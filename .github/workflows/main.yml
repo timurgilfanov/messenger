@@ -213,6 +213,12 @@ jobs:
             --directories-to-pull /sdcard/Download \
             --results-dir="${{ env.RESULTS_DIR }}" | tee run.log
 
+      - name: Upload Instrumented Test Run Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-testlab-run-log
+          path: run.log
+
       - name: Extract Firebase Results Path
         id: extract-results
         run: |

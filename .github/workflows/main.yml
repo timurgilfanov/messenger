@@ -261,6 +261,9 @@ jobs:
           report_paths: testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
           check_name: "Instrumented Test Results"
 
+      - name: Rebuild class files for JaCoCo
+        run: ./gradlew assembleDebug
+
       - name: Generate JaCoCo XML Report from merged .ec
         run: |
           mkdir -p coverage-report

@@ -22,6 +22,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableAndroidTestCoverage = project.hasProperty("coverage")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(

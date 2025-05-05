@@ -13,6 +13,7 @@ on:
       - 'app/**'
       - 'build.gradle.kts'
       - 'gradle/**'
+      - '.github/workflows/main.yml'
 
 jobs:
   build:
@@ -83,6 +84,12 @@ jobs:
         with:
           name: androidtest-apk
           path: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+
+      - name: Upload Kotlin class files
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-classfiles
+          path: app/build/tmp/kotlin-classes/debug
 
   unitTest:
     needs: build
@@ -210,15 +217,34 @@ jobs:
             --timeout 5m \
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec \
             --directories-to-pull /sdcard/Download \
-            --results-dir="${{ env.RESULTS_DIR }}" | tee run.log
+            --results-dir="${{ env.RESULTS_DIR }}" 2>&1 | tee run.log
+
+      - name: Upload Instrumented Test Run Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-testlab-run-log
+          path: run.log
 
       - name: Extract Firebase Results Path
         id: extract-results
         run: |
-          echo "RESULTS_URL=$(grep 'Raw results will be stored in' run.log | awk '{print $NF}')" >> "$GITHUB_ENV"
+          CONSOLE_URL=$(grep 'Raw results will be stored in' run.log | awk '{print $NF}' | tr -d '[]')
+          if [ -z "$CONSOLE_URL" ]; then
+            echo "❌ Failed to extract CONSOLE_URL from run.log"; exit 1
+          fi
+          # Convert to gs:// URL
+          BUCKET_PATH=$(echo "$CONSOLE_URL" | sed 's|https://console.developers.google.com/storage/browser/|gs://|')
+          if [ -z "$BUCKET_PATH" ]; then
+            echo "❌ Failed to convert CONSOLE_URL to BUCKET_PATH"; exit 1
+          fi
+          echo "RESULTS_URL=$BUCKET_PATH" >> "$GITHUB_ENV"
+          echo "✅ RESULTS_URL set to $BUCKET_PATH"
 
       - name: Download results from Firebase Test Lab
         run: |
+          if [ -z "$RESULTS_URL" ]; then
+            echo "❌ RESULTS_URL is not set"; exit 1
+          fi
           mkdir -p testlab-results
           gsutil -m cp -r $RESULTS_URL testlab-results/
 
@@ -241,6 +267,12 @@ jobs:
           report_paths: testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
           check_name: "Instrumented Test Results"
 
+      - name: Download Kotlin class files
+        uses: actions/download-artifact@v4
+        with:
+          name: kotlin-classfiles
+          path: app/build/tmp/kotlin-classes/debug
+
       - name: Generate JaCoCo XML Report from merged .ec
         run: |
           mkdir -p coverage-report
@@ -249,11 +281,21 @@ jobs:
             --sourcefiles app/src/main \
             --xml coverage-report/instrumented-report.xml
 
+      - name: Sanitize all subdirectory names to remove colons
+        run: |
+          for dir in testlab-results/*; do
+            base=$(basename "$dir")
+            safe=$(echo "$base" | tr ':' '_')
+            if [ "$base" != "$safe" ]; then
+              mv "testlab-results/$base" "testlab-results/$safe"
+            fi
+          done
+
       - name: Upload Instrumented Test Report
         uses: actions/upload-artifact@v4
         with:
           name: firebase-testlab-results
-          path: testlab-results
+          path: testlab-results/
 
       - name: Upload JaCoCo Instrumented XML Report
         uses: actions/upload-artifact@v4

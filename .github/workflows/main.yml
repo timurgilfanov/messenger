@@ -85,6 +85,12 @@ jobs:
           name: androidtest-apk
           path: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 
+      - name: Upload Kotlin class files
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-classfiles
+          path: app/build/tmp/kotlin-classes/debug
+
   unitTest:
     needs: build
 
@@ -261,8 +267,11 @@ jobs:
           report_paths: testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
           check_name: "Instrumented Test Results"
 
-      - name: Rebuild class files for JaCoCo
-        run: ./gradlew assembleDebug
+      - name: Download Kotlin class files
+        uses: actions/download-artifact@v4
+        with:
+          name: kotlin-classfiles
+          path: app/build/tmp/kotlin-classes/debug
 
       - name: Generate JaCoCo XML Report from merged .ec
         run: |

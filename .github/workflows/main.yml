@@ -281,11 +281,16 @@ jobs:
             --sourcefiles app/src/main \
             --xml coverage-report/instrumented-report.xml
 
+      - name: Sanitize Firebase results path
+        run: |
+          SAFE_RESULTS_DIR=$(echo "${RESULTS_DIR}" | tr ':' '_')
+          mv "testlab-results/${RESULTS_DIR}" "testlab-results/$SAFE_RESULTS_DIR"
+
       - name: Upload Instrumented Test Report
         uses: actions/upload-artifact@v4
         with:
           name: firebase-testlab-results
-          path: testlab-results/${{ env.RESULTS_DIR }}
+          path: testlab-results/
 
       - name: Upload JaCoCo Instrumented XML Report
         uses: actions/upload-artifact@v4

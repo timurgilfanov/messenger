@@ -211,7 +211,7 @@ jobs:
             --timeout 5m \
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec \
             --directories-to-pull /sdcard/Download \
-            --results-dir="${{ env.RESULTS_DIR }}" | tee run.log
+            --results-dir="${{ env.RESULTS_DIR }}" 2>&1 | tee run.log
 
       - name: Upload Instrumented Test Run Log
         uses: actions/upload-artifact@v4

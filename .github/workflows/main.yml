@@ -215,7 +215,10 @@ jobs:
       - name: Extract Firebase Results Path
         id: extract-results
         run: |
-          echo "RESULTS_URL=$(grep 'Raw results will be stored in' run.log | awk '{print $NF}')" >> "$GITHUB_ENV"
+          CONSOLE_URL=$(grep 'Raw results will be stored in' run.log | awk '{print $NF}')
+          # Convert to gs:// URL
+          BUCKET_PATH=$(echo "$CONSOLE_URL" | sed 's|https://console.developers.google.com/storage/browser/|gs://|')
+          echo "RESULTS_URL=$BUCKET_PATH" >> "$GITHUB_ENV"
 
       - name: Download results from Firebase Test Lab
         run: |

@@ -6,3 +6,11 @@ I plan to try:
 * Hilt as DI library
 * Orbit MVI as MVVM+ approach develop UI
 * separate fakes in test modules.
+
+## Set up
+
+### Detekt and ktlint
+* Install detekt and ktlint Android Studio plugins.
+* Download detekt-compose-*.jar from [Compose ruleset](https://github.com/mrmans0n/compose-rules/releases) release.
+* Config detekt to use ./config/detekt/detekt.yml config and Compose ruleset.
+

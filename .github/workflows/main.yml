@@ -281,10 +281,15 @@ jobs:
             --sourcefiles app/src/main \
             --xml coverage-report/instrumented-report.xml
 
-      - name: Sanitize Firebase results path
+      - name: Sanitize all subdirectory names to remove colons
         run: |
-          SAFE_RESULTS_DIR=$(echo "${RESULTS_DIR}" | tr ':' '_')
-          mv "testlab-results/${RESULTS_DIR}" "testlab-results/$SAFE_RESULTS_DIR"
+          for dir in testlab-results/*; do
+            base=$(basename "$dir")
+            safe=$(echo "$base" | tr ':' '_')
+            if [ "$base" != "$safe" ]; then
+              mv "testlab-results/$base" "testlab-results/$safe"
+            fi
+          done
 
       - name: Upload Instrumented Test Report
         uses: actions/upload-artifact@v4

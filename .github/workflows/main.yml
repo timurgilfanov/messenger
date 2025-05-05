@@ -222,7 +222,7 @@ jobs:
       - name: Extract Firebase Results Path
         id: extract-results
         run: |
-          CONSOLE_URL=$(grep 'Raw results will be stored in' run.log | awk '{print $NF}')
+          CONSOLE_URL=$(grep 'Raw results will be stored in' run.log | awk '{print $NF}' | tr -d '[]')
           if [ -z "$CONSOLE_URL" ]; then
             echo "❌ Failed to extract CONSOLE_URL from run.log"; exit 1
           fi

@@ -1,4 +1,6 @@
 # messenger
+[![codecov](https://codecov.io/gh/timurgilfanov/messenger/graph/badge.svg?token=MF0478WVBI)](https://codecov.io/gh/timurgilfanov/messenger)
+
 Sample Android application that mimic to Telegram messenger UX to try new things and train engineering muscles.
 
 I plan to try:

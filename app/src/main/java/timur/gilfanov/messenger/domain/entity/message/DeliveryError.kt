@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.entity.model.message
+package timur.gilfanov.messenger.domain.entity.message
 
 import kotlin.time.Duration
 

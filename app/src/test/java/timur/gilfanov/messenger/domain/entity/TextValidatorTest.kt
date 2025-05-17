@@ -1,9 +1,11 @@
-package timur.gilfanov.messenger.entity
+package timur.gilfanov.messenger.domain.entity
 
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.Test
-import timur.gilfanov.messenger.entity.validation.TextValidator
+import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidator
 
 class TextValidatorTest {
 
@@ -30,9 +32,7 @@ class TextValidatorTest {
         val emptyText = ""
         val result = validator.validate(emptyText)
         assertTrue(result.isFailure)
-        val exception = result.exceptionOrNull()
-        assertTrue(exception is IllegalArgumentException)
-        assertEquals("Message text cannot be empty", exception.message)
+        assertEquals(TextValidationError.Empty, (result as Failure).error)
     }
 
     @Test
@@ -41,9 +41,7 @@ class TextValidatorTest {
         val blankText = "   "
         val result = validator.validate(blankText)
         assertTrue(result.isFailure)
-        val exception = result.exceptionOrNull()
-        assertTrue(exception is IllegalArgumentException)
-        assertEquals("Message text cannot be empty", exception.message)
+        assertEquals(TextValidationError.Empty, (result as Failure).error)
     }
 
     @Test
@@ -53,8 +51,8 @@ class TextValidatorTest {
         val tooLongText = "a".repeat(maxLength + 1)
         val result = validator.validate(tooLongText)
         assertTrue(result.isFailure)
-        val exception = result.exceptionOrNull()
-        assertTrue(exception is IllegalArgumentException)
-        assertEquals("Message text cannot exceed $maxLength characters", exception.message)
+        val error = (result as Failure).error
+        assertTrue(error is TextValidationError.TooLong)
+        assertEquals(maxLength, error.maxLength)
     }
 }

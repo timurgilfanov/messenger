@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.entity.model.message
+package timur.gilfanov.messenger.domain.entity.message
 
 sealed class DeliveryStatus {
     data class Sending(val progress: Int) : DeliveryStatus() {
@@ -11,4 +11,12 @@ sealed class DeliveryStatus {
     object Sent : DeliveryStatus()
     object Delivered : DeliveryStatus()
     object Read : DeliveryStatus()
+
+    override fun toString(): String = when (this) {
+        is Sending -> "Sending($progress)"
+        is Failed -> "Failed($reason)"
+        Sent -> "Sent"
+        Delivered -> "Delivered"
+        Read -> "Read"
+    }
 }

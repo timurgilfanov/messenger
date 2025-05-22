@@ -26,7 +26,6 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.usecase.CreateMessageError.DeliveryStatusAlreadySet
 import timur.gilfanov.messenger.domain.usecase.CreateMessageError.DeliveryStatusUpdateNotValid
 import timur.gilfanov.messenger.domain.usecase.CreateMessageError.MessageIsNotValid
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.Unauthorized
 
 class CreateMessageUseCaseTest {
 

@@ -3,8 +3,8 @@ package timur.gilfanov.messenger.domain.entity.message
 import java.util.UUID
 import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.communication.Communication
-import timur.gilfanov.messenger.domain.entity.communication.Participant
+import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidatorVersion
 import timur.gilfanov.messenger.domain.usecase.ValidationError
@@ -13,7 +13,7 @@ data class TextMessage(
     override val id: UUID,
     override val parentId: UUID?,
     override val sender: Participant,
-    override val recipient: Communication,
+    override val recipient: Chat,
     override val createdAt: Instant,
     override val sentAt: Instant? = null,
     override val deliveredAt: Instant? = null,

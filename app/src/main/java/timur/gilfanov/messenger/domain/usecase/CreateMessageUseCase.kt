@@ -1,9 +1,15 @@
 package timur.gilfanov.messenger.domain.usecase
 
+import java.util.UUID
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
+import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.Rule.CanNotWriteAfterJoining
+import timur.gilfanov.messenger.domain.entity.chat.Rule.Debounce
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.onFailure
@@ -11,18 +17,20 @@ import timur.gilfanov.messenger.domain.entity.onSuccess
 import timur.gilfanov.messenger.domain.usecase.CreateMessageError.DeliveryStatusAlreadySet
 import timur.gilfanov.messenger.domain.usecase.CreateMessageError.DeliveryStatusUpdateNotValid
 import timur.gilfanov.messenger.domain.usecase.CreateMessageError.MessageIsNotValid
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.Unauthorized
+import timur.gilfanov.messenger.domain.usecase.CreateMessageError.WaitAfterJoining
+import timur.gilfanov.messenger.domain.usecase.CreateMessageError.WaitDebounce
 
 class CreateMessageUseCase(
+    private val chat: Chat,
     private val message: Message,
     private val repository: Repository,
     private val deliveryStatusValidator: DeliveryStatusValidator,
+    private val now: Instant = Clock.System.now(),
 ) {
 
     operator fun invoke() = flow<ResultWithError<Message, CreateMessageError>> {
-        val permission = message.recipient.canSendMessage()
-        if (permission is Failure) {
-            emit(Failure(Unauthorized(permission.error)))
+        checkRules().onFailure { error: CreateMessageError ->
+            emit(Failure(error))
             return@flow
         }
 
@@ -45,4 +53,46 @@ class CreateMessageUseCase(
             prev = progress.deliveryStatus
         }
     }
+
+    fun checkRules(): ResultWithError<Unit, CreateMessageError> {
+        for (rule in chat.rules) {
+            val ruleResult = when (rule) {
+                is CanNotWriteAfterJoining -> checkJoiningRule(rule)
+                is Debounce -> checkDebounceRule(rule)
+            }
+
+            if (ruleResult is Failure) {
+                return ruleResult
+            }
+        }
+        return Success(Unit)
+    }
+
+    private fun checkJoiningRule(
+        rule: CanNotWriteAfterJoining,
+    ): ResultWithError<Unit, CreateMessageError> {
+        val joinedAt = chat.participants.first { it.id == message.sender.id }.joinedAt
+        val timeFromJoining = now - joinedAt
+
+        return if (timeFromJoining < rule.duration) {
+            Failure(WaitAfterJoining(rule.duration - timeFromJoining))
+        } else {
+            Success(Unit)
+        }
+    }
+
+    private fun checkDebounceRule(rule: Debounce): ResultWithError<Unit, CreateMessageError> {
+        val lastMessage = chat.lastMessageBy(message.sender.id) ?: return Success(Unit)
+        val timeFromLastMessage = now - lastMessage.createdAt
+
+        return if (timeFromLastMessage < rule.delay) {
+            Failure(WaitDebounce(rule.delay - timeFromLastMessage))
+        } else {
+            Success(Unit)
+        }
+    }
+
+    private fun Chat.lastMessageBy(participantId: UUID): Message? = messages
+        .filter { it.sender.id == participantId }
+        .maxByOrNull { it.createdAt }
 }

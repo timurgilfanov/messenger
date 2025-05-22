@@ -8,8 +8,8 @@ import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.usecase.ValidationError
 
 interface Message {
-    val id: UUID
-    val parentId: UUID?
+    val id: UUID // TODO Use inline class
+    val parentId: UUID? // TODO Use inline class
     val sender: Participant
     val recipient: Chat
     val createdAt: Instant

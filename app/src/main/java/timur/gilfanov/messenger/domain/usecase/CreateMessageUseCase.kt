@@ -49,7 +49,10 @@ class CreateMessageUseCase(
         repository.sendMessage(message).collect { progress ->
             deliveryStatusValidator.validate(prev, progress.deliveryStatus)
                 .onSuccess { emit(Success(progress)) }
-                .onFailure { error -> emit(Failure(DeliveryStatusUpdateNotValid(error))) }
+                .onFailure { error ->
+                    emit(Failure(DeliveryStatusUpdateNotValid(error)))
+                    return@collect
+                }
             prev = progress.deliveryStatus
         }
     }

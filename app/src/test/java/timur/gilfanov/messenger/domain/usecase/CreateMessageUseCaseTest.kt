@@ -10,23 +10,26 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.junit.Test
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.Participant
+import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.Rule.CanNotWriteAfterJoining
 import timur.gilfanov.messenger.domain.entity.chat.Rule.Debounce
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sent
 import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.usecase.CreateMessageError.DeliveryStatusAlreadySet
@@ -39,23 +42,27 @@ class CreateMessageUseCaseTest {
 
     @Test
     fun `test joining rule failure`() = runTest {
-        // Arrange
-        val now = Instant.fromEpochMilliseconds(1000000)
-        val joinedAt = now - 1.minutes
+        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val joinedAt = customTime - 1.minutes
         val waitDuration = 5.minutes
-        val remainingTime = waitDuration - (now - joinedAt)
+        val remainingTime = waitDuration - (customTime - joinedAt)
 
-        val senderId = UUID.randomUUID()
-        val participant = mockk<Participant>()
-        every { participant.id } returns senderId
-        every { participant.joinedAt } returns joinedAt
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = joinedAt,
+            pictureUrl = null,
+        )
 
-        val message = mockk<Message>()
-        every { message.sender } returns participant
+        val message = mockk<Message> {
+            every { sender } returns participant
+        }
 
-        val chat = mockk<Chat>()
-        every { chat.participants } returns setOf(participant)
-        every { chat.rules } returns setOf(CanNotWriteAfterJoining(waitDuration))
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf(CanNotWriteAfterJoining(waitDuration))
+        }
 
         val repository = mockk<Repository>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -65,10 +72,9 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Message, CreateMessageError>>(result)
@@ -79,33 +85,38 @@ class CreateMessageUseCaseTest {
 
         verify { chat.participants }
         verify { chat.rules }
-        verify { participant.id }
-        verify { participant.joinedAt }
         verify { message.sender }
     }
 
     @Test
     fun `test debounce rule failure`() = runTest {
-        // Arrange
-        val now = Instant.fromEpochMilliseconds(1000000)
-        val lastMessageTime = now - 10.seconds
+        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val lastMessageTime = customTime - 10.seconds
         val debounceDelay = 30.seconds
-        val remainingTime = debounceDelay - (now - lastMessageTime)
+        val remainingTime = debounceDelay - (customTime - lastMessageTime)
 
-        val senderId = UUID.randomUUID()
-        val participant = mockk<Participant>()
-        every { participant.id } returns senderId
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
 
-        val lastMessage = mockk<Message>()
-        every { lastMessage.sender.id } returns senderId
-        every { lastMessage.createdAt } returns lastMessageTime
+        val lastMessage = mockk<Message> {
+            every { sender } returns participant
+            every { createdAt } returns lastMessageTime
+        }
 
-        val message = mockk<Message>()
-        every { message.sender.id } returns senderId
+        val message = mockk<Message> {
+            every { sender } returns participant
+        }
 
-        val chat = mockk<Chat>()
-        every { chat.rules } returns setOf(Debounce(debounceDelay))
-        every { chat.messages } returns listOf(lastMessage)
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf(Debounce(debounceDelay))
+            every { messages } returns persistentListOf(lastMessage)
+        }
 
         val repository = mockk<Repository>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -115,10 +126,9 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Message, CreateMessageError>>(result)
@@ -129,99 +139,44 @@ class CreateMessageUseCaseTest {
 
         verify { chat.rules }
         verify { chat.messages }
-        verify { message.sender.id }
-        verify { lastMessage.sender.id }
+        verify { message.sender }
+        verify { lastMessage.sender }
         verify { lastMessage.createdAt }
     }
 
     @Test
     fun `test multiple rules success`() = runTest {
-        // Arrange
-        val now = Instant.fromEpochMilliseconds(1000000)
-        val joinedAt = now - 10.minutes
-        val lastMessageTime = now - 1.minutes
+        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val joinedAt = customTime - 10.minutes
+        val lastMessageTime = customTime - 1.minutes
 
-        val senderId = UUID.randomUUID()
-        val participant = mockk<Participant>()
-        every { participant.id } returns senderId
-        every { participant.joinedAt } returns joinedAt
-
-        val lastMessage = mockk<Message>()
-        every { lastMessage.sender.id } returns senderId
-        every { lastMessage.createdAt } returns lastMessageTime
-
-        val messageSender = mockk<Participant>()
-        every { messageSender.id } returns senderId
-
-        val message = mockk<Message>()
-        every { message.sender } returns messageSender
-        every { message.validate() } returns Success(Unit)
-        every { message.deliveryStatus } returns null
-
-        val chat = mockk<Chat>()
-        every { chat.participants } returns setOf(participant)
-        every { chat.rules } returns setOf(
-            CanNotWriteAfterJoining(5.minutes),
-            Debounce(30.seconds),
-        )
-        every { chat.messages } returns listOf(lastMessage)
-
-        val repository = mockk<Repository>()
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
-
-        every { deliveryStatusValidator.validate(null, any()) } returns Success(Unit)
-        coEvery { repository.sendMessage(message) } returns flowOf(message)
-
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
-            repository = repository,
-            deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = joinedAt,
+            pictureUrl = null,
         )
 
-        // Act & Assert
-        useCase().test {
-            val result = awaitItem()
-            assertIs<Success<Message, CreateMessageError>>(result)
-            assertEquals(message, result.data)
-            awaitComplete()
+        val lastMessage = mockk<Message> {
+            every { sender } returns participant
+            every { createdAt } returns lastMessageTime
         }
 
-        verify { chat.participants }
-        verify { chat.rules }
-        verify { chat.messages }
-        verify { participant.joinedAt }
-        verify { message.sender }
-        verify { messageSender.id }
-        verify { message.validate() }
-        verify { message.deliveryStatus }
-        verify { lastMessage.sender.id }
-        verify { lastMessage.createdAt }
-        verify { deliveryStatusValidator.validate(null, any()) }
-    }
+        val message = mockk<Message> {
+            every { sender } returns participant
+            every { validate() } returns Success(Unit)
+            every { deliveryStatus } returns null
+        }
 
-    @Test
-    fun `test with custom time`() = runTest {
-        // Arrange
-        val customTime = Instant.fromEpochMilliseconds(2000000)
-        val joinedAt = customTime - 10.minutes
-
-        val senderId = UUID.randomUUID()
-        val participant = mockk<Participant>()
-        every { participant.id } returns senderId
-        every { participant.joinedAt } returns joinedAt
-
-        val message = mockk<Message>()
-        every { message.sender.id } returns senderId
-        every { message.sender } returns participant
-        every { message.validate() } returns Success(Unit)
-        every { message.deliveryStatus } returns null
-
-        val chat = mockk<Chat>()
-        every { chat.participants } returns setOf(participant)
-        every { chat.rules } returns setOf(CanNotWriteAfterJoining(5.minutes))
-        every { chat.messages } returns emptyList()
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf(
+                CanNotWriteAfterJoining(5.minutes),
+                Debounce(30.seconds),
+            )
+            every { messages } returns persistentListOf(lastMessage)
+        }
 
         val repository = mockk<Repository>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -237,7 +192,6 @@ class CreateMessageUseCaseTest {
             now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Success<Message, CreateMessageError>>(result)
@@ -247,25 +201,38 @@ class CreateMessageUseCaseTest {
 
         verify { chat.participants }
         verify { chat.rules }
-        verify { participant.id }
-        verify { participant.joinedAt }
+        verify { chat.messages }
         verify { message.sender }
         verify { message.validate() }
         verify { message.deliveryStatus }
+        verify { lastMessage.createdAt }
         verify { deliveryStatusValidator.validate(null, any()) }
     }
 
     @Test
-    fun `test with empty rules`() = runTest {
-        // Arrange
-        val now = Clock.System.now()
+    fun `test with custom time`() = runTest {
+        val customTime = Instant.fromEpochMilliseconds(2000000)
+        val joinedAt = customTime - 10.minutes
 
-        val message = mockk<Message>()
-        every { message.validate() } returns Success(Unit)
-        every { message.deliveryStatus } returns null
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = joinedAt,
+            pictureUrl = null,
+        )
 
-        val chat = mockk<Chat>()
-        every { chat.rules } returns emptySet()
+        val message = mockk<Message> {
+            every { sender } returns participant
+            every { validate() } returns Success(Unit)
+            every { deliveryStatus } returns null
+        }
+
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf(CanNotWriteAfterJoining(5.minutes))
+            every { messages } returns persistentListOf()
+        }
 
         val repository = mockk<Repository>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -278,10 +245,62 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
+        useCase().test {
+            val result = awaitItem()
+            assertIs<Success<Message, CreateMessageError>>(result)
+            assertEquals(message, result.data)
+            awaitComplete()
+        }
+
+        verify { chat.participants }
+        verify { chat.rules }
+        verify { message.sender }
+        verify { message.validate() }
+        verify { message.deliveryStatus }
+        verify { deliveryStatusValidator.validate(null, any()) }
+    }
+
+    @Test
+    fun `test with empty rules`() = runTest {
+        val customTime = Instant.fromEpochMilliseconds(2000000)
+
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
+
+        val message = mockk<Message> {
+            every { sender } returns participant
+            every { validate() } returns Success(Unit)
+            every { deliveryStatus } returns null
+        }
+
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf()
+            every { messages } returns persistentListOf()
+        }
+
+        val repository = mockk<Repository>()
+        val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
+
+        every { deliveryStatusValidator.validate(null, any()) } returns Success(Unit)
+        coEvery { repository.sendMessage(message) } returns flowOf(message)
+
+        val useCase = CreateMessageUseCase(
+            chat = chat,
+            message = message,
+            repository = repository,
+            deliveryStatusValidator = deliveryStatusValidator,
+            now = customTime,
+        )
+
         useCase().test {
             val result = awaitItem()
             assertIs<Success<Message, CreateMessageError>>(result)
@@ -297,30 +316,44 @@ class CreateMessageUseCaseTest {
 
     @Test
     fun `delivery status validation succeed then failed`() = runTest {
-        // Arrange
-        val uuid = UUID.randomUUID()
-        val now = Clock.System.now()
+        val messageId = MessageId(UUID.randomUUID())
+        val customTime = Instant.fromEpochMilliseconds(2000000)
 
-        val message = mockk<Message>()
-        val sending50 = mockk<Message>()
-        val sending100 = mockk<Message>()
-        val sentMessage = mockk<Message>()
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
 
-        every { message.id } returns uuid
-        every { message.validate() } returns Success(Unit)
-        every { message.deliveryStatus } returns null
+        val message = mockk<Message> {
+            every { id } returns messageId
+            every { sender } returns participant
+            every { validate() } returns Success(Unit)
+            every { deliveryStatus } returns null
+        }
 
-        every { sending50.id } returns uuid
-        every { sending50.deliveryStatus } returns Sending(50)
+        val sending50 = mockk<Message> {
+            every { id } returns messageId
+            every { deliveryStatus } returns Sending(50)
+        }
 
-        every { sending100.id } returns uuid
-        every { sending100.deliveryStatus } returns Sending(100)
+        val sending100 = mockk<Message> {
+            every { id } returns messageId
+            every { deliveryStatus } returns Sending(100)
+        }
 
-        every { sentMessage.id } returns uuid
-        every { sentMessage.deliveryStatus } returns Sent
+        val sentMessage = mockk<Message> {
+            every { id } returns messageId
+            every { deliveryStatus } returns Sent
+        }
 
-        val chat = mockk<Chat>()
-        every { chat.rules } returns emptySet()
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf()
+            every { messages } returns persistentListOf()
+        }
 
         val validationError = mockk<DeliveryStatusValidationError>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -343,10 +376,9 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val result1 = awaitItem()
             assertIs<Success<Message, CreateMessageError>>(result1)
@@ -376,22 +408,34 @@ class CreateMessageUseCaseTest {
 
     @Test
     fun `delivery status validation failed on first update`() = runTest {
-        // Arrange
-        val uuid = UUID.randomUUID()
-        val now = Clock.System.now()
+        val messageId = MessageId(UUID.randomUUID())
+        val customTime = Instant.fromEpochMilliseconds(2000000)
 
-        val message = mockk<Message>()
-        val sending50 = mockk<Message>()
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
 
-        every { message.id } returns uuid
-        every { message.validate() } returns Success(Unit)
-        every { message.deliveryStatus } returns null
+        val message = mockk<Message> {
+            every { id } returns messageId
+            every { sender } returns participant
+            every { validate() } returns Success(Unit)
+            every { deliveryStatus } returns null
+        }
 
-        every { sending50.id } returns uuid
-        every { sending50.deliveryStatus } returns Sending(50)
+        val sending50 = mockk<Message> {
+            every { id } returns messageId
+            every { deliveryStatus } returns Sending(50)
+        }
 
-        val chat = mockk<Chat>()
-        every { chat.rules } returns emptySet()
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf()
+            every { messages } returns persistentListOf()
+        }
 
         val validationError = mockk<DeliveryStatusValidationError>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -408,10 +452,9 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Message, CreateMessageError>>(result)
@@ -428,15 +471,26 @@ class CreateMessageUseCaseTest {
 
     @Test
     fun `message validation failure`() = runTest {
-        // Arrange
-        val now = Clock.System.now()
+        val customTime = Instant.fromEpochMilliseconds(2000000)
         val validationError = mockk<ValidationError>()
 
-        val message = mockk<Message>()
-        every { message.validate() } returns Failure(validationError)
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
 
-        val chat = mockk<Chat>()
-        every { chat.rules } returns emptySet()
+        val message = mockk<Message> {
+            every { sender } returns participant
+            every { validate() } returns Failure(validationError)
+        }
+
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf()
+        }
 
         val repository = mockk<Repository>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -446,10 +500,9 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Message, CreateMessageError>>(result)
@@ -464,16 +517,27 @@ class CreateMessageUseCaseTest {
 
     @Test
     fun `delivery status already set`() = runTest {
-        // Arrange
-        val now = Clock.System.now()
+        val customTime = Instant.fromEpochMilliseconds(2000000)
         val existingStatus = mockk<DeliveryStatus>()
 
-        val message = mockk<Message>()
-        every { message.validate() } returns Success(Unit)
-        every { message.deliveryStatus } returns existingStatus
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
 
-        val chat = mockk<Chat>()
-        every { chat.rules } returns emptySet()
+        val message = mockk<Message> {
+            every { sender } returns participant
+            every { validate() } returns Success(Unit)
+            every { deliveryStatus } returns existingStatus
+        }
+
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf()
+        }
 
         val repository = mockk<Repository>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -483,10 +547,9 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Message, CreateMessageError>>(result)
@@ -502,16 +565,27 @@ class CreateMessageUseCaseTest {
 
     @Test
     fun `repository throws exception`() = runTest {
-        // Arrange
-        val now = Clock.System.now()
+        val customTime = Instant.fromEpochMilliseconds(2000000)
         val exception = RuntimeException("Network error")
 
-        val message = mockk<Message>()
-        every { message.validate() } returns Success(Unit)
-        every { message.deliveryStatus } returns null
+        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
 
-        val chat = mockk<Chat>()
-        every { chat.rules } returns emptySet()
+        val message = mockk<Message> {
+            every { sender } returns participant
+            every { validate() } returns Success(Unit)
+            every { deliveryStatus } returns null
+        }
+
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf()
+        }
 
         val repository = mockk<Repository>()
         coEvery { repository.sendMessage(message) } throws exception
@@ -523,10 +597,9 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val error = awaitError()
             assertEquals("Network error", error.message)
@@ -539,23 +612,32 @@ class CreateMessageUseCaseTest {
 
     @Test
     fun `no participant found`() = runTest {
-        // Arrange
-        val now = Clock.System.now()
-        val senderId = UUID.randomUUID()
-        val otherParticipantId = UUID.randomUUID()
+        val customTime = Instant.fromEpochMilliseconds(2000000)
+        val senderId = ParticipantId(UUID.randomUUID())
+        val otherParticipantId = ParticipantId(UUID.randomUUID())
 
-        val otherParticipant = mockk<Participant>()
-        every { otherParticipant.id } returns otherParticipantId
+        val otherParticipant = Participant(
+            id = otherParticipantId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
 
-        val messageSender = mockk<Participant>()
-        every { messageSender.id } returns senderId
+        val messageSender = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
 
-        val message = mockk<Message>()
-        every { message.sender } returns messageSender
+        val message = mockk<Message> {
+            every { sender } returns messageSender
+        }
 
-        val chat = mockk<Chat>()
-        every { chat.rules } returns setOf(CanNotWriteAfterJoining(5.minutes))
-        every { chat.participants } returns setOf(otherParticipant)
+        val chat = mockk<Chat> {
+            every { rules } returns persistentSetOf(CanNotWriteAfterJoining(5.minutes))
+            every { participants } returns persistentSetOf(otherParticipant)
+        }
 
         val repository = mockk<Repository>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -565,10 +647,9 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val error = awaitError()
             assert(error is NoSuchElementException)
@@ -577,28 +658,31 @@ class CreateMessageUseCaseTest {
         verify { chat.rules }
         verify { chat.participants }
         verify { message.sender }
-        verify { messageSender.id }
-        verify { otherParticipant.id }
     }
 
     @Test
     fun `last message not found`() = runTest {
-        // Arrange
-        val now = Clock.System.now()
-        val senderId = UUID.randomUUID()
+        val customTime = Instant.fromEpochMilliseconds(2000000)
+        val senderId = ParticipantId(UUID.randomUUID())
 
-        val messageSender = mockk<Participant>()
-        every { messageSender.id } returns senderId
+        val participant = Participant(
+            id = senderId,
+            name = "",
+            joinedAt = customTime - 10.minutes,
+            pictureUrl = null,
+        )
 
-        val message = mockk<Message>()
-        every { message.sender } returns messageSender
-        every { message.sender.id } returns senderId
-        every { message.validate() } returns Success(Unit)
-        every { message.deliveryStatus } returns null
+        val message = mockk<Message> {
+            every { sender } returns participant
+            every { validate() } returns Success(Unit)
+            every { deliveryStatus } returns null
+        }
 
-        val chat = mockk<Chat>()
-        every { chat.rules } returns setOf(Debounce(30.seconds))
-        every { chat.messages } returns emptyList()
+        val chat = mockk<Chat> {
+            every { participants } returns persistentSetOf(participant)
+            every { rules } returns persistentSetOf(Debounce(30.seconds))
+            every { messages } returns persistentListOf()
+        }
 
         val repository = mockk<Repository>()
         val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
@@ -611,10 +695,9 @@ class CreateMessageUseCaseTest {
             message = message,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = now,
+            now = customTime,
         )
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Success<Message, CreateMessageError>>(result)
@@ -624,7 +707,6 @@ class CreateMessageUseCaseTest {
 
         verify { chat.rules }
         verify { chat.messages }
-        verify { message.sender.id }
         verify { message.validate() }
         verify { message.deliveryStatus }
         verify { deliveryStatusValidator.validate(null, any()) }

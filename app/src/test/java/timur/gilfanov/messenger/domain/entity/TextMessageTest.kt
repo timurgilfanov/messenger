@@ -1,20 +1,32 @@
 package timur.gilfanov.messenger.domain.entity
 
-import io.mockk.mockk
+import java.util.UUID
 import junit.framework.TestCase.assertTrue
+import kotlinx.datetime.Clock
 import org.junit.Test
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.Participant
+import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 
 class TextMessageTest {
 
     @Test
     fun validationIsWorking() {
+        val participant = Participant(
+            id = ParticipantId(UUID.randomUUID()),
+            name = "Test User",
+            pictureUrl = null,
+            joinedAt = Clock.System.now(),
+        )
+
         val message = TextMessage(
-            id = mockk(),
-            parentId = mockk(),
-            sender = mockk(),
-            recipient = mockk(),
-            createdAt = mockk(),
+            id = MessageId(UUID.randomUUID()),
+            parentId = MessageId(UUID.randomUUID()),
+            sender = participant,
+            recipient = ChatId(UUID.randomUUID()),
+            createdAt = Clock.System.now(),
             text = "Valid text",
         )
 

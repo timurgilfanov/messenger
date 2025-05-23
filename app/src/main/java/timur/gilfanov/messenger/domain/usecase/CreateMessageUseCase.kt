@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.domain.usecase
 
-import java.util.UUID
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -8,6 +7,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.Rule.CanNotWriteAfterJoining
 import timur.gilfanov.messenger.domain.entity.chat.Rule.Debounce
 import timur.gilfanov.messenger.domain.entity.message.Message
@@ -95,7 +95,7 @@ class CreateMessageUseCase(
         }
     }
 
-    private fun Chat.lastMessageBy(participantId: UUID): Message? = messages
+    private fun Chat.lastMessageBy(participantId: ParticipantId): Message? = messages
         .filter { it.sender.id == participantId }
         .maxByOrNull { it.createdAt }
 }

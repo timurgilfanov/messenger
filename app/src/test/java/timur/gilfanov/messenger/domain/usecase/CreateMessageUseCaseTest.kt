@@ -315,6 +315,7 @@ class CreateMessageUseCaseTest {
     }
 
     @Test
+    @Suppress("LongMethod")
     fun `delivery status validation succeed then failed`() = runTest {
         val messageId = MessageId(UUID.randomUUID())
         val customTime = Instant.fromEpochMilliseconds(2000000)

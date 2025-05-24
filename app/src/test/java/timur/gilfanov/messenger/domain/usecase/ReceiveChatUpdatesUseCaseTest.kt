@@ -24,7 +24,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
     @Test
     fun `successfully receive chat updates`() = runTest {
-        // Arrange
         val chatId = ChatId(UUID.randomUUID())
         val chat = mockk<Chat> {
             every { id } returns chatId
@@ -43,7 +42,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
-        // Act & Assert
         useCase().test {
             val result1 = awaitItem()
             assertIs<Success<Chat, ReceiveChatUpdatesError>>(result1)
@@ -61,7 +59,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
     @Test
     fun `handle chat not found error`() = runTest {
-        // Arrange
         val chatId = ChatId(UUID.randomUUID())
         val repository = mockk<Repository>()
         coEvery { repository.receiveChatUpdates(chatId) } returns flow {
@@ -70,7 +67,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Chat, ReceiveChatUpdatesError>>(result)
@@ -81,7 +77,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
     @Test
     fun `handle network not available error`() = runTest {
-        // Arrange
         val chatId = ChatId(UUID.randomUUID())
         val repository = mockk<Repository>()
         coEvery { repository.receiveChatUpdates(chatId) } returns flow {
@@ -90,7 +85,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Chat, ReceiveChatUpdatesError>>(result)
@@ -101,7 +95,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
     @Test
     fun `handle server unreachable error`() = runTest {
-        // Arrange
         val chatId = ChatId(UUID.randomUUID())
         val repository = mockk<Repository>()
         coEvery { repository.receiveChatUpdates(chatId) } returns flow {
@@ -110,7 +103,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Chat, ReceiveChatUpdatesError>>(result)
@@ -121,7 +113,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
     @Test
     fun `handle server error`() = runTest {
-        // Arrange
         val chatId = ChatId(UUID.randomUUID())
         val repository = mockk<Repository>()
         coEvery { repository.receiveChatUpdates(chatId) } returns flow {
@@ -130,7 +121,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Chat, ReceiveChatUpdatesError>>(result)
@@ -141,7 +131,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
     @Test
     fun `handle unknown error`() = runTest {
-        // Arrange
         val chatId = ChatId(UUID.randomUUID())
         val repository = mockk<Repository>()
         coEvery { repository.receiveChatUpdates(chatId) } returns flow {
@@ -150,7 +139,6 @@ class ReceiveChatUpdatesUseCaseTest {
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
-        // Act & Assert
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<Chat, ReceiveChatUpdatesError>>(result)

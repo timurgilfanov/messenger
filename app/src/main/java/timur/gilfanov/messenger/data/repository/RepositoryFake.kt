@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.data.repository
 
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -36,7 +38,7 @@ class RepositoryFake : Repository {
 
     override suspend fun sendMessage(message: Message): Flow<Message> {
         val chatId = message.recipient
-        val chat = chats[chatId] ?: return flowOf(message)
+        val chat = chats[chatId]!!
 
         val updatedMessage = when (message) {
             is TextMessage -> message.copy(deliveryStatus = DeliveryStatus.Sent)
@@ -50,6 +52,32 @@ class RepositoryFake : Repository {
 
         chats[chatId] = updatedChat
 
+        chatUpdates.emit(updatedChat)
+
+        return flowOf(updatedMessage)
+    }
+
+    override suspend fun editMessage(message: Message): Flow<Message> {
+        val chatId = message.recipient
+        val chat = chats[chatId]!!
+
+        val updatedMessage = when (message) {
+            is TextMessage -> message.copy(deliveryStatus = DeliveryStatus.Sent)
+            else -> error("Unknown message type")
+        }
+
+        val updatedMessages = chat.messages.toMutableList().apply {
+            val index = indexOfFirst { it.id == message.id }
+            if (index != -1) {
+                set(index, updatedMessage)
+            }
+        }
+
+        val updatedChat = chat.copy(
+            messages = persistentListOf<Message>().addAll(updatedMessages),
+        )
+
+        chats[chatId] = updatedChat
         chatUpdates.emit(updatedChat)
 
         return flowOf(updatedMessage)
@@ -69,11 +97,9 @@ class RepositoryFake : Repository {
             .distinctUntilChanged()
     }
 
-    private fun <T> kotlinx.collections.immutable.ImmutableList<T>.add(
-        item: T,
-    ): kotlinx.collections.immutable.ImmutableList<T> {
+    private fun <T> ImmutableList<T>.add(item: T): ImmutableList<T> {
         val mutableList = this.toMutableList()
         mutableList.add(item)
-        return kotlinx.collections.immutable.persistentListOf<T>().addAll(mutableList)
+        return persistentListOf<T>().addAll(mutableList)
     }
 }

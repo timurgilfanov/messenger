@@ -7,9 +7,10 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule
+import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule.CanNotWriteAfterJoining
+import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule.Debounce
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.entity.chat.Rule.CanNotWriteAfterJoining
-import timur.gilfanov.messenger.domain.entity.chat.Rule.Debounce
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.onFailure
@@ -59,6 +60,7 @@ class CreateMessageUseCase(
 
     fun checkRules(): ResultWithError<Unit, CreateMessageError> {
         for (rule in chat.rules) {
+            if (rule !is CreateMessageRule) continue
             val ruleResult = when (rule) {
                 is CanNotWriteAfterJoining -> checkJoiningRule(rule)
                 is Debounce -> checkDebounceRule(rule)

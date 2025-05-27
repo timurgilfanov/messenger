@@ -8,6 +8,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 
 interface Repository {
     suspend fun sendMessage(message: Message): Flow<Message>
+    suspend fun editMessage(message: Message): Flow<Message>
     suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryError>
     suspend fun receiveChatUpdates(
         chatId: ChatId,

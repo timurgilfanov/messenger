@@ -572,7 +572,12 @@ class EditMessageUseCaseTest {
             pictureUrl = null,
             messages = persistentListOf(originalMessage),
             participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
+            rules = persistentSetOf(
+                SenderIdCanNotChange,
+                RecipientCanNotChange,
+                CreationTimeCanNotChange,
+                EditWindow(10.minutes),
+            ),
             unreadMessagesCount = 0,
             lastReadMessageId = null,
         )

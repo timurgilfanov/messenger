@@ -20,7 +20,7 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 
 class DeliveryStatusValidatorTest {
 
-    private val validator = DeliveryStatusValidator()
+    private val validator = DeliveryStatusValidatorImpl()
 
     @Test
     fun validateNullToSendingTransition() {

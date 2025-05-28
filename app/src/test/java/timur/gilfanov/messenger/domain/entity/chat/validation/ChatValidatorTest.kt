@@ -25,7 +25,7 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 
 class ChatValidatorTest {
 
-    private val validator = ChatValidator()
+    private val validator = ChatValidatorImpl()
 
     @Test
     fun validateValidParticipants() {

@@ -5,13 +5,12 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
-import timur.gilfanov.messenger.domain.usecase.CreateChatError.ChatIsNotValid
-import timur.gilfanov.messenger.domain.usecase.CreateChatError.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidatorImpl
 
 class CreateChatUseCase(
     private val chat: Chat,
     private val repository: Repository,
-    private val validator: ChatValidator = ChatValidator(),
+    private val validator: ChatValidator = ChatValidatorImpl(),
 ) {
     suspend operator fun invoke(): ResultWithError<Chat, CreateChatError> {
         val validation = validator.validateOnCreation(chat)
@@ -22,7 +21,7 @@ class CreateChatUseCase(
         val result = repository.createChat(chat)
         return when (result) {
             is Success -> Success(result.data)
-            is Failure -> Failure(RepositoryCreateChatError(result.error))
+            is Failure -> Failure(result.error)
         }
     }
 }

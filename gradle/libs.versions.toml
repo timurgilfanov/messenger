@@ -15,7 +15,6 @@ composeRules = "0.4.22"
 kover = "0.9.1"
 kotlinxDatetime = "0.5.0"
 kotlinxCollectionsImmutable = "0.3.7"
-mockk = "1.13.10"
 turbine = "1.1.0"
 
 [libraries]
@@ -40,7 +39,6 @@ ktlint-compose = { module = "io.nlopez.compose.rules:ktlint", version.ref = "com
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
 kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 [plugins]

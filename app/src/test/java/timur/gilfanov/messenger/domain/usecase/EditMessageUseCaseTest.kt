@@ -1,18 +1,18 @@
 package timur.gilfanov.messenger.domain.usecase
 
 import app.cash.turbine.test
-import io.mockk.every
-import io.mockk.mockk
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.RepositoryFake
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -23,11 +23,13 @@ import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.RecipientCanN
 import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.SenderIdCanNotChange
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
@@ -41,57 +43,83 @@ import timur.gilfanov.messenger.domain.usecase.EditMessageError.SenderIdChanged
 
 class EditMessageUseCaseTest {
 
+    private class RepositoryFake : Repository {
+        private val chats = mutableMapOf<ChatId, Chat>()
+
+        override suspend fun sendMessage(message: Message): Flow<Message> {
+            error("Not yet implemented")
+        }
+
+        override suspend fun editMessage(message: Message): Flow<Message> {
+            val updatedMessage = when (message) {
+                is TextMessage -> message.copy(deliveryStatus = DeliveryStatus.Sent)
+                else -> message
+            }
+            return flowOf(updatedMessage)
+        }
+
+        override suspend fun createChat(
+            chat: Chat,
+        ): ResultWithError<Chat, RepositoryCreateChatError> {
+            chats[chat.id] = chat
+            return Success(chat)
+        }
+
+        override suspend fun receiveChatUpdates(
+            chatId: ChatId,
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
+            error("Not yet implemented")
+        }
+    }
+
+    private class DeliveryStatusValidatorFake(
+        val validateResults: Map<
+            Pair<DeliveryStatus?, DeliveryStatus?>,
+            ResultWithError<Unit, DeliveryStatusValidationError>,
+            > = mapOf(),
+    ) : DeliveryStatusValidator {
+        override fun validate(
+            currentStatus: DeliveryStatus?,
+            newStatus: DeliveryStatus?,
+        ): ResultWithError<Unit, DeliveryStatusValidationError> =
+            validateResults[Pair(currentStatus, newStatus)] ?: Success(Unit)
+    }
+
     @Test
     fun `edit window expired rule failure`() = runTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 10.minutes
         val editWindowDuration = 5.minutes
 
-        val messageUuid = UUID.randomUUID()
-        val messageId = MessageId(messageUuid)
-        val senderId = ParticipantId(UUID.randomUUID())
-        val chatId = ChatId(UUID.randomUUID())
-
-        val participant = Participant(
-            id = senderId,
-            name = "User",
+        val participant = createParticipant(
             joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
         )
 
-        val originalMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Original message",
-        )
+        val originalMessage = buildTextMessage {
+            sender = participant
+            createdAt = messageCreatedAt
+            text = "Original message"
+        }
 
-        val editedMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Edited message",
-        )
+        val editedMessage = buildTextMessage {
+            id = originalMessage.id
+            sender = participant
+            recipient = originalMessage.recipient
+            createdAt = messageCreatedAt
+            text = "Edited message"
+        }
 
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(originalMessage),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(EditWindow(editWindowDuration)),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
+        val chat = buildChat {
+            id = originalMessage.recipient
+            messages = persistentListOf(originalMessage)
+            participants = persistentSetOf(participant)
+            rules = persistentSetOf(EditWindow(editWindowDuration))
+        }
 
         val repository = RepositoryFake()
         repository.createChat(chat)
 
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
+        val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
             chat = chat,
@@ -115,51 +143,35 @@ class EditMessageUseCaseTest {
         val originalCreatedAt = customTime - 2.minutes
         val newCreatedAt = customTime - 1.minutes
 
-        val messageUuid = UUID.randomUUID()
-        val messageId = MessageId(messageUuid)
-        val senderId = ParticipantId(UUID.randomUUID())
-        val chatId = ChatId(UUID.randomUUID())
-
-        val participant = Participant(
-            id = senderId,
-            name = "User",
+        val participant = createParticipant(
             joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
         )
 
-        val originalMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = originalCreatedAt,
-            text = "Original message",
-        )
+        val originalMessage = buildTextMessage {
+            sender = participant
+            createdAt = originalCreatedAt
+            text = "Original message"
+        }
 
-        val editedMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = newCreatedAt,
-            text = "Edited message",
-        )
+        val editedMessage = buildTextMessage {
+            id = originalMessage.id
+            sender = participant
+            recipient = originalMessage.recipient
+            createdAt = newCreatedAt
+            text = "Edited message"
+        }
 
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(originalMessage),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(CreationTimeCanNotChange),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
+        val chat = buildChat {
+            id = originalMessage.recipient
+            messages = persistentListOf(originalMessage)
+            participants = persistentSetOf(participant)
+            rules = persistentSetOf(CreationTimeCanNotChange)
+        }
 
         val repository = RepositoryFake()
         repository.createChat(chat)
 
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
+        val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
             chat = chat,
@@ -182,52 +194,39 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val messageUuid = UUID.randomUUID()
-        val messageId = MessageId(messageUuid)
-        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = createParticipant(
+            joinedAt = customTime - 20.minutes,
+        )
+
         val originalChatId = ChatId(UUID.randomUUID())
         val newChatId = ChatId(UUID.randomUUID())
 
-        val participant = Participant(
-            id = senderId,
-            name = "User",
-            joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
-        )
+        val originalMessage = buildTextMessage {
+            sender = participant
+            recipient = originalChatId
+            createdAt = messageCreatedAt
+            text = "Original message"
+        }
 
-        val originalMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = originalChatId,
-            createdAt = messageCreatedAt,
-            text = "Original message",
-        )
+        val editedMessage = buildTextMessage {
+            id = originalMessage.id
+            sender = participant
+            recipient = newChatId
+            createdAt = messageCreatedAt
+            text = "Edited message"
+        }
 
-        val editedMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = newChatId,
-            createdAt = messageCreatedAt,
-            text = "Edited message",
-        )
-
-        val chat = Chat(
-            id = originalChatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(originalMessage),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(RecipientCanNotChange),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
+        val chat = buildChat {
+            id = originalChatId
+            messages = persistentListOf(originalMessage)
+            participants = persistentSetOf(participant)
+            rules = persistentSetOf(RecipientCanNotChange)
+        }
 
         val repository = RepositoryFake()
         repository.createChat(chat)
 
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
+        val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
             chat = chat,
@@ -250,59 +249,44 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val messageUuid = UUID.randomUUID()
-        val messageId = MessageId(messageUuid)
-        val originalSenderId = ParticipantId(UUID.randomUUID())
-        val newSenderId = ParticipantId(UUID.randomUUID())
-        val chatId = ChatId(UUID.randomUUID())
-
-        val originalParticipant = Participant(
-            id = originalSenderId,
+        val originalParticipant = createParticipant(
             name = "User1",
             joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
         )
 
-        val newParticipant = Participant(
-            id = newSenderId,
+        val newParticipant = createParticipant(
             name = "User2",
             joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
         )
 
-        val originalMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = originalParticipant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Original message",
-        )
+        val chatId = ChatId(UUID.randomUUID())
 
-        val editedMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = newParticipant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Edited message",
-        )
+        val originalMessage = buildTextMessage {
+            sender = originalParticipant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Original message"
+        }
 
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(originalMessage),
-            participants = persistentSetOf(originalParticipant, newParticipant),
-            rules = persistentSetOf(SenderIdCanNotChange),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
+        val editedMessage = buildTextMessage {
+            id = originalMessage.id
+            sender = newParticipant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Edited message"
+        }
+
+        val chat = buildChat {
+            id = chatId
+            messages = persistentListOf(originalMessage)
+            participants = persistentSetOf(originalParticipant, newParticipant)
+            rules = persistentSetOf(SenderIdCanNotChange)
+        }
 
         val repository = RepositoryFake()
         repository.createChat(chat)
 
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
+        val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
             chat = chat,
@@ -325,51 +309,40 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val messageUuid = UUID.randomUUID()
-        val messageId = MessageId(messageUuid)
-        val senderId = ParticipantId(UUID.randomUUID())
-        val chatId = ChatId(UUID.randomUUID())
-
-        val participant = Participant(
-            id = senderId,
-            name = "User",
+        val participant = createParticipant(
             joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
         )
 
-        val originalMessage = TextMessage(
+        val chatId = ChatId(UUID.randomUUID())
+        val messageId = MessageId(UUID.randomUUID())
+
+        val originalMessage = buildTextMessage {
+            id = messageId
+            sender = participant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Original message"
+        }
+
+        val validationError = TextValidationError.Empty
+        val editedMessage = createInvalidMessage(
             id = messageId,
-            parentId = null,
             sender = participant,
             recipient = chatId,
             createdAt = messageCreatedAt,
-            text = "Original message",
+            validationError = validationError,
         )
 
-        val validationError = mockk<TextValidationError>()
-        val editedMessage = mockk<Message> {
-            every { id } returns messageId
-            every { sender } returns participant
-            every { recipient } returns chatId
-            every { createdAt } returns messageCreatedAt
-            every { validate() } returns Failure(validationError)
+        val chat = buildChat {
+            id = chatId
+            messages = persistentListOf(originalMessage)
+            participants = persistentSetOf(participant)
         }
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(originalMessage),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
 
         val repository = RepositoryFake()
         repository.createChat(chat)
 
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
+        val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
             chat = chat,
@@ -393,54 +366,39 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val messageUuid = UUID.randomUUID()
-        val messageId = MessageId(messageUuid)
-        val senderId = ParticipantId(UUID.randomUUID())
-        val chatId = ChatId(UUID.randomUUID())
-
-        val participant = Participant(
-            id = senderId,
-            name = "User",
+        val participant = createParticipant(
             joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
         )
 
+        val chatId = ChatId(UUID.randomUUID())
         val deliveryStatus = Sending(50)
 
-        val originalMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Original message",
-        )
+        val originalMessage = buildTextMessage {
+            sender = participant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Original message"
+        }
 
-        val editedMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Edited message",
-            deliveryStatus = deliveryStatus,
-        )
+        val editedMessage = buildTextMessage {
+            id = originalMessage.id
+            sender = participant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Edited message"
+            this.deliveryStatus = deliveryStatus
+        }
 
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(originalMessage),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
+        val chat = buildChat {
+            id = chatId
+            messages = persistentListOf(originalMessage)
+            participants = persistentSetOf(participant)
+        }
 
         val repository = RepositoryFake()
         repository.createChat(chat)
 
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
+        val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
             chat = chat,
@@ -464,55 +422,43 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val messageUuid = UUID.randomUUID()
-        val messageId = MessageId(messageUuid)
-        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = createParticipant(
+            joinedAt = customTime - 20.minutes,
+        )
+
         val chatId = ChatId(UUID.randomUUID())
 
-        val participant = Participant(
-            id = senderId,
-            name = "User",
-            joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
-        )
+        val originalMessage = buildTextMessage {
+            sender = participant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Original message"
+        }
 
-        val originalMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Original message",
-        )
+        val editedMessage = buildTextMessage {
+            id = originalMessage.id
+            sender = participant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Edited message"
+        }
 
-        val editedMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Edited message",
-        )
+        val chat = buildChat {
+            id = chatId
+            messages = persistentListOf(originalMessage)
+            participants = persistentSetOf(participant)
+        }
 
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(originalMessage),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
-
-        val validationError = mockk<DeliveryStatusValidationError>()
+        val validationError = DeliveryStatusValidationError.CannotChangeFromRead
 
         val repository = RepositoryFake()
         repository.createChat(chat)
 
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator> {
-            every { validate(null, DeliveryStatus.Sent) } returns Failure(validationError)
-        }
+        val deliveryStatusValidator = DeliveryStatusValidatorFake(
+            validateResults = mapOf(
+                Pair(null, DeliveryStatus.Sent) to Failure(validationError),
+            ),
+        )
 
         val useCase = EditMessageUseCase(
             chat = chat,
@@ -536,58 +482,47 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val messageUuid = UUID.randomUUID()
-        val messageId = MessageId(messageUuid)
-        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = createParticipant(
+            joinedAt = customTime - 20.minutes,
+        )
+
         val chatId = ChatId(UUID.randomUUID())
 
-        val participant = Participant(
-            id = senderId,
-            name = "User",
-            joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
-        )
+        val originalMessage = buildTextMessage {
+            sender = participant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Original message"
+        }
 
-        val originalMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Original message",
-        )
+        val editedMessage = buildTextMessage {
+            id = originalMessage.id
+            sender = participant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Edited message"
+        }
 
-        val editedMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Edited message",
-        )
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(originalMessage),
-            participants = persistentSetOf(participant),
+        val chat = buildChat {
+            id = chatId
+            messages = persistentListOf(originalMessage)
+            participants = persistentSetOf(participant)
             rules = persistentSetOf(
                 SenderIdCanNotChange,
                 RecipientCanNotChange,
                 CreationTimeCanNotChange,
                 EditWindow(10.minutes),
-            ),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
+            )
+        }
 
         val repository = RepositoryFake()
         repository.createChat(chat)
 
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator> {
-            every { validate(null, DeliveryStatus.Sent) } returns Success(Unit)
-        }
+        val deliveryStatusValidator = DeliveryStatusValidatorFake(
+            validateResults = mapOf(
+                Pair(null, DeliveryStatus.Sent) to Success(Unit),
+            ),
+        )
 
         val useCase = EditMessageUseCase(
             chat = chat,
@@ -601,7 +536,7 @@ class EditMessageUseCaseTest {
             val result = awaitItem()
             assertIs<Success<Message, EditMessageError>>(result)
             val updatedMessage = result.data as TextMessage
-            assertEquals(messageId, updatedMessage.id)
+            assertEquals(originalMessage.id, updatedMessage.id)
             assertEquals("Edited message", updatedMessage.text)
             assertEquals(DeliveryStatus.Sent, updatedMessage.deliveryStatus)
             awaitComplete()
@@ -613,53 +548,41 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val messageUuid = UUID.randomUUID()
-        val messageId = MessageId(messageUuid)
-        val senderId = ParticipantId(UUID.randomUUID())
+        val participant = createParticipant(
+            joinedAt = customTime - 20.minutes,
+        )
+
         val chatId = ChatId(UUID.randomUUID())
 
-        val participant = Participant(
-            id = senderId,
-            name = "User",
-            joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
-        )
+        val originalMessage = buildTextMessage {
+            sender = participant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Original message"
+        }
 
-        val originalMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Original message",
-        )
+        val editedMessage = buildTextMessage {
+            id = originalMessage.id
+            sender = participant
+            recipient = chatId
+            createdAt = messageCreatedAt
+            text = "Edited message"
+        }
 
-        val editedMessage = TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = participant,
-            recipient = chatId,
-            createdAt = messageCreatedAt,
-            text = "Edited message",
-        )
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(originalMessage),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
+        val chat = buildChat {
+            id = chatId
+            messages = persistentListOf(originalMessage)
+            participants = persistentSetOf(participant)
+        }
 
         val repository = RepositoryFake()
         repository.createChat(chat)
 
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator> {
-            every { validate(null, DeliveryStatus.Sent) } returns Success(Unit)
-        }
+        val deliveryStatusValidator = DeliveryStatusValidatorFake(
+            validateResults = mapOf(
+                Pair(null, DeliveryStatus.Sent) to Success(Unit),
+            ),
+        )
 
         val useCase = EditMessageUseCase(
             chat = chat,
@@ -676,5 +599,37 @@ class EditMessageUseCaseTest {
             assertEquals(DeliveryStatus.Sent, updatedMessage.deliveryStatus)
             awaitComplete()
         }
+    }
+
+    private fun createParticipant(
+        id: ParticipantId = ParticipantId(UUID.randomUUID()),
+        name: String = "User",
+        joinedAt: Instant,
+        pictureUrl: String? = null,
+    ): Participant = Participant(
+        id = id,
+        name = name,
+        joinedAt = joinedAt,
+        pictureUrl = pictureUrl,
+    )
+
+    private fun createInvalidMessage(
+        id: MessageId,
+        sender: Participant,
+        recipient: ChatId,
+        createdAt: Instant,
+        validationError: ValidationError,
+    ): Message = object : Message {
+        override val id: MessageId = id
+        override val parentId: MessageId? = null
+        override val sender: Participant = sender
+        override val recipient: ChatId = recipient
+        override val createdAt: Instant = createdAt
+        override val sentAt: Instant? = null
+        override val deliveredAt: Instant? = null
+        override val editedAt: Instant? = null
+        override val deliveryStatus: DeliveryStatus? = null
+
+        override fun validate(): ResultWithError<Unit, ValidationError> = Failure(validationError)
     }
 }

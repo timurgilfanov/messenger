@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
@@ -19,7 +18,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.Repository
-import timur.gilfanov.messenger.domain.usecase.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.RepositoryCreateChatError
 
 class RepositoryFake : Repository {
     private val chats = mutableMapOf<ChatId, Chat>()
@@ -30,10 +29,10 @@ class RepositoryFake : Repository {
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
-    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryError> {
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> {
         chats[chat.id] = chat
         chatUpdates.emit(chat)
-        return Success(chat)
+        return ResultWithError.Success(chat)
     }
 
     override suspend fun sendMessage(message: Message): Flow<Message> {
@@ -90,9 +89,9 @@ class RepositoryFake : Repository {
 
         return chatUpdates
             .filter { it.id == chatId }
-            .map { Success<Chat, ReceiveChatUpdatesError>(it) }
+            .map { ResultWithError.Success<Chat, ReceiveChatUpdatesError>(it) }
             .onStart {
-                initialChat?.let { emit(Success(it)) }
+                initialChat?.let { emit(ResultWithError.Success(it)) }
             }
             .distinctUntilChanged()
     }

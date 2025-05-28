@@ -1,19 +1,20 @@
 package timur.gilfanov.messenger.domain.usecase
 
 import app.cash.turbine.test
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.NetworkNotAvailable
 import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.ServerError
@@ -22,23 +23,46 @@ import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.UnknownEr
 
 class ReceiveChatUpdatesUseCaseTest {
 
+    private class RepositoryFake(
+        val chatUpdatesFlow: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>,
+    ) : Repository {
+        override suspend fun sendMessage(message: Message): Flow<Message> {
+            error("Not yet implemented")
+        }
+
+        override suspend fun editMessage(message: Message): Flow<Message> {
+            error("Not yet implemented")
+        }
+
+        override suspend fun createChat(
+            chat: Chat,
+        ): ResultWithError<Chat, RepositoryCreateChatError> {
+            error("Not yet implemented")
+        }
+
+        override suspend fun receiveChatUpdates(
+            chatId: ChatId,
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatUpdatesFlow
+    }
+
     @Test
     fun `successfully receive chat updates`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val chat = mockk<Chat> {
-            every { id } returns chatId
-            every { name } returns "Test Chat"
+        val chat = buildChat {
+            id = chatId
+            name = "Test Chat"
         }
-        val updatedChat = mockk<Chat> {
-            every { id } returns chatId
-            every { name } returns "Updated Chat"
+        val updatedChat = buildChat {
+            id = chatId
+            name = "Updated Chat"
         }
 
-        val repository = mockk<Repository>()
-        coEvery { repository.receiveChatUpdates(chatId) } returns flow {
-            emit(Success(chat))
-            emit(Success(updatedChat))
-        }
+        val repository = RepositoryFake(
+            chatUpdatesFlow = flow {
+                emit(Success(chat))
+                emit(Success(updatedChat))
+            },
+        )
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
@@ -60,10 +84,11 @@ class ReceiveChatUpdatesUseCaseTest {
     @Test
     fun `handle chat not found error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val repository = mockk<Repository>()
-        coEvery { repository.receiveChatUpdates(chatId) } returns flow {
-            emit(Failure(ChatNotFound))
-        }
+        val repository = RepositoryFake(
+            chatUpdatesFlow = flow {
+                emit(Failure(ChatNotFound))
+            },
+        )
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
@@ -78,10 +103,11 @@ class ReceiveChatUpdatesUseCaseTest {
     @Test
     fun `handle network not available error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val repository = mockk<Repository>()
-        coEvery { repository.receiveChatUpdates(chatId) } returns flow {
-            emit(Failure(NetworkNotAvailable))
-        }
+        val repository = RepositoryFake(
+            chatUpdatesFlow = flow {
+                emit(Failure(NetworkNotAvailable))
+            },
+        )
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
@@ -96,10 +122,11 @@ class ReceiveChatUpdatesUseCaseTest {
     @Test
     fun `handle server unreachable error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val repository = mockk<Repository>()
-        coEvery { repository.receiveChatUpdates(chatId) } returns flow {
-            emit(Failure(ServerUnreachable))
-        }
+        val repository = RepositoryFake(
+            chatUpdatesFlow = flow {
+                emit(Failure(ServerUnreachable))
+            },
+        )
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
@@ -114,10 +141,11 @@ class ReceiveChatUpdatesUseCaseTest {
     @Test
     fun `handle server error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val repository = mockk<Repository>()
-        coEvery { repository.receiveChatUpdates(chatId) } returns flow {
-            emit(Failure(ServerError))
-        }
+        val repository = RepositoryFake(
+            chatUpdatesFlow = flow {
+                emit(Failure(ServerError))
+            },
+        )
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 
@@ -132,10 +160,11 @@ class ReceiveChatUpdatesUseCaseTest {
     @Test
     fun `handle unknown error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val repository = mockk<Repository>()
-        coEvery { repository.receiveChatUpdates(chatId) } returns flow {
-            emit(Failure(UnknownError))
-        }
+        val repository = RepositoryFake(
+            chatUpdatesFlow = flow {
+                emit(Failure(UnknownError))
+            },
+        )
 
         val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
 

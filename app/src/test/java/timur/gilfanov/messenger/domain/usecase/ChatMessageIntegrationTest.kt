@@ -16,12 +16,14 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 
@@ -45,19 +47,19 @@ class ChatMessageIntegrationTest {
         val chatId = ChatId(UUID.randomUUID())
         val participant = createParticipant(customTime)
 
-        val initialChat = createChat(
-            id = chatId,
-            participant = participant,
-        )
+        val initialChat = buildChat {
+            id = chatId
+            participants = persistentSetOf(participant)
+        }
 
         val messageId = MessageId(UUID.randomUUID())
-        val message = createMessage(
-            id = messageId,
-            text = "Hello, this is a test message",
-            sender = participant,
-            recipient = chatId,
-            createdAt = customTime,
-        )
+        val message = buildTextMessage {
+            id = messageId
+            text = "Hello, this is a test message"
+            sender = participant
+            recipient = chatId
+            createdAt = customTime
+        }
 
         val updatedMessage = message.copy(deliveryStatus = DeliveryStatus.Sent)
         val updatedChat = initialChat.copy(
@@ -114,39 +116,5 @@ class ChatMessageIntegrationTest {
         name = "Test User",
         pictureUrl = null,
         joinedAt = customTime,
-    )
-
-    private fun createChat(
-        id: ChatId = ChatId(UUID.randomUUID()),
-        name: String = "Test Chat",
-        participant: Participant,
-        messages: kotlinx.collections.immutable.ImmutableList<Message> = persistentListOf(),
-        unreadMessagesCount: Int = 0,
-    ): Chat = Chat(
-        id = id,
-        name = name,
-        pictureUrl = null,
-        messages = messages,
-        participants = persistentSetOf(participant),
-        rules = persistentSetOf(),
-        unreadMessagesCount = unreadMessagesCount,
-        lastReadMessageId = null,
-    )
-
-    private fun createMessage(
-        id: MessageId = MessageId(UUID.randomUUID()),
-        text: String = "Test message",
-        sender: Participant,
-        recipient: ChatId,
-        createdAt: Instant,
-        deliveryStatus: DeliveryStatus? = null,
-    ): TextMessage = TextMessage(
-        id = id,
-        parentId = null,
-        text = text,
-        sender = sender,
-        recipient = recipient,
-        createdAt = createdAt,
-        deliveryStatus = deliveryStatus,
     )
 }

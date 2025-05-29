@@ -25,6 +25,7 @@ import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule.Debounce
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sent
@@ -42,6 +43,7 @@ import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.Messag
 import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.WaitAfterJoining
 import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.WaitDebounce
 import timur.gilfanov.messenger.domain.usecase.message.CreateMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 
@@ -57,6 +59,13 @@ class CreateMessageUseCaseTest {
         }
 
         override suspend fun editMessage(message: Message): Flow<Message> {
+            error("Not yet implemented")
+        }
+
+        override suspend fun deleteMessage(
+            messageId: MessageId,
+            mode: DeleteMessageMode,
+        ): ResultWithError<Unit, RepositoryDeleteMessageError> {
             error("Not yet implemented")
         }
 

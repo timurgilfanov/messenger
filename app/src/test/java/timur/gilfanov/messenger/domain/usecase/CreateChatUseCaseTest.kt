@@ -18,13 +18,16 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
+import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatIsNotValid
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError.DuplicateChatId
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class CreateChatUseCaseTest {
 
@@ -36,6 +39,14 @@ class CreateChatUseCaseTest {
         override suspend fun editMessage(message: Message): Flow<Message> {
             error("Not yet implemented")
         }
+
+        override suspend fun deleteMessage(
+            messageId: MessageId,
+            mode: DeleteMessageMode,
+        ): ResultWithError<Unit, RepositoryDeleteMessageError> {
+            error("Not yet implemented")
+        }
+
         override suspend fun createChat(
             chat: Chat,
         ): ResultWithError<Chat, RepositoryCreateChatError> {

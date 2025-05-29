@@ -15,3 +15,12 @@ sealed class EditMessageRule : Rule() {
     object RecipientCanNotChange : EditMessageRule()
     object CreationTimeCanNotChange : EditMessageRule()
 }
+
+sealed class DeleteMessageRule : Rule() {
+    data class DeleteWindow(val duration: Duration) : DeleteMessageRule()
+    object SenderCanDeleteOwn : DeleteMessageRule()
+    object AdminCanDeleteAny : DeleteMessageRule()
+    object ModeratorCanDeleteAny : DeleteMessageRule()
+    object NoDeleteAfterDelivered : DeleteMessageRule()
+    data class DeleteForEveryoneWindow(val duration: Duration) : DeleteMessageRule()
+}

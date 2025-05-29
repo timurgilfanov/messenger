@@ -24,6 +24,7 @@ import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.SenderIdCanNo
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
@@ -44,6 +45,7 @@ import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.MessageI
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.RecipientChanged
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.SenderIdChanged
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class EditMessageUseCaseTest {
 
@@ -60,6 +62,13 @@ class EditMessageUseCaseTest {
                 else -> message
             }
             return flowOf(updatedMessage)
+        }
+
+        override suspend fun deleteMessage(
+            messageId: MessageId,
+            mode: DeleteMessageMode,
+        ): ResultWithError<Unit, RepositoryDeleteMessageError> {
+            error("Not yet implemented")
         }
 
         override suspend fun createChat(

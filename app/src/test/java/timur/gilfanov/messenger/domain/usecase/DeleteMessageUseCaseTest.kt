@@ -20,9 +20,8 @@ import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.DeleteForEv
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.DeleteWindow
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.NoDeleteAfterDelivered
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.SenderCanDeleteOwn
-import timur.gilfanov.messenger.domain.entity.chat.Participant
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode.FOR_EVERYONE
 import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode.FOR_SENDER_ONLY
@@ -78,7 +77,9 @@ class DeleteMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageId = MessageId(UUID.randomUUID())
 
-        val participant = createParticipant(joinedAt = customTime - 10.minutes)
+        val participant = buildParticipant {
+            joinedAt = customTime - 10.minutes
+        }
 
         val chat = buildChat {
             participants = persistentSetOf(participant)
@@ -108,7 +109,9 @@ class DeleteMessageUseCaseTest {
         val messageCreatedAt = customTime - 10.minutes
         val deleteWindowDuration = 5.minutes
 
-        val participant = createParticipant(joinedAt = customTime - 20.minutes)
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val message = buildMessage {
             sender = participant
@@ -142,14 +145,14 @@ class DeleteMessageUseCaseTest {
     fun `sender permission check failure`() = runTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
 
-        val messageSender = createParticipant(
-            name = "MessageSender",
-            joinedAt = customTime - 20.minutes,
-        )
-        val currentUser = createParticipant(
-            name = "CurrentUser",
-            joinedAt = customTime - 20.minutes,
-        )
+        val messageSender = buildParticipant {
+            name = "MessageSender"
+            joinedAt = customTime - 20.minutes
+        }
+        val currentUser = buildParticipant {
+            name = "CurrentUser"
+            joinedAt = customTime - 20.minutes
+        }
 
         val message = buildMessage {
             sender = messageSender
@@ -182,17 +185,15 @@ class DeleteMessageUseCaseTest {
     fun `admin can delete any message`() = runTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
 
-        val messageSender = createParticipant(
-            name = "MessageSender",
-            joinedAt = customTime - 20.minutes,
-        )
-        val admin = Participant(
-            id = ParticipantId(UUID.randomUUID()),
-            name = "Admin",
-            joinedAt = customTime - 20.minutes,
-            pictureUrl = null,
-            isAdmin = true,
-        )
+        val messageSender = buildParticipant {
+            name = "MessageSender"
+            joinedAt = customTime - 20.minutes
+        }
+        val admin = buildParticipant {
+            name = "Admin"
+            joinedAt = customTime - 20.minutes
+            isAdmin = true
+        }
 
         val message = buildMessage {
             sender = messageSender
@@ -224,7 +225,9 @@ class DeleteMessageUseCaseTest {
     fun `message already delivered rule failure`() = runTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
 
-        val participant = createParticipant(joinedAt = customTime - 20.minutes)
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val message = buildMessage {
             sender = participant
@@ -260,7 +263,9 @@ class DeleteMessageUseCaseTest {
         val messageCreatedAt = customTime - 10.minutes
         val deleteForEveryoneWindowDuration = 5.minutes
 
-        val participant = createParticipant(joinedAt = customTime - 20.minutes)
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val message = buildMessage {
             sender = participant
@@ -299,7 +304,9 @@ class DeleteMessageUseCaseTest {
         val messageCreatedAt = customTime - 10.minutes
         val deleteForEveryoneWindowDuration = 5.minutes
 
-        val participant = createParticipant(joinedAt = customTime - 20.minutes)
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val message = buildMessage {
             sender = participant
@@ -335,7 +342,9 @@ class DeleteMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val participant = createParticipant(joinedAt = customTime - 20.minutes)
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val message = buildMessage {
             sender = participant
@@ -373,7 +382,9 @@ class DeleteMessageUseCaseTest {
     fun `repository error propagation`() = runTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
 
-        val participant = createParticipant(joinedAt = customTime - 20.minutes)
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val message = buildMessage {
             sender = participant
@@ -402,16 +413,4 @@ class DeleteMessageUseCaseTest {
         assertIs<Failure<Unit, DeleteMessageError>>(result)
         assertEquals(DeleteMessageError.NetworkNotAvailable, result.error)
     }
-
-    private fun createParticipant(
-        id: ParticipantId = ParticipantId(UUID.randomUUID()),
-        name: String = "User",
-        joinedAt: Instant,
-        pictureUrl: String? = null,
-    ): Participant = Participant(
-        id = id,
-        name = name,
-        joinedAt = joinedAt,
-        pictureUrl = pictureUrl,
-    )
 }

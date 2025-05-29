@@ -25,6 +25,7 @@ import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule.Debounce
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
@@ -99,13 +100,10 @@ class CreateMessageUseCaseTest {
         val waitDuration = 5.minutes
         val remainingTime = waitDuration - (customTime - joinedAt)
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = joinedAt,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            this.joinedAt = joinedAt
+            name = ""
+        }
 
         val message = buildMessage {
             sender = participant
@@ -144,13 +142,10 @@ class CreateMessageUseCaseTest {
         val debounceDelay = 30.seconds
         val remainingTime = debounceDelay - (customTime - lastMessageTime)
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = customTime - 10.minutes,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            name = ""
+            this.joinedAt = customTime - 10.minutes
+        }
 
         val lastMessage = buildMessage {
             sender = participant
@@ -194,13 +189,10 @@ class CreateMessageUseCaseTest {
         val joinedAt = customTime - 10.minutes
         val lastMessageTime = customTime - 1.minutes
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = joinedAt,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            this.joinedAt = joinedAt
+            name = ""
+        }
 
         val lastMessage = buildMessage {
             sender = participant
@@ -249,13 +241,10 @@ class CreateMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(2000000)
         val joinedAt = customTime - 10.minutes
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = joinedAt,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            this.joinedAt = joinedAt
+            name = ""
+        }
 
         val message = buildMessage {
             sender = participant
@@ -294,13 +283,10 @@ class CreateMessageUseCaseTest {
     fun `test with empty rules`() = runTest {
         val customTime = Instant.fromEpochMilliseconds(2000000)
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = customTime - 10.minutes,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            name = ""
+            this.joinedAt = customTime - 10.minutes
+        }
 
         val message = buildMessage {
             sender = participant
@@ -341,13 +327,10 @@ class CreateMessageUseCaseTest {
         val messageId = MessageId(UUID.randomUUID())
         val customTime = Instant.fromEpochMilliseconds(2000000)
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = customTime - 10.minutes,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            name = ""
+            this.joinedAt = customTime - 10.minutes
+        }
 
         val message = buildMessage {
             id = messageId
@@ -430,13 +413,10 @@ class CreateMessageUseCaseTest {
         val messageId = MessageId(UUID.randomUUID())
         val customTime = Instant.fromEpochMilliseconds(2000000)
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = customTime - 10.minutes,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            name = ""
+            this.joinedAt = customTime - 10.minutes
+        }
 
         val message = buildMessage {
             id = messageId
@@ -490,13 +470,10 @@ class CreateMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(2000000)
         val validationError = object : ValidationError {}
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = customTime - 10.minutes,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            name = ""
+            this.joinedAt = customTime - 10.minutes
+        }
 
         val message = buildMessage {
             sender = participant
@@ -534,13 +511,10 @@ class CreateMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(2000000)
         val existingStatus = Sending(25)
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = customTime - 10.minutes,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            name = ""
+            this.joinedAt = customTime - 10.minutes
+        }
 
         val message = buildMessage {
             sender = participant
@@ -578,13 +552,10 @@ class CreateMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(2000000)
         val exception = RuntimeException("Network error")
 
-        val senderId = ParticipantId(UUID.randomUUID())
-        val participant = Participant(
-            id = senderId,
-            name = "",
-            joinedAt = customTime - 10.minutes,
-            pictureUrl = null,
-        )
+        val participant = buildParticipant {
+            name = ""
+            this.joinedAt = customTime - 10.minutes
+        }
 
         val message = buildMessage {
             sender = participant

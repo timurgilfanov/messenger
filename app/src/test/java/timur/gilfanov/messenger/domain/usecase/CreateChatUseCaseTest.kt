@@ -1,334 +1,126 @@
 package timur.gilfanov.messenger.domain.usecase
 
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import org.junit.Test
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
-import timur.gilfanov.messenger.domain.usecase.CreateChatError.ChatIsNotValid
-import timur.gilfanov.messenger.domain.usecase.CreateChatError.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.RepositoryError.NetworkError
-import timur.gilfanov.messenger.domain.usecase.RepositoryError.ServerError
+import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.usecase.RepositoryCreateChatError.DuplicateChatId
 
 class CreateChatUseCaseTest {
 
+    private class RepositoryFake(val error: RepositoryCreateChatError? = null) : Repository {
+        val chats = mutableSetOf<Chat>()
+        override suspend fun sendMessage(message: Message): Flow<Message> {
+            error("Not yet implemented")
+        }
+        override suspend fun editMessage(message: Message): Flow<Message> {
+            error("Not yet implemented")
+        }
+        override suspend fun createChat(
+            chat: Chat,
+        ): ResultWithError<Chat, RepositoryCreateChatError> {
+            error?.let {
+                return Failure(it)
+            }
+            return if (chats.any { it.id == chat.id }) {
+                Failure(DuplicateChatId)
+            } else {
+                chats.add(chat)
+                Success(chat)
+            }
+        }
+        override suspend fun receiveChatUpdates(
+            chatId: ChatId,
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
+            error("Not yet implemented")
+        }
+    }
+
+    private class ChatValidatorFake(val error: ChatValidationError? = null) : ChatValidator {
+        override fun validateOnCreation(chat: Chat): ResultWithError<Unit, ChatValidationError> {
+            if (error != null) return Failure(error)
+            return Success(Unit)
+        }
+    }
+
     @Test
     fun `valid chat creation succeeds`() = runTest {
-        // Arrange
-        val chatId = ChatId(UUID.randomUUID())
-        val participant = createParticipant()
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
-
-        val validator = mockk<ChatValidator>()
-        every { validator.validateOnCreation(chat) } returns Success(Unit)
-
-        val repository = mockk<Repository>()
-        coEvery { repository.createChat(chat) } returns Success(chat)
-
+        val chat = buildChat {}
+        val validator = ChatValidatorFake()
+        val repository = RepositoryFake()
         val useCase = CreateChatUseCase(chat, repository, validator)
-
-        // Act
         val result = useCase()
-
-        // Assert
         assertIs<Success<Chat, CreateChatError>>(result)
         assertEquals(chat, result.data)
-
-        verify { validator.validateOnCreation(chat) }
-        coVerify(exactly = 1) { repository.createChat(chat) }
     }
 
     @Test
     fun `invalid chat validation fails`() = runTest {
-        // Arrange
-        val chatId = ChatId(UUID.randomUUID())
-        val participant = createParticipant()
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
-
-        val validationError = mockk<ChatValidationError.NoParticipants>()
-        val validator = mockk<ChatValidator>()
-        every { validator.validateOnCreation(chat) } returns Failure(validationError)
-
-        val repository = mockk<Repository>()
-
+        val chat = buildChat {}
+        val validationError = ChatValidationError.EmptyName
+        val validator = ChatValidatorFake(validationError)
+        val repository = RepositoryFake()
         val useCase = CreateChatUseCase(chat, repository, validator)
-
-        // Act
         val result = useCase()
-
-        // Assert
         assertIs<Failure<Chat, CreateChatError>>(result)
         assertIs<ChatIsNotValid>(result.error)
         assertEquals(validationError, result.error.error)
-
-        verify { validator.validateOnCreation(chat) }
-        coVerify(exactly = 0) { repository.createChat(any()) }
     }
 
     @Test
     fun `repository error handling`() = runTest {
-        // Arrange
-        val chatId = ChatId(UUID.randomUUID())
-        val participant = createParticipant()
-        val validator = mockk<ChatValidator>()
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
-
-        every { validator.validateOnCreation(chat) } returns Success(Unit)
-
-        val repositoryError = RepositoryError.UnknownError
-        val repository = mockk<Repository>()
-        coEvery { repository.createChat(chat) } returns Failure(repositoryError)
-
+        val validator = ChatValidatorFake()
+        val chat = buildChat {}
+        val repositoryError = RepositoryCreateChatError.UnknownError
+        val repository = RepositoryFake(repositoryError)
         val useCase = CreateChatUseCase(chat, repository, validator)
-
-        // Act
         val result = useCase()
-
-        // Assert
         assertIs<Failure<Chat, CreateChatError>>(result)
-        assertIs<RepositoryCreateChatError>(result.error)
-        assertEquals(repositoryError, result.error.error)
-
-        verify { validator.validateOnCreation(chat) }
-        coVerify(exactly = 1) { repository.createChat(chat) }
+        assertEquals(repositoryError, result.error)
     }
 
     @Test
-    fun `empty participants list validation`() = runTest {
-        // Arrange
+    fun `create second chat with same id fails`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(),
-            participants = persistentSetOf(),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
-
-        val validationError = mockk<ChatValidationError.NoParticipants>()
-        val validator = mockk<ChatValidator>()
-        every { validator.validateOnCreation(chat) } returns Failure(validationError)
-
-        val repository = mockk<Repository>()
-
-        val useCase = CreateChatUseCase(chat, repository, validator)
-
-        // Act
-        val result = useCase()
-
-        // Assert
-        assertIs<Failure<Chat, CreateChatError>>(result)
-        assertIs<ChatIsNotValid>(result.error)
-        assertEquals(validationError, result.error.error)
-
-        verify { validator.validateOnCreation(chat) }
-        coVerify(exactly = 0) { repository.createChat(any()) }
-    }
-
-    @Test
-    fun `empty chat name validation`() = runTest {
-        // Arrange
-        val chatId = ChatId(UUID.randomUUID())
-        val participant = createParticipant()
-
-        val chat = Chat(
-            id = chatId,
-            name = "",
-            pictureUrl = null,
-            messages = persistentListOf(),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
-
-        val validationError = mockk<ChatValidationError.NoParticipants>()
-        val validator = mockk<ChatValidator>()
-        every { validator.validateOnCreation(chat) } returns Failure(validationError)
-
-        val repository = mockk<Repository>()
-
-        val useCase = CreateChatUseCase(chat, repository, validator)
-
-        // Act
-        val result = useCase()
-
-        // Assert
-        assertIs<Failure<Chat, CreateChatError>>(result)
-        assertIs<ChatIsNotValid>(result.error)
-        assertEquals(validationError, result.error.error)
-
-        verify { validator.validateOnCreation(chat) }
-        coVerify(exactly = 0) { repository.createChat(any()) }
-    }
-
-    @Test
-    fun `repository returns success`() = runTest {
-        // Arrange
-        val chatId = ChatId(UUID.randomUUID())
-        val participant = createParticipant()
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
-
-        val createdChat = chat.copy(name = "Updated Chat Name")
-
-        val validator = mockk<ChatValidator>()
-        every { validator.validateOnCreation(chat) } returns Success(Unit)
-
-        val repository = mockk<Repository>()
-        coEvery { repository.createChat(chat) } returns Success(createdChat)
-
-        val useCase = CreateChatUseCase(chat, repository, validator)
-
-        // Act
-        val result = useCase()
-
-        // Assert
+        val chat = buildChat { id = chatId }
+        val validator = ChatValidatorFake()
+        val repository = RepositoryFake()
+        val result = CreateChatUseCase(chat, repository, validator)()
         assertIs<Success<Chat, CreateChatError>>(result)
-        assertEquals(createdChat, result.data)
-        assertEquals("Updated Chat Name", result.data.name)
+        assertEquals(chat, result.data)
 
-        verify { validator.validateOnCreation(chat) }
-        coVerify(exactly = 1) { repository.createChat(chat) }
+        val newParticipant = createParticipant()
+        val newChat = buildChat {
+            id = chatId
+            name = "Second Chat"
+            participants = persistentSetOf(newParticipant)
+        }
+        val newResult = CreateChatUseCase(newChat, repository, validator)()
+        assertIs<Failure<Chat, CreateChatError>>(newResult)
+        assertEquals(DuplicateChatId, newResult.error)
     }
 
-    @Test
-    fun `repository returns network error`() = runTest {
-        // Arrange
-        val chatId = ChatId(UUID.randomUUID())
-        val participant = createParticipant()
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
-
-        val validator = mockk<ChatValidator>()
-        every { validator.validateOnCreation(chat) } returns Success(Unit)
-
-        val repository = mockk<Repository>()
-        coEvery { repository.createChat(chat) } returns Failure(NetworkError)
-
-        val useCase = CreateChatUseCase(chat, repository, validator)
-
-        // Act
-        val result = useCase()
-
-        // Assert
-        assertIs<Failure<Chat, CreateChatError>>(result)
-        assertIs<RepositoryCreateChatError>(result.error)
-        assertEquals(NetworkError, result.error.error)
-
-        verify { validator.validateOnCreation(chat) }
-        coVerify(exactly = 1) { repository.createChat(chat) }
-    }
-
-    @Test
-    fun `repository returns server error`() = runTest {
-        // Arrange
-        val chatId = ChatId(UUID.randomUUID())
-        val participant = createParticipant()
-
-        val chat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
-
-        val validator = mockk<ChatValidator>()
-        every { validator.validateOnCreation(chat) } returns Success(Unit)
-
-        val repository = mockk<Repository>()
-        coEvery { repository.createChat(chat) } returns Failure(ServerError)
-
-        val useCase = CreateChatUseCase(chat, repository, validator)
-
-        // Act
-        val result = useCase()
-
-        // Assert
-        assertIs<Failure<Chat, CreateChatError>>(result)
-        assertIs<RepositoryCreateChatError>(result.error)
-        assertEquals(ServerError, result.error.error)
-
-        verify { validator.validateOnCreation(chat) }
-        coVerify(exactly = 1) { repository.createChat(chat) }
-    }
-
-    private fun createParticipant(): Participant = Participant(
-        id = ParticipantId(UUID.randomUUID()),
-        name = "Test User",
-        pictureUrl = null,
-        joinedAt = Clock.System.now(),
-    )
+    // removed createChat, use buildChat pattern
 }
+
+private fun createParticipant(): Participant = Participant(
+    id = ParticipantId(UUID.randomUUID()),
+    name = "Test User",
+    pictureUrl = null,
+    joinedAt = Clock.System.now(),
+)

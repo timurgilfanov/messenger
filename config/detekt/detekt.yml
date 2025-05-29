@@ -1,7 +1,4 @@
 complexity:
-  LongMethod:
-    ignoreAnnotated:
-      - Test
   TooManyFunctions:
     ignoreAnnotatedFunctions: [ 'Preview' ]
 

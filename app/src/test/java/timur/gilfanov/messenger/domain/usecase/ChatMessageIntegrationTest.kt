@@ -1,9 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase
 
 import app.cash.turbine.test
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -13,46 +10,56 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
 import timur.gilfanov.messenger.data.repository.RepositoryFake
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
+import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 
 class ChatMessageIntegrationTest {
+
+    private class ChatValidatorFake : ChatValidator {
+        override fun validateOnCreation(chat: Chat): ResultWithError<Unit, ChatValidationError> =
+            Success(Unit)
+    }
+
+    private class DeliveryStatusValidatorFake : DeliveryStatusValidator {
+        override fun validate(
+            currentStatus: DeliveryStatus?,
+            newStatus: DeliveryStatus?,
+        ): ResultWithError<Unit, DeliveryStatusValidationError> = Success(Unit)
+    }
+
     @Test
     fun `create chat, add message and receive update`() = runTest {
         val customTime = Instant.fromEpochMilliseconds(2000000)
         val chatId = ChatId(UUID.randomUUID())
         val participant = createParticipant(customTime)
 
-        val initialChat = Chat(
-            id = chatId,
-            name = "Test Chat",
-            pictureUrl = null,
-            messages = persistentListOf(),
-            participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
-            unreadMessagesCount = 0,
-            lastReadMessageId = null,
-        )
+        val initialChat = buildChat {
+            id = chatId
+            participants = persistentSetOf(participant)
+        }
 
         val messageId = MessageId(UUID.randomUUID())
-        val message = TextMessage(
-            id = messageId,
-            parentId = null,
-            text = "Hello, this is a test message",
-            sender = participant,
-            recipient = chatId,
-            createdAt = customTime,
-            deliveryStatus = null,
-        )
+        val message = buildTextMessage {
+            id = messageId
+            text = "Hello, this is a test message"
+            sender = participant
+            recipient = chatId
+            createdAt = customTime
+        }
 
         val updatedMessage = message.copy(deliveryStatus = DeliveryStatus.Sent)
         val updatedChat = initialChat.copy(
@@ -61,12 +68,8 @@ class ChatMessageIntegrationTest {
         )
 
         val repository = RepositoryFake()
-
-        val chatValidator = mockk<ChatValidator>()
-        every { chatValidator.validateOnCreation(initialChat) } returns Success(Unit)
-
-        val deliveryStatusValidator = mockk<DeliveryStatusValidator>()
-        every { deliveryStatusValidator.validate(null, any()) } returns Success(Unit)
+        val chatValidator = ChatValidatorFake()
+        val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val createChatUseCase = CreateChatUseCase(initialChat, repository, chatValidator)
         val createMessageUseCase = CreateMessageUseCase(
@@ -106,9 +109,6 @@ class ChatMessageIntegrationTest {
             assertEquals(updatedMessage, messageUpdate.data.messages[0])
             assertEquals(1, messageUpdate.data.unreadMessagesCount)
         }
-
-        verify { chatValidator.validateOnCreation(initialChat) }
-        verify { deliveryStatusValidator.validate(null, any()) }
     }
 
     private fun createParticipant(customTime: Instant): Participant = Participant(

@@ -33,11 +33,16 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.DeliveryStatusAlreadySet
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.DeliveryStatusUpdateNotValid
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.MessageIsNotValid
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.WaitAfterJoining
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.WaitDebounce
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.DeliveryStatusAlreadySet
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.DeliveryStatusUpdateNotValid
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.MessageIsNotValid
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.WaitAfterJoining
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.WaitDebounce
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageUseCase
+
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 
 class CreateMessageUseCaseTest {

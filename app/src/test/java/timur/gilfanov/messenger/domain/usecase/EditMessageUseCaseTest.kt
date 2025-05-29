@@ -33,13 +33,17 @@ import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.CreationTimeChanged
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.DeliveryStatusAlreadySet
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.DeliveryStatusUpdateNotValid
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.EditWindowExpired
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.MessageIsNotValid
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.RecipientChanged
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.SenderIdChanged
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.CreationTimeChanged
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusAlreadySet
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusUpdateNotValid
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.EditWindowExpired
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.MessageIsNotValid
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.RecipientChanged
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.SenderIdChanged
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageUseCase
 
 class EditMessageUseCaseTest {
 

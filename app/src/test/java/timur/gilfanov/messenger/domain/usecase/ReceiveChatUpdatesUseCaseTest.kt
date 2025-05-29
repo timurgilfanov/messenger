@@ -15,11 +15,14 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.message.Message
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.ServerError
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.ServerUnreachable
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.UnknownError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.UnknownError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 
 class ReceiveChatUpdatesUseCaseTest {
 

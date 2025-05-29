@@ -16,9 +16,9 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.Repository
-import timur.gilfanov.messenger.domain.usecase.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 
 class RepositoryFake : Repository {
     private val chats = mutableMapOf<ChatId, Chat>()

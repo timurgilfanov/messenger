@@ -19,7 +19,12 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
 import timur.gilfanov.messenger.domain.entity.message.Message
-import timur.gilfanov.messenger.domain.usecase.RepositoryCreateChatError.DuplicateChatId
+import timur.gilfanov.messenger.domain.usecase.chat.ChatIsNotValid
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError.DuplicateChatId
 
 class CreateChatUseCaseTest {
 

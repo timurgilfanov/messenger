@@ -29,6 +29,7 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.Networ
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.NotAuthorized
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError as RepositoryError
 
 class DeleteMessageUseCase(
     private val chat: Chat,
@@ -57,13 +58,13 @@ class DeleteMessageUseCase(
                 is Success -> Success(Unit)
                 is Failure -> Failure(
                     when (result.error) {
-                        RepositoryDeleteMessageError.LocalError -> LocalError
-                        is RepositoryDeleteMessageError.MessageNotFound -> MessageNotFound(
+                        RepositoryError.LocalError -> LocalError
+                        is RepositoryError.MessageNotFound -> MessageNotFound(
                             result.error.messageId,
                         )
-                        RepositoryDeleteMessageError.NetworkNotAvailable -> NetworkNotAvailable
-                        RepositoryDeleteMessageError.RemoteError -> RemoteError
-                        RepositoryDeleteMessageError.RemoteUnreachable -> RemoteUnreachable
+                        RepositoryError.NetworkNotAvailable -> NetworkNotAvailable
+                        RepositoryError.RemoteError -> RemoteError
+                        RepositoryError.RemoteUnreachable -> RemoteUnreachable
                     },
                 )
             }

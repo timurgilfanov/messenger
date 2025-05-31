@@ -13,12 +13,15 @@ import kotlinx.coroutines.flow.onStart
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.Repository
-import timur.gilfanov.messenger.domain.usecase.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class RepositoryFake : Repository {
     private val chats = mutableMapOf<ChatId, Chat>()
@@ -80,6 +83,13 @@ class RepositoryFake : Repository {
         chatUpdates.emit(updatedChat)
 
         return flowOf(updatedMessage)
+    }
+
+    override suspend fun deleteMessage(
+        messageId: MessageId,
+        mode: DeleteMessageMode,
+    ): ResultWithError<Unit, RepositoryDeleteMessageError> {
+        error("Not implemented")
     }
 
     override suspend fun receiveChatUpdates(

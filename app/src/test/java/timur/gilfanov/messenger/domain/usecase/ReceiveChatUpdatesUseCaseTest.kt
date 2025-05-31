@@ -14,12 +14,18 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.Message
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.ServerError
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.ServerUnreachable
-import timur.gilfanov.messenger.domain.usecase.ReceiveChatUpdatesError.UnknownError
+import timur.gilfanov.messenger.domain.entity.message.MessageId
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.UnknownError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class ReceiveChatUpdatesUseCaseTest {
 
@@ -31,6 +37,13 @@ class ReceiveChatUpdatesUseCaseTest {
         }
 
         override suspend fun editMessage(message: Message): Flow<Message> {
+            error("Not yet implemented")
+        }
+
+        override suspend fun deleteMessage(
+            messageId: MessageId,
+            mode: DeleteMessageMode,
+        ): ResultWithError<Unit, RepositoryDeleteMessageError> {
             error("Not yet implemented")
         }
 

@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase
+package timur.gilfanov.messenger.domain.usecase.message
 
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.Clock
@@ -15,11 +15,12 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.onSuccess
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.DeliveryStatusAlreadySet
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.DeliveryStatusUpdateNotValid
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.MessageIsNotValid
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.WaitAfterJoining
-import timur.gilfanov.messenger.domain.usecase.CreateMessageError.WaitDebounce
+import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.DeliveryStatusAlreadySet
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.DeliveryStatusUpdateNotValid
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.MessageIsNotValid
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.WaitAfterJoining
+import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.WaitDebounce
 
 class CreateMessageUseCase(
     private val chat: Chat,

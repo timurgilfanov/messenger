@@ -22,8 +22,9 @@ import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.EditWindow
 import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.RecipientCanNotChange
 import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.SenderIdCanNotChange
 import timur.gilfanov.messenger.domain.entity.chat.Participant
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
+import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
@@ -33,13 +34,18 @@ import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.CreationTimeChanged
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.DeliveryStatusAlreadySet
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.DeliveryStatusUpdateNotValid
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.EditWindowExpired
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.MessageIsNotValid
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.RecipientChanged
-import timur.gilfanov.messenger.domain.usecase.EditMessageError.SenderIdChanged
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.CreationTimeChanged
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusAlreadySet
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusUpdateNotValid
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.EditWindowExpired
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.MessageIsNotValid
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.RecipientChanged
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.SenderIdChanged
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class EditMessageUseCaseTest {
 
@@ -56,6 +62,13 @@ class EditMessageUseCaseTest {
                 else -> message
             }
             return flowOf(updatedMessage)
+        }
+
+        override suspend fun deleteMessage(
+            messageId: MessageId,
+            mode: DeleteMessageMode,
+        ): ResultWithError<Unit, RepositoryDeleteMessageError> {
+            error("Not yet implemented")
         }
 
         override suspend fun createChat(
@@ -91,9 +104,9 @@ class EditMessageUseCaseTest {
         val messageCreatedAt = customTime - 10.minutes
         val editWindowDuration = 5.minutes
 
-        val participant = createParticipant(
-            joinedAt = customTime - 20.minutes,
-        )
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val originalMessage = buildTextMessage {
             sender = participant
@@ -143,9 +156,9 @@ class EditMessageUseCaseTest {
         val originalCreatedAt = customTime - 2.minutes
         val newCreatedAt = customTime - 1.minutes
 
-        val participant = createParticipant(
-            joinedAt = customTime - 20.minutes,
-        )
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val originalMessage = buildTextMessage {
             sender = participant
@@ -194,9 +207,9 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val participant = createParticipant(
-            joinedAt = customTime - 20.minutes,
-        )
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val originalChatId = ChatId(UUID.randomUUID())
         val newChatId = ChatId(UUID.randomUUID())
@@ -249,15 +262,15 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val originalParticipant = createParticipant(
-            name = "User1",
-            joinedAt = customTime - 20.minutes,
-        )
+        val originalParticipant = buildParticipant {
+            name = "User1"
+            joinedAt = customTime - 20.minutes
+        }
 
-        val newParticipant = createParticipant(
-            name = "User2",
-            joinedAt = customTime - 20.minutes,
-        )
+        val newParticipant = buildParticipant {
+            name = "User2"
+            joinedAt = customTime - 20.minutes
+        }
 
         val chatId = ChatId(UUID.randomUUID())
 
@@ -309,9 +322,9 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val participant = createParticipant(
-            joinedAt = customTime - 20.minutes,
-        )
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val chatId = ChatId(UUID.randomUUID())
         val messageId = MessageId(UUID.randomUUID())
@@ -366,9 +379,9 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val participant = createParticipant(
-            joinedAt = customTime - 20.minutes,
-        )
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val chatId = ChatId(UUID.randomUUID())
         val deliveryStatus = Sending(50)
@@ -422,9 +435,9 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val participant = createParticipant(
-            joinedAt = customTime - 20.minutes,
-        )
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val chatId = ChatId(UUID.randomUUID())
 
@@ -482,9 +495,9 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val participant = createParticipant(
-            joinedAt = customTime - 20.minutes,
-        )
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val chatId = ChatId(UUID.randomUUID())
 
@@ -548,9 +561,9 @@ class EditMessageUseCaseTest {
         val customTime = Instant.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
-        val participant = createParticipant(
-            joinedAt = customTime - 20.minutes,
-        )
+        val participant = buildParticipant {
+            joinedAt = customTime - 20.minutes
+        }
 
         val chatId = ChatId(UUID.randomUUID())
 
@@ -600,18 +613,6 @@ class EditMessageUseCaseTest {
             awaitComplete()
         }
     }
-
-    private fun createParticipant(
-        id: ParticipantId = ParticipantId(UUID.randomUUID()),
-        name: String = "User",
-        joinedAt: Instant,
-        pictureUrl: String? = null,
-    ): Participant = Participant(
-        id = id,
-        name = name,
-        joinedAt = joinedAt,
-        pictureUrl = pictureUrl,
-    )
 
     private fun createInvalidMessage(
         id: MessageId,

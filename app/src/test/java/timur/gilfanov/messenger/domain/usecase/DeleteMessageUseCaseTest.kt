@@ -32,6 +32,7 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.DeleteForEveryoneWindowExpired
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.DeleteWindowExpired
@@ -72,6 +73,12 @@ class DeleteMessageUseCaseTest {
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
+            error("Not yet implemented")
+        }
+
+        override suspend fun deleteChat(
+            chatId: ChatId,
+        ): ResultWithError<Unit, RepositoryDeleteChatError> {
             error("Not yet implemented")
         }
     }

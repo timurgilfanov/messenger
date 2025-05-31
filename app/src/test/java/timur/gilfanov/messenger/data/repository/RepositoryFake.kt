@@ -21,6 +21,7 @@ import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.Repository
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class RepositoryFake : Repository {
@@ -104,6 +105,17 @@ class RepositoryFake : Repository {
                 initialChat?.let { emit(ResultWithError.Success(it)) }
             }
             .distinctUntilChanged()
+    }
+
+    override suspend fun deleteChat(
+        chatId: ChatId,
+    ): ResultWithError<Unit, RepositoryDeleteChatError> {
+        if (!chats.containsKey(chatId)) {
+            return ResultWithError.Failure(RepositoryDeleteChatError.ChatNotFound(chatId))
+        }
+
+        chats.remove(chatId)
+        return ResultWithError.Success(Unit)
     }
 
     private fun <T> ImmutableList<T>.add(item: T): ImmutableList<T> {

@@ -36,6 +36,7 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.CreationTimeChanged
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusAlreadySet
@@ -81,6 +82,12 @@ class EditMessageUseCaseTest {
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
+            error("Not yet implemented")
+        }
+
+        override suspend fun deleteChat(
+            chatId: ChatId,
+        ): ResultWithError<Unit, RepositoryDeleteChatError> {
             error("Not yet implemented")
         }
     }

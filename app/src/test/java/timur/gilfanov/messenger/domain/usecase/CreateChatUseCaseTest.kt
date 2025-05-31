@@ -27,6 +27,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError.DuplicateChatId
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class CreateChatUseCaseTest {
@@ -63,6 +64,12 @@ class CreateChatUseCaseTest {
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
+            error("Not yet implemented")
+        }
+
+        override suspend fun deleteChat(
+            chatId: ChatId,
+        ): ResultWithError<Unit, RepositoryDeleteChatError> {
             error("Not yet implemented")
         }
     }

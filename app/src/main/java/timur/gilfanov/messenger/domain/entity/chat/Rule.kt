@@ -24,3 +24,7 @@ sealed class DeleteMessageRule : Rule() {
     object NoDeleteAfterDelivered : DeleteMessageRule()
     data class DeleteForEveryoneWindow(val duration: Duration) : DeleteMessageRule()
 }
+
+sealed class DeleteChatRule : Rule() {
+    object OnlyAdminCanDelete : DeleteChatRule()
+}

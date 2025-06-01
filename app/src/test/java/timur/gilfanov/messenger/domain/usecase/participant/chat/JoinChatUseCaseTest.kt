@@ -6,7 +6,6 @@ import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.ParticipantNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -14,6 +13,7 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
 import timur.gilfanov.messenger.domain.usecase.participant.chat.JoinChatError.AlreadyInChat
 import timur.gilfanov.messenger.domain.usecase.participant.chat.JoinChatError.ChatClosed
 import timur.gilfanov.messenger.domain.usecase.participant.chat.JoinChatError.ChatFull
@@ -32,7 +32,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.JoinChatError.Us
 class JoinChatUseCaseTest {
 
     private class RepositoryFake(private val error: RepositoryJoinChatError? = null) :
-        ParticipantRepository by ParticipantNotImplemented() {
+        ParticipantRepository by ParticipantRepositoryNotImplemented() {
         override suspend fun joinChat(
             chatId: ChatId,
             inviteLink: String?,

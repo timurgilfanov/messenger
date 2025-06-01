@@ -9,7 +9,6 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.RepositoryFake
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -31,6 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.CreateMessage
 import timur.gilfanov.messenger.domain.usecase.participant.message.CreateMessageUseCase
 import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatError
 import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatUseCase
+import timur.gilfanov.messenger.domain.usecase.repository.RepositoryFake
 
 class ChatMessageIntegrationTest {
 

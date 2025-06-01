@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.ParticipantNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule
@@ -28,11 +27,12 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
 import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
 
 class EditMessageUseCaseTest {
 
-    private class RepositoryFake : ParticipantRepository by ParticipantNotImplemented() {
+    private class RepositoryFake : ParticipantRepository by ParticipantRepositoryNotImplemented() {
 
         override suspend fun editMessage(message: Message): Flow<Message> {
             val updatedMessage = when (message) {

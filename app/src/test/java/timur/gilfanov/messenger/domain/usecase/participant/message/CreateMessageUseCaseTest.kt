@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.ParticipantNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule
 import timur.gilfanov.messenger.domain.entity.chat.Participant
@@ -29,6 +28,7 @@ import timur.gilfanov.messenger.domain.entity.message.buildMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
 import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
@@ -38,7 +38,7 @@ class CreateMessageUseCaseTest {
     private class RepositoryFake(
         val sendMessageResult: Flow<Message> = flowOf(),
         val exception: Exception? = null,
-    ) : ParticipantRepository by ParticipantNotImplemented() {
+    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
         override suspend fun sendMessage(message: Message): Flow<Message> {
             exception?.let { throw it }
             return sendMessageResult

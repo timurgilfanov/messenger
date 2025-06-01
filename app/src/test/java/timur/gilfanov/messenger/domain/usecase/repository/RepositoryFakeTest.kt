@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.data.repository
+package timur.gilfanov.messenger.domain.usecase.repository
 
 import app.cash.turbine.test
 import java.util.UUID

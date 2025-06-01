@@ -5,7 +5,6 @@ import kotlin.test.assertIs
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.PrivilegedNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -19,7 +18,7 @@ class DeleteChatUseCaseTest {
     private class RepositoryFake(
         private val deleteChatResult: ResultWithError<Unit, RepositoryDeleteChatError> =
             Success(Unit),
-    ) : PrivilegedRepository by PrivilegedNotImplemented() {
+    ) : PrivilegedRepository by PrivilegedRepositoryNotImplemented() {
         override suspend fun deleteChat(
             chatId: ChatId,
         ): ResultWithError<Unit, RepositoryDeleteChatError> = deleteChatResult

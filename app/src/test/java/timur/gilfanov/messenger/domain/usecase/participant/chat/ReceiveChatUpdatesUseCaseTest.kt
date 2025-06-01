@@ -8,18 +8,18 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.ParticipantNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
 
 class ReceiveChatUpdatesUseCaseTest {
 
     private class RepositoryFake(
         val chatUpdatesFlow: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>,
-    ) : ParticipantRepository by ParticipantNotImplemented() {
+    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatUpdatesFlow

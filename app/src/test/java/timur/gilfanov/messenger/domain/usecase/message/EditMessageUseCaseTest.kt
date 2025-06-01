@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase
+package timur.gilfanov.messenger.domain.usecase.message
 
 import app.cash.turbine.test
 import java.util.UUID
@@ -14,19 +14,13 @@ import kotlinx.datetime.Instant
 import org.junit.Test
 import timur.gilfanov.messenger.data.repository.NotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
-import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.CreationTimeCanNotChange
-import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.EditWindow
-import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.RecipientCanNotChange
-import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule.SenderIdCanNotChange
+import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
@@ -34,16 +28,9 @@ import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
+import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.ValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
-import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.CreationTimeChanged
-import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusAlreadySet
-import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusUpdateNotValid
-import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.EditWindowExpired
-import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.MessageIsNotValid
-import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.RecipientChanged
-import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.SenderIdChanged
-import timur.gilfanov.messenger.domain.usecase.message.EditMessageUseCase
 
 class EditMessageUseCaseTest {
 
@@ -62,7 +49,7 @@ class EditMessageUseCaseTest {
             chat: Chat,
         ): ResultWithError<Chat, RepositoryCreateChatError> {
             chats[chat.id] = chat
-            return Success(chat)
+            return ResultWithError.Success(chat)
         }
     }
 
@@ -76,12 +63,12 @@ class EditMessageUseCaseTest {
             currentStatus: DeliveryStatus?,
             newStatus: DeliveryStatus?,
         ): ResultWithError<Unit, DeliveryStatusValidationError> =
-            validateResults[Pair(currentStatus, newStatus)] ?: Success(Unit)
+            validateResults[Pair(currentStatus, newStatus)] ?: ResultWithError.Success(Unit)
     }
 
     @Test
     fun `edit window expired rule failure`() = runTest {
-        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 10.minutes
         val editWindowDuration = 5.minutes
 
@@ -107,7 +94,7 @@ class EditMessageUseCaseTest {
             id = originalMessage.recipient
             messages = persistentListOf(originalMessage)
             participants = persistentSetOf(participant)
-            rules = persistentSetOf(EditWindow(editWindowDuration))
+            rules = persistentSetOf(EditMessageRule.EditWindow(editWindowDuration))
         }
 
         val repository = RepositoryFake()
@@ -125,15 +112,15 @@ class EditMessageUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<Failure<Message, EditMessageError>>(result)
-            assertEquals(EditWindowExpired, result.error)
+            assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
+            assertEquals(EditMessageError.EditWindowExpired, result.error)
             awaitComplete()
         }
     }
 
     @Test
     fun `creation time changed rule failure`() = runTest {
-        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val originalCreatedAt = customTime - 2.minutes
         val newCreatedAt = customTime - 1.minutes
 
@@ -159,7 +146,7 @@ class EditMessageUseCaseTest {
             id = originalMessage.recipient
             messages = persistentListOf(originalMessage)
             participants = persistentSetOf(participant)
-            rules = persistentSetOf(CreationTimeCanNotChange)
+            rules = persistentSetOf(EditMessageRule.CreationTimeCanNotChange)
         }
 
         val repository = RepositoryFake()
@@ -177,15 +164,15 @@ class EditMessageUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<Failure<Message, EditMessageError>>(result)
-            assertEquals(CreationTimeChanged, result.error)
+            assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
+            assertEquals(EditMessageError.CreationTimeChanged, result.error)
             awaitComplete()
         }
     }
 
     @Test
     fun `recipient changed rule failure`() = runTest {
-        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
         val participant = buildParticipant {
@@ -214,7 +201,7 @@ class EditMessageUseCaseTest {
             id = originalChatId
             messages = persistentListOf(originalMessage)
             participants = persistentSetOf(participant)
-            rules = persistentSetOf(RecipientCanNotChange)
+            rules = persistentSetOf(EditMessageRule.RecipientCanNotChange)
         }
 
         val repository = RepositoryFake()
@@ -232,15 +219,15 @@ class EditMessageUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<Failure<Message, EditMessageError>>(result)
-            assertEquals(RecipientChanged, result.error)
+            assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
+            assertEquals(EditMessageError.RecipientChanged, result.error)
             awaitComplete()
         }
     }
 
     @Test
     fun `sender id changed rule failure`() = runTest {
-        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
         val originalParticipant = buildParticipant {
@@ -274,7 +261,7 @@ class EditMessageUseCaseTest {
             id = chatId
             messages = persistentListOf(originalMessage)
             participants = persistentSetOf(originalParticipant, newParticipant)
-            rules = persistentSetOf(SenderIdCanNotChange)
+            rules = persistentSetOf(EditMessageRule.SenderIdCanNotChange)
         }
 
         val repository = RepositoryFake()
@@ -292,15 +279,15 @@ class EditMessageUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<Failure<Message, EditMessageError>>(result)
-            assertEquals(SenderIdChanged, result.error)
+            assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
+            assertEquals(EditMessageError.SenderIdChanged, result.error)
             awaitComplete()
         }
     }
 
     @Test
     fun `message validation failure`() = runTest {
-        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
         val participant = buildParticipant {
@@ -348,8 +335,8 @@ class EditMessageUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<Failure<Message, EditMessageError>>(result)
-            val error = result.error as MessageIsNotValid
+            assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
+            val error = result.error as EditMessageError.MessageIsNotValid
             assertIs<TextValidationError>(error.reason)
             awaitComplete()
         }
@@ -357,7 +344,7 @@ class EditMessageUseCaseTest {
 
     @Test
     fun `delivery status already set`() = runTest {
-        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
         val participant = buildParticipant {
@@ -365,7 +352,7 @@ class EditMessageUseCaseTest {
         }
 
         val chatId = ChatId(UUID.randomUUID())
-        val deliveryStatus = Sending(50)
+        val deliveryStatus = DeliveryStatus.Sending(50)
 
         val originalMessage = buildTextMessage {
             sender = participant
@@ -404,8 +391,8 @@ class EditMessageUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<Failure<Message, EditMessageError>>(result)
-            val error = result.error as DeliveryStatusAlreadySet
+            assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
+            val error = result.error as EditMessageError.DeliveryStatusAlreadySet
             assertEquals(deliveryStatus, error.status)
             awaitComplete()
         }
@@ -413,7 +400,7 @@ class EditMessageUseCaseTest {
 
     @Test
     fun `delivery status validation failure`() = runTest {
-        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
         val participant = buildParticipant {
@@ -450,7 +437,7 @@ class EditMessageUseCaseTest {
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(
-                Pair(null, DeliveryStatus.Sent) to Failure(validationError),
+                Pair(null, DeliveryStatus.Sent) to ResultWithError.Failure(validationError),
             ),
         )
 
@@ -464,8 +451,8 @@ class EditMessageUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<Failure<Message, EditMessageError>>(result)
-            val error = result.error as DeliveryStatusUpdateNotValid
+            assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
+            val error = result.error as EditMessageError.DeliveryStatusUpdateNotValid
             assertEquals(validationError, error.error)
             awaitComplete()
         }
@@ -473,7 +460,7 @@ class EditMessageUseCaseTest {
 
     @Test
     fun `successful message edit`() = runTest {
-        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
         val participant = buildParticipant {
@@ -502,10 +489,10 @@ class EditMessageUseCaseTest {
             messages = persistentListOf(originalMessage)
             participants = persistentSetOf(participant)
             rules = persistentSetOf(
-                SenderIdCanNotChange,
-                RecipientCanNotChange,
-                CreationTimeCanNotChange,
-                EditWindow(10.minutes),
+                EditMessageRule.SenderIdCanNotChange,
+                EditMessageRule.RecipientCanNotChange,
+                EditMessageRule.CreationTimeCanNotChange,
+                EditMessageRule.EditWindow(10.minutes),
             )
         }
 
@@ -514,7 +501,7 @@ class EditMessageUseCaseTest {
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(
-                Pair(null, DeliveryStatus.Sent) to Success(Unit),
+                Pair(null, DeliveryStatus.Sent) to ResultWithError.Success(Unit),
             ),
         )
 
@@ -528,7 +515,7 @@ class EditMessageUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<Success<Message, EditMessageError>>(result)
+            assertIs<ResultWithError.Success<Message, EditMessageError>>(result)
             val updatedMessage = result.data as TextMessage
             assertEquals(originalMessage.id, updatedMessage.id)
             assertEquals("Edited message", updatedMessage.text)
@@ -539,7 +526,7 @@ class EditMessageUseCaseTest {
 
     @Test
     fun `repository return error`() = runTest {
-        val customTime = Instant.fromEpochMilliseconds(1000000)
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val messageCreatedAt = customTime - 2.minutes
 
         val participant = buildParticipant {
@@ -574,7 +561,7 @@ class EditMessageUseCaseTest {
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(
-                Pair(null, DeliveryStatus.Sent) to Success(Unit),
+                Pair(null, DeliveryStatus.Sent) to ResultWithError.Success(Unit),
             ),
         )
 
@@ -588,7 +575,7 @@ class EditMessageUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<Success<Message, EditMessageError>>(result)
+            assertIs<ResultWithError.Success<Message, EditMessageError>>(result)
             val updatedMessage = result.data as TextMessage
             assertEquals(DeliveryStatus.Sent, updatedMessage.deliveryStatus)
             awaitComplete()
@@ -612,6 +599,7 @@ class EditMessageUseCaseTest {
         override val editedAt: Instant? = null
         override val deliveryStatus: DeliveryStatus? = null
 
-        override fun validate(): ResultWithError<Unit, ValidationError> = Failure(validationError)
+        override fun validate(): ResultWithError<Unit, ValidationError> =
+            ResultWithError.Failure(validationError)
     }
 }

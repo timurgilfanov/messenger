@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.domain.entity.chat.validation
 
-import timur.gilfanov.messenger.domain.usecase.ValidationError
+import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
 
 sealed class ChatValidationError : ValidationError {
     object NoParticipants : ChatValidationError()

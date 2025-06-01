@@ -6,7 +6,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidatorVersion
-import timur.gilfanov.messenger.domain.usecase.ValidationError
+import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
 
 data class TextMessage(
     override val id: MessageId,

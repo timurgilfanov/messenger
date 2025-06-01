@@ -28,6 +28,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError.DuplicateChatId
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class CreateChatUseCaseTest {
@@ -72,6 +73,10 @@ class CreateChatUseCaseTest {
         ): ResultWithError<Unit, RepositoryDeleteChatError> {
             error("Not yet implemented")
         }
+        override suspend fun joinChat(
+            chatId: ChatId,
+            inviteLink: String?,
+        ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
     }
 
     private class ChatValidatorFake(val error: ChatValidationError? = null) : ChatValidator {

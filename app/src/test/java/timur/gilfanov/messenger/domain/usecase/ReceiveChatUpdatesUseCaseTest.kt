@@ -26,6 +26,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.Unkn
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class ReceiveChatUpdatesUseCaseTest {
@@ -63,6 +64,11 @@ class ReceiveChatUpdatesUseCaseTest {
         ): ResultWithError<Unit, RepositoryDeleteChatError> {
             error("Not yet implemented")
         }
+
+        override suspend fun joinChat(
+            chatId: ChatId,
+            inviteLink: String?,
+        ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
     }
 
     @Test

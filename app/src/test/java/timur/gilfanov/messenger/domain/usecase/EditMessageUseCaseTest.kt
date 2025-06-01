@@ -38,6 +38,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.CreationTimeChanged
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusAlreadySet
@@ -96,6 +97,10 @@ class EditMessageUseCaseTest {
             chatId: ChatId,
             inviteLink: String?,
         ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
+
+        override suspend fun leaveChat(
+            chatId: ChatId,
+        ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
     }
 
     private class DeliveryStatusValidatorFake(

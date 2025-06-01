@@ -34,6 +34,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.DeleteForEveryoneWindowExpired
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.DeleteWindowExpired
@@ -87,6 +88,10 @@ class DeleteMessageUseCaseTest {
             chatId: ChatId,
             inviteLink: String?,
         ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
+
+        override suspend fun leaveChat(
+            chatId: ChatId,
+        ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
     }
 
     @Test

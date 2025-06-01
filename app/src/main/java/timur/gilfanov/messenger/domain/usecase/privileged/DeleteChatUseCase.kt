@@ -7,7 +7,6 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDelete
 import timur.gilfanov.messenger.domain.entity.chat.Participant
-import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError as RepositoryError
 
 class DeleteChatUseCase(
     private val chat: Chat,
@@ -24,15 +23,7 @@ class DeleteChatUseCase(
         return repository.deleteChat(chat.id).let { result ->
             when (result) {
                 is Success -> Success(Unit)
-                is Failure -> Failure(
-                    when (val e = result.error) {
-                        RepositoryError.NetworkNotAvailable -> DeleteChatError.NetworkNotAvailable
-                        RepositoryError.RemoteUnreachable -> DeleteChatError.RemoteUnreachable
-                        RepositoryError.RemoteError -> DeleteChatError.RemoteError
-                        RepositoryError.LocalError -> DeleteChatError.LocalError
-                        is RepositoryError.ChatNotFound -> DeleteChatError.ChatNotFound(e.chatId)
-                    },
-                )
+                is Failure -> Failure(result.error)
             }
         }
     }

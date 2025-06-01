@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.domain.usecase.privileged
 
-import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
@@ -104,29 +103,5 @@ class DeleteChatUseCaseTest {
         val useCase = DeleteChatUseCase(chat, alice, RepositoryFake())
         val result = useCase()
         assertIs<Success<Unit, DeleteChatError>>(result)
-    }
-
-    @Test
-    fun `repository errors map correctly`() = runTest {
-        val alice = buildParticipant { isAdmin = true }
-        val chat = buildChat { participants = persistentSetOf(alice) }
-
-        val errors = mapOf(
-            RepositoryDeleteChatError.NetworkNotAvailable to DeleteChatError.NetworkNotAvailable,
-            RepositoryDeleteChatError.LocalError to DeleteChatError.LocalError,
-            RepositoryDeleteChatError.RemoteError to DeleteChatError.RemoteError,
-            RepositoryDeleteChatError.RemoteUnreachable to DeleteChatError.RemoteUnreachable,
-            RepositoryDeleteChatError.ChatNotFound(
-                chat.id,
-            ) to DeleteChatError.ChatNotFound(chat.id),
-        )
-
-        errors.forEach { (repoError, expected) ->
-            val repo = RepositoryFake(Failure(repoError))
-            val useCase = DeleteChatUseCase(chat, alice, repo)
-            val result = useCase()
-            assertIs<Failure<Unit, DeleteChatError>>(result)
-            assertEquals(expected, result.error)
-        }
     }
 }

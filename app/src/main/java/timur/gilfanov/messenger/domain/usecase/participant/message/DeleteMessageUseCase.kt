@@ -20,15 +20,10 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.DeleteForEveryoneWindowExpired
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.DeleteWindowExpired
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.LocalError
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.MessageAlreadyDelivered
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.MessageNotFound
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.NetworkNotAvailable
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.NotAuthorized
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.RemoteUnreachable
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode.FOR_SENDER_ONLY
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError as RepositoryError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.MessageNotFound
 
 class DeleteMessageUseCase(
     private val chat: Chat,
@@ -55,17 +50,7 @@ class DeleteMessageUseCase(
         return repository.deleteMessage(messageId, deleteMode).let { result ->
             when (result) {
                 is Success -> Success(Unit)
-                is Failure -> Failure(
-                    when (result.error) {
-                        RepositoryError.LocalError -> LocalError
-                        is RepositoryError.MessageNotFound -> MessageNotFound(
-                            result.error.messageId,
-                        )
-                        RepositoryError.NetworkNotAvailable -> NetworkNotAvailable
-                        RepositoryError.RemoteError -> RemoteError
-                        RepositoryError.RemoteUnreachable -> RemoteUnreachable
-                    },
-                )
+                is Failure -> Failure(result.error)
             }
         }
     }

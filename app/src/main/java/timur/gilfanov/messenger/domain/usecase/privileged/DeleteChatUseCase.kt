@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.priveleged
+package timur.gilfanov.messenger.domain.usecase.privileged
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
@@ -7,7 +7,7 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDelete
 import timur.gilfanov.messenger.domain.entity.chat.Participant
-import timur.gilfanov.messenger.domain.usecase.priveleged.RepositoryDeleteChatError as RepositoryError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError as RepositoryError
 
 class DeleteChatUseCase(
     private val chat: Chat,

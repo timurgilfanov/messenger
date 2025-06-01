@@ -23,9 +23,9 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinCh
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.priveleged.PrivilegedRepository
-import timur.gilfanov.messenger.domain.usecase.priveleged.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.priveleged.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.privileged.PrivilegedRepository
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
 
 class RepositoryFake :
     ParticipantRepository by ParticipantNotImplemented(),

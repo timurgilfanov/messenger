@@ -29,8 +29,8 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdat
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.message.CreateMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.CreateMessageUseCase
-import timur.gilfanov.messenger.domain.usecase.priveleged.CreateChatError
-import timur.gilfanov.messenger.domain.usecase.priveleged.CreateChatUseCase
+import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatError
+import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatUseCase
 
 class ChatMessageIntegrationTest {
 

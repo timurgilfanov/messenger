@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.priveleged
+package timur.gilfanov.messenger.domain.usecase.privileged
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure

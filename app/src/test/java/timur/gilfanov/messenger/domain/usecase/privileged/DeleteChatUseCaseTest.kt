@@ -5,7 +5,7 @@ import kotlin.test.assertIs
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.ParticipantNotImplemented
+import timur.gilfanov.messenger.data.repository.PrivilegedNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -13,17 +13,13 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDelete
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.priveleged.DeleteChatError
-import timur.gilfanov.messenger.domain.usecase.priveleged.DeleteChatUseCase
-import timur.gilfanov.messenger.domain.usecase.priveleged.RepositoryDeleteChatError
 
 class DeleteChatUseCaseTest {
 
     private class RepositoryFake(
         private val deleteChatResult: ResultWithError<Unit, RepositoryDeleteChatError> =
             Success(Unit),
-    ) : ParticipantRepository by ParticipantNotImplemented() {
+    ) : PrivilegedRepository by PrivilegedNotImplemented() {
         override suspend fun deleteChat(
             chatId: ChatId,
         ): ResultWithError<Unit, RepositoryDeleteChatError> = deleteChatResult

@@ -14,11 +14,6 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
-import timur.gilfanov.messenger.domain.usecase.priveleged.ChatIsNotValid
-import timur.gilfanov.messenger.domain.usecase.priveleged.CreateChatError
-import timur.gilfanov.messenger.domain.usecase.priveleged.CreateChatUseCase
-import timur.gilfanov.messenger.domain.usecase.priveleged.PrivilegedRepository
-import timur.gilfanov.messenger.domain.usecase.priveleged.RepositoryCreateChatError
 
 class CreateChatUseCaseTest {
 

@@ -14,7 +14,6 @@ import kotlinx.datetime.Instant
 import org.junit.Test
 import timur.gilfanov.messenger.data.repository.ParticipantNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.EditMessageRule
 import timur.gilfanov.messenger.domain.entity.chat.Participant
@@ -30,12 +29,10 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
-import timur.gilfanov.messenger.domain.usecase.priveleged.RepositoryCreateChatError
 
 class EditMessageUseCaseTest {
 
     private class RepositoryFake : ParticipantRepository by ParticipantNotImplemented() {
-        private val chats = mutableMapOf<ChatId, Chat>()
 
         override suspend fun editMessage(message: Message): Flow<Message> {
             val updatedMessage = when (message) {
@@ -43,13 +40,6 @@ class EditMessageUseCaseTest {
                 else -> message
             }
             return flowOf(updatedMessage)
-        }
-
-        override suspend fun createChat(
-            chat: Chat,
-        ): ResultWithError<Chat, RepositoryCreateChatError> {
-            chats[chat.id] = chat
-            return ResultWithError.Success(chat)
         }
     }
 
@@ -98,7 +88,6 @@ class EditMessageUseCaseTest {
         }
 
         val repository = RepositoryFake()
-        repository.createChat(chat)
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
@@ -150,7 +139,6 @@ class EditMessageUseCaseTest {
         }
 
         val repository = RepositoryFake()
-        repository.createChat(chat)
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
@@ -205,7 +193,6 @@ class EditMessageUseCaseTest {
         }
 
         val repository = RepositoryFake()
-        repository.createChat(chat)
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
@@ -265,7 +252,6 @@ class EditMessageUseCaseTest {
         }
 
         val repository = RepositoryFake()
-        repository.createChat(chat)
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
@@ -321,7 +307,6 @@ class EditMessageUseCaseTest {
         }
 
         val repository = RepositoryFake()
-        repository.createChat(chat)
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
@@ -377,7 +362,6 @@ class EditMessageUseCaseTest {
         }
 
         val repository = RepositoryFake()
-        repository.createChat(chat)
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
@@ -433,7 +417,6 @@ class EditMessageUseCaseTest {
         val validationError = DeliveryStatusValidationError.CannotChangeFromRead
 
         val repository = RepositoryFake()
-        repository.createChat(chat)
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(
@@ -497,7 +480,6 @@ class EditMessageUseCaseTest {
         }
 
         val repository = RepositoryFake()
-        repository.createChat(chat)
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(
@@ -557,7 +539,6 @@ class EditMessageUseCaseTest {
         }
 
         val repository = RepositoryFake()
-        repository.createChat(chat)
 
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(

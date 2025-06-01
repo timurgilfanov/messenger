@@ -17,16 +17,19 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.priveleged.PrivilegedRepository
 import timur.gilfanov.messenger.domain.usecase.priveleged.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.priveleged.RepositoryDeleteChatError
 
-class RepositoryFake : Repository by NotImplemented() {
+class RepositoryFake :
+    ParticipantRepository by ParticipantNotImplemented(),
+    PrivilegedRepository by PrivilegedNotImplemented() {
     private val chats = mutableMapOf<ChatId, Chat>()
 
     private val chatUpdates = MutableSharedFlow<Chat>(

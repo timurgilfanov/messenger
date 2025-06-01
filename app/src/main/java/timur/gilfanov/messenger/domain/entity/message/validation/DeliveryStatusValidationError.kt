@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.domain.entity.message.validation
 
-import timur.gilfanov.messenger.domain.usecase.ValidationError
+import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
 
 sealed class DeliveryStatusValidationError : ValidationError {
     object CannotChangeFromRead : DeliveryStatusValidationError()

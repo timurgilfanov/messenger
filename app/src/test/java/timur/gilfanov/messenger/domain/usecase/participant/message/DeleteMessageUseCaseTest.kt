@@ -9,7 +9,7 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.NotImplemented
+import timur.gilfanov.messenger.data.repository.ParticipantNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
@@ -17,14 +17,14 @@ import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
-import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
 class DeleteMessageUseCaseTest {
 
     private class RepositoryFake(
         private val deleteMessageResult: ResultWithError<Unit, RepositoryDeleteMessageError> =
             ResultWithError.Success(Unit),
-    ) : Repository by NotImplemented() {
+    ) : ParticipantRepository by ParticipantNotImplemented() {
         override suspend fun deleteMessage(
             messageId: MessageId,
             mode: DeleteMessageMode,

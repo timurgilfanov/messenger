@@ -16,7 +16,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.onSuccess
-import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.CreationTimeChanged
 import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.DeliveryStatusAlreadySet
 import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.DeliveryStatusUpdateNotValid
@@ -28,7 +28,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageEr
 class EditMessageUseCase(
     private val chat: Chat,
     private val message: Message,
-    private val repository: Repository,
+    private val repository: ParticipantRepository,
     private val deliveryStatusValidator: DeliveryStatusValidator,
     private val now: Instant = Clock.System.now(),
 ) {

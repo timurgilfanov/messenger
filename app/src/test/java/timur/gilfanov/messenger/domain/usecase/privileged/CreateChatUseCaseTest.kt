@@ -6,7 +6,7 @@ import kotlin.test.assertIs
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.NotImplemented
+import timur.gilfanov.messenger.data.repository.PrivilegedNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -14,16 +14,16 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
-import timur.gilfanov.messenger.domain.usecase.Repository
 import timur.gilfanov.messenger.domain.usecase.priveleged.ChatIsNotValid
 import timur.gilfanov.messenger.domain.usecase.priveleged.CreateChatError
 import timur.gilfanov.messenger.domain.usecase.priveleged.CreateChatUseCase
+import timur.gilfanov.messenger.domain.usecase.priveleged.PrivilegedRepository
 import timur.gilfanov.messenger.domain.usecase.priveleged.RepositoryCreateChatError
 
 class CreateChatUseCaseTest {
 
     private class RepositoryFake(val error: RepositoryCreateChatError? = null) :
-        Repository by NotImplemented() {
+        PrivilegedRepository by PrivilegedNotImplemented() {
         val chats = mutableSetOf<Chat>()
 
         override suspend fun createChat(

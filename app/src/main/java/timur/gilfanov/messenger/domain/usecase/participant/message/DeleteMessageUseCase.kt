@@ -17,7 +17,7 @@ import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
-import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.DeleteForEveryoneWindowExpired
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.DeleteWindowExpired
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.LocalError
@@ -35,7 +35,7 @@ class DeleteMessageUseCase(
     private val messageId: MessageId,
     private val currentUser: Participant,
     private val deleteMode: DeleteMessageMode,
-    private val repository: Repository,
+    private val repository: ParticipantRepository,
     private val now: Instant = Clock.System.now(),
 ) {
 

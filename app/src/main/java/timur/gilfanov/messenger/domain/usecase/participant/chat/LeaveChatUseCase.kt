@@ -4,7 +4,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.LeaveChatError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.participant.chat.LeaveChatError.LocalError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.LeaveChatError.NetworkNotAvailable
@@ -13,7 +13,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.LeaveChatError.R
 import timur.gilfanov.messenger.domain.usecase.participant.chat.LeaveChatError.RemoteUnreachable
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError as RepositoryError
 
-class LeaveChatUseCase(private val chatId: ChatId, private val repository: Repository) {
+class LeaveChatUseCase(private val chatId: ChatId, private val repository: ParticipantRepository) {
     suspend operator fun invoke(): ResultWithError<Unit, LeaveChatError> =
         repository.leaveChat(chatId).let { result ->
             when (result) {

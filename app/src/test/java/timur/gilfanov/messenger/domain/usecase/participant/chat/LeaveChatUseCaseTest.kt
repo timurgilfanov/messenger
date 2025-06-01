@@ -4,18 +4,18 @@ import java.util.UUID
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import timur.gilfanov.messenger.data.repository.NotImplemented
+import timur.gilfanov.messenger.data.repository.ParticipantNotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError as RepositoryError
 
 class LeaveChatUseCaseTest {
 
     private class RepositoryFake(val error: RepositoryError? = null) :
-        Repository by NotImplemented() {
+        ParticipantRepository by ParticipantNotImplemented() {
         override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, RepositoryError> =
             error?.let {
                 Failure(it)

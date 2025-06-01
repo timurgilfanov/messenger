@@ -2,7 +2,7 @@ package timur.gilfanov.messenger.domain.usecase.participant.message
 
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
-import timur.gilfanov.messenger.domain.usecase.ValidationError
+import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
 
 sealed class EditMessageError {
     object EditWindowExpired : EditMessageError()

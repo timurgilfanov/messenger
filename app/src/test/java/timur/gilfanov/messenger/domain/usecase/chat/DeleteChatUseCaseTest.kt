@@ -30,6 +30,11 @@ class DeleteChatUseCaseTest {
             chatId: ChatId,
         ): ResultWithError<Unit, RepositoryDeleteChatError> = deleteChatResult
 
+        override suspend fun joinChat(
+            chatId: ChatId,
+            inviteLink: String?,
+        ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
+
         override suspend fun sendMessage(message: Message): Flow<Message> {
             error("Not yet implemented")
         }

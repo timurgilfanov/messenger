@@ -19,6 +19,9 @@ class ChatBuilder {
     var rules: ImmutableSet<Rule> = persistentSetOf()
     var unreadMessagesCount: Int = 0
     var lastReadMessageId: MessageId? = null
+    var isClosed: Boolean = false
+    var isArchived: Boolean = false
+    var isOneToOne: Boolean = false
 
     fun build(): Chat = Chat(
         id = id,
@@ -29,5 +32,8 @@ class ChatBuilder {
         rules = rules,
         unreadMessagesCount = unreadMessagesCount,
         lastReadMessageId = lastReadMessageId,
+        isClosed = isClosed,
+        isArchived = isArchived,
+        isOneToOne = isOneToOne,
     )
 }

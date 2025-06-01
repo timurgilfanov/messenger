@@ -18,4 +18,7 @@ data class Chat(
     val rules: ImmutableSet<Rule>,
     val unreadMessagesCount: Int,
     val lastReadMessageId: MessageId?,
+    val isClosed: Boolean = false,
+    val isArchived: Boolean = false,
+    val isOneToOne: Boolean = false,
 )

@@ -22,6 +22,7 @@ import timur.gilfanov.messenger.domain.usecase.Repository
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class RepositoryFake : Repository {
@@ -117,6 +118,11 @@ class RepositoryFake : Repository {
         chats.remove(chatId)
         return ResultWithError.Success(Unit)
     }
+
+    override suspend fun joinChat(
+        chatId: ChatId,
+        inviteLink: String?,
+    ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
 
     private fun <T> ImmutableList<T>.add(item: T): ImmutableList<T> {
         val mutableList = this.toMutableList()

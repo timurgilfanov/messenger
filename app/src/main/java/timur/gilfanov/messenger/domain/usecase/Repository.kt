@@ -10,6 +10,7 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 interface Repository {
@@ -24,4 +25,8 @@ interface Repository {
         chatId: ChatId,
     ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>
     suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, RepositoryDeleteChatError>
+    suspend fun joinChat(
+        chatId: ChatId,
+        inviteLink: String?,
+    ): ResultWithError<Chat, RepositoryJoinChatError>
 }

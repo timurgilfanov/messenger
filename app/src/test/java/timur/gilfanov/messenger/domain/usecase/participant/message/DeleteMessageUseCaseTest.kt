@@ -18,6 +18,8 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.MessageNotFound
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.RemoteError
 
 class DeleteMessageUseCaseTest {
 
@@ -58,7 +60,7 @@ class DeleteMessageUseCaseTest {
 
         val result = useCase()
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-        assertIs<DeleteMessageError.MessageNotFound>(result.error)
+        assertIs<MessageNotFound>(result.error)
         assertEquals(messageId, result.error.messageId)
     }
 
@@ -405,15 +407,14 @@ class DeleteMessageUseCaseTest {
             rules = persistentSetOf(DeleteMessageRule.SenderCanDeleteOwn)
         }
 
-        val errors = mapOf(
-            RepositoryDeleteMessageError.NetworkNotAvailable to
-                DeleteMessageError.NetworkNotAvailable,
-            RepositoryDeleteMessageError.LocalError to DeleteMessageError.LocalError,
-            RepositoryDeleteMessageError.RemoteError to DeleteMessageError.RemoteError,
-            RepositoryDeleteMessageError.RemoteUnreachable to DeleteMessageError.RemoteUnreachable,
+        val errors = setOf(
+            RepositoryDeleteMessageError.NetworkNotAvailable,
+            RepositoryDeleteMessageError.LocalError,
+            RepositoryDeleteMessageError.RemoteError,
+            RepositoryDeleteMessageError.RemoteUnreachable,
         )
 
-        errors.forEach { (repoError, expectedError) ->
+        errors.forEach { repoError ->
             val repository =
                 RepositoryFake(deleteMessageResult = ResultWithError.Failure(repoError))
             val useCase = DeleteMessageUseCase(
@@ -427,7 +428,7 @@ class DeleteMessageUseCaseTest {
 
             val result = useCase()
             assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-            assertEquals(expectedError, result.error)
+            assertEquals(repoError, result.error)
         }
     }
 
@@ -471,7 +472,7 @@ class DeleteMessageUseCaseTest {
 
         val result = useCase()
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-        assertEquals(DeleteMessageError.RemoteError, result.error)
+        assertEquals(RemoteError, result.error)
     }
 
     @Test

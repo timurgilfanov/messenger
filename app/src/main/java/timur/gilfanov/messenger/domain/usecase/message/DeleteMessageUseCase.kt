@@ -14,8 +14,6 @@ import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.ModeratorCa
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.NoDeleteAfterDelivered
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.SenderCanDeleteOwn
 import timur.gilfanov.messenger.domain.entity.chat.Participant
-import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
-import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode.FOR_SENDER_ONLY
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
@@ -29,6 +27,7 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.Networ
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.NotAuthorized
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode.FOR_SENDER_ONLY
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError as RepositoryError
 
 class DeleteMessageUseCase(

@@ -2,10 +2,10 @@ package timur.gilfanov.messenger.data.repository
 
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 
 class NotImplemented : Repository {
     override suspend fun leaveChat(chatId: ChatId) = error("Not implemented in delegate")

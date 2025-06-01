@@ -14,7 +14,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
-import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage

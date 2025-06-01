@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
@@ -12,6 +11,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 interface Repository {

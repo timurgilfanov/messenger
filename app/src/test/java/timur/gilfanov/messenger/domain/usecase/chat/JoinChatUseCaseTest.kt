@@ -17,6 +17,20 @@ import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.AlreadyInChat
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatClosed
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.CooldownActive
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ExpiredInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.InvalidInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.LocalError
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.OneToOneChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.RemoteError
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserBlocked
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserNotFound
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class JoinChatUseCaseTest {
@@ -30,6 +44,10 @@ class JoinChatUseCaseTest {
         } else {
             Failure<Chat, RepositoryJoinChatError>(error)
         }
+
+        override suspend fun leaveChat(
+            chatId: ChatId,
+        ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
 
         override suspend fun sendMessage(message: Message): Flow<Message> =
             error("Not yet implemented")
@@ -97,7 +115,7 @@ class JoinChatUseCaseTest {
             val result = JoinChatUseCase(chatId, null, repo).invoke()
             assertIs<Failure<Chat, JoinChatError>>(result, "Expected Failure for $repoError")
             if (expectedError is CooldownActive && result.error is CooldownActive) {
-                assertEquals(expectedError.remaining, (result.error as CooldownActive).remaining)
+                assertEquals(expectedError.remaining, result.error.remaining)
             } else {
                 assertEquals(expectedError, result.error, "Mapping failed for $repoError")
             }

@@ -11,6 +11,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 interface Repository {
@@ -29,4 +30,5 @@ interface Repository {
         chatId: ChatId,
         inviteLink: String?,
     ): ResultWithError<Chat, RepositoryJoinChatError>
+    suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, RepositoryLeaveChatError>
 }

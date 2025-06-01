@@ -6,6 +6,20 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.usecase.Repository
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.AlreadyInChat
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatClosed
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.CooldownActive
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ExpiredInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.InvalidInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.LocalError
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.OneToOneChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.RemoteError
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserBlocked
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserNotFound
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError as RepositoryError
 
 class JoinChatUseCase(

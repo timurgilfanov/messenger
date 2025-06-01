@@ -4,9 +4,12 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 
 sealed class DeleteChatError {
     object NotAuthorized : DeleteChatError()
-    object NetworkNotAvailable : DeleteChatError()
-    object RemoteUnreachable : DeleteChatError()
-    object RemoteError : DeleteChatError()
-    object LocalError : DeleteChatError()
-    data class ChatNotFound(val chatId: ChatId) : DeleteChatError()
+}
+
+sealed class RepositoryDeleteChatError : DeleteChatError() {
+    object NetworkNotAvailable : RepositoryDeleteChatError()
+    object RemoteUnreachable : RepositoryDeleteChatError()
+    object RemoteError : RepositoryDeleteChatError()
+    object LocalError : RepositoryDeleteChatError()
+    data class ChatNotFound(val chatId: ChatId) : RepositoryDeleteChatError()
 }

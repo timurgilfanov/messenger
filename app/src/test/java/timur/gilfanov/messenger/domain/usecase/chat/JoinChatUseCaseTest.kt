@@ -4,18 +4,15 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import timur.gilfanov.messenger.data.repository.NotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
-import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
-import timur.gilfanov.messenger.domain.entity.message.Message
-import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.Repository
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.AlreadyInChat
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatClosed
@@ -31,11 +28,11 @@ import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.RemoteError
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.RemoteUnreachable
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserBlocked
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserNotFound
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 class JoinChatUseCaseTest {
 
-    private class RepositoryFake(private val error: RepositoryJoinChatError? = null) : Repository {
+    private class RepositoryFake(private val error: RepositoryJoinChatError? = null) :
+        Repository by NotImplemented() {
         override suspend fun joinChat(
             chatId: ChatId,
             inviteLink: String?,
@@ -44,33 +41,6 @@ class JoinChatUseCaseTest {
         } else {
             Failure<Chat, RepositoryJoinChatError>(error)
         }
-
-        override suspend fun leaveChat(
-            chatId: ChatId,
-        ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
-
-        override suspend fun sendMessage(message: Message): Flow<Message> =
-            error("Not yet implemented")
-
-        override suspend fun editMessage(message: Message): Flow<Message> =
-            error("Not yet implemented")
-
-        override suspend fun deleteMessage(
-            messageId: MessageId,
-            mode: DeleteMessageMode,
-        ): ResultWithError<Unit, RepositoryDeleteMessageError> = error("Not yet implemented")
-
-        override suspend fun createChat(
-            chat: Chat,
-        ): ResultWithError<Chat, RepositoryCreateChatError> = error("Not yet implemented")
-
-        override suspend fun receiveChatUpdates(
-            chatId: ChatId,
-        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = error("Not yet implemented")
-
-        override suspend fun deleteChat(
-            chatId: ChatId,
-        ): ResultWithError<Unit, RepositoryDeleteChatError> = error("Not yet implemented")
     }
 
     @Test

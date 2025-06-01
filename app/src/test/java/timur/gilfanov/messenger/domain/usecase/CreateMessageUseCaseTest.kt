@@ -15,18 +15,16 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
+import timur.gilfanov.messenger.data.repository.NotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
-import timur.gilfanov.messenger.domain.entity.chat.Chat
-import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule.CanNotWriteAfterJoining
 import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule.Debounce
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
-import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sent
@@ -35,11 +33,6 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError
 import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.DeliveryStatusAlreadySet
 import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.DeliveryStatusUpdateNotValid
@@ -47,7 +40,6 @@ import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.Messag
 import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.WaitAfterJoining
 import timur.gilfanov.messenger.domain.usecase.message.CreateMessageError.WaitDebounce
 import timur.gilfanov.messenger.domain.usecase.message.CreateMessageUseCase
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 
@@ -56,49 +48,11 @@ class CreateMessageUseCaseTest {
     private class RepositoryFake(
         val sendMessageResult: Flow<Message> = flowOf(),
         val exception: Exception? = null,
-    ) : Repository {
+    ) : Repository by NotImplemented() {
         override suspend fun sendMessage(message: Message): Flow<Message> {
             exception?.let { throw it }
             return sendMessageResult
         }
-
-        override suspend fun editMessage(message: Message): Flow<Message> {
-            error("Not yet implemented")
-        }
-
-        override suspend fun deleteMessage(
-            messageId: MessageId,
-            mode: DeleteMessageMode,
-        ): ResultWithError<Unit, RepositoryDeleteMessageError> {
-            error("Not yet implemented")
-        }
-
-        override suspend fun createChat(
-            chat: Chat,
-        ): ResultWithError<Chat, RepositoryCreateChatError> {
-            error("Not yet implemented")
-        }
-
-        override suspend fun receiveChatUpdates(
-            chatId: ChatId,
-        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
-            error("Not yet implemented")
-        }
-
-        override suspend fun deleteChat(
-            chatId: ChatId,
-        ): ResultWithError<Unit, RepositoryDeleteChatError> {
-            error("Not yet implemented")
-        }
-
-        override suspend fun joinChat(
-            chatId: ChatId,
-            inviteLink: String?,
-        ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
-
-        override suspend fun leaveChat(
-            chatId: ChatId,
-        ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
     }
 
     class DeliveryStatusValidatorFake(

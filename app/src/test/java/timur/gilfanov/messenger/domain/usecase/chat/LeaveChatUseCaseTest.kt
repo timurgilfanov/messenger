@@ -4,21 +4,18 @@ import java.util.UUID
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import timur.gilfanov.messenger.data.repository.NotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
-import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
-import timur.gilfanov.messenger.domain.entity.message.Message
-import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.Repository
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError as RepositoryError
 
 class LeaveChatUseCaseTest {
 
     private class RepositoryFake(val error: RepositoryError? = null) :
-        Repository by FakeRepositoryDelegate() {
+        Repository by NotImplemented() {
         override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, RepositoryError> =
             error?.let {
                 Failure(it)
@@ -107,17 +104,4 @@ class LeaveChatUseCaseTest {
         assertIs<Failure<Unit, LeaveChatError>>(result)
         assertIs<LeaveChatError.LocalError>(result.error)
     }
-}
-
-private class FakeRepositoryDelegate : Repository {
-    override suspend fun leaveChat(chatId: ChatId) = error("Not implemented in delegate")
-    override suspend fun createChat(chat: Chat) = error("Not implemented in delegate")
-    override suspend fun deleteChat(chatId: ChatId) = error("Not implemented in delegate")
-    override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
-        error("Not implemented in delegate")
-    override suspend fun editMessage(message: Message) = error("Not implemented in delegate")
-    override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
-        error("Not implemented in delegate")
-    override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented in delegate")
-    override suspend fun sendMessage(message: Message) = error("Not implemented in delegate")
 }

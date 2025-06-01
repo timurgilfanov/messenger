@@ -26,7 +26,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 
-class RepositoryFake : Repository {
+class RepositoryFake : Repository by NotImplemented() {
     private val chats = mutableMapOf<ChatId, Chat>()
 
     private val chatUpdates = MutableSharedFlow<Chat>(

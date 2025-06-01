@@ -6,15 +6,13 @@ import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
+import timur.gilfanov.messenger.data.repository.NotImplemented
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
-import timur.gilfanov.messenger.domain.entity.chat.Chat
-import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.AdminCanDeleteAny
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.DeleteForEveryoneWindow
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.DeleteWindow
@@ -27,14 +25,8 @@ import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode.FOR_EVERYONE
 import timur.gilfanov.messenger.domain.entity.message.DeleteMessageMode.FOR_SENDER_ONLY
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
-import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.DeleteForEveryoneWindowExpired
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.DeleteWindowExpired
@@ -52,46 +44,11 @@ class DeleteMessageUseCaseTest {
     private class RepositoryFake(
         private val deleteMessageResult: ResultWithError<Unit, RepositoryDeleteMessageError> =
             Success(Unit),
-    ) : Repository {
-        override suspend fun sendMessage(message: Message): Flow<Message> {
-            error("Not yet implemented")
-        }
-
-        override suspend fun editMessage(message: Message): Flow<Message> {
-            error("Not yet implemented")
-        }
-
+    ) : Repository by NotImplemented() {
         override suspend fun deleteMessage(
             messageId: MessageId,
             mode: DeleteMessageMode,
         ): ResultWithError<Unit, RepositoryDeleteMessageError> = deleteMessageResult
-
-        override suspend fun createChat(
-            chat: Chat,
-        ): ResultWithError<Chat, RepositoryCreateChatError> {
-            error("Not yet implemented")
-        }
-
-        override suspend fun receiveChatUpdates(
-            chatId: ChatId,
-        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
-            error("Not yet implemented")
-        }
-
-        override suspend fun deleteChat(
-            chatId: ChatId,
-        ): ResultWithError<Unit, RepositoryDeleteChatError> {
-            error("Not yet implemented")
-        }
-
-        override suspend fun joinChat(
-            chatId: ChatId,
-            inviteLink: String?,
-        ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
-
-        override suspend fun leaveChat(
-            chatId: ChatId,
-        ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
     }
 
     @Test

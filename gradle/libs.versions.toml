@@ -1,5 +1,6 @@
 [versions]
 agp = "8.9.2"
+konsist = "0.17.3"
 kotlin = "2.0.21"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -34,6 +35,7 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 detekt-compose = { module = "io.nlopez.compose.rules:detekt", version.ref = "composeRules" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 ktlint-compose = { module = "io.nlopez.compose.rules:ktlint", version.ref = "composeRules" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }

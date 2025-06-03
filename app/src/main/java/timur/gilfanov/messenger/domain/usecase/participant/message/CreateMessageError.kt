@@ -1,9 +1,9 @@
 package timur.gilfanov.messenger.domain.usecase.participant.message
 
 import kotlin.time.Duration
+import timur.gilfanov.messenger.domain.entity.ValidationError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
-import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
 
 sealed class CreateMessageError {
     data class WaitAfterJoining(val duration: Duration) : CreateMessageError()

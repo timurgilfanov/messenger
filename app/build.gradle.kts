@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.collections.immutable)
     testImplementation(libs.junit)
+    testImplementation(libs.konsist)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)

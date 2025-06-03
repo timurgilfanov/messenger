@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.ValidationError
 import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -29,7 +30,6 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
-import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 

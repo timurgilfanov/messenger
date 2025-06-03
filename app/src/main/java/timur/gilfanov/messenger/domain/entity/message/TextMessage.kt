@@ -2,11 +2,11 @@ package timur.gilfanov.messenger.domain.entity.message
 
 import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.ValidationError
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidatorVersion
-import timur.gilfanov.messenger.domain.usecase.participant.ValidationError
 
 data class TextMessage(
     override val id: MessageId,

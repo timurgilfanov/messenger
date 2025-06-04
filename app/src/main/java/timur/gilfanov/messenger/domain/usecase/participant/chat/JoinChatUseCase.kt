@@ -7,12 +7,11 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
-class JoinChatUseCase(
-    private val chatId: ChatId,
-    private val inviteLink: String? = null,
-    private val repository: ParticipantRepository,
-) {
-    suspend operator fun invoke(): ResultWithError<Chat, JoinChatError> =
+class JoinChatUseCase(private val repository: ParticipantRepository) {
+    suspend operator fun invoke(
+        chatId: ChatId,
+        inviteLink: String? = null,
+    ): ResultWithError<Chat, JoinChatError> =
         repository.joinChat(chatId, inviteLink).let { result ->
             when (result) {
                 is Success -> Success(result.data)

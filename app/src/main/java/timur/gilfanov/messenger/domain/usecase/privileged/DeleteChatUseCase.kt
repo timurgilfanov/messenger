@@ -9,14 +9,10 @@ import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDe
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 
 class DeleteChatUseCase(
-    private val chat: Chat,
-    private val currentUser: Participant,
     private val repository: PrivilegedRepository,
 ) {
-    suspend operator fun invoke(): ResultWithError<Unit, DeleteChatError> {
-        checkRules(
-            hasAdminPrivileges = currentUser.isAdmin,
-        ).let { result ->
+    suspend operator fun invoke(chat: Chat, currentUser: Participant): ResultWithError<Unit, DeleteChatError> {
+        checkRules(chat, hasAdminPrivileges = currentUser.isAdmin).let { result ->
             if (result is Failure) return result
         }
 
@@ -28,7 +24,10 @@ class DeleteChatUseCase(
         }
     }
 
-    private fun checkRules(hasAdminPrivileges: Boolean): ResultWithError<Unit, DeleteChatError> {
+    private fun checkRules(
+        chat: Chat,
+        hasAdminPrivileges: Boolean,
+    ): ResultWithError<Unit, DeleteChatError> {
         val deleteChatRules = chat.rules.filterIsInstance<DeleteChatRule>()
 
         for (rule in deleteChatRules) {

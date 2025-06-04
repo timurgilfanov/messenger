@@ -47,7 +47,8 @@ class JoinChatUseCaseTest {
     fun `join open chat succeeds`() = runTest {
         val repo = RepositoryFake()
         val chatId = ChatId(id = UUID.randomUUID())
-        val result = JoinChatUseCase(chatId, null, repo).invoke()
+        val useCase = JoinChatUseCase(repo)
+        val result = useCase(chatId, null)
         assertIs<Success<Chat, JoinChatError>>(result)
         assertEquals(chatId, result.data.id)
     }
@@ -56,9 +57,9 @@ class JoinChatUseCaseTest {
     fun `network not available`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(NetworkNotAvailable)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<NetworkNotAvailable>(result.error)
@@ -68,9 +69,9 @@ class JoinChatUseCaseTest {
     fun `remote unreachable`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(RemoteUnreachable)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<RemoteUnreachable>(result.error)
@@ -80,9 +81,9 @@ class JoinChatUseCaseTest {
     fun `remote error`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(RemoteError)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<RemoteError>(result.error)
@@ -92,9 +93,9 @@ class JoinChatUseCaseTest {
     fun `local error`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(LocalError)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<LocalError>(result.error)
@@ -104,9 +105,9 @@ class JoinChatUseCaseTest {
     fun `chat not found`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(ChatNotFound)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<ChatNotFound>(result.error)
@@ -116,9 +117,9 @@ class JoinChatUseCaseTest {
     fun `invalid invite link`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(InvalidInviteLink)
-        val useCase = JoinChatUseCase(chatId, "invalid-link", repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, "invalid-link")
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<InvalidInviteLink>(result.error)
@@ -128,9 +129,9 @@ class JoinChatUseCaseTest {
     fun `expired invite link`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(ExpiredInviteLink)
-        val useCase = JoinChatUseCase(chatId, "expired-link", repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, "expired-link")
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<ExpiredInviteLink>(result.error)
@@ -140,9 +141,9 @@ class JoinChatUseCaseTest {
     fun `chat closed`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(ChatClosed)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<ChatClosed>(result.error)
@@ -152,9 +153,9 @@ class JoinChatUseCaseTest {
     fun `already joined`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(AlreadyJoined)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<AlreadyJoined>(result.error)
@@ -164,9 +165,9 @@ class JoinChatUseCaseTest {
     fun `chat full`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(ChatFull)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<ChatFull>(result.error)
@@ -176,9 +177,9 @@ class JoinChatUseCaseTest {
     fun `one to one chat full`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(OneToOneChatFull)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<OneToOneChatFull>(result.error)
@@ -188,9 +189,9 @@ class JoinChatUseCaseTest {
     fun `user not found`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(UserNotFound)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<UserNotFound>(result.error)
@@ -200,9 +201,9 @@ class JoinChatUseCaseTest {
     fun `user blocked`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val repository = RepositoryFake(UserBlocked)
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<UserBlocked>(result.error)
@@ -213,9 +214,9 @@ class JoinChatUseCaseTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val cooldownDuration = 30.seconds
         val repository = RepositoryFake(CooldownActive(cooldownDuration))
-        val useCase = JoinChatUseCase(chatId, null, repository)
+        val useCase = JoinChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
         assertIs<CooldownActive>(result.error)

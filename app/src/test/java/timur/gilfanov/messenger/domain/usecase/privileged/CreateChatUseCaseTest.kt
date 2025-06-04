@@ -47,8 +47,8 @@ class CreateChatUseCaseTest {
         val chat = buildChat {}
         val validator = ChatValidatorFake()
         val repository = RepositoryFake()
-        val useCase = CreateChatUseCase(chat, repository, validator)
-        val result = useCase()
+        val useCase = CreateChatUseCase(repository, validator)
+        val result = useCase(chat)
         assertIs<ResultWithError.Success<Chat, CreateChatError>>(result)
         assertEquals(chat, result.data)
     }
@@ -59,8 +59,8 @@ class CreateChatUseCaseTest {
         val validationError = ChatValidationError.EmptyName
         val validator = ChatValidatorFake(validationError)
         val repository = RepositoryFake()
-        val useCase = CreateChatUseCase(chat, repository, validator)
-        val result = useCase()
+        val useCase = CreateChatUseCase(repository, validator)
+        val result = useCase(chat)
         assertIs<ResultWithError.Failure<Chat, CreateChatError>>(result)
         assertIs<ChatIsNotValid>(result.error)
         assertEquals(validationError, result.error.error)
@@ -72,8 +72,8 @@ class CreateChatUseCaseTest {
         val chat = buildChat {}
         val repositoryError = RepositoryCreateChatError.UnknownError
         val repository = RepositoryFake(repositoryError)
-        val useCase = CreateChatUseCase(chat, repository, validator)
-        val result = useCase()
+        val useCase = CreateChatUseCase(repository, validator)
+        val result = useCase(chat)
         assertIs<ResultWithError.Failure<Chat, CreateChatError>>(result)
         assertEquals(repositoryError, result.error)
     }
@@ -84,7 +84,8 @@ class CreateChatUseCaseTest {
         val chat = buildChat { id = chatId }
         val validator = ChatValidatorFake()
         val repository = RepositoryFake()
-        val result = CreateChatUseCase(chat, repository, validator)()
+        val useCase = CreateChatUseCase(repository, validator)
+        val result = useCase(chat)
         assertIs<ResultWithError.Success<Chat, CreateChatError>>(result)
         assertEquals(chat, result.data)
 
@@ -94,7 +95,7 @@ class CreateChatUseCaseTest {
             name = "Second Chat"
             participants = persistentSetOf(newParticipant)
         }
-        val newResult = CreateChatUseCase(newChat, repository, validator)()
+        val newResult = useCase(newChat)
         assertIs<ResultWithError.Failure<Chat, CreateChatError>>(newResult)
         assertEquals(RepositoryCreateChatError.DuplicateChatId, newResult.error)
     }

@@ -92,14 +92,15 @@ class EditMessageUseCaseTest {
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
-            chat = chat,
-            message = editedMessage,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = editedMessage,
+            now = customTime
+        ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
             assertEquals(EditMessageError.EditWindowExpired, result.error)
@@ -143,14 +144,15 @@ class EditMessageUseCaseTest {
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
-            chat = chat,
-            message = editedMessage,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = editedMessage,
+            now = customTime
+        ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
             assertEquals(EditMessageError.CreationTimeChanged, result.error)
@@ -197,14 +199,15 @@ class EditMessageUseCaseTest {
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
-            chat = chat,
-            message = editedMessage,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = editedMessage,
+            now = customTime
+        ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
             assertEquals(EditMessageError.RecipientChanged, result.error)
@@ -256,14 +259,15 @@ class EditMessageUseCaseTest {
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
-            chat = chat,
-            message = editedMessage,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = editedMessage,
+            now = customTime
+        ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
             assertEquals(EditMessageError.SenderIdChanged, result.error)
@@ -311,14 +315,15 @@ class EditMessageUseCaseTest {
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
-            chat = chat,
-            message = editedMessage,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = editedMessage,
+            now = customTime
+        ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
             val error = result.error as EditMessageError.MessageIsNotValid
@@ -366,14 +371,15 @@ class EditMessageUseCaseTest {
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val useCase = EditMessageUseCase(
-            chat = chat,
-            message = editedMessage,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = editedMessage,
+            now = customTime
+        ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
             val error = result.error as EditMessageError.DeliveryStatusAlreadySet
@@ -425,14 +431,15 @@ class EditMessageUseCaseTest {
         )
 
         val useCase = EditMessageUseCase(
-            chat = chat,
-            message = editedMessage,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = editedMessage,
+            now = customTime
+        ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
             val error = result.error as EditMessageError.DeliveryStatusUpdateNotValid
@@ -488,14 +495,15 @@ class EditMessageUseCaseTest {
         )
 
         val useCase = EditMessageUseCase(
-            chat = chat,
-            message = editedMessage,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = editedMessage,
+            now = customTime
+        ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Message, EditMessageError>>(result)
             val updatedMessage = result.data as TextMessage
@@ -547,14 +555,15 @@ class EditMessageUseCaseTest {
         )
 
         val useCase = EditMessageUseCase(
-            chat = chat,
-            message = editedMessage,
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = editedMessage,
+            now = customTime
+        ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Message, EditMessageError>>(result)
             val updatedMessage = result.data as TextMessage

@@ -8,11 +8,10 @@ import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidatorImpl
 
 class CreateChatUseCase(
-    private val chat: Chat,
     private val repository: PrivilegedRepository,
     private val validator: ChatValidator = ChatValidatorImpl(),
 ) {
-    suspend operator fun invoke(): ResultWithError<Chat, CreateChatError> {
+    suspend operator fun invoke(chat: Chat): ResultWithError<Chat, CreateChatError> {
         val validation = validator.validateOnCreation(chat)
         if (validation is Failure) {
             return Failure(ChatIsNotValid(validation.error))

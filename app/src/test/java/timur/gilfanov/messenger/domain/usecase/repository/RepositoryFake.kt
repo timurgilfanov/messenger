@@ -19,6 +19,7 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
@@ -50,8 +51,11 @@ class RepositoryFake :
         chatListFlow.emit(chats.values.toList())
     }
 
-    override suspend fun flowChatList(): Flow<List<Chat>> =
-        chatListFlow.onStart { emit(chats.values.toList()) }.distinctUntilChanged()
+    override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
+        chatListFlow
+            .onStart { emit(chats.values.toList()) }
+            .distinctUntilChanged()
+            .map { ResultWithError.Success<List<Chat>, FlowChatListError>(it) }
 
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> {
         chats[chat.id] = chat

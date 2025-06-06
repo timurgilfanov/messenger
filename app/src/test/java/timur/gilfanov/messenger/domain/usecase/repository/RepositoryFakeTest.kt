@@ -18,6 +18,7 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 
 class RepositoryFakeTest {
@@ -42,12 +43,16 @@ class RepositoryFakeTest {
         repository.createChat(chat1)
 
         repository.flowChatList().test {
-            assertEquals(listOf(chat1), awaitItem())
+            val initial = awaitItem()
+            assertIs<Success<List<Chat>, FlowChatListError>>(initial)
+            assertEquals(listOf(chat1), initial.data)
 
             val chat2 = chat1.copy(id = ChatId(UUID.randomUUID()), name = "Chat 2")
             repository.createChat(chat2)
 
-            assertEquals(listOf(chat1, chat2), awaitItem())
+            val second = awaitItem()
+            assertIs<Success<List<Chat>, FlowChatListError>>(second)
+            assertEquals(listOf(chat1, chat2), second.data)
 
             cancelAndIgnoreRemainingEvents()
         }

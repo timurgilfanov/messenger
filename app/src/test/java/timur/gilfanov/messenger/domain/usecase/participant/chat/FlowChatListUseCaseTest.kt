@@ -46,4 +46,133 @@ class FlowChatListUseCaseTest {
             awaitComplete()
         }
     }
+
+    @Test
+    fun `returns error from repository`() = runTest {
+        val networkError = FlowChatListError.NetworkNotAvailable
+        val repository = RepositoryFake(
+            chatListFlow = flow {
+                emit(ResultWithError.Failure(networkError))
+            },
+        )
+
+        val useCase = FlowChatListUseCase(repository)
+
+        useCase().test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(result)
+            assertEquals(networkError, result.error)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `returns empty chat list`() = runTest {
+        val repository = RepositoryFake(
+            chatListFlow = flow {
+                emit(ResultWithError.Success(emptyList()))
+            },
+        )
+
+        val useCase = FlowChatListUseCase(repository)
+
+        useCase().test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<List<Chat>, FlowChatListError>>(result)
+            assertEquals(emptyList(), result.data)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `handles multiple errors in flow`() = runTest {
+        val networkError = FlowChatListError.NetworkNotAvailable
+        val remoteError = FlowChatListError.RemoteError
+        val repository = RepositoryFake(
+            chatListFlow = flow {
+                emit(ResultWithError.Failure(networkError))
+                emit(ResultWithError.Failure(remoteError))
+            },
+        )
+
+        val useCase = FlowChatListUseCase(repository)
+
+        useCase().test {
+            val firstResult = awaitItem()
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(firstResult)
+            assertEquals(networkError, firstResult.error)
+
+            val secondResult = awaitItem()
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(secondResult)
+            assertEquals(remoteError, secondResult.error)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `handles mixed success and errors`() = runTest {
+        val chat = buildChat { name = "Test Chat" }
+        val networkError = FlowChatListError.NetworkNotAvailable
+        val repository = RepositoryFake(
+            chatListFlow = flow {
+                emit(ResultWithError.Success(listOf(chat)))
+                emit(ResultWithError.Failure(networkError))
+                emit(ResultWithError.Success(listOf(chat)))
+            },
+        )
+
+        val useCase = FlowChatListUseCase(repository)
+
+        useCase().test {
+            val firstResult = awaitItem()
+            assertIs<ResultWithError.Success<List<Chat>, FlowChatListError>>(firstResult)
+            assertEquals(listOf(chat), firstResult.data)
+
+            val secondResult = awaitItem()
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(secondResult)
+            assertEquals(networkError, secondResult.error)
+
+            val thirdResult = awaitItem()
+            assertIs<ResultWithError.Success<List<Chat>, FlowChatListError>>(thirdResult)
+            assertEquals(listOf(chat), thirdResult.data)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `handles different error types`() = runTest {
+        val networkError = FlowChatListError.NetworkNotAvailable
+        val remoteError = FlowChatListError.RemoteError
+        val localError = FlowChatListError.LocalError
+        val remoteUnreachable = FlowChatListError.RemoteUnreachable
+        val repository = RepositoryFake(
+            chatListFlow = flow {
+                emit(ResultWithError.Failure(networkError))
+                emit(ResultWithError.Failure(remoteError))
+                emit(ResultWithError.Failure(localError))
+                emit(ResultWithError.Failure(remoteUnreachable))
+            },
+        )
+
+        val useCase = FlowChatListUseCase(repository)
+
+        useCase().test {
+            val firstResult = awaitItem()
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(firstResult)
+            assertEquals(networkError, firstResult.error)
+
+            val secondResult = awaitItem()
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(secondResult)
+            assertEquals(remoteError, secondResult.error)
+
+            val thirdResult = awaitItem()
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(thirdResult)
+            assertEquals(localError, thirdResult.error)
+
+            val fourthResult = awaitItem()
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(fourthResult)
+            assertEquals(remoteUnreachable, fourthResult.error)
+            awaitComplete()
+        }
+    }
 }

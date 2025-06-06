@@ -7,6 +7,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 
 class ParticipantRepositoryNotImplemented : ParticipantRepository {
     override suspend fun leaveChat(chatId: ChatId) = error("Not implemented in delegate")
+    override suspend fun flowChatList() = error("Not implemented in delegate")
     override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
         error("Not implemented in delegate")
     override suspend fun editMessage(message: Message) = error("Not implemented in delegate")

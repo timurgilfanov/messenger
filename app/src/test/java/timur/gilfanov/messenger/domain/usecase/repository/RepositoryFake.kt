@@ -34,15 +34,29 @@ class RepositoryFake :
     PrivilegedRepository by PrivilegedRepositoryNotImplemented() {
     private val chats = mutableMapOf<ChatId, Chat>()
 
+    private val chatListFlow = MutableSharedFlow<List<Chat>>(
+        replay = 1,
+        extraBufferCapacity = 10,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
     private val chatUpdates = MutableSharedFlow<Chat>(
         replay = 1,
         extraBufferCapacity = 10,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
+    private suspend fun emitChatList() {
+        chatListFlow.emit(chats.values.toList())
+    }
+
+    override suspend fun flowChatList(): Flow<List<Chat>> =
+        chatListFlow.onStart { emit(chats.values.toList()) }.distinctUntilChanged()
+
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> {
         chats[chat.id] = chat
         chatUpdates.emit(chat)
+        emitChatList()
         return ResultWithError.Success(chat)
     }
 
@@ -61,8 +75,8 @@ class RepositoryFake :
         )
 
         chats[chatId] = updatedChat
-
         chatUpdates.emit(updatedChat)
+        emitChatList()
 
         return flowOf(updatedMessage)
     }
@@ -89,6 +103,7 @@ class RepositoryFake :
 
         chats[chatId] = updatedChat
         chatUpdates.emit(updatedChat)
+        emitChatList()
 
         return flowOf(updatedMessage)
     }
@@ -122,6 +137,7 @@ class RepositoryFake :
         }
 
         chats.remove(chatId)
+        emitChatList()
         return ResultWithError.Success(Unit)
     }
 

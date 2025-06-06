@@ -23,6 +23,37 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdat
 class RepositoryFakeTest {
 
     @Test
+    fun `flowChatList emits initial list and updates`() = runTest {
+        val repository = RepositoryFake()
+        val customTime = Instant.fromEpochMilliseconds(1000)
+        val participant = createParticipant(customTime)
+
+        val chat1 = Chat(
+            id = ChatId(UUID.randomUUID()),
+            name = "Chat 1",
+            pictureUrl = null,
+            messages = persistentListOf(),
+            participants = persistentSetOf(participant),
+            rules = persistentSetOf(),
+            unreadMessagesCount = 0,
+            lastReadMessageId = null,
+        )
+
+        repository.createChat(chat1)
+
+        repository.flowChatList().test {
+            assertEquals(listOf(chat1), awaitItem())
+
+            val chat2 = chat1.copy(id = ChatId(UUID.randomUUID()), name = "Chat 2")
+            repository.createChat(chat2)
+
+            assertEquals(listOf(chat1, chat2), awaitItem())
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `receiveChatUpdates emits initial chat and updates after message creation`() = runTest {
         val repository = RepositoryFake()
         val customTime = Instant.fromEpochMilliseconds(2000000)

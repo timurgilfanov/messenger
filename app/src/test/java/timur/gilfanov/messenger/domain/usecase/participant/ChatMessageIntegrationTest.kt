@@ -74,12 +74,11 @@ class ChatMessageIntegrationTest {
 
         val repository = RepositoryFake()
         val chatValidator = ChatValidatorFake()
-        val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
         val createChatUseCase = CreateChatUseCase(repository, chatValidator)
         val sendMessageUseCase = SendMessageUseCase(
             repository = repository,
-            deliveryStatusValidator = deliveryStatusValidator,
+            deliveryStatusValidator = DeliveryStatusValidatorFake(),
         )
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 

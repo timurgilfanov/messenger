@@ -44,9 +44,7 @@ class DeleteMessageUseCase(val repository: ParticipantRepository) {
             message = message,
             deleteMode = deleteMode,
             now = now,
-            currentUser,
-            hasAdminPrivileges = currentUser.isAdmin,
-            hasModeratorPrivileges = currentUser.isModerator,
+            currentUser = currentUser,
         ).let { result ->
             if (result is Failure) return result
         }
@@ -65,10 +63,10 @@ class DeleteMessageUseCase(val repository: ParticipantRepository) {
         deleteMode: DeleteMessageMode,
         now: Instant,
         currentUser: Participant,
-        hasAdminPrivileges: Boolean,
-        hasModeratorPrivileges: Boolean,
     ): ResultWithError<Unit, DeleteMessageError> {
         val deleteRules = chat.rules.filterIsInstance<DeleteMessageRule>()
+        val hasAdminPrivileges = currentUser.isAdmin
+        val hasModeratorPrivileges = currentUser.isModerator
 
         // TODO check for privilege to delete others' messages.
         //  But still can't delete admin messages. Maybe add a separate rule for that.

@@ -26,50 +26,52 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageEr
 import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.SenderIdChanged
 
 class EditMessageUseCase(
-    private val chat: Chat,
-    private val message: Message,
-    private val repository: ParticipantRepository,
-    private val deliveryStatusValidator: DeliveryStatusValidator,
-    private val now: Instant = Clock.System.now(),
+    val repository: ParticipantRepository,
+    val deliveryStatusValidator: DeliveryStatusValidator,
 ) {
 
-    operator fun invoke() = flow<ResultWithError<Message, EditMessageError>> {
-        checkRules().onFailure { error: EditMessageError ->
-            emit(Failure(error))
-            return@flow
+    operator fun invoke(chat: Chat, message: Message, now: Instant = Clock.System.now()) =
+        flow<ResultWithError<Message, EditMessageError>> {
+            checkRules(chat, message, now).onFailure { error: EditMessageError ->
+                emit(Failure(error))
+                return@flow
+            }
+
+            val validation = message.validate()
+            if (validation is Failure) {
+                emit(Failure(MessageIsNotValid(validation.error)))
+                return@flow
+            }
+
+            message.deliveryStatus?.let { status ->
+                emit(Failure(DeliveryStatusAlreadySet(status)))
+                return@flow
+            }
+
+            var prev = message.deliveryStatus
+            repository.editMessage(message).collect { progress ->
+                deliveryStatusValidator.validate(prev, progress.deliveryStatus)
+                    .onSuccess { emit(Success(progress)) }
+                    .onFailure { error ->
+                        emit(Failure(DeliveryStatusUpdateNotValid(error)))
+                        return@collect
+                    }
+                prev = progress.deliveryStatus
+            }
         }
 
-        val validation = message.validate()
-        if (validation is Failure) {
-            emit(Failure(MessageIsNotValid(validation.error)))
-            return@flow
-        }
-
-        message.deliveryStatus?.let { status ->
-            emit(Failure(DeliveryStatusAlreadySet(status)))
-            return@flow
-        }
-
-        var prev = message.deliveryStatus
-        repository.editMessage(message).collect { progress ->
-            deliveryStatusValidator.validate(prev, progress.deliveryStatus)
-                .onSuccess { emit(Success(progress)) }
-                .onFailure { error ->
-                    emit(Failure(DeliveryStatusUpdateNotValid(error)))
-                    return@collect
-                }
-            prev = progress.deliveryStatus
-        }
-    }
-
-    fun checkRules(): ResultWithError<Unit, EditMessageError> {
+    fun checkRules(
+        chat: Chat,
+        message: Message,
+        now: Instant,
+    ): ResultWithError<Unit, EditMessageError> {
         chat.rules.forEach { rule ->
             if (rule !is EditMessageRule) return@forEach
             val ruleResult = when (rule) {
-                SenderIdCanNotChange -> checkSenderId()
-                RecipientCanNotChange -> checkRecipient()
-                CreationTimeCanNotChange -> checkCreationTime()
-                is EditWindow -> checkEditWindow(rule)
+                SenderIdCanNotChange -> checkSenderId(chat, message)
+                RecipientCanNotChange -> checkRecipient(chat, message)
+                CreationTimeCanNotChange -> checkCreationTime(chat, message)
+                is EditWindow -> checkEditWindow(chat, message, rule, now)
             }
 
             if (ruleResult is Failure) {
@@ -79,7 +81,12 @@ class EditMessageUseCase(
         return Success(Unit)
     }
 
-    private fun checkEditWindow(rule: EditWindow): ResultWithError<Unit, EditMessageError> {
+    private fun checkEditWindow(
+        chat: Chat,
+        message: Message,
+        rule: EditWindow,
+        now: Instant,
+    ): ResultWithError<Unit, EditMessageError> {
         val messageCreatedAt = chat.messages.first { it.id == message.id }.createdAt
         val timeFromCreating = now - messageCreatedAt
 
@@ -90,7 +97,10 @@ class EditMessageUseCase(
         }
     }
 
-    private fun checkCreationTime(): ResultWithError<Unit, EditMessageError> {
+    private fun checkCreationTime(
+        chat: Chat,
+        message: Message,
+    ): ResultWithError<Unit, EditMessageError> {
         val originalMessage = chat.messages.first { it.id == message.id }
         return if (originalMessage.createdAt != message.createdAt) {
             Failure(CreationTimeChanged)
@@ -99,7 +109,10 @@ class EditMessageUseCase(
         }
     }
 
-    private fun checkRecipient(): ResultWithError<Unit, EditMessageError> {
+    private fun checkRecipient(
+        chat: Chat,
+        message: Message,
+    ): ResultWithError<Unit, EditMessageError> {
         val originalMessage = chat.messages.first { it.id == message.id }
         return if (originalMessage.recipient != message.recipient) {
             Failure(RecipientChanged)
@@ -108,7 +121,10 @@ class EditMessageUseCase(
         }
     }
 
-    private fun checkSenderId(): ResultWithError<Unit, EditMessageError> {
+    private fun checkSenderId(
+        chat: Chat,
+        message: Message,
+    ): ResultWithError<Unit, EditMessageError> {
         val originalMessage = chat.messages.first { it.id == message.id }
         return if (originalMessage.sender.id != message.sender.id) {
             Failure(SenderIdChanged)

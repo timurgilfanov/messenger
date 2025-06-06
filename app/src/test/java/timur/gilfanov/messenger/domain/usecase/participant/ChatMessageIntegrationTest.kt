@@ -26,8 +26,8 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
-import timur.gilfanov.messenger.domain.usecase.participant.message.CreateMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.CreateMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
 import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatError
 import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatUseCase
 import timur.gilfanov.messenger.domain.usecase.repository.RepositoryFake
@@ -74,31 +74,31 @@ class ChatMessageIntegrationTest {
 
         val repository = RepositoryFake()
         val chatValidator = ChatValidatorFake()
-        val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
-        val createChatUseCase = CreateChatUseCase(initialChat, repository, chatValidator)
-        val createMessageUseCase = CreateMessageUseCase(
-            chat = initialChat,
-            message = message,
+        val createChatUseCase = CreateChatUseCase(repository, chatValidator)
+        val sendMessageUseCase = SendMessageUseCase(
             repository = repository,
-            deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
+            deliveryStatusValidator = DeliveryStatusValidatorFake(),
         )
-        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(chatId, repository)
+        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
-        val chatResult = createChatUseCase()
+        val chatResult = createChatUseCase(initialChat)
         assertIs<ResultWithError.Success<Chat, CreateChatError>>(chatResult)
         assertEquals(initialChat, chatResult.data)
 
-        receiveChatUpdatesUseCase().test {
+        receiveChatUpdatesUseCase(chatId).test {
             val initialUpdate = awaitItem()
             assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(initialUpdate)
             assertEquals(initialChat, initialUpdate.data)
             assertEquals(0, initialUpdate.data.messages.size)
 
-            createMessageUseCase().test {
+            sendMessageUseCase(
+                chat = initialChat,
+                message = message,
+                now = customTime,
+            ).test {
                 val messageResult = awaitItem()
-                assertIs<ResultWithError.Success<Message, CreateMessageError>>(messageResult)
+                assertIs<ResultWithError.Success<Message, SendMessageError>>(messageResult)
                 val resultMessage = messageResult.data
                 assertIs<TextMessage>(resultMessage)
                 assertEquals(message.id, resultMessage.id)

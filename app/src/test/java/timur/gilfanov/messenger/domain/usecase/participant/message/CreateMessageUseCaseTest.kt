@@ -83,18 +83,19 @@ class CreateMessageUseCaseTest {
         val repository = RepositoryFake()
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Message, CreateMessageError>>(result)
-            assertIs<CreateMessageError.WaitAfterJoining>(result.error)
+            assertIs<ResultWithError.Failure<Message, SendMessageError>>(result)
+            assertIs<SendMessageError.WaitAfterJoining>(result.error)
             assertEquals(remainingTime, result.error.duration)
             awaitComplete()
         }
@@ -131,18 +132,19 @@ class CreateMessageUseCaseTest {
         val repository = RepositoryFake()
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Message, CreateMessageError>>(result)
-            assertIs<CreateMessageError.WaitDebounce>(result.error)
+            assertIs<ResultWithError.Failure<Message, SendMessageError>>(result)
+            assertIs<SendMessageError.WaitDebounce>(result.error)
             assertEquals(remainingTime, result.error.duration)
             awaitComplete()
         }
@@ -185,17 +187,18 @@ class CreateMessageUseCaseTest {
             ),
         )
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Success<Message, CreateMessageError>>(result)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result)
             assertEquals(message, result.data)
             awaitComplete()
         }
@@ -228,17 +231,18 @@ class CreateMessageUseCaseTest {
             ),
         )
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Success<Message, CreateMessageError>>(result)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result)
             assertEquals(message, result.data)
             awaitComplete()
         }
@@ -270,17 +274,18 @@ class CreateMessageUseCaseTest {
             ),
         )
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Success<Message, CreateMessageError>>(result)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result)
             assertEquals(message, result.data)
             awaitComplete()
         }
@@ -349,28 +354,29 @@ class CreateMessageUseCaseTest {
             },
         )
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result1 = awaitItem()
-            assertIs<ResultWithError.Success<Message, CreateMessageError>>(result1)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result1)
             assertEquals(sending50, result1.data)
             assertEquals(DeliveryStatus.Sending(50), result1.data.deliveryStatus)
 
             val result2 = awaitItem()
-            assertIs<ResultWithError.Success<Message, CreateMessageError>>(result2)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result2)
             assertEquals(sent, result2.data)
             assertEquals(DeliveryStatus.Sent, result2.data.deliveryStatus)
 
             val result3 = awaitItem()
-            assertIs<ResultWithError.Failure<Message, CreateMessageError>>(result3)
-            assertIs<CreateMessageError.DeliveryStatusUpdateNotValid>(result3.error)
+            assertIs<ResultWithError.Failure<Message, SendMessageError>>(result3)
+            assertIs<SendMessageError.DeliveryStatusUpdateNotValid>(result3.error)
             assertEquals(validationError, result3.error.error)
 
             awaitComplete()
@@ -417,18 +423,19 @@ class CreateMessageUseCaseTest {
             },
         )
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Message, CreateMessageError>>(result)
-            assertIs<CreateMessageError.DeliveryStatusUpdateNotValid>(result.error)
+            assertIs<ResultWithError.Failure<Message, SendMessageError>>(result)
+            assertIs<SendMessageError.DeliveryStatusUpdateNotValid>(result.error)
             assertEquals(validationError, result.error.error)
             awaitComplete()
         }
@@ -458,18 +465,19 @@ class CreateMessageUseCaseTest {
         val repository = RepositoryFake()
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Message, CreateMessageError>>(result)
-            assertIs<CreateMessageError.MessageIsNotValid>(result.error)
+            assertIs<ResultWithError.Failure<Message, SendMessageError>>(result)
+            assertIs<SendMessageError.MessageIsNotValid>(result.error)
             assertEquals(validationError, result.error.reason)
             awaitComplete()
         }
@@ -499,18 +507,19 @@ class CreateMessageUseCaseTest {
         val repository = RepositoryFake()
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Message, CreateMessageError>>(result)
-            assertIs<CreateMessageError.DeliveryStatusAlreadySet>(result.error)
+            assertIs<ResultWithError.Failure<Message, SendMessageError>>(result)
+            assertIs<SendMessageError.DeliveryStatusAlreadySet>(result.error)
             assertEquals(existingStatus, result.error.status)
             awaitComplete()
         }
@@ -539,15 +548,16 @@ class CreateMessageUseCaseTest {
         val repository = RepositoryFake(exception = exception)
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val error = awaitError()
             assertEquals("Network error", error.message)
         }
@@ -586,15 +596,16 @@ class CreateMessageUseCaseTest {
         val repository = RepositoryFake()
         val deliveryStatusValidator = DeliveryStatusValidatorFake()
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val error = awaitError()
             assert(error is NoSuchElementException)
         }
@@ -629,17 +640,18 @@ class CreateMessageUseCaseTest {
             ),
         )
 
-        val useCase = CreateMessageUseCase(
-            chat = chat,
-            message = message,
+        val useCase = SendMessageUseCase(
             repository = repository,
             deliveryStatusValidator = deliveryStatusValidator,
-            now = customTime,
         )
 
-        useCase().test {
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Success<Message, CreateMessageError>>(result)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result)
             assertEquals(message, result.data)
             awaitComplete()
         }

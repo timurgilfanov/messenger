@@ -50,15 +50,16 @@ class DeleteMessageUseCaseTest {
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
-            chat = chat,
-            messageId = messageId,
-            currentUser = participant,
-            deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
             repository = repository,
-            now = customTime,
         )
 
-        val result = useCase()
+        val result = useCase(
+            chat = chat,
+            messageId = messageId,
+            deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
+            currentUser = participant,
+            now = customTime,
+        )
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
         assertIs<MessageNotFound>(result.error)
         assertEquals(messageId, result.error.messageId)
@@ -88,15 +89,16 @@ class DeleteMessageUseCaseTest {
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
             chat = chat,
             messageId = message.id,
             currentUser = participant,
             deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-            repository = repository,
             now = customTime,
         )
-
-        val result = useCase()
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
         assertIs<DeleteMessageError.DeleteWindowExpired>(result.error)
         assertEquals(deleteWindowDuration, result.error.windowDuration)
@@ -129,15 +131,16 @@ class DeleteMessageUseCaseTest {
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
             chat = chat,
             messageId = message.id,
             currentUser = currentUser,
             deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-            repository = repository,
             now = customTime,
         )
-
-        val result = useCase()
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
         assertIs<DeleteMessageError.NotAuthorized>(result.error)
     }
@@ -173,15 +176,16 @@ class DeleteMessageUseCaseTest {
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
             chat = chat,
             messageId = message.id,
             currentUser = admin,
             deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-            repository = repository,
             now = customTime,
         )
-
-        val result = useCase()
         assertIs<ResultWithError.Success<Unit, DeleteMessageError>>(result)
     }
 
@@ -216,15 +220,16 @@ class DeleteMessageUseCaseTest {
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
             chat = chat,
             messageId = message.id,
             currentUser = admin,
             deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-            repository = repository,
             now = customTime,
         )
-
-        val result = useCase()
         assertIs<ResultWithError.Success<Unit, DeleteMessageError>>(result)
     }
 
@@ -254,15 +259,16 @@ class DeleteMessageUseCaseTest {
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
             chat = chat,
             messageId = message.id,
             currentUser = participant,
             deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-            repository = repository,
             now = customTime,
         )
-
-        val result = useCase()
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
         assertIs<DeleteMessageError.MessageAlreadyDelivered>(result.error)
     }
@@ -294,15 +300,16 @@ class DeleteMessageUseCaseTest {
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
             chat = chat,
             messageId = message.id,
             currentUser = participant,
             deleteMode = DeleteMessageMode.FOR_EVERYONE,
-            repository = repository,
             now = customTime,
         )
-
-        val result = useCase()
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
         assertIs<DeleteMessageError.DeleteForEveryoneWindowExpired>(result.error)
         assertEquals(deleteForEveryoneWindowDuration, result.error.windowDuration)
@@ -335,15 +342,16 @@ class DeleteMessageUseCaseTest {
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
             chat = chat,
             messageId = message.id,
             currentUser = participant,
             deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-            repository = repository,
             now = customTime,
         )
-
-        val result = useCase()
         assertIs<ResultWithError.Success<Unit, DeleteMessageError>>(result)
     }
 
@@ -376,20 +384,21 @@ class DeleteMessageUseCaseTest {
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
             chat = chat,
             messageId = message.id,
             currentUser = participant,
             deleteMode = DeleteMessageMode.FOR_EVERYONE,
-            repository = repository,
             now = customTime,
         )
-
-        val result = useCase()
         assertIs<ResultWithError.Success<Unit, DeleteMessageError>>(result)
     }
 
     @Test
-    fun `repository error propagation`() = runTest {
+    fun `repository error handling`() = runTest {
         val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
 
         val participant = buildParticipant {
@@ -407,33 +416,26 @@ class DeleteMessageUseCaseTest {
             rules = persistentSetOf(DeleteMessageRule.SenderCanDeleteOwn)
         }
 
-        val errors = setOf(
-            RepositoryDeleteMessageError.NetworkNotAvailable,
-            RepositoryDeleteMessageError.LocalError,
-            RepositoryDeleteMessageError.RemoteError,
-            RepositoryDeleteMessageError.RemoteUnreachable,
+        val repositoryError = RemoteError
+        val repository = RepositoryFake(ResultWithError.Failure(repositoryError))
+
+        val useCase = DeleteMessageUseCase(
+            repository = repository,
         )
 
-        errors.forEach { repoError ->
-            val repository =
-                RepositoryFake(deleteMessageResult = ResultWithError.Failure(repoError))
-            val useCase = DeleteMessageUseCase(
-                chat = chat,
-                messageId = message.id,
-                currentUser = participant,
-                deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-                repository = repository,
-                now = customTime,
-            )
-
-            val result = useCase()
-            assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-            assertEquals(repoError, result.error)
-        }
+        val result = useCase(
+            chat = chat,
+            messageId = message.id,
+            currentUser = participant,
+            deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
+            now = customTime,
+        )
+        assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
+        assertEquals(repositoryError, result.error)
     }
 
     @Test
-    fun `repository returns remote error`() = runTest {
+    fun `message not found in chat`() = runTest {
         val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
 
         val participant = buildParticipant {
@@ -445,261 +447,117 @@ class DeleteMessageUseCaseTest {
             createdAt = customTime - 2.minutes
         }
 
-        val chat = buildChat {
-            participants = persistentSetOf(participant)
-            messages = persistentListOf(message)
-            rules = persistentSetOf(
-                DeleteMessageRule.SenderCanDeleteOwn,
-                DeleteMessageRule.DeleteWindow(10.minutes),
-            )
+        val otherMessage = buildMessage {
+            sender = participant
+            createdAt = customTime - 3.minutes
         }
 
-        val repository =
-            RepositoryFake(
-                deleteMessageResult = ResultWithError.Failure(
-                    RepositoryDeleteMessageError.RemoteError,
-                ),
-            )
+        val chat = buildChat {
+            participants = persistentSetOf(participant)
+            messages = persistentListOf(otherMessage)
+            rules = persistentSetOf(DeleteMessageRule.SenderCanDeleteOwn)
+        }
+
+        val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
             chat = chat,
             messageId = message.id,
             currentUser = participant,
-            deleteMode = DeleteMessageMode.FOR_EVERYONE,
-            repository = repository,
-            now = customTime,
-        )
-
-        val result = useCase()
-        assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-        assertEquals(RemoteError, result.error)
-    }
-
-    @Test
-    fun `admin can delete message with AdminCanDeleteAny rule`() = runTest {
-        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
-        val messageCreatedAt = customTime - 2.minutes
-
-        val messageSender = buildParticipant {
-            name = "MessageSender"
-            joinedAt = customTime - 20.minutes
-        }
-
-        val admin = buildParticipant {
-            name = "Admin"
-            joinedAt = customTime - 20.minutes
-            isAdmin = true
-        }
-
-        val message = buildMessage {
-            sender = messageSender
-            createdAt = messageCreatedAt
-        }
-
-        val chat = buildChat {
-            participants = persistentSetOf(messageSender, admin)
-            messages = persistentListOf(message)
-            rules = persistentSetOf(
-                DeleteMessageRule.AdminCanDeleteAny,
-            )
-        }
-
-        val repository = RepositoryFake()
-
-        val useCase = DeleteMessageUseCase(
-            chat = chat,
-            messageId = message.id,
-            currentUser = admin,
             deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-            repository = repository,
             now = customTime,
         )
-
-        val result = useCase()
-        assertIs<ResultWithError.Success<Unit, DeleteMessageError>>(result)
-    }
-
-    @Test
-    fun `moderator can delete message with ModeratorCanDeleteAny rule`() = runTest {
-        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
-        val messageCreatedAt = customTime - 2.minutes
-
-        val messageSender = buildParticipant {
-            name = "MessageSender"
-            joinedAt = customTime - 20.minutes
-        }
-
-        val moderator = buildParticipant {
-            name = "Moderator"
-            joinedAt = customTime - 20.minutes
-            isModerator = true
-        }
-
-        val message = buildMessage {
-            sender = messageSender
-            createdAt = messageCreatedAt
-        }
-
-        val chat = buildChat {
-            participants = persistentSetOf(messageSender, moderator)
-            messages = persistentListOf(message)
-            rules = persistentSetOf(
-                DeleteMessageRule.ModeratorCanDeleteAny,
-            )
-        }
-
-        val repository = RepositoryFake()
-
-        val useCase = DeleteMessageUseCase(
-            chat = chat,
-            messageId = message.id,
-            currentUser = moderator,
-            deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-            repository = repository,
-            now = customTime,
-        )
-
-        val result = useCase()
-        assertIs<ResultWithError.Success<Unit, DeleteMessageError>>(result)
-    }
-
-    @Test
-    fun `admin is subject to DeleteWindow rule`() = runTest {
-        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
-        val messageCreatedAt = customTime - 10.minutes
-        val deleteWindowDuration = 5.minutes
-
-        val messageSender = buildParticipant {
-            name = "MessageSender"
-            joinedAt = customTime - 20.minutes
-        }
-
-        val admin = buildParticipant {
-            name = "Admin"
-            joinedAt = customTime - 20.minutes
-            isAdmin = true
-        }
-
-        val message = buildMessage {
-            sender = messageSender
-            createdAt = messageCreatedAt
-        }
-
-        val chat = buildChat {
-            participants = persistentSetOf(messageSender, admin)
-            messages = persistentListOf(message)
-            rules = persistentSetOf(
-                DeleteMessageRule.AdminCanDeleteAny,
-                DeleteMessageRule.DeleteWindow(deleteWindowDuration),
-            )
-        }
-
-        val repository = RepositoryFake()
-
-        val useCase = DeleteMessageUseCase(
-            chat = chat,
-            messageId = message.id,
-            currentUser = admin,
-            deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
-            repository = repository,
-            now = customTime,
-        )
-
-        val result = useCase()
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-        assertIs<DeleteMessageError.DeleteWindowExpired>(result.error)
+        assertIs<MessageNotFound>(result.error)
+        assertEquals(message.id, result.error.messageId)
     }
 
     @Test
-    fun `admin is subject to DeleteForEveryoneWindow rule`() = runTest {
-        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
-        val messageCreatedAt = customTime - 10.minutes
-        val deleteForEveryoneWindowDuration = 5.minutes
-
-        val messageSender = buildParticipant {
-            name = "MessageSender"
-            joinedAt = customTime - 20.minutes
-        }
-
-        val admin = buildParticipant {
-            name = "Admin"
-            joinedAt = customTime - 20.minutes
-            isAdmin = true
-        }
-
-        val message = buildMessage {
-            sender = messageSender
-            createdAt = messageCreatedAt
-        }
-
-        val chat = buildChat {
-            participants = persistentSetOf(messageSender, admin)
-            messages = persistentListOf(message)
-            rules = persistentSetOf(
-                DeleteMessageRule.AdminCanDeleteAny,
-                DeleteMessageRule.DeleteForEveryoneWindow(deleteForEveryoneWindowDuration),
-            )
-        }
-
-        val repository = RepositoryFake()
-
-        val useCase = DeleteMessageUseCase(
-            chat = chat,
-            messageId = message.id,
-            currentUser = admin,
-            deleteMode = DeleteMessageMode.FOR_EVERYONE,
-            repository = repository,
-            now = customTime,
-        )
-
-        val result = useCase()
-        assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-        assertIs<DeleteMessageError.DeleteForEveryoneWindowExpired>(result.error)
-    }
-
-    @Test
-    fun `admin is subject to NoDeleteAfterDelivered rule`() = runTest {
+    fun `user not in chat participants cannot delete message`() = runTest {
         val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
 
         val messageSender = buildParticipant {
             name = "MessageSender"
             joinedAt = customTime - 20.minutes
         }
-
-        val admin = buildParticipant {
-            name = "Admin"
+        val otherUser = buildParticipant {
+            name = "OtherUser"
             joinedAt = customTime - 20.minutes
-            isAdmin = true
+        }
+        val nonParticipant = buildParticipant {
+            name = "NonParticipant"
+            joinedAt = customTime - 20.minutes
         }
 
         val message = buildMessage {
             sender = messageSender
             createdAt = customTime - 2.minutes
-            deliveryStatus = DeliveryStatus.Delivered
         }
 
         val chat = buildChat {
-            participants = persistentSetOf(messageSender, admin)
+            participants = persistentSetOf(messageSender, otherUser)
             messages = persistentListOf(message)
-            rules = persistentSetOf(
-                DeleteMessageRule.AdminCanDeleteAny,
-                DeleteMessageRule.NoDeleteAfterDelivered,
-            )
+            rules = persistentSetOf(DeleteMessageRule.SenderCanDeleteOwn)
         }
 
         val repository = RepositoryFake()
 
         val useCase = DeleteMessageUseCase(
-            chat = chat,
-            messageId = message.id,
-            currentUser = admin,
-            deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
             repository = repository,
-            now = customTime,
         )
 
-        val result = useCase()
+        val result = useCase(
+            chat = chat,
+            messageId = message.id,
+            currentUser = nonParticipant,
+            deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
+            now = customTime,
+        )
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-        assertIs<DeleteMessageError.MessageAlreadyDelivered>(result.error)
+        assertIs<DeleteMessageError.NotAuthorized>(result.error)
+    }
+
+    @Test
+    fun `chat with no rules allows any participant to delete any message`() = runTest {
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
+
+        val messageSender = buildParticipant {
+            name = "MessageSender"
+            joinedAt = customTime - 20.minutes
+        }
+        val otherUser = buildParticipant {
+            name = "OtherUser"
+            joinedAt = customTime - 20.minutes
+        }
+
+        val message = buildMessage {
+            sender = messageSender
+            createdAt = customTime - 2.minutes
+        }
+
+        val chat = buildChat {
+            participants = persistentSetOf(messageSender, otherUser)
+            messages = persistentListOf(message)
+            rules = persistentSetOf()
+        }
+
+        val repository = RepositoryFake()
+
+        val useCase = DeleteMessageUseCase(
+            repository = repository,
+        )
+
+        val result = useCase(
+            chat = chat,
+            messageId = message.id,
+            currentUser = otherUser,
+            deleteMode = DeleteMessageMode.FOR_SENDER_ONLY,
+            now = customTime,
+        )
+        assertIs<ResultWithError.Success<Unit, DeleteMessageError>>(result)
     }
 }

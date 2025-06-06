@@ -34,8 +34,8 @@ class DeleteChatUseCaseTest {
             rules = persistentSetOf(OnlyAdminCanDelete)
         }
 
-        val useCase = DeleteChatUseCase(chat, alice, RepositoryFake())
-        val result = useCase()
+        val useCase = DeleteChatUseCase(RepositoryFake())
+        val result = useCase(chat, alice)
         assertIs<Failure<Unit, DeleteChatError>>(result)
         assertIs<DeleteChatError.NotAuthorized>(result.error)
     }
@@ -51,8 +51,8 @@ class DeleteChatUseCaseTest {
             rules = persistentSetOf(OnlyAdminCanDelete)
         }
 
-        val useCase = DeleteChatUseCase(chat, alice, RepositoryFake())
-        val result = useCase()
+        val useCase = DeleteChatUseCase(RepositoryFake())
+        val result = useCase(chat, alice)
         assertIs<Success<Unit, DeleteChatError>>(result)
     }
 
@@ -66,8 +66,8 @@ class DeleteChatUseCaseTest {
             rules = persistentSetOf(OnlyAdminCanDelete)
         }
 
-        val useCase = DeleteChatUseCase(chat, alice, RepositoryFake())
-        val result = useCase()
+        val useCase = DeleteChatUseCase(RepositoryFake())
+        val result = useCase(chat, alice)
         assertIs<Failure<Unit, DeleteChatError>>(result)
         assertIs<DeleteChatError.NotAuthorized>(result.error)
     }
@@ -84,8 +84,8 @@ class DeleteChatUseCaseTest {
             rules = persistentSetOf(OnlyAdminCanDelete)
         }
 
-        val useCase = DeleteChatUseCase(chat, david, RepositoryFake())
-        val result = useCase()
+        val useCase = DeleteChatUseCase(RepositoryFake())
+        val result = useCase(chat, david)
         assertIs<Failure<Unit, DeleteChatError>>(result)
         assertIs<DeleteChatError.NotAuthorized>(result.error)
     }
@@ -100,8 +100,8 @@ class DeleteChatUseCaseTest {
             rules = persistentSetOf()
         }
 
-        val useCase = DeleteChatUseCase(chat, alice, RepositoryFake())
-        val result = useCase()
+        val useCase = DeleteChatUseCase(RepositoryFake())
+        val result = useCase(chat, alice)
         assertIs<Success<Unit, DeleteChatError>>(result)
     }
 }

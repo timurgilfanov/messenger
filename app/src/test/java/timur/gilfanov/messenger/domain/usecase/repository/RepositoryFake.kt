@@ -19,6 +19,7 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
@@ -34,15 +35,32 @@ class RepositoryFake :
     PrivilegedRepository by PrivilegedRepositoryNotImplemented() {
     private val chats = mutableMapOf<ChatId, Chat>()
 
+    private val chatListFlow = MutableSharedFlow<List<Chat>>(
+        replay = 1,
+        extraBufferCapacity = 10,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
     private val chatUpdates = MutableSharedFlow<Chat>(
         replay = 1,
         extraBufferCapacity = 10,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
+    private suspend fun emitChatList() {
+        chatListFlow.emit(chats.values.toList())
+    }
+
+    override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
+        chatListFlow
+            .onStart { emit(chats.values.toList()) }
+            .distinctUntilChanged()
+            .map { ResultWithError.Success<List<Chat>, FlowChatListError>(it) }
+
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> {
         chats[chat.id] = chat
         chatUpdates.emit(chat)
+        emitChatList()
         return ResultWithError.Success(chat)
     }
 
@@ -61,8 +79,8 @@ class RepositoryFake :
         )
 
         chats[chatId] = updatedChat
-
         chatUpdates.emit(updatedChat)
+        emitChatList()
 
         return flowOf(updatedMessage)
     }
@@ -89,6 +107,7 @@ class RepositoryFake :
 
         chats[chatId] = updatedChat
         chatUpdates.emit(updatedChat)
+        emitChatList()
 
         return flowOf(updatedMessage)
     }
@@ -122,6 +141,7 @@ class RepositoryFake :
         }
 
         chats.remove(chatId)
+        emitChatList()
         return ResultWithError.Success(Unit)
     }
 

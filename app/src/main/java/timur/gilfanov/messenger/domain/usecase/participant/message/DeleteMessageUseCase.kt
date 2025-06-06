@@ -14,6 +14,7 @@ import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.ModeratorCa
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.NoDeleteAfterDelivered
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule.SenderCanDeleteOwn
 import timur.gilfanov.messenger.domain.entity.chat.Participant
+import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
@@ -25,24 +26,25 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode.FOR_SENDER_ONLY
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.MessageNotFound
 
-class DeleteMessageUseCase(
-    private val chat: Chat,
-    private val messageId: MessageId,
-    private val currentUser: Participant,
-    private val deleteMode: DeleteMessageMode,
-    private val repository: ParticipantRepository,
-    private val now: Instant = Clock.System.now(),
-) {
+class DeleteMessageUseCase(val repository: ParticipantRepository) {
 
     @Suppress("ReturnCount")
-    suspend operator fun invoke(): ResultWithError<Unit, DeleteMessageError> {
+    suspend operator fun invoke(
+        chat: Chat,
+        messageId: MessageId,
+        deleteMode: DeleteMessageMode,
+        currentUser: Participant,
+        now: Instant = Clock.System.now(),
+    ): ResultWithError<Unit, DeleteMessageError> {
         val message = chat.messages.find { it.id == messageId }
             ?: return Failure(MessageNotFound(messageId))
 
         checkRules(
-            message,
-            hasAdminPrivileges = currentUser.isAdmin,
-            hasModeratorPrivileges = currentUser.isModerator,
+            chat = chat,
+            message = message,
+            deleteMode = deleteMode,
+            now = now,
+            currentUser = currentUser,
         ).let { result ->
             if (result is Failure) return result
         }
@@ -56,31 +58,45 @@ class DeleteMessageUseCase(
     }
 
     private fun checkRules(
+        chat: Chat,
         message: Message,
-        hasAdminPrivileges: Boolean,
-        hasModeratorPrivileges: Boolean,
+        deleteMode: DeleteMessageMode,
+        now: Instant,
+        currentUser: Participant,
     ): ResultWithError<Unit, DeleteMessageError> {
         val deleteRules = chat.rules.filterIsInstance<DeleteMessageRule>()
+        val hasAdminPrivileges = currentUser.isAdmin
+        val hasModeratorPrivileges = currentUser.isModerator
 
+        // TODO check for privilege to delete others' messages.
+        //  But still can't delete admin messages. Maybe add a separate rule for that.
         if (hasAdminPrivileges || hasModeratorPrivileges) {
-            return checkRulesForAdminOrModerator(deleteRules, message)
+            return checkRulesForAdminOrModerator(deleteRules, message, deleteMode, now)
         }
 
-        return checkRulesForRegularUser(deleteRules, message)
+        return checkRulesForRegularUser(deleteRules, message, deleteMode, currentUser.id, now)
     }
 
     private fun checkRulesForRegularUser(
         deleteRules: List<DeleteMessageRule>,
         message: Message,
+        deleteMode: DeleteMessageMode,
+        participantId: ParticipantId,
+        now: Instant,
     ): ResultWithError<Unit, DeleteMessageError> {
         for (rule in deleteRules) {
             val ruleResult = when (rule) {
-                is DeleteWindow -> checkDeleteWindow(rule, message)
-                SenderCanDeleteOwn -> checkSenderPermission(message)
+                is DeleteWindow -> checkDeleteWindow(rule, message, now)
+                SenderCanDeleteOwn -> checkSenderPermission(message, participantId)
                 AdminCanDeleteAny -> Success(Unit) // Already handled for admin/moderator
                 ModeratorCanDeleteAny -> Success(Unit) // Already handled for admin/moderator
                 NoDeleteAfterDelivered -> checkDeliveryStatus(message)
-                is DeleteForEveryoneWindow -> checkDeleteForEveryoneWindow(rule, message)
+                is DeleteForEveryoneWindow -> checkDeleteForEveryoneWindow(
+                    rule,
+                    message,
+                    deleteMode,
+                    now,
+                )
             }
 
             if (ruleResult is Failure) {
@@ -93,12 +109,19 @@ class DeleteMessageUseCase(
     private fun checkRulesForAdminOrModerator(
         deleteRules: List<DeleteMessageRule>,
         message: Message,
+        deleteMode: DeleteMessageMode,
+        now: Instant,
     ): ResultWithError<Unit, DeleteMessageError> {
         for (rule in deleteRules) {
             val ruleResult = when (rule) {
-                is DeleteWindow -> checkDeleteWindow(rule, message)
+                is DeleteWindow -> checkDeleteWindow(rule, message, now)
                 NoDeleteAfterDelivered -> checkDeliveryStatus(message)
-                is DeleteForEveryoneWindow -> checkDeleteForEveryoneWindow(rule, message)
+                is DeleteForEveryoneWindow -> checkDeleteForEveryoneWindow(
+                    rule,
+                    message,
+                    deleteMode,
+                    now,
+                )
                 // Skip permission rules for admin/moderator
                 SenderCanDeleteOwn -> Success(Unit)
                 AdminCanDeleteAny -> Success(Unit)
@@ -115,6 +138,7 @@ class DeleteMessageUseCase(
     private fun checkDeleteWindow(
         rule: DeleteWindow,
         message: Message,
+        now: Instant,
     ): ResultWithError<Unit, DeleteMessageError> {
         val timeFromCreation = now - message.createdAt
         return if (timeFromCreation > rule.duration) {
@@ -124,12 +148,14 @@ class DeleteMessageUseCase(
         }
     }
 
-    private fun checkSenderPermission(message: Message): ResultWithError<Unit, DeleteMessageError> =
-        if (message.sender.id == currentUser.id) {
-            Success(Unit)
-        } else {
-            Failure(NotAuthorized)
-        }
+    private fun checkSenderPermission(
+        message: Message,
+        participantId: ParticipantId,
+    ): ResultWithError<Unit, DeleteMessageError> = if (message.sender.id == participantId) {
+        Success(Unit)
+    } else {
+        Failure(NotAuthorized)
+    }
 
     private fun checkDeliveryStatus(message: Message): ResultWithError<Unit, DeleteMessageError> =
         if (message.deliveryStatus == DeliveryStatus.Delivered) {
@@ -141,6 +167,8 @@ class DeleteMessageUseCase(
     private fun checkDeleteForEveryoneWindow(
         rule: DeleteForEveryoneWindow,
         message: Message,
+        deleteMode: DeleteMessageMode,
+        now: Instant,
     ): ResultWithError<Unit, DeleteMessageError> {
         if (deleteMode == FOR_SENDER_ONLY) return Success(Unit)
 

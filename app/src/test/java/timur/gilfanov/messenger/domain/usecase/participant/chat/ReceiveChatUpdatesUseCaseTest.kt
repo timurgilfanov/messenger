@@ -44,9 +44,9 @@ class ReceiveChatUpdatesUseCaseTest {
             },
         )
 
-        val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
+        val useCase = ReceiveChatUpdatesUseCase(repository)
 
-        useCase().test {
+        useCase(chatId).test {
             val result1 = awaitItem()
             assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(result1)
             assertEquals(chat, result1.data)
@@ -70,9 +70,9 @@ class ReceiveChatUpdatesUseCaseTest {
             },
         )
 
-        val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
+        val useCase = ReceiveChatUpdatesUseCase(repository)
 
-        useCase().test {
+        useCase(chatId).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
             assertIs<ReceiveChatUpdatesError.ChatNotFound>(result.error)
@@ -89,9 +89,9 @@ class ReceiveChatUpdatesUseCaseTest {
             },
         )
 
-        val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
+        val useCase = ReceiveChatUpdatesUseCase(repository)
 
-        useCase().test {
+        useCase(chatId).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
             assertIs<ReceiveChatUpdatesError.NetworkNotAvailable>(result.error)
@@ -108,9 +108,9 @@ class ReceiveChatUpdatesUseCaseTest {
             },
         )
 
-        val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
+        val useCase = ReceiveChatUpdatesUseCase(repository)
 
-        useCase().test {
+        useCase(chatId).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
             assertIs<ReceiveChatUpdatesError.ServerUnreachable>(result.error)
@@ -127,9 +127,9 @@ class ReceiveChatUpdatesUseCaseTest {
             },
         )
 
-        val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
+        val useCase = ReceiveChatUpdatesUseCase(repository)
 
-        useCase().test {
+        useCase(chatId).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
             assertIs<ReceiveChatUpdatesError.ServerError>(result.error)
@@ -146,9 +146,9 @@ class ReceiveChatUpdatesUseCaseTest {
             },
         )
 
-        val useCase = ReceiveChatUpdatesUseCase(chatId, repository)
+        val useCase = ReceiveChatUpdatesUseCase(repository)
 
-        useCase().test {
+        useCase(chatId).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
             assertIs<ReceiveChatUpdatesError.UnknownError>(result.error)

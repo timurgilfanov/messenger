@@ -32,9 +32,9 @@ class LeaveChatUseCaseTest {
     fun `successful chat leave`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake()
-        val useCase = LeaveChatUseCase(chatId, repository)
+        val useCase = LeaveChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId)
 
         assertIs<Success<Unit, LeaveChatError>>(result)
     }
@@ -43,9 +43,9 @@ class LeaveChatUseCaseTest {
     fun `chat not found`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(ChatNotFound)
-        val useCase = LeaveChatUseCase(chatId, repository)
+        val useCase = LeaveChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId)
 
         assertIs<Failure<Unit, LeaveChatError>>(result)
         assertIs<ChatNotFound>(result.error)
@@ -55,9 +55,9 @@ class LeaveChatUseCaseTest {
     fun `not a participant`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(NotParticipant)
-        val useCase = LeaveChatUseCase(chatId, repository)
+        val useCase = LeaveChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId)
 
         assertIs<Failure<Unit, LeaveChatError>>(result)
         assertIs<NotParticipant>(result.error)
@@ -67,9 +67,9 @@ class LeaveChatUseCaseTest {
     fun `network not available`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(NetworkNotAvailable)
-        val useCase = LeaveChatUseCase(chatId, repository)
+        val useCase = LeaveChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId)
 
         assertIs<Failure<Unit, LeaveChatError>>(result)
         assertIs<NetworkNotAvailable>(result.error)
@@ -79,9 +79,9 @@ class LeaveChatUseCaseTest {
     fun `remote unreachable`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(RemoteUnreachable)
-        val useCase = LeaveChatUseCase(chatId, repository)
+        val useCase = LeaveChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId)
 
         assertIs<Failure<Unit, LeaveChatError>>(result)
         assertIs<RemoteUnreachable>(result.error)
@@ -91,9 +91,9 @@ class LeaveChatUseCaseTest {
     fun `remote error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(RemoteError)
-        val useCase = LeaveChatUseCase(chatId, repository)
+        val useCase = LeaveChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId)
 
         assertIs<Failure<Unit, LeaveChatError>>(result)
         assertIs<RemoteError>(result.error)
@@ -103,9 +103,9 @@ class LeaveChatUseCaseTest {
     fun `local error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(LocalError)
-        val useCase = LeaveChatUseCase(chatId, repository)
+        val useCase = LeaveChatUseCase(repository)
 
-        val result = useCase()
+        val result = useCase(chatId)
 
         assertIs<Failure<Unit, LeaveChatError>>(result)
         assertIs<LocalError>(result.error)

@@ -15,6 +15,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDel
 interface ParticipantRepository {
     suspend fun sendMessage(message: Message): Flow<Message>
     suspend fun editMessage(message: Message): Flow<Message>
+    suspend fun flowChatList(): Flow<List<Chat>>
     suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,

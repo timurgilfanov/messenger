@@ -50,7 +50,7 @@ class ChatViewModel @AssistedInject constructor(
     interface ChatViewModelFactory {
         fun create(
             @Assisted("chatId") chatId: UUID,
-            @Assisted("currentUserId") currentUserId: UUID
+            @Assisted("currentUserId") currentUserId: UUID,
         ): ChatViewModel
     }
 

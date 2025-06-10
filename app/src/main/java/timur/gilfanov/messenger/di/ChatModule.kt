@@ -35,12 +35,12 @@ object ChatModule {
     @ViewModelScoped
     fun provideSendMessageUseCase(
         repository: ParticipantRepository,
-        deliveryStatusValidator: DeliveryStatusValidator
+        deliveryStatusValidator: DeliveryStatusValidator,
     ): SendMessageUseCase = SendMessageUseCase(repository, deliveryStatusValidator)
 
     @Provides
     @ViewModelScoped
     fun provideReceiveChatUpdatesUseCase(
-        repository: ParticipantRepository
+        repository: ParticipantRepository,
     ): ReceiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 }

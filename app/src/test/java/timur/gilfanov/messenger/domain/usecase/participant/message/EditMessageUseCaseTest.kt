@@ -99,7 +99,7 @@ class EditMessageUseCaseTest {
         useCase(
             chat = chat,
             message = editedMessage,
-            now = customTime
+            now = customTime,
         ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
@@ -151,7 +151,7 @@ class EditMessageUseCaseTest {
         useCase(
             chat = chat,
             message = editedMessage,
-            now = customTime
+            now = customTime,
         ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
@@ -206,7 +206,7 @@ class EditMessageUseCaseTest {
         useCase(
             chat = chat,
             message = editedMessage,
-            now = customTime
+            now = customTime,
         ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
@@ -266,7 +266,7 @@ class EditMessageUseCaseTest {
         useCase(
             chat = chat,
             message = editedMessage,
-            now = customTime
+            now = customTime,
         ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
@@ -322,7 +322,7 @@ class EditMessageUseCaseTest {
         useCase(
             chat = chat,
             message = editedMessage,
-            now = customTime
+            now = customTime,
         ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
@@ -378,7 +378,7 @@ class EditMessageUseCaseTest {
         useCase(
             chat = chat,
             message = editedMessage,
-            now = customTime
+            now = customTime,
         ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
@@ -438,7 +438,7 @@ class EditMessageUseCaseTest {
         useCase(
             chat = chat,
             message = editedMessage,
-            now = customTime
+            now = customTime,
         ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
@@ -502,7 +502,7 @@ class EditMessageUseCaseTest {
         useCase(
             chat = chat,
             message = editedMessage,
-            now = customTime
+            now = customTime,
         ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Message, EditMessageError>>(result)
@@ -562,7 +562,7 @@ class EditMessageUseCaseTest {
         useCase(
             chat = chat,
             message = editedMessage,
-            now = customTime
+            now = customTime,
         ).test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Message, EditMessageError>>(result)

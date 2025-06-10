@@ -574,6 +574,7 @@ class CreateMessageUseCaseTest {
             name = "",
             joinedAt = customTime - 10.minutes,
             pictureUrl = null,
+            onlineAt = null,
         )
 
         val messageSender = Participant(
@@ -581,6 +582,7 @@ class CreateMessageUseCaseTest {
             name = "",
             joinedAt = customTime - 10.minutes,
             pictureUrl = null,
+            onlineAt = null,
         )
 
         val message = buildMessage {
@@ -621,6 +623,7 @@ class CreateMessageUseCaseTest {
             name = "",
             joinedAt = customTime - 10.minutes,
             pictureUrl = null,
+            onlineAt = null,
         )
 
         val message = buildMessage {

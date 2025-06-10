@@ -146,7 +146,7 @@ class ChatViewModel(
 
         val chatStatus = if (chat.isOneToOne) {
             val otherParticipant = chat.participants.first { it.id != currentUserId }
-            ChatStatus.OneToOne("last seen recently") // TODO: Implement proper last online time
+            ChatStatus.OneToOne(otherParticipant.onlineAt)
         } else {
             ChatStatus.Group(chat.participants.size)
         }

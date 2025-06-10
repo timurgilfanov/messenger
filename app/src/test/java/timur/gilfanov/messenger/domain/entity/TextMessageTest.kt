@@ -19,6 +19,7 @@ class TextMessageTest {
             name = "Test User",
             pictureUrl = null,
             joinedAt = Clock.System.now(),
+            onlineAt = null,
         )
 
         val message = TextMessage(

@@ -121,5 +121,6 @@ class RepositoryFakeTest {
         name = "Test User",
         pictureUrl = null,
         joinedAt = customTime,
+        onlineAt = null,
     )
 }

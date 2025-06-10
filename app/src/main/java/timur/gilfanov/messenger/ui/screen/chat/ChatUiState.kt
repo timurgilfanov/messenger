@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
@@ -45,7 +46,7 @@ data class ParticipantUiModel(val id: ParticipantId, val name: String, val pictu
 
 sealed class ChatStatus {
     object Loading : ChatStatus()
-    data class OneToOne(val lastOnlineTime: String) : ChatStatus()
+    data class OneToOne(val otherParticipantOnlineAt: Instant?) : ChatStatus()
     data class Group(val participantCount: Int) : ChatStatus()
     data class Error(val message: String) : ChatStatus()
 }

@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
@@ -37,7 +38,9 @@ fun MessageInput(
         OutlinedTextField(
             value = text,
             onValueChange = onTextChange,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .testTag("message_input"),
             placeholder = { Text("Type a message...") },
             shape = RoundedCornerShape(24.dp),
             enabled = !isSending,
@@ -46,7 +49,9 @@ fun MessageInput(
         IconButton(
             onClick = onSendMessage,
             enabled = text.isNotBlank() && !isSending,
-            modifier = Modifier.padding(start = 8.dp),
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .testTag("send_button"),
         ) {
             if (isSending) {
                 CircularProgressIndicator(

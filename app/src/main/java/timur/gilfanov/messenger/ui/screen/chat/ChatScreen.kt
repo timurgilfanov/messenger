@@ -80,7 +80,7 @@ fun ChatScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ChatContent(
+fun ChatContent(
     state: ChatUiState.Ready,
     onTextChange: (String) -> Unit,
     onSendMessage: () -> Unit,

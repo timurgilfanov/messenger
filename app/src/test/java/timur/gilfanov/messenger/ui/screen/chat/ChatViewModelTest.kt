@@ -139,8 +139,8 @@ class ChatViewModelTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val viewModel = ChatViewModel(
-            chatId = chatId,
-            currentUserId = currentUserId,
+            chatIdUuid = chatId.id,
+            currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
         )
@@ -177,8 +177,8 @@ class ChatViewModelTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val viewModel = ChatViewModel(
-            chatId = chatId,
-            currentUserId = currentUserId,
+            chatIdUuid = chatId.id,
+            currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
         )
@@ -215,8 +215,8 @@ class ChatViewModelTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val viewModel = ChatViewModel(
-            chatId = chatId,
-            currentUserId = currentUserId,
+            chatIdUuid = chatId.id,
+            currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
         )
@@ -246,8 +246,8 @@ class ChatViewModelTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val viewModel = ChatViewModel(
-            chatId = chatId,
-            currentUserId = currentUserId,
+            chatIdUuid = chatId.id,
+            currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
         )
@@ -277,8 +277,8 @@ class ChatViewModelTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val viewModel = ChatViewModel(
-            chatId = chatId,
-            currentUserId = currentUserId,
+            chatIdUuid = chatId.id,
+            currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
         )
@@ -325,8 +325,8 @@ class ChatViewModelTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val viewModel = ChatViewModel(
-            chatId = chatId,
-            currentUserId = currentUserId,
+            chatIdUuid = chatId.id,
+            currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
         )
@@ -366,8 +366,8 @@ class ChatViewModelTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val viewModel = ChatViewModel(
-            chatId = chatId,
-            currentUserId = currentUserId,
+            chatIdUuid = chatId.id,
+            currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
         )

@@ -2,6 +2,10 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -31,12 +35,24 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdat
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
 
-class ChatViewModel(
-    private val chatId: ChatId,
-    private val currentUserId: ParticipantId,
+@HiltViewModel(assistedFactory = ChatViewModel.ChatViewModelFactory::class)
+class ChatViewModel @AssistedInject constructor(
+    @Assisted("chatId") chatIdUuid: UUID,
+    @Assisted("currentUserId") currentUserIdUuid: UUID,
     private val sendMessageUseCase: SendMessageUseCase,
     private val receiveChatUpdatesUseCase: ReceiveChatUpdatesUseCase,
 ) : ViewModel() {
+
+    private val chatId = ChatId(chatIdUuid)
+    private val currentUserId = ParticipantId(currentUserIdUuid)
+
+    @AssistedFactory
+    interface ChatViewModelFactory {
+        fun create(
+            @Assisted("chatId") chatId: UUID,
+            @Assisted("currentUserId") currentUserId: UUID
+        ): ChatViewModel
+    }
 
     private val _uiState = MutableStateFlow<ChatUiState>(ChatUiState.Loading())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()

@@ -9,8 +9,10 @@ import org.junit.Test
 
 class ArchitectureTest {
 
-    val usecaseLayer = Layer("usecase", "timur.gilfanov.messenger.domain.usecase..")
-    val entityLayer = Layer("entity", "timur.gilfanov.messenger.domain.entity..")
+    private val uiLayer = Layer("ui", "timur.gilfanov.messenger.ui..")
+    private val dataLayer = Layer("data", "timur.gilfanov.messenger.data..")
+    private val usecaseLayer = Layer("usecase", "timur.gilfanov.messenger.domain.usecase..")
+    private val entityLayer = Layer("entity", "timur.gilfanov.messenger.domain.entity..")
 
     @Test
     fun `usecase layer depends on entity layer only`() {
@@ -18,6 +20,8 @@ class ArchitectureTest {
             .scopeFromProject()
             .assertArchitecture {
                 usecaseLayer.dependsOn(entityLayer)
+                usecaseLayer.doesNotDependOn(dataLayer)
+                usecaseLayer.doesNotDependOn(uiLayer)
             }
     }
 
@@ -39,6 +43,17 @@ class ArchitectureTest {
             .assertTrue {
                 !it.text.contains("import dagger.hilt") &&
                     !it.text.contains("import javax.inject")
+            }
+    }
+
+    @Test
+    fun `ui layer depends on usecase and entity layer only`() {
+        Konsist
+            .scopeFromProject()
+            .assertArchitecture {
+                uiLayer.dependsOn(entityLayer)
+                uiLayer.dependsOn(usecaseLayer)
+                uiLayer.doesNotDependOn(dataLayer)
             }
     }
 }

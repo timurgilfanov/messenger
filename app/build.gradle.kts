@@ -67,7 +67,7 @@ kover {
                 annotatedBy(
                     "androidx.compose.ui.tooling.preview.Preview",
                     "dagger.internal.DaggerGenerated",
-                    "javax.annotation.processing.Generated"
+                    "javax.annotation.processing.Generated",
                 )
                 classes(
                     "*.Hilt_*",

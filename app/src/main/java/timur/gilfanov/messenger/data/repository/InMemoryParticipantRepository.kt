@@ -17,7 +17,9 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Delivered
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Read
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
@@ -31,6 +33,16 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDel
 
 @Singleton
 class InMemoryParticipantRepository @Inject constructor() : ParticipantRepository {
+
+    companion object {
+        private const val SENDING_DELAY_MS = 500L
+        private const val DELIVERY_DELAY_MS = 300L
+        private const val READ_DELAY_MS = 2000L
+        private const val EDIT_DELAY_MS = 500L
+        private const val SENDING_PROGRESS_START = 0
+        private const val SENDING_PROGRESS_MID = 50
+        private const val SENDING_PROGRESS_COMPLETE = 100
+    }
 
     private val currentUserId =
         ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
@@ -70,7 +82,7 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                     sender = otherUser,
                     recipient = defaultChatId,
                     createdAt = Clock.System.now(),
-                    deliveryStatus = DeliveryStatus.Read,
+                    deliveryStatus = Read,
                 ),
                 TextMessage(
                     id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
@@ -79,7 +91,7 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                     sender = currentUser,
                     recipient = defaultChatId,
                     createdAt = Clock.System.now(),
-                    deliveryStatus = DeliveryStatus.Delivered,
+                    deliveryStatus = Delivered,
                 ),
             ),
         ),
@@ -90,16 +102,16 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
     )
 
     override suspend fun sendMessage(message: Message): Flow<Message> = flow {
-        emit((message as TextMessage).copy(deliveryStatus = DeliveryStatus.Sending(0)))
-        delay(500)
+        emit((message as TextMessage).copy(deliveryStatus = Sending(SENDING_PROGRESS_START)))
+        delay(SENDING_DELAY_MS)
 
-        emit(message.copy(deliveryStatus = DeliveryStatus.Sending(50)))
-        delay(500)
+        emit(message.copy(deliveryStatus = Sending(SENDING_PROGRESS_MID)))
+        delay(SENDING_DELAY_MS)
 
-        emit(message.copy(deliveryStatus = DeliveryStatus.Sending(100)))
-        delay(300)
+        emit(message.copy(deliveryStatus = Sending(SENDING_PROGRESS_COMPLETE)))
+        delay(DELIVERY_DELAY_MS)
 
-        val deliveredMessage = message.copy(deliveryStatus = DeliveryStatus.Delivered)
+        val deliveredMessage = message.copy(deliveryStatus = Delivered)
         val currentChat = chatFlow.value
         val updatedChat = currentChat.copy(
             messages = currentChat.messages.toMutableList().apply {
@@ -111,14 +123,12 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
 
         emit(deliveredMessage)
 
-        delay(2000)
+        delay(READ_DELAY_MS)
 
-        val readMessage = deliveredMessage.copy(deliveryStatus = DeliveryStatus.Read)
+        val readMessage = deliveredMessage.copy(deliveryStatus = Read)
         val finalChat = updatedChat.copy(
             messages = updatedChat.messages.toMutableList().apply {
-                removeAt(
-                    updatedChat.messages.size - 1,
-                )
+                removeAt(updatedChat.messages.size - 1)
                 add(readMessage)
             }.toImmutableList(),
         )
@@ -129,7 +139,7 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
     }
 
     override suspend fun editMessage(message: Message): Flow<Message> = flow {
-        delay(500)
+        delay(EDIT_DELAY_MS)
 
         val currentChat = chatFlow.value
         val messageIndex = currentChat.messages.indexOfFirst { it.id == message.id }

@@ -30,96 +30,134 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
+private const val TIMESTAMP_ALPHA = 0.7f
+private const val CHECK_OVERLAP_SPACING_DP = -2
+
 @Composable
 fun MessageBubble(message: MessageUiModel, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        MessageBubbleContent(message = message)
+
+        when (val status = message.deliveryStatus) {
+            is DeliveryStatus.Failed -> {
+                MessageError(
+                    error = status.reason.toString(),
+                    isFromCurrentUser = message.isFromCurrentUser,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            else -> {}
+        }
+    }
+}
+
+@Composable
+private fun MessageBubbleContent(message: MessageUiModel) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (message.isFromCurrentUser) {
             Arrangement.End
         } else {
             Arrangement.Start
         },
     ) {
-        Box(
-            modifier = Modifier
-                .widthIn(max = 280.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (message.isFromCurrentUser) 16.dp else 4.dp,
-                        bottomEnd = if (message.isFromCurrentUser) 4.dp else 16.dp,
-                    ),
-                )
-                .background(
-                    if (message.isFromCurrentUser) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    },
-                )
-                .padding(12.dp),
-        ) {
-            Column {
-                if (!message.isFromCurrentUser) {
-                    Text(
-                        text = message.senderName,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (message.isFromCurrentUser) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                }
-
-                Text(
-                    text = message.text,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (message.isFromCurrentUser) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.padding(top = 4.dp),
-                ) {
-                    Text(
-                        text = message.createdAt,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontSize = 10.sp,
-                        color = if (message.isFromCurrentUser) {
-                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        },
-                    )
-
-                    if (message.isFromCurrentUser) {
-                        DeliveryStatusIndicator(
-                            status = message.deliveryStatus,
-                            tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                        )
-                    }
-                }
-            }
-        }
+        MessageBubbleBox(message = message)
     }
+}
 
-    when (val status = message.deliveryStatus) {
-        is DeliveryStatus.Failed -> {
-            MessageError(
-                error = status.reason.toString(),
-                isFromCurrentUser = message.isFromCurrentUser,
-                modifier = Modifier.padding(top = 4.dp),
+@Composable
+private fun MessageBubbleBox(message: MessageUiModel) {
+    val maxBubbleWidth = 280.dp
+    val bubbleCornerRadius = 16.dp
+    val messageBubblePadding = 12.dp
+
+    Box(
+        modifier = Modifier
+            .widthIn(max = maxBubbleWidth)
+            .clip(
+                RoundedCornerShape(
+                    topStart = bubbleCornerRadius,
+                    topEnd = bubbleCornerRadius,
+                    bottomStart = if (message.isFromCurrentUser) bubbleCornerRadius else 4.dp,
+                    bottomEnd = if (message.isFromCurrentUser) 4.dp else bubbleCornerRadius,
+                ),
+            )
+            .background(
+                if (message.isFromCurrentUser) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+            )
+            .padding(messageBubblePadding),
+    ) {
+        MessageBubbleText(message = message)
+    }
+}
+
+@Composable
+private fun MessageBubbleText(message: MessageUiModel) {
+    Column {
+        if (!message.isFromCurrentUser) {
+            SenderNameText(message = message)
+        }
+
+        MessageContentText(message = message)
+
+        MessageFooter(message = message)
+    }
+}
+
+@Composable
+private fun SenderNameText(message: MessageUiModel) {
+    Text(
+        text = message.senderName,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun MessageContentText(message: MessageUiModel) {
+    Text(
+        text = message.text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = if (message.isFromCurrentUser) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+    )
+}
+
+@Composable
+private fun MessageFooter(message: MessageUiModel) {
+    val timestampFontSize = 10.sp
+    val timestampAlpha = TIMESTAMP_ALPHA
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.padding(top = 4.dp),
+    ) {
+        Text(
+            text = message.createdAt,
+            style = MaterialTheme.typography.bodySmall,
+            fontSize = timestampFontSize,
+            color = if (message.isFromCurrentUser) {
+                MaterialTheme.colorScheme.onPrimary.copy(alpha = timestampAlpha)
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = timestampAlpha)
+            },
+        )
+
+        if (message.isFromCurrentUser) {
+            DeliveryStatusIndicator(
+                status = message.deliveryStatus,
+                tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = timestampAlpha),
             )
         }
-        else -> {}
     }
 }
 
@@ -148,9 +186,10 @@ private fun DeliveryStatusIndicator(
         }
 
         DeliveryStatus.Read -> {
+            val checkOverlapSpacing = CHECK_OVERLAP_SPACING_DP.dp
             Row(
                 modifier = modifier,
-                horizontalArrangement = Arrangement.spacedBy((-2).dp),
+                horizontalArrangement = Arrangement.spacedBy(checkOverlapSpacing),
             ) {
                 Icon(
                     imageVector = Icons.Default.Check,
@@ -258,7 +297,7 @@ private fun MessageBubbleSendingPreview() {
                 senderId = "current-user",
                 senderName = "You",
                 createdAt = "14:32",
-                deliveryStatus = DeliveryStatus.Sending(75),
+                deliveryStatus = DeliveryStatus.Sending(progress = 75),
                 isFromCurrentUser = true,
             ),
         )

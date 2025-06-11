@@ -64,7 +64,11 @@ kover {
     reports {
         filters {
             excludes {
-                annotatedBy("androidx.compose.ui.tooling.preview.Preview")
+                annotatedBy(
+                    "androidx.compose.ui.tooling.preview.Preview",
+                    "dagger.internal.DaggerGenerated",
+                    "javax.annotation.processing.Generated"
+                )
                 classes(
                     "*.Hilt_*",
                     "*_HiltModules*",
@@ -76,7 +80,7 @@ kover {
                     "Dagger*",
                     "*_ComponentTreeDeps*",
                     "*_HiltComponents*",
-                    "timur.gilfanov.messenger.di.*"
+                    "timur.gilfanov.messenger.di.*",
                 )
             }
         }

@@ -277,11 +277,17 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/debug
 
+      - name: Filter out @Preview methods
+        run: |
+          java -jar tools/preview-stripper.jar \
+            app/build/tmp/kotlin-classes/debug \
+            filtered-classes
+
       - name: Generate JaCoCo XML Report from merged .ec
         run: |
           mkdir -p coverage-report
           java -jar jacococli.jar report merged-coverage/coverage.ec \
-            --classfiles app/build/tmp/kotlin-classes/debug \
+            --classfiles filtered-classes \
             --sourcefiles app/src/main \
             --xml coverage-report/instrumented-report.xml
 

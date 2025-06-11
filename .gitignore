@@ -32,3 +32,13 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Preview Stripper building files
+/tools/previewstripper/PreviewStripper$1$1.class
+/tools/PreviewStripper$1$1.class
+/tools/previewstripper/PreviewStripper$1.class
+/tools/PreviewStripper$1.class
+/tools/previewstripper/PreviewStripper.class
+/tools/PreviewStripper.class
+/tools/libs/asm-commons-9.6.jar
+/tools/libs/asm-9.6.jar

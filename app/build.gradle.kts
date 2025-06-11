@@ -60,6 +60,29 @@ hilt {
     enableAggregatingTask = false
 }
 
+kover {
+    reports {
+        filters {
+            excludes {
+                annotatedBy("androidx.compose.ui.tooling.preview.Preview")
+                classes(
+                    "*.Hilt_*",
+                    "*_HiltModules*",
+                    "*_Factory*",
+                    "*_MembersInjector*",
+                    "dagger.hilt.internal.*",
+                    "*ComposableSingletons*",
+                    "hilt_aggregated_deps.*",
+                    "Dagger*",
+                    "*_ComponentTreeDeps*",
+                    "*_HiltComponents*",
+                    "timur.gilfanov.messenger.di.*"
+                )
+            }
+        }
+    }
+}
+
 dependencies {
 
     implementation(libs.androidx.core.ktx)

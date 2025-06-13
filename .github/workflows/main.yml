@@ -282,6 +282,7 @@ jobs:
             --classfiles app/build/tmp/kotlin-classes/debug \
             --src app/src/main \
             --excludeAnnotation androidx.compose.ui.tooling.preview.Preview \
+            --excludeAnnotation androidx.compose.runtime.Composable \
             --xml coverage-report/instrumented-report.xml
 
       - name: Sanitize all subdirectory names to remove colons

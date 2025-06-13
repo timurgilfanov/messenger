@@ -252,19 +252,6 @@ jobs:
           mkdir -p testlab-results
           gsutil -m cp -r $RESULTS_URL testlab-results/
 
-      - name: Download JaCoCo CLI
-        run: |
-          curl -L -o jacococli.jar https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.11/org.jacoco.cli-0.8.11-nodeps.jar
-
-      - name: Merge .ec files
-        run: |
-          mkdir -p merged-coverage
-          EC_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} -path "*/artifacts/sdcard/Download/coverage.ec")
-          if [ -z "$EC_FILES" ]; then
-            echo "❌ No coverage.ec files found."; exit 1
-          fi
-          java -jar jacococli.jar merge $EC_FILES --destfile merged-coverage/coverage.ec
-
       - name: Publish Instrumented Test Results
         uses: mikepenz/action-junit-report@v4
         with:
@@ -280,11 +267,18 @@ jobs:
       - name: Download Kover CLI
         run: |
           curl -L -o kover-cli.jar \
-            https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kover-cli/0.9.1/kover-cli-0.9.1-nodeps.jar
+            https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kover-cli/0.9.1/kover-cli-0.9.1.jar
 
       - name: Generate JaCoCo-compatible XML (instrumented tests)
         run: |
-          java -jar kover-cli.jar report merged-coverage/coverage.ec \
+          COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
+                             -path "*/artifacts/sdcard/Download/coverage.ec" \
+                             -print0 | xargs -0)
+          if [ -z "$COVERAGE_FILES" ]; then
+            echo "❌ No coverage.ec files found"; exit 1
+          fi
+          
+          java -jar kover-cli.jar report $COVERAGE_FILES \
             --classfiles app/build/tmp/kotlin-classes/debug \
             --src app/src/main \
             --excludeAnnotation androidx.compose.ui.tooling.preview.Preview \

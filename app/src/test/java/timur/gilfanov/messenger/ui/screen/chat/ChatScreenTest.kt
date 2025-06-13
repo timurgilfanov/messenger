@@ -1,15 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -18,19 +10,21 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
 import kotlinx.collections.immutable.persistentListOf
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [33])
 class ChatScreenTest {
 
     @get:Rule
@@ -39,13 +33,11 @@ class ChatScreenTest {
     private val testChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
 
     @Test
-    fun chatScreen_showsLoadingState() {
-        val loadingState = ChatUiState.Loading()
-
+    fun `chat screen shows loading state`() {
         composeTestRule.setContent {
             MessengerTheme {
                 ChatScreenContent(
-                    uiState = loadingState,
+                    uiState = ChatUiState.Loading(),
                     onTextChange = {},
                     onSendMessage = {},
                 )
@@ -56,7 +48,7 @@ class ChatScreenTest {
     }
 
     @Test
-    fun chatScreen_showsErrorState() {
+    fun `chat screen shows error state`() {
         val errorMessage = ReceiveChatUpdatesError.UnknownError
         val errorState = ChatUiState.Error(errorMessage)
 
@@ -74,7 +66,7 @@ class ChatScreenTest {
     }
 
     @Test
-    fun chatScreen_showsReadyStateWithMessages() {
+    fun `chat screen shows ready state with messages`() {
         val messages = persistentListOf(
             MessageUiModel(
                 id = "1",
@@ -136,7 +128,7 @@ class ChatScreenTest {
     }
 
     @Test
-    fun chatScreen_messageInputUpdatesText() {
+    fun `chat screen message input updates text`() {
         val readyState = ChatUiState.Ready(
             id = testChatId,
             title = "Test Chat",
@@ -169,7 +161,7 @@ class ChatScreenTest {
     }
 
     @Test
-    fun chatScreen_sendButtonClicksWhenTextPresent() {
+    fun `chat screen send button clicks when text present`() {
         val readyState = ChatUiState.Ready(
             id = testChatId,
             title = "Test Chat",
@@ -198,7 +190,7 @@ class ChatScreenTest {
     }
 
     @Test
-    fun chatScreen_showsSendingState() {
+    fun `chat screen shows sending state`() {
         val readyState = ChatUiState.Ready(
             id = testChatId,
             title = "Test Chat",
@@ -226,7 +218,7 @@ class ChatScreenTest {
     }
 
     @Test
-    fun chatScreen_showsGroupChatStatus() {
+    fun `chat screen shows group chat status`() {
         val readyState = ChatUiState.Ready(
             id = testChatId,
             title = "Group Chat",
@@ -263,7 +255,7 @@ class ChatScreenTest {
     }
 
     @Test
-    fun chatScreen_showsUpdateError() {
+    fun `chat screen shows update error`() {
         val updateError = ReceiveChatUpdatesError.UnknownError
         val readyState = ChatUiState.Ready(
             id = testChatId,
@@ -288,47 +280,5 @@ class ChatScreenTest {
         }
 
         composeTestRule.onNodeWithText("Update failed: $updateError").assertIsDisplayed()
-    }
-}
-
-@Composable
-private fun ChatScreenContent(
-    uiState: ChatUiState,
-    onTextChange: (String) -> Unit,
-    onSendMessage: () -> Unit,
-) {
-    when (uiState) {
-        is ChatUiState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.semantics {
-                        contentDescription = "Loading"
-                    },
-                )
-            }
-        }
-
-        is ChatUiState.Error -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "Error: ${uiState.error}",
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-        }
-
-        is ChatUiState.Ready -> {
-            ChatContent(
-                state = uiState,
-                onTextChange = onTextChange,
-                onSendMessage = onSendMessage,
-            )
-        }
     }
 }

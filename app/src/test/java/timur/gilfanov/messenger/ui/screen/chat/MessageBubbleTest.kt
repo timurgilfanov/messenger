@@ -6,22 +6,24 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [33])
 class MessageBubbleTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
     @Test
-    fun currentUserMessageDisplaysCorrectly() {
+    fun `current user message displays correctly`() {
         val message = MessageUiModel(
             id = "1",
             text = "Hello! This is a message from the current user.",
@@ -46,7 +48,7 @@ class MessageBubbleTest {
     }
 
     @Test
-    fun otherUserMessageDisplaysCorrectly() {
+    fun `other user message displays correctly`() {
         val message = MessageUiModel(
             id = "2",
             text = "Hi there! This is a message from another user.",
@@ -71,7 +73,7 @@ class MessageBubbleTest {
     }
 
     @Test
-    fun messageWithSendingStatusShowsIndicator() {
+    fun `message with sending status shows indicator`() {
         val message = MessageUiModel(
             id = "3",
             text = "This message is currently being sent...",
@@ -95,7 +97,7 @@ class MessageBubbleTest {
     }
 
     @Test
-    fun messageWithDeliveredStatusShowsCheck() {
+    fun `message with delivered status shows check`() {
         val message = MessageUiModel(
             id = "4",
             text = "This message has been delivered.",
@@ -117,7 +119,7 @@ class MessageBubbleTest {
     }
 
     @Test
-    fun messageWithReadStatusShowsDoubleCheck() {
+    fun `message with read status shows double check`() {
         val message = MessageUiModel(
             id = "5",
             text = "This message has been read.",
@@ -144,7 +146,7 @@ class MessageBubbleTest {
     }
 
     @Test
-    fun failedMessageShowsErrorIndicator() {
+    fun `failed message shows error indicator`() {
         val message = MessageUiModel(
             id = "6",
             text = "This message failed to send.",
@@ -169,7 +171,7 @@ class MessageBubbleTest {
     }
 
     @Test
-    fun longMessageTextWrapsCorrectly() {
+    fun `long message text wraps correctly`() {
         val longText = "This is a very long message that should wrap to multiple lines. " +
             "It contains enough text to ensure that the bubble will need to handle text wrapping " +
             "properly to maintain readability and proper layout constraints."
@@ -194,7 +196,7 @@ class MessageBubbleTest {
     }
 
     @Test
-    fun emptyMessageTextHandledCorrectly() {
+    fun `empty message text handled correctly`() {
         val message = MessageUiModel(
             id = "8",
             text = "",

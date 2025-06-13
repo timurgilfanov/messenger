@@ -19,6 +19,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,13 +47,33 @@ fun ChatScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    when (val state = uiState) {
+    ChatScreenContent(
+        uiState = uiState,
+        onTextChange = viewModel::updateInputText,
+        onSendMessage = viewModel::sendMessage,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChatScreenContent(
+    uiState: ChatUiState,
+    onTextChange: (String) -> Unit,
+    onSendMessage: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when (uiState) {
         is ChatUiState.Loading -> {
             Box(
                 modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    modifier = Modifier.semantics {
+                        contentDescription = "Loading"
+                    },
+                )
             }
         }
 
@@ -61,7 +83,7 @@ fun ChatScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Error: ${state.error}",
+                    text = "Error: ${uiState.error}",
                     color = MaterialTheme.colorScheme.error,
                 )
             }
@@ -69,9 +91,9 @@ fun ChatScreen(
 
         is ChatUiState.Ready -> {
             ChatContent(
-                state = state,
-                onTextChange = viewModel::updateInputText,
-                onSendMessage = viewModel::sendMessage,
+                state = uiState,
+                onTextChange = onTextChange,
+                onSendMessage = onSendMessage,
                 modifier = modifier,
             )
         }

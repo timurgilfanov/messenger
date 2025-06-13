@@ -147,19 +147,19 @@ jobs:
           check_name: "Unit Test Results"
 
       - name: Generate Kover XML Report
-        run: ./gradlew koverXmlReport
+        run: ./gradlew koverXmlReportDebug
 
       - name: Upload Kover Unit XML Report
         uses: actions/upload-artifact@v4
         with:
           name: unit-report
-          path: app/build/reports/kover/report.xml
+          path: app/build/reports/kover/reportDebug.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/report.xml
+          files: app/build/reports/kover/reportDebug.xml
           flags: android_unit
           fail_ci_if_error: true
 

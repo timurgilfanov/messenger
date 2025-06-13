@@ -90,11 +90,6 @@ kover {
                 )
             }
         }
-        variant("release") {
-            xml {
-                onCheck = false
-            }
-        }
     }
 }
 

@@ -277,12 +277,17 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/debug
 
-      - name: Generate JaCoCo XML Report from merged .ec
+      - name: Download Kover CLI
         run: |
-          mkdir -p coverage-report
-          java -jar jacococli.jar report merged-coverage/coverage.ec \
+          curl -L -o kover-cli.jar \
+            https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kover-cli/0.9.1/kover-cli-0.9.1-nodeps.jar
+
+      - name: Generate JaCoCo-compatible XML (instrumented tests)
+        run: |
+          java -jar kover-cli.jar report merged-coverage/coverage.ec \
             --classfiles app/build/tmp/kotlin-classes/debug \
-            --sourcefiles app/src/main \
+            --src app/src/main \
+            --excludeAnnotation androidx.compose.ui.tooling.preview.Preview \
             --xml coverage-report/instrumented-report.xml
 
       - name: Sanitize all subdirectory names to remove colons

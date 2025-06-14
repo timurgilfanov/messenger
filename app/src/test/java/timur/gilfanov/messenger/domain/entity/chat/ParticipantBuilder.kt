@@ -11,6 +11,7 @@ class ParticipantBuilder {
     var name: String = "User"
     var pictureUrl: String? = null
     var joinedAt: Instant = Instant.fromEpochMilliseconds(0)
+    var onlineAt: Instant? = null
     var isAdmin: Boolean = false
     var isModerator: Boolean = false
 
@@ -19,6 +20,7 @@ class ParticipantBuilder {
         name = name,
         pictureUrl = pictureUrl,
         joinedAt = joinedAt,
+        onlineAt = onlineAt,
         isAdmin = isAdmin,
         isModerator = isModerator,
     )

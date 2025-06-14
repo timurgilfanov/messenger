@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kover)
+    alias(libs.plugins.hilt)
+    id("kotlin-kapt")
 }
 
 android {
@@ -19,6 +21,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 
     buildTypes {
@@ -54,6 +62,37 @@ detekt {
     buildUponDefaultConfig = true
 }
 
+hilt {
+    enableAggregatingTask = false
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                annotatedBy(
+                    "androidx.compose.ui.tooling.preview.Preview",
+                    "dagger.internal.DaggerGenerated",
+                    "javax.annotation.processing.Generated",
+                )
+                classes(
+                    "*.Hilt_*",
+                    "*_HiltModules*",
+                    "*_Factory*",
+                    "*_MembersInjector*",
+                    "dagger.hilt.internal.*",
+                    "*ComposableSingletons*",
+                    "hilt_aggregated_deps.*",
+                    "Dagger*",
+                    "*_ComponentTreeDeps*",
+                    "*_HiltComponents*",
+                    "timur.gilfanov.messenger.di.*",
+                )
+            }
+        }
+    }
+}
+
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -66,11 +105,18 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.collections.immutable)
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
+    kapt(libs.hilt.compiler)
     testImplementation(libs.junit)
     testImplementation(libs.konsist)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
+    testImplementation(libs.androidx.ui.test.manifest)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -147,19 +147,19 @@ jobs:
           check_name: "Unit Test Results"
 
       - name: Generate Kover XML Report
-        run: ./gradlew koverXmlReport
+        run: ./gradlew koverXmlReportDebug
 
       - name: Upload Kover Unit XML Report
         uses: actions/upload-artifact@v4
         with:
           name: unit-report
-          path: app/build/reports/kover/report.xml
+          path: app/build/reports/kover/reportDebug.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/report.xml
+          files: app/build/reports/kover/reportDebug.xml
           flags: android_unit
           fail_ci_if_error: true
 
@@ -252,19 +252,6 @@ jobs:
           mkdir -p testlab-results
           gsutil -m cp -r $RESULTS_URL testlab-results/
 
-      - name: Download JaCoCo CLI
-        run: |
-          curl -L -o jacococli.jar https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.11/org.jacoco.cli-0.8.11-nodeps.jar
-
-      - name: Merge .ec files
-        run: |
-          mkdir -p merged-coverage
-          EC_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} -path "*/artifacts/sdcard/Download/coverage.ec")
-          if [ -z "$EC_FILES" ]; then
-            echo "❌ No coverage.ec files found."; exit 1
-          fi
-          java -jar jacococli.jar merge $EC_FILES --destfile merged-coverage/coverage.ec
-
       - name: Publish Instrumented Test Results
         uses: mikepenz/action-junit-report@v4
         with:
@@ -277,12 +264,24 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/debug
 
-      - name: Generate JaCoCo XML Report from merged .ec
+      - name: Download Kover CLI
         run: |
-          mkdir -p coverage-report
-          java -jar jacococli.jar report merged-coverage/coverage.ec \
+          curl -L -o kover-cli.jar \
+            https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kover-cli/0.9.1/kover-cli-0.9.1.jar
+
+      - name: Generate Instrumented Coverage Report
+        run: |
+          COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
+                             -path "*/artifacts/sdcard/Download/coverage.ec" \
+                             -print0 | xargs -0)
+          if [ -z "$COVERAGE_FILES" ]; then
+            echo "❌ No coverage.ec files found"; exit 1
+          fi
+          
+          java -jar kover-cli.jar report $COVERAGE_FILES \
             --classfiles app/build/tmp/kotlin-classes/debug \
-            --sourcefiles app/src/main \
+            --src app/src/main \
+            --excludeAnnotation androidx.compose.runtime.Composable \
             --xml coverage-report/instrumented-report.xml
 
       - name: Sanitize all subdirectory names to remove colons
@@ -301,7 +300,7 @@ jobs:
           name: firebase-testlab-results
           path: testlab-results/
 
-      - name: Upload JaCoCo Instrumented XML Report
+      - name: Upload Instrumented Coverage Report
         uses: actions/upload-artifact@v4
         with:
           name: instrumented-report

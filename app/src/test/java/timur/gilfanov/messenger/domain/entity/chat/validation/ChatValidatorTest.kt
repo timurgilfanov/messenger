@@ -34,6 +34,7 @@ class ChatValidatorTest {
             name = "Test User",
             joinedAt = Clock.System.now(),
             pictureUrl = null,
+            onlineAt = null,
         )
         val participants = persistentSetOf(participant)
 
@@ -224,6 +225,7 @@ class ChatValidatorTest {
             name = "Test User",
             joinedAt = Clock.System.now(),
             pictureUrl = null,
+            onlineAt = null,
         )
         return Chat(
             id = ChatId(UUID.randomUUID()),
@@ -245,6 +247,7 @@ class ChatValidatorTest {
             name = "Test User",
             joinedAt = Clock.System.now(),
             pictureUrl = null,
+            onlineAt = null,
         )
         override val recipient = ChatId(UUID.randomUUID())
         override val createdAt = Clock.System.now()

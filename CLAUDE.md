@@ -24,21 +24,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Run a single test method
 ./gradlew testDebugUnitTest --tests "ClassName.testMethodName"
 
-# Run tests by category (custom tasks)
-./gradlew testUnit                    # Run only Unit tests
-./gradlew testComponent               # Run only Component tests  
-./gradlew testArchitecture            # Run only Architecture tests
-./gradlew testFeature                 # Run only Feature tests
-./gradlew testApplicationUnit         # Run only Application unit tests
-./gradlew testApplication             # Run only Application tests (unit + instrumentation)
-./gradlew testReleaseCandidate        # Run only Release Candidate tests
+# Run tests by category (property-based approach)
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Component
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Feature
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Application
+./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.messenger.Application
 
 # Pre-commit checks
 ./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)
 
-# Run tests with category filters (manual approach)
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit
-./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.messenger.Application
+# Exclude specific categories
 ./gradlew testDebugUnitTest -PexcludeCategory=timur.gilfanov.messenger.Architecture
 ```
 

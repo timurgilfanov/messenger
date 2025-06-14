@@ -77,7 +77,7 @@ jobs:
           exit 1
 
       - name: Run Architecture Tests
-        run: ./gradlew testArchitecture
+        run: ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture
 
       - name: Upload Architecture Test Report
         uses: actions/upload-artifact@v4
@@ -146,14 +146,14 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          ./gradlew testUnit | tee unit-test.log
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit | tee unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
 
       - name: Run Component Tests
         run: |
-          ./gradlew testComponent | tee component-test.log
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Component | tee component-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
@@ -216,7 +216,7 @@ jobs:
 
       - name: Run Feature Tests
         run: |
-          ./gradlew testFeature | tee feature-test.log
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Feature | tee feature-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat feature-test.log
           exit $EXIT
@@ -262,7 +262,7 @@ jobs:
 
       - name: Run Application Unit Tests
         run: |
-          ./gradlew testApplicationUnit | tee application-unit-test.log
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Application | tee application-unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat application-unit-test.log
           exit $EXIT

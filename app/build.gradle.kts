@@ -149,112 +149,44 @@ tasks.withType<Test> {
     }
 }
 
-// Custom test tasks for categories (based on Testing Strategy.md)
-tasks.register("testUnit") {
-    group = "verification"
-    description = "Run only Unit tests"
-    dependsOn("testDebugUnitTest")
-    doFirst {
-        tasks.withType<Test> {
-            useJUnit {
-                includeCategories("timur.gilfanov.messenger.Unit")
-            }
-        }
-    }
-}
-
-tasks.register("testComponent") {
-    group = "verification"
-    description = "Run only Component tests"
-    dependsOn("testDebugUnitTest")
-    doFirst {
-        tasks.withType<Test> {
-            useJUnit {
-                includeCategories("timur.gilfanov.messenger.Component")
-            }
-        }
-    }
-}
-
-tasks.register("testArchitecture") {
-    group = "verification"
-    description = "Run only Architecture tests"
-    dependsOn("testDebugUnitTest")
-    doFirst {
-        tasks.withType<Test> {
-            useJUnit {
-                includeCategories("timur.gilfanov.messenger.Architecture")
-            }
-        }
-    }
-}
-
-tasks.register("testFeature") {
-    group = "verification"
-    description = "Run only Feature tests"
-    dependsOn("testDebugUnitTest")
-    doFirst {
-        tasks.withType<Test> {
-            useJUnit {
-                includeCategories("timur.gilfanov.messenger.Feature")
-            }
-        }
-    }
-}
-
-tasks.register("testApplicationUnit") {
-    group = "verification"
-    description = "Run only Application unit tests"
-    dependsOn("testDebugUnitTest")
-    doFirst {
-        tasks.withType<Test> {
-            useJUnit {
-                includeCategories("timur.gilfanov.messenger.Application")
-            }
-        }
-    }
-}
-
-tasks.register("testApplication") {
-    group = "verification"
-    description = "Run only Application tests (both unit and instrumentation)"
-    dependsOn("testApplicationUnit", "connectedDebugAndroidTest")
-    doFirst {
-        tasks.withType<Test> {
-            useJUnit {
-                includeCategories("timur.gilfanov.messenger.Application")
-            }
-        }
-    }
-}
-
-tasks.register("testReleaseCandidate") {
-    group = "verification"
-    description = "Run only Release Candidate tests"
-    dependsOn("connectedReleaseAndroidTest")
-    doFirst {
-        tasks.withType<Test> {
-            useJUnit {
-                includeCategories("timur.gilfanov.messenger.ReleaseCandidate")
-            }
-        }
-    }
-}
-
 tasks.register("preCommit") {
     group = "verification"
-    description =
-        "Run all pre-commit checks locally (formatting, lint, detekt, architecture, unit, component tests)"
-    dependsOn(
-        "ktlintFormat", // Auto-fix formatting
-        "lintDebug", // Android lint
-        "detekt", // Static analysis
-        "testArchitecture", // Architecture tests
-        "testUnit", // Unit tests
-        "testComponent", // Component tests
-    )
+    description = "Run all pre-commit checks locally"
+
+    dependsOn("ktlintFormat", "lintDebug", "detekt")
 
     doLast {
+        println("✅ Pre-commit formatting, lint, and static analysis complete!")
+        println("")
+        println("Running test categories...")
+
+        val categories = listOf(
+            "Architecture" to "🔧",
+            "Unit" to "🧪",
+            "Component" to "🔩",
+        )
+
+        categories.forEach { (category, emoji) ->
+            println("$emoji Running $category tests...")
+
+            val process = ProcessBuilder(
+                "./gradlew",
+                "testDebugUnitTest",
+                "-PtestCategory=timur.gilfanov.messenger.$category",
+            )
+                .directory(project.rootDir)
+                .inheritIO()
+                .start()
+
+            val exitCode = process.waitFor()
+            if (exitCode != 0) {
+                throw GradleException(
+                    "$category tests failed with exit code $exitCode",
+                )
+            }
+        }
+
+        println("")
         println("✅ All pre-commit checks passed! Ready to commit.")
     }
 }

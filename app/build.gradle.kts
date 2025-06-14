@@ -202,10 +202,23 @@ tasks.register("testFeature") {
     }
 }
 
+tasks.register("testApplicationUnit") {
+    group = "verification"
+    description = "Run only Application unit tests"
+    dependsOn("testDebugUnitTest")
+    doFirst {
+        tasks.withType<Test> {
+            useJUnit {
+                includeCategories("timur.gilfanov.messenger.Application")
+            }
+        }
+    }
+}
+
 tasks.register("testApplication") {
     group = "verification"
     description = "Run only Application tests (both unit and instrumentation)"
-    dependsOn("testDebugUnitTest", "connectedDebugAndroidTest")
+    dependsOn("testApplicationUnit", "connectedDebugAndroidTest")
     doFirst {
         tasks.withType<Test> {
             useJUnit {

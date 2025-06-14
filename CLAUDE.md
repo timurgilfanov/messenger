@@ -29,6 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew testComponent               # Run only Component tests  
 ./gradlew testArchitecture            # Run only Architecture tests
 ./gradlew testFeature                 # Run only Feature tests
+./gradlew testApplicationUnit         # Run only Application unit tests
 ./gradlew testApplication             # Run only Application tests (unit + instrumentation)
 ./gradlew testReleaseCandidate        # Run only Release Candidate tests
 
@@ -98,10 +99,10 @@ The CI/CD pipeline is organized by test categories and follows the Testing Strat
 
 **Pre-merge (PR only):**
 - `feature-tests`: Feature tests on emulators
-- `application-tests-emulator`: Application tests on emulators
+- `application-tests-emulator`: Application unit tests locally + instrumentation tests on Firebase Test Lab emulators
 
 **Post-merge (main branch):**
-- `application-tests-devices`: Application tests on real devices via Firebase Test Lab
+- `application-tests-devices`: Application instrumentation tests on real devices via Firebase Test Lab
 
 **Pre-release (tags):**
 - `release-candidate-tests`: Release Candidate tests on multiple devices with release build

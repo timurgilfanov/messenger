@@ -269,7 +269,7 @@ jobs:
           curl -L -o kover-cli.jar \
             https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kover-cli/0.9.1/kover-cli-0.9.1.jar
 
-      - name: Generate JaCoCo-compatible XML (instrumented tests)
+      - name: Generate Instrumented Coverage Report
         run: |
           COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
                              -path "*/artifacts/sdcard/Download/coverage.ec" \
@@ -281,7 +281,6 @@ jobs:
           java -jar kover-cli.jar report $COVERAGE_FILES \
             --classfiles app/build/tmp/kotlin-classes/debug \
             --src app/src/main \
-            --excludeAnnotation androidx.compose.ui.tooling.preview.Preview \
             --excludeAnnotation androidx.compose.runtime.Composable \
             --xml coverage-report/instrumented-report.xml
 
@@ -301,7 +300,7 @@ jobs:
           name: firebase-testlab-results
           path: testlab-results/
 
-      - name: Upload JaCoCo Instrumented XML Report
+      - name: Upload Instrumented Coverage Report
         uses: actions/upload-artifact@v4
         with:
           name: instrumented-report

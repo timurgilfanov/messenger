@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import timur.gilfanov.messenger.ui.ExcludeFromInstrumentationTestCoverageReportGenerated
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
@@ -76,7 +75,6 @@ fun MessageInput(
 }
 
 @Preview(showBackground = true)
-@ExcludeFromInstrumentationTestCoverageReportGenerated
 @Composable
 private fun MessageInputEmptyPreview() {
     MessengerTheme {
@@ -90,7 +88,6 @@ private fun MessageInputEmptyPreview() {
 }
 
 @Preview(showBackground = true)
-@ExcludeFromInstrumentationTestCoverageReportGenerated
 @Composable
 private fun MessageInputWithTextPreview() {
     MessengerTheme {
@@ -104,7 +101,6 @@ private fun MessageInputWithTextPreview() {
 }
 
 @Preview(showBackground = true)
-@ExcludeFromInstrumentationTestCoverageReportGenerated
 @Composable
 private fun MessageInputSendingPreview() {
     MessengerTheme {

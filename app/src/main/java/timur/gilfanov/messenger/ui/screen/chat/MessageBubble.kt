@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
-import timur.gilfanov.messenger.ui.ExcludeFromInstrumentationTestCoverageReportGenerated
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 private const val TIMESTAMP_ALPHA = 0.7f
@@ -252,7 +251,6 @@ private fun MessageError(error: String, isFromCurrentUser: Boolean, modifier: Mo
 }
 
 @Preview(showBackground = true)
-@ExcludeFromInstrumentationTestCoverageReportGenerated
 @Composable
 private fun MessageBubbleCurrentUserPreview() {
     MessengerTheme {
@@ -271,7 +269,6 @@ private fun MessageBubbleCurrentUserPreview() {
 }
 
 @Preview(showBackground = true)
-@ExcludeFromInstrumentationTestCoverageReportGenerated
 @Composable
 private fun MessageBubbleOtherUserPreview() {
     MessengerTheme {
@@ -290,7 +287,6 @@ private fun MessageBubbleOtherUserPreview() {
 }
 
 @Preview(showBackground = true)
-@ExcludeFromInstrumentationTestCoverageReportGenerated
 @Composable
 private fun MessageBubbleSendingPreview() {
     MessengerTheme {
@@ -309,7 +305,6 @@ private fun MessageBubbleSendingPreview() {
 }
 
 @Preview(showBackground = true)
-@ExcludeFromInstrumentationTestCoverageReportGenerated
 @Composable
 private fun MessageBubbleFailedPreview() {
     MessengerTheme {

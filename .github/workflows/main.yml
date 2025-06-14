@@ -508,7 +508,7 @@ jobs:
             --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
             --device model=MediumPhone.arm,version=30 \
             --device model=MediumPhone.arm,version=33 \
-            --device model=foldable,version=30 \
+            --device model=felix,version=33 \
             --timeout 5m \
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.Application \
             --directories-to-pull /sdcard/Download \
@@ -565,7 +565,7 @@ jobs:
           # Create directory for device-specific coverage reports
           mkdir -p device-coverage-reports
           
-          # Generate phone coverage report
+          # Generate phone coverage report (MediumPhone devices)
           PHONE_COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
                                  -path "*MediumPhone*" \
                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
@@ -579,9 +579,9 @@ jobs:
               --xml device-coverage-reports/application-device-phone-report.xml
           fi
           
-          # Generate foldable coverage report  
+          # Generate foldable coverage report (Pixel Fold)
           FOLDABLE_COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
-                                    -path "*foldable*" \
+                                    -path "*felix*" \
                                     -path "*/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
@@ -681,7 +681,7 @@ jobs:
             --device model=MediumPhone.arm,version=33 \
             --device model=MediumPhone.arm,version=31 \
             --device model=MediumPhone.arm,version=29 \
-            --device model=foldable,version=30 \
+            --device model=felix,version=33 \
             --device model=MediumTablet.arm,version=30 \
             --timeout 10m \
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.ReleaseCandidate \
@@ -767,9 +767,9 @@ jobs:
               --xml device-coverage-reports/release-candidate-device-tablet-report.xml
           fi
           
-          # Generate foldable coverage report  
+          # Generate foldable coverage report (Pixel Fold)
           FOLDABLE_COVERAGE_FILES=$(find release-testlab-results/${{ env.RESULTS_DIR }} \
-                                    -path "*foldable*" \
+                                    -path "*felix*" \
                                     -path "*/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then

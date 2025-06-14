@@ -227,3 +227,21 @@ tasks.register("testReleaseCandidate") {
         }
     }
 }
+
+tasks.register("preCommit") {
+    group = "verification"
+    description =
+        "Run all pre-commit checks locally (formatting, lint, detekt, architecture, unit, component tests)"
+    dependsOn(
+        "ktlintFormat", // Auto-fix formatting
+        "lintDebug", // Android lint
+        "detekt", // Static analysis
+        "testArchitecture", // Architecture tests
+        "testUnit", // Unit tests
+        "testComponent", // Component tests
+    )
+
+    doLast {
+        println("✅ All pre-commit checks passed! Ready to commit.")
+    }
+}

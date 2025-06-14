@@ -32,6 +32,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew testApplication             # Run only Application tests (unit + instrumentation)
 ./gradlew testReleaseCandidate        # Run only Release Candidate tests
 
+# Pre-commit checks
+./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)
+
 # Run tests with category filters (manual approach)
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit
 ./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.messenger.Application
@@ -89,6 +92,9 @@ The CI/CD pipeline is organized by test categories and follows the Testing Strat
 **Every Commit (push + PR):**
 - `build`: lint + detekt + architecture tests + APK generation
 - `unit-component-tests`: Unit and Component tests (fast feedback)
+
+**Local Development:**
+- `preCommit`: Run all pre-commit checks locally before committing (auto-formatting + lint + detekt + architecture + unit + component tests)
 
 **Pre-merge (PR only):**
 - `feature-tests`: Feature tests on emulators

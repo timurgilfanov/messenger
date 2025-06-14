@@ -149,6 +149,89 @@ tasks.withType<Test> {
     }
 }
 
+// Category-specific coverage report tasks
+tasks.register("generateCategorySpecificReports") {
+    group = "verification"
+    description = "Generate category-specific coverage reports"
+
+    doLast {
+        // After tests are run with coverage, copy the main report to category-specific files
+        val category = project.findProperty("testCategory") as String?
+        if (category != null) {
+            val categoryName = category.substringAfterLast(".")
+            copy {
+                from("build/reports/kover/reportDebug.xml")
+                into("build/reports/kover/")
+                rename { "${categoryName.lowercase()}-report.xml" }
+            }
+            println("Generated category-specific report: ${categoryName.lowercase()}-report.xml")
+        }
+    }
+}
+
+tasks.register("testArchitectureWithCoverage") {
+    group = "verification"
+    description = "Run Architecture tests with coverage"
+    doLast {
+        val process = ProcessBuilder(
+            "./gradlew",
+            "testDebugUnitTest",
+            "-PtestCategory=timur.gilfanov.messenger.Architecture",
+            "-Pcoverage",
+        )
+            .directory(project.rootDir)
+            .inheritIO()
+            .start()
+
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw GradleException("Architecture tests failed with exit code $exitCode")
+        }
+    }
+}
+
+tasks.register("testUnitWithCoverage") {
+    group = "verification"
+    description = "Run Unit tests with coverage"
+    doLast {
+        val process = ProcessBuilder(
+            "./gradlew",
+            "testDebugUnitTest",
+            "-PtestCategory=timur.gilfanov.messenger.Unit",
+            "-Pcoverage",
+        )
+            .directory(project.rootDir)
+            .inheritIO()
+            .start()
+
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw GradleException("Unit tests failed with exit code $exitCode")
+        }
+    }
+}
+
+tasks.register("testComponentWithCoverage") {
+    group = "verification"
+    description = "Run Component tests with coverage"
+    doLast {
+        val process = ProcessBuilder(
+            "./gradlew",
+            "testDebugUnitTest",
+            "-PtestCategory=timur.gilfanov.messenger.Component",
+            "-Pcoverage",
+        )
+            .directory(project.rootDir)
+            .inheritIO()
+            .start()
+
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw GradleException("Component tests failed with exit code $exitCode")
+        }
+    }
+}
+
 tasks.register("preCommit") {
     group = "verification"
     description = "Run all pre-commit checks locally"
@@ -158,7 +241,7 @@ tasks.register("preCommit") {
     doLast {
         println("✅ Pre-commit formatting, lint, and static analysis complete!")
         println("")
-        println("Running test categories...")
+        println("Running test categories with coverage...")
 
         val categories = listOf(
             "Architecture" to "🔧",
@@ -167,12 +250,13 @@ tasks.register("preCommit") {
         )
 
         categories.forEach { (category, emoji) ->
-            println("$emoji Running $category tests...")
+            println("$emoji Running $category tests with coverage...")
 
             val process = ProcessBuilder(
                 "./gradlew",
                 "testDebugUnitTest",
                 "-PtestCategory=timur.gilfanov.messenger.$category",
+                "-Pcoverage",
             )
                 .directory(project.rootDir)
                 .inheritIO()
@@ -187,6 +271,7 @@ tasks.register("preCommit") {
         }
 
         println("")
-        println("✅ All pre-commit checks passed! Ready to commit.")
+        println("✅ All pre-commit checks passed! Coverage reports generated.")
+        println("📊 Coverage reports available in app/build/reports/kover/")
     }
 }

@@ -12,3 +12,67 @@ coverage:
       default:
         target: 80%
         threshold: 1%
+
+# Component-based coverage organization
+component_management:
+  individual_components:
+    # Domain Layer Components
+    - component_id: domain_entities
+      name: "Domain Entities"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/**"
+    
+    - component_id: domain_usecases
+      name: "Domain Use Cases"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/**"
+    
+    # Feature-Based Components
+    - component_id: chat_feature
+      name: "Chat Feature"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/chat/**"
+        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/participant/chat/**"
+        - "app/src/main/java/timur/gilfanov/messenger/ui/screen/chat/**"
+    
+    - component_id: message_feature
+      name: "Message Feature"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/message/**"
+        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/participant/message/**"
+    
+    # UI Layer Components
+    - component_id: ui_screens
+      name: "UI Screens"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/ui/screen/**"
+    
+    - component_id: ui_theme
+      name: "UI Theme"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/ui/theme/**"
+    
+    # Architecture Layer Components  
+    - component_id: data_layer
+      name: "Data Layer"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/data/**"
+    
+    - component_id: dependency_injection
+      name: "Dependency Injection"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/di/**"
+    
+    # Validation Components
+    - component_id: validation_logic
+      name: "Validation Logic"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/chat/validation/**"
+        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/message/validation/**"
+    
+    # Core Application Components
+    - component_id: application_core
+      name: "Application Core"
+      paths:
+        - "app/src/main/java/timur/gilfanov/messenger/MainActivity.kt"
+        - "app/src/main/java/timur/gilfanov/messenger/MessengerApplication.kt"

@@ -24,6 +24,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Run a single test method
 ./gradlew testDebugUnitTest --tests "ClassName.testMethodName"
 
+# Run tests by category (custom tasks)
+./gradlew testUnit                    # Run only Unit tests
+./gradlew testComponent               # Run only Component tests  
+./gradlew testArchitecture            # Run only Architecture tests
+./gradlew testFeature                 # Run only Feature tests
+./gradlew testApplication             # Run only Application tests (unit + instrumentation)
+./gradlew testReleaseCandidate        # Run only Release Candidate tests
+
 # Run tests with category filters (manual approach)
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit
 ./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.messenger.Application
@@ -62,7 +70,7 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
 
 ### Testing Strategy
-Full strategy in `Testing Strategies.md`.
+Full strategy in `Testing Strategy.md`.
 - **Fakes over Mocks**: Uses fake implementations (`RepositoryFake`) instead of mocking frameworks
 - **Builder Pattern**: Test builders for domain entities (`ChatBuilder`, `MessageBuilder`)
 - **Integration Tests**: Tests cover use case interactions with repository layer
@@ -74,6 +82,23 @@ Full strategy in `Testing Strategies.md`.
   - `Feature`: Test integration between two or more components
   - `Application`: Test deployable binary to verify application functionality
   - `ReleaseCandidate`: Verifies the critical user journeys of a release build and performance
+
+### CI/CD Pipeline
+The CI/CD pipeline is organized by test categories and follows the Testing Strategy execution matrix:
+
+**Every Commit (push + PR):**
+- `build`: lint + detekt + architecture tests + APK generation
+- `unit-component-tests`: Unit and Component tests (fast feedback)
+
+**Pre-merge (PR only):**
+- `feature-tests`: Feature tests on emulators
+- `application-tests-emulator`: Application tests on emulators
+
+**Post-merge (main branch):**
+- `application-tests-devices`: Application tests on real devices via Firebase Test Lab
+
+**Pre-release (tags):**
+- `release-candidate-tests`: Release Candidate tests on multiple devices with release build
 
 ### Code Quality Tools
 - **Detekt**: Static analysis with custom rules in `config/detekt/detekt.yml`

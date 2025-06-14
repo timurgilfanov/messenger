@@ -148,3 +148,82 @@ tasks.withType<Test> {
         }
     }
 }
+
+// Custom test tasks for categories (based on Testing Strategy.md)
+tasks.register("testUnit") {
+    group = "verification"
+    description = "Run only Unit tests"
+    dependsOn("testDebugUnitTest")
+    doFirst {
+        tasks.withType<Test> {
+            useJUnit {
+                includeCategories("timur.gilfanov.messenger.Unit")
+            }
+        }
+    }
+}
+
+tasks.register("testComponent") {
+    group = "verification"
+    description = "Run only Component tests"
+    dependsOn("testDebugUnitTest")
+    doFirst {
+        tasks.withType<Test> {
+            useJUnit {
+                includeCategories("timur.gilfanov.messenger.Component")
+            }
+        }
+    }
+}
+
+tasks.register("testArchitecture") {
+    group = "verification"
+    description = "Run only Architecture tests"
+    dependsOn("testDebugUnitTest")
+    doFirst {
+        tasks.withType<Test> {
+            useJUnit {
+                includeCategories("timur.gilfanov.messenger.Architecture")
+            }
+        }
+    }
+}
+
+tasks.register("testFeature") {
+    group = "verification"
+    description = "Run only Feature tests"
+    dependsOn("testDebugUnitTest")
+    doFirst {
+        tasks.withType<Test> {
+            useJUnit {
+                includeCategories("timur.gilfanov.messenger.Feature")
+            }
+        }
+    }
+}
+
+tasks.register("testApplication") {
+    group = "verification"
+    description = "Run only Application tests (both unit and instrumentation)"
+    dependsOn("testDebugUnitTest", "connectedDebugAndroidTest")
+    doFirst {
+        tasks.withType<Test> {
+            useJUnit {
+                includeCategories("timur.gilfanov.messenger.Application")
+            }
+        }
+    }
+}
+
+tasks.register("testReleaseCandidate") {
+    group = "verification"
+    description = "Run only Release Candidate tests"
+    dependsOn("connectedReleaseAndroidTest")
+    doFirst {
+        tasks.withType<Test> {
+            useJUnit {
+                includeCategories("timur.gilfanov.messenger.ReleaseCandidate")
+            }
+        }
+    }
+}

@@ -54,6 +54,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew koverHtmlReport
 ```
 
+### Test Categories with Coverage
+```bash
+# Run specific test categories with coverage
+./gradlew testArchitectureWithCoverage
+./gradlew testUnitWithCoverage
+./gradlew testComponentWithCoverage
+
+# Run individual categories with coverage (alternative)
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture -Pcoverage
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit -Pcoverage
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Component -Pcoverage
+```
+
+### Coverage Reports
+The CI/CD pipeline uploads **test-specific** coverage reports to Codecov with precise flags that match exactly what was tested:
+
+**Test Category Coverage (Local Tests):**
+- `architecture,local` - Coverage from Architecture tests only
+- `unit,local` - Coverage from Unit tests only  
+- `component,robolectric` - Coverage from Component tests only
+- `feature,local` - Coverage from Feature tests only
+- `application,local` - Coverage from Application unit tests only
+
+**Device-Specific Coverage (Firebase Test Lab):**
+- `application,emulator,phone` - Coverage from Application tests on phone emulators only
+- `application,device,phone` - Coverage from Application tests on phone devices only
+- `application,device,foldable` - Coverage from Application tests on foldable devices only
+- `release_candidate,device,phone` - Coverage from Release Candidate tests on phone devices only
+- `release_candidate,device,tablet` - Coverage from Release Candidate tests on tablet devices only
+- `release_candidate,device,foldable` - Coverage from Release Candidate tests on foldable devices only
+
+**Flag Precision:**
+Each coverage report contains **only** the coverage data from the specific:
+- Test category that was executed (Unit, Component, Architecture, Feature, Application, Release Candidate)
+- Environment where tests ran (local, robolectric, emulator, device)  
+- Device type that was used (phone, tablet, foldable)
+
+This ensures accurate coverage tracking without cross-contamination between different test types or execution environments.
+
 ## Architecture Overview
 
 This is an Android messenger application built with Kotlin and Jetpack Compose, following Clean Architecture principles with a domain-driven design approach.

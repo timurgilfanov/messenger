@@ -8,6 +8,7 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -23,6 +24,7 @@ import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationErro
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 
+@Category(Unit::class)
 class ChatValidatorTest {
 
     private val validator = ChatValidatorImpl()

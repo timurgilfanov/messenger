@@ -10,19 +10,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew build
 
 # Run unit tests
-./gradlew test
+./gradlew testDebugUnitTest
 
 # Run instrumentation tests 
-./gradlew connectedAndroidTest
+./gradlew connectedDebugAndroidTest
 
 # Run tests with coverage
-./gradlew test -Pcoverage
+./gradlew testDebugUnitTest -Pcoverage
 
 # Run a single test class
-./gradlew test --tests "ClassName"
+./gradlew testDebugUnitTest --tests "ClassName"
 
 # Run a single test method
-./gradlew test --tests "ClassName.testMethodName"
+./gradlew testDebugUnitTest --tests "ClassName.testMethodName"
+
+# Run tests by category (property-based approach)
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Component
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Feature
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Application
+./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.messenger.Application
+
+# Pre-commit checks
+./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)
+
+# Exclude specific categories
+./gradlew testDebugUnitTest -PexcludeCategory=timur.gilfanov.messenger.Architecture
 ```
 
 ### Code Quality
@@ -57,10 +71,38 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
 
 ### Testing Strategy
+Full strategy in `Testing Strategy.md`.
 - **Fakes over Mocks**: Uses fake implementations (`RepositoryFake`) instead of mocking frameworks
 - **Builder Pattern**: Test builders for domain entities (`ChatBuilder`, `MessageBuilder`)
 - **Integration Tests**: Tests cover use case interactions with repository layer
 - **Turbine**: For testing Kotlin Flow emissions
+- **Test Categories**: Tests are organized by category using JUnit's `@Category` annotation (as defined in Testing Strategy.md):
+  - `Unit`: Test single method or class with minimal dependencies
+  - `Component`: Test multiply classes together  
+  - `Architecture`: Verify architecture rules
+  - `Feature`: Test integration between two or more components
+  - `Application`: Test deployable binary to verify application functionality
+  - `ReleaseCandidate`: Verifies the critical user journeys of a release build and performance
+
+### CI/CD Pipeline
+The CI/CD pipeline is organized by test categories and follows the Testing Strategy execution matrix:
+
+**Every Commit (push + PR):**
+- `build`: lint + detekt + architecture tests + APK generation
+- `unit-component-tests`: Unit and Component tests (fast feedback)
+
+**Local Development:**
+- `preCommit`: Run all pre-commit checks locally before committing (auto-formatting + lint + detekt + architecture + unit + component tests)
+
+**Pre-merge (PR only):**
+- `feature-tests`: Feature tests on emulators
+- `application-tests-emulator`: Application unit tests locally + instrumentation tests on Firebase Test Lab emulators
+
+**Post-merge (main branch):**
+- `application-tests-devices`: Application instrumentation tests on real devices via Firebase Test Lab
+
+**Pre-release (tags):**
+- `release-candidate-tests`: Release Candidate tests on multiple devices with release build
 
 ### Code Quality Tools
 - **Detekt**: Static analysis with custom rules in `config/detekt/detekt.yml`

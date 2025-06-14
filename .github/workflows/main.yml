@@ -1,8 +1,9 @@
-name: Main Branch Verification
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
     paths:
       - 'app/**'
       - 'build.gradle.kts'
@@ -15,6 +16,7 @@ jobs:
   build:
     permissions:
       contents: read
+      checks: write # required for mikepenz/action-junit-report
 
     runs-on: ubuntu-latest
     steps:
@@ -74,6 +76,21 @@ jobs:
           echo "Detekt found issues. See the uploaded report for details."
           exit 1
 
+      - name: Run Architecture Tests
+        run: ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture
+
+      - name: Upload Architecture Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+
+      - name: Publish Architecture Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Architecture Test Results"
+
       - name: Build Debug and AndroidTest APKs
         run: ./gradlew -Pcoverage assembleDebug assembleDebugAndroidTest
 
@@ -95,7 +112,7 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/debug
 
-  unitTest:
+  unit-component-tests:
     needs: build
 
     permissions:
@@ -129,30 +146,37 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          ./gradlew testDebugUnitTest | tee unit-test.log
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit | tee unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat unit-test.log
+          exit $EXIT
+
+      - name: Run Component Tests
+        run: |
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Component | tee component-test.log
+          EXIT=${PIPESTATUS[0]}
+          [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
 
       - name: Upload Unit Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-report
+          name: unit-component-test-report
           path: app/build/reports/tests/testDebugUnitTest
 
-      - name: Publish Unit Test Results
+      - name: Publish Unit and Component Test Results
         uses: mikepenz/action-junit-report@v4
         with:
           report_paths: app/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Unit Test Results"
+          check_name: "Unit and Component Test Results"
 
       - name: Generate Kover XML Report
         run: ./gradlew koverXmlReportDebug
 
-      - name: Upload Kover Unit XML Report
+      - name: Upload Kover Unit and Component XML Report
         uses: actions/upload-artifact@v4
         with:
-          name: unit-report
+          name: unit-component-report
           path: app/build/reports/kover/reportDebug.xml
 
       - name: Upload coverage to Codecov
@@ -160,10 +184,187 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: app/build/reports/kover/reportDebug.xml
-          flags: android_unit
+          flags: android_unit_component
           fail_ci_if_error: true
 
-  androidTest:
+  feature-tests:
+    if: github.event_name == 'pull_request'
+    needs: build
+
+    permissions:
+      checks: write # required for mikepenz/action-junit-report
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/configuration-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Feature Tests
+        run: |
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Feature | tee feature-test.log
+          EXIT=${PIPESTATUS[0]}
+          [ $EXIT -eq 0 ] || cat feature-test.log
+          exit $EXIT
+
+      - name: Upload Feature Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+
+      - name: Publish Feature Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Feature Test Results"
+
+  application-tests-emulator:
+    if: github.event_name == 'pull_request'
+    needs: build
+
+    permissions:
+      checks: write # required for mikepenz/action-junit-report
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/configuration-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Application Unit Tests
+        run: |
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Application | tee application-unit-test.log
+          EXIT=${PIPESTATUS[0]}
+          [ $EXIT -eq 0 ] || cat application-unit-test.log
+          exit $EXIT
+
+      - name: Upload Application Unit Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+
+      - name: Publish Application Unit Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Application Unit Test Results"
+
+      - name: Download Debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug
+
+      - name: Download AndroidTest APK
+        uses: actions/download-artifact@v4
+        with:
+          name: androidtest-apk
+          path: app/build/outputs/apk/androidTest/debug
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Install gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Run Application Instrumentation Tests on Emulators
+        run: |
+          gcloud firebase test android run \
+            --type instrumentation \
+            --app app/build/outputs/apk/debug/app-debug.apk \
+            --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --device model=Pixel2.arm,version=30 \
+            --timeout 5m \
+            --environment-variables testCategory=timur.gilfanov.messenger.Application \
+            --results-dir="${{ env.RESULTS_DIR }}" 2>&1 | tee emulator-run.log
+
+      - name: Upload Application Emulator Test Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-emulator-test-log
+          path: emulator-run.log
+
+      - name: Extract Firebase Results Path
+        id: extract-results
+        run: |
+          CONSOLE_URL=$(grep 'Raw results will be stored in' emulator-run.log | awk '{print $NF}' | tr -d '[]')
+          if [ -z "$CONSOLE_URL" ]; then
+            echo "❌ Failed to extract CONSOLE_URL from emulator-run.log"; exit 1
+          fi
+          # Convert to gs:// URL
+          BUCKET_PATH=$(echo "$CONSOLE_URL" | sed 's|https://console.developers.google.com/storage/browser/|gs://|')
+          if [ -z "$BUCKET_PATH" ]; then
+            echo "❌ Failed to convert CONSOLE_URL to BUCKET_PATH"; exit 1
+          fi
+          echo "RESULTS_URL=$BUCKET_PATH" >> "$GITHUB_ENV"
+          echo "✅ RESULTS_URL set to $BUCKET_PATH"
+
+      - name: Download results from Firebase Test Lab
+        run: |
+          if [ -z "$RESULTS_URL" ]; then
+            echo "❌ RESULTS_URL is not set"; exit 1
+          fi
+          mkdir -p emulator-testlab-results
+          gsutil -m cp -r $RESULTS_URL emulator-testlab-results/
+
+      - name: Publish Application Emulator Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: emulator-testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
+          check_name: "Application Instrumentation Test Results (Emulator)"
+
+      - name: Sanitize all subdirectory names to remove colons
+        run: |
+          for dir in emulator-testlab-results/*; do
+            base=$(basename "$dir")
+            safe=$(echo "$base" | tr ':' '_')
+            if [ "$base" != "$safe" ]; then
+              mv "emulator-testlab-results/$base" "emulator-testlab-results/$safe"
+            fi
+          done
+
+      - name: Upload Application Emulator Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-emulator-test-results
+          path: emulator-testlab-results/
+
+  application-tests-devices:
+    if: github.ref == 'refs/heads/main'
     needs: build
 
     permissions:
@@ -211,22 +412,23 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Run Firebase Test Lab tests
+      - name: Run Application Tests on Devices
         run: |
           gcloud firebase test android run \
             --type instrumentation \
             --app app/build/outputs/apk/debug/app-debug.apk \
             --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
             --device model=MediumPhone.arm,version=30 \
+            --device model=MediumPhone.arm,version=33 \
             --timeout 5m \
-            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.Application \
             --directories-to-pull /sdcard/Download \
             --results-dir="${{ env.RESULTS_DIR }}" 2>&1 | tee run.log
 
-      - name: Upload Instrumented Test Run Log
+      - name: Upload Application Test Run Log
         uses: actions/upload-artifact@v4
         with:
-          name: firebase-testlab-run-log
+          name: application-test-devices-run-log
           path: run.log
 
       - name: Extract Firebase Results Path
@@ -252,11 +454,11 @@ jobs:
           mkdir -p testlab-results
           gsutil -m cp -r $RESULTS_URL testlab-results/
 
-      - name: Publish Instrumented Test Results
+      - name: Publish Application Test Results
         uses: mikepenz/action-junit-report@v4
         with:
           report_paths: testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
-          check_name: "Instrumented Test Results"
+          check_name: "Application Test Results (Devices)"
 
       - name: Download Kotlin class files
         uses: actions/download-artifact@v4
@@ -269,7 +471,7 @@ jobs:
           curl -L -o kover-cli.jar \
             https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kover-cli/0.9.1/kover-cli-0.9.1.jar
 
-      - name: Generate Instrumented Coverage Report
+      - name: Generate Application Test Coverage Report
         run: |
           COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
                              -path "*/artifacts/sdcard/Download/coverage.ec" \
@@ -282,7 +484,7 @@ jobs:
             --classfiles app/build/tmp/kotlin-classes/debug \
             --src app/src/main \
             --excludeAnnotation androidx.compose.runtime.Composable \
-            --xml coverage-report/instrumented-report.xml
+            --xml coverage-report/application-report.xml
 
       - name: Sanitize all subdirectory names to remove colons
         run: |
@@ -294,22 +496,127 @@ jobs:
             fi
           done
 
-      - name: Upload Instrumented Test Report
+      - name: Upload Application Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: firebase-testlab-results
+          name: application-test-devices-results
           path: testlab-results/
 
-      - name: Upload Instrumented Coverage Report
+      - name: Upload Application Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          name: instrumented-report
-          path: coverage-report/instrumented-report.xml
+          name: application-report
+          path: coverage-report/application-report.xml
 
-      - name: Upload Instrumented Coverage to Codecov
+      - name: Upload Application Coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage-report/instrumented-report.xml
-          flags: android_instrumented
+          files: coverage-report/application-report.xml
+          flags: android_application
           fail_ci_if_error: true
+
+  release-candidate-tests:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+
+    permissions:
+      checks: write # required for mikepenz/action-junit-report
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/configuration-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Release APKs
+        run: ./gradlew assembleRelease assembleReleaseAndroidTest
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Install gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Run Release Candidate Tests
+        run: |
+          gcloud firebase test android run \
+            --type instrumentation \
+            --app app/build/outputs/apk/release/app-release.apk \
+            --test app/build/outputs/apk/androidTest/release/app-release-androidTest.apk \
+            --device model=MediumPhone.arm,version=30 \
+            --device model=MediumPhone.arm,version=33 \
+            --device model=MediumPhone.arm,version=31 \
+            --device model=MediumTablet.arm,version=30 \
+            --timeout 10m \
+            --environment-variables testCategory=timur.gilfanov.messenger.ReleaseCandidate \
+            --results-dir="${{ env.RESULTS_DIR }}" 2>&1 | tee release-run.log
+
+      - name: Upload Release Candidate Test Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-test-log
+          path: release-run.log
+
+      - name: Extract Firebase Results Path
+        id: extract-results
+        run: |
+          CONSOLE_URL=$(grep 'Raw results will be stored in' release-run.log | awk '{print $NF}' | tr -d '[]')
+          if [ -z "$CONSOLE_URL" ]; then
+            echo "❌ Failed to extract CONSOLE_URL from release-run.log"; exit 1
+          fi
+          # Convert to gs:// URL
+          BUCKET_PATH=$(echo "$CONSOLE_URL" | sed 's|https://console.developers.google.com/storage/browser/|gs://|')
+          if [ -z "$BUCKET_PATH" ]; then
+            echo "❌ Failed to convert CONSOLE_URL to BUCKET_PATH"; exit 1
+          fi
+          echo "RESULTS_URL=$BUCKET_PATH" >> "$GITHUB_ENV"
+          echo "✅ RESULTS_URL set to $BUCKET_PATH"
+
+      - name: Download results from Firebase Test Lab
+        run: |
+          if [ -z "$RESULTS_URL" ]; then
+            echo "❌ RESULTS_URL is not set"; exit 1
+          fi
+          mkdir -p release-testlab-results
+          gsutil -m cp -r $RESULTS_URL release-testlab-results/
+
+      - name: Publish Release Candidate Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: release-testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
+          check_name: "Release Candidate Test Results"
+
+      - name: Sanitize all subdirectory names to remove colons
+        run: |
+          for dir in release-testlab-results/*; do
+            base=$(basename "$dir")
+            safe=$(echo "$base" | tr ':' '_')
+            if [ "$base" != "$safe" ]; then
+              mv "release-testlab-results/$base" "release-testlab-results/$safe"
+            fi
+          done
+
+      - name: Upload Release Candidate Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-test-results
+          path: release-testlab-results/

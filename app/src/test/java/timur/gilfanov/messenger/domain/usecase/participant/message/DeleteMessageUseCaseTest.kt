@@ -9,6 +9,7 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
@@ -21,6 +22,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.MessageNotFound
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.RemoteError
 
+@Category(Unit::class)
 class DeleteMessageUseCaseTest {
 
     private class RepositoryFake(

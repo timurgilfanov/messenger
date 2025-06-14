@@ -23,6 +23,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    sourceSets {
+        getByName("test") {
+            java.srcDir("src/testShared/java")
+        }
+        getByName("androidTest") {
+            java.srcDir("src/testShared/java")
+        }
+    }
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -127,4 +136,57 @@ dependencies {
     ktlintRuleset(libs.ktlint.compose)
     detektPlugins(libs.detekt.compose)
     detektPlugins(libs.detekt.formatting)
+}
+
+tasks.withType<Test> {
+    useJUnit {
+        if (project.hasProperty("testCategory")) {
+            includeCategories(project.property("testCategory") as String)
+        }
+        if (project.hasProperty("excludeCategory")) {
+            excludeCategories(project.property("excludeCategory") as String)
+        }
+    }
+}
+
+tasks.register("preCommit") {
+    group = "verification"
+    description = "Run all pre-commit checks locally"
+
+    dependsOn("ktlintFormat", "lintDebug", "detekt")
+
+    doLast {
+        println("✅ Pre-commit formatting, lint, and static analysis complete!")
+        println("")
+        println("Running test categories...")
+
+        val categories = listOf(
+            "Architecture" to "🔧",
+            "Unit" to "🧪",
+            "Component" to "🔩",
+        )
+
+        categories.forEach { (category, emoji) ->
+            println("$emoji Running $category tests...")
+
+            val process = ProcessBuilder(
+                "./gradlew",
+                "testDebugUnitTest",
+                "-PtestCategory=timur.gilfanov.messenger.$category",
+            )
+                .directory(project.rootDir)
+                .inheritIO()
+                .start()
+
+            val exitCode = process.waitFor()
+            if (exitCode != 0) {
+                throw GradleException(
+                    "$category tests failed with exit code $exitCode",
+                )
+            }
+        }
+
+        println("")
+        println("✅ All pre-commit checks passed! Ready to commit.")
+    }
 }

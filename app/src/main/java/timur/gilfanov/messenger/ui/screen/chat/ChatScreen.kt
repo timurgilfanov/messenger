@@ -29,6 +29,7 @@ import kotlinx.collections.immutable.persistentListOf
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.ui.ExcludeFromInstrumentationTestCoverageReportGenerated
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -165,6 +166,7 @@ fun ChatContent(
 }
 
 @Preview(showBackground = true)
+@ExcludeFromInstrumentationTestCoverageReportGenerated
 @Composable
 private fun ChatContentPreview() {
     MessengerTheme {
@@ -220,6 +222,7 @@ private fun ChatContentPreview() {
 }
 
 @Preview(showBackground = true)
+@ExcludeFromInstrumentationTestCoverageReportGenerated
 @Composable
 private fun ChatLoadingPreview() {
     MessengerTheme {

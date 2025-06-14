@@ -4,6 +4,7 @@ import java.util.UUID
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -17,6 +18,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveC
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.RemoteError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.RemoteUnreachable
 
+@Category(Unit::class)
 class LeaveChatUseCaseTest {
 
     private class RepositoryFake(val error: RepositoryLeaveChatError? = null) :

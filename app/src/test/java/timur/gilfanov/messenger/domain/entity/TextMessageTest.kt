@@ -4,12 +4,14 @@ import java.util.UUID
 import junit.framework.TestCase.assertTrue
 import kotlinx.datetime.Clock
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 
+@Category(Unit::class)
 class TextMessageTest {
 
     @Test

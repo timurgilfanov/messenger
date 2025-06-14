@@ -6,7 +6,10 @@ import com.lemonappdev.konsist.api.architecture.Layer
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import com.lemonappdev.konsist.api.verify.assertTrue
 import org.junit.Test
+import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.Architecture
 
+@Category(Architecture::class)
 class ArchitectureTest {
 
     private val uiLayer = Layer("ui", "timur.gilfanov.messenger.ui..")

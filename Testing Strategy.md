@@ -22,9 +22,9 @@ Test classes should be annotated with it's test category, so CI/CD could know wh
 
 | Category          | Network access                          | Execution                                            | Build type             | Lifecycle                      |
 |-------------------|-----------------------------------------|------------------------------------------------------|------------------------|--------------------------------|
-| Architecture      | No                                      | Local                                                | Debuggable             | Pre-merge                      |
-| Unit              | No                                      | Local                                                | Debuggable             | Pre-merge                      | 
-| Component         | No                                      | Local <br/> Robolectric <br/> Emulator               | Debuggable             | Pre-merge                      |
+| Architecture      | No                                      | Local                                                | Debuggable             | Every commit                   |
+| Unit              | No                                      | Local                                                | Debuggable             | Every commit                   | 
+| Component         | No                                      | Local <br/> Robolectric <br/> Emulator               | Debuggable             | Every commit                   |
 | Feature           | Mocked                                  | Local <br/> Robolectric <br/> Emulator <br/> Devices | Debuggable             | Pre-merge                      |
 | Application       | Mocked <br/> **Staging** <br/> **Prod** | Emulator <br/> **Devices**                           | Debuggable             | Pre-merge <br/> **Post-merge** |
 | Release Candidate | Prod                                    | Emulator <br/> Devices                               | Minified release build | Post-merge <br/> Pre-release   |

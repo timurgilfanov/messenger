@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ValidationError
 import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule
@@ -33,6 +34,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 
+@Category(Unit::class)
 class CreateMessageUseCaseTest {
 
     private class RepositoryFake(

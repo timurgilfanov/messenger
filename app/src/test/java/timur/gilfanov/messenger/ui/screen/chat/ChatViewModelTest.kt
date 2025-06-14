@@ -20,6 +20,8 @@ import kotlinx.datetime.Instant
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.Feature
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -42,6 +44,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdat
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@Category(Feature::class)
 class ChatViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()

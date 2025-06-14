@@ -23,6 +23,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    sourceSets {
+        getByName("test") {
+            java.srcDir("src/testShared/java")
+        }
+        getByName("androidTest") {
+            java.srcDir("src/testShared/java")
+        }
+    }
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -127,4 +136,15 @@ dependencies {
     ktlintRuleset(libs.ktlint.compose)
     detektPlugins(libs.detekt.compose)
     detektPlugins(libs.detekt.formatting)
+}
+
+tasks.withType<Test> {
+    useJUnit {
+        if (project.hasProperty("testCategory")) {
+            includeCategories(project.property("testCategory") as String)
+        }
+        if (project.hasProperty("excludeCategory")) {
+            excludeCategories(project.property("excludeCategory") as String)
+        }
+    }
 }

@@ -3,10 +3,12 @@ package timur.gilfanov.messenger.domain.entity
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidator
 
+@Category(Unit::class)
 class TextValidatorTest {
 
     @Test

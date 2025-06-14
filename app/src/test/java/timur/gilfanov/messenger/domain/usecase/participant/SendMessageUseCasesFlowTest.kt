@@ -9,6 +9,8 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
+import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.Feature
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -32,7 +34,8 @@ import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatError
 import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatUseCase
 import timur.gilfanov.messenger.domain.usecase.repository.RepositoryFake
 
-class ChatMessageIntegrationTest {
+@Category(Feature::class)
+class SendMessageUseCasesFlowTest {
 
     private class ChatValidatorFake : ChatValidator {
         override fun validateOnCreation(chat: Chat): ResultWithError<Unit, ChatValidationError> =

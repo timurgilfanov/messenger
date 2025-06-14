@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.domain.entity.message.validation
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
@@ -18,6 +19,7 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError.CannotChangeFromRead
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError.CannotChangeFromUndefinedToOtherThanSending
 
+@Category(Unit::class)
 class DeliveryStatusValidatorTest {
 
     private val validator = DeliveryStatusValidatorImpl()

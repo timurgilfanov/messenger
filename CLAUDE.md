@@ -10,19 +10,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew build
 
 # Run unit tests
-./gradlew test
+./gradlew testDebugUnitTest
 
 # Run instrumentation tests 
-./gradlew connectedAndroidTest
+./gradlew connectedDebugAndroidTest
 
 # Run tests with coverage
-./gradlew test -Pcoverage
+./gradlew testDebugUnitTest -Pcoverage
 
 # Run a single test class
-./gradlew test --tests "ClassName"
+./gradlew testDebugUnitTest --tests "ClassName"
 
 # Run a single test method
-./gradlew test --tests "ClassName.testMethodName"
+./gradlew testDebugUnitTest --tests "ClassName.testMethodName"
+
+# Run tests with category filters (manual approach)
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit
+./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.messenger.Application
+./gradlew testDebugUnitTest -PexcludeCategory=timur.gilfanov.messenger.Architecture
 ```
 
 ### Code Quality
@@ -57,10 +62,18 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
 
 ### Testing Strategy
+Full strategy in `Testing Strategies.md`.
 - **Fakes over Mocks**: Uses fake implementations (`RepositoryFake`) instead of mocking frameworks
 - **Builder Pattern**: Test builders for domain entities (`ChatBuilder`, `MessageBuilder`)
 - **Integration Tests**: Tests cover use case interactions with repository layer
 - **Turbine**: For testing Kotlin Flow emissions
+- **Test Categories**: Tests are organized by category using JUnit's `@Category` annotation (as defined in Testing Strategy.md):
+  - `Unit`: Test single method or class with minimal dependencies
+  - `Component`: Test multiply classes together  
+  - `Architecture`: Verify architecture rules
+  - `Feature`: Test integration between two or more components
+  - `Application`: Test deployable binary to verify application functionality
+  - `ReleaseCandidate`: Verifies the critical user journeys of a release build and performance
 
 ### Code Quality Tools
 - **Detekt**: Static analysis with custom rules in `config/detekt/detekt.yml`

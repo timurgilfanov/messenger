@@ -4,6 +4,7 @@ import kotlin.test.assertIs
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -12,6 +13,7 @@ import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDe
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 
+@Category(Unit::class)
 class DeleteChatUseCaseTest {
 
     private class RepositoryFake(

@@ -65,11 +65,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture -Pcoverage
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit -Pcoverage
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Component -Pcoverage
+
+# Generate category-specific coverage reports
+./gradlew koverXmlReportDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.Unit
+```
+
+### Codecov Components
+Components are configured in `codecov.yml` and automatically organize coverage by code paths:
+```bash
+# Components are path-based and work automatically with any coverage upload
+# No special commands needed - just run tests with coverage and upload to Codecov
+# View component coverage in Codecov dashboard under "Components" tab
 ```
 
 ### Coverage Reports
-The CI/CD pipeline uploads **test-specific** coverage reports to Codecov with precise flags that match exactly what was tested:
+The CI/CD pipeline provides **two-dimensional coverage analysis** using both Codecov Components and test-specific flags for comprehensive insights:
 
+#### **Test-Specific Flags (What was tested)**
 **Test Category Coverage (Local Tests):**
 - `architecture,local` - Coverage from Architecture tests only
 - `unit,local` - Coverage from Unit tests only  
@@ -85,13 +97,40 @@ The CI/CD pipeline uploads **test-specific** coverage reports to Codecov with pr
 - `release_candidate,device,tablet` - Coverage from Release Candidate tests on tablet devices only
 - `release_candidate,device,foldable` - Coverage from Release Candidate tests on foldable devices only
 
-**Flag Precision:**
-Each coverage report contains **only** the coverage data from the specific:
-- Test category that was executed (Unit, Component, Architecture, Feature, Application, Release Candidate)
-- Environment where tests ran (local, robolectric, emulator, device)  
-- Device type that was used (phone, tablet, foldable)
+#### **Codecov Components (Which code was tested)**
+**Domain Layer Components:**
+- `domain_entities` - Core business entities (Chat, Message, Participant)
+- `domain_usecases` - Business logic operations
+- `validation_logic` - Entity validation rules
 
-This ensures accurate coverage tracking without cross-contamination between different test types or execution environments.
+**Feature-Based Components:**
+- `chat_feature` - Chat-related entities, use cases, and UI
+- `message_feature` - Message-related entities and use cases
+
+**UI Layer Components:**
+- `ui_screens` - Compose screens and ViewModels
+- `ui_theme` - Theme and styling components
+
+**Architecture Components:**
+- `data_layer` - Repository implementations
+- `dependency_injection` - Hilt modules
+- `application_core` - MainActivity and Application class
+
+#### **Two-Dimensional Analysis**
+Combine Components + Flags for insights like:
+- **"Chat Feature Unit Test Coverage"**: `chat_feature` component + `unit,local` flag
+- **"Domain Entities Device Coverage"**: `domain_entities` component + `application,device,phone` flag  
+- **"UI Screens Component Test Coverage"**: `ui_screens` component + `component,robolectric` flag
+- **"Validation Logic Architecture Coverage"**: `validation_logic` component + `architecture,local` flag
+
+#### **Coverage Precision**
+Each coverage report contains **only** the coverage data from:
+- **Specific test category** that was executed (Unit, Component, Architecture, Feature, Application, Release Candidate)
+- **Specific environment** where tests ran (local, robolectric, emulator, device)  
+- **Specific device type** that was used (phone, tablet, foldable)
+- **Specific code components** as defined in `codecov.yml` (automatically filtered by path)
+
+This ensures accurate coverage tracking without cross-contamination and provides rich insights for both testing strategy and code organization decisions.
 
 ## Architecture Overview
 
@@ -142,6 +181,12 @@ The CI/CD pipeline is organized by test categories and follows the Testing Strat
 
 **Pre-release (tags):**
 - `release-candidate-tests`: Release Candidate tests on multiple devices with release build
+
+**Coverage Integration:**
+- Each job uploads test-specific coverage reports with precise flags (e.g., `unit,local`, `application,device,phone`)
+- Codecov Components automatically organize coverage by code structure (defined in `codecov.yml`)
+- No CI/CD changes needed for Components - they work automatically with existing coverage uploads
+- Codecov dashboard provides both flag-based and component-based views of coverage data
 
 ### Code Quality Tools
 - **Detekt**: Static analysis with custom rules in `config/detekt/detekt.yml`

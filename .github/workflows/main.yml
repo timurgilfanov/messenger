@@ -77,20 +77,7 @@ jobs:
           exit 1
 
       - name: Run Architecture Tests
-        run: ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture -Pcoverage
-
-      - name: Generate Architecture Coverage Report
-        run: |
-          ./gradlew koverXmlReportDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.Architecture
-
-      - name: Upload Architecture Coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/architecture-report.xml
-          flags: architecture,local
-          fail_ci_if_error: true
+        run: ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture
 
       - name: Upload Architecture Test Report
         uses: actions/upload-artifact@v4

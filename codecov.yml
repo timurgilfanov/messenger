@@ -13,10 +13,8 @@ coverage:
         target: 80%
         threshold: 1%
 
-# Component-based coverage organization
 component_management:
   individual_components:
-    # Domain Layer Components
     - component_id: domain_entities
       name: "Domain Entities"
       paths:
@@ -27,7 +25,6 @@ component_management:
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/**"
     
-    # Feature-Based Components
     - component_id: chat_feature
       name: "Chat Feature"
       paths:
@@ -41,7 +38,6 @@ component_management:
         - "app/src/main/java/timur/gilfanov/messenger/domain/entity/message/**"
         - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/participant/message/**"
     
-    # UI Layer Components
     - component_id: ui_screens
       name: "UI Screens"
       paths:
@@ -52,7 +48,6 @@ component_management:
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/ui/theme/**"
     
-    # Architecture Layer Components  
     - component_id: data_layer
       name: "Data Layer"
       paths:
@@ -63,16 +58,73 @@ component_management:
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/di/**"
     
-    # Validation Components
     - component_id: validation_logic
       name: "Validation Logic"
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/domain/entity/chat/validation/**"
         - "app/src/main/java/timur/gilfanov/messenger/domain/entity/message/validation/**"
     
-    # Core Application Components
     - component_id: application_core
       name: "Application Core"
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/MainActivity.kt"
         - "app/src/main/java/timur/gilfanov/messenger/MessengerApplication.kt"
+
+flag_management:
+  individual_flags:
+    
+    - name: unit
+      carryforward: true
+      statuses:
+        - type: project
+          target: 80%
+          threshold: 1%
+    
+    - name: component
+      carryforward: true
+      statuses:
+        - type: project
+          target: 10%
+          threshold: 1%
+    
+    - name: feature
+      carryforward: true
+      statuses:
+        - type: project
+          target: 5%
+          threshold: 1%
+    
+    - name: application
+      carryforward: true
+      statuses:
+        - type: project
+          target: 0%
+          threshold: 3%
+    
+    - name: release_candidate
+      carryforward: true
+      statuses:
+        - type: project
+          target: 0%
+          threshold: 5%
+    
+    - name: local
+      carryforward: true
+    
+    - name: robolectric
+      carryforward: true
+    
+    - name: emulator
+      carryforward: true
+    
+    - name: device
+      carryforward: true
+    
+    - name: phone
+      carryforward: true
+    
+    - name: tablet
+      carryforward: true
+    
+    - name: foldable
+      carryforward: true

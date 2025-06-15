@@ -9,9 +9,6 @@ on:
       - 'build.gradle.kts'
       - 'gradle/**'
       - '.github/workflows/main.yml'
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.MD'
   pull_request:
     branches: [ "main" ]
     paths:
@@ -19,9 +16,6 @@ on:
       - 'build.gradle.kts'
       - 'gradle/**'
       - '.github/workflows/main.yml'
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.MD'
 
 jobs:
   build:

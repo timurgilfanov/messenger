@@ -17,8 +17,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
@@ -41,7 +43,7 @@ fun MessageInput(
             modifier = Modifier
                 .weight(1f)
                 .testTag("message_input"),
-            placeholder = { Text("Type a message...") },
+            placeholder = { Text(stringResource(R.string.message_input_placeholder)) },
             shape = RoundedCornerShape(24.dp),
             enabled = !isSending,
         )
@@ -62,7 +64,7 @@ fun MessageInput(
             } else {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send message",
+                    contentDescription = stringResource(R.string.send_message_content_description),
                     tint = if (text.isNotBlank()) {
                         MaterialTheme.colorScheme.primary
                     } else {
@@ -77,6 +79,19 @@ fun MessageInput(
 @Preview(showBackground = true)
 @Composable
 private fun MessageInputEmptyPreview() {
+    MessengerTheme {
+        MessageInput(
+            text = "",
+            isSending = false,
+            onTextChange = {},
+            onSendMessage = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, locale = "de")
+@Composable
+private fun MessageInputEmptyGermanPreview() {
     MessengerTheme {
         MessageInput(
             text = "",

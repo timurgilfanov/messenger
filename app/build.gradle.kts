@@ -23,15 +23,6 @@ android {
         testInstrumentationRunner = "dagger.hilt.android.testing.HiltAndroidJUnitRunner"
     }
 
-    sourceSets {
-        getByName("test") {
-            java.srcDir("src/testShared/java")
-        }
-        getByName("androidTest") {
-            java.srcDir("src/testShared/java")
-        }
-    }
-
     testOptions {
         unitTests {
             isIncludeAndroidResources = true

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Messenger</string>
+    <string name="message_input_placeholder">Type a message...</string>
+    <string name="send_message_content_description">Send message</string>
 </resources>

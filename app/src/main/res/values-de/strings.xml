@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Messenger</string>
+    <string name="message_input_placeholder">Nachricht eingeben...</string>
+    <string name="send_message_content_description">Nachricht senden</string>
+</resources>

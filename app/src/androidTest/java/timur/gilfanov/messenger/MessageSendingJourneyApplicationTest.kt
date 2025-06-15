@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -27,9 +29,14 @@ class MessageSendingJourneyApplicationTest {
     fun messageSendingJourney_completesSuccessfully() {
         composeTestRule.waitForIdle()
 
+        // Wait for placeholder text to appear (indicates Ready state)
+        composeTestRule.onNodeWithText("Type a message...")
+            .assertIsDisplayed()
+
         val testMessage = "Hello, this is a test message!"
 
         // Step 1: Type message in input field
+
         composeTestRule.onNodeWithTag("message_input")
             .performTextInput(testMessage)
 
@@ -45,8 +52,13 @@ class MessageSendingJourneyApplicationTest {
         composeTestRule.waitForIdle()
 
         // Step 4: Verify input field is cleared after sending
-        composeTestRule.onNodeWithTag("message_input")
-            .assertTextEquals("")
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.onNodeWithTag("message_input")
+                .fetchSemanticsNode()
+                .config.getOrNull(SemanticsProperties.EditableText)
+                ?.text
+                ?.isEmpty() == true
+        }
 
         // Step 5: Verify placeholder text is shown again
         composeTestRule.onNodeWithText("Type a message...")
@@ -61,12 +73,12 @@ class MessageSendingJourneyApplicationTest {
     fun messageSending_handlesEmptyInput() {
         composeTestRule.waitForIdle()
 
-        // Verify send button exists but shouldn't be clickable when input is empty
-        composeTestRule.onNodeWithTag("send_button")
+        // Wait for placeholder text to appear (indicates Ready state)
+        composeTestRule.onNodeWithText("Type a message...")
             .assertIsDisplayed()
 
-        // Input should show placeholder
-        composeTestRule.onNodeWithText("Type a message...")
+        // Verify send button exists but shouldn't be clickable when input is empty
+        composeTestRule.onNodeWithTag("send_button")
             .assertIsDisplayed()
 
         // Try to click send button with empty input - it should be disabled
@@ -81,7 +93,9 @@ class MessageSendingJourneyApplicationTest {
 
     @Test
     fun messageSending_multipleMessagesSequentially() {
-        composeTestRule.waitForIdle()
+        // Wait for placeholder text to appear (indicates Ready state)
+        composeTestRule.onNodeWithText("Type a message...")
+            .assertIsDisplayed()
 
         val messages = listOf(
             "First message",
@@ -91,6 +105,7 @@ class MessageSendingJourneyApplicationTest {
 
         messages.forEach { message ->
             // Type message
+
             composeTestRule.onNodeWithTag("message_input")
                 .performTextInput(message)
 
@@ -102,12 +117,14 @@ class MessageSendingJourneyApplicationTest {
             composeTestRule.onNodeWithTag("send_button")
                 .performClick()
 
-            // Wait for processing
-            composeTestRule.waitForIdle()
-
             // Verify input is cleared
-            composeTestRule.onNodeWithTag("message_input")
-                .assertTextEquals("")
+            composeTestRule.waitUntil(timeoutMillis = 5_000) {
+                composeTestRule.onNodeWithTag("message_input")
+                    .fetchSemanticsNode()
+                    .config.getOrNull(SemanticsProperties.EditableText)
+                    ?.text
+                    ?.isEmpty() == true
+            }
 
             // Verify UI is ready for next message
             composeTestRule.onNodeWithTag("message_input")
@@ -120,12 +137,15 @@ class MessageSendingJourneyApplicationTest {
 
     @Test
     fun messageSending_preservesInputDuringTyping() {
-        composeTestRule.waitForIdle()
+        // Wait for placeholder text to appear (indicates Ready state)
+        composeTestRule.onNodeWithText("Type a message...")
+            .assertIsDisplayed()
 
         val partialMessage = "This is a long message that I'm typing"
         val completeMessage = "$partialMessage and now I'll send it"
 
         // Type partial message
+
         composeTestRule.onNodeWithTag("message_input")
             .performTextInput(partialMessage)
 
@@ -145,10 +165,13 @@ class MessageSendingJourneyApplicationTest {
         composeTestRule.onNodeWithTag("send_button")
             .performClick()
 
-        composeTestRule.waitForIdle()
-
         // Verify input is cleared after sending
-        composeTestRule.onNodeWithTag("message_input")
-            .assertTextEquals("")
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.onNodeWithTag("message_input")
+                .fetchSemanticsNode()
+                .config.getOrNull(SemanticsProperties.EditableText)
+                ?.text
+                ?.isEmpty() == true
+        }
     }
 }

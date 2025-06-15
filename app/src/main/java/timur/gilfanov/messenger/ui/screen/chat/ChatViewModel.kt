@@ -75,10 +75,21 @@ class ChatViewModel @AssistedInject constructor(
             sendMessageUseCase(currentChat!!, message).collect { result ->
                 when (result) {
                     is ResultWithError.Success -> {
-                        if (result.data.deliveryStatus == DeliveryStatus.Sent) {
-                            _uiState.update {
-                                (it as ChatUiState.Ready).copy(isSending = false, inputText = "")
+                        when (result.data.deliveryStatus) {
+                            DeliveryStatus.Sent,
+                            DeliveryStatus.Delivered,
+                            DeliveryStatus.Read,
+                            -> _uiState.update {
+                                if ((it as ChatUiState.Ready).isSending) {
+                                    it.copy(isSending = false, inputText = "")
+                                } else {
+                                    it
+                                }
                             }
+                            is DeliveryStatus.Failed,
+                            is DeliveryStatus.Sending,
+                            null,
+                            -> Unit
                         }
                     }
 

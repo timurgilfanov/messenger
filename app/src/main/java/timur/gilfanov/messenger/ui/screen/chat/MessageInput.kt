@@ -89,6 +89,19 @@ private fun MessageInputEmptyPreview() {
     }
 }
 
+@Preview(showBackground = true, locale = "de")
+@Composable
+private fun MessageInputEmptyGermanPreview() {
+    MessengerTheme {
+        MessageInput(
+            text = "",
+            isSending = false,
+            onTextChange = {},
+            onSendMessage = {},
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun MessageInputWithTextPreview() {

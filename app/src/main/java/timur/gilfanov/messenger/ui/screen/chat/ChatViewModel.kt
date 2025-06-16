@@ -72,33 +72,14 @@ class ChatViewModel @AssistedInject constructor(
             val currentParticipant = currentChat!!.participants.first { it.id == currentUserId }
             val message = createTextMessage(messageText, currentParticipant)
 
+            var oneShot = true
             sendMessageUseCase(currentChat!!, message).collect { result ->
                 when (result) {
                     is ResultWithError.Success -> {
-                        when (result.data.deliveryStatus!!) {
-                            DeliveryStatus.Sent,
-                            DeliveryStatus.Delivered,
-                            DeliveryStatus.Read,
-                            -> _uiState.update {
-                                if ((it as ChatUiState.Ready).isSending) {
-                                    it.copy(isSending = false, inputText = "")
-                                } else {
-                                    it
-                                }
-                            }
-                            is DeliveryStatus.Failed -> _uiState.update {
-                                if ((it as ChatUiState.Ready).isSending) {
-                                    it.copy(isSending = false)
-                                } else {
-                                    it
-                                }
-                            }
-                            is DeliveryStatus.Sending -> _uiState.update {
-                                if (!(it as ChatUiState.Ready).isSending) {
-                                    it.copy(isSending = true)
-                                } else {
-                                    it
-                                }
+                        if (oneShot) {
+                            oneShot = false
+                            _uiState.update {
+                                (it as ChatUiState.Ready).copy(isSending = false, inputText = "")
                             }
                         }
                     }

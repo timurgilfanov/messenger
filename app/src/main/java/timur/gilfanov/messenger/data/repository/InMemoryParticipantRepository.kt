@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Clock
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -102,40 +103,48 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
     )
 
     override suspend fun sendMessage(message: Message): Flow<Message> = flow {
-        emit((message as TextMessage).copy(deliveryStatus = Sending(SENDING_PROGRESS_START)))
+        fun updateChat(message: Message) {
+            val currentChat = chatFlow.value
+            val updatedChat = currentChat.copy(
+                messages = currentChat.messages.toMutableList().apply {
+                    add(message)
+                }.toImmutableList(),
+            )
+            chatFlow.update { updatedChat }
+            chatListFlow.update { listOf(updatedChat) }
+        }
+
+        (message as TextMessage).copy(
+            deliveryStatus = Sending(SENDING_PROGRESS_START),
+        ).let { message ->
+            updateChat(message)
+            emit(message)
+        }
         delay(SENDING_DELAY_MS)
 
-        emit(message.copy(deliveryStatus = Sending(SENDING_PROGRESS_MID)))
+        message.copy(deliveryStatus = Sending(SENDING_PROGRESS_MID)).let { message ->
+            updateChat(message)
+            emit(message)
+        }
         delay(SENDING_DELAY_MS)
 
-        emit(message.copy(deliveryStatus = Sending(SENDING_PROGRESS_COMPLETE)))
+        message.copy(deliveryStatus = Sending(SENDING_PROGRESS_COMPLETE)).let { message ->
+            updateChat(message)
+            emit(message)
+        }
         delay(DELIVERY_DELAY_MS)
 
-        val deliveredMessage = message.copy(deliveryStatus = Delivered)
-        val currentChat = chatFlow.value
-        val updatedChat = currentChat.copy(
-            messages = currentChat.messages.toMutableList().apply {
-                add(deliveredMessage)
-            }.toImmutableList(),
-        )
-        chatFlow.value = updatedChat
-        chatListFlow.value = listOf(updatedChat)
-
-        emit(deliveredMessage)
+        message.copy(deliveryStatus = Delivered).let { message ->
+            updateChat(message)
+            emit(message)
+        }
 
         delay(READ_DELAY_MS)
 
-        val readMessage = deliveredMessage.copy(deliveryStatus = Read)
-        val finalChat = updatedChat.copy(
-            messages = updatedChat.messages.toMutableList().apply {
-                removeAt(updatedChat.messages.size - 1)
-                add(readMessage)
-            }.toImmutableList(),
-        )
-        chatFlow.value = finalChat
-        chatListFlow.value = listOf(finalChat)
-
-        emit(readMessage)
+        message.copy(deliveryStatus = Read).let { message ->
+            updateChat(message)
+            emit(message)
+        }
     }
 
     override suspend fun editMessage(message: Message): Flow<Message> = flow {
@@ -148,8 +157,8 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                 set(messageIndex, message)
             }.toImmutableList()
             val updatedChat = currentChat.copy(messages = updatedMessages)
-            chatFlow.value = updatedChat
-            chatListFlow.value = listOf(updatedChat)
+            chatFlow.update { updatedChat }
+            chatListFlow.update { listOf(updatedChat) }
         }
 
         emit(message)
@@ -167,8 +176,8 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
             removeAll { it.id == messageId }
         }.toImmutableList()
         val updatedChat = currentChat.copy(messages = updatedMessages)
-        chatFlow.value = updatedChat
-        chatListFlow.value = listOf(updatedChat)
+        chatFlow.update { updatedChat }
+        chatListFlow.update { listOf(updatedChat) }
 
         return ResultWithError.Success(Unit)
     }

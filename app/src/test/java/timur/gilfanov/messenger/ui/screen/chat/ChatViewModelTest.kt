@@ -9,13 +9,19 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.yield
 import kotlinx.datetime.Instant
 import org.junit.After
 import org.junit.Before
@@ -30,8 +36,12 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
-import timur.gilfanov.messenger.domain.entity.message.DeliveryError
+import timur.gilfanov.messenger.domain.entity.message.DeliveryError.NetworkUnavailable
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Delivered
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Failed
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Read
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
@@ -69,7 +79,7 @@ class ChatViewModelTest {
         override suspend fun sendMessage(message: Message): Flow<Message> =
             flowSendMessage ?: flowOf(
                 when (message) {
-                    is TextMessage -> message.copy(deliveryStatus = DeliveryStatus.Sending(0))
+                    is TextMessage -> message.copy(deliveryStatus = Sending(0))
                     else -> message
                 },
             )
@@ -79,6 +89,30 @@ class ChatViewModelTest {
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = flowChat ?: flowOf(
             chat?.let { Success(it) } ?: Failure(ChatNotFound),
         )
+    }
+
+    private class RepositoryFake2(chat: Chat, messages: List<Message>) :
+        ParticipantRepository by ParticipantRepositoryNotImplemented() {
+
+        private val chatFlow = MutableStateFlow(chat)
+
+        private val flowSendMessage = flowOf(*(messages.toTypedArray()))
+
+        override suspend fun sendMessage(message: Message): Flow<Message> = flowSendMessage.onEach {
+            chatFlow.update { currentChat ->
+                val messages = currentChat.messages.toMutableList().apply {
+                    add(message)
+                }.toImmutableList()
+                currentChat.copy(messages = messages)
+            }
+            yield()
+        }
+
+        override suspend fun receiveChatUpdates(
+            chatId: ChatId,
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatFlow.map { chat ->
+            Success<Chat, ReceiveChatUpdatesError>(chat)
+        }
     }
 
     private fun createTestChat(
@@ -303,230 +337,71 @@ class ChatViewModelTest {
     }
 
     @Test
-    fun `sendMessage clears input and sets sending state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-
-        val chat = createTestChat(chatId, currentUserId, otherUserId)
-
-        val message = buildTextMessage {
-            sender = chat.participants.first { it.id == currentUserId }
-            recipient = chatId
-            createdAt = Instant.fromEpochMilliseconds(1000)
-            text = "Test message"
-        }
-        val repository =
-            RepositoryFake(
-                chat = chat,
-                flowSendMessage = flowOf(
-                    message.copy(deliveryStatus = DeliveryStatus.Sending(0)),
-                    message.copy(deliveryStatus = DeliveryStatus.Sent),
-                ),
+    fun `sendMessage clears input once`() = runTest {
+        listOf(
+            listOf(Sending(0), Sending(50)),
+            listOf(Sending(0), Failed(NetworkUnavailable)),
+            listOf(Sending(0), Delivered),
+            listOf(Sending(0), Read),
+        ).forEach { statuses ->
+            val chatId = ChatId(UUID.randomUUID())
+            val currentUserId = ParticipantId(UUID.randomUUID())
+            val otherUserId = ParticipantId(UUID.randomUUID())
+            val chat = createTestChat(chatId, currentUserId, otherUserId)
+            val message = buildTextMessage {
+                sender = chat.participants.first { it.id == currentUserId }
+                recipient = chatId
+                createdAt = Instant.fromEpochMilliseconds(1000)
+                text = "Test message"
+            }
+            val rep = RepositoryFake2(chat, statuses.map { message.copy(deliveryStatus = it) })
+            val viewModel = ChatViewModel(
+                chatIdUuid = chatId.id,
+                currentUserIdUuid = currentUserId.id,
+                sendMessageUseCase = SendMessageUseCase(rep, DeliveryStatusValidatorImpl()),
+                receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
             )
 
-        val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
-        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
+            viewModel.uiState.test {
+                val loadingState = awaitItem()
+                assertTrue(loadingState is ChatUiState.Loading)
 
-        val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
-            sendMessageUseCase = sendMessageUseCase,
-            receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
-        )
+                val readyState = awaitItem()
+                assertTrue(readyState is ChatUiState.Ready)
 
-        viewModel.uiState.test {
-            val loadingState = awaitItem()
-            assertTrue(loadingState is ChatUiState.Loading)
+                viewModel.updateInputText("Test message")
+                val stateWithInput = awaitItem() as ChatUiState.Ready
+                assertEquals("Test message", stateWithInput.inputText)
 
-            val readyState = awaitItem()
-            assertTrue(readyState is ChatUiState.Ready)
+                viewModel.sendMessage()
+                (awaitItem() as ChatUiState.Ready).let { state ->
+                    assertTrue(state.isSending)
+                    assertEquals("Test message", state.inputText)
+                    assertEquals(0, state.messages.size)
+                }
 
-            viewModel.updateInputText("Test message")
-            val stateWithInput = awaitItem() as ChatUiState.Ready
-            assertEquals("Test message", stateWithInput.inputText)
+                (awaitItem() as ChatUiState.Ready).let { state ->
+                    assertTrue(state.isSending)
+                    assertEquals("Test message", state.inputText)
+                    assertEquals(1, state.messages.size)
+                }
 
-            viewModel.sendMessage()
+                (awaitItem() as ChatUiState.Ready).let { state ->
+                    assertFalse(state.isSending)
+                    assertEquals(1, state.messages.size)
+                    assertEquals("Test message", state.messages.last().text)
+                    assertEquals("", state.inputText)
+                }
 
-            val sendingState = awaitItem() as ChatUiState.Ready
-            assertTrue(sendingState.isSending)
-            assertEquals("Test message", stateWithInput.inputText)
+                viewModel.updateInputText("Test message 2")
+                assertEquals("Test message 2", (awaitItem() as ChatUiState.Ready).inputText)
 
-            val sentState = awaitItem() as ChatUiState.Ready
-            assertFalse(sentState.isSending)
-            assertEquals("", sentState.inputText)
-        }
-    }
-
-    @Test
-    fun `sendMessage clears input and sets delivered state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-
-        val chat = createTestChat(chatId, currentUserId, otherUserId)
-
-        val message = buildTextMessage {
-            sender = chat.participants.first { it.id == currentUserId }
-            recipient = chatId
-            createdAt = Instant.fromEpochMilliseconds(1000)
-            text = "Test message"
-        }
-        val repository =
-            RepositoryFake(
-                chat = chat,
-                flowSendMessage = flowOf(
-                    message.copy(deliveryStatus = DeliveryStatus.Sending(0)),
-                    message.copy(deliveryStatus = DeliveryStatus.Delivered),
-                ),
-            )
-
-        val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
-        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
-
-        val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
-            sendMessageUseCase = sendMessageUseCase,
-            receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
-        )
-
-        viewModel.uiState.test {
-            val loadingState = awaitItem()
-            assertTrue(loadingState is ChatUiState.Loading)
-
-            val readyState = awaitItem()
-            assertTrue(readyState is ChatUiState.Ready)
-
-            viewModel.updateInputText("Test message")
-            val stateWithInput = awaitItem() as ChatUiState.Ready
-            assertEquals("Test message", stateWithInput.inputText)
-
-            viewModel.sendMessage()
-
-            val sendingState = awaitItem() as ChatUiState.Ready
-            assertTrue(sendingState.isSending)
-            assertEquals("Test message", stateWithInput.inputText)
-
-            val sentState = awaitItem() as ChatUiState.Ready
-            assertFalse(sentState.isSending)
-            assertEquals("", sentState.inputText)
-        }
-    }
-
-    @Test
-    fun `sendMessage clears input and sets failed state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-
-        val chat = createTestChat(chatId, currentUserId, otherUserId)
-
-        val message = buildTextMessage {
-            sender = chat.participants.first { it.id == currentUserId }
-            recipient = chatId
-            createdAt = Instant.fromEpochMilliseconds(1000)
-            text = "Test message"
-        }
-        val repository =
-            RepositoryFake(
-                chat = chat,
-                flowSendMessage = flowOf(
-                    message.copy(deliveryStatus = DeliveryStatus.Sending(0)),
-                    message.copy(
-                        deliveryStatus = DeliveryStatus.Failed(
-                            reason = DeliveryError.MessageTooLarge,
-                        ),
-                    ),
-                ),
-            )
-
-        val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
-        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
-
-        val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
-            sendMessageUseCase = sendMessageUseCase,
-            receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
-        )
-
-        viewModel.uiState.test {
-            val loadingState = awaitItem()
-            assertTrue(loadingState is ChatUiState.Loading)
-
-            val readyState = awaitItem()
-            assertTrue(readyState is ChatUiState.Ready)
-
-            viewModel.updateInputText("Test message")
-            val stateWithInput = awaitItem() as ChatUiState.Ready
-            assertEquals("Test message", stateWithInput.inputText)
-
-            viewModel.sendMessage()
-
-            val sendingState = awaitItem() as ChatUiState.Ready
-            assertTrue(sendingState.isSending)
-            assertEquals("Test message", stateWithInput.inputText)
-
-            val sentState = awaitItem() as ChatUiState.Ready
-            assertFalse(sentState.isSending)
-            assertEquals("Test message", sentState.inputText)
-        }
-    }
-
-    @Test
-    fun `second sendMessage keep input text`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-
-        val chat = createTestChat(chatId, currentUserId, otherUserId)
-
-        val message = buildTextMessage {
-            sender = chat.participants.first { it.id == currentUserId }
-            recipient = chatId
-            createdAt = Instant.fromEpochMilliseconds(1000)
-            text = "Test message"
-        }
-        val repository =
-            RepositoryFake(
-                chat = chat,
-                flowSendMessage = flowOf(
-                    message.copy(deliveryStatus = DeliveryStatus.Sending(0)),
-                    message.copy(deliveryStatus = DeliveryStatus.Sent),
-                ),
-            )
-
-        val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
-        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
-
-        val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
-            sendMessageUseCase = sendMessageUseCase,
-            receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
-        )
-
-        viewModel.uiState.test {
-            val loadingState = awaitItem()
-            assertTrue(loadingState is ChatUiState.Loading)
-
-            val readyState = awaitItem()
-            assertTrue(readyState is ChatUiState.Ready)
-
-            viewModel.updateInputText("Test message")
-            val stateWithInput = awaitItem() as ChatUiState.Ready
-            assertEquals("Test message", stateWithInput.inputText)
-
-            viewModel.sendMessage()
-
-            val sendingState = awaitItem() as ChatUiState.Ready
-            assertTrue(sendingState.isSending)
-            assertEquals("Test message", stateWithInput.inputText)
-
-            val sentState = awaitItem() as ChatUiState.Ready
-            assertFalse(sentState.isSending)
-            assertEquals("", sentState.inputText)
+                (awaitItem() as ChatUiState.Ready).let { state ->
+                    assertEquals(2, state.messages.size)
+                    assertEquals("Test message", state.messages.last().text)
+                    assertEquals("Test message 2", state.inputText)
+                }
+            }
         }
     }
 

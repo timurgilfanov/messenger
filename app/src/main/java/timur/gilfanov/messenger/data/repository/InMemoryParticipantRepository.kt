@@ -107,7 +107,14 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
             val currentChat = chatFlow.value
             val updatedChat = currentChat.copy(
                 messages = currentChat.messages.toMutableList().apply {
-                    add(message)
+                    if (message.id in this.map { it.id }) {
+                        // If message already exists, update it
+                        val index = indexOfFirst { it.id == message.id }
+                        set(index, message)
+                    } else {
+                        // Otherwise, add new message
+                        add(message)
+                    }
                 }.toImmutableList(),
             )
             chatFlow.update { updatedChat }

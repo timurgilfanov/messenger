@@ -19,7 +19,7 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError.CannotChangeFromRead
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError.CannotChangeFromUndefinedToOtherThanSending
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class DeliveryStatusValidatorTest {
 
     private val validator = DeliveryStatusValidatorImpl()

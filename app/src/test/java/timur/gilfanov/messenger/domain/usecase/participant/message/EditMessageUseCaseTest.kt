@@ -31,7 +31,7 @@ import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationE
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class EditMessageUseCaseTest {
 
     private class RepositoryFake : ParticipantRepository by ParticipantRepositoryNotImplemented() {

@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger
+package timur.gilfanov.annotations
 
 interface Unit
 

@@ -13,7 +13,7 @@ import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDe
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class DeleteChatUseCaseTest {
 
     private class RepositoryFake(

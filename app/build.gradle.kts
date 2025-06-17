@@ -23,15 +23,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    sourceSets {
-        getByName("test") {
-            java.srcDir("src/testShared/java")
-        }
-        getByName("androidTest") {
-            java.srcDir("src/testShared/java")
-        }
-    }
-
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -126,11 +117,13 @@ dependencies {
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.ui.test.junit4)
     testImplementation(libs.androidx.ui.test.manifest)
+    testImplementation(project(":test-annotations"))
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.kotlin.test)
+    androidTestImplementation(project(":test-annotations"))
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     ktlintRuleset(libs.ktlint.compose)
@@ -176,7 +169,7 @@ tasks.register("testArchitectureWithCoverage") {
         val process = ProcessBuilder(
             "./gradlew",
             "testDebugUnitTest",
-            "-PtestCategory=timur.gilfanov.messenger.Architecture",
+            "-PtestCategory=timur.gilfanov.annotations.Architecture",
             "-Pcoverage",
         )
             .directory(project.rootDir)
@@ -197,7 +190,7 @@ tasks.register("testUnitWithCoverage") {
         val process = ProcessBuilder(
             "./gradlew",
             "testDebugUnitTest",
-            "-PtestCategory=timur.gilfanov.messenger.Unit",
+            "-PtestCategory=timur.gilfanov.annotations.Unit",
             "-Pcoverage",
         )
             .directory(project.rootDir)
@@ -218,7 +211,7 @@ tasks.register("testComponentWithCoverage") {
         val process = ProcessBuilder(
             "./gradlew",
             "testDebugUnitTest",
-            "-PtestCategory=timur.gilfanov.messenger.Component",
+            "-PtestCategory=timur.gilfanov.annotations.Component",
             "-Pcoverage",
         )
             .directory(project.rootDir)
@@ -255,7 +248,7 @@ tasks.register("preCommit") {
             val process = ProcessBuilder(
                 "./gradlew",
                 "testDebugUnitTest",
-                "-PtestCategory=timur.gilfanov.messenger.$category",
+                "-PtestCategory=timur.gilfanov.annotations.$category",
                 "-Pcoverage",
             )
                 .directory(project.rootDir)

@@ -10,7 +10,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.Feature
+import timur.gilfanov.annotations.Feature
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId

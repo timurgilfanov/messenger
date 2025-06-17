@@ -24,7 +24,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinCh
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class InMemoryParticipantRepositoryTest {
 
     @Test

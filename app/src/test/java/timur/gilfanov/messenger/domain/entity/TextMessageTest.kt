@@ -11,7 +11,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class TextMessageTest {
 
     @Test

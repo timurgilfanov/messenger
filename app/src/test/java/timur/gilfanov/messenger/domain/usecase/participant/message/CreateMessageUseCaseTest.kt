@@ -34,7 +34,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class CreateMessageUseCaseTest {
 
     private class RepositoryFake(

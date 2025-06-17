@@ -9,7 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
-import timur.gilfanov.messenger.Application
+import timur.gilfanov.annotations.Application
 
 @Category(Application::class)
 @RunWith(AndroidJUnit4::class)

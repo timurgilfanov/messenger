@@ -25,18 +25,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew testDebugUnitTest --tests "ClassName.testMethodName"
 
 # Run tests by category (property-based approach)
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Component
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Feature
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Application
-./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.messenger.Application
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Application
+./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.annotations.Application
 
 # Pre-commit checks
 ./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)
 
 # Exclude specific categories
-./gradlew testDebugUnitTest -PexcludeCategory=timur.gilfanov.messenger.Architecture
+./gradlew testDebugUnitTest -PexcludeCategory=timur.gilfanov.annotations.Architecture
 ```
 
 ### Code Quality
@@ -62,12 +62,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew testComponentWithCoverage
 
 # Run individual categories with coverage (alternative)
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture -Pcoverage
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit -Pcoverage
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Component -Pcoverage
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture -Pcoverage
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage
+./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage
 
 # Generate category-specific coverage reports
-./gradlew koverXmlReportDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.Unit
+./gradlew koverXmlReportDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
 ```
 
 ### Codecov Components

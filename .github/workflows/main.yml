@@ -424,12 +424,28 @@ jobs:
               --xml device-coverage-reports/application-emulator-phone-report.xml
           done
 
-      - name: Upload Application Emulator Phone Coverage to Codecov
+      - name: Upload Application Emulator Phone Coverage to Codecov (application)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/application-emulator-phone-report.xml
-          flags: application,emulator,phone
+          flags: application
+          fail_ci_if_error: false
+
+      - name: Upload Application Emulator Phone Coverage to Codecov (emulator)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/application-emulator-phone-report.xml
+          flags: emulator
+          fail_ci_if_error: false
+
+      - name: Upload Application Emulator Phone Coverage to Codecov (phone)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/application-emulator-phone-report.xml
+          flags: phone
           fail_ci_if_error: false
 
       - name: Upload Application Emulator Test Report
@@ -596,20 +612,52 @@ jobs:
           name: application-test-devices-results
           path: testlab-results/
 
-      - name: Upload Application Phone Coverage to Codecov
+      - name: Upload Application Device Phone Coverage to Codecov (application)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/application-device-phone-report.xml
-          flags: application,device,phone
+          flags: application
           fail_ci_if_error: false
 
-      - name: Upload Application Foldable Coverage to Codecov
+      - name: Upload Application Device Phone Coverage to Codecov (device)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/application-device-phone-report.xml
+          flags: device
+          fail_ci_if_error: false
+
+      - name: Upload Application Device Phone Coverage to Codecov (phone)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/application-device-phone-report.xml
+          flags: phone
+          fail_ci_if_error: false
+
+      - name: Upload Application Device Foldable Coverage to Codecov (application)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/application-device-foldable-report.xml
-          flags: application,device,foldable
+          flags: application
+          fail_ci_if_error: false
+
+      - name: Upload Application Device Foldable Coverage to Codecov (device)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/application-device-foldable-report.xml
+          flags: device
+          fail_ci_if_error: false
+
+      - name: Upload Application Device Foldable Coverage to Codecov (foldable)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/application-device-foldable-report.xml
+          flags: foldable
           fail_ci_if_error: false
 
       - name: Upload Application Coverage Report
@@ -768,28 +816,76 @@ jobs:
               --xml device-coverage-reports/release-candidate-device-foldable-report.xml
           fi
 
-      - name: Upload Release Candidate Phone Coverage to Codecov
+      - name: Upload Release Candidate Phone Coverage to Codecov (release_candidate)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-phone-report.xml
-          flags: release_candidate,device,phone
+          flags: release_candidate
           fail_ci_if_error: false
 
-      - name: Upload Release Candidate Tablet Coverage to Codecov
+      - name: Upload Release Candidate Phone Coverage to Codecov (device)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/release-candidate-device-phone-report.xml
+          flags: device
+          fail_ci_if_error: false
+
+      - name: Upload Release Candidate Phone Coverage to Codecov (phone)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/release-candidate-device-phone-report.xml
+          flags: phone
+          fail_ci_if_error: false
+
+      - name: Upload Release Candidate Tablet Coverage to Codecov (release_candidate)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-tablet-report.xml
-          flags: release_candidate,device,tablet
+          flags: release_candidate
           fail_ci_if_error: false
 
-      - name: Upload Release Candidate Foldable Coverage to Codecov
+      - name: Upload Release Candidate Tablet Coverage to Codecov (device)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/release-candidate-device-tablet-report.xml
+          flags: device
+          fail_ci_if_error: false
+
+      - name: Upload Release Candidate Tablet Coverage to Codecov (tablet)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/release-candidate-device-tablet-report.xml
+          flags: tablet
+          fail_ci_if_error: false
+
+      - name: Upload Release Candidate Foldable Coverage to Codecov (release_candidate)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-foldable-report.xml
-          flags: release_candidate,device,foldable
+          flags: release_candidate
+          fail_ci_if_error: false
+
+      - name: Upload Release Candidate Foldable Coverage to Codecov (device)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/release-candidate-device-foldable-report.xml
+          flags: device
+          fail_ci_if_error: false
+
+      - name: Upload Release Candidate Foldable Coverage to Codecov (foldable)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: device-coverage-reports/release-candidate-device-foldable-report.xml
+          flags: foldable
           fail_ci_if_error: false
 
       - name: Sanitize all subdirectory names to remove colons

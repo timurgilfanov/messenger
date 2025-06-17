@@ -8,7 +8,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidator
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class TextValidatorTest {
 
     @Test

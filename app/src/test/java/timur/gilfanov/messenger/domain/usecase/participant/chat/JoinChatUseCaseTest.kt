@@ -30,7 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinCh
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.UserBlocked
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.UserNotFound
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class JoinChatUseCaseTest {
 
     private class RepositoryFake(private val error: RepositoryJoinChatError? = null) :

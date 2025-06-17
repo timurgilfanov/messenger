@@ -22,7 +22,7 @@ import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class RepositoryFakeTest {
 
     @Test

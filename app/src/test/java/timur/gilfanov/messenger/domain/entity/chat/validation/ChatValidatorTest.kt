@@ -24,7 +24,7 @@ import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationErro
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class ChatValidatorTest {
 
     private val validator = ChatValidatorImpl()

@@ -16,7 +16,7 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
 
-@Category(Unit::class)
+@Category(timur.gilfanov.annotations.Unit::class)
 class ReceiveChatUpdatesUseCaseTest {
 
     private class RepositoryFake(

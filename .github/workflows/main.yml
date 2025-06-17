@@ -77,7 +77,7 @@ jobs:
           exit 1
 
       - name: Run Architecture Tests
-        run: ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Architecture
+        run: ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
 
       - name: Upload Architecture Test Report
         uses: actions/upload-artifact@v4
@@ -146,7 +146,7 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Unit -Pcoverage | tee unit-test.log
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage | tee unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
@@ -154,7 +154,7 @@ jobs:
       - name: Generate Unit Coverage Report
         run: |
           ./gradlew koverXmlReportDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.Unit
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
 
       - name: Upload Unit Coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -166,7 +166,7 @@ jobs:
 
       - name: Run Component Tests
         run: |
-          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Component -Pcoverage | tee component-test.log
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage | tee component-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
@@ -174,7 +174,7 @@ jobs:
       - name: Generate Component Coverage Report
         run: |
           ./gradlew koverXmlReportDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.Component
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Component
 
       - name: Upload Component Coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -231,7 +231,7 @@ jobs:
 
       - name: Run Feature Tests
         run: |
-          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Feature -Pcoverage | tee feature-test.log
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature -Pcoverage | tee feature-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat feature-test.log
           exit $EXIT
@@ -239,7 +239,7 @@ jobs:
       - name: Generate Feature Coverage Report
         run: |
           ./gradlew koverXmlReportDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.Feature
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Feature
 
       - name: Upload Feature Coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -290,7 +290,7 @@ jobs:
 
       - name: Run Application Unit Tests
         run: |
-          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.Application -Pcoverage | tee application-unit-test.log
+          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Application -Pcoverage | tee application-unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat application-unit-test.log
           exit $EXIT
@@ -298,7 +298,7 @@ jobs:
       - name: Generate Application Unit Coverage Report
         run: |
           ./gradlew koverXmlReportDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.Application
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Application
 
       - name: Upload Application Unit Coverage to Codecov
         uses: codecov/codecov-action@v4

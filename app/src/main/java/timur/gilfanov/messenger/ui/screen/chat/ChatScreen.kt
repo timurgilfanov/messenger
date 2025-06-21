@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.util.UUID
 import kotlinx.collections.immutable.persistentListOf
+import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
@@ -45,7 +46,7 @@ fun ChatScreen(
             )
         }),
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.collectAsState()
 
     ChatScreenContent(
         uiState = uiState,

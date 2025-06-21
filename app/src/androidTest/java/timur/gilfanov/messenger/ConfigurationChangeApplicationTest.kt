@@ -28,6 +28,9 @@ class ConfigurationChangeApplicationTest {
 
         val testMessage = "This message should survive rotation"
 
+        composeTestRule.onNodeWithTag("message_input")
+            .assertIsDisplayed()
+
         // Type text in the message input
         composeTestRule.onNodeWithTag("message_input")
             .performTextInput(testMessage)
@@ -99,6 +102,9 @@ class ConfigurationChangeApplicationTest {
         composeTestRule.waitForIdle()
 
         val testMessage = "Multi-rotation test"
+
+        composeTestRule.onNodeWithTag("message_input")
+            .assertIsDisplayed()
 
         // Enter text
         composeTestRule.onNodeWithTag("message_input")

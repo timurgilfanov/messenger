@@ -129,6 +129,10 @@ dependencies {
     ktlintRuleset(libs.ktlint.compose)
     detektPlugins(libs.detekt.compose)
     detektPlugins(libs.detekt.formatting)
+    implementation(libs.orbit.core)
+    implementation(libs.orbit.viewmodel)
+    implementation(libs.orbit.compose)
+    testImplementation(libs.orbit.test)
 }
 
 tasks.withType<Test> {

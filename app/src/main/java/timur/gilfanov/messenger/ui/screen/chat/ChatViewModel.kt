@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -11,18 +10,16 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlinx.collections.immutable.toPersistentList
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import org.orbitmvi.orbit.ContainerHost
+import org.orbitmvi.orbit.annotation.OrbitExperimental
+import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
@@ -41,7 +38,14 @@ class ChatViewModel @AssistedInject constructor(
     @Assisted("currentUserId") currentUserIdUuid: UUID,
     private val sendMessageUseCase: SendMessageUseCase,
     private val receiveChatUpdatesUseCase: ReceiveChatUpdatesUseCase,
-) : ViewModel() {
+) : ViewModel(),
+    ContainerHost<ChatUiState, Nothing> {
+
+    override val container = container<ChatUiState, Nothing>(ChatUiState.Loading()) {
+        coroutineScope {
+            launch { observeChatUpdates() }
+        }
+    }
 
     private val chatId = ChatId(chatIdUuid)
     private val currentUserId = ParticipantId(currentUserIdUuid)
@@ -54,23 +58,24 @@ class ChatViewModel @AssistedInject constructor(
         ): ChatViewModel
     }
 
-    private val _uiState = MutableStateFlow<ChatUiState>(ChatUiState.Loading())
-    val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
-
     private var currentChat: Chat? = null
 
-    init {
-        observeChatUpdates()
-    }
+    @OptIn(OrbitExperimental::class)
+    fun sendMessage(
+        messageId: MessageId = MessageId(UUID.randomUUID()),
+        now: Instant = Clock.System.now(),
+    ) = intent {
+        runOn<ChatUiState.Ready> {
+            reduce { state.copy(isSending = true) }
 
-    fun sendMessage() {
-        val messageText = (_uiState.value as ChatUiState.Ready).inputText.trim()
-
-        viewModelScope.launch {
-            _uiState.update { (it as ChatUiState.Ready).copy(isSending = true) }
-
-            val currentParticipant = currentChat!!.participants.first { it.id == currentUserId }
-            val message = createTextMessage(messageText, currentParticipant)
+            val message = TextMessage(
+                id = messageId,
+                parentId = null,
+                sender = currentChat!!.participants.first { it.id == currentUserId },
+                recipient = chatId,
+                createdAt = now,
+                text = state.inputText.trim(),
+            )
 
             var oneShot = true
             sendMessageUseCase(currentChat!!, message).collect { result ->
@@ -78,15 +83,13 @@ class ChatViewModel @AssistedInject constructor(
                     is ResultWithError.Success -> {
                         if (oneShot) {
                             oneShot = false
-                            _uiState.update {
-                                (it as ChatUiState.Ready).copy(isSending = false, inputText = "")
-                            }
+                            reduce { state.copy(isSending = false, inputText = "") }
                         }
                     }
 
                     is ResultWithError.Failure -> {
-                        _uiState.update {
-                            (it as ChatUiState.Ready).copy(
+                        reduce {
+                            state.copy(
                                 isSending = false,
                                 dialogError = ReadyError.SendMessageError(result.error),
                             )
@@ -97,48 +100,55 @@ class ChatViewModel @AssistedInject constructor(
         }
     }
 
-    fun updateInputText(text: String) {
-        _uiState.update { (it as ChatUiState.Ready).copy(inputText = text) }
+    @OptIn(OrbitExperimental::class)
+    fun updateInputText(text: String) = intent {
+        runOn<ChatUiState.Ready> {
+            reduce {
+                state.copy(inputText = text)
+            }
+        }
     }
 
-    fun dismissDialogError() {
-        _uiState.update { (it as ChatUiState.Ready).copy(dialogError = null) }
+    @OptIn(OrbitExperimental::class)
+    fun dismissDialogError() = intent {
+        runOn<ChatUiState.Ready> {
+            reduce {
+                state.copy(dialogError = null)
+            }
+        }
     }
 
-    private fun observeChatUpdates() {
-        viewModelScope.launch {
-            receiveChatUpdatesUseCase(chatId)
-                .onEach { result ->
+    @OptIn(OrbitExperimental::class)
+    private suspend fun observeChatUpdates() = subIntent {
+        repeatOnSubscription {
+            receiveChatUpdatesUseCase(chatId).collect { result ->
+                reduce {
                     when (result) {
                         is ResultWithError.Success -> {
                             val chat = result.data
                             currentChat = chat
-                            updateUiStateFromChat(chat)
+                            updateUiStateFromChat(state, chat)
                         }
 
-                        is ResultWithError.Failure -> {
-                            _uiState.update {
-                                when (result.error) {
-                                    ChatNotFound -> ChatUiState.Error(result.error)
-                                    NetworkNotAvailable,
-                                    ServerError,
-                                    ServerUnreachable,
-                                    UnknownError,
-                                    -> when (it) {
-                                        is ChatUiState.Loading -> ChatUiState.Loading(result.error)
-                                        is ChatUiState.Ready -> it.copy(updateError = result.error)
-                                        is ChatUiState.Error -> error("Unexpected UI state Error")
-                                    }
-                                }
+                        is ResultWithError.Failure -> when (result.error) {
+                            ChatNotFound -> ChatUiState.Error(result.error)
+                            NetworkNotAvailable,
+                            ServerError,
+                            ServerUnreachable,
+                            UnknownError,
+                            -> when (val s = state) {
+                                is ChatUiState.Loading -> ChatUiState.Loading(result.error)
+                                is ChatUiState.Ready -> s.copy(updateError = result.error)
+                                is ChatUiState.Error -> error("Unexpected UI state Error")
                             }
                         }
                     }
                 }
-                .launchIn(this)
+            }
         }
     }
 
-    private fun updateUiStateFromChat(chat: Chat) {
+    private fun updateUiStateFromChat(state: ChatUiState, chat: Chat): ChatUiState.Ready {
         val messages = chat.messages.map { message ->
             MessageUiModel(
                 id = message.id.id.toString(),
@@ -169,30 +179,19 @@ class ChatViewModel @AssistedInject constructor(
             ChatStatus.Group(chat.participants.size)
         }
 
-        _uiState.update {
-            ChatUiState.Ready(
-                id = chat.id,
-                title = chat.name,
-                participants = participantUiModels,
-                isGroupChat = !chat.isOneToOne,
-                messages = messages,
-                status = chatStatus,
-                inputText = (it as? ChatUiState.Ready?)?.inputText ?: "",
-                isSending = (it as? ChatUiState.Ready?)?.isSending == true,
-                updateError = (it as? ChatUiState.Ready?)?.updateError,
-                dialogError = (it as? ChatUiState.Ready?)?.dialogError,
-            )
-        }
+        return ChatUiState.Ready(
+            id = chat.id,
+            title = chat.name,
+            participants = participantUiModels,
+            isGroupChat = !chat.isOneToOne,
+            messages = messages,
+            status = chatStatus,
+            inputText = (state as? ChatUiState.Ready?)?.inputText ?: "",
+            isSending = (state as? ChatUiState.Ready?)?.isSending == true,
+            updateError = (state as? ChatUiState.Ready?)?.updateError,
+            dialogError = (state as? ChatUiState.Ready?)?.dialogError,
+        )
     }
-
-    private fun createTextMessage(text: String, sender: Participant): TextMessage = TextMessage(
-        id = MessageId(UUID.randomUUID()),
-        parentId = null,
-        sender = sender,
-        recipient = chatId,
-        createdAt = Clock.System.now(),
-        text = text,
-    )
 
     private fun formatTimestamp(epochMillis: Long): String {
         val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())

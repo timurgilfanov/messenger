@@ -136,12 +136,9 @@ class ChatViewModel @AssistedInject constructor(
                             ServerError,
                             ServerUnreachable,
                             UnknownError,
-                            -> when (state) {
+                            -> when (val s = state) {
                                 is ChatUiState.Loading -> ChatUiState.Loading(result.error)
-                                is ChatUiState.Ready -> (state as ChatUiState.Ready).copy(
-                                    updateError = result.error,
-                                )
-
+                                is ChatUiState.Ready -> s.copy(updateError = result.error)
                                 is ChatUiState.Error -> error("Unexpected UI state Error")
                             }
                         }

@@ -145,6 +145,8 @@ jobs:
           path: app/build/outputs/apk/debug
 
       - name: Run Unit Tests
+        id: run_unit_tests
+        continue-on-error: true
         run: |
           ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage | tee unit-test.log
           EXIT=${PIPESTATUS[0]}
@@ -164,6 +166,8 @@ jobs:
           check_name: "Unit Test Results"
           
       - name: Run Component Tests
+        id: run_component_tests
+        continue-on-error: true
         run: |
           ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage | tee component-test.log
           EXIT=${PIPESTATUS[0]}
@@ -181,6 +185,12 @@ jobs:
         with:
           report_paths: app/build/test-results/testDebugUnitTest/*.xml
           check_name: "Component Test Results"
+          
+      - name: Fail if Unit or Component Tests Failed
+        if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success'
+        run: |
+          echo "❌ Unit or component tests failed. See the uploaded reports for details."
+          exit 1
 
       - name: Generate Unit Coverage Report
         run: |
@@ -333,6 +343,8 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Application Unit Tests
+        id: run_application_unit_tests
+        continue-on-error: true
         run: |
           ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Application -Pcoverage | tee application-unit-test.log
           EXIT=${PIPESTATUS[0]}

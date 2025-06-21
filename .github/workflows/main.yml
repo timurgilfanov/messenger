@@ -372,7 +372,7 @@ jobs:
             --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
             --device model=Pixel2.arm,version=30 \
             --timeout 5m \
-            --environment-variables testCategory=timur.gilfanov.messenger.Application \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.Application \
             --results-dir="${{ env.RESULTS_DIR }}" 2>&1 | tee emulator-run.log
 
       - name: Upload Application Emulator Test Log

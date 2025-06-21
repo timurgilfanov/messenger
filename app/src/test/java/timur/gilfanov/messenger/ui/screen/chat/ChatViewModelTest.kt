@@ -1,5 +1,8 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -138,18 +141,20 @@ class ChatViewModelTest {
         senderId: ParticipantId,
         text: String = "Test message",
         deliveryStatus: DeliveryStatus = DeliveryStatus.Sent,
+        joinedAt: Instant,
+        createdAt: Instant,
     ): TextMessage {
         val sender = buildParticipant {
             id = senderId
             name = "Current User"
-            joinedAt = Instant.fromEpochMilliseconds(1000)
+            this.joinedAt = joinedAt
         }
 
         return buildTextMessage {
             this.sender = sender
             this.text = text
             this.deliveryStatus = deliveryStatus
-            this.createdAt = Instant.fromEpochMilliseconds(1000)
+            this.createdAt = createdAt
         }
     }
 
@@ -158,8 +163,10 @@ class ChatViewModelTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
-
-        val message = createTestMessage(currentUserId, "Hello!")
+        val now = Instant.fromEpochMilliseconds(1000)
+        val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val createdAtUi = formatter.format(Date(1000))
+        val message = createTestMessage(currentUserId, "Hello!", joinedAt = now, createdAt = now)
         val chat = createTestChat(chatId, currentUserId, otherUserId, listOf(message))
 
         val repository = RepositoryFake(
@@ -202,7 +209,7 @@ class ChatViewModelTest {
                             text = "Hello!",
                             senderId = currentUserId.id.toString(),
                             senderName = "Current User",
-                            createdAt = "04:00",
+                            createdAt = createdAtUi,
                             deliveryStatus = DeliveryStatus.Sent,
                             isFromCurrentUser = true,
                         ),
@@ -341,10 +348,13 @@ class ChatViewModelTest {
             val chatId = ChatId(UUID.randomUUID())
             val currentUserId = ParticipantId(UUID.randomUUID())
             val chat = createTestChat(chatId, currentUserId)
+            val now = Instant.fromEpochMilliseconds(1000)
+            val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+            val createdAt = formatter.format(Date(1000))
             val message = buildTextMessage {
                 sender = chat.participants.first { it.id == currentUserId }
                 recipient = chatId
-                createdAt = Instant.fromEpochMilliseconds(1000)
+                this.createdAt = now
                 text = "Test message"
             }
             val rep = RepositoryFake2(chat, statuses)
@@ -365,7 +375,7 @@ class ChatViewModelTest {
                 viewModel.updateInputText("Test message")
                 expectStateOn<ChatUiState.Ready> { copy(inputText = "Test message") }
 
-                viewModel.sendMessage(message.id, now = Instant.fromEpochMilliseconds(1000))
+                viewModel.sendMessage(message.id, now = now)
                 expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
 
                 val messageUi = MessageUiModel(
@@ -373,7 +383,7 @@ class ChatViewModelTest {
                     text = "Test message",
                     senderId = currentUserId.id.toString(),
                     senderName = "Current User",
-                    createdAt = "04:00",
+                    createdAt = createdAt,
                     deliveryStatus = statuses[0],
                     isFromCurrentUser = true,
                 )

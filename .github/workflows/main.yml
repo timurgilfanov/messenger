@@ -187,12 +187,20 @@ jobs:
           ./gradlew koverXmlReportDebug
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
 
-      - name: Upload Unit Coverage to Codecov
+      - name: Upload Unit Coverage to Codecov (Unit)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: app/build/reports/kover/unit-report.xml
-          flags: unit,local
+          flags: unit
+          fail_ci_if_error: true
+          
+      - name: Upload Unit Coverage to Codecov (Local)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/kover/unit-report.xml
+          flags: local
           fail_ci_if_error: true
 
       - name: Generate Component Coverage Report
@@ -200,12 +208,20 @@ jobs:
           ./gradlew koverXmlReportDebug
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Component
 
-      - name: Upload Component Coverage to Codecov
+      - name: Upload Component Coverage to Codecov (Component)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: app/build/reports/kover/component-report.xml
-          flags: component,robolectric
+          flags: component
+          fail_ci_if_error: true
+          
+      - name: Upload Component Coverage to Codecov (Robolectric)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/kover/component-report.xml
+          flags: robolectric
           fail_ci_if_error: true
 
       - name: Upload Kover Unit and Component XML Report
@@ -253,12 +269,20 @@ jobs:
           ./gradlew koverXmlReportDebug
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Feature
 
-      - name: Upload Feature Coverage to Codecov
+      - name: Upload Feature Coverage to Codecov (Feature)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: app/build/reports/kover/feature-report.xml
-          flags: feature,local
+          flags: feature
+          fail_ci_if_error: true
+          
+      - name: Upload Feature Coverage to Codecov (Local)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/kover/feature-report.xml
+          flags: local
           fail_ci_if_error: true
 
       - name: Upload Feature Test Report
@@ -312,12 +336,20 @@ jobs:
           ./gradlew koverXmlReportDebug
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Application
 
-      - name: Upload Application Unit Coverage to Codecov
+      - name: Upload Application Unit Coverage to Codecov (Application)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: app/build/reports/kover/application-report.xml
-          flags: application,local
+          flags: application
+          fail_ci_if_error: true
+          
+      - name: Upload Application Unit Coverage to Codecov (Local)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/kover/application-report.xml
+          flags: local
           fail_ci_if_error: true
 
       - name: Upload Application Unit Test Report

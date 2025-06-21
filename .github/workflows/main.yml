@@ -263,6 +263,18 @@ jobs:
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat feature-test.log
           exit $EXIT
+          
+      - name: Upload Feature Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+
+      - name: Publish Feature Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Feature Test Results"
 
       - name: Generate Feature Coverage Report
         run: |
@@ -284,18 +296,6 @@ jobs:
           files: app/build/reports/kover/feature-report.xml
           flags: local
           fail_ci_if_error: true
-
-      - name: Upload Feature Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: feature-test-report
-          path: app/build/reports/tests/testDebugUnitTest
-
-      - name: Publish Feature Test Results
-        uses: mikepenz/action-junit-report@v4
-        with:
-          report_paths: app/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Feature Test Results"
 
   application-tests-emulator:
     if: github.event_name == 'pull_request'
@@ -331,6 +331,18 @@ jobs:
           [ $EXIT -eq 0 ] || cat application-unit-test.log
           exit $EXIT
 
+      - name: Upload Application Unit Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+
+      - name: Publish Application Unit Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Application Unit Test Results"
+          
       - name: Generate Application Unit Coverage Report
         run: |
           ./gradlew koverXmlReportDebug
@@ -351,18 +363,6 @@ jobs:
           files: app/build/reports/kover/application-report.xml
           flags: local
           fail_ci_if_error: true
-
-      - name: Upload Application Unit Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-unit-test-report
-          path: app/build/reports/tests/testDebugUnitTest
-
-      - name: Publish Application Unit Test Results
-        uses: mikepenz/action-junit-report@v4
-        with:
-          report_paths: app/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Application Unit Test Results"
 
       - name: Download Debug APK
         uses: actions/download-artifact@v4
@@ -467,6 +467,12 @@ jobs:
               --excludeAnnotation androidx.compose.runtime.Composable \
               --xml device-coverage-reports/application-emulator-phone-report.xml
           done
+          
+      - name: Upload Application Emulator Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-emulator-test-results
+          path: emulator-testlab-results/
 
       - name: Upload Application Emulator Phone Coverage to Codecov (application)
         uses: codecov/codecov-action@v4
@@ -491,12 +497,6 @@ jobs:
           files: device-coverage-reports/application-emulator-phone-report.xml
           flags: phone
           fail_ci_if_error: false
-
-      - name: Upload Application Emulator Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-emulator-test-results
-          path: emulator-testlab-results/
 
   application-tests-devices:
     if: github.ref == 'refs/heads/main'

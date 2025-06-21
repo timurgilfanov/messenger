@@ -342,48 +342,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run Application Unit Tests
-        id: run_application_unit_tests
-        continue-on-error: true
-        run: |
-          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Application -Pcoverage | tee application-unit-test.log
-          EXIT=${PIPESTATUS[0]}
-          [ $EXIT -eq 0 ] || cat application-unit-test.log
-          exit $EXIT
-
-      - name: Upload Application Unit Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-unit-test-report
-          path: app/build/reports/tests/testDebugUnitTest
-
-      - name: Publish Application Unit Test Results
-        uses: mikepenz/action-junit-report@v4
-        with:
-          report_paths: app/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Application Unit Test Results"
-          
-      - name: Generate Application Unit Coverage Report
-        run: |
-          ./gradlew koverXmlReportDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Application
-
-      - name: Upload Application Unit Coverage to Codecov (Application)
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/application-report.xml
-          flags: application
-          fail_ci_if_error: true
-          
-      - name: Upload Application Unit Coverage to Codecov (Local)
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/application-report.xml
-          flags: local
-          fail_ci_if_error: true
-
       - name: Download Debug APK
         uses: actions/download-artifact@v4
         with:

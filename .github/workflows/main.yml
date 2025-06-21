@@ -258,12 +258,14 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Feature Tests
+        id: run_feature_tests
+        continue-on-error: true
         run: |
           ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature -Pcoverage | tee feature-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat feature-test.log
           exit $EXIT
-          
+
       - name: Upload Feature Test Report
         uses: actions/upload-artifact@v4
         with:
@@ -275,6 +277,12 @@ jobs:
         with:
           report_paths: app/build/test-results/testDebugUnitTest/*.xml
           check_name: "Feature Test Results"
+
+      - name: Fail if Feature Tests Failed
+        if: steps.run_feature_tests.outcome != 'success'
+        run: |
+          echo "❌ Feature tests failed. See the uploaded report for details."
+          exit 1
 
       - name: Generate Feature Coverage Report
         run: |

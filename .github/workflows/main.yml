@@ -157,11 +157,11 @@ jobs:
           name: unit-test-report
           path: app/build/reports/tests/testDebugUnitTest
           
-      - name: Publish Unit and Component Test Results
+      - name: Publish Unit Test Results
         uses: mikepenz/action-junit-report@v4
         with:
           report_paths: app/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Unit and Component Test Results"
+          check_name: "Unit Test Results"
           
       - name: Run Component Tests
         run: |

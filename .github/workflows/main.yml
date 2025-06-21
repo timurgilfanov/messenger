@@ -403,6 +403,12 @@ jobs:
           fi
           mkdir -p emulator-testlab-results
           gsutil -m cp -r $RESULTS_URL emulator-testlab-results/
+          
+      - name: Upload Application Emulator Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-emulator-test-results
+          path: emulator-testlab-results/
 
       - name: Publish Application Emulator Test Results
         uses: mikepenz/action-junit-report@v4
@@ -436,21 +442,18 @@ jobs:
           # Create directory for device-specific coverage reports
           mkdir -p device-coverage-reports
           
-          # Find and process coverage files from Pixel2 emulator (phone)
-          find emulator-testlab-results -name "*.ec" -path "*Pixel2*" | while read coverage_file; do
-            echo "Processing phone emulator coverage: $coverage_file"
-            java -jar kover-cli.jar report "$coverage_file" \
+          # Generate emulator coverage report 
+          PHONE_COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
+                                 -path "*/artifacts/sdcard/Download/coverage.ec" \
+                                 -print0 | xargs -0)
+          if [ -n "$PHONE_COVERAGE_FILES" ]; then
+            echo "Generating emulator coverage report..."
+            java -jar kover-cli.jar report $PHONE_COVERAGE_FILES \
               --classfiles app/build/tmp/kotlin-classes/debug \
               --src app/src/main \
               --excludeAnnotation androidx.compose.runtime.Composable \
               --xml device-coverage-reports/application-emulator-phone-report.xml
-          done
-          
-      - name: Upload Application Emulator Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-emulator-test-results
-          path: emulator-testlab-results/
+          fi        
 
       - name: Upload Application Emulator Phone Coverage to Codecov (application)
         uses: codecov/codecov-action@v4

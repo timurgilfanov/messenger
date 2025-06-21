@@ -150,7 +150,19 @@ jobs:
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
-
+          
+      - name: Upload Unit Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+          
+      - name: Publish Unit and Component Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Unit and Component Test Results"
+          
       - name: Run Component Tests
         run: |
           ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage | tee component-test.log
@@ -158,17 +170,17 @@ jobs:
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
 
-      - name: Upload Unit and Component Test Report
+      - name: Upload Component Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: unit-component-test-report
+          name: component-test-report
           path: app/build/reports/tests/testDebugUnitTest
 
-      - name: Publish Unit and Component Test Results
+      - name: Publish Component Test Results
         uses: mikepenz/action-junit-report@v4
         with:
           report_paths: app/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Unit and Component Test Results"
+          check_name: "Component Test Results"
 
       - name: Generate Unit Coverage Report
         run: |

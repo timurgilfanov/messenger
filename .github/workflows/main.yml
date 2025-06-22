@@ -438,14 +438,15 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/debug
 
-      - name: Generate Emulator Device-Specific Coverage Reports
+      - name: Generate Emulator Coverage Reports
         run: |
-          # Create directory for device-specific coverage reports
-          mkdir -p device-coverage-reports
+          # Create directory for coverage reports
+          mkdir -p coverage-reports
+          ls emulator-testlab-results
           
           # Generate emulator coverage report 
           PHONE_COVERAGE_FILES=$(find emulator-testlab-results \
-                                 -path "*/artifacts/sdcard/Download/coverage.ec" \
+                                 -path "**/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating emulator coverage report..."
@@ -453,14 +454,14 @@ jobs:
               --classfiles app/build/tmp/kotlin-classes/debug \
               --src app/src/main \
               --excludeAnnotation androidx.compose.runtime.Composable \
-              --xml device-coverage-reports/application-emulator-phone-report.xml
+              --xml coverage-reports/application-emulator-phone-report.xml
           fi        
 
       - name: Upload Application Emulator Phone Coverage to Codecov (application)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: device-coverage-reports/application-emulator-phone-report.xml
+          files: coverage-reports/application-emulator-phone-report.xml
           flags: application
           fail_ci_if_error: true
 
@@ -468,7 +469,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: device-coverage-reports/application-emulator-phone-report.xml
+          files: coverage-reports/application-emulator-phone-report.xml
           flags: emulator
           fail_ci_if_error: true
 
@@ -476,7 +477,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: device-coverage-reports/application-emulator-phone-report.xml
+          files: coverage-reports/application-emulator-phone-report.xml
           flags: phone
           fail_ci_if_error: true
 

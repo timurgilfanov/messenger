@@ -404,12 +404,6 @@ jobs:
           mkdir -p emulator-testlab-results
           gsutil -m cp -r $RESULTS_URL emulator-testlab-results/        
 
-      - name: Publish Application Emulator Test Results
-        uses: mikepenz/action-junit-report@v4
-        with:
-          report_paths: emulator-testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
-          check_name: "Application Instrumentation Test Results (Emulator)"
-
       - name: Sanitize all subdirectory names to remove colons
         run: |
           for dir in emulator-testlab-results/*; do
@@ -420,11 +414,23 @@ jobs:
             fi
           done
           
+      - name: Update RESULTS_DIR after sanitizing
+        run: |
+          SAFE_RESULTS_DIR=$(echo "${RESULTS_DIR}" | tr ':' '_')
+          echo "RESULTS_DIR=$SAFE_RESULTS_DIR" >> $GITHUB_ENV
+          
+      # Needs sanitized path without colons
       - name: Upload Application Emulator Test Report
         uses: actions/upload-artifact@v4
         with:
           name: application-emulator-test-results
           path: emulator-testlab-results/
+          
+      - name: Publish Application Emulator Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: emulator-testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
+          check_name: "Application Instrumentation Test Results (Emulator)"
 
       - name: Download Kover CLI for emulator coverage
         run: |

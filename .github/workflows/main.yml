@@ -443,7 +443,7 @@ jobs:
           mkdir -p device-coverage-reports
           
           # Generate emulator coverage report 
-          PHONE_COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
+          PHONE_COVERAGE_FILES=$(find emulator-testlab-results/${{ env.RESULTS_DIR }} \
                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then

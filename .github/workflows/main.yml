@@ -373,6 +373,7 @@ jobs:
             --device model=Pixel2.arm,version=30 \
             --timeout 5m \
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.Application \
+            --directories-to-pull /sdcard/Download \
             --results-dir="" 2>&1 | tee emulator-run.log
 
       - name: Upload Application Emulator Test Log

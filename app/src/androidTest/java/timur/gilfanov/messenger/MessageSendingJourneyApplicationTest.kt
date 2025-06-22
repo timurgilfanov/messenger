@@ -2,6 +2,7 @@ package timur.gilfanov.messenger
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -9,6 +10,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextInputSelection
+import androidx.compose.ui.text.TextRange
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -135,6 +138,7 @@ class MessageSendingJourneyApplicationTest {
         }
     }
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun messageSending_preservesInputDuringTyping() {
         // Wait for placeholder text to appear (indicates Ready state)
@@ -154,6 +158,8 @@ class MessageSendingJourneyApplicationTest {
             .assertTextEquals(partialMessage)
 
         // Continue typing
+        composeTestRule.onNodeWithTag("message_input")
+            .performTextInputSelection(TextRange(partialMessage.length)) // Move cursor to end
         composeTestRule.onNodeWithTag("message_input")
             .performTextInput(" and now I'll send it")
 

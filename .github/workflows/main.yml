@@ -145,56 +145,94 @@ jobs:
           path: app/build/outputs/apk/debug
 
       - name: Run Unit Tests
+        id: run_unit_tests
+        continue-on-error: true
         run: |
           ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage | tee unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
-
-      - name: Generate Unit Coverage Report
-        run: |
-          ./gradlew koverXmlReportDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
-
-      - name: Upload Unit Coverage to Codecov
-        uses: codecov/codecov-action@v4
+          
+      - name: Upload Unit Test Report
+        uses: actions/upload-artifact@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/unit-report.xml
-          flags: unit,local
-          fail_ci_if_error: true
-
+          name: unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+          
+      - name: Publish Unit Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Unit Test Results"
+          
       - name: Run Component Tests
+        id: run_component_tests
+        continue-on-error: true
         run: |
           ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage | tee component-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
 
+      - name: Upload Component Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+
+      - name: Publish Component Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Component Test Results"
+          
+      - name: Fail if Unit or Component Tests Failed
+        if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success'
+        run: |
+          echo "❌ Unit or component tests failed. See the uploaded reports for details."
+          exit 1
+
+      - name: Generate Unit Coverage Report
+        run: |
+          ./gradlew koverXmlReportDebug
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
+
+      - name: Upload Unit Coverage to Codecov (Unit)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/kover/unit-report.xml
+          flags: unit
+          fail_ci_if_error: true
+          
+      - name: Upload Unit Coverage to Codecov (Local)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/kover/unit-report.xml
+          flags: local
+          fail_ci_if_error: true
+
       - name: Generate Component Coverage Report
         run: |
           ./gradlew koverXmlReportDebug
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Component
 
-      - name: Upload Component Coverage to Codecov
+      - name: Upload Component Coverage to Codecov (Component)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: app/build/reports/kover/component-report.xml
-          flags: component,robolectric
+          flags: component
           fail_ci_if_error: true
-
-      - name: Upload Unit Test Report
-        uses: actions/upload-artifact@v4
+          
+      - name: Upload Component Coverage to Codecov (Robolectric)
+        uses: codecov/codecov-action@v4
         with:
-          name: unit-component-test-report
-          path: app/build/reports/tests/testDebugUnitTest
-
-      - name: Publish Unit and Component Test Results
-        uses: mikepenz/action-junit-report@v4
-        with:
-          report_paths: app/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Unit and Component Test Results"
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/kover/component-report.xml
+          flags: robolectric
+          fail_ci_if_error: true
 
       - name: Upload Kover Unit and Component XML Report
         uses: actions/upload-artifact@v4
@@ -230,24 +268,13 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Feature Tests
+        id: run_feature_tests
+        continue-on-error: true
         run: |
           ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature -Pcoverage | tee feature-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat feature-test.log
           exit $EXIT
-
-      - name: Generate Feature Coverage Report
-        run: |
-          ./gradlew koverXmlReportDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Feature
-
-      - name: Upload Feature Coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/feature-report.xml
-          flags: feature,local
-          fail_ci_if_error: true
 
       - name: Upload Feature Test Report
         uses: actions/upload-artifact@v4
@@ -260,6 +287,33 @@ jobs:
         with:
           report_paths: app/build/test-results/testDebugUnitTest/*.xml
           check_name: "Feature Test Results"
+
+      - name: Fail if Feature Tests Failed
+        if: steps.run_feature_tests.outcome != 'success'
+        run: |
+          echo "❌ Feature tests failed. See the uploaded report for details."
+          exit 1
+
+      - name: Generate Feature Coverage Report
+        run: |
+          ./gradlew koverXmlReportDebug
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Feature
+
+      - name: Upload Feature Coverage to Codecov (Feature)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/kover/feature-report.xml
+          flags: feature
+          fail_ci_if_error: true
+          
+      - name: Upload Feature Coverage to Codecov (Local)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/kover/feature-report.xml
+          flags: local
+          fail_ci_if_error: true
 
   application-tests-emulator:
     if: github.event_name == 'pull_request'
@@ -287,38 +341,6 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-
-      - name: Run Application Unit Tests
-        run: |
-          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Application -Pcoverage | tee application-unit-test.log
-          EXIT=${PIPESTATUS[0]}
-          [ $EXIT -eq 0 ] || cat application-unit-test.log
-          exit $EXIT
-
-      - name: Generate Application Unit Coverage Report
-        run: |
-          ./gradlew koverXmlReportDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Application
-
-      - name: Upload Application Unit Coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/application-report.xml
-          flags: application,local
-          fail_ci_if_error: true
-
-      - name: Upload Application Unit Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-unit-test-report
-          path: app/build/reports/tests/testDebugUnitTest
-
-      - name: Publish Application Unit Test Results
-        uses: mikepenz/action-junit-report@v4
-        with:
-          report_paths: app/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Application Unit Test Results"
 
       - name: Download Debug APK
         uses: actions/download-artifact@v4
@@ -350,8 +372,9 @@ jobs:
             --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
             --device model=Pixel2.arm,version=30 \
             --timeout 5m \
-            --environment-variables testCategory=timur.gilfanov.messenger.Application \
-            --results-dir="${{ env.RESULTS_DIR }}" 2>&1 | tee emulator-run.log
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.Application \
+            --directories-to-pull /sdcard/Download \
+            --results-dir="" 2>&1 | tee emulator-run.log
 
       - name: Upload Application Emulator Test Log
         uses: actions/upload-artifact@v4
@@ -380,13 +403,7 @@ jobs:
             echo "❌ RESULTS_URL is not set"; exit 1
           fi
           mkdir -p emulator-testlab-results
-          gsutil -m cp -r $RESULTS_URL emulator-testlab-results/
-
-      - name: Publish Application Emulator Test Results
-        uses: mikepenz/action-junit-report@v4
-        with:
-          report_paths: emulator-testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
-          check_name: "Application Instrumentation Test Results (Emulator)"
+          gsutil -m cp -r $RESULTS_URL emulator-testlab-results/        
 
       - name: Sanitize all subdirectory names to remove colons
         run: |
@@ -397,6 +414,19 @@ jobs:
               mv "emulator-testlab-results/$base" "emulator-testlab-results/$safe"
             fi
           done
+          
+      # Needs sanitized path without colons
+      - name: Upload Application Emulator Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-emulator-test-results
+          path: emulator-testlab-results/
+          
+      - name: Publish Application Emulator Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: emulator-testlab-results/**/*.xml
+          check_name: "Application Instrumentation Test Results (Emulator)"
 
       - name: Download Kover CLI for emulator coverage
         run: |
@@ -409,50 +439,47 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/debug
 
-      - name: Generate Emulator Device-Specific Coverage Reports
+      - name: Generate Emulator Coverage Reports
         run: |
-          # Create directory for device-specific coverage reports
-          mkdir -p device-coverage-reports
+          # Create directory for coverage reports
+          mkdir -p coverage-reports
           
-          # Find and process coverage files from Pixel2 emulator (phone)
-          find emulator-testlab-results -name "*.ec" -path "*Pixel2*" | while read coverage_file; do
-            echo "Processing phone emulator coverage: $coverage_file"
-            java -jar kover-cli.jar report "$coverage_file" \
+          # Generate emulator coverage report 
+          PHONE_COVERAGE_FILES=$(find emulator-testlab-results \
+                                 -path "**/artifacts/sdcard/Download/coverage.ec" \
+                                 -print0 | xargs -0)
+          if [ -n "$PHONE_COVERAGE_FILES" ]; then
+            echo "Generating emulator coverage report..."
+            java -jar kover-cli.jar report $PHONE_COVERAGE_FILES \
               --classfiles app/build/tmp/kotlin-classes/debug \
               --src app/src/main \
               --excludeAnnotation androidx.compose.runtime.Composable \
-              --xml device-coverage-reports/application-emulator-phone-report.xml
-          done
+              --xml coverage-reports/application-emulator-phone-report.xml
+          fi        
 
       - name: Upload Application Emulator Phone Coverage to Codecov (application)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: device-coverage-reports/application-emulator-phone-report.xml
+          files: coverage-reports/application-emulator-phone-report.xml
           flags: application
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Application Emulator Phone Coverage to Codecov (emulator)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: device-coverage-reports/application-emulator-phone-report.xml
+          files: coverage-reports/application-emulator-phone-report.xml
           flags: emulator
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Application Emulator Phone Coverage to Codecov (phone)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: device-coverage-reports/application-emulator-phone-report.xml
+          files: coverage-reports/application-emulator-phone-report.xml
           flags: phone
-          fail_ci_if_error: false
-
-      - name: Upload Application Emulator Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-emulator-test-results
-          path: emulator-testlab-results/
+          fail_ci_if_error: true
 
   application-tests-devices:
     if: github.ref == 'refs/heads/main'
@@ -515,7 +542,7 @@ jobs:
             --timeout 5m \
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.Application \
             --directories-to-pull /sdcard/Download \
-            --results-dir="${{ env.RESULTS_DIR }}" 2>&1 | tee run.log
+            --results-dir="" 2>&1 | tee run.log
 
       - name: Upload Application Test Run Log
         uses: actions/upload-artifact@v4
@@ -543,13 +570,13 @@ jobs:
           if [ -z "$RESULTS_URL" ]; then
             echo "❌ RESULTS_URL is not set"; exit 1
           fi
-          mkdir -p testlab-results
-          gsutil -m cp -r $RESULTS_URL testlab-results/
+          mkdir -p device-testlab-results
+          gsutil -m cp -r $RESULTS_URL device-testlab-results/
 
       - name: Publish Application Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
+          report_paths: device-testlab-results/**/*.xml
           check_name: "Application Test Results (Devices)"
 
       - name: Download Kotlin class files
@@ -569,7 +596,7 @@ jobs:
           mkdir -p device-coverage-reports
           
           # Generate phone coverage report (MediumPhone devices)
-          PHONE_COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
+          PHONE_COVERAGE_FILES=$(find device-testlab-results \
                                  -path "*MediumPhone*" \
                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
@@ -583,7 +610,7 @@ jobs:
           fi
           
           # Generate foldable coverage report (Pixel Fold)
-          FOLDABLE_COVERAGE_FILES=$(find testlab-results/${{ env.RESULTS_DIR }} \
+          FOLDABLE_COVERAGE_FILES=$(find device-testlab-results }} \
                                     -path "*felix*" \
                                     -path "*/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
@@ -598,11 +625,11 @@ jobs:
 
       - name: Sanitize all subdirectory names to remove colons
         run: |
-          for dir in testlab-results/*; do
+          for dir in device-testlab-results/*; do
             base=$(basename "$dir")
             safe=$(echo "$base" | tr ':' '_')
             if [ "$base" != "$safe" ]; then
-              mv "testlab-results/$base" "testlab-results/$safe"
+              mv "device-testlab-results/$base" "device-testlab-results/$safe"
             fi
           done
 
@@ -618,7 +645,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/application-device-phone-report.xml
           flags: application
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Application Device Phone Coverage to Codecov (device)
         uses: codecov/codecov-action@v4
@@ -626,7 +653,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/application-device-phone-report.xml
           flags: device
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Application Device Phone Coverage to Codecov (phone)
         uses: codecov/codecov-action@v4
@@ -634,7 +661,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/application-device-phone-report.xml
           flags: phone
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Application Device Foldable Coverage to Codecov (application)
         uses: codecov/codecov-action@v4
@@ -642,7 +669,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/application-device-foldable-report.xml
           flags: application
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Application Device Foldable Coverage to Codecov (device)
         uses: codecov/codecov-action@v4
@@ -650,7 +677,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/application-device-foldable-report.xml
           flags: device
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Application Device Foldable Coverage to Codecov (foldable)
         uses: codecov/codecov-action@v4
@@ -658,7 +685,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/application-device-foldable-report.xml
           flags: foldable
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Application Coverage Report
         uses: actions/upload-artifact@v4
@@ -721,7 +748,7 @@ jobs:
             --timeout 10m \
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.ReleaseCandidate \
             --directories-to-pull /sdcard/Download \
-            --results-dir="${{ env.RESULTS_DIR }}" 2>&1 | tee release-run.log
+            --results-dir="" 2>&1 | tee release-run.log
 
       - name: Upload Release Candidate Test Log
         uses: actions/upload-artifact@v4
@@ -751,11 +778,27 @@ jobs:
           fi
           mkdir -p release-testlab-results
           gsutil -m cp -r $RESULTS_URL release-testlab-results/
+          
+      - name: Sanitize all subdirectory names to remove colons
+        run: |
+          for dir in release-testlab-results/*; do
+            base=$(basename "$dir")
+            safe=$(echo "$base" | tr ':' '_')
+            if [ "$base" != "$safe" ]; then
+              mv "release-testlab-results/$base" "release-testlab-results/$safe"
+            fi
+          done
+
+      - name: Upload Release Candidate Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-test-results
+          path: release-testlab-results/
 
       - name: Publish Release Candidate Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: release-testlab-results/${{ env.RESULTS_DIR }}/**/*.xml
+          report_paths: release-testlab-results/**/*.xml
           check_name: "Release Candidate Test Results"
 
       - name: Download Kover CLI
@@ -775,7 +818,7 @@ jobs:
           mkdir -p device-coverage-reports
           
           # Generate phone coverage report
-          PHONE_COVERAGE_FILES=$(find release-testlab-results/${{ env.RESULTS_DIR }} \
+          PHONE_COVERAGE_FILES=$(find release-testlab-results \
                                  -path "*MediumPhone*" \
                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
@@ -789,7 +832,7 @@ jobs:
           fi
           
           # Generate tablet coverage report  
-          TABLET_COVERAGE_FILES=$(find release-testlab-results/${{ env.RESULTS_DIR }} \
+          TABLET_COVERAGE_FILES=$(find release-testlab-results \
                                   -path "*MediumTablet*" \
                                   -path "*/artifacts/sdcard/Download/coverage.ec" \
                                   -print0 | xargs -0)
@@ -803,7 +846,7 @@ jobs:
           fi
           
           # Generate foldable coverage report (Pixel Fold)
-          FOLDABLE_COVERAGE_FILES=$(find release-testlab-results/${{ env.RESULTS_DIR }} \
+          FOLDABLE_COVERAGE_FILES=$(find release-testlab-results \
                                     -path "*felix*" \
                                     -path "*/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
@@ -822,7 +865,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-phone-report.xml
           flags: release_candidate
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Release Candidate Phone Coverage to Codecov (device)
         uses: codecov/codecov-action@v4
@@ -830,7 +873,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-phone-report.xml
           flags: device
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Release Candidate Phone Coverage to Codecov (phone)
         uses: codecov/codecov-action@v4
@@ -838,7 +881,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-phone-report.xml
           flags: phone
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Release Candidate Tablet Coverage to Codecov (release_candidate)
         uses: codecov/codecov-action@v4
@@ -846,7 +889,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-tablet-report.xml
           flags: release_candidate
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Release Candidate Tablet Coverage to Codecov (device)
         uses: codecov/codecov-action@v4
@@ -854,7 +897,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-tablet-report.xml
           flags: device
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Release Candidate Tablet Coverage to Codecov (tablet)
         uses: codecov/codecov-action@v4
@@ -862,7 +905,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-tablet-report.xml
           flags: tablet
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Release Candidate Foldable Coverage to Codecov (release_candidate)
         uses: codecov/codecov-action@v4
@@ -870,7 +913,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-foldable-report.xml
           flags: release_candidate
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Release Candidate Foldable Coverage to Codecov (device)
         uses: codecov/codecov-action@v4
@@ -878,7 +921,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-foldable-report.xml
           flags: device
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload Release Candidate Foldable Coverage to Codecov (foldable)
         uses: codecov/codecov-action@v4
@@ -886,20 +929,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: device-coverage-reports/release-candidate-device-foldable-report.xml
           flags: foldable
-          fail_ci_if_error: false
-
-      - name: Sanitize all subdirectory names to remove colons
-        run: |
-          for dir in release-testlab-results/*; do
-            base=$(basename "$dir")
-            safe=$(echo "$base" | tr ':' '_')
-            if [ "$base" != "$safe" ]; then
-              mv "release-testlab-results/$base" "release-testlab-results/$safe"
-            fi
-          done
-
-      - name: Upload Release Candidate Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-candidate-test-results
-          path: release-testlab-results/
+          fail_ci_if_error: true

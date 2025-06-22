@@ -572,6 +572,22 @@ jobs:
           fi
           mkdir -p device-testlab-results
           gsutil -m cp -r $RESULTS_URL device-testlab-results/
+          
+      - name: Sanitize all subdirectory names to remove colons
+        run: |
+          for dir in device-testlab-results/*; do
+            base=$(basename "$dir")
+            safe=$(echo "$base" | tr ':' '_')
+            if [ "$base" != "$safe" ]; then
+              mv "device-testlab-results/$base" "device-testlab-results/$safe"
+            fi
+          done
+
+      - name: Upload Application Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-test-devices-results
+          path: device-testlab-results/
 
       - name: Publish Application Test Results
         uses: mikepenz/action-junit-report@v4
@@ -622,22 +638,6 @@ jobs:
               --excludeAnnotation androidx.compose.runtime.Composable \
               --xml device-coverage-reports/application-device-foldable-report.xml
           fi
-
-      - name: Sanitize all subdirectory names to remove colons
-        run: |
-          for dir in device-testlab-results/*; do
-            base=$(basename "$dir")
-            safe=$(echo "$base" | tr ':' '_')
-            if [ "$base" != "$safe" ]; then
-              mv "device-testlab-results/$base" "device-testlab-results/$safe"
-            fi
-          done
-
-      - name: Upload Application Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-test-devices-results
-          path: testlab-results/
 
       - name: Upload Application Device Phone Coverage to Codecov (application)
         uses: codecov/codecov-action@v4

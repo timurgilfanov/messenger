@@ -402,13 +402,7 @@ jobs:
             echo "❌ RESULTS_URL is not set"; exit 1
           fi
           mkdir -p emulator-testlab-results
-          gsutil -m cp -r $RESULTS_URL emulator-testlab-results/
-          
-      - name: Upload Application Emulator Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-emulator-test-results
-          path: emulator-testlab-results/
+          gsutil -m cp -r $RESULTS_URL emulator-testlab-results/        
 
       - name: Publish Application Emulator Test Results
         uses: mikepenz/action-junit-report@v4
@@ -425,6 +419,12 @@ jobs:
               mv "emulator-testlab-results/$base" "emulator-testlab-results/$safe"
             fi
           done
+          
+      - name: Upload Application Emulator Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-emulator-test-results
+          path: emulator-testlab-results/
 
       - name: Download Kover CLI for emulator coverage
         run: |

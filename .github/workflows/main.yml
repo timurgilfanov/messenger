@@ -442,7 +442,6 @@ jobs:
         run: |
           # Create directory for coverage reports
           mkdir -p coverage-reports
-          ls emulator-testlab-results
           
           # Generate emulator coverage report 
           PHONE_COVERAGE_FILES=$(find emulator-testlab-results \

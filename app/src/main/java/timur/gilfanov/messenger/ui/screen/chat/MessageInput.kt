@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
@@ -18,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import timur.gilfanov.messenger.R
@@ -25,9 +29,8 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
 fun MessageInput(
-    text: String,
+    state: TextFieldState,
     isSending: Boolean,
-    onTextChange: (String) -> Unit,
     onSendMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -38,8 +41,12 @@ fun MessageInput(
         verticalAlignment = Alignment.Bottom,
     ) {
         OutlinedTextField(
-            value = text,
-            onValueChange = onTextChange,
+            value = TextFieldValue(
+                text = state.text.toString(),
+                selection = state.selection,
+                composition = state.composition,
+            ),
+            onValueChange = { state.setTextAndPlaceCursorAtEnd(it.text) },
             modifier = Modifier
                 .weight(1f)
                 .testTag("message_input"),
@@ -50,7 +57,7 @@ fun MessageInput(
 
         IconButton(
             onClick = onSendMessage,
-            enabled = text.isNotBlank() && !isSending,
+            enabled = state.text.isNotBlank() && !isSending,
             modifier = Modifier
                 .padding(start = 8.dp)
                 .testTag("send_button"),
@@ -65,7 +72,7 @@ fun MessageInput(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = stringResource(R.string.send_message_content_description),
-                    tint = if (text.isNotBlank()) {
+                    tint = if (state.text.isNotBlank()) {
                         MaterialTheme.colorScheme.primary
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -81,9 +88,8 @@ fun MessageInput(
 private fun MessageInputEmptyPreview() {
     MessengerTheme {
         MessageInput(
-            text = "",
+            state = TextFieldState(""),
             isSending = false,
-            onTextChange = {},
             onSendMessage = {},
         )
     }
@@ -94,9 +100,8 @@ private fun MessageInputEmptyPreview() {
 private fun MessageInputEmptyGermanPreview() {
     MessengerTheme {
         MessageInput(
-            text = "",
+            state = TextFieldState(""),
             isSending = false,
-            onTextChange = {},
             onSendMessage = {},
         )
     }
@@ -107,10 +112,27 @@ private fun MessageInputEmptyGermanPreview() {
 private fun MessageInputWithTextPreview() {
     MessengerTheme {
         MessageInput(
-            text = "Hello, this is my message!",
+            state = TextFieldState("Hello, this is my message!"),
             isSending = false,
-            onTextChange = {},
             onSendMessage = {},
+
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+@Suppress("MagicNumber")
+private fun MessageInputWithSelectionPreview() {
+    MessengerTheme {
+        MessageInput(
+            state = TextFieldState(
+                "Hello, this is my message!",
+                TextRange(0, 5),
+            ),
+            isSending = false,
+            onSendMessage = {},
+
         )
     }
 }
@@ -120,9 +142,8 @@ private fun MessageInputWithTextPreview() {
 private fun MessageInputSendingPreview() {
     MessengerTheme {
         MessageInput(
-            text = "Sending this message...",
+            state = TextFieldState("Sending this message..."),
             isSending = true,
-            onTextChange = {},
             onSendMessage = {},
         )
     }

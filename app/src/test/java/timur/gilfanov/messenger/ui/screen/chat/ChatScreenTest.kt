@@ -1,12 +1,15 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import java.util.UUID
 import kotlinx.collections.immutable.persistentListOf
@@ -39,7 +42,6 @@ class ChatScreenTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = ChatUiState.Loading(),
-                    onTextChange = {},
                     onSendMessage = {},
                 )
             }
@@ -57,7 +59,6 @@ class ChatScreenTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = errorState,
-                    onTextChange = {},
                     onSendMessage = {},
                 )
             }
@@ -101,7 +102,7 @@ class ChatScreenTest {
             ),
             isGroupChat = false,
             messages = messages,
-            inputText = "",
+            inputTextField = TextFieldState(""),
             isSending = false,
             status = ChatStatus.OneToOne(null),
         )
@@ -110,7 +111,6 @@ class ChatScreenTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
-                    onTextChange = {},
                     onSendMessage = {},
                 )
             }
@@ -130,24 +130,22 @@ class ChatScreenTest {
 
     @Test
     fun `chat screen message input updates text`() {
+        val textFieldState = TextFieldState("")
         val readyState = ChatUiState.Ready(
             id = testChatId,
             title = "Test Chat",
             participants = persistentListOf(),
             isGroupChat = false,
             messages = persistentListOf(),
-            inputText = "",
+            inputTextField = textFieldState,
             isSending = false,
             status = ChatStatus.OneToOne(null),
         )
-
-        var capturedText = ""
 
         composeTestRule.setContent {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
-                    onTextChange = { capturedText = it },
                     onSendMessage = {},
                 )
             }
@@ -158,7 +156,38 @@ class ChatScreenTest {
 
         // Note: In a real test, we would need to update the state and recompose
         // This test verifies that the callback is called
-        assert(capturedText == testMessage)
+        assert(textFieldState.text == testMessage)
+    }
+
+    @Test
+    fun `repeat message input text updates`() {
+        val textFieldState = TextFieldState("")
+        val readyState = ChatUiState.Ready(
+            id = testChatId,
+            title = "Test Chat",
+            participants = persistentListOf(),
+            isGroupChat = false,
+            messages = persistentListOf(),
+            inputTextField = textFieldState,
+            isSending = false,
+            status = ChatStatus.OneToOne(null),
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatScreenContent(
+                    uiState = readyState,
+                    onSendMessage = {},
+                )
+            }
+        }
+
+        repeat(100) {
+            val message = "Test message #$it"
+            composeTestRule.onNodeWithTag("message_input").performTextInput(message)
+            composeTestRule.onNodeWithTag("message_input").assertTextEquals(message)
+            composeTestRule.onNodeWithTag("message_input").performTextClearance()
+        }
     }
 
     @Test
@@ -169,7 +198,7 @@ class ChatScreenTest {
             participants = persistentListOf(),
             isGroupChat = false,
             messages = persistentListOf(),
-            inputText = "Test message",
+            inputTextField = TextFieldState("Test message"),
             isSending = false,
             status = ChatStatus.OneToOne(null),
         )
@@ -180,7 +209,6 @@ class ChatScreenTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
-                    onTextChange = {},
                     onSendMessage = { sendClicked = true },
                 )
             }
@@ -198,7 +226,7 @@ class ChatScreenTest {
             participants = persistentListOf(),
             isGroupChat = false,
             messages = persistentListOf(),
-            inputText = "Sending...",
+            inputTextField = TextFieldState("Sending..."),
             isSending = true,
             status = ChatStatus.OneToOne(null),
         )
@@ -207,7 +235,6 @@ class ChatScreenTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
-                    onTextChange = {},
                     onSendMessage = {},
                 )
             }
@@ -237,7 +264,7 @@ class ChatScreenTest {
             ),
             isGroupChat = true,
             messages = persistentListOf(),
-            inputText = "",
+            inputTextField = TextFieldState(""),
             isSending = false,
             status = ChatStatus.Group(2),
         )
@@ -246,7 +273,6 @@ class ChatScreenTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
-                    onTextChange = {},
                     onSendMessage = {},
                 )
             }
@@ -264,7 +290,7 @@ class ChatScreenTest {
             participants = persistentListOf(),
             isGroupChat = false,
             messages = persistentListOf(),
-            inputText = "",
+            inputTextField = TextFieldState(""),
             isSending = false,
             status = ChatStatus.OneToOne(null),
             updateError = updateError,
@@ -274,7 +300,6 @@ class ChatScreenTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
-                    onTextChange = {},
                     onSendMessage = {},
                 )
             }

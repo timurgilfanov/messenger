@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -15,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,10 +47,8 @@ fun ChatScreen(
         }),
 ) {
     val uiState by viewModel.collectAsState()
-
     ChatScreenContent(
         uiState = uiState,
-        onTextChange = viewModel::updateInputText,
         onSendMessage = viewModel::sendMessage,
         modifier = modifier,
     )
@@ -60,7 +58,6 @@ fun ChatScreen(
 @Composable
 fun ChatScreenContent(
     uiState: ChatUiState,
-    onTextChange: (String) -> Unit,
     onSendMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -93,7 +90,6 @@ fun ChatScreenContent(
         is ChatUiState.Ready -> {
             ChatContent(
                 state = uiState,
-                onTextChange = onTextChange,
                 onSendMessage = onSendMessage,
                 modifier = modifier,
             )
@@ -105,7 +101,6 @@ fun ChatScreenContent(
 @Composable
 fun ChatContent(
     state: ChatUiState.Ready,
-    onTextChange: (String) -> Unit,
     onSendMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -137,9 +132,8 @@ fun ChatContent(
         },
         bottomBar = {
             MessageInput(
-                text = state.inputText,
+                state = state.inputTextField,
                 isSending = state.isSending,
-                onTextChange = onTextChange,
                 onSendMessage = onSendMessage,
             )
         },
@@ -210,11 +204,10 @@ private fun ChatContentPreview() {
                         isFromCurrentUser = false,
                     ),
                 ),
-                inputText = "",
+                inputTextField = TextFieldState(""),
                 isSending = false,
                 status = ChatStatus.OneToOne(null),
             ),
-            onTextChange = {},
             onSendMessage = {},
         )
     }

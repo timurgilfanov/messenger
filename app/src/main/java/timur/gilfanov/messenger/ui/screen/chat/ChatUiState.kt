@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.compose.foundation.text.input.TextFieldState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Instant
@@ -18,7 +19,7 @@ sealed interface ChatUiState {
         val participants: ImmutableList<ParticipantUiModel>,
         val isGroupChat: Boolean,
         val messages: ImmutableList<MessageUiModel> = persistentListOf(),
-        val inputText: String = "",
+        val inputTextField: TextFieldState = TextFieldState(""),
         val isSending: Boolean = false,
         val status: ChatStatus,
         val updateError: ReceiveChatUpdatesError? = null,

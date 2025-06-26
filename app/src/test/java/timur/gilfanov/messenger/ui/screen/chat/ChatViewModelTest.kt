@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -214,7 +216,7 @@ class ChatViewModelTest {
                             isFromCurrentUser = true,
                         ),
                     ),
-                    inputText = "",
+                    inputTextField = TextFieldState(""),
                     isSending = false,
                     status = ChatStatus.OneToOne(null),
                 )
@@ -265,7 +267,7 @@ class ChatViewModelTest {
                     ),
                     isGroupChat = true,
                     messages = persistentListOf(),
-                    inputText = "",
+                    inputTextField = TextFieldState(""),
                     isSending = false,
                     status = ChatStatus.Group(2),
                 )
@@ -301,43 +303,6 @@ class ChatViewModelTest {
     }
 
     @Test
-    fun `updateInputText updates state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val chat = createTestChat(chatId, currentUserId)
-
-        val repository = RepositoryFake(
-            chat = chat,
-            flowChat = flowOf(Success(chat)),
-        )
-
-        val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
-        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
-
-        val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
-            sendMessageUseCase = sendMessageUseCase,
-            receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
-        )
-
-        viewModel.test(this) {
-            runOnCreate()
-            val readyState = awaitState()
-            assertTrue(
-                readyState is ChatUiState.Ready,
-                "Expected Ready state, but got: $readyState",
-            )
-            assertNull(readyState.dialogError)
-
-            viewModel.updateInputText("Hello world")
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputText = "Hello world")
-            }
-        }
-    }
-
-    @Test
     fun `sending a message clears input only once`() = runTest {
         listOf(
             listOf(Sending(0), Sending(50)),
@@ -349,8 +314,6 @@ class ChatViewModelTest {
             val currentUserId = ParticipantId(UUID.randomUUID())
             val chat = createTestChat(chatId, currentUserId)
             val now = Instant.fromEpochMilliseconds(1000)
-            val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-            val createdAt = formatter.format(Date(1000))
             val message = buildTextMessage {
                 sender = chat.participants.first { it.id == currentUserId }
                 recipient = chatId
@@ -368,12 +331,10 @@ class ChatViewModelTest {
                 val job = runOnCreate()
                 awaitState().let { state ->
                     assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
-                    assertEquals("", state.inputText)
+                    assertEquals("", state.inputTextField.text)
                     assertFalse(state.isSending)
+                    state.inputTextField.setTextAndPlaceCursorAtEnd("Test message")
                 }
-
-                viewModel.updateInputText("Test message")
-                expectStateOn<ChatUiState.Ready> { copy(inputText = "Test message") }
 
                 viewModel.sendMessage(message.id, now = now)
                 expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
@@ -383,17 +344,20 @@ class ChatViewModelTest {
                     text = "Test message",
                     senderId = currentUserId.id.toString(),
                     senderName = "Current User",
-                    createdAt = createdAt,
+                    createdAt = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(1000)),
                     deliveryStatus = statuses[0],
                     isFromCurrentUser = true,
                 )
                 expectStateOn<ChatUiState.Ready> { copy(messages = persistentListOf(messageUi)) }
                 expectStateOn<ChatUiState.Ready> {
-                    copy(isSending = false, inputText = "", messages = persistentListOf(messageUi))
+                    inputTextField.setTextAndPlaceCursorAtEnd("Test message 2")
+                    copy(
+                        isSending = false,
+                        messages = persistentListOf(messageUi),
+                    )
                 }
-                viewModel.updateInputText("Test message 2")
-                expectStateOn<ChatUiState.Ready> { copy(inputText = "Test message 2") }
                 expectStateOn<ChatUiState.Ready> {
+                    assertEquals("Test message 2", inputTextField.text)
                     copy(messages = persistentListOf(messageUi.copy(deliveryStatus = statuses[1])))
                 }
                 job.cancel() // Need this because repo chatFlow is infinite and will never complete

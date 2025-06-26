@@ -1,10 +1,13 @@
 package timur.gilfanov.messenger
 
-import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsProperties.EditableText
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -58,7 +61,7 @@ class MessageSendingJourneyApplicationTest {
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             composeTestRule.onNodeWithTag("message_input")
                 .fetchSemanticsNode()
-                .config.getOrNull(SemanticsProperties.EditableText)
+                .config.getOrNull(EditableText)
                 ?.text
                 ?.isEmpty() == true
         }
@@ -94,47 +97,27 @@ class MessageSendingJourneyApplicationTest {
             .assertIsDisplayed()
     }
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun messageSending_multipleMessagesSequentially() {
-        // Wait for placeholder text to appear (indicates Ready state)
-        composeTestRule.onNodeWithText("Type a message...")
-            .assertIsDisplayed()
-
-        val messages = listOf(
-            "First message",
-            "Second message",
-            "Third message",
-        )
-
-        messages.forEach { message ->
-            // Type message
-
-            composeTestRule.onNodeWithTag("message_input")
-                .performTextInput(message)
-
-            // Verify text is entered
-            composeTestRule.onNodeWithTag("message_input")
-                .assertTextEquals(message)
-
-            // Send message
-            composeTestRule.onNodeWithTag("send_button")
-                .performClick()
-
-            // Verify input is cleared
-            composeTestRule.waitUntil(timeoutMillis = 5_000) {
-                composeTestRule.onNodeWithTag("message_input")
-                    .fetchSemanticsNode()
-                    .config.getOrNull(SemanticsProperties.EditableText)
-                    ?.text
-                    ?.isEmpty() == true
+        with(composeTestRule) {
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            onNodeWithText("Type a message...").assertIsDisplayed()
+            onNodeWithTag("message_input").assertIsDisplayed()
+            onNodeWithTag("send_button").assertIsDisplayed()
+            repeat(100) {
+                val message = "Test message #$it"
+                onNodeWithTag("message_input").assertIsEnabled()
+                onNodeWithTag("message_input").performTextInput(message)
+                onNodeWithTag("message_input").assertTextEquals(message)
+                onNodeWithText("Type a message...").assertIsNotDisplayed()
+                onNodeWithTag("send_button").performClick()
+                waitUntil(timeoutMillis = 100) {
+                    onNodeWithTag("message_input")
+                        .fetchSemanticsNode()
+                        .config.getOrNull(EditableText)?.text?.isEmpty() == true
+                }
             }
-
-            // Verify UI is ready for next message
-            composeTestRule.onNodeWithTag("message_input")
-                .assertIsDisplayed()
-
-            composeTestRule.onNodeWithTag("send_button")
-                .assertIsDisplayed()
         }
     }
 
@@ -175,7 +158,7 @@ class MessageSendingJourneyApplicationTest {
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             composeTestRule.onNodeWithTag("message_input")
                 .fetchSemanticsNode()
-                .config.getOrNull(SemanticsProperties.EditableText)
+                .config.getOrNull(EditableText)
                 ?.text
                 ?.isEmpty() == true
         }

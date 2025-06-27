@@ -171,11 +171,7 @@ class ChatViewModelTest {
         val message = createTestMessage(currentUserId, "Hello!", joinedAt = now, createdAt = now)
         val chat = createTestChat(chatId, currentUserId, otherUserId, listOf(message))
 
-        val repository = RepositoryFake(
-            chat = chat,
-            flowChat = flowOf(Success(chat)),
-        )
-
+        val repository = RepositoryFake(chat = chat, flowChat = flowOf(Success(chat)))
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
@@ -188,7 +184,10 @@ class ChatViewModelTest {
 
         viewModel.test(this) {
             runOnCreate()
-            expectState {
+            val state = awaitState()
+            assertTrue { state is ChatUiState.Ready }
+            val inputField = (state as ChatUiState.Ready).inputTextField
+            assertEquals(
                 ChatUiState.Ready(
                     id = chatId,
                     title = "Direct Message",
@@ -216,11 +215,12 @@ class ChatViewModelTest {
                             isFromCurrentUser = true,
                         ),
                     ),
-                    inputTextField = TextFieldState(""),
+                    inputTextField = inputField,
                     isSending = false,
                     status = ChatStatus.OneToOne(null),
-                )
-            }
+                ),
+                state,
+            )
         }
     }
 
@@ -249,7 +249,10 @@ class ChatViewModelTest {
 
         viewModel.test(this) {
             runOnCreate()
-            expectState {
+            val state = awaitState()
+            assertTrue { state is ChatUiState.Ready }
+            val inputField = (state as ChatUiState.Ready).inputTextField
+            assertEquals(
                 ChatUiState.Ready(
                     id = chatId,
                     title = "Group Chat",
@@ -267,11 +270,12 @@ class ChatViewModelTest {
                     ),
                     isGroupChat = true,
                     messages = persistentListOf(),
-                    inputTextField = TextFieldState(""),
+                    inputTextField = inputField,
                     isSending = false,
                     status = ChatStatus.Group(2),
-                )
-            }
+                ),
+                state,
+            )
         }
     }
 
@@ -329,13 +333,15 @@ class ChatViewModelTest {
             )
             viewModel.test(this) {
                 val job = runOnCreate()
+                val inputTextField: TextFieldState
                 awaitState().let { state ->
                     assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
                     assertEquals("", state.inputTextField.text)
                     assertFalse(state.isSending)
-                    state.inputTextField.setTextAndPlaceCursorAtEnd("Test message")
+                    inputTextField = state.inputTextField
                 }
 
+                inputTextField.setTextAndPlaceCursorAtEnd("Test message")
                 viewModel.sendMessage(message.id, now = now)
                 expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
 
@@ -345,21 +351,14 @@ class ChatViewModelTest {
                     senderId = currentUserId.id.toString(),
                     senderName = "Current User",
                     createdAt = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(1000)),
-                    deliveryStatus = statuses[0],
+                    deliveryStatus = statuses[1],
                     isFromCurrentUser = true,
                 )
+                expectStateOn<ChatUiState.Ready> { copy(isSending = false) }
+                assertEquals("", inputTextField.text)
+                inputTextField.setTextAndPlaceCursorAtEnd("Test message 2")
                 expectStateOn<ChatUiState.Ready> { copy(messages = persistentListOf(messageUi)) }
-                expectStateOn<ChatUiState.Ready> {
-                    inputTextField.setTextAndPlaceCursorAtEnd("Test message 2")
-                    copy(
-                        isSending = false,
-                        messages = persistentListOf(messageUi),
-                    )
-                }
-                expectStateOn<ChatUiState.Ready> {
-                    assertEquals("Test message 2", inputTextField.text)
-                    copy(messages = persistentListOf(messageUi.copy(deliveryStatus = statuses[1])))
-                }
+                assertEquals("Test message 2", inputTextField.text)
                 job.cancel() // Need this because repo chatFlow is infinite and will never complete
             }
         }

@@ -244,6 +244,7 @@ tasks.register("preCommit") {
             "Architecture" to "🔧",
             "Unit" to "🧪",
             "Component" to "🔩",
+            "Feature" to "🛠️",
         )
 
         categories.forEach { (category, emoji) ->

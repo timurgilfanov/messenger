@@ -103,24 +103,19 @@ class ConfigurationChangeApplicationTest {
     @Test
     fun chatScreen_handlesMultipleRotations() {
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
-
         val testMessage = "Multi-rotation test"
-
         composeTestRule.onNodeWithTag("message_input")
             .assertIsDisplayed()
 
         composeTestRule.onNodeWithTag("message_input")
             .performTextInput(testMessage)
 
-        // Perform multiple rotations
-        val orientations = listOf(
-            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-        )
-
-        orientations.forEach { orientation ->
+        repeat(20) { index ->
+            val orientation = if (index % 2 == 0) {
+                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            } else {
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
             composeTestRule.activity.requestedOrientation = orientation
             composeTestRule.waitForIdle()
 

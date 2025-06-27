@@ -19,8 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -68,9 +67,7 @@ fun ChatScreenContent(
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.semantics {
-                        contentDescription = "Loading"
-                    },
+                    modifier = Modifier.testTag("loading_indicator"),
                 )
             }
         }
@@ -83,6 +80,7 @@ fun ChatScreenContent(
                 Text(
                     text = "Error: ${uiState.error}",
                     color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("error_message"),
                 )
             }
         }

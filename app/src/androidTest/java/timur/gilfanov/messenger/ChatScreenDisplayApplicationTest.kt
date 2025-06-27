@@ -1,6 +1,8 @@
 package timur.gilfanov.messenger
 
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -11,6 +13,7 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.Application
 
+@OptIn(ExperimentalTestApi::class)
 @Category(Application::class)
 @RunWith(AndroidJUnit4::class)
 class ChatScreenDisplayApplicationTest {
@@ -20,8 +23,7 @@ class ChatScreenDisplayApplicationTest {
 
     @Test
     fun chatScreen_displaysCorrectlyOnAppLaunch() {
-        // Wait for the app to load and display the chat screen
-        composeTestRule.waitForIdle()
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
 
         // Verify the message input field is displayed
         composeTestRule.onNodeWithTag("message_input")
@@ -43,28 +45,7 @@ class ChatScreenDisplayApplicationTest {
     @Test
     fun chatScreen_showsLoadingStateInitially() {
         // The loading state should be visible briefly when the app starts
-        // This test verifies the loading indicator has correct content description
-        composeTestRule.waitForIdle()
-
-        // After loading completes, the chat content should be visible
-        composeTestRule.onNodeWithTag("message_input")
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun chatScreen_displaysPredeterminedChatData() {
-        composeTestRule.waitForIdle()
-
-        // Verify the app uses the hardcoded chat ID and loads the chat
-        // The UI should show the chat screen with all essential components
-        composeTestRule.onNodeWithTag("message_input")
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag("send_button")
-            .assertIsDisplayed()
-
-        // Verify the input field is functional (enabled by default)
-        composeTestRule.onNodeWithText("Type a message...")
-            .assertIsDisplayed()
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("loading_indicator"))
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
     }
 }

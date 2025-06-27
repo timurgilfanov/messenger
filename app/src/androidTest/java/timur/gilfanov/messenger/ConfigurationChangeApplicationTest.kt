@@ -1,8 +1,10 @@
 package timur.gilfanov.messenger
 
 import android.content.pm.ActivityInfo
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -15,6 +17,7 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.Application
 import timur.gilfanov.annotations.ReleaseCandidate
 
+@OptIn(ExperimentalTestApi::class)
 @Category(Application::class)
 @RunWith(AndroidJUnit4::class)
 class ConfigurationChangeApplicationTest {
@@ -24,7 +27,7 @@ class ConfigurationChangeApplicationTest {
 
     @Test
     fun chatScreen_preservesInputTextOnRotation() {
-        composeTestRule.waitForIdle()
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
 
         val testMessage = "This message should survive rotation"
 
@@ -61,7 +64,7 @@ class ConfigurationChangeApplicationTest {
 
     @Test
     fun chatScreen_preservesUIStateOnRotation() {
-        composeTestRule.waitForIdle()
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
 
         // Verify initial UI state
         composeTestRule.onNodeWithTag("message_input")
@@ -99,14 +102,13 @@ class ConfigurationChangeApplicationTest {
     @Category(ReleaseCandidate::class)
     @Test
     fun chatScreen_handlesMultipleRotations() {
-        composeTestRule.waitForIdle()
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
 
         val testMessage = "Multi-rotation test"
 
         composeTestRule.onNodeWithTag("message_input")
             .assertIsDisplayed()
 
-        // Enter text
         composeTestRule.onNodeWithTag("message_input")
             .performTextInput(testMessage)
 

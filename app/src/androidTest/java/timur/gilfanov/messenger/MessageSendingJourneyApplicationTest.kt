@@ -23,6 +23,7 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.Application
 import timur.gilfanov.annotations.ReleaseCandidate
 
+@OptIn(ExperimentalTestApi::class)
 @Category(Application::class)
 @RunWith(AndroidJUnit4::class)
 class MessageSendingJourneyApplicationTest {
@@ -33,7 +34,7 @@ class MessageSendingJourneyApplicationTest {
     @Category(ReleaseCandidate::class)
     @Test
     fun messageSendingJourney_completesSuccessfully() {
-        composeTestRule.waitForIdle()
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
 
         // Wait for placeholder text to appear (indicates Ready state)
         composeTestRule.onNodeWithText("Type a message...")
@@ -77,7 +78,7 @@ class MessageSendingJourneyApplicationTest {
 
     @Test
     fun messageSending_handlesEmptyInput() {
-        composeTestRule.waitForIdle()
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
 
         // Wait for placeholder text to appear (indicates Ready state)
         composeTestRule.onNodeWithText("Type a message...")
@@ -97,7 +98,6 @@ class MessageSendingJourneyApplicationTest {
             .assertIsDisplayed()
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun messageSending_multipleMessagesSequentially() {
         with(composeTestRule) {
@@ -124,6 +124,8 @@ class MessageSendingJourneyApplicationTest {
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun messageSending_preservesInputDuringTyping() {
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+
         // Wait for placeholder text to appear (indicates Ready state)
         composeTestRule.onNodeWithText("Type a message...")
             .assertIsDisplayed()

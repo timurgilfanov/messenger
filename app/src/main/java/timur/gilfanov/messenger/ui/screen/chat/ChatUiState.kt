@@ -7,6 +7,7 @@ import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 
 sealed interface ChatUiState {
@@ -20,6 +21,7 @@ sealed interface ChatUiState {
         val isGroupChat: Boolean,
         val messages: ImmutableList<MessageUiModel> = persistentListOf(),
         val inputTextField: TextFieldState = TextFieldState(""),
+        val inputTextValidationError: TextValidationError? = null,
         val isSending: Boolean = false,
         val status: ChatStatus,
         val updateError: ReceiveChatUpdatesError? = null,

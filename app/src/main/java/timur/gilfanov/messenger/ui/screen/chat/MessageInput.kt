@@ -27,12 +27,15 @@ import androidx.compose.ui.unit.dp
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
+@Suppress("LongParameterList")
 @Composable
 fun MessageInput(
     state: TextFieldState,
     isSending: Boolean,
-    onSendMessage: () -> Unit,
+    isValid: Boolean,
     modifier: Modifier = Modifier,
+    textValidationError: String? = null,
+    onSendMessage: () -> Unit = {},
 ) {
     Row(
         modifier = modifier
@@ -52,33 +55,50 @@ fun MessageInput(
                 .testTag("message_input"),
             placeholder = { Text(stringResource(R.string.message_input_placeholder)) },
             shape = RoundedCornerShape(24.dp),
+            isError = textValidationError != null,
+            label = if (textValidationError != null) {
+                {
+                    Text(
+                        text = textValidationError,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            } else {
+                null
+            },
             enabled = !isSending,
+            maxLines = 16,
         )
 
-        IconButton(
-            onClick = onSendMessage,
-            enabled = state.text.isNotBlank() && !isSending,
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .testTag("send_button"),
-        ) {
-            if (isSending) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = stringResource(R.string.send_message_content_description),
-                    tint = if (state.text.isNotBlank()) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    },
-                )
-            }
+        Button(onSendMessage, isValid, isSending)
+    }
+}
+
+@Composable
+private fun Button(onSendMessage: () -> Unit, isValid: Boolean, isSending: Boolean) {
+    IconButton(
+        onClick = onSendMessage,
+        enabled = isValid && !isSending,
+        modifier = Modifier
+            .padding(start = 8.dp)
+            .testTag("send_button"),
+    ) {
+        if (isSending) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        } else {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Send,
+                contentDescription = stringResource(R.string.send_message_content_description),
+                tint = if (isValid) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                },
+            )
         }
     }
 }
@@ -90,7 +110,7 @@ private fun MessageInputEmptyPreview() {
         MessageInput(
             state = TextFieldState(""),
             isSending = false,
-            onSendMessage = {},
+            isValid = false,
         )
     }
 }
@@ -102,7 +122,7 @@ private fun MessageInputEmptyGermanPreview() {
         MessageInput(
             state = TextFieldState(""),
             isSending = false,
-            onSendMessage = {},
+            isValid = false,
         )
     }
 }
@@ -114,8 +134,35 @@ private fun MessageInputWithTextPreview() {
         MessageInput(
             state = TextFieldState("Hello, this is my message!"),
             isSending = false,
-            onSendMessage = {},
+            isValid = true,
+        )
+    }
+}
 
+@Preview(showBackground = true)
+@Composable
+private fun MessageInputNotValidPreview() {
+    MessengerTheme {
+        MessageInput(
+            state = TextFieldState("Hello, this is not valid message!"),
+            isValid = false,
+            textValidationError = "This message is not valid",
+            isSending = false,
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 480)
+@Composable
+private fun MessageInputTooLongPreview() {
+    MessengerTheme {
+        @Suppress("MagicNumber")
+        val longText = "a".repeat(2001)
+        MessageInput(
+            state = TextFieldState(longText),
+            isValid = false,
+            textValidationError = "This message is not valid",
+            isSending = false,
         )
     }
 }
@@ -131,8 +178,7 @@ private fun MessageInputWithSelectionPreview() {
                 TextRange(0, 5),
             ),
             isSending = false,
-            onSendMessage = {},
-
+            isValid = true,
         )
     }
 }
@@ -144,7 +190,7 @@ private fun MessageInputSendingPreview() {
         MessageInput(
             state = TextFieldState("Sending this message..."),
             isSending = true,
-            onSendMessage = {},
+            isValid = false,
         )
     }
 }

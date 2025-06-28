@@ -85,13 +85,10 @@ class ChatViewModel @AssistedInject constructor(
             )
 
             sendMessageUseCase(currentChat!!, message).collect { result ->
-
                 when (result) {
                     is ResultWithError.Success -> {
                         reduce {
-                            if (state.inputTextField.text.toString() ==
-                                (result.data as TextMessage).text
-                            ) {
+                            if (state.inputTextField.text == (result.data as TextMessage).text) {
                                 state.inputTextField.setTextAndPlaceCursorAtEnd("")
                                 state.copy(isSending = false)
                             } else {
@@ -121,23 +118,6 @@ class ChatViewModel @AssistedInject constructor(
             }
         }
     }
-
-//    @OptIn(OrbitExperimental::class, FlowPreview::class)
-//    private suspend fun observeInputText() = subIntent {
-//        // TODO launch & validate input
-//        runOn<ChatUiState.Ready> {
-//            repeatOnSubscription {
-//                snapshotFlow { state.inputTextField.text }
-//                    .distinctUntilChanged()
-//                    .collect { inputText ->
-//                        println(
-//                            "${System.currentTimeMillis()}[${Thread.currentThread().name}] " +
-//                                "ChatVM input text changed: $inputText",
-//                        )
-//                    }
-//            }
-//        }
-//    }
 
     @OptIn(OrbitExperimental::class, FlowPreview::class)
     private suspend fun observeChatUpdates() = subIntent {

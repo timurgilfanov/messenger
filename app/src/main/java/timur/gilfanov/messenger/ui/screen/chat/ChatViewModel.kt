@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.lifecycle.ViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -10,7 +12,10 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -31,6 +36,8 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdat
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.UnknownError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
+
+private const val STATE_UPDATE_DEBOUNCE = 200L
 
 @HiltViewModel(assistedFactory = ChatViewModel.ChatViewModelFactory::class)
 class ChatViewModel @AssistedInject constructor(
@@ -74,16 +81,19 @@ class ChatViewModel @AssistedInject constructor(
                 sender = currentChat!!.participants.first { it.id == currentUserId },
                 recipient = chatId,
                 createdAt = now,
-                text = state.inputText.trim(),
+                text = state.inputTextField.text.toString(),
             )
 
-            var oneShot = true
             sendMessageUseCase(currentChat!!, message).collect { result ->
                 when (result) {
                     is ResultWithError.Success -> {
-                        if (oneShot) {
-                            oneShot = false
-                            reduce { state.copy(isSending = false, inputText = "") }
+                        reduce {
+                            if (state.inputTextField.text == (result.data as TextMessage).text) {
+                                state.inputTextField.setTextAndPlaceCursorAtEnd("")
+                                state.copy(isSending = false)
+                            } else {
+                                state
+                            }
                         }
                     }
 
@@ -101,15 +111,6 @@ class ChatViewModel @AssistedInject constructor(
     }
 
     @OptIn(OrbitExperimental::class)
-    fun updateInputText(text: String) = intent {
-        runOn<ChatUiState.Ready> {
-            reduce {
-                state.copy(inputText = text)
-            }
-        }
-    }
-
-    @OptIn(OrbitExperimental::class)
     fun dismissDialogError() = intent {
         runOn<ChatUiState.Ready> {
             reduce {
@@ -118,33 +119,36 @@ class ChatViewModel @AssistedInject constructor(
         }
     }
 
-    @OptIn(OrbitExperimental::class)
+    @OptIn(OrbitExperimental::class, FlowPreview::class)
     private suspend fun observeChatUpdates() = subIntent {
         repeatOnSubscription {
-            receiveChatUpdatesUseCase(chatId).collect { result ->
-                reduce {
-                    when (result) {
-                        is ResultWithError.Success -> {
-                            val chat = result.data
-                            currentChat = chat
-                            updateUiStateFromChat(state, chat)
-                        }
+            receiveChatUpdatesUseCase(chatId)
+                .distinctUntilChanged()
+                .debounce(STATE_UPDATE_DEBOUNCE)
+                .collect { result ->
+                    reduce {
+                        when (result) {
+                            is ResultWithError.Success -> {
+                                val chat = result.data
+                                currentChat = chat
+                                updateUiStateFromChat(state, chat)
+                            }
 
-                        is ResultWithError.Failure -> when (result.error) {
-                            ChatNotFound -> ChatUiState.Error(result.error)
-                            NetworkNotAvailable,
-                            ServerError,
-                            ServerUnreachable,
-                            UnknownError,
-                            -> when (val s = state) {
-                                is ChatUiState.Loading -> ChatUiState.Loading(result.error)
-                                is ChatUiState.Ready -> s.copy(updateError = result.error)
-                                is ChatUiState.Error -> error("Unexpected UI state Error")
+                            is ResultWithError.Failure -> when (result.error) {
+                                ChatNotFound -> ChatUiState.Error(result.error)
+                                NetworkNotAvailable,
+                                ServerError,
+                                ServerUnreachable,
+                                UnknownError,
+                                -> when (val s = state) {
+                                    is ChatUiState.Loading -> ChatUiState.Loading(result.error)
+                                    is ChatUiState.Ready -> s.copy(updateError = result.error)
+                                    is ChatUiState.Error -> error("Unexpected UI state Error")
+                                }
                             }
                         }
                     }
                 }
-            }
         }
     }
 
@@ -186,7 +190,7 @@ class ChatViewModel @AssistedInject constructor(
             isGroupChat = !chat.isOneToOne,
             messages = messages,
             status = chatStatus,
-            inputText = (state as? ChatUiState.Ready?)?.inputText ?: "",
+            inputTextField = (state as? ChatUiState.Ready?)?.inputTextField ?: TextFieldState(""),
             isSending = (state as? ChatUiState.Ready?)?.isSending == true,
             updateError = (state as? ChatUiState.Ready?)?.updateError,
             dialogError = (state as? ChatUiState.Ready?)?.dialogError,

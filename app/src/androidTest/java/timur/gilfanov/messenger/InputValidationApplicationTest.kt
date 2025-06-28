@@ -27,63 +27,44 @@ class InputValidationApplicationTest {
 
     @Test
     fun inputValidation_showsErrorForTooLongMessage() {
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
-
-        composeTestRule.onNodeWithText("Type a message...")
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithText("Message can not be longer then 2000 characters")
-            .assertIsNotDisplayed()
-
-        val tooLongMessage = "a".repeat(2001)
-
-        composeTestRule.onNodeWithTag("message_input")
-            .performTextInput(tooLongMessage)
-
-        composeTestRule.waitForIdle()
-
-        // Verify error message contains expected text about length limit
-        composeTestRule.onNodeWithText("Message can not be longer then 2000 characters")
-            .assertIsDisplayed()
+        with(composeTestRule) {
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            onNodeWithText("Type a message...").assertIsDisplayed()
+            onNodeWithText("Message can not be longer then 2000 characters").assertIsNotDisplayed()
+            val tooLongMessage = "a".repeat(2001)
+            onNodeWithTag("message_input").performTextInput(tooLongMessage)
+            waitForIdle()
+            onNodeWithText("Message can not be longer then 2000 characters").assertIsDisplayed()
+        }
     }
 
     @Test
     fun inputValidation_clearsErrorWhenTextBecomesValid() {
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
-
-        composeTestRule.onNodeWithText("Type a message...")
-            .assertIsDisplayed()
-
-        val tooLongMessage = "a".repeat(2001)
-        composeTestRule.onNodeWithTag("message_input")
-            .performTextInput(tooLongMessage)
-
-        composeTestRule.waitForIdle()
-
-        composeTestRule.onNodeWithText("Message can not be longer then 2000 characters")
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag("message_input")
-            .performTextReplacement("Valid message")
-
-        composeTestRule.onNodeWithText("Message can not be longer then 2000 characters")
-            .assertIsNotDisplayed()
+        with(composeTestRule) {
+            waitUntilAtLeastOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 1000,
+            )
+            onNodeWithText("Type a message...").assertIsDisplayed()
+            val tooLongMessage = "a".repeat(2001)
+            onNodeWithTag("message_input").performTextInput(tooLongMessage)
+            waitForIdle()
+            onNodeWithText("Message can not be longer then 2000 characters").assertIsDisplayed()
+            onNodeWithTag("message_input").performTextReplacement("Valid message")
+            waitForIdle()
+            onNodeWithText("Message can not be longer then 2000 characters").assertIsNotDisplayed()
+        }
     }
 
     @Test
     fun inputValidation_emptyInputDoesNotShowError() {
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
-
-        composeTestRule.onNodeWithText("Type a message...")
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag("message_input")
-            .performTextInput("Some text")
-
-        composeTestRule.onNodeWithTag("message_input")
-            .performTextClearance()
-
-        composeTestRule.onNodeWithText("Type a message...")
-            .assertIsDisplayed()
+        with(composeTestRule) {
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            onNodeWithText("Type a message...").assertIsDisplayed()
+            onNodeWithTag("message_input").performTextInput("Some text")
+            onNodeWithTag("message_input").performTextClearance()
+            waitForIdle()
+            onNodeWithText("Type a message...").assertIsDisplayed()
+        }
     }
 }

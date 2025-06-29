@@ -36,7 +36,7 @@ class MessageSendingApplicationTest {
     @Test
     fun messageSending_completesSuccessfully() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1_000)
             onNodeWithText("Type a message...").assertIsDisplayed()
             val testMessage = "Hello, this is a test message!"
             onNodeWithTag("message_input").performTextInput(testMessage)
@@ -59,7 +59,7 @@ class MessageSendingApplicationTest {
     @Test
     fun messageSending_handlesEmptyInput() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1_000)
             onNodeWithText("Type a message...").assertIsDisplayed()
             onNodeWithTag("send_button").assertIsDisplayed()
             onNodeWithTag("send_button").performClick()
@@ -103,7 +103,7 @@ class MessageSendingApplicationTest {
     @Test
     fun messageSending_preservesInputDuringTyping() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1_000)
             onNodeWithText("Type a message...").assertIsDisplayed()
 
             val partialMessage = "This is a long message that I'm typing"
@@ -119,7 +119,7 @@ class MessageSendingApplicationTest {
             onNodeWithTag("message_input").assertTextEquals(completeMessage)
             onNodeWithTag("send_button").performClick()
             waitForIdle()
-            waitUntil(timeoutMillis = 5_000) {
+            waitUntil(timeoutMillis = 1_000) {
                 onNodeWithTag("message_input")
                     .fetchSemanticsNode()
                     .config.getOrNull(EditableText)

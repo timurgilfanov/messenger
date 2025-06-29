@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -16,19 +17,25 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.annotation.OrbitExperimental
+import org.orbitmvi.orbit.syntax.SubStateSyntax
 import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.ValidationError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.NetworkNotAvailable
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ServerError
@@ -54,6 +61,16 @@ class ChatViewModel @AssistedInject constructor(
         }
     }
 
+    var launched = false
+    init {
+        container.stateFlow
+            .filter { !launched && it is ChatUiState.Ready }
+            .onEach { state ->
+                launched = true
+                observeInputText()
+            }.launchIn(container.scope)
+    }
+
     private val chatId = ChatId(chatIdUuid)
     private val currentUserId = ParticipantId(currentUserIdUuid)
 
@@ -65,50 +82,89 @@ class ChatViewModel @AssistedInject constructor(
         ): ChatViewModel
     }
 
+    @OptIn(OrbitExperimental::class, FlowPreview::class)
+    private suspend fun observeInputText() = subIntent {
+        runOn<ChatUiState.Ready> {
+            repeatOnSubscription {
+                snapshotFlow { state.inputTextField.text }
+                    .distinctUntilChanged()
+                    .collect { inputText ->
+                        val message = textMessage(
+                            messageId = MessageId(UUID.randomUUID()),
+                            now = Clock.System.now(),
+                        )
+                        val validate = message.validate()
+                        val validationError = when (validate) {
+                            is ResultWithError.Failure<Unit, ValidationError> -> {
+                                validate.error as TextValidationError
+                            }
+                            is ResultWithError.Success<Unit, ValidationError> -> null
+                        }
+                        reduce {
+                            state.copy(inputTextValidationError = validationError)
+                        }
+                    }
+            }
+        }
+    }
+
     private var currentChat: Chat? = null
 
     @OptIn(OrbitExperimental::class)
     fun sendMessage(
         messageId: MessageId = MessageId(UUID.randomUUID()),
         now: Instant = Clock.System.now(),
-    ) = intent {
-        runOn<ChatUiState.Ready> {
-            reduce { state.copy(isSending = true) }
+    ) {
+        intent {
+            runOn<ChatUiState.Ready> {
+                reduce { state.copy(isSending = true) }
 
-            val message = TextMessage(
-                id = messageId,
-                parentId = null,
-                sender = currentChat!!.participants.first { it.id == currentUserId },
-                recipient = chatId,
-                createdAt = now,
-                text = state.inputTextField.text.toString(),
-            )
-
-            sendMessageUseCase(currentChat!!, message).collect { result ->
-                when (result) {
-                    is ResultWithError.Success -> {
-                        reduce {
-                            if (state.inputTextField.text == (result.data as TextMessage).text) {
+                val message = textMessage(messageId, now)
+                sendMessageUseCase(currentChat!!, message).collect { result ->
+                    when (result) {
+                        is ResultWithError.Success -> {
+                            var clear = false
+                            reduce {
+                                if (state.inputTextField.text ==
+                                    (result.data as TextMessage).text
+                                ) {
+                                    clear = true
+                                    state.copy(isSending = false)
+                                } else {
+                                    state
+                                }
+                            }
+                            if (clear) {
+                                // important to clear after the state is updated to prevent concurrency issues
                                 state.inputTextField.setTextAndPlaceCursorAtEnd("")
-                                state.copy(isSending = false)
-                            } else {
-                                state
                             }
                         }
-                    }
 
-                    is ResultWithError.Failure -> {
-                        reduce {
-                            state.copy(
-                                isSending = false,
-                                dialogError = ReadyError.SendMessageError(result.error),
-                            )
+                        is ResultWithError.Failure -> {
+                            reduce {
+                                state.copy(
+                                    isSending = false,
+                                    dialogError = ReadyError.SendMessageError(result.error),
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
+
+    private fun SubStateSyntax<ChatUiState, Nothing, ChatUiState.Ready>.textMessage(
+        messageId: MessageId,
+        now: Instant,
+    ): TextMessage = TextMessage(
+        id = messageId,
+        parentId = null,
+        sender = currentChat!!.participants.first { it.id == currentUserId },
+        recipient = chatId,
+        createdAt = now,
+        text = state.inputTextField.text.toString(),
+    )
 
     @OptIn(OrbitExperimental::class)
     fun dismissDialogError() = intent {
@@ -183,6 +239,7 @@ class ChatViewModel @AssistedInject constructor(
             ChatStatus.Group(chat.participants.size)
         }
 
+        val inputTextValidationError = (state as? ChatUiState.Ready?)?.inputTextValidationError
         return ChatUiState.Ready(
             id = chat.id,
             title = chat.name,
@@ -191,6 +248,7 @@ class ChatViewModel @AssistedInject constructor(
             messages = messages,
             status = chatStatus,
             inputTextField = (state as? ChatUiState.Ready?)?.inputTextField ?: TextFieldState(""),
+            inputTextValidationError = inputTextValidationError,
             isSending = (state as? ChatUiState.Ready?)?.isSending == true,
             updateError = (state as? ChatUiState.Ready?)?.updateError,
             dialogError = (state as? ChatUiState.Ready?)?.dialogError,

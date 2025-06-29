@@ -134,7 +134,6 @@ fun ChatContent(
         bottomBar = {
             MessageInput(
                 state = state.inputTextField,
-                isValid = state.inputTextValidationError == null,
                 textValidationError = when (state.inputTextValidationError) {
                     null, TextValidationError.Empty -> null
                     is TextValidationError.TooLong -> stringResource(

@@ -32,7 +32,6 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 fun MessageInput(
     state: TextFieldState,
     isSending: Boolean,
-    isValid: Boolean,
     modifier: Modifier = Modifier,
     textValidationError: String? = null,
     onSendMessage: () -> Unit = {},
@@ -70,7 +69,7 @@ fun MessageInput(
             maxLines = 16,
         )
 
-        Button(onSendMessage, isValid, isSending)
+        Button(onSendMessage, textValidationError == null, isSending)
     }
 }
 
@@ -110,7 +109,6 @@ private fun MessageInputEmptyPreview() {
         MessageInput(
             state = TextFieldState(""),
             isSending = false,
-            isValid = false,
         )
     }
 }
@@ -122,7 +120,6 @@ private fun MessageInputEmptyGermanPreview() {
         MessageInput(
             state = TextFieldState(""),
             isSending = false,
-            isValid = false,
         )
     }
 }
@@ -134,7 +131,6 @@ private fun MessageInputWithTextPreview() {
         MessageInput(
             state = TextFieldState("Hello, this is my message!"),
             isSending = false,
-            isValid = true,
         )
     }
 }
@@ -145,7 +141,6 @@ private fun MessageInputNotValidPreview() {
     MessengerTheme {
         MessageInput(
             state = TextFieldState("Hello, this is not valid message!"),
-            isValid = false,
             textValidationError = "This message is not valid",
             isSending = false,
         )
@@ -160,7 +155,6 @@ private fun MessageInputTooLongPreview() {
         val longText = "a".repeat(2001)
         MessageInput(
             state = TextFieldState(longText),
-            isValid = false,
             textValidationError = "This message is not valid",
             isSending = false,
         )
@@ -178,7 +172,6 @@ private fun MessageInputWithSelectionPreview() {
                 TextRange(0, 5),
             ),
             isSending = false,
-            isValid = true,
         )
     }
 }
@@ -190,7 +183,6 @@ private fun MessageInputSendingPreview() {
         MessageInput(
             state = TextFieldState("Sending this message..."),
             isSending = true,
-            isValid = false,
         )
     }
 }

@@ -114,31 +114,39 @@ class ChatViewModel @AssistedInject constructor(
     fun sendMessage(
         messageId: MessageId = MessageId(UUID.randomUUID()),
         now: Instant = Clock.System.now(),
-    ) = intent {
-        runOn<ChatUiState.Ready> {
-            reduce { state.copy(isSending = true) }
+    ) {
+        intent {
+            runOn<ChatUiState.Ready> {
+                reduce { state.copy(isSending = true) }
 
-            val message = textMessage(messageId, now)
-
-            sendMessageUseCase(currentChat!!, message).collect { result ->
-                when (result) {
-                    is ResultWithError.Success -> {
-                        reduce {
-                            if (state.inputTextField.text == (result.data as TextMessage).text) {
+                val message = textMessage(messageId, now)
+                sendMessageUseCase(currentChat!!, message).collect { result ->
+                    when (result) {
+                        is ResultWithError.Success -> {
+                            var clear = false
+                            reduce {
+                                if (state.inputTextField.text ==
+                                    (result.data as TextMessage).text
+                                ) {
+                                    clear = true
+                                    state.copy(isSending = false)
+                                } else {
+                                    state
+                                }
+                            }
+                            if (clear) {
+                                // important to clear after the state is updated to prevent concurrency issues
                                 state.inputTextField.setTextAndPlaceCursorAtEnd("")
-                                state.copy(isSending = false)
-                            } else {
-                                state
                             }
                         }
-                    }
 
-                    is ResultWithError.Failure -> {
-                        reduce {
-                            state.copy(
-                                isSending = false,
-                                dialogError = ReadyError.SendMessageError(result.error),
-                            )
+                        is ResultWithError.Failure -> {
+                            reduce {
+                                state.copy(
+                                    isSending = false,
+                                    dialogError = ReadyError.SendMessageError(result.error),
+                                )
+                            }
                         }
                     }
                 }
@@ -231,6 +239,7 @@ class ChatViewModel @AssistedInject constructor(
             ChatStatus.Group(chat.participants.size)
         }
 
+        val inputTextValidationError = (state as? ChatUiState.Ready?)?.inputTextValidationError
         return ChatUiState.Ready(
             id = chat.id,
             title = chat.name,
@@ -239,7 +248,7 @@ class ChatViewModel @AssistedInject constructor(
             messages = messages,
             status = chatStatus,
             inputTextField = (state as? ChatUiState.Ready?)?.inputTextField ?: TextFieldState(""),
-            inputTextValidationError = (state as? ChatUiState.Ready?)?.inputTextValidationError,
+            inputTextValidationError = inputTextValidationError,
             isSending = (state as? ChatUiState.Ready?)?.isSending == true,
             updateError = (state as? ChatUiState.Ready?)?.updateError,
             dialogError = (state as? ChatUiState.Ready?)?.dialogError,

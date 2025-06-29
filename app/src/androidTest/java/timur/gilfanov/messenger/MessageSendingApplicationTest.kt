@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger
 
+import androidx.compose.ui.semantics.SemanticsProperties.Disabled
 import androidx.compose.ui.semantics.SemanticsProperties.EditableText
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -70,23 +71,29 @@ class MessageSendingApplicationTest {
     @Test
     fun messageSending_multipleMessagesSequentially() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1_000)
             onNodeWithText("Type a message...").assertIsDisplayed()
-            onNodeWithTag("message_input").assertIsDisplayed()
             onNodeWithTag("send_button").assertIsDisplayed()
             repeat(100) {
                 val message = "Test message #$it"
-                onNodeWithTag("message_input").assertIsEnabled()
-                onNodeWithTag("message_input").performTextInput(message)
-                waitForIdle()
-                onNodeWithTag("message_input").assertTextEquals(message)
+                onNodeWithTag("message_input").run {
+                    performTextInput(message)
+                    waitUntil(timeoutMillis = 1_000) {
+                        fetchSemanticsNode().config[EditableText].text == message
+                    }
+                }
                 onNodeWithText("Type a message...").assertIsNotDisplayed()
-                onNodeWithTag("send_button").performClick()
-                waitForIdle()
+                onNodeWithTag("send_button").let {
+                    it.assertIsEnabled()
+                    it.performClick()
+                }
                 waitUntil(timeoutMillis = 1_000) {
                     onNodeWithTag("message_input")
                         .fetchSemanticsNode()
-                        .config.getOrNull(EditableText)?.text?.isEmpty() == true
+                        .config.run {
+                            getOrNull(EditableText)?.text?.isEmpty() == true &&
+                                getOrNull(Disabled) == null
+                        }
                 }
             }
         }

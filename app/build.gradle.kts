@@ -53,6 +53,11 @@ android {
     }
 }
 
+composeCompiler {
+    reportsDestination = layout.buildDirectory.dir("compose_metrics")
+    metricsDestination = layout.buildDirectory.dir("compose_compiler")
+}
+
 ktlint {
     version.set("1.4.1") // restricted by compose ruleset for ktlint, waiting for 0.4.23 release
 }

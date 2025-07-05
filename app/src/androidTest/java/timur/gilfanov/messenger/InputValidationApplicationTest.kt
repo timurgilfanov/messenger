@@ -4,6 +4,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -40,19 +41,18 @@ class InputValidationApplicationTest {
 
     @Test
     fun inputValidation_clearsErrorWhenTextBecomesValid() {
+        val tooLongMessage = "a".repeat(2001)
+        val errorText = "Message can not be longer then 2000 characters"
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(
-                hasTestTag("message_input"),
-                timeoutMillis = 1000,
-            )
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
             onNodeWithText("Type a message...").assertIsDisplayed()
-            val tooLongMessage = "a".repeat(2001)
-            onNodeWithTag("message_input").performTextInput(tooLongMessage)
-            waitForIdle()
-            onNodeWithText("Message can not be longer then 2000 characters").assertIsDisplayed()
-            onNodeWithTag("message_input").performTextReplacement("Valid message")
-            waitForIdle()
-            onNodeWithText("Message can not be longer then 2000 characters").assertIsNotDisplayed()
+            repeat(100) {
+                println("Iteration: $it")
+                onNodeWithTag("message_input").performTextReplacement(tooLongMessage)
+                waitUntilAtLeastOneExists(hasText(errorText), timeoutMillis = 1_000)
+                onNodeWithTag("message_input").performTextReplacement("Valid message")
+                waitUntilDoesNotExist(hasText(errorText), timeoutMillis = 1_000)
+            }
         }
     }
 

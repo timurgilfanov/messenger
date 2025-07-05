@@ -36,6 +36,10 @@ fun MessageInput(
     textValidationError: String? = null,
     onSendMessage: () -> Unit = {},
 ) {
+    println(
+        "${System.currentTimeMillis()}[${Thread.currentThread().name}] ChatScreen.MessageInput " +
+            "textValidationError: $textValidationError, text: ${state.text}",
+    )
     Row(
         modifier = modifier
             .fillMaxWidth()

@@ -13,6 +13,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.debounce
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.orbitmvi.orbit.ContainerHost
@@ -100,8 +102,10 @@ class ChatViewModel @AssistedInject constructor(
                             }
                             is ResultWithError.Success<Unit, ValidationError> -> null
                         }
-                        reduce {
-                            state.copy(inputTextValidationError = validationError)
+                        withContext(Dispatchers.Main) {
+                            reduce {
+                                state.copy(inputTextValidationError = validationError)
+                            }
                         }
                     }
             }
@@ -182,24 +186,26 @@ class ChatViewModel @AssistedInject constructor(
                 .distinctUntilChanged()
                 .debounce(STATE_UPDATE_DEBOUNCE)
                 .collect { result ->
-                    reduce {
-                        when (result) {
-                            is ResultWithError.Success -> {
-                                val chat = result.data
-                                currentChat = chat
-                                updateUiStateFromChat(state, chat)
-                            }
+                    withContext(Dispatchers.Main) {
+                        reduce {
+                            when (result) {
+                                is ResultWithError.Success -> {
+                                    val chat = result.data
+                                    currentChat = chat
+                                    updateUiStateFromChat(state, chat)
+                                }
 
-                            is ResultWithError.Failure -> when (result.error) {
-                                ChatNotFound -> ChatUiState.Error(result.error)
-                                NetworkNotAvailable,
-                                ServerError,
-                                ServerUnreachable,
-                                UnknownError,
-                                -> when (val s = state) {
-                                    is ChatUiState.Loading -> ChatUiState.Loading(result.error)
-                                    is ChatUiState.Ready -> s.copy(updateError = result.error)
-                                    is ChatUiState.Error -> error("Unexpected UI state Error")
+                                is ResultWithError.Failure -> when (result.error) {
+                                    ChatNotFound -> ChatUiState.Error(result.error)
+                                    NetworkNotAvailable,
+                                    ServerError,
+                                    ServerUnreachable,
+                                    UnknownError,
+                                    -> when (val s = state) {
+                                        is ChatUiState.Loading -> ChatUiState.Loading(result.error)
+                                        is ChatUiState.Ready -> s.copy(updateError = result.error)
+                                        is ChatUiState.Error -> error("Unexpected UI state Error")
+                                    }
                                 }
                             }
                         }

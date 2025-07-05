@@ -132,15 +132,16 @@ fun ChatContent(
             )
         },
         bottomBar = {
+            val textValidationError = when (state.inputTextValidationError) {
+                null, TextValidationError.Empty -> null
+                is TextValidationError.TooLong -> stringResource(
+                    R.string.message_input_error_too_long,
+                    state.inputTextValidationError.maxLength,
+                )
+            }
             MessageInput(
                 state = state.inputTextField,
-                textValidationError = when (state.inputTextValidationError) {
-                    null, TextValidationError.Empty -> null
-                    is TextValidationError.TooLong -> stringResource(
-                        R.string.message_input_error_too_long,
-                        state.inputTextValidationError.maxLength,
-                    )
-                },
+                textValidationError = textValidationError,
                 isSending = state.isSending,
                 onSendMessage = onSendMessage,
             )

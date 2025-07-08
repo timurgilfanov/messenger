@@ -20,9 +20,11 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import kotlinx.datetime.Instant
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
@@ -55,10 +57,16 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdat
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
+import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Feature::class)
 class ChatViewModelTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
     private class RepositoryFake(
         private val chat: Chat? = null,
@@ -107,7 +115,7 @@ class ChatViewModelTest {
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatFlow.map { chat ->
-            Success<Chat, ReceiveChatUpdatesError>(chat)
+            Success(chat)
         }
     }
 
@@ -166,8 +174,7 @@ class ChatViewModelTest {
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
         val now = Instant.fromEpochMilliseconds(1000)
-        val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-        val createdAtUi = formatter.format(Date(1000))
+        val createdAtUi = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(1000))
         val message = createTestMessage(currentUserId, "Hello!", joinedAt = now, createdAt = now)
         val chat = createTestChat(chatId, currentUserId, otherUserId, listOf(message))
 
@@ -184,6 +191,7 @@ class ChatViewModelTest {
 
         viewModel.test(this) {
             runOnCreate()
+            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
             val inputField = (state as ChatUiState.Ready).inputTextField
@@ -249,6 +257,7 @@ class ChatViewModelTest {
 
         viewModel.test(this) {
             runOnCreate()
+            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
             val inputField = (state as ChatUiState.Ready).inputTextField
@@ -300,6 +309,7 @@ class ChatViewModelTest {
 
         viewModel.test(this) {
             runOnCreate()
+            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             expectState {
                 ChatUiState.Loading(NetworkNotAvailable)
             }
@@ -333,6 +343,7 @@ class ChatViewModelTest {
             )
             viewModel.test(this) {
                 val job = runOnCreate()
+                testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
                 val inputTextField: TextFieldState
                 awaitState().let { state ->
                     assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
@@ -384,6 +395,7 @@ class ChatViewModelTest {
 
         viewModel.test(this) {
             runOnCreate()
+            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val readyState = awaitState()
             assertTrue(readyState is ChatUiState.Ready)
             assertNull(readyState.dialogError)

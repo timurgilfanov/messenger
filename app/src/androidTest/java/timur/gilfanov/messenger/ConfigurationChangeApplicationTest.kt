@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger
 
-import android.content.pm.ActivityInfo
+import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
@@ -27,108 +28,94 @@ class ConfigurationChangeApplicationTest {
 
     @Test
     fun chatScreen_preservesInputTextOnRotation() {
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+        with(composeTestRule) {
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
 
-        val testMessage = "This message should survive rotation"
+            val testMessage = "This message should survive rotation"
 
-        composeTestRule.onNodeWithTag("message_input")
-            .assertIsDisplayed()
+            onNodeWithTag("message_input").apply {
+                assertIsDisplayed()
+                performTextInput(testMessage)
+                assertTextEquals(testMessage)
+            }
 
-        // Type text in the message input
-        composeTestRule.onNodeWithTag("message_input")
-            .performTextInput(testMessage)
+            activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            waitForIdle()
 
-        // Verify text was entered
-        composeTestRule.onNodeWithTag("message_input")
-            .assertTextEquals(testMessage)
+            onNodeWithTag("message_input").apply {
+                assertIsDisplayed()
+                assertTextEquals(testMessage)
+            }
 
-        // Rotate to landscape
-        composeTestRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        composeTestRule.waitForIdle()
+            activity.requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
+            waitForIdle()
 
-        // Verify text is preserved after rotation
-        composeTestRule.onNodeWithTag("message_input")
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag("message_input")
-            .assertTextEquals(testMessage)
-
-        // Rotate back to portrait
-        composeTestRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        composeTestRule.waitForIdle()
-
-        // Verify text is still preserved
-        composeTestRule.onNodeWithTag("message_input")
-            .assertTextEquals(testMessage)
+            onNodeWithTag("message_input")
+                .assertTextEquals(testMessage)
+        }
     }
 
     @Test
     fun chatScreen_preservesUIStateOnRotation() {
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+        with(composeTestRule) {
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
 
-        // Verify initial UI state
-        composeTestRule.onNodeWithTag("message_input")
-            .assertIsDisplayed()
+            onNodeWithTag("message_input")
+                .assertIsDisplayed()
 
-        composeTestRule.onNodeWithTag("send_button")
-            .assertIsDisplayed()
+            onNodeWithTag("send_button")
+                .assertIsDisplayed()
 
-        composeTestRule.onNodeWithText("Type a message...")
-            .assertIsDisplayed()
+            onNodeWithText("Type a message...")
+                .assertIsDisplayed()
 
-        // Rotate to landscape
-        composeTestRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        composeTestRule.waitForIdle()
+            activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            waitForIdle()
 
-        // Verify UI elements are still displayed after rotation
-        composeTestRule.onNodeWithTag("message_input")
-            .assertIsDisplayed()
+            onNodeWithTag("message_input")
+                .assertIsDisplayed()
 
-        composeTestRule.onNodeWithTag("send_button")
-            .assertIsDisplayed()
+            onNodeWithTag("send_button")
+                .assertIsDisplayed()
 
-        // Rotate back to portrait
-        composeTestRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        composeTestRule.waitForIdle()
+            activity.requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
+            waitForIdle()
 
-        // Verify UI elements are still displayed
-        composeTestRule.onNodeWithTag("message_input")
-            .assertIsDisplayed()
+            onNodeWithTag("message_input")
+                .assertIsDisplayed()
 
-        composeTestRule.onNodeWithTag("send_button")
-            .assertIsDisplayed()
+            onNodeWithTag("send_button")
+                .assertIsDisplayed()
+        }
     }
 
     @Category(ReleaseCandidate::class)
     @Test
     fun chatScreen_handlesMultipleRotations() {
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
-        val testMessage = "Multi-rotation test"
-        composeTestRule.onNodeWithTag("message_input")
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag("message_input")
-            .performTextInput(testMessage)
-
-        repeat(20) { index ->
-            val orientation = if (index % 2 == 0) {
-                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            } else {
-                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        with(composeTestRule) {
+            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            val testMessage = "Multi-rotation test"
+            onNodeWithTag("message_input").apply {
+                assertIsDisplayed()
+                performTextInput(testMessage)
             }
-            composeTestRule.activity.requestedOrientation = orientation
-            composeTestRule.waitForIdle()
 
-            // Verify the app remains functional after each rotation
-            composeTestRule.onNodeWithTag("message_input")
-                .assertIsDisplayed()
+            repeat(100) { index ->
+                activity.requestedOrientation = if (index % 2 == 0) {
+                    SCREEN_ORIENTATION_LANDSCAPE
+                } else {
+                    SCREEN_ORIENTATION_PORTRAIT
+                }
+                waitForIdle()
 
-            composeTestRule.onNodeWithTag("send_button")
-                .assertIsDisplayed()
+                onNodeWithTag("message_input").apply {
+                    assertIsDisplayed()
+                    assertTextEquals(testMessage)
+                }
 
-            // Verify text is preserved
-            composeTestRule.onNodeWithTag("message_input")
-                .assertTextEquals(testMessage)
+                onNodeWithTag("send_button")
+                    .assertIsDisplayed()
+            }
         }
     }
 }

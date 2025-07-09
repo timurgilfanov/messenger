@@ -25,10 +25,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.util.UUID
-import javax.annotation.processing.Generated
 import kotlinx.collections.immutable.persistentListOf
 import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.R
+import timur.gilfanov.messenger.annotation.ExcludeFromCoverageGenerated
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
@@ -166,7 +166,7 @@ fun ChatContent(
 }
 
 @Preview(showBackground = true)
-@Generated
+@ExcludeFromCoverageGenerated
 @Composable
 private fun ChatContentPreview() {
     MessengerTheme {
@@ -221,7 +221,7 @@ private fun ChatContentPreview() {
 }
 
 @Preview(showBackground = true)
-@Generated
+@ExcludeFromCoverageGenerated
 @Composable
 private fun ChatLoadingPreview() {
     MessengerTheme {

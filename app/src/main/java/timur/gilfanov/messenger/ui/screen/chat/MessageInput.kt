@@ -24,8 +24,8 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import javax.annotation.processing.Generated
 import timur.gilfanov.messenger.R
+import timur.gilfanov.messenger.annotation.ExcludeFromCoverageGenerated
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Suppress("LongParameterList")
@@ -108,7 +108,7 @@ private fun Button(onSendMessage: () -> Unit, isValid: Boolean, isSending: Boole
 }
 
 @Preview(showBackground = true)
-@Generated
+@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageInputEmptyPreview() {
     MessengerTheme {
@@ -120,7 +120,7 @@ private fun MessageInputEmptyPreview() {
 }
 
 @Preview(showBackground = true, locale = "de")
-@Generated
+@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageInputEmptyGermanPreview() {
     MessengerTheme {
@@ -132,7 +132,7 @@ private fun MessageInputEmptyGermanPreview() {
 }
 
 @Preview(showBackground = true)
-@Generated
+@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageInputWithTextPreview() {
     MessengerTheme {
@@ -144,7 +144,7 @@ private fun MessageInputWithTextPreview() {
 }
 
 @Preview(showBackground = true)
-@Generated
+@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageInputNotValidPreview() {
     MessengerTheme {
@@ -157,7 +157,7 @@ private fun MessageInputNotValidPreview() {
 }
 
 @Preview(showBackground = true, heightDp = 480)
-@Generated
+@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageInputTooLongPreview() {
     MessengerTheme {
@@ -172,7 +172,7 @@ private fun MessageInputTooLongPreview() {
 }
 
 @Preview(showBackground = true)
-@Generated
+@ExcludeFromCoverageGenerated
 @Composable
 @Suppress("MagicNumber")
 private fun MessageInputWithSelectionPreview() {
@@ -188,7 +188,7 @@ private fun MessageInputWithSelectionPreview() {
 }
 
 @Preview(showBackground = true)
-@Generated
+@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageInputSendingPreview() {
     MessengerTheme {

@@ -171,69 +171,6 @@ tasks.register("generateCategorySpecificReports") {
     }
 }
 
-tasks.register("testArchitectureWithCoverage") {
-    group = "verification"
-    description = "Run Architecture tests with coverage"
-    doLast {
-        val process = ProcessBuilder(
-            "./gradlew",
-            "testDebugUnitTest",
-            "-PtestCategory=timur.gilfanov.annotations.Architecture",
-            "-Pcoverage",
-        )
-            .directory(project.rootDir)
-            .inheritIO()
-            .start()
-
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            throw GradleException("Architecture tests failed with exit code $exitCode")
-        }
-    }
-}
-
-tasks.register("testUnitWithCoverage") {
-    group = "verification"
-    description = "Run Unit tests with coverage"
-    doLast {
-        val process = ProcessBuilder(
-            "./gradlew",
-            "testDebugUnitTest",
-            "-PtestCategory=timur.gilfanov.annotations.Unit",
-            "-Pcoverage",
-        )
-            .directory(project.rootDir)
-            .inheritIO()
-            .start()
-
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            throw GradleException("Unit tests failed with exit code $exitCode")
-        }
-    }
-}
-
-tasks.register("testComponentWithCoverage") {
-    group = "verification"
-    description = "Run Component tests with coverage"
-    doLast {
-        val process = ProcessBuilder(
-            "./gradlew",
-            "testDebugUnitTest",
-            "-PtestCategory=timur.gilfanov.annotations.Component",
-            "-Pcoverage",
-        )
-            .directory(project.rootDir)
-            .inheritIO()
-            .start()
-
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            throw GradleException("Component tests failed with exit code $exitCode")
-        }
-    }
-}
-
 tasks.register("preCommit") {
     group = "verification"
     description = "Run all pre-commit checks locally"

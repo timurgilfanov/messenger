@@ -428,10 +428,10 @@ jobs:
           report_paths: emulator-testlab-results/**/*.xml
           check_name: "Application Instrumentation Test Results (Emulator)"
 
-      - name: Download Kover CLI for emulator coverage
+      - name: Download JaCoCo CLI for emulator coverage
         run: |
-          curl -L -o kover-cli.jar \
-            https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kover-cli/0.9.1/kover-cli-0.9.1.jar
+          curl -L -o jacococli.jar \
+            https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.11/org.jacoco.cli-0.8.11-nodeps.jar
 
       - name: Download Kotlin class files for emulator coverage
         uses: actions/download-artifact@v4
@@ -450,10 +450,9 @@ jobs:
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating emulator coverage report..."
-            java -jar kover-cli.jar report $PHONE_COVERAGE_FILES \
+            java -jar jacococli.jar report $PHONE_COVERAGE_FILES \
               --classfiles app/build/tmp/kotlin-classes/debug \
-              --src app/src/main \
-              --excludeAnnotation androidx.compose.runtime.Composable \
+              --sourcefiles app/src/main \
               --xml coverage-reports/application-emulator-phone-report.xml
           fi        
 

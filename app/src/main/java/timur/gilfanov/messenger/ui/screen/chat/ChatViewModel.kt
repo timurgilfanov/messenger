@@ -27,7 +27,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.annotation.OrbitExperimental
-import org.orbitmvi.orbit.syntax.SubStateSyntax
 import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ValidationError
@@ -91,24 +90,32 @@ class ChatViewModel @AssistedInject constructor(
                 snapshotFlow { state.inputTextField.text }
                     .distinctUntilChanged()
                     .collect { inputText ->
-                        val message = textMessage(
-                            messageId = MessageId(UUID.randomUUID()),
-                            now = Clock.System.now(),
-                        )
-                        val validate = message.validate()
-                        val validationError = when (validate) {
-                            is ResultWithError.Failure<Unit, ValidationError> -> {
-                                validate.error as TextValidationError
-                            }
-                            is ResultWithError.Success<Unit, ValidationError> -> null
-                        }
                         withContext(Dispatchers.Main) {
                             reduce {
-                                state.copy(inputTextValidationError = validationError)
+                                state.copy(
+                                    inputTextValidationError = validateInputText(
+                                        inputText.toString(),
+                                    ),
+                                )
                             }
                         }
                     }
             }
+        }
+    }
+
+    private fun validateInputText(text: String): TextValidationError? {
+        val message = textMessage(
+            messageId = MessageId(UUID.randomUUID()),
+            now = Clock.System.now(),
+            text = text,
+        )
+        return when (val validate = message.validate()) {
+            is ResultWithError.Failure<Unit, ValidationError> -> {
+                validate.error as TextValidationError
+            }
+
+            is ResultWithError.Success<Unit, ValidationError> -> null
         }
     }
 
@@ -123,7 +130,7 @@ class ChatViewModel @AssistedInject constructor(
             runOn<ChatUiState.Ready> {
                 reduce { state.copy(isSending = true) }
 
-                val message = textMessage(messageId, now)
+                val message = textMessage(messageId, now, state.inputTextField.text.toString())
                 sendMessageUseCase(currentChat!!, message).collect { result ->
                     when (result) {
                         is ResultWithError.Success -> {
@@ -158,17 +165,15 @@ class ChatViewModel @AssistedInject constructor(
         }
     }
 
-    private fun SubStateSyntax<ChatUiState, Nothing, ChatUiState.Ready>.textMessage(
-        messageId: MessageId,
-        now: Instant,
-    ): TextMessage = TextMessage(
-        id = messageId,
-        parentId = null,
-        sender = currentChat!!.participants.first { it.id == currentUserId },
-        recipient = chatId,
-        createdAt = now,
-        text = state.inputTextField.text.toString(),
-    )
+    private fun textMessage(messageId: MessageId, now: Instant, text: String): TextMessage =
+        TextMessage(
+            id = messageId,
+            parentId = null,
+            sender = currentChat!!.participants.first { it.id == currentUserId },
+            recipient = chatId,
+            createdAt = now,
+            text = text,
+        )
 
     @OptIn(OrbitExperimental::class)
     fun dismissDialogError() = intent {

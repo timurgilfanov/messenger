@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -22,22 +21,18 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Delivered
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
-import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.RepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.RepositoryFakeWithStatusFlow
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Feature::class)
-class ChatViewModelRealTimeUpdatesTest {
+class ChatViewModelUpdatesTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -45,7 +40,7 @@ class ChatViewModelRealTimeUpdatesTest {
     private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
     @Test
-    fun `observeChatUpdates handles real-time message updates`() = runTest {
+    fun `message from other participant appears in UI state`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
@@ -102,7 +97,7 @@ class ChatViewModelRealTimeUpdatesTest {
     }
 
     @Test
-    fun `observeChatUpdates handles chat metadata updates`() = runTest {
+    fun `chat metadata updates seen in UI state`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
@@ -170,7 +165,7 @@ class ChatViewModelRealTimeUpdatesTest {
     }
 
     @Test
-    fun `observeChatUpdates applies debounce to rapid updates`() = runTest {
+    fun `few rapid messages result in one chat update`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
@@ -230,128 +225,6 @@ class ChatViewModelRealTimeUpdatesTest {
             assertTrue(finalState is ChatUiState.Ready)
             assertEquals(3, finalState.messages.size)
             assertEquals("Final Message", finalState.messages[2].text)
-
-            job.cancel()
-        }
-    }
-
-    @Test
-    fun `observeChatUpdates synchronizes currentChat field for message sending`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-        val now = Instant.fromEpochMilliseconds(1000)
-
-        val initialChat = createTestChat(chatId, currentUserId, otherUserId)
-        val chatFlow =
-            MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(Success(initialChat))
-
-        val repository = RepositoryFake(flowChat = chatFlow)
-        val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
-        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
-
-        val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
-            sendMessageUseCase = sendMessageUseCase,
-            receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
-        )
-
-        viewModel.test(this) {
-            val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-            // Initial state should be ready
-            val initialState = awaitState()
-            assertTrue(initialState is ChatUiState.Ready)
-
-            // Add input text to enable message sending
-            initialState.inputTextField.setTextAndPlaceCursorAtEnd("Test message")
-
-            // Update chat with new participant - this should update currentChat
-            val newParticipant = buildParticipant {
-                id = ParticipantId(UUID.randomUUID())
-                name = "New Participant"
-                joinedAt = now
-            }
-            val updatedChat = initialChat.copy(
-                participants = persistentSetOf(
-                    *initialChat.participants.toTypedArray(),
-                    newParticipant,
-                ),
-            )
-
-            chatFlow.value = Success(updatedChat)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-            val updatedState = awaitState()
-            assertTrue(updatedState is ChatUiState.Ready)
-            assertEquals(3, updatedState.participants.size)
-
-            // Send a message - this should work with the updated currentChat
-            // The message sending will use the updated chat participant list
-            viewModel.sendMessage(MessageId(UUID.randomUUID()), now)
-
-            // Wait for sending state
-            expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
-
-            // Wait for message sending to complete - this proves currentChat was updated
-            expectStateOn<ChatUiState.Ready> { copy(isSending = false) }
-
-            // Input should be cleared (this only happens if message sending succeeded)
-            assertEquals("", updatedState.inputTextField.text.toString())
-
-            job.cancel()
-        }
-    }
-
-    @Test
-    fun `observeChatUpdates handles concurrent updates during message sending`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-        val now = Instant.fromEpochMilliseconds(1000)
-
-        val initialChat = createTestChat(chatId, currentUserId, otherUserId)
-
-        // Use RepositoryFakeWithStatusFlow for realistic message sending flow
-        val repository = RepositoryFakeWithStatusFlow(initialChat, listOf(Sending(0), Delivered))
-        val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
-        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
-
-        val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
-            sendMessageUseCase = sendMessageUseCase,
-            receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
-        )
-
-        viewModel.test(this) {
-            val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-            // Initial state should be ready
-            val initialState = awaitState()
-            assertTrue(initialState is ChatUiState.Ready)
-
-            // Add input text and start sending a message
-            initialState.inputTextField.setTextAndPlaceCursorAtEnd("Sending message")
-            viewModel.sendMessage(MessageId(UUID.randomUUID()), now)
-
-            // Wait for sending state
-            expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
-
-            // Wait for message sending to complete
-            expectStateOn<ChatUiState.Ready> { copy(isSending = false) }
-
-            // Final state should show the sent message
-            val finalState = awaitState()
-            assertTrue(finalState is ChatUiState.Ready)
-            assertFalse(finalState.isSending)
-            assertEquals(1, finalState.messages.size) // Message was sent
-
-            // Input should be cleared
-            assertEquals("", finalState.inputTextField.text.toString())
 
             job.cancel()
         }

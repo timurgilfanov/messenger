@@ -40,7 +40,7 @@ class ChatViewModelErrorHandlingTest {
     private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
     @Test
-    fun `observeChatUpdates handles ChatNotFound error`() = runTest {
+    fun `No chat exists error propagates to UI state`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
 
@@ -71,7 +71,7 @@ class ChatViewModelErrorHandlingTest {
     }
 
     @Test
-    fun `observeChatUpdates handles network errors from different states`() = runTest {
+    fun `Network errors propagates to UI state`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
@@ -95,55 +95,29 @@ class ChatViewModelErrorHandlingTest {
             val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
-            // Initial state should be ready
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
 
-            // Test network error from Ready state - should preserve Ready state with updateError
-            chatFlow.value =
-                Failure<Chat, ReceiveChatUpdatesError>(ReceiveChatUpdatesError.NetworkNotAvailable)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-            val networkErrorState = awaitState()
-            assertTrue(networkErrorState is ChatUiState.Ready)
-            assertEquals(ReceiveChatUpdatesError.NetworkNotAvailable, networkErrorState.updateError)
-
-            // Test server error from Ready state
-            chatFlow.value =
-                Failure<Chat, ReceiveChatUpdatesError>(ReceiveChatUpdatesError.ServerError)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-            val serverErrorState = awaitState()
-            assertTrue(serverErrorState is ChatUiState.Ready)
-            assertEquals(ReceiveChatUpdatesError.ServerError, serverErrorState.updateError)
-
-            // Test server unreachable from Ready state
-            chatFlow.value =
-                Failure<Chat, ReceiveChatUpdatesError>(ReceiveChatUpdatesError.ServerUnreachable)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-            val unreachableErrorState = awaitState()
-            assertTrue(unreachableErrorState is ChatUiState.Ready)
-            assertEquals(
+            listOf(
+                ReceiveChatUpdatesError.NetworkNotAvailable,
+                ReceiveChatUpdatesError.ServerError,
                 ReceiveChatUpdatesError.ServerUnreachable,
-                unreachableErrorState.updateError,
-            )
+                ReceiveChatUpdatesError.UnknownError,
+            ).forEach { error ->
+                chatFlow.value = Failure(error)
+                testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
-            // Test unknown error from Ready state
-            chatFlow.value =
-                Failure<Chat, ReceiveChatUpdatesError>(ReceiveChatUpdatesError.UnknownError)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-            val unknownErrorState = awaitState()
-            assertTrue(unknownErrorState is ChatUiState.Ready)
-            assertEquals(ReceiveChatUpdatesError.UnknownError, unknownErrorState.updateError)
+                val errorState = awaitState()
+                assertTrue(errorState is ChatUiState.Ready)
+                assertEquals(error, errorState.updateError)
+            }
 
             job.cancel()
         }
     }
 
     @Test
-    fun `observeChatUpdates handles errors from Loading state`() = runTest {
+    fun `Network not available in Loading state propagates to UI state `() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
 
@@ -176,7 +150,7 @@ class ChatViewModelErrorHandlingTest {
     }
 
     @Test
-    fun `observeChatUpdates recovers from transient errors`() = runTest {
+    fun `Chat recovers from transient errors`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
@@ -236,62 +210,6 @@ class ChatViewModelErrorHandlingTest {
             assertEquals("Message after recovery", recoveredState.messages[0].text)
             // Note: We don't check updateError clearing here as it might be
             // implementation-specific timing with debounce
-
-            job.cancel()
-        }
-    }
-
-    @Test
-    fun `observeChatUpdates handles chat updates with messages`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-        val now = Instant.fromEpochMilliseconds(1000)
-
-        val initialChat = createTestChat(chatId, currentUserId, otherUserId)
-        val chatFlow =
-            MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(Success(initialChat))
-
-        val repository = RepositoryFake(flowChat = chatFlow)
-        val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
-        val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
-
-        val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
-            sendMessageUseCase = sendMessageUseCase,
-            receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
-        )
-
-        viewModel.test(this) {
-            val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-            // Initial state should be ready
-            val initialState = awaitState()
-            assertTrue(initialState is ChatUiState.Ready)
-
-            // Update chat data (new message from other user)
-            val newMessage = createTestMessage(
-                senderId = otherUserId,
-                text = "New incoming message",
-                joinedAt = now,
-                createdAt = now,
-            )
-            val updatedChat = initialChat.copy(
-                messages = persistentListOf(newMessage),
-            )
-
-            chatFlow.value = Success(updatedChat)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-            // Verify that chat updates are applied
-            val updatedState = awaitState()
-            assertTrue(updatedState is ChatUiState.Ready)
-
-            // Chat data should be updated
-            assertEquals(1, updatedState.messages.size)
-            assertEquals("New incoming message", updatedState.messages[0].text)
 
             job.cancel()
         }

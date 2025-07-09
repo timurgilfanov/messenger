@@ -600,10 +600,10 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/debug
 
-      - name: Download Kover CLI
+      - name: Download JaCoCo CLI
         run: |
-          curl -L -o kover-cli.jar \
-            https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kover-cli/0.9.1/kover-cli-0.9.1.jar
+          curl -L -o jacococli.jar \
+            https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.13/org.jacoco.cli-0.8.13-nodeps.jar
 
       - name: Generate Device-Specific Coverage Reports
         run: |
@@ -617,10 +617,9 @@ jobs:
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating phone coverage report..."
-            java -jar kover-cli.jar report $PHONE_COVERAGE_FILES \
+            java -jar jacococli.jar report $PHONE_COVERAGE_FILES \
               --classfiles app/build/tmp/kotlin-classes/debug \
-              --src app/src/main \
-              --excludeAnnotation androidx.compose.runtime.Composable \
+              --sourcefiles app/src/main \
               --xml device-coverage-reports/application-device-phone-report.xml
           fi
           
@@ -631,10 +630,9 @@ jobs:
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
             echo "Generating foldable coverage report..."
-            java -jar kover-cli.jar report $FOLDABLE_COVERAGE_FILES \
+            java -jar jacococli.jar report $FOLDABLE_COVERAGE_FILES \
               --classfiles app/build/tmp/kotlin-classes/debug \
-              --src app/src/main \
-              --excludeAnnotation androidx.compose.runtime.Composable \
+              --sourcefiles app/src/main \
               --xml device-coverage-reports/application-device-foldable-report.xml
           fi
 
@@ -800,10 +798,10 @@ jobs:
           report_paths: release-testlab-results/**/*.xml
           check_name: "Release Candidate Test Results"
 
-      - name: Download Kover CLI
+      - name: Download JaCoCo CLI
         run: |
-          curl -L -o kover-cli.jar \
-            https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kover-cli/0.9.1/kover-cli-0.9.1.jar
+          curl -L -o jacococli.jar \
+            https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.13/org.jacoco.cli-0.8.13-nodeps.jar
 
       - name: Download Kotlin class files
         uses: actions/download-artifact@v4
@@ -823,10 +821,9 @@ jobs:
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating release candidate phone coverage report..."
-            java -jar kover-cli.jar report $PHONE_COVERAGE_FILES \
+            java -jar jacococli.jar report $PHONE_COVERAGE_FILES \
               --classfiles app/build/tmp/kotlin-classes/debug \
-              --src app/src/main \
-              --excludeAnnotation androidx.compose.runtime.Composable \
+              --sourcefiles app/src/main \
               --xml device-coverage-reports/release-candidate-device-phone-report.xml
           fi
           
@@ -837,10 +834,9 @@ jobs:
                                   -print0 | xargs -0)
           if [ -n "$TABLET_COVERAGE_FILES" ]; then
             echo "Generating release candidate tablet coverage report..."
-            java -jar kover-cli.jar report $TABLET_COVERAGE_FILES \
+            java -jar jacococli.jar report $TABLET_COVERAGE_FILES \
               --classfiles app/build/tmp/kotlin-classes/debug \
-              --src app/src/main \
-              --excludeAnnotation androidx.compose.runtime.Composable \
+              --sourcefiles app/src/main \
               --xml device-coverage-reports/release-candidate-device-tablet-report.xml
           fi
           
@@ -851,10 +847,9 @@ jobs:
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
             echo "Generating release candidate foldable coverage report..."
-            java -jar kover-cli.jar report $FOLDABLE_COVERAGE_FILES \
+            java -jar jacococli.jar report $FOLDABLE_COVERAGE_FILES \
               --classfiles app/build/tmp/kotlin-classes/debug \
-              --src app/src/main \
-              --excludeAnnotation androidx.compose.runtime.Composable \
+              --sourcefiles app/src/main \
               --xml device-coverage-reports/release-candidate-device-foldable-report.xml
           fi
 

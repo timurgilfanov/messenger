@@ -24,6 +24,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import javax.annotation.processing.Generated
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
@@ -107,6 +108,7 @@ private fun Button(onSendMessage: () -> Unit, isValid: Boolean, isSending: Boole
 }
 
 @Preview(showBackground = true)
+@Generated
 @Composable
 private fun MessageInputEmptyPreview() {
     MessengerTheme {
@@ -118,6 +120,7 @@ private fun MessageInputEmptyPreview() {
 }
 
 @Preview(showBackground = true, locale = "de")
+@Generated
 @Composable
 private fun MessageInputEmptyGermanPreview() {
     MessengerTheme {
@@ -129,6 +132,7 @@ private fun MessageInputEmptyGermanPreview() {
 }
 
 @Preview(showBackground = true)
+@Generated
 @Composable
 private fun MessageInputWithTextPreview() {
     MessengerTheme {
@@ -140,6 +144,7 @@ private fun MessageInputWithTextPreview() {
 }
 
 @Preview(showBackground = true)
+@Generated
 @Composable
 private fun MessageInputNotValidPreview() {
     MessengerTheme {
@@ -152,6 +157,7 @@ private fun MessageInputNotValidPreview() {
 }
 
 @Preview(showBackground = true, heightDp = 480)
+@Generated
 @Composable
 private fun MessageInputTooLongPreview() {
     MessengerTheme {
@@ -166,6 +172,7 @@ private fun MessageInputTooLongPreview() {
 }
 
 @Preview(showBackground = true)
+@Generated
 @Composable
 @Suppress("MagicNumber")
 private fun MessageInputWithSelectionPreview() {
@@ -181,6 +188,7 @@ private fun MessageInputWithSelectionPreview() {
 }
 
 @Preview(showBackground = true)
+@Generated
 @Composable
 private fun MessageInputSendingPreview() {
     MessengerTheme {

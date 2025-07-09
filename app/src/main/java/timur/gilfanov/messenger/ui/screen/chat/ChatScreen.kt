@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.util.UUID
+import javax.annotation.processing.Generated
 import kotlinx.collections.immutable.persistentListOf
 import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.R
@@ -165,6 +166,7 @@ fun ChatContent(
 }
 
 @Preview(showBackground = true)
+@Generated
 @Composable
 private fun ChatContentPreview() {
     MessengerTheme {
@@ -219,6 +221,7 @@ private fun ChatContentPreview() {
 }
 
 @Preview(showBackground = true)
+@Generated
 @Composable
 private fun ChatLoadingPreview() {
     MessengerTheme {

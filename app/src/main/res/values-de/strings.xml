@@ -2,4 +2,5 @@
     <string name="app_name">Messenger</string>
     <string name="message_input_placeholder">Nachricht eingeben...</string>
     <string name="send_message_content_description">Nachricht senden</string>
+    <string name="message_input_error_too_long">Die Nachricht darf nicht länger als %d Zeichen sein</string>
 </resources>

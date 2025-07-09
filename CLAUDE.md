@@ -57,12 +57,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Test Categories with Coverage
 ```bash
 # Run specific test categories with coverage
-./gradlew testArchitectureWithCoverage
-./gradlew testUnitWithCoverage
-./gradlew testComponentWithCoverage
-
-# Run individual categories with coverage (alternative)
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture -Pcoverage
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage
 

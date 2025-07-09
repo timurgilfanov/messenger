@@ -53,6 +53,11 @@ android {
     }
 }
 
+composeCompiler {
+    reportsDestination = layout.buildDirectory.dir("compose_metrics")
+    metricsDestination = layout.buildDirectory.dir("compose_compiler")
+}
+
 ktlint {
     version.set("1.4.1") // restricted by compose ruleset for ktlint, waiting for 0.4.23 release
 }
@@ -162,69 +167,6 @@ tasks.register("generateCategorySpecificReports") {
                 rename { "${categoryName.lowercase()}-report.xml" }
             }
             println("Generated category-specific report: ${categoryName.lowercase()}-report.xml")
-        }
-    }
-}
-
-tasks.register("testArchitectureWithCoverage") {
-    group = "verification"
-    description = "Run Architecture tests with coverage"
-    doLast {
-        val process = ProcessBuilder(
-            "./gradlew",
-            "testDebugUnitTest",
-            "-PtestCategory=timur.gilfanov.annotations.Architecture",
-            "-Pcoverage",
-        )
-            .directory(project.rootDir)
-            .inheritIO()
-            .start()
-
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            throw GradleException("Architecture tests failed with exit code $exitCode")
-        }
-    }
-}
-
-tasks.register("testUnitWithCoverage") {
-    group = "verification"
-    description = "Run Unit tests with coverage"
-    doLast {
-        val process = ProcessBuilder(
-            "./gradlew",
-            "testDebugUnitTest",
-            "-PtestCategory=timur.gilfanov.annotations.Unit",
-            "-Pcoverage",
-        )
-            .directory(project.rootDir)
-            .inheritIO()
-            .start()
-
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            throw GradleException("Unit tests failed with exit code $exitCode")
-        }
-    }
-}
-
-tasks.register("testComponentWithCoverage") {
-    group = "verification"
-    description = "Run Component tests with coverage"
-    doLast {
-        val process = ProcessBuilder(
-            "./gradlew",
-            "testDebugUnitTest",
-            "-PtestCategory=timur.gilfanov.annotations.Component",
-            "-Pcoverage",
-        )
-            .directory(project.rootDir)
-            .inheritIO()
-            .start()
-
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            throw GradleException("Component tests failed with exit code $exitCode")
         }
     }
 }

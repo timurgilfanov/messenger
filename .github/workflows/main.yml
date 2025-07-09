@@ -431,7 +431,7 @@ jobs:
       - name: Download JaCoCo CLI for emulator coverage
         run: |
           curl -L -o jacococli.jar \
-            https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.11/org.jacoco.cli-0.8.11-nodeps.jar
+            https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.13/org.jacoco.cli-0.8.13-nodeps.jar
 
       - name: Download Kotlin class files for emulator coverage
         uses: actions/download-artifact@v4

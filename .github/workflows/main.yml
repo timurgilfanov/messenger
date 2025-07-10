@@ -608,9 +608,10 @@ jobs:
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating phone coverage report using Gradle task..."
+            echo "Coverage files: $PHONE_COVERAGE_FILES"
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
-            echo "Coverage files: $COVERAGE_FILES_COMMA"
-            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles=$PHONE_COVERAGE_FILES
+            echo "Comma separated files: $COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/application-device-phone-report.xml
           fi
           

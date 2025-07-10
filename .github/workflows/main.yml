@@ -428,11 +428,6 @@ jobs:
           report_paths: emulator-testlab-results/**/*.xml
           check_name: "Application Instrumentation Test Results (Emulator)"
 
-      - name: Download JaCoCo CLI for emulator coverage
-        run: |
-          curl -L -o jacococli.jar \
-            https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.13/org.jacoco.cli-0.8.13-nodeps.jar
-
       - name: Download Kotlin class files for emulator coverage
         uses: actions/download-artifact@v4
         with:
@@ -444,16 +439,17 @@ jobs:
           # Create directory for coverage reports
           mkdir -p coverage-reports
           
-          # Generate emulator coverage report 
+          # Find emulator coverage files 
           PHONE_COVERAGE_FILES=$(find emulator-testlab-results \
                                  -path "**/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
-            echo "Generating emulator coverage report..."
-            java -jar jacococli.jar report $PHONE_COVERAGE_FILES \
-              --classfiles app/build/tmp/kotlin-classes/debug \
-              --sourcefiles app/src/main \
-              --xml coverage-reports/application-emulator-phone-report.xml
+            echo "Generating emulator coverage report using Gradle task..."
+            COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
+            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
+            
+            # Copy generated report to expected location
+            cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml coverage-reports/application-emulator-phone-report.xml
           fi        
 
       - name: Upload Application Emulator Phone Coverage to Codecov (application)
@@ -600,11 +596,6 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/debug
 
-      - name: Download JaCoCo CLI
-        run: |
-          curl -L -o jacococli.jar \
-            https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.13/org.jacoco.cli-0.8.13-nodeps.jar
-
       - name: Generate Device-Specific Coverage Reports
         run: |
           # Create directory for device-specific coverage reports
@@ -616,24 +607,22 @@ jobs:
                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
-            echo "Generating phone coverage report..."
-            java -jar jacococli.jar report $PHONE_COVERAGE_FILES \
-              --classfiles app/build/tmp/kotlin-classes/debug \
-              --sourcefiles app/src/main \
-              --xml device-coverage-reports/application-device-phone-report.xml
+            echo "Generating phone coverage report using Gradle task..."
+            COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
+            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
+            cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/application-device-phone-report.xml
           fi
           
           # Generate foldable coverage report (Pixel Fold)
-          FOLDABLE_COVERAGE_FILES=$(find device-testlab-results }} \
+          FOLDABLE_COVERAGE_FILES=$(find device-testlab-results \
                                     -path "*felix*" \
                                     -path "*/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
-            echo "Generating foldable coverage report..."
-            java -jar jacococli.jar report $FOLDABLE_COVERAGE_FILES \
-              --classfiles app/build/tmp/kotlin-classes/debug \
-              --sourcefiles app/src/main \
-              --xml device-coverage-reports/application-device-foldable-report.xml
+            echo "Generating foldable coverage report using Gradle task..."
+            COVERAGE_FILES_COMMA=$(echo "$FOLDABLE_COVERAGE_FILES" | tr ' ' ',')
+            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
+            cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/application-device-foldable-report.xml
           fi
 
       - name: Upload Application Device Phone Coverage to Codecov (application)
@@ -798,11 +787,6 @@ jobs:
           report_paths: release-testlab-results/**/*.xml
           check_name: "Release Candidate Test Results"
 
-      - name: Download JaCoCo CLI
-        run: |
-          curl -L -o jacococli.jar \
-            https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.13/org.jacoco.cli-0.8.13-nodeps.jar
-
       - name: Download Kotlin class files
         uses: actions/download-artifact@v4
         with:
@@ -820,11 +804,10 @@ jobs:
                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
-            echo "Generating release candidate phone coverage report..."
-            java -jar jacococli.jar report $PHONE_COVERAGE_FILES \
-              --classfiles app/build/tmp/kotlin-classes/debug \
-              --sourcefiles app/src/main \
-              --xml device-coverage-reports/release-candidate-device-phone-report.xml
+            echo "Generating release candidate phone coverage report using Gradle task..."
+            COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
+            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
+            cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/release-candidate-device-phone-report.xml
           fi
           
           # Generate tablet coverage report  
@@ -833,11 +816,10 @@ jobs:
                                   -path "*/artifacts/sdcard/Download/coverage.ec" \
                                   -print0 | xargs -0)
           if [ -n "$TABLET_COVERAGE_FILES" ]; then
-            echo "Generating release candidate tablet coverage report..."
-            java -jar jacococli.jar report $TABLET_COVERAGE_FILES \
-              --classfiles app/build/tmp/kotlin-classes/debug \
-              --sourcefiles app/src/main \
-              --xml device-coverage-reports/release-candidate-device-tablet-report.xml
+            echo "Generating release candidate tablet coverage report using Gradle task..."
+            COVERAGE_FILES_COMMA=$(echo "$TABLET_COVERAGE_FILES" | tr ' ' ',')
+            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
+            cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/release-candidate-device-tablet-report.xml
           fi
           
           # Generate foldable coverage report (Pixel Fold)
@@ -846,11 +828,10 @@ jobs:
                                     -path "*/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
-            echo "Generating release candidate foldable coverage report..."
-            java -jar jacococli.jar report $FOLDABLE_COVERAGE_FILES \
-              --classfiles app/build/tmp/kotlin-classes/debug \
-              --sourcefiles app/src/main \
-              --xml device-coverage-reports/release-candidate-device-foldable-report.xml
+            echo "Generating release candidate foldable coverage report using Gradle task..."
+            COVERAGE_FILES_COMMA=$(echo "$FOLDABLE_COVERAGE_FILES" | tr ' ' ',')
+            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
+            cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/release-candidate-device-foldable-report.xml
           fi
 
       - name: Upload Release Candidate Phone Coverage to Codecov (release_candidate)

@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kover)
     alias(libs.plugins.hilt)
     id("kotlin-kapt")
+    id("jacoco")
 }
 
 android {
@@ -79,6 +80,7 @@ kover {
                     "androidx.compose.ui.tooling.preview.Preview",
                     "dagger.internal.DaggerGenerated",
                     "javax.annotation.processing.Generated",
+                    "timur.gilfanov.messenger.annotation.ExcludeFromCoverageGenerated",
                 )
                 classes(
                     "*.Hilt_*",
@@ -95,6 +97,52 @@ kover {
                 )
             }
         }
+    }
+}
+
+tasks.register<JacocoReport>("jacocoFirebaseTestLabReport") {
+    group = "verification"
+    description = "Generate JaCoCo coverage report from Firebase Test Lab .ec files"
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        xml.outputLocation.set(
+            layout.buildDirectory.file("reports/jacoco/firebaseTestLab/jacocoTestReport.xml"),
+        )
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/firebaseTestLab/html"))
+    }
+
+    sourceDirectories.setFrom(files("$projectDir/src/main/java"))
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("intermediates/javac/debug/classes")) {
+            exclude(
+                // Hilt generated classes
+                "**/*Hilt_*",
+                "**/*_HiltModules*",
+                "**/*_Factory*",
+                "**/*_MembersInjector*",
+                "**/dagger/hilt/internal/**",
+                "**/hilt_aggregated_deps/**",
+                "**/Dagger*",
+                "**/*_ComponentTreeDeps*",
+                "**/*_HiltComponents*",
+                "**/timur/gilfanov/messenger/di/**",
+
+                // Compose generated classes
+                "**/*ComposableSingletons*",
+
+                // Preview functions (pattern-based exclusion as backup)
+                "**/*Preview*",
+                "**/*PreviewKt*",
+            )
+        },
+    )
+
+    // Allow external .ec files to be specified via property
+    val ecFiles = project.findProperty("jacocoExecFiles")?.toString()?.split(",")?.map { file(it) }
+    if (ecFiles != null) {
+        executionData.setFrom(ecFiles)
     }
 }
 

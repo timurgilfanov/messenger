@@ -80,7 +80,6 @@ kover {
                     "androidx.compose.ui.tooling.preview.Preview",
                     "dagger.internal.DaggerGenerated",
                     "javax.annotation.processing.Generated",
-                    "timur.gilfanov.messenger.annotation.ExcludeFromCoverageGenerated",
                 )
                 classes(
                     "*.Hilt_*",
@@ -115,7 +114,28 @@ tasks.register<JacocoReport>("jacocoFirebaseTestLabReport") {
 
     sourceDirectories.setFrom(files("$projectDir/src/main/java"))
     classDirectories.setFrom(
-        fileTree(layout.buildDirectory.dir("intermediates/javac/debug/classes")) {
+        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+            exclude(
+                // Hilt generated classes
+                "**/*Hilt_*",
+                "**/*_HiltModules*",
+                "**/*_Factory*",
+                "**/*_MembersInjector*",
+                "**/dagger/hilt/internal/**",
+                "**/hilt_aggregated_deps/**",
+                "**/Dagger*",
+                "**/*_ComponentTreeDeps*",
+                "**/*_HiltComponents*",
+                "**/timur/gilfanov/messenger/di/**",
+
+                // Compose generated classes
+                "**/*ComposableSingletons*",
+
+                // Preview functions (pattern-based exclusion as backup)
+                "**/*Preview*",
+                "**/*PreviewKt*",
+            )
+        } + fileTree(layout.buildDirectory.dir("intermediates/javac/debug/classes")) {
             exclude(
                 // Hilt generated classes
                 "**/*Hilt_*",

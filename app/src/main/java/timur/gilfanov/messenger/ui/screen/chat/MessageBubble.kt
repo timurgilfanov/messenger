@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import timur.gilfanov.messenger.annotation.ExcludeFromCoverageGenerated
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
@@ -252,7 +251,6 @@ private fun MessageError(error: String, isFromCurrentUser: Boolean, modifier: Mo
 }
 
 @Preview(showBackground = true)
-@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageBubbleCurrentUserPreview() {
     MessengerTheme {
@@ -271,7 +269,6 @@ private fun MessageBubbleCurrentUserPreview() {
 }
 
 @Preview(showBackground = true)
-@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageBubbleOtherUserPreview() {
     MessengerTheme {
@@ -290,7 +287,6 @@ private fun MessageBubbleOtherUserPreview() {
 }
 
 @Preview(showBackground = true)
-@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageBubbleSendingPreview() {
     MessengerTheme {
@@ -309,7 +305,6 @@ private fun MessageBubbleSendingPreview() {
 }
 
 @Preview(showBackground = true)
-@ExcludeFromCoverageGenerated
 @Composable
 private fun MessageBubbleFailedPreview() {
     MessengerTheme {

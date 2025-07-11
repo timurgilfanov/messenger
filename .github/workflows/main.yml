@@ -604,13 +604,11 @@ jobs:
           # Generate phone coverage report (MediumPhone devices)
           PHONE_COVERAGE_FILES=$(find device-testlab-results \
                                  -path "*MediumPhone*" \
-                                 -path "*/artifacts/sdcard/Download/coverage.ec" \
+                                 -path "**/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating phone coverage report using Gradle task..."
-            echo "Coverage files: $PHONE_COVERAGE_FILES"
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
-            echo "Comma separated files: $COVERAGE_FILES_COMMA"
             ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/application-device-phone-report.xml
           fi
@@ -618,7 +616,7 @@ jobs:
           # Generate foldable coverage report (Pixel Fold)
           FOLDABLE_COVERAGE_FILES=$(find device-testlab-results \
                                     -path "*felix*" \
-                                    -path "*/artifacts/sdcard/Download/coverage.ec" \
+                                    -path "**/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
             echo "Generating foldable coverage report using Gradle task..."
@@ -803,7 +801,7 @@ jobs:
           # Generate phone coverage report
           PHONE_COVERAGE_FILES=$(find release-testlab-results \
                                  -path "*MediumPhone*" \
-                                 -path "*/artifacts/sdcard/Download/coverage.ec" \
+                                 -path "**/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating release candidate phone coverage report using Gradle task..."
@@ -815,7 +813,7 @@ jobs:
           # Generate tablet coverage report  
           TABLET_COVERAGE_FILES=$(find release-testlab-results \
                                   -path "*MediumTablet*" \
-                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
+                                  -path "**/artifacts/sdcard/Download/coverage.ec" \
                                   -print0 | xargs -0)
           if [ -n "$TABLET_COVERAGE_FILES" ]; then
             echo "Generating release candidate tablet coverage report using Gradle task..."
@@ -827,7 +825,7 @@ jobs:
           # Generate foldable coverage report (Pixel Fold)
           FOLDABLE_COVERAGE_FILES=$(find release-testlab-results \
                                     -path "*felix*" \
-                                    -path "*/artifacts/sdcard/Download/coverage.ec" \
+                                    -path "**/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
             echo "Generating release candidate foldable coverage report using Gradle task..."

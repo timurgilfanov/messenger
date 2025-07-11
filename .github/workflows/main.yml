@@ -448,7 +448,7 @@ jobs:
             echo "PHONE_COVERAGE_FILES: $PHONE_COVERAGE_FILES"
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
             echo "COVERAGE_FILES_COMMA: $COVERAGE_FILES_COMMA"
-            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoFirebaseTestLabReport --rerun-tasks --info -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             
             # Copy generated report to expected location
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml coverage-reports/application-emulator-phone-report.xml

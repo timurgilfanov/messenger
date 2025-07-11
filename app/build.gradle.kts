@@ -160,7 +160,9 @@ tasks.register<JacocoReport>("jacocoFirebaseTestLabReport") {
     )
 
     // Allow external .ec files to be specified via property
-    val ecFiles = project.findProperty("jacocoExecFiles")?.toString()?.split(",")?.map {
+    val jacocoExecFiles = project.findProperty("jacocoExecFiles")?.toString()
+    println("jacocoExecFiles property: $jacocoExecFiles")
+    val ecFiles = jacocoExecFiles?.split(",")?.map {
         file(it.trim())
     }
     if (ecFiles != null) {

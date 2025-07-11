@@ -163,7 +163,7 @@ tasks.register<JacocoReport>("jacocoFirebaseTestLabReport") {
     val jacocoExecFiles = project.findProperty("jacocoExecFiles")?.toString()
     println("jacocoExecFiles property: $jacocoExecFiles")
     val ecFiles = jacocoExecFiles?.split(",")?.map {
-        file(it.trim())
+        project.rootProject.file(it.trim())
     }
     if (ecFiles != null) {
         println("JaCoCo execution files: $ecFiles")

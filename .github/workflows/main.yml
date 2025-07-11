@@ -441,7 +441,7 @@ jobs:
           
           # Find emulator coverage files 
           PHONE_COVERAGE_FILES=$(find emulator-testlab-results \
-                                 -path "**/artifacts/sdcard/Download/coverage.ec" \
+                                 -path "*/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating emulator coverage report using Gradle task..."
@@ -604,7 +604,7 @@ jobs:
           # Generate phone coverage report (MediumPhone devices)
           PHONE_COVERAGE_FILES=$(find device-testlab-results \
                                  -path "*MediumPhone*" \
-                                 -path "**/artifacts/sdcard/Download/coverage.ec" \
+                                 -path "*/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating phone coverage report using Gradle task..."
@@ -616,7 +616,7 @@ jobs:
           # Generate foldable coverage report (Pixel Fold)
           FOLDABLE_COVERAGE_FILES=$(find device-testlab-results \
                                     -path "*felix*" \
-                                    -path "**/artifacts/sdcard/Download/coverage.ec" \
+                                    -path "*/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
             echo "Generating foldable coverage report using Gradle task..."
@@ -801,7 +801,7 @@ jobs:
           # Generate phone coverage report
           PHONE_COVERAGE_FILES=$(find release-testlab-results \
                                  -path "*MediumPhone*" \
-                                 -path "**/artifacts/sdcard/Download/coverage.ec" \
+                                 -path "*/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating release candidate phone coverage report using Gradle task..."
@@ -813,7 +813,7 @@ jobs:
           # Generate tablet coverage report  
           TABLET_COVERAGE_FILES=$(find release-testlab-results \
                                   -path "*MediumTablet*" \
-                                  -path "**/artifacts/sdcard/Download/coverage.ec" \
+                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
                                   -print0 | xargs -0)
           if [ -n "$TABLET_COVERAGE_FILES" ]; then
             echo "Generating release candidate tablet coverage report using Gradle task..."
@@ -825,7 +825,7 @@ jobs:
           # Generate foldable coverage report (Pixel Fold)
           FOLDABLE_COVERAGE_FILES=$(find release-testlab-results \
                                     -path "*felix*" \
-                                    -path "**/artifacts/sdcard/Download/coverage.ec" \
+                                    -path "*/artifacts/sdcard/Download/coverage.ec" \
                                     -print0 | xargs -0)
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
             echo "Generating release candidate foldable coverage report using Gradle task..."

@@ -113,49 +113,29 @@ tasks.register<JacocoReport>("jacocoFirebaseTestLabReport") {
     }
 
     sourceDirectories.setFrom(files("$projectDir/src/main/java"))
+    val excludePatterns = listOf(
+        // Hilt generated classes
+        "**/*Hilt_*",
+        "**/*_HiltModules*",
+        "**/*_Factory*",
+        "**/*_MembersInjector*",
+        "**/dagger/hilt/internal/**",
+        "**/hilt_aggregated_deps/**",
+        "**/Dagger*",
+        "**/*_ComponentTreeDeps*",
+        "**/*_HiltComponents*",
+        "**/timur/gilfanov/messenger/di/**",
+        // Compose generated classes
+        "**/*ComposableSingletons*",
+        // Preview functions
+        "**/*Preview*",
+        "**/*PreviewKt*",
+    )
     classDirectories.setFrom(
         fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
-            exclude(
-                // Hilt generated classes
-                "**/*Hilt_*",
-                "**/*_HiltModules*",
-                "**/*_Factory*",
-                "**/*_MembersInjector*",
-                "**/dagger/hilt/internal/**",
-                "**/hilt_aggregated_deps/**",
-                "**/Dagger*",
-                "**/*_ComponentTreeDeps*",
-                "**/*_HiltComponents*",
-                "**/timur/gilfanov/messenger/di/**",
-
-                // Compose generated classes
-                "**/*ComposableSingletons*",
-
-                // Preview functions (pattern-based exclusion as backup)
-                "**/*Preview*",
-                "**/*PreviewKt*",
-            )
+            exclude(excludePatterns)
         } + fileTree(layout.buildDirectory.dir("intermediates/javac/debug/classes")) {
-            exclude(
-                // Hilt generated classes
-                "**/*Hilt_*",
-                "**/*_HiltModules*",
-                "**/*_Factory*",
-                "**/*_MembersInjector*",
-                "**/dagger/hilt/internal/**",
-                "**/hilt_aggregated_deps/**",
-                "**/Dagger*",
-                "**/*_ComponentTreeDeps*",
-                "**/*_HiltComponents*",
-                "**/timur/gilfanov/messenger/di/**",
-
-                // Compose generated classes
-                "**/*ComposableSingletons*",
-
-                // Preview functions (pattern-based exclusion as backup)
-                "**/*Preview*",
-                "**/*PreviewKt*",
-            )
+            exclude(excludePatterns)
         },
     )
 

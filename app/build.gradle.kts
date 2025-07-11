@@ -99,9 +99,9 @@ kover {
     }
 }
 
-tasks.register<JacocoReport>("jacocoFirebaseTestLabReport") {
+tasks.register<JacocoReport>("jacocoExternalCoverageReport") {
     group = "verification"
-    description = "Generate JaCoCo coverage report from Firebase Test Lab .ec files"
+    description = "Generate JaCoCo coverage report from external .ec files passed via parameters"
 
     reports {
         xml.required.set(true)
@@ -139,15 +139,19 @@ tasks.register<JacocoReport>("jacocoFirebaseTestLabReport") {
         },
     )
 
-    // Allow external .ec files to be specified via property
-    val jacocoExecFiles = project.findProperty("jacocoExecFiles")?.toString()
-    val ecFiles = jacocoExecFiles?.split(",")?.map {
+    // External coverage files passed via parameter
+    val externalCoverageFiles = project.findProperty("externalCoverageFiles")?.toString()
+    val coverageFiles = externalCoverageFiles?.split(",")?.map {
         project.rootProject.file(it.trim())
     }
-    if (ecFiles != null) {
-        executionData.setFrom(ecFiles)
+
+    if (coverageFiles != null) {
+        executionData.setFrom(coverageFiles)
+        println("Using external coverage files: $coverageFiles")
     } else {
-        println("No files found for jacocoExecFiles property=$jacocoExecFiles")
+        throw GradleException(
+            "externalCoverageFiles parameter is required. Provide comma-separated .ec file paths.",
+        )
     }
 }
 

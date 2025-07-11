@@ -442,10 +442,12 @@ jobs:
           # Find emulator coverage files 
           PHONE_COVERAGE_FILES=$(find emulator-testlab-results \
                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
-                                 -print0 | xargs -0)
+                                 -print0 | xargs -0)          
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating emulator coverage report using Gradle task..."
+            echo "PHONE_COVERAGE_FILES: $PHONE_COVERAGE_FILES"
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
+            echo "COVERAGE_FILES_COMMA: $COVERAGE_FILES_COMMA"
             ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             
             # Copy generated report to expected location

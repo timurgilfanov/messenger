@@ -445,13 +445,12 @@ jobs:
                                  -print0 | xargs -0)          
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating emulator coverage report using Gradle task..."
-            echo "PHONE_COVERAGE_FILES: $PHONE_COVERAGE_FILES"
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
-            echo "COVERAGE_FILES_COMMA: $COVERAGE_FILES_COMMA"
-            ./gradlew :app:jacocoFirebaseTestLabReport --rerun-tasks --info -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             
             # Copy generated report to expected location
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml coverage-reports/application-emulator-phone-report.xml
+            rm -rf app/build/reports/jacoco/firebaseTestLab
           fi        
 
       - name: Upload Application Emulator Phone Coverage to Codecov (application)
@@ -613,6 +612,7 @@ jobs:
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
             ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/application-device-phone-report.xml
+            rm -rf app/build/reports/jacoco/firebaseTestLab
           fi
           
           # Generate foldable coverage report (Pixel Fold)
@@ -625,6 +625,7 @@ jobs:
             COVERAGE_FILES_COMMA=$(echo "$FOLDABLE_COVERAGE_FILES" | tr ' ' ',')
             ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/application-device-foldable-report.xml
+            rm -rf app/build/reports/jacoco/firebaseTestLab
           fi
 
       - name: Upload Application Device Phone Coverage to Codecov (application)
@@ -810,6 +811,7 @@ jobs:
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
             ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/release-candidate-device-phone-report.xml
+            rm -rf app/build/reports/jacoco/firebaseTestLab
           fi
           
           # Generate tablet coverage report  
@@ -822,6 +824,7 @@ jobs:
             COVERAGE_FILES_COMMA=$(echo "$TABLET_COVERAGE_FILES" | tr ' ' ',')
             ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/release-candidate-device-tablet-report.xml
+            rm -rf app/build/reports/jacoco/firebaseTestLab
           fi
           
           # Generate foldable coverage report (Pixel Fold)
@@ -834,6 +837,7 @@ jobs:
             COVERAGE_FILES_COMMA=$(echo "$FOLDABLE_COVERAGE_FILES" | tr ' ' ',')
             ./gradlew :app:jacocoFirebaseTestLabReport -PjacocoExecFiles="$COVERAGE_FILES_COMMA"
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/release-candidate-device-foldable-report.xml
+            rm -rf app/build/reports/jacoco/firebaseTestLab
           fi
 
       - name: Upload Release Candidate Phone Coverage to Codecov (release_candidate)

@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kover)
     alias(libs.plugins.hilt)
     id("kotlin-kapt")
+    id("jacoco")
 }
 
 android {
@@ -95,6 +96,62 @@ kover {
                 )
             }
         }
+    }
+}
+
+tasks.register<JacocoReport>("jacocoExternalCoverageReport") {
+    group = "verification"
+    description = "Generate JaCoCo coverage report from external .ec files passed via parameters"
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        xml.outputLocation.set(
+            layout.buildDirectory.file("reports/jacoco/firebaseTestLab/jacocoTestReport.xml"),
+        )
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/firebaseTestLab/html"))
+    }
+
+    sourceDirectories.setFrom(files("$projectDir/src/main/java"))
+    val excludePatterns = listOf(
+        // Hilt generated classes
+        "**/*Hilt_*",
+        "**/*_HiltModules*",
+        "**/*_Factory*",
+        "**/*_MembersInjector*",
+        "**/dagger/hilt/internal/**",
+        "**/hilt_aggregated_deps/**",
+        "**/Dagger*",
+        "**/*_ComponentTreeDeps*",
+        "**/*_HiltComponents*",
+        "**/timur/gilfanov/messenger/di/**",
+        // Compose generated classes
+        "**/*ComposableSingletons*",
+        // Preview functions
+        "**/*Preview*",
+        "**/*PreviewKt*",
+    )
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+            exclude(excludePatterns)
+        } + fileTree(layout.buildDirectory.dir("intermediates/javac/debug/classes")) {
+            exclude(excludePatterns)
+        },
+    )
+
+    // External coverage files passed via parameter
+    val externalCoverageFiles = project.findProperty("externalCoverageFiles")?.toString()
+    val coverageFiles = externalCoverageFiles?.split(",")?.map {
+        project.rootProject.file(it.trim())
+    }
+
+    if (coverageFiles != null) {
+        executionData.setFrom(coverageFiles)
+        println("Using external coverage files: $coverageFiles")
+    } else {
+        throw GradleException(
+            "externalCoverageFiles parameter is required. Provide comma-separated .ec file paths.",
+        )
     }
 }
 

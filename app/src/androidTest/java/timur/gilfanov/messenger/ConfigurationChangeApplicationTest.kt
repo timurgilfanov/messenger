@@ -108,7 +108,7 @@ class ConfigurationChangeApplicationTest {
                 }
                 waitForIdle()
 
-                onNodeWithTag("message_input").apply {
+                onNodeWithTag("message_input", useUnmergedTree = true).apply {
                     assertIsDisplayed()
                     assertTextEquals(testMessage)
                 }

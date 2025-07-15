@@ -24,7 +24,8 @@ data class ChatListItemUiModel(
 
 data class ChatListScreenState(
     val uiState: ChatListUiState = ChatListUiState.Empty,
-    val currentUser: CurrentUserUiModel = CurrentUserUiModel(ParticipantId(java.util.UUID.randomUUID()), "", null),
+    val currentUser: CurrentUserUiModel =
+        CurrentUserUiModel(ParticipantId(java.util.UUID.randomUUID()), "", null),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null,

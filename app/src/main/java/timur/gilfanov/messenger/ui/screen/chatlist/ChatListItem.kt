@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -46,8 +47,6 @@ fun ChatListItem(
     SwipeToActionRow(
         modifier = modifier,
         onStartAction = { onDelete(chatItem.id) },
-        startActionEnabled = true,
-        endActionEnabled = false,
     ) {
         Card(
             modifier = Modifier
@@ -65,57 +64,62 @@ fun ChatListItem(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Chat Avatar
                 ChatAvatar(
                     pictureUrl = chatItem.pictureUrl,
                     name = chatItem.name,
                     isOnline = chatItem.isOnline,
                 )
-
-                // Chat Info
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = chatItem.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-
-                    if (chatItem.lastMessage != null) {
-                        Text(
-                            text = chatItem.lastMessage,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-
-                // Right Side Info
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    if (chatItem.lastMessageTime != null) {
-                        Text(
-                            text = formatTime(chatItem.lastMessageTime),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp,
-                        )
-                    }
-
-                    if (chatItem.unreadCount > 0) {
-                        UnreadBadge(count = chatItem.unreadCount)
-                    }
-                }
+                ChatInfo(chatItem)
+                EndSideInfo(chatItem)
             }
+        }
+    }
+}
+
+@Composable
+private fun EndSideInfo(chatItem: ChatListItemUiModel) {
+    Column(
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        if (chatItem.lastMessageTime != null) {
+            Text(
+                text = formatTime(chatItem.lastMessageTime),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+            )
+        }
+
+        if (chatItem.unreadCount > 0) {
+            UnreadBadge(count = chatItem.unreadCount)
+        }
+    }
+}
+
+@Composable
+private fun RowScope.ChatInfo(chatItem: ChatListItemUiModel) {
+    Column(
+        modifier = Modifier.weight(1f),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = chatItem.name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        if (chatItem.lastMessage != null) {
+            Text(
+                text = chatItem.lastMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

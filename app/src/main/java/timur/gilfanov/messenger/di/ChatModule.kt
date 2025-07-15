@@ -47,7 +47,6 @@ object ChatModule {
 
     @Provides
     @ViewModelScoped
-    fun provideFlowChatListUseCase(
-        repository: ParticipantRepository,
-    ): FlowChatListUseCase = FlowChatListUseCase(repository)
+    fun provideFlowChatListUseCase(repository: ParticipantRepository): FlowChatListUseCase =
+        FlowChatListUseCase(repository)
 }

@@ -27,10 +27,10 @@ fun SwipeToActionRow(
     modifier: Modifier = Modifier,
     onStartAction: () -> Unit = {},
     onEndAction: () -> Unit = {},
-    startActionEnabled: Boolean = true,
-    endActionEnabled: Boolean = false,
     content: @Composable () -> Unit,
 ) {
+    val startActionEnabled = onStartAction != {}
+    val endActionEnabled = onEndAction != {}
     val hapticFeedback = LocalHapticFeedback.current
     val swipeState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->

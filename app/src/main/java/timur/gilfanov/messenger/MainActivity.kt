@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.UUID
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
@@ -23,15 +24,17 @@ class MainActivity : ComponentActivity() {
                     currentUserId = ParticipantId(
                         UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
                     ),
-                    onChatClick = { chatId ->
-                        // Navigation to chat screen will be implemented later
-                    },
-                    onNewChatClick = {
-                        // Navigation to new chat screen will be implemented later
-                    },
-                    onSearchClick = {
-                        // Navigation to search screen will be implemented later
-                    },
+                    actions = ChatListActions(
+                        onChatClick = { chatId ->
+                            // Navigation to chat screen will be implemented later
+                        },
+                        onNewChatClick = {
+                            // Navigation to new chat screen will be implemented later
+                        },
+                        onSearchClick = {
+                            // Navigation to search screen will be implemented later
+                        },
+                    ),
                     modifier = Modifier.fillMaxSize(),
                 )
             }

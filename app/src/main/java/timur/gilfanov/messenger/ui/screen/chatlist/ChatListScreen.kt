@@ -31,14 +31,25 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
+data class ChatListActions(
+    val onChatClick: (ChatId) -> Unit = {},
+    val onNewChatClick: () -> Unit = {},
+    val onSearchClick: () -> Unit = {},
+)
+
+data class ChatListContentActions(
+    val onChatClick: (ChatId) -> Unit,
+    val onNewChatClick: () -> Unit,
+    val onSearchClick: () -> Unit,
+    val onDeleteChat: (ChatId) -> Unit,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListScreen(
     currentUserId: ParticipantId,
+    actions: ChatListActions,
     modifier: Modifier = Modifier,
-    onChatClick: (ChatId) -> Unit = {},
-    onNewChatClick: () -> Unit = {},
-    onSearchClick: () -> Unit = {},
     viewModel: ChatListViewModel =
         hiltViewModel(creationCallback = { factory: ChatListViewModel.ChatListViewModelFactory ->
             factory.create(currentUserId = currentUserId.id)
@@ -48,10 +59,12 @@ fun ChatListScreen(
 
     ChatListScreenContent(
         screenState = screenState,
-        onChatClick = onChatClick,
-        onNewChatClick = onNewChatClick,
-        onSearchClick = onSearchClick,
-        onDeleteChat = { /* Delete chat not implemented yet */ },
+        actions = ChatListContentActions(
+            onChatClick = actions.onChatClick,
+            onNewChatClick = actions.onNewChatClick,
+            onSearchClick = actions.onSearchClick,
+            onDeleteChat = { /* Delete chat not implemented yet */ },
+        ),
         modifier = modifier,
     )
 }
@@ -60,20 +73,17 @@ fun ChatListScreen(
 @Composable
 fun ChatListScreenContent(
     screenState: ChatListScreenState,
-    onChatClick: (ChatId) -> Unit,
-    onNewChatClick: () -> Unit,
-    onSearchClick: () -> Unit,
-    onDeleteChat: (ChatId) -> Unit,
+    actions: ChatListContentActions,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { TopBar(screenState, onSearchClick, onNewChatClick) },
+        topBar = { TopBar(screenState, actions.onSearchClick, actions.onNewChatClick) },
     ) { paddingValues ->
         when (screenState.uiState) {
             ChatListUiState.Empty -> {
                 EmptyStateComponent(
-                    onStartFirstChat = onNewChatClick,
+                    onStartFirstChat = actions.onNewChatClick,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
@@ -94,8 +104,8 @@ fun ChatListScreenContent(
                     ) { chatItem ->
                         ChatListItem(
                             chatItem = chatItem,
-                            onClick = onChatClick,
-                            onDelete = onDeleteChat,
+                            onClick = actions.onChatClick,
+                            onDelete = actions.onDeleteChat,
                             modifier = Modifier
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                                 .testTag("chat_item_${chatItem.id.id}"),
@@ -186,10 +196,12 @@ private fun ChatListScreenEmptyPreview() {
                 isRefreshing = false,
                 errorMessage = null,
             ),
-            onChatClick = {},
-            onNewChatClick = {},
-            onSearchClick = {},
-            onDeleteChat = {},
+            actions = ChatListContentActions(
+                onChatClick = {},
+                onNewChatClick = {},
+                onSearchClick = {},
+                onDeleteChat = {},
+            ),
         )
     }
 }
@@ -243,10 +255,12 @@ private fun ChatListScreenWithChatsPreview() {
                 isRefreshing = false,
                 errorMessage = null,
             ),
-            onChatClick = {},
-            onNewChatClick = {},
-            onSearchClick = {},
-            onDeleteChat = {},
+            actions = ChatListContentActions(
+                onChatClick = {},
+                onNewChatClick = {},
+                onSearchClick = {},
+                onDeleteChat = {},
+            ),
         )
     }
 }
@@ -267,10 +281,12 @@ private fun ChatListScreenLoadingPreview() {
                 isRefreshing = false,
                 errorMessage = null,
             ),
-            onChatClick = {},
-            onNewChatClick = {},
-            onSearchClick = {},
-            onDeleteChat = {},
+            actions = ChatListContentActions(
+                onChatClick = {},
+                onNewChatClick = {},
+                onSearchClick = {},
+                onDeleteChat = {},
+            ),
         )
     }
 }
@@ -291,10 +307,12 @@ private fun ChatListScreenErrorPreview() {
                 isRefreshing = false,
                 errorMessage = "Network error",
             ),
-            onChatClick = {},
-            onNewChatClick = {},
-            onSearchClick = {},
-            onDeleteChat = {},
+            actions = ChatListContentActions(
+                onChatClick = {},
+                onNewChatClick = {},
+                onSearchClick = {},
+                onDeleteChat = {},
+            ),
         )
     }
 }

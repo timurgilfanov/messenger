@@ -11,6 +11,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
 
@@ -43,4 +44,10 @@ object ChatModule {
     fun provideReceiveChatUpdatesUseCase(
         repository: ParticipantRepository,
     ): ReceiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
+
+    @Provides
+    @ViewModelScoped
+    fun provideFlowChatListUseCase(
+        repository: ParticipantRepository,
+    ): FlowChatListUseCase = FlowChatListUseCase(repository)
 }

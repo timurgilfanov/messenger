@@ -84,7 +84,7 @@ private fun EndSideInfo(chatItem: ChatListItemUiModel) {
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        if (chatItem.lastMessageTime != null) {
+        if (chatItem.lastMessageTime != null && chatItem.unreadCount == 0) {
             Text(
                 text = formatTime(chatItem.lastMessageTime),
                 style = MaterialTheme.typography.bodySmall,

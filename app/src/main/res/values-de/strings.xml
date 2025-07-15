@@ -3,4 +3,18 @@
     <string name="message_input_placeholder">Nachricht eingeben...</string>
     <string name="send_message_content_description">Nachricht senden</string>
     <string name="message_input_error_too_long">Die Nachricht darf nicht länger als %d Zeichen sein</string>
+    
+    <!-- Chat List Screen -->
+    <string name="chat_list_search_content_description">Chats durchsuchen</string>
+    <string name="chat_list_new_chat_content_description">Neuer Chat</string>
+    <string name="chat_list_empty_title">Noch keine Chats</string>
+    <string name="chat_list_empty_message">Starten Sie eine Unterhaltung, indem Sie einen neuen Chat erstellen</string>
+    <string name="chat_list_status_loading">Laden...</string>
+    <string name="chat_list_status_no_chats">Keine Chats</string>
+    <string name="chat_list_status_chats_count">%d Chats</string>
+    <string name="chat_list_error_network">Keine Internetverbindung</string>
+    <string name="chat_list_error_server">Serverfehler</string>
+    <string name="chat_list_error_server_unreachable">Server nicht erreichbar</string>
+    <string name="chat_list_error_unknown">Unbekannter Fehler</string>
+    <string name="chat_list_swipe_delete_content_description">Chat löschen</string>
 </resources>

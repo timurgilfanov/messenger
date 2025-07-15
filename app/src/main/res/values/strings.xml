@@ -17,4 +17,7 @@
     <string name="chat_list_error_server_unreachable">Server unreachable</string>
     <string name="chat_list_error_unknown">Unknown error</string>
     <string name="chat_list_swipe_delete_content_description">Delete chat</string>
+    
+    <!-- Time formatting -->
+    <string name="yesterday">Yesterday</string>
 </resources>

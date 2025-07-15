@@ -17,4 +17,7 @@
     <string name="chat_list_error_server_unreachable">Server nicht erreichbar</string>
     <string name="chat_list_error_unknown">Unbekannter Fehler</string>
     <string name="chat_list_swipe_delete_content_description">Chat löschen</string>
+    
+    <!-- Time formatting -->
+    <string name="yesterday">Gestern</string>
 </resources>

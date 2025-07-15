@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chatlist
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,19 +26,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
+
+private const val DAYS_IN_WEEK = 7
+private const val DAYS_IN_YEAR = 365
 
 @Composable
 fun ChatListItem(
@@ -85,8 +94,9 @@ private fun EndSideInfo(chatItem: ChatListItemUiModel) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         if (chatItem.lastMessageTime != null && chatItem.unreadCount == 0) {
+            val context = LocalContext.current
             Text(
-                text = formatTime(chatItem.lastMessageTime),
+                text = formatTime(context, chatItem.lastMessageTime),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
@@ -196,23 +206,70 @@ private fun UnreadBadge(count: Int) {
     }
 }
 
-private fun formatTime(timestamp: Instant): String {
-    val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-    return formatter.format(Date(timestamp.toEpochMilliseconds()))
+private fun formatTime(context: Context, timestamp: Instant): String {
+    val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
+    val now = Calendar.getInstance()
+    val messageTime = Calendar.getInstance().apply {
+        timeInMillis = timestamp.toEpochMilliseconds()
+    }
+
+    val daysDiff = getDaysDifference(now, messageTime)
+
+    return when {
+        daysDiff == 0 -> {
+            // Today - show time
+            SimpleDateFormat(
+                "HH:mm",
+                locale,
+            ).format(Date(timestamp.toEpochMilliseconds()))
+        }
+        daysDiff == 1 -> {
+            // Yesterday
+            context.getString(R.string.yesterday)
+        }
+        daysDiff <= DAYS_IN_WEEK -> {
+            // This week - show day of week
+            SimpleDateFormat(
+                "EEE",
+                locale,
+            ).format(Date(timestamp.toEpochMilliseconds()))
+        }
+        else -> {
+            // Older than a week - show date
+            SimpleDateFormat(
+                "dd MMM",
+                locale,
+            ).format(Date(timestamp.toEpochMilliseconds()))
+        }
+    }
+}
+
+private fun getDaysDifference(now: Calendar, messageTime: Calendar): Int {
+    val nowDay = now.get(Calendar.DAY_OF_YEAR)
+    val nowYear = now.get(Calendar.YEAR)
+    val messageDay = messageTime.get(Calendar.DAY_OF_YEAR)
+    val messageYear = messageTime.get(Calendar.YEAR)
+
+    return if (nowYear == messageYear) {
+        nowDay - messageDay
+    } else {
+        // Simple approximation for year difference
+        (nowYear - messageYear) * DAYS_IN_YEAR + (nowDay - messageDay)
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun ChatListItemPreview() {
+private fun ChatListItemTodayPreview() {
     MessengerTheme {
         ChatListItem(
             chatItem = ChatListItemUiModel(
                 id = ChatId(UUID.randomUUID()),
-                name = "John Doe",
+                name = "John Doe (Today)",
                 pictureUrl = null,
                 lastMessage = "Hey there! How are you doing?",
                 lastMessageTime = Clock.System.now(),
-                unreadCount = 3,
+                unreadCount = 0,
                 isOnline = true,
                 lastOnlineTime = Clock.System.now(),
             ),
@@ -222,18 +279,75 @@ private fun ChatListItemPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun ChatListItemGroupPreview() {
+private fun ChatListItemYesterdayPreview() {
     MessengerTheme {
         ChatListItem(
             chatItem = ChatListItemUiModel(
                 id = ChatId(UUID.randomUUID()),
-                name = "Project Team",
+                name = "Alice (Yesterday)",
                 pictureUrl = null,
-                lastMessage = "Alice: The design looks great!",
-                lastMessageTime = Clock.System.now(),
+                lastMessage = "The design looks great!",
+                lastMessageTime = Clock.System.now() - 1.days,
                 unreadCount = 0,
                 isOnline = false,
                 lastOnlineTime = null,
+            ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatListItemThisWeekPreview() {
+    MessengerTheme {
+        ChatListItem(
+            chatItem = ChatListItemUiModel(
+                id = ChatId(UUID.randomUUID()),
+                name = "Bob (This Week)",
+                pictureUrl = null,
+                lastMessage = "Meeting at 3 PM",
+                lastMessageTime = Clock.System.now() - 3.days,
+                unreadCount = 0,
+                isOnline = false,
+                lastOnlineTime = null,
+            ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatListItemOldDatePreview() {
+    MessengerTheme {
+        ChatListItem(
+            chatItem = ChatListItemUiModel(
+                id = ChatId(UUID.randomUUID()),
+                name = "Sarah (Old Date)",
+                pictureUrl = null,
+                lastMessage = "Thanks for the help!",
+                lastMessageTime = Clock.System.now() - 10.days,
+                unreadCount = 0,
+                isOnline = false,
+                lastOnlineTime = null,
+            ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatListItemWithUnreadPreview() {
+    MessengerTheme {
+        ChatListItem(
+            chatItem = ChatListItemUiModel(
+                id = ChatId(UUID.randomUUID()),
+                name = "Mike (Unread)",
+                pictureUrl = null,
+                lastMessage = "Important message here",
+                lastMessageTime = Clock.System.now() - 2.hours,
+                unreadCount = 5,
+                isOnline = true,
+                lastOnlineTime = Clock.System.now(),
             ),
         )
     }
@@ -246,10 +360,67 @@ private fun ChatListItemNoMessagePreview() {
         ChatListItem(
             chatItem = ChatListItemUiModel(
                 id = ChatId(UUID.randomUUID()),
-                name = "Sarah Wilson",
+                name = "Emma (No Message)",
                 pictureUrl = null,
                 lastMessage = null,
                 lastMessageTime = null,
+                unreadCount = 0,
+                isOnline = false,
+                lastOnlineTime = null,
+            ),
+        )
+    }
+}
+
+@Preview(showBackground = true, locale = "de")
+@Composable
+private fun ChatListItemGermanYesterdayPreview() {
+    MessengerTheme {
+        ChatListItem(
+            chatItem = ChatListItemUiModel(
+                id = ChatId(UUID.randomUUID()),
+                name = "Hans (German Yesterday)",
+                pictureUrl = null,
+                lastMessage = "Guten Tag!",
+                lastMessageTime = Clock.System.now() - 1.days,
+                unreadCount = 0,
+                isOnline = false,
+                lastOnlineTime = null,
+            ),
+        )
+    }
+}
+
+@Preview(showBackground = true, locale = "de")
+@Composable
+private fun ChatListItemGermanThisWeekPreview() {
+    MessengerTheme {
+        ChatListItem(
+            chatItem = ChatListItemUiModel(
+                id = ChatId(UUID.randomUUID()),
+                name = "Klaus (German This Week)",
+                pictureUrl = null,
+                lastMessage = "Wie geht's?",
+                lastMessageTime = Clock.System.now() - 3.days,
+                unreadCount = 0,
+                isOnline = false,
+                lastOnlineTime = null,
+            ),
+        )
+    }
+}
+
+@Preview(showBackground = true, locale = "DE-de")
+@Composable
+private fun ChatListItemGermanOldDatePreview() {
+    MessengerTheme {
+        ChatListItem(
+            chatItem = ChatListItemUiModel(
+                id = ChatId(UUID.randomUUID()),
+                name = "Petra (German Old Date)",
+                pictureUrl = null,
+                lastMessage = "Danke schön!",
+                lastMessageTime = Clock.System.now() - 10.days,
                 unreadCount = 0,
                 isOnline = false,
                 lastOnlineTime = null,

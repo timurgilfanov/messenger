@@ -19,6 +19,7 @@ import org.orbitmvi.orbit.annotation.OrbitExperimental
 import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.LocalError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.NetworkNotAvailable
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.RemoteError
@@ -31,6 +32,7 @@ private const val STATE_UPDATE_DEBOUNCE = 200L
 class ChatListViewModel @AssistedInject constructor(
     @Assisted("currentUserId") currentUserIdUuid: UUID,
     private val flowChatListUseCase: FlowChatListUseCase,
+    private val participantRepository: ParticipantRepository,
 ) : ViewModel(),
     ContainerHost<ChatListScreenState, Nothing> {
 
@@ -46,6 +48,7 @@ class ChatListViewModel @AssistedInject constructor(
     ) {
         coroutineScope {
             launch { observeChatList() }
+            launch { observeChatListUpdating() }
         }
     }
 
@@ -54,10 +57,19 @@ class ChatListViewModel @AssistedInject constructor(
         fun create(@Assisted("currentUserId") currentUserId: UUID): ChatListViewModel
     }
 
-    @OptIn(OrbitExperimental::class)
-    fun refresh() = intent {
-        reduce { state.copy(isRefreshing = true) } // todo remove pull-to-refresh
-        // The flow will automatically trigger refresh
+    @OptIn(OrbitExperimental::class, FlowPreview::class)
+    private suspend fun observeChatListUpdating() = subIntent {
+        repeatOnSubscription {
+            participantRepository.isChatListUpdating()
+                .distinctUntilChanged()
+                .collect { isUpdating ->
+                    withContext(Dispatchers.Main) {
+                        reduce {
+                            state.copy(isRefreshing = isUpdating)
+                        }
+                    }
+                }
+        }
     }
 
     @OptIn(OrbitExperimental::class, FlowPreview::class)

@@ -102,6 +102,8 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         listOf(chatFlow.value),
     )
 
+    private val isChatListUpdatingFlow = MutableStateFlow(false)
+
     override suspend fun sendMessage(message: Message): Flow<Message> = flow {
         fun updateChat(message: Message) {
             val currentChat = chatFlow.value
@@ -173,6 +175,8 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
 
     override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
         chatListFlow.map { ResultWithError.Success(it) }
+
+    override fun isChatListUpdating(): Flow<Boolean> = isChatListUpdatingFlow
 
     override suspend fun deleteMessage(
         messageId: MessageId,

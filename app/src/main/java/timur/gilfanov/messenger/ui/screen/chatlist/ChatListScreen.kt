@@ -15,8 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -53,7 +51,6 @@ fun ChatListScreen(
         onChatClick = onChatClick,
         onNewChatClick = onNewChatClick,
         onSearchClick = onSearchClick,
-        onRefresh = viewModel::refresh,
         onDeleteChat = { /* Delete chat not implemented yet */ },
         modifier = modifier,
     )
@@ -66,106 +63,106 @@ fun ChatListScreenContent(
     onChatClick: (ChatId) -> Unit,
     onNewChatClick: () -> Unit,
     onSearchClick: () -> Unit,
-    onRefresh: () -> Unit,
     onDeleteChat: (ChatId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val pullToRefreshState = rememberPullToRefreshState()
-
     Scaffold(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        // TODO center horizontally
-                        Text(
-                            text = screenState.currentUser.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
-                        )
-
-                        val statusText = when {
-                            screenState.isLoading -> "Loading..."
-                            screenState.errorMessage != null -> screenState.errorMessage
-                            else -> getStatusText(screenState.uiState)
-                        }
-
-                        Text(
-                            text = statusText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (screenState.errorMessage != null) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = onSearchClick,
-                        modifier = Modifier.testTag("search_button"),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search chats",
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onNewChatClick,
-                        modifier = Modifier.testTag("new_chat_button"),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "New chat",
-                        )
-                    }
-                },
-            )
-        },
+        topBar = { TopBar(screenState, onSearchClick, onNewChatClick) },
     ) { paddingValues ->
-        PullToRefreshBox(
-            state = pullToRefreshState,
-            isRefreshing = screenState.isRefreshing,
-            onRefresh = onRefresh,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-        ) {
-            when (screenState.uiState) {
-                ChatListUiState.Empty -> {
-                    EmptyStateComponent(
-                        onStartFirstChat = onNewChatClick,
-                        modifier = Modifier.testTag("empty_state"),
-                    )
-                }
+        when (screenState.uiState) {
+            ChatListUiState.Empty -> {
+                EmptyStateComponent(
+                    onStartFirstChat = onNewChatClick,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .testTag("empty_state"),
+                )
+            }
 
-                is ChatListUiState.NotEmpty -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("chat_list"),
-                    ) {
-                        items(
-                            items = screenState.uiState.chats,
-                            key = { it.id.id },
-                        ) { chatItem ->
-                            ChatListItem(
-                                chatItem = chatItem,
-                                onClick = onChatClick,
-                                onDelete = onDeleteChat,
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .testTag("chat_item_${chatItem.id.id}"),
-                            )
-                        }
+            is ChatListUiState.NotEmpty -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .testTag("chat_list"),
+                ) {
+                    items(
+                        items = screenState.uiState.chats,
+                        key = { it.id.id },
+                    ) { chatItem ->
+                        ChatListItem(
+                            chatItem = chatItem,
+                            onClick = onChatClick,
+                            onDelete = onDeleteChat,
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .testTag("chat_item_${chatItem.id.id}"),
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun TopBar(
+    screenState: ChatListScreenState,
+    onSearchClick: () -> Unit,
+    onNewChatClick: () -> Unit,
+) {
+    TopAppBar(
+        title = {
+            Column {
+                // TODO center horizontally
+                Text(
+                    text = screenState.currentUser.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+
+                val statusText = when {
+                    screenState.isLoading -> "Loading..."
+                    screenState.errorMessage != null -> screenState.errorMessage
+                    else -> getStatusText(screenState.uiState)
+                }
+
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (screenState.errorMessage != null) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
+        },
+        actions = {
+            IconButton(
+                onClick = onSearchClick,
+                modifier = Modifier.testTag("search_button"),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search chats",
+                )
+            }
+
+            IconButton(
+                onClick = onNewChatClick,
+                modifier = Modifier.testTag("new_chat_button"),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "New chat",
+                )
+            }
+        },
+    )
 }
 
 private fun getStatusText(uiState: ChatListUiState): String = when (uiState) {
@@ -192,7 +189,6 @@ private fun ChatListScreenEmptyPreview() {
             onChatClick = {},
             onNewChatClick = {},
             onSearchClick = {},
-            onRefresh = {},
             onDeleteChat = {},
         )
     }
@@ -250,7 +246,6 @@ private fun ChatListScreenWithChatsPreview() {
             onChatClick = {},
             onNewChatClick = {},
             onSearchClick = {},
-            onRefresh = {},
             onDeleteChat = {},
         )
     }
@@ -275,7 +270,6 @@ private fun ChatListScreenLoadingPreview() {
             onChatClick = {},
             onNewChatClick = {},
             onSearchClick = {},
-            onRefresh = {},
             onDeleteChat = {},
         )
     }
@@ -300,7 +294,6 @@ private fun ChatListScreenErrorPreview() {
             onChatClick = {},
             onNewChatClick = {},
             onSearchClick = {},
-            onRefresh = {},
             onDeleteChat = {},
         )
     }

@@ -30,12 +30,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
-
-private const val TIME_DISPLAY_LENGTH = 5
 
 @Composable
 fun ChatListItem(
@@ -194,10 +196,9 @@ private fun UnreadBadge(count: Int) {
     }
 }
 
-private fun formatTime(timestamp: String): String {
-    // Simple time formatting - shows first 5 characters (HH:MM)
-    // TODO Proper time formatting will be implemented later
-    return timestamp.take(TIME_DISPLAY_LENGTH)
+private fun formatTime(timestamp: Instant): String {
+    val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    return formatter.format(Date(timestamp.toEpochMilliseconds()))
 }
 
 @Preview(showBackground = true)
@@ -210,7 +211,7 @@ private fun ChatListItemPreview() {
                 name = "John Doe",
                 pictureUrl = null,
                 lastMessage = "Hey there! How are you doing?",
-                lastMessageTime = "14:30",
+                lastMessageTime = Clock.System.now(),
                 unreadCount = 3,
                 isOnline = true,
                 lastOnlineTime = Clock.System.now(),
@@ -229,7 +230,7 @@ private fun ChatListItemGroupPreview() {
                 name = "Project Team",
                 pictureUrl = null,
                 lastMessage = "Alice: The design looks great!",
-                lastMessageTime = "Yesterday",
+                lastMessageTime = Clock.System.now(),
                 unreadCount = 0,
                 isOnline = false,
                 lastOnlineTime = null,

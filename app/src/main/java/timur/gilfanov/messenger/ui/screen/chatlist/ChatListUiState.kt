@@ -16,7 +16,7 @@ data class ChatListItemUiModel(
     val name: String,
     val pictureUrl: String?,
     val lastMessage: String?,
-    val lastMessageTime: String?, // todo use Instant instead of String
+    val lastMessageTime: Instant?,
     val unreadCount: Int,
     val isOnline: Boolean,
     val lastOnlineTime: Instant?,
@@ -51,7 +51,7 @@ fun Chat.toChatListItemUiModel(): ChatListItemUiModel {
                 else -> "Message"
             }
         },
-        lastMessageTime = lastMessage?.createdAt?.toString(),
+        lastMessageTime = lastMessage?.createdAt,
         unreadCount = unreadMessagesCount,
         isOnline = otherParticipant?.onlineAt != null,
         lastOnlineTime = otherParticipant?.onlineAt,

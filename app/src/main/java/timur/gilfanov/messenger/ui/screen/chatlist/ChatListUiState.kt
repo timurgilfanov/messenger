@@ -5,6 +5,7 @@ import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.TextMessage
 
 sealed interface ChatListUiState {
     data object Empty : ChatListUiState
@@ -47,8 +48,8 @@ fun Chat.toChatListItemUiModel(): ChatListItemUiModel {
         pictureUrl = pictureUrl,
         lastMessage = lastMessage?.let {
             when (it) {
-                is timur.gilfanov.messenger.domain.entity.message.TextMessage -> it.text
-                else -> "Message"
+                is TextMessage -> it.text
+                else -> error("Unsupported message type for chat list: ${it::class.simpleName}")
             }
         },
         lastMessageTime = lastMessage?.createdAt,

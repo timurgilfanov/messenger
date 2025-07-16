@@ -18,7 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
-import timur.gilfanov.annotations.Feature
+import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError.NetworkUnavailable
@@ -39,7 +39,7 @@ import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.Reposit
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@Category(Feature::class)
+@Category(Component::class)
 class ChatViewModelMessageSendingTest {
 
     @get:Rule

@@ -15,7 +15,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
-import timur.gilfanov.annotations.Feature
+import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -31,7 +31,7 @@ import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createT
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@Category(Feature::class)
+@Category(Component::class)
 class ChatViewModelLoadingTest {
 
     @get:Rule

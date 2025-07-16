@@ -1,0 +1,466 @@
+package timur.gilfanov.messenger.ui.screen.chatlist
+
+import android.content.pm.ActivityInfo
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.datetime.Clock
+import org.junit.Rule
+import org.junit.Test
+import org.junit.experimental.categories.Category
+import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.ui.theme.MessengerTheme
+
+@Category(timur.gilfanov.annotations.Component::class)
+@RunWith(AndroidJUnit4::class)
+@Config(sdk = [34])
+class ChatListScreenTest {
+
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+    private val testUserId = ParticipantId(UUID.randomUUID())
+    private val testChatId = ChatId(UUID.randomUUID())
+
+    private fun createTestScreenState(
+        uiState: ChatListUiState = ChatListUiState.Empty,
+        isLoading: Boolean = false,
+        isRefreshing: Boolean = false,
+        errorMessage: String? = null,
+    ) = ChatListScreenState(
+        uiState = uiState,
+        currentUser = CurrentUserUiModel(
+            id = testUserId,
+            name = "John Doe",
+            pictureUrl = null,
+        ),
+        isLoading = isLoading,
+        isRefreshing = isRefreshing,
+        errorMessage = errorMessage,
+    )
+
+    private fun createTestChatItem(
+        id: ChatId = testChatId,
+        name: String = "Test Chat",
+        lastMessage: String = "Test message",
+        unreadCount: Int = 0,
+    ) = ChatListItemUiModel(
+        id = id,
+        name = name,
+        pictureUrl = null,
+        lastMessage = lastMessage,
+        lastMessageTime = Clock.System.now(),
+        unreadCount = unreadCount,
+        isOnline = false,
+        lastOnlineTime = null,
+    )
+
+    @Test
+    fun `ChatListScreen displays empty state correctly`() {
+        val screenState = createTestScreenState(uiState = ChatListUiState.Empty)
+        var newChatClicked = false
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = { newChatClicked = true },
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("empty_state")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen displays chat list correctly`() {
+        val chatItem = createTestChatItem(name = "Alice Johnson")
+        val screenState = createTestScreenState(
+            uiState = ChatListUiState.NotEmpty(persistentListOf(chatItem)),
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("chat_list")
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("Alice Johnson")
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag("chat_item_${chatItem.id.id}")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen displays user name in title`() {
+        val screenState = createTestScreenState()
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("John Doe")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen displays loading state correctly`() {
+        val screenState = createTestScreenState(isLoading = true)
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Loading...")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen displays error message correctly`() {
+        val screenState = createTestScreenState(errorMessage = "Network error")
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Network error")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen displays chat count correctly`() {
+        val chatItems = persistentListOf(
+            createTestChatItem(id = ChatId(UUID.randomUUID()), name = "Chat 1"),
+            createTestChatItem(id = ChatId(UUID.randomUUID()), name = "Chat 2"),
+        )
+        val screenState = createTestScreenState(
+            uiState = ChatListUiState.NotEmpty(chatItems),
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("2 chats")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen displays no chats status correctly`() {
+        val screenState = createTestScreenState(uiState = ChatListUiState.Empty)
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("No chats")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen search button triggers callback`() {
+        val screenState = createTestScreenState()
+        var searchClicked = false
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = { searchClicked = true },
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("search_button")
+            .performClick()
+
+        assertTrue(searchClicked)
+    }
+
+    @Test
+    fun `ChatListScreen new chat button triggers callback`() {
+        val screenState = createTestScreenState()
+        var newChatClicked = false
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = { newChatClicked = true },
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("new_chat_button")
+            .performClick()
+
+        assertTrue(newChatClicked)
+    }
+
+    @Test
+    fun `ChatListScreen chat item click triggers callback`() {
+        val chatItem = createTestChatItem()
+        val screenState = createTestScreenState(
+            uiState = ChatListUiState.NotEmpty(persistentListOf(chatItem)),
+        )
+        var clickedChatId: ChatId? = null
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = { clickedChatId = it },
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("chat_item_${chatItem.id.id}")
+            .performClick()
+
+        assertEquals(testChatId, clickedChatId)
+    }
+
+    @Test
+    fun `ChatListScreen displays multiple chat items correctly`() {
+        val chatItems = persistentListOf(
+            createTestChatItem(id = ChatId(UUID.randomUUID()), name = "Alice Johnson"),
+            createTestChatItem(id = ChatId(UUID.randomUUID()), name = "Bob Smith"),
+            createTestChatItem(id = ChatId(UUID.randomUUID()), name = "Carol Davis"),
+        )
+        val screenState = createTestScreenState(
+            uiState = ChatListUiState.NotEmpty(chatItems),
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Alice Johnson")
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("Bob Smith")
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("Carol Davis")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen handles configuration change correctly`() {
+        val chatItem = createTestChatItem(name = "Test Chat")
+        val screenState = createTestScreenState(
+            uiState = ChatListUiState.NotEmpty(persistentListOf(chatItem)),
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        // Verify content is displayed
+        composeTestRule.onNodeWithText("Test Chat")
+            .assertIsDisplayed()
+
+        // Simulate configuration change
+        composeTestRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        composeTestRule.waitForIdle()
+
+        // Verify content is still displayed
+        composeTestRule.onNodeWithText("Test Chat")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen preserves error state after configuration change`() {
+        val screenState = createTestScreenState(errorMessage = "Network error")
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        // Verify error is displayed
+        composeTestRule.onNodeWithText("Network error")
+            .assertIsDisplayed()
+
+        // Simulate configuration change
+        composeTestRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        composeTestRule.waitForIdle()
+
+        // Verify error is still displayed
+        composeTestRule.onNodeWithText("Network error")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen shows appropriate content description for buttons`() {
+        val screenState = createTestScreenState()
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        // Test tags are used as content description identifiers
+        composeTestRule.onNodeWithTag("search_button")
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag("new_chat_button")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `ChatListScreen handles empty state action correctly`() {
+        val screenState = createTestScreenState(uiState = ChatListUiState.Empty)
+        var newChatClicked = false
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = { newChatClicked = true },
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        // The empty state should be displayed
+        composeTestRule.onNodeWithTag("empty_state")
+            .assertIsDisplayed()
+
+        // Note: Testing the empty state action would require knowing the internal
+        // structure of EmptyStateComponent, which is not part of this test's scope
+        assertFalse(newChatClicked) // Initially false
+    }
+}

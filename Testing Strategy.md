@@ -4,11 +4,11 @@ To balance between short time to find bug and waiting time for tests to run I ne
 
 ## Test Categories
 
+**Architecture** — verify architecture rules. Example: entity layer do not depend on any other layer. 
+
 **Unit** — test single method or class with minimal dependencies. Example: text validator.
 
-**Component** — test multiply classes together. Example: button behaviour or appearance, form validation.
-
-**Architecture** — verify architecture rules. Example: entity layer do not depend on any other layer. 
+**Component** — test multiply classes together. Example: button behaviour or appearance, form validation. 
 
 **Feature** — test integration between two or more components. Example: UI or ViewModel send a message to use case and handle different responses.
 

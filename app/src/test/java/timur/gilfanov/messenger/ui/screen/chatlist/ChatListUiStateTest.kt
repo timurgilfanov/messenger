@@ -61,10 +61,7 @@ class ChatListUiStateTest {
         this.name = params.name
         this.pictureUrl = params.pictureUrl
         this.messages = persistentListOf<Message>().addAll(params.messages)
-        this.participants =
-            persistentSetOf<Participant>().addAll(
-                params.participants,
-            )
+        this.participants = persistentSetOf<Participant>().addAll(params.participants)
         this.isOneToOne = params.isOneToOne
         this.unreadMessagesCount = params.unreadMessagesCount
     }

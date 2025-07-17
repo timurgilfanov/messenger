@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -39,6 +40,12 @@ class ChatViewModelLoadingTest {
 
     private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
+    @After
+    fun tearDown() {
+        // Ensure all coroutines are completed and cleaned up
+        testDispatcher.scheduler.advanceUntilIdle()
+    }
+
     @Test
     fun `loads chat successfully`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
@@ -61,11 +68,10 @@ class ChatViewModelLoadingTest {
         )
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
-            val inputField = (state as ChatUiState.Ready).inputTextField
             assertEquals(
                 ChatUiState.Ready(
                     id = chatId,
@@ -94,12 +100,14 @@ class ChatViewModelLoadingTest {
                             isFromCurrentUser = true,
                         ),
                     ),
-                    inputTextField = inputField,
+                    inputTextField = (state as ChatUiState.Ready).inputTextField,
                     isSending = false,
                     status = ChatStatus.OneToOne(null),
                 ),
                 state,
             )
+
+            job.cancel()
         }
     }
 
@@ -127,7 +135,7 @@ class ChatViewModelLoadingTest {
         )
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
@@ -156,6 +164,8 @@ class ChatViewModelLoadingTest {
                 ),
                 state,
             )
+
+            job.cancel()
         }
     }
 
@@ -179,11 +189,13 @@ class ChatViewModelLoadingTest {
         )
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             expectState {
                 ChatUiState.Loading(NetworkNotAvailable)
             }
+
+            job.cancel()
         }
     }
 }

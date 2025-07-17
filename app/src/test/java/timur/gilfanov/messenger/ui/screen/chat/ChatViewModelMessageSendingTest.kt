@@ -14,6 +14,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -46,6 +47,12 @@ class ChatViewModelMessageSendingTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
+
+    @After
+    fun tearDown() {
+        // Ensure all coroutines are completed and cleaned up
+        testDispatcher.scheduler.advanceUntilIdle()
+    }
 
     @Test
     fun `sending a message clears input only once`() = runTest {
@@ -125,7 +132,7 @@ class ChatViewModelMessageSendingTest {
         )
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val readyState = awaitState()
             assertTrue(readyState is ChatUiState.Ready)
@@ -155,6 +162,8 @@ class ChatViewModelMessageSendingTest {
             expectStateOn<ChatUiState.Ready> {
                 copy(dialogError = null)
             }
+
+            job.cancel()
         }
     }
 }

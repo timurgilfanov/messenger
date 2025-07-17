@@ -206,7 +206,7 @@ private fun UnreadBadge(count: Int) {
     }
 }
 
-internal fun formatTime(context: Context, timestamp: Instant): String {
+private fun formatTime(context: Context, timestamp: Instant): String {
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val now = Calendar.getInstance()
     val messageTime = Calendar.getInstance().apply {
@@ -244,7 +244,7 @@ internal fun formatTime(context: Context, timestamp: Instant): String {
     }
 }
 
-internal fun getDaysDifference(now: Calendar, messageTime: Calendar): Int {
+private fun getDaysDifference(now: Calendar, messageTime: Calendar): Int {
     val nowDay = now.get(Calendar.DAY_OF_YEAR)
     val nowYear = now.get(Calendar.YEAR)
     val messageDay = messageTime.get(Calendar.DAY_OF_YEAR)

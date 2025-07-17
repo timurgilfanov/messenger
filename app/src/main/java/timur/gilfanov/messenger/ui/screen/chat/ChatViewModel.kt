@@ -16,6 +16,7 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -90,6 +91,7 @@ class ChatViewModel @AssistedInject constructor(
                 snapshotFlow { state.inputTextField.text }
                     .distinctUntilChanged()
                     .collect { inputText ->
+                        ensureActive()
                         withContext(Dispatchers.Main) {
                             reduce {
                                 state.copy(
@@ -191,6 +193,7 @@ class ChatViewModel @AssistedInject constructor(
                 .distinctUntilChanged()
                 .debounce(STATE_UPDATE_DEBOUNCE)
                 .collect { result ->
+                    ensureActive()
                     withContext(Dispatchers.Main) {
                         reduce {
                             when (result) {

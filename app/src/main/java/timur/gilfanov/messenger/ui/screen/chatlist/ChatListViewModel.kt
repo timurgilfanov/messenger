@@ -10,6 +10,7 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -59,6 +60,7 @@ class ChatListViewModel @AssistedInject constructor(
             participantRepository.isChatListUpdating()
                 .distinctUntilChanged()
                 .collect { isUpdating ->
+                    ensureActive()
                     withContext(Dispatchers.Main) {
                         reduce {
                             state.copy(isRefreshing = isUpdating)
@@ -75,6 +77,7 @@ class ChatListViewModel @AssistedInject constructor(
                 .distinctUntilChanged()
                 .debounce(STATE_UPDATE_DEBOUNCE)
                 .collect { result ->
+                    ensureActive()
                     withContext(Dispatchers.Main) {
                         reduce {
                             when (result) {

@@ -17,6 +17,8 @@
     <string name="chat_list_error_server_unreachable">Server nicht erreichbar</string>
     <string name="chat_list_error_local">Lokaler Fehler</string>
     <string name="chat_list_error_unknown">Unbekannter Fehler</string>
+    <string name="chat_list_avatar_content_description">Avatar</string>
+    <string name="chat_list_group_content_description">Gruppenchat</string>
     <string name="chat_list_swipe_delete_content_description">Chat löschen</string>
     
     <!-- Time formatting -->

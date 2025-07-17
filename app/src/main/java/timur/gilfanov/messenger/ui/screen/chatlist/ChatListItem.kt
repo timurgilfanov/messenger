@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -156,7 +157,9 @@ private fun ChatAvatar(pictureUrl: String?, name: String, isOnline: Boolean) {
                 // TODO AsyncImage will be added when image loading is implemented
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Avatar",
+                    contentDescription = stringResource(
+                        R.string.chat_list_avatar_content_description,
+                    ),
                     modifier = Modifier.size(48.dp),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
@@ -172,7 +175,9 @@ private fun ChatAvatar(pictureUrl: String?, name: String, isOnline: Boolean) {
                 } else {
                     Icon(
                         imageVector = Icons.Default.Person,
-                        contentDescription = "Group",
+                        contentDescription = stringResource(
+                            R.string.chat_list_group_content_description,
+                        ),
                         modifier = Modifier.size(24.dp),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     )

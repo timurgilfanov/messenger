@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
-import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -39,12 +38,6 @@ class ChatViewModelUpdatesTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
-
-    @After
-    fun tearDown() {
-        // Ensure all coroutines are completed and cleaned up
-        testDispatcher.scheduler.advanceUntilIdle()
-    }
 
     @Test
     fun `message from other participant appears in UI state`() = runTest {

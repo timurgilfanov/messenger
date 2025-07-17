@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
-import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -39,12 +38,6 @@ class ChatViewModelLoadingTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
-
-    @After
-    fun tearDown() {
-        // Ensure all coroutines are completed and cleaned up
-        testDispatcher.scheduler.advanceUntilIdle()
-    }
 
     @Test
     fun `loads chat successfully`() = runTest {

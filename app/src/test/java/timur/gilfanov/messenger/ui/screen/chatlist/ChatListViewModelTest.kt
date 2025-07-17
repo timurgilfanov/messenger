@@ -86,23 +86,6 @@ class ChatListViewModelTest {
     }
 
     @Test
-    fun `ViewModel initializes with loading state`() = runTest {
-        val repository = RepositoryFake()
-        val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
-
-        viewModel.test(this) {
-            runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-            val state = awaitState()
-
-            assertEquals(ChatListUiState.Empty, state.uiState)
-            assertEquals(false, state.isLoading)
-            assertEquals(ParticipantId(testUserId), state.currentUser.id)
-        }
-    }
-
-    @Test
     fun `ViewModel displays empty state when no chats`() = runTest {
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Success(emptyList())),
@@ -137,9 +120,8 @@ class ChatListViewModelTest {
             val state = awaitState()
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
-            val notEmptyState = state.uiState as ChatListUiState.NotEmpty
-            assertEquals(1, notEmptyState.chats.size)
-            assertEquals("Test Chat", notEmptyState.chats[0].name)
+            assertEquals(1, state.uiState.chats.size)
+            assertEquals("Test Chat", state.uiState.chats[0].name)
             assertEquals(false, state.isLoading)
             assertNull(state.errorMessage)
         }

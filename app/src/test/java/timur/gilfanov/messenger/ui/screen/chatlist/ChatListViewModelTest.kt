@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -74,7 +75,7 @@ class ChatListViewModelTest {
 
     private class RepositoryFake(
         private val chatListFlow: Flow<ResultWithError<List<Chat>, FlowChatListError>> = flowOf(
-            ResultWithError.Success(emptyList()),
+            Success(emptyList()),
         ),
         private val updatingFlow: Flow<Boolean> = flowOf(false),
     ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
@@ -88,7 +89,7 @@ class ChatListViewModelTest {
     @Test
     fun `ViewModel displays empty state when no chats`() = runTest {
         val repository = RepositoryFake(
-            chatListFlow = flowOf(ResultWithError.Success(emptyList())),
+            chatListFlow = flowOf(Success(emptyList())),
         )
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
@@ -109,7 +110,7 @@ class ChatListViewModelTest {
     fun `ViewModel displays chat list when chats available`() = runTest {
         val testChat = createTestChat(name = "Test Chat")
         val repository = RepositoryFake(
-            chatListFlow = flowOf(ResultWithError.Success(listOf(testChat))),
+            chatListFlow = flowOf(Success(listOf(testChat))),
         )
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
@@ -211,7 +212,7 @@ class ChatListViewModelTest {
     fun `ViewModel updates refreshing state correctly`() = runTest {
         val updatingFlow = MutableStateFlow(false)
         val repository = RepositoryFake(
-            chatListFlow = flowOf(ResultWithError.Success(emptyList())),
+            chatListFlow = flowOf(Success(emptyList())),
             updatingFlow = updatingFlow,
         )
         val useCase = FlowChatListUseCase(repository)
@@ -248,7 +249,7 @@ class ChatListViewModelTest {
             unreadCount = 2,
         )
         val repository = RepositoryFake(
-            chatListFlow = flowOf(ResultWithError.Success(listOf(testChat))),
+            chatListFlow = flowOf(Success(listOf(testChat))),
         )
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
@@ -259,8 +260,7 @@ class ChatListViewModelTest {
             val state = awaitState()
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
-            val notEmptyState = state.uiState as ChatListUiState.NotEmpty
-            val chatItem = notEmptyState.chats[0]
+            val chatItem = state.uiState.chats[0]
             assertEquals("Test Chat", chatItem.name)
             assertEquals("Hello world", chatItem.lastMessage)
             assertEquals(2, chatItem.unreadCount)
@@ -271,7 +271,7 @@ class ChatListViewModelTest {
     @Test
     fun `ViewModel handles chat updates correctly`() = runTest {
         val chatListFlow = MutableStateFlow<ResultWithError<List<Chat>, FlowChatListError>>(
-            ResultWithError.Success(listOf(createTestChat(name = "Initial Chat"))),
+            Success(listOf(createTestChat(name = "Initial Chat"))),
         )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
@@ -284,20 +284,16 @@ class ChatListViewModelTest {
             // Initial state
             val initialState = awaitState()
             assertTrue(initialState.uiState is ChatListUiState.NotEmpty)
-            val initialNotEmpty = initialState.uiState as ChatListUiState.NotEmpty
+            val initialNotEmpty = initialState.uiState
             assertEquals("Initial Chat", initialNotEmpty.chats[0].name)
 
             // Update chat list
-            chatListFlow.value =
-                ResultWithError.Success<List<Chat>, FlowChatListError>(
-                    listOf(createTestChat(name = "Updated Chat")),
-                )
+            chatListFlow.value = Success(listOf(createTestChat(name = "Updated Chat")))
             testDispatcher.scheduler.advanceUntilIdle()
 
             val updatedState = awaitState()
             assertTrue(updatedState.uiState is ChatListUiState.NotEmpty)
-            val updatedNotEmpty = updatedState.uiState as ChatListUiState.NotEmpty
-            assertEquals("Updated Chat", updatedNotEmpty.chats[0].name)
+            assertEquals("Updated Chat", updatedState.uiState.chats[0].name)
         }
     }
 
@@ -319,7 +315,7 @@ class ChatListViewModelTest {
             assertEquals(FlowChatListError.NetworkNotAvailable, errorState.error)
 
             // Fix the error with successful data
-            chatListFlow.value = ResultWithError.Success<List<Chat>, FlowChatListError>(emptyList())
+            chatListFlow.value = Success(emptyList())
             testDispatcher.scheduler.advanceUntilIdle()
 
             val successState = awaitState()

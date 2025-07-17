@@ -95,7 +95,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
@@ -103,6 +103,8 @@ class ChatListViewModelTest {
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertNull(state.error)
+
+            job.cancel()
         }
     }
 
@@ -116,7 +118,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
@@ -125,6 +127,8 @@ class ChatListViewModelTest {
             assertEquals("Test Chat", state.uiState.chats[0].name)
             assertEquals(false, state.isLoading)
             assertNull(state.error)
+
+            job.cancel()
         }
     }
 
@@ -137,7 +141,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
@@ -145,6 +149,8 @@ class ChatListViewModelTest {
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
+
+            job.cancel()
         }
     }
 
@@ -157,7 +163,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
@@ -165,6 +171,8 @@ class ChatListViewModelTest {
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteError, state.error)
+
+            job.cancel()
         }
     }
 
@@ -177,7 +185,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
@@ -185,6 +193,8 @@ class ChatListViewModelTest {
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteUnreachable, state.error)
+
+            job.cancel()
         }
     }
 
@@ -197,7 +207,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
@@ -205,6 +215,8 @@ class ChatListViewModelTest {
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.LocalError, state.error)
+
+            job.cancel()
         }
     }
 
@@ -219,7 +231,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial state
@@ -237,6 +249,8 @@ class ChatListViewModelTest {
             testDispatcher.scheduler.advanceUntilIdle()
             val finalState = awaitState()
             assertEquals(false, finalState.isRefreshing)
+
+            job.cancel()
         }
     }
 
@@ -255,7 +269,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
@@ -265,6 +279,8 @@ class ChatListViewModelTest {
             assertEquals("Hello world", chatItem.lastMessage)
             assertEquals(2, chatItem.unreadCount)
             assertEquals(testTimestamp, chatItem.lastMessageTime)
+
+            job.cancel()
         }
     }
 
@@ -278,7 +294,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial state
@@ -294,6 +310,8 @@ class ChatListViewModelTest {
             val updatedState = awaitState()
             assertTrue(updatedState.uiState is ChatListUiState.NotEmpty)
             assertEquals("Updated Chat", updatedState.uiState.chats[0].name)
+
+            job.cancel()
         }
     }
 
@@ -307,7 +325,7 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial error state
@@ -321,6 +339,8 @@ class ChatListViewModelTest {
             val successState = awaitState()
             assertNull(successState.error)
             assertEquals(false, successState.isLoading)
+
+            job.cancel()
         }
     }
 
@@ -333,13 +353,15 @@ class ChatListViewModelTest {
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
 
         viewModel.test(this) {
-            runOnCreate()
+            val job = runOnCreate()
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
+
+            job.cancel()
         }
     }
 }

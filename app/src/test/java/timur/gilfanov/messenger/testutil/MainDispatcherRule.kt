@@ -14,32 +14,16 @@ class MainDispatcherRule(val testDispatcher: TestDispatcher = StandardTestDispat
 
     companion object {
         private var isMainDispatcherSet = false
-        private var globalTestDispatcher: TestDispatcher? = null
-
-        init {
-            // Set up Main dispatcher globally for all tests
-            val dispatcher = StandardTestDispatcher()
-            try {
-                Dispatchers.setMain(dispatcher)
-                isMainDispatcherSet = true
-                globalTestDispatcher = dispatcher
-            } catch (e: Exception) {
-                // Main dispatcher might already be set
-                println("MainDispatcherRule: Could not set global Main dispatcher: ${e.message}")
-            }
-        }
     }
 
     override fun starting(description: Description) {
         if (!isMainDispatcherSet) {
             Dispatchers.setMain(testDispatcher)
+            isMainDispatcherSet = true
         }
     }
 
-    override fun finished(description: Description) {
-        // Ensure all coroutines are completed before resetting
-        testDispatcher.scheduler.advanceUntilIdle()
-        globalTestDispatcher?.scheduler?.advanceUntilIdle()
-        // Don't reset Main dispatcher - leave it set for background coroutines
-    }
+    // No cleanup - let Main dispatcher persist for entire test suite
+    // This prevents "Dispatchers.Main was accessed when platform dispatcher was absent"
+    // errors from background coroutines in Orbit MVI framework
 }

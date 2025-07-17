@@ -21,10 +21,10 @@ import timur.gilfanov.annotations.ReleaseCandidate
 @OptIn(ExperimentalTestApi::class)
 @Category(Application::class)
 @RunWith(AndroidJUnit4::class)
-class ConfigurationChangeApplicationTest {
+class ChatScreenConfigurationChangeApplicationTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
     @Test
     fun chatScreen_preservesInputTextOnRotation() {

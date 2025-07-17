@@ -23,7 +23,7 @@ import timur.gilfanov.annotations.Application
 class ChatListConfigurationChangeApplicationTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatListScreenTestActivity>()
 
     @Test
     fun chatListScreen_buttonsWorkAfterRotation() {

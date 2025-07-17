@@ -36,8 +36,8 @@ data class CurrentUserUiModel(val id: ParticipantId, val name: String, val pictu
 
 fun Chat.toChatListItemUiModel(): ChatListItemUiModel {
     val lastMessage = messages.lastOrNull()
-    val otherParticipant = if (isOneToOne) {
-        participants.firstOrNull()
+    val otherParticipant = if (isOneToOne && participants.size >= 2) {
+        participants.drop(1).firstOrNull()
     } else {
         null
     }

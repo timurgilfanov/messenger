@@ -20,10 +20,6 @@ import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.LocalError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.RemoteUnreachable
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListUseCase
 
 private const val STATE_UPDATE_DEBOUNCE = 200L
@@ -98,22 +94,15 @@ class ChatListViewModel @AssistedInject constructor(
                                         uiState = uiState,
                                         isLoading = false,
                                         isRefreshing = false,
-                                        errorMessage = null,
+                                        error = null,
                                     )
                                 }
 
                                 is ResultWithError.Failure -> {
-                                    val errorMessage = when (result.error) {
-                                        NetworkNotAvailable -> "No internet connection"
-                                        RemoteError -> "Server error"
-                                        RemoteUnreachable -> "Server unreachable"
-                                        LocalError -> "Local error"
-                                    }
-
                                     state.copy(
                                         isLoading = false,
                                         isRefreshing = false,
-                                        errorMessage = errorMessage,
+                                        error = result.error,
                                     )
                                 }
                             }

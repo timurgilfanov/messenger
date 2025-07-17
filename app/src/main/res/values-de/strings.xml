@@ -15,6 +15,7 @@
     <string name="chat_list_error_network">Keine Internetverbindung</string>
     <string name="chat_list_error_server">Serverfehler</string>
     <string name="chat_list_error_server_unreachable">Server nicht erreichbar</string>
+    <string name="chat_list_error_local">Lokaler Fehler</string>
     <string name="chat_list_error_unknown">Unbekannter Fehler</string>
     <string name="chat_list_swipe_delete_content_description">Chat löschen</string>
     

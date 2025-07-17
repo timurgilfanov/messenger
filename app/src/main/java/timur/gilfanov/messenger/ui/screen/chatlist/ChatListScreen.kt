@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,8 +28,16 @@ import java.util.UUID
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Clock
 import org.orbitmvi.orbit.compose.collectAsState
+import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.LocalError
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.RemoteError
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.RemoteUnreachable
+import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
+import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.NotEmpty
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 data class ChatListActions(
@@ -81,7 +90,7 @@ fun ChatListScreenContent(
         topBar = { TopBar(screenState, actions.onSearchClick, actions.onNewChatClick) },
     ) { paddingValues ->
         when (screenState.uiState) {
-            ChatListUiState.Empty -> {
+            Empty -> {
                 EmptyStateComponent(
                     onStartFirstChat = actions.onNewChatClick,
                     modifier = Modifier
@@ -91,7 +100,7 @@ fun ChatListScreenContent(
                 )
             }
 
-            is ChatListUiState.NotEmpty -> {
+            is NotEmpty -> {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -135,15 +144,15 @@ private fun TopBar(
                 )
 
                 val statusText = when {
-                    screenState.isLoading -> "Loading..."
-                    screenState.errorMessage != null -> screenState.errorMessage
+                    screenState.isLoading -> stringResource(R.string.chat_list_status_loading)
+                    screenState.error != null -> getErrorMessage(screenState.error)
                     else -> getStatusText(screenState.uiState)
                 }
 
                 Text(
                     text = statusText,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (screenState.errorMessage != null) {
+                    color = if (screenState.error != null) {
                         MaterialTheme.colorScheme.error
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
@@ -175,9 +184,18 @@ private fun TopBar(
     )
 }
 
+@Composable
 private fun getStatusText(uiState: ChatListUiState): String = when (uiState) {
-    ChatListUiState.Empty -> "No chats"
-    is ChatListUiState.NotEmpty -> "${uiState.chats.size} chats"
+    Empty -> stringResource(R.string.chat_list_status_no_chats)
+    is NotEmpty -> stringResource(R.string.chat_list_status_chats_count, uiState.chats.size)
+}
+
+@Composable
+private fun getErrorMessage(error: FlowChatListError): String = when (error) {
+    NetworkNotAvailable -> stringResource(R.string.chat_list_error_network)
+    RemoteError -> stringResource(R.string.chat_list_error_server)
+    RemoteUnreachable -> stringResource(R.string.chat_list_error_server_unreachable)
+    LocalError -> stringResource(R.string.chat_list_error_local)
 }
 
 @Preview(showBackground = true)
@@ -186,7 +204,7 @@ private fun ChatListScreenEmptyPreview() {
     MessengerTheme {
         ChatListScreenContent(
             screenState = ChatListScreenState(
-                uiState = ChatListUiState.Empty,
+                uiState = Empty,
                 currentUser = CurrentUserUiModel(
                     id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
@@ -194,7 +212,7 @@ private fun ChatListScreenEmptyPreview() {
                 ),
                 isLoading = false,
                 isRefreshing = false,
-                errorMessage = null,
+                error = null,
             ),
             actions = ChatListContentActions(
                 onChatClick = {},
@@ -212,7 +230,7 @@ private fun ChatListScreenWithChatsPreview() {
     MessengerTheme {
         ChatListScreenContent(
             screenState = ChatListScreenState(
-                uiState = ChatListUiState.NotEmpty(
+                uiState = NotEmpty(
                     chats = persistentListOf(
                         ChatListItemUiModel(
                             id = ChatId(UUID.randomUUID()),
@@ -253,7 +271,7 @@ private fun ChatListScreenWithChatsPreview() {
                 ),
                 isLoading = false,
                 isRefreshing = false,
-                errorMessage = null,
+                error = null,
             ),
             actions = ChatListContentActions(
                 onChatClick = {},
@@ -271,7 +289,7 @@ private fun ChatListScreenLoadingPreview() {
     MessengerTheme {
         ChatListScreenContent(
             screenState = ChatListScreenState(
-                uiState = ChatListUiState.Empty,
+                uiState = Empty,
                 currentUser = CurrentUserUiModel(
                     id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
@@ -279,7 +297,7 @@ private fun ChatListScreenLoadingPreview() {
                 ),
                 isLoading = true,
                 isRefreshing = false,
-                errorMessage = null,
+                error = null,
             ),
             actions = ChatListContentActions(
                 onChatClick = {},
@@ -297,7 +315,7 @@ private fun ChatListScreenErrorPreview() {
     MessengerTheme {
         ChatListScreenContent(
             screenState = ChatListScreenState(
-                uiState = ChatListUiState.Empty,
+                uiState = Empty,
                 currentUser = CurrentUserUiModel(
                     id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
@@ -305,7 +323,7 @@ private fun ChatListScreenErrorPreview() {
                 ),
                 isLoading = false,
                 isRefreshing = false,
-                errorMessage = "Network error",
+                error = NetworkNotAvailable,
             ),
             actions = ChatListContentActions(
                 onChatClick = {},

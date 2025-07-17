@@ -19,8 +19,10 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Category(timur.gilfanov.annotations.Component::class)
@@ -38,7 +40,7 @@ class ChatListScreenTest {
         uiState: ChatListUiState = ChatListUiState.Empty,
         isLoading: Boolean = false,
         isRefreshing: Boolean = false,
-        errorMessage: String? = null,
+        error: FlowChatListError? = null,
     ) = ChatListScreenState(
         uiState = uiState,
         currentUser = CurrentUserUiModel(
@@ -48,7 +50,7 @@ class ChatListScreenTest {
         ),
         isLoading = isLoading,
         isRefreshing = isRefreshing,
-        errorMessage = errorMessage,
+        error = error,
     )
 
     private fun createTestChatItem(
@@ -159,13 +161,15 @@ class ChatListScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Loading...")
+        composeTestRule.onNodeWithText(
+            composeTestRule.activity.getString(R.string.chat_list_status_loading),
+        )
             .assertIsDisplayed()
     }
 
     @Test
     fun `ChatListScreen displays error message correctly`() {
-        val screenState = createTestScreenState(errorMessage = "Network error")
+        val screenState = createTestScreenState(error = FlowChatListError.NetworkNotAvailable)
 
         composeTestRule.setContent {
             MessengerTheme {
@@ -181,7 +185,9 @@ class ChatListScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Network error")
+        composeTestRule.onNodeWithText(
+            composeTestRule.activity.getString(R.string.chat_list_error_network),
+        )
             .assertIsDisplayed()
     }
 
@@ -209,7 +215,9 @@ class ChatListScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText("2 chats")
+        composeTestRule.onNodeWithText(
+            composeTestRule.activity.getString(R.string.chat_list_status_chats_count, 2),
+        )
             .assertIsDisplayed()
     }
 
@@ -231,7 +239,9 @@ class ChatListScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText("No chats")
+        composeTestRule.onNodeWithText(
+            composeTestRule.activity.getString(R.string.chat_list_status_no_chats),
+        )
             .assertIsDisplayed()
     }
 
@@ -382,7 +392,7 @@ class ChatListScreenTest {
 
     @Test
     fun `ChatListScreen preserves error state after configuration change`() {
-        val screenState = createTestScreenState(errorMessage = "Network error")
+        val screenState = createTestScreenState(error = FlowChatListError.NetworkNotAvailable)
 
         composeTestRule.setContent {
             MessengerTheme {
@@ -399,7 +409,9 @@ class ChatListScreenTest {
         }
 
         // Verify error is displayed
-        composeTestRule.onNodeWithText("Network error")
+        composeTestRule.onNodeWithText(
+            composeTestRule.activity.getString(R.string.chat_list_error_network),
+        )
             .assertIsDisplayed()
 
         // Simulate configuration change
@@ -407,7 +419,9 @@ class ChatListScreenTest {
         composeTestRule.waitForIdle()
 
         // Verify error is still displayed
-        composeTestRule.onNodeWithText("Network error")
+        composeTestRule.onNodeWithText(
+            composeTestRule.activity.getString(R.string.chat_list_error_network),
+        )
             .assertIsDisplayed()
     }
 

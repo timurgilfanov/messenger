@@ -101,7 +101,7 @@ class ChatListViewModelTest {
             assertEquals(ChatListUiState.Empty, state.uiState)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
-            assertNull(state.errorMessage)
+            assertNull(state.error)
         }
     }
 
@@ -123,7 +123,7 @@ class ChatListViewModelTest {
             assertEquals(1, state.uiState.chats.size)
             assertEquals("Test Chat", state.uiState.chats[0].name)
             assertEquals(false, state.isLoading)
-            assertNull(state.errorMessage)
+            assertNull(state.error)
         }
     }
 
@@ -143,7 +143,7 @@ class ChatListViewModelTest {
             assertEquals(ChatListUiState.Empty, state.uiState)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
-            assertEquals("No internet connection", state.errorMessage)
+            assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
         }
     }
 
@@ -163,7 +163,7 @@ class ChatListViewModelTest {
             assertEquals(ChatListUiState.Empty, state.uiState)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
-            assertEquals("Server error", state.errorMessage)
+            assertEquals(FlowChatListError.RemoteError, state.error)
         }
     }
 
@@ -183,7 +183,7 @@ class ChatListViewModelTest {
             assertEquals(ChatListUiState.Empty, state.uiState)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
-            assertEquals("Server unreachable", state.errorMessage)
+            assertEquals(FlowChatListError.RemoteUnreachable, state.error)
         }
     }
 
@@ -203,7 +203,7 @@ class ChatListViewModelTest {
             assertEquals(ChatListUiState.Empty, state.uiState)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
-            assertEquals("Local error", state.errorMessage)
+            assertEquals(FlowChatListError.LocalError, state.error)
         }
     }
 
@@ -316,14 +316,14 @@ class ChatListViewModelTest {
 
             // Initial error state
             val errorState = awaitState()
-            assertEquals("No internet connection", errorState.errorMessage)
+            assertEquals(FlowChatListError.NetworkNotAvailable, errorState.error)
 
             // Fix the error with successful data
             chatListFlow.value = ResultWithError.Success<List<Chat>, FlowChatListError>(emptyList())
             testDispatcher.scheduler.advanceUntilIdle()
 
             val successState = awaitState()
-            assertNull(successState.errorMessage)
+            assertNull(successState.error)
             assertEquals(false, successState.isLoading)
         }
     }
@@ -343,7 +343,7 @@ class ChatListViewModelTest {
 
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
-            assertEquals("No internet connection", state.errorMessage)
+            assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
         }
     }
 }

@@ -6,6 +6,7 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 
 sealed interface ChatListUiState {
     data object Empty : ChatListUiState
@@ -29,7 +30,7 @@ data class ChatListScreenState(
         CurrentUserUiModel(ParticipantId(java.util.UUID.randomUUID()), "", null),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
-    val errorMessage: String? = null,
+    val error: FlowChatListError? = null,
 )
 
 data class CurrentUserUiModel(val id: ParticipantId, val name: String, val pictureUrl: String?)

@@ -7,6 +7,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -100,12 +101,13 @@ class ChatViewModelLoadingTest {
                 state,
             )
 
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 
     @Test
     fun `loads group chat successfully`() = runTest {
+        val testName = "loads group chat successfully"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
@@ -158,12 +160,15 @@ class ChatViewModelLoadingTest {
                 state,
             )
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `handles chat loading error`() = runTest {
+        val testName = "handles chat loading error"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
 
@@ -188,7 +193,9 @@ class ChatViewModelLoadingTest {
                 ChatUiState.Loading(NetworkNotAvailable)
             }
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 }

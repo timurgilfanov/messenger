@@ -6,6 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -91,8 +92,7 @@ class ChatViewModelUpdatesTest {
             assertEquals("Hello from other user!", updatedState.messages[0].text)
             assertEquals(otherUserId.id.toString(), updatedState.messages[0].senderId)
             assertFalse(updatedState.messages[0].isFromCurrentUser)
-
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 
@@ -160,7 +160,7 @@ class ChatViewModelUpdatesTest {
             val newParticipantUi = updatedState.participants.find { it.id == newParticipantId }
             assertEquals("New Participant", newParticipantUi?.name)
 
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 
@@ -226,7 +226,7 @@ class ChatViewModelUpdatesTest {
             assertEquals(3, finalState.messages.size)
             assertEquals("Final Message", finalState.messages[2].text)
 
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 }

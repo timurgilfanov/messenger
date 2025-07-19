@@ -21,10 +21,8 @@ import org.orbitmvi.orbit.test.test
 import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.entity.message.DeliveryError.NetworkUnavailable
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Delivered
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Failed
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Read
+import timur.gilfanov.messenger.domain.entity.message.DeliveryError
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
@@ -51,10 +49,11 @@ class ChatViewModelMessageSendingTest {
     fun `sending a message clears input only once`() = runTest {
         listOf(
             listOf(Sending(0), Sending(50)),
-            listOf(Sending(0), Failed(NetworkUnavailable)),
-            listOf(Sending(0), Delivered),
-            listOf(Sending(0), Read),
+            listOf(Sending(0), DeliveryStatus.Failed(DeliveryError.NetworkUnavailable)),
+            listOf(Sending(0), DeliveryStatus.Delivered),
+            listOf(Sending(0), DeliveryStatus.Read),
         ).forEach { statuses ->
+            println("=== Starting test iteration with statuses: $statuses ===")
             val chatId = ChatId(UUID.randomUUID())
             val currentUserId = ParticipantId(UUID.randomUUID())
             val chat = createTestChat(chatId, currentUserId)
@@ -73,7 +72,8 @@ class ChatViewModelMessageSendingTest {
                 receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
             )
             viewModel.test(this) {
-                val job = runOnCreate()
+//                val job = runOnCreate()
+//                println("[${Thread.currentThread().name}] onCreate job: $job")
                 testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
                 val inputTextField: TextFieldState
                 awaitState().let { state ->
@@ -101,8 +101,11 @@ class ChatViewModelMessageSendingTest {
                 inputTextField.setTextAndPlaceCursorAtEnd("Test message 2")
                 expectStateOn<ChatUiState.Ready> { copy(messages = persistentListOf(messageUi)) }
                 assertEquals("Test message 2", inputTextField.text)
-                job.cancel() // Need this because repo chatFlow is infinite and will never complete
+                println(
+                    "[${Thread.currentThread().name}] Test iteration with statuses $statuses completed",
+                )
             }
+            println("=== Finished test iteration with statuses: $statuses ===")
         }
     }
 
@@ -125,7 +128,8 @@ class ChatViewModelMessageSendingTest {
         )
 
         viewModel.test(this) {
-            val job = runOnCreate()
+//            val job = runOnCreate()
+//            println("[${Thread.currentThread().name}] onCreate job: $job")
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val readyState = awaitState()
             assertTrue(readyState is ChatUiState.Ready)
@@ -156,7 +160,7 @@ class ChatViewModelMessageSendingTest {
                 copy(dialogError = null)
             }
 
-            job.cancel()
+//            job.cancelAndJoin()
         }
     }
 }

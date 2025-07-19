@@ -47,7 +47,6 @@ class InputValidationApplicationTest {
             waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
             onNodeWithText("Type a message...").assertIsDisplayed()
             repeat(100) {
-                println("Iteration: $it")
                 onNodeWithTag("message_input").performTextReplacement(tooLongMessage)
                 waitUntilAtLeastOneExists(hasText(errorText), timeoutMillis = 1_000)
                 onNodeWithTag("message_input").performTextReplacement("Valid message")

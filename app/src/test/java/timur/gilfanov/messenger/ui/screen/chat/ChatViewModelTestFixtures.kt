@@ -1,9 +1,12 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import java.util.UUID
+import kotlin.coroutines.coroutineContext
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,11 +105,23 @@ object ChatViewModelTestFixtures {
         )
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun generateParentChain(job: Job): String {
+        val parents = mutableListOf<Job>()
+        var current: Job? = job
+        while (current?.parent != null) {
+            parents.add(current.parent!!)
+            current = current.parent
+        }
+        return parents.joinToString(" -> ") { it.toString() }
+    }
+
     class RepositoryFakeWithStatusFlow(chat: Chat, val statuses: List<DeliveryStatus>) :
         ParticipantRepository by ParticipantRepositoryNotImplemented() {
 
         private val chatFlow = MutableStateFlow(chat)
 
+        @OptIn(ExperimentalCoroutinesApi::class)
         override suspend fun sendMessage(message: Message): Flow<Message> = flowOf(
             *(statuses.map { (message as TextMessage).copy(deliveryStatus = it) }.toTypedArray()),
         ).onEach { msg ->
@@ -120,6 +135,12 @@ object ChatViewModelTestFixtures {
                         add(msg)
                     }
                 }.toImmutableList()
+                println(
+                    "[${Thread.currentThread().name}, parents ${generateParentChain(
+                        coroutineContext[Job]!!,
+                    )}] " +
+                        "Updated message with status ${messages.first().deliveryStatus}, ",
+                )
                 currentChat.copy(messages = messages)
             }
         }
@@ -127,6 +148,11 @@ object ChatViewModelTestFixtures {
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatFlow.map { chat ->
+            println(
+                "[${Thread.currentThread().name}, parents ${generateParentChain(
+                    coroutineContext[Job]!!,
+                )}] Updated chat with status ${chat.messages.firstOrNull()?.deliveryStatus}",
+            )
             Success(chat)
         }
     }

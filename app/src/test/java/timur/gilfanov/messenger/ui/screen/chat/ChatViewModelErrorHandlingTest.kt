@@ -5,6 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -41,6 +42,7 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `No chat exists error propagates to UI state`() = runTest {
+        val testName = "No chat exists error propagates to UI state"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
 
@@ -66,12 +68,15 @@ class ChatViewModelErrorHandlingTest {
             assertTrue(errorState is ChatUiState.Error)
             assertEquals(ChatNotFound, errorState.error)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `Network errors propagates to UI state`() = runTest {
+        val testName = "Network errors propagates to UI state"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
@@ -112,12 +117,15 @@ class ChatViewModelErrorHandlingTest {
                 assertEquals(error, errorState.updateError)
             }
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `Network not available in Loading state propagates to UI state `() = runTest {
+        val testName = "Network not available in Loading state propagates to UI state"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
 
@@ -145,12 +153,15 @@ class ChatViewModelErrorHandlingTest {
             assertTrue(loadingErrorState is ChatUiState.Loading)
             assertEquals(ReceiveChatUpdatesError.NetworkNotAvailable, loadingErrorState.error)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `Chat recovers from transient errors`() = runTest {
+        val testName = "Chat recovers from transient errors"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
@@ -211,7 +222,9 @@ class ChatViewModelErrorHandlingTest {
             // Note: We don't check updateError clearing here as it might be
             // implementation-specific timing with debounce
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 }

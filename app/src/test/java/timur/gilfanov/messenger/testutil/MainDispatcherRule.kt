@@ -15,9 +15,17 @@ class MainDispatcherRule(val testDispatcher: TestDispatcher = StandardTestDispat
 
     override fun starting(description: Description) {
         Dispatchers.setMain(testDispatcher)
+        println(
+            "[${Thread.currentThread().name}] MainDispatcherRule starting: " +
+                "${description.className}.${description.methodName}",
+        )
     }
 
     override fun finished(description: Description) {
         Dispatchers.resetMain()
+        println(
+            "[${Thread.currentThread().name}] MainDispatcherRule finished: " +
+                "${description.className}.${description.methodName}",
+        )
     }
 }

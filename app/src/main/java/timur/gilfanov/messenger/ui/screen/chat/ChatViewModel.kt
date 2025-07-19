@@ -12,9 +12,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.coroutines.coroutineContext
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.debounce
@@ -57,8 +60,13 @@ class ChatViewModel @AssistedInject constructor(
 ) : ViewModel(),
     ContainerHost<ChatUiState, Nothing> {
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override val container = container<ChatUiState, Nothing>(ChatUiState.Loading()) {
+        println(
+            "Current job before coroutineScope: ${coroutineContext[Job]}, parent: ${coroutineContext[Job]?.parent}",
+        )
         coroutineScope {
+            println("Current job before launch: ${coroutineContext[Job]}")
             launch { observeChatUpdates() }
         }
     }
@@ -186,14 +194,23 @@ class ChatViewModel @AssistedInject constructor(
         }
     }
 
-    @OptIn(OrbitExperimental::class, FlowPreview::class)
+    @OptIn(OrbitExperimental::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
     private suspend fun observeChatUpdates() = subIntent {
+        println(
+            "Current job before subIntent: ${coroutineContext[Job]}, " +
+                "parent: ${coroutineContext[Job]?.parent}",
+        )
         repeatOnSubscription {
+            println("Current job before repeatOnSubscription: ${coroutineContext[Job]}")
             receiveChatUpdatesUseCase(chatId)
                 .distinctUntilChanged()
                 .debounce(STATE_UPDATE_DEBOUNCE)
                 .collect { result ->
+                    println("Current job in collect: ${coroutineContext[Job]}")
                     ensureActive()
+                    println(
+                        "[${Thread.currentThread().name}] ChatViewModel: observeChatUpdates: $result",
+                    )
                     withContext(Dispatchers.Main) {
                         reduce {
                             when (result) {

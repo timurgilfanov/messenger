@@ -6,6 +6,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -88,6 +89,7 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel displays empty state when no chats`() = runTest {
+        val testName = "ViewModel displays empty state when no chats"
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(emptyList())),
         )
@@ -104,12 +106,15 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertNull(state.error)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel displays chat list when chats available`() = runTest {
+        val testName = "ViewModel displays chat list when chats available"
         val testChat = createTestChat(name = "Test Chat")
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(listOf(testChat))),
@@ -128,12 +133,15 @@ class ChatListViewModelTest {
             assertEquals(false, state.isLoading)
             assertNull(state.error)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel handles network error correctly`() = runTest {
+        val testName = "ViewModel handles network error correctly"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.NetworkNotAvailable)),
         )
@@ -150,12 +158,15 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel handles server error correctly`() = runTest {
+        val testName = "ViewModel handles server error correctly"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.RemoteError)),
         )
@@ -172,12 +183,15 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteError, state.error)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel handles server unreachable error correctly`() = runTest {
+        val testName = "ViewModel handles server unreachable error correctly"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.RemoteUnreachable)),
         )
@@ -194,12 +208,15 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteUnreachable, state.error)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel handles local error correctly`() = runTest {
+        val testName = "ViewModel handles local error correctly"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.LocalError)),
         )
@@ -216,12 +233,15 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.LocalError, state.error)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel updates refreshing state correctly`() = runTest {
+        val testName = "ViewModel updates refreshing state correctly"
         val updatingFlow = MutableStateFlow(false)
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(emptyList())),
@@ -250,12 +270,15 @@ class ChatListViewModelTest {
             val finalState = awaitState()
             assertEquals(false, finalState.isRefreshing)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel transforms chat to UI model correctly`() = runTest {
+        val testName = "ViewModel transforms chat to UI model correctly"
         val message = createTestMessage("Hello world")
         val testChat = createTestChat(
             name = "Test Chat",
@@ -280,12 +303,15 @@ class ChatListViewModelTest {
             assertEquals(2, chatItem.unreadCount)
             assertEquals(testTimestamp, chatItem.lastMessageTime)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel handles chat updates correctly`() = runTest {
+        val testName = "ViewModel handles chat updates correctly"
         val chatListFlow = MutableStateFlow<ResultWithError<List<Chat>, FlowChatListError>>(
             Success(listOf(createTestChat(name = "Initial Chat"))),
         )
@@ -311,12 +337,15 @@ class ChatListViewModelTest {
             assertTrue(updatedState.uiState is ChatListUiState.NotEmpty)
             assertEquals("Updated Chat", updatedState.uiState.chats[0].name)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel clears error on successful data load`() = runTest {
+        val testName = "ViewModel clears error on successful data load"
         val chatListFlow = MutableStateFlow<ResultWithError<List<Chat>, FlowChatListError>>(
             ResultWithError.Failure(FlowChatListError.NetworkNotAvailable),
         )
@@ -340,12 +369,15 @@ class ChatListViewModelTest {
             assertNull(successState.error)
             assertEquals(false, successState.isLoading)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
     @Test
     fun `ViewModel stops loading and refreshing on error`() = runTest {
+        val testName = "ViewModel stops loading and refreshing on error"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.NetworkNotAvailable)),
         )
@@ -361,7 +393,9 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
 
-            job.cancel()
+            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
+            job.cancelAndJoin()
+            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 }

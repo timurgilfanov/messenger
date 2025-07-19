@@ -23,6 +23,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
@@ -64,12 +65,15 @@ class ChatViewModelUpdatesTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial state should be ready with no messages
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertTrue(initialState.messages.isEmpty())
+
+            expectStateOn<ChatUiState.Ready> {
+                copy(inputTextValidationError = TextValidationError.Empty)
+            }
 
             // Add a new message to the chat
             val newMessage = createTestMessage(
@@ -121,8 +125,8 @@ class ChatViewModelUpdatesTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
+//            assertTrue(awaitState() is ChatUiState.Loading)
             // Initial state should be ready with group chat status
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
@@ -130,6 +134,10 @@ class ChatViewModelUpdatesTest {
             assertEquals(2, initialState.participants.size)
             assertTrue(initialState.isGroupChat)
             assertEquals(ChatStatus.Group(2), initialState.status)
+
+            expectStateOn<ChatUiState.Ready> {
+                copy(inputTextValidationError = TextValidationError.Empty)
+            }
 
             // Update chat metadata: change name and add new participant
             val newParticipant = buildParticipant {
@@ -188,12 +196,17 @@ class ChatViewModelUpdatesTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
+
+//            assertTrue(awaitState() is ChatUiState.Loading)
 
             // Initial state should be ready
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertEquals("Direct Message", initialState.title)
+
+            expectStateOn<ChatUiState.Ready> {
+                copy(inputTextValidationError = TextValidationError.Empty)
+            }
 
             // Send rapid updates within debounce window (200ms)
             val message1 =

@@ -11,6 +11,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
@@ -72,8 +73,7 @@ class ChatViewModelMessageSendingTest {
                 receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
             )
             viewModel.test(this) {
-//                val job = runOnCreate()
-//                println("[${Thread.currentThread().name}] onCreate job: $job")
+                val job = runOnCreate()
                 testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
                 val inputTextField: TextFieldState
                 awaitState().let { state ->
@@ -101,9 +101,7 @@ class ChatViewModelMessageSendingTest {
                 inputTextField.setTextAndPlaceCursorAtEnd("Test message 2")
                 expectStateOn<ChatUiState.Ready> { copy(messages = persistentListOf(messageUi)) }
                 assertEquals("Test message 2", inputTextField.text)
-                println(
-                    "[${Thread.currentThread().name}] Test iteration with statuses $statuses completed",
-                )
+                job.cancelAndJoin()
             }
             println("=== Finished test iteration with statuses: $statuses ===")
         }
@@ -128,7 +126,7 @@ class ChatViewModelMessageSendingTest {
         )
 
         viewModel.test(this) {
-//            val job = runOnCreate()
+            val job = runOnCreate()
 //            println("[${Thread.currentThread().name}] onCreate job: $job")
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             println("[${Thread.currentThread().name}] before awaitState()")
@@ -136,13 +134,16 @@ class ChatViewModelMessageSendingTest {
             assertTrue(readyState is ChatUiState.Ready)
             assertNull(readyState.dialogError)
 
+            expectStateOn<ChatUiState.Ready> {
+                copy(inputTextValidationError = TextValidationError.Empty)
+            }
+
             // Sending a empty text message should cause an error
             viewModel.sendMessage(MessageId(UUID.randomUUID()), Instant.fromEpochMilliseconds(1000))
 
-            val sendingState = awaitState()
-            assertTrue(sendingState is ChatUiState.Ready)
-            assertTrue(sendingState.isSending)
-            assertNull(sendingState.dialogError)
+            expectStateOn<ChatUiState.Ready> {
+                copy(isSending = true)
+            }
 
             expectStateOn<ChatUiState.Ready> {
                 copy(
@@ -161,7 +162,7 @@ class ChatViewModelMessageSendingTest {
                 copy(dialogError = null)
             }
 
-//            job.cancelAndJoin()
+            job.cancelAndJoin()
         }
     }
 }

@@ -18,13 +18,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -73,14 +72,8 @@ class ChatViewModel @AssistedInject constructor(
     }
 
     var launched = false
-    init {
-        container.stateFlow
-            .filter { !launched && it is ChatUiState.Ready }
-            .onEach { state ->
-                launched = true
-                observeInputText()
-            }.launchIn(container.scope)
-    }
+
+    var observeInputTextJob: Job? = null
 
     private val chatId = ChatId(chatIdUuid)
     private val currentUserId = ParticipantId(currentUserIdUuid)
@@ -93,22 +86,39 @@ class ChatViewModel @AssistedInject constructor(
         ): ChatViewModel
     }
 
-    @OptIn(OrbitExperimental::class, FlowPreview::class)
+    @OptIn(
+        OrbitExperimental::class,
+        FlowPreview::class,
+        ExperimentalCoroutinesApi::class,
+    )
     private suspend fun observeInputText() = subIntent {
         runOn<ChatUiState.Ready> {
+            println(
+                "observeInputText: Current job before repeatOnSubscription: ${coroutineContext[Job]}",
+            )
             repeatOnSubscription {
+                println(
+                    "observeInputText: Current job before snapshotFlow: ${coroutineContext[Job]}",
+                )
                 snapshotFlow { state.inputTextField.text }
                     .distinctUntilChanged()
                     .collect { inputText ->
                         ensureActive()
                         withContext(Dispatchers.Main) {
+                            println(
+                                "observeInputText: Current job before reduce: ${coroutineContext[Job]}",
+                            )
                             reduce {
-                                state.copy(
-                                    inputTextValidationError = validateInputText(
-                                        inputText.toString(),
-                                    ),
+                                val error = validateInputText(inputText.toString())
+                                println(
+                                    "observeInputText: Validating input text: $inputText, " +
+                                        "error: $error",
                                 )
+                                state.copy(inputTextValidationError = error)
                             }
+                            println(
+                                "observeInputText: Current job after reduce: ${coroutineContext[Job]}",
+                            )
                         }
                     }
             }
@@ -196,60 +206,89 @@ class ChatViewModel @AssistedInject constructor(
     }
 
     @OptIn(OrbitExperimental::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
+    @Suppress("LongMethod")
     private suspend fun observeChatUpdates() = subIntent {
         println(
             "Current job before subIntent: ${coroutineContext[Job]}, " +
                 "parent: ${coroutineContext[Job]?.parent}",
         )
-//        repeatOnSubscription {
         println("Current job before repeatOnSubscription: ${coroutineContext[Job]}")
-        receiveChatUpdatesUseCase(chatId)
-            .distinctUntilChanged()
-            .debounce(STATE_UPDATE_DEBOUNCE)
-            .collect { result ->
-                println(
-                    "[${Thread.currentThread().name}] Current job in collect: ${coroutineContext[Job]}",
-                )
-//                ensureActive()
-                withContext(Dispatchers.Main) {
+        repeatOnSubscription {
+            receiveChatUpdatesUseCase(chatId)
+                .distinctUntilChanged()
+                .debounce(STATE_UPDATE_DEBOUNCE)
+                .collect { result ->
                     println(
-                        "[${Thread.currentThread().name}] ChatViewModel: observeChatUpdates: $result",
+                        "[${Thread.currentThread().name}] Current job in collect: ${coroutineContext[Job]}",
                     )
-                    reduce {
+//                ensureActive()
+                    withContext(Dispatchers.Main) {
                         println(
-                            "[${Thread.currentThread().name}] Reducing state with result",
+                            "[${Thread.currentThread().name}] ChatViewModel: observeChatUpdates: $result",
                         )
-                        when (result) {
-                            is ResultWithError.Success -> {
-                                val chat = result.data
-                                currentChat = chat
-                                updateUiStateFromChat(state, chat)
-                            }
+                        reduce {
+                            println(
+                                "[${Thread.currentThread().name}] Reducing state with result",
+                            )
+                            when (result) {
+                                is ResultWithError.Success -> {
+                                    val chat = result.data
+                                    currentChat = chat
+                                    updateUiStateFromChat(state, chat)
+                                }
 
-                            is ResultWithError.Failure -> when (result.error) {
-                                ChatNotFound -> ChatUiState.Error(result.error)
-                                NetworkNotAvailable,
-                                ServerError,
-                                ServerUnreachable,
-                                UnknownError,
-                                -> when (val s = state) {
-                                    is ChatUiState.Loading -> ChatUiState.Loading(result.error)
-                                    is ChatUiState.Ready -> s.copy(updateError = result.error)
-                                    is ChatUiState.Error -> error("Unexpected UI state Error")
+                                is ResultWithError.Failure -> {
+                                    launched = false
+                                    when (result.error) {
+                                        ChatNotFound -> ChatUiState.Error(result.error)
+                                        NetworkNotAvailable,
+                                        ServerError,
+                                        ServerUnreachable,
+                                        UnknownError,
+                                        -> when (val s = state) {
+                                            is ChatUiState.Loading -> ChatUiState.Loading(
+                                                result.error,
+                                            )
+                                            is ChatUiState.Ready -> s.copy(
+                                                updateError = result.error,
+                                            )
+                                            is ChatUiState.Error -> error(
+                                                "Unexpected UI state Error",
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
+                        println(
+                            "[${Thread.currentThread().name}] Before yielding in observeChatUpdates",
+                        )
+                        yield()
+                        println(
+                            "[${Thread.currentThread().name}] After yielding in observeChatUpdates",
+                        )
                     }
-                    println(
-                        "[${Thread.currentThread().name}] Before yielding in observeChatUpdates",
-                    )
-                    yield()
-                    println(
-                        "[${Thread.currentThread().name}] After yielding in observeChatUpdates",
-                    )
+
+                    if (state is ChatUiState.Ready && !launched) {
+                        println(
+                            "[${Thread.currentThread().name}] Launching observeInputText",
+                        )
+                        launched = true
+                        observeInputTextJob = launch {
+                            observeInputText()
+                        }
+                    }
+                    if (state is ChatUiState.Error && launched) {
+                        println(
+                            "[${Thread.currentThread().name}] Not launching observeInputText, " +
+                                "current state is Error",
+                        )
+                        observeInputTextJob?.cancelAndJoin()
+                        println("[${Thread.currentThread().name}] observeInputTextJob cancelled")
+                        launched = false
+                    }
                 }
-//                }
-            }
+        }
     }
 
     private fun updateUiStateFromChat(state: ChatUiState, chat: Chat): ChatUiState.Ready {

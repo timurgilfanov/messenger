@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.orbitmvi.orbit.ContainerHost
@@ -200,43 +201,55 @@ class ChatViewModel @AssistedInject constructor(
             "Current job before subIntent: ${coroutineContext[Job]}, " +
                 "parent: ${coroutineContext[Job]?.parent}",
         )
-        repeatOnSubscription {
-            println("Current job before repeatOnSubscription: ${coroutineContext[Job]}")
-            receiveChatUpdatesUseCase(chatId)
-                .distinctUntilChanged()
-                .debounce(STATE_UPDATE_DEBOUNCE)
-                .collect { result ->
-                    println("Current job in collect: ${coroutineContext[Job]}")
-                    ensureActive()
+//        repeatOnSubscription {
+        println("Current job before repeatOnSubscription: ${coroutineContext[Job]}")
+        receiveChatUpdatesUseCase(chatId)
+            .distinctUntilChanged()
+            .debounce(STATE_UPDATE_DEBOUNCE)
+            .collect { result ->
+                println(
+                    "[${Thread.currentThread().name}] Current job in collect: ${coroutineContext[Job]}",
+                )
+//                ensureActive()
+                withContext(Dispatchers.Main) {
                     println(
                         "[${Thread.currentThread().name}] ChatViewModel: observeChatUpdates: $result",
                     )
-                    withContext(Dispatchers.Main) {
-                        reduce {
-                            when (result) {
-                                is ResultWithError.Success -> {
-                                    val chat = result.data
-                                    currentChat = chat
-                                    updateUiStateFromChat(state, chat)
-                                }
+                    reduce {
+                        println(
+                            "[${Thread.currentThread().name}] Reducing state with result",
+                        )
+                        when (result) {
+                            is ResultWithError.Success -> {
+                                val chat = result.data
+                                currentChat = chat
+                                updateUiStateFromChat(state, chat)
+                            }
 
-                                is ResultWithError.Failure -> when (result.error) {
-                                    ChatNotFound -> ChatUiState.Error(result.error)
-                                    NetworkNotAvailable,
-                                    ServerError,
-                                    ServerUnreachable,
-                                    UnknownError,
-                                    -> when (val s = state) {
-                                        is ChatUiState.Loading -> ChatUiState.Loading(result.error)
-                                        is ChatUiState.Ready -> s.copy(updateError = result.error)
-                                        is ChatUiState.Error -> error("Unexpected UI state Error")
-                                    }
+                            is ResultWithError.Failure -> when (result.error) {
+                                ChatNotFound -> ChatUiState.Error(result.error)
+                                NetworkNotAvailable,
+                                ServerError,
+                                ServerUnreachable,
+                                UnknownError,
+                                -> when (val s = state) {
+                                    is ChatUiState.Loading -> ChatUiState.Loading(result.error)
+                                    is ChatUiState.Ready -> s.copy(updateError = result.error)
+                                    is ChatUiState.Error -> error("Unexpected UI state Error")
                                 }
                             }
                         }
                     }
+                    println(
+                        "[${Thread.currentThread().name}] Before yielding in observeChatUpdates",
+                    )
+                    yield()
+                    println(
+                        "[${Thread.currentThread().name}] After yielding in observeChatUpdates",
+                    )
                 }
-        }
+//                }
+            }
     }
 
     private fun updateUiStateFromChat(state: ChatUiState, chat: Chat): ChatUiState.Ready {

@@ -131,6 +131,7 @@ class ChatViewModelMessageSendingTest {
 //            val job = runOnCreate()
 //            println("[${Thread.currentThread().name}] onCreate job: $job")
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
+            println("[${Thread.currentThread().name}] before awaitState()")
             val readyState = awaitState()
             assertTrue(readyState is ChatUiState.Ready)
             assertNull(readyState.dialogError)

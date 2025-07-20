@@ -84,29 +84,29 @@ flag_management:
       carryforward: true
       statuses:
         - type: project
-          target: 10%
+          target: 70%
           threshold: 1%
     
     - name: feature
       carryforward: true
       statuses:
         - type: project
-          target: 5%
+          target: 50%
           threshold: 1%
     
     - name: application
       carryforward: true
       statuses:
         - type: project
-          target: 0%
-          threshold: 3%
+          target: 40%
+          threshold: 1%
     
     - name: release_candidate
       carryforward: true
       statuses:
         - type: project
-          target: 0%
-          threshold: 5%
+          target: 30%
+          threshold: 30%
     
     - name: local
       carryforward: true

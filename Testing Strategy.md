@@ -55,11 +55,11 @@ Tests of all categories can be executed sequentially.
 
 ## Test Pyramid
 
-* Unit: 70%
-* Component: 20%
-* Feature: 8%
-* Application: 2%
-* Architecture: 0.1%
+* Unit: 80%
+* Component: 70%
+* Feature: 50%
+* Application: 40%
+* Release Candidate: 30%
 
 ## Execution Rime:
 * Unit, Architecture: < 100ms per test

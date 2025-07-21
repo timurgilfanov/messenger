@@ -23,7 +23,7 @@ class ChatScreenDisplayApplicationTest {
 
     @Test
     fun chatScreen_displaysCorrectlyOnAppLaunch() {
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+        composeTestRule.waitUntilExactlyOneExists(hasTestTag("message_input"))
 
         // Verify the message input field is displayed
         composeTestRule.onNodeWithTag("message_input")
@@ -45,7 +45,7 @@ class ChatScreenDisplayApplicationTest {
     @Test
     fun chatScreen_showsLoadingStateInitially() {
         // The loading state should be visible briefly when the app starts
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("loading_indicator"))
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+        composeTestRule.waitUntilExactlyOneExists(hasTestTag("loading_indicator"))
+        composeTestRule.waitUntilExactlyOneExists(hasTestTag("message_input"))
     }
 }

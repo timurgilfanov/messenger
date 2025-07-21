@@ -29,7 +29,7 @@ class ChatListConfigurationChangeApplicationTest {
     fun chatListScreen_buttonsWorkAfterRotation() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -76,14 +76,14 @@ class ChatListConfigurationChangeApplicationTest {
         with(composeTestRule) {
             // Try to catch the app during loading
             try {
-                waitUntilAtLeastOneExists(hasText("Loading..."), timeoutMillis = 500)
+                waitUntilExactlyOneExists(hasText("Loading..."), timeoutMillis = 500)
 
                 // Rotate while loading
                 activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
                 waitForIdle()
 
                 // Should eventually show content
-                waitUntilAtLeastOneExists(
+                waitUntilExactlyOneExists(
                     hasTestTag("empty_state") or hasTestTag("chat_list"),
                     timeoutMillis = 3000,
                 )
@@ -96,7 +96,7 @@ class ChatListConfigurationChangeApplicationTest {
                     .assertIsDisplayed()
             } catch (e: AssertionError) {
                 // If loading is too fast, just verify final state
-                waitUntilAtLeastOneExists(
+                waitUntilExactlyOneExists(
                     hasTestTag("empty_state") or hasTestTag("chat_list"),
                     timeoutMillis = 3000,
                 )
@@ -108,7 +108,7 @@ class ChatListConfigurationChangeApplicationTest {
     fun chatListScreen_layoutAdaptsToOrientation() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -147,7 +147,7 @@ class ChatListConfigurationChangeApplicationTest {
     fun chatListScreen_preservesScrollPositionOnRotation() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -186,7 +186,7 @@ class ChatListConfigurationChangeApplicationTest {
     fun chatListScreen_handlesRapidRotations() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -226,7 +226,7 @@ class ChatListConfigurationChangeApplicationTest {
     fun chatListScreen_memoryStabilityDuringRotations() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -262,7 +262,7 @@ class ChatListConfigurationChangeApplicationTest {
     fun chatListScreen_preservesDataIntegrityAcrossRotations() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )

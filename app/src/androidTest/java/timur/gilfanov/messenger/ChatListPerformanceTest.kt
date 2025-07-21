@@ -25,7 +25,7 @@ class ChatListPerformanceTest {
     fun chatListScreen_launchPerformance() {
         // Measure app launch time
         val launchTime = measureTimeMillis {
-            composeTestRule.waitUntilAtLeastOneExists(
+            composeTestRule.waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 5000,
             )
@@ -39,7 +39,7 @@ class ChatListPerformanceTest {
     fun chatListScreen_scrollPerformance() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -78,7 +78,7 @@ class ChatListPerformanceTest {
     fun chatListScreen_memoryUsageDuringInteraction() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -107,7 +107,7 @@ class ChatListPerformanceTest {
     fun chatListScreen_uiResponsiveness() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -135,7 +135,7 @@ class ChatListPerformanceTest {
     fun chatListScreen_configurationChangePerformance() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -166,7 +166,7 @@ class ChatListPerformanceTest {
     fun chatListScreen_stressTestWithRapidInteractions() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -201,7 +201,7 @@ class ChatListPerformanceTest {
     fun chatListScreen_memoryLeakDetection() {
         with(composeTestRule) {
             // Wait for chat list to load
-            waitUntilAtLeastOneExists(
+            waitUntilExactlyOneExists(
                 hasTestTag("empty_state") or hasTestTag("chat_list"),
                 timeoutMillis = 3000,
             )
@@ -239,7 +239,7 @@ class ChatListPerformanceTest {
         with(composeTestRule) {
             // Measure initial rendering performance
             val renderTime = measureTimeMillis {
-                waitUntilAtLeastOneExists(
+                waitUntilExactlyOneExists(
                     hasTestTag("empty_state") or hasTestTag("chat_list"),
                     timeoutMillis = 3000,
                 )

@@ -24,7 +24,7 @@ class ChatListScreenDisplayApplicationTest {
     @Test
     fun chatListScreen_displaysCorrectlyOnAppLaunch() {
         // Wait for initial loading to complete and either empty state or chat list to appear
-        composeTestRule.waitUntilAtLeastOneExists(
+        composeTestRule.waitUntilExactlyOneExists(
             hasTestTag("empty_state") or hasTestTag("chat_list"),
             timeoutMillis = 3000,
         )
@@ -55,13 +55,12 @@ class ChatListScreenDisplayApplicationTest {
     @Test
     fun chatListScreen_showsLoadingStateInitially() {
         // The loading state should be visible briefly when the app starts
-        composeTestRule.waitUntilAtLeastOneExists(
+        composeTestRule.waitUntilExactlyOneExists(
             hasTestTag("loading_indicator"),
-            timeoutMillis = 1000,
         )
 
         // Then either empty state or chat list should appear
-        composeTestRule.waitUntilAtLeastOneExists(
+        composeTestRule.waitUntilExactlyOneExists(
             hasTestTag("empty_state") or hasTestTag("chat_list"),
             timeoutMillis = 3000,
         )
@@ -70,7 +69,7 @@ class ChatListScreenDisplayApplicationTest {
     @Test
     fun chatListScreen_showsEmptyStateWhenNoChats() {
         // Wait for the app to finish loading
-        composeTestRule.waitUntilAtLeastOneExists(
+        composeTestRule.waitUntilExactlyOneExists(
             hasTestTag("empty_state") or hasTestTag("chat_list"),
             timeoutMillis = 3000,
         )
@@ -93,7 +92,7 @@ class ChatListScreenDisplayApplicationTest {
     @Test
     fun chatListScreen_showsStatusText() {
         // Wait for the app to finish loading
-        composeTestRule.waitUntilAtLeastOneExists(
+        composeTestRule.waitUntilExactlyOneExists(
             hasTestTag("empty_state") or hasTestTag("chat_list"),
             timeoutMillis = 3000,
         )
@@ -114,7 +113,7 @@ class ChatListScreenDisplayApplicationTest {
     @Test
     fun chatListScreen_buttonsAreAccessible() {
         // Wait for the app to finish loading
-        composeTestRule.waitUntilAtLeastOneExists(
+        composeTestRule.waitUntilExactlyOneExists(
             hasTestTag("empty_state") or hasTestTag("chat_list"),
             timeoutMillis = 3000,
         )

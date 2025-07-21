@@ -44,7 +44,6 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `No chat exists error propagates to UI state`() = runTest {
-        val testName = "No chat exists error propagates to UI state"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
 
@@ -130,7 +129,6 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `Network not available in Loading state propagates to UI state `() = runTest {
-        val testName = "Network not available in Loading state propagates to UI state"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
 
@@ -164,7 +162,6 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `Chat recovers from transient errors`() = runTest {
-        val testName = "Chat recovers from transient errors"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())

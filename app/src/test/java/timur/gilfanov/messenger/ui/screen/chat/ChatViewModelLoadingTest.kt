@@ -107,7 +107,6 @@ class ChatViewModelLoadingTest {
 
     @Test
     fun `loads group chat successfully`() = runTest {
-        val testName = "loads group chat successfully"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
         val otherUserId = ParticipantId(UUID.randomUUID())
@@ -166,7 +165,6 @@ class ChatViewModelLoadingTest {
 
     @Test
     fun `handles chat loading error`() = runTest {
-        val testName = "handles chat loading error"
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
 

@@ -89,7 +89,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel displays empty state when no chats`() = runTest {
-        val testName = "ViewModel displays empty state when no chats"
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(emptyList())),
         )
@@ -112,7 +111,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel displays chat list when chats available`() = runTest {
-        val testName = "ViewModel displays chat list when chats available"
         val testChat = createTestChat(name = "Test Chat")
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(listOf(testChat))),
@@ -137,7 +135,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel handles network error correctly`() = runTest {
-        val testName = "ViewModel handles network error correctly"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.NetworkNotAvailable)),
         )
@@ -160,7 +157,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel handles server error correctly`() = runTest {
-        val testName = "ViewModel handles server error correctly"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.RemoteError)),
         )
@@ -183,7 +179,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel handles server unreachable error correctly`() = runTest {
-        val testName = "ViewModel handles server unreachable error correctly"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.RemoteUnreachable)),
         )
@@ -206,7 +201,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel handles local error correctly`() = runTest {
-        val testName = "ViewModel handles local error correctly"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.LocalError)),
         )
@@ -229,7 +223,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel updates refreshing state correctly`() = runTest {
-        val testName = "ViewModel updates refreshing state correctly"
         val updatingFlow = MutableStateFlow(false)
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(emptyList())),
@@ -264,7 +257,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel transforms chat to UI model correctly`() = runTest {
-        val testName = "ViewModel transforms chat to UI model correctly"
         val message = createTestMessage("Hello world")
         val testChat = createTestChat(
             name = "Test Chat",
@@ -295,7 +287,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel handles chat updates correctly`() = runTest {
-        val testName = "ViewModel handles chat updates correctly"
         val chatListFlow = MutableStateFlow<ResultWithError<List<Chat>, FlowChatListError>>(
             Success(listOf(createTestChat(name = "Initial Chat"))),
         )
@@ -327,7 +318,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel clears error on successful data load`() = runTest {
-        val testName = "ViewModel clears error on successful data load"
         val chatListFlow = MutableStateFlow<ResultWithError<List<Chat>, FlowChatListError>>(
             ResultWithError.Failure(FlowChatListError.NetworkNotAvailable),
         )
@@ -357,7 +347,6 @@ class ChatListViewModelTest {
 
     @Test
     fun `ViewModel stops loading and refreshing on error`() = runTest {
-        val testName = "ViewModel stops loading and refreshing on error"
         val repository = RepositoryFake(
             chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.NetworkNotAvailable)),
         )

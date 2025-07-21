@@ -5,7 +5,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,17 +101,6 @@ object ChatViewModelTestFixtures {
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = flowChat ?: flowOf(
             chat?.let { Success(it) } ?: Failure(ChatNotFound),
         )
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun generateParentChain(job: Job): String {
-        val parents = mutableListOf<Job>()
-        var current: Job? = job
-        while (current?.parent != null) {
-            parents.add(current.parent!!)
-            current = current.parent
-        }
-        return parents.joinToString(" -> ") { it.toString() }
     }
 
     class RepositoryFakeWithStatusFlow(chat: Chat, val statuses: List<DeliveryStatus>) :

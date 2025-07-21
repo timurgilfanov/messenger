@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.orbitmvi.orbit.ContainerHost
@@ -248,13 +247,6 @@ class ChatViewModel @AssistedInject constructor(
                                 }
                             }
                         }
-                        println(
-                            "[${Thread.currentThread().name}] Before yielding in observeChatUpdates",
-                        )
-                        yield()
-                        println(
-                            "[${Thread.currentThread().name}] After yielding in observeChatUpdates",
-                        )
                     }
                     if (observeInputTextJob?.isActive != true) {
                         runOn<ChatUiState.Ready> {

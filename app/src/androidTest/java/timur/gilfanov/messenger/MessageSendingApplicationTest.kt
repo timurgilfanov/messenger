@@ -30,7 +30,7 @@ import timur.gilfanov.annotations.ReleaseCandidate
 class MessageSendingApplicationTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
     @Category(ReleaseCandidate::class)
     @Test

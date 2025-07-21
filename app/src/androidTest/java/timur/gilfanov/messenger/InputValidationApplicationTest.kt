@@ -24,7 +24,7 @@ import timur.gilfanov.annotations.Application
 class InputValidationApplicationTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
     @Test
     fun inputValidation_showsErrorForTooLongMessage() {

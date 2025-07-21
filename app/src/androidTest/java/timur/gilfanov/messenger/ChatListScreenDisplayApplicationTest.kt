@@ -19,7 +19,7 @@ import timur.gilfanov.annotations.Application
 class ChatListScreenDisplayApplicationTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatListScreenTestActivity>()
 
     @Test
     fun chatListScreen_displaysCorrectlyOnAppLaunch() {

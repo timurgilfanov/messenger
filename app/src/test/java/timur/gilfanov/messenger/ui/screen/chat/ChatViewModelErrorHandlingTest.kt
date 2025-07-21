@@ -210,7 +210,6 @@ class ChatViewModelErrorHandlingTest {
                 messages = persistentListOf(newMessage),
             )
             chatFlow.value = Success(recoveredChat)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Should recover with successful state - focus on recovery being successful
             val recoveredState = awaitState()

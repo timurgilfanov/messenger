@@ -234,13 +234,11 @@ class ChatListViewModelTest {
 
             // Simulate refreshing
             updatingFlow.value = true
-            testDispatcher.scheduler.advanceUntilIdle()
             val refreshingState = awaitState()
             assertEquals(true, refreshingState.isRefreshing)
 
             // Stop refreshing
             updatingFlow.value = false
-            testDispatcher.scheduler.advanceUntilIdle()
             val finalState = awaitState()
             assertEquals(false, finalState.isRefreshing)
 
@@ -297,7 +295,6 @@ class ChatListViewModelTest {
 
             // Update chat list
             chatListFlow.value = Success(listOf(createTestChat(name = "Updated Chat")))
-            testDispatcher.scheduler.advanceUntilIdle()
 
             val updatedState = awaitState()
             assertTrue(updatedState.uiState is ChatListUiState.NotEmpty)
@@ -325,7 +322,6 @@ class ChatListViewModelTest {
 
             // Fix the error with successful data
             chatListFlow.value = Success(emptyList())
-            testDispatcher.scheduler.advanceUntilIdle()
 
             val successState = awaitState()
             assertNull(successState.error)

@@ -87,7 +87,6 @@ class ChatViewModelUpdatesTest {
             )
 
             chatFlow.value = Success(updatedChat)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Verify the new message appears in UI state
             val updatedState = awaitState()
@@ -154,7 +153,6 @@ class ChatViewModelUpdatesTest {
             )
 
             chatFlow.value = Success(updatedChat)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Verify metadata changes are reflected in UI state
             val updatedState = awaitState()

@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import java.util.UUID
-import kotlin.coroutines.coroutineContext
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
@@ -135,12 +134,6 @@ object ChatViewModelTestFixtures {
                         add(msg)
                     }
                 }.toImmutableList()
-                println(
-                    "[${Thread.currentThread().name}, parents ${generateParentChain(
-                        coroutineContext[Job]!!,
-                    )}] " +
-                        "Updated message with status ${messages.first().deliveryStatus}, ",
-                )
                 currentChat.copy(messages = messages)
             }
         }
@@ -148,11 +141,6 @@ object ChatViewModelTestFixtures {
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatFlow.map { chat ->
-            println(
-                "[${Thread.currentThread().name}, parents ${generateParentChain(
-                    coroutineContext[Job]!!,
-                )}] Updated chat with status ${chat.messages.firstOrNull()?.deliveryStatus}",
-            )
             Success(chat)
         }
     }

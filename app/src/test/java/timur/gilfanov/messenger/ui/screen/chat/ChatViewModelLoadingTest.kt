@@ -160,9 +160,7 @@ class ChatViewModelLoadingTest {
                 state,
             )
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -193,9 +191,7 @@ class ChatViewModelLoadingTest {
                 ChatUiState.Loading(NetworkNotAvailable)
             }
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 }

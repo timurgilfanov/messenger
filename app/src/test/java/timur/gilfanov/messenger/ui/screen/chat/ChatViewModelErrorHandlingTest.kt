@@ -70,9 +70,7 @@ class ChatViewModelErrorHandlingTest {
             assertTrue(errorState is ChatUiState.Error)
             assertEquals(ChatNotFound, errorState.error)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -111,9 +109,6 @@ class ChatViewModelErrorHandlingTest {
             updateError = null,
         )
         viewModel.test(this, initialState) {
-            println(
-                "[${Thread.currentThread().name}] Starting test with initial state: $initialState",
-            )
             val job = runOnCreate()
 
             expectStateOn<ChatUiState.Ready> {
@@ -125,9 +120,7 @@ class ChatViewModelErrorHandlingTest {
                 ReceiveChatUpdatesError.ServerUnreachable,
                 ReceiveChatUpdatesError.UnknownError,
             ).forEach { error ->
-                println("[${Thread.currentThread().name}] Testing with error: $error")
                 chatFlow.value = Failure(error)
-                println("[${Thread.currentThread().name}] awaiting state after error")
                 expectStateOn<ChatUiState.Ready> { copy(updateError = error) }
             }
 
@@ -165,9 +158,7 @@ class ChatViewModelErrorHandlingTest {
             assertTrue(loadingErrorState is ChatUiState.Loading)
             assertEquals(ReceiveChatUpdatesError.NetworkNotAvailable, loadingErrorState.error)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -203,7 +194,6 @@ class ChatViewModelErrorHandlingTest {
             assertTrue(initialState is ChatUiState.Ready)
             assertNull(initialState.updateError)
 
-            println("[${Thread.currentThread().name}] $testName - Initial state is ready")
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = TextValidationError.Empty)
             }
@@ -211,7 +201,6 @@ class ChatViewModelErrorHandlingTest {
             // Simulate transient network error
             chatFlow.value = Failure(ReceiveChatUpdatesError.NetworkNotAvailable)
 
-            println("[${Thread.currentThread().name}] Simulating transient network error")
             val errorState = awaitState()
             assertTrue(errorState is ChatUiState.Ready)
             assertEquals(ReceiveChatUpdatesError.NetworkNotAvailable, errorState.updateError)
@@ -230,7 +219,6 @@ class ChatViewModelErrorHandlingTest {
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Should recover with successful state - focus on recovery being successful
-            println("[${Thread.currentThread().name}] Simulating recovery with new message")
             val recoveredState = awaitState()
             assertTrue(recoveredState is ChatUiState.Ready)
             // Check that we have the message (recovery worked)
@@ -239,9 +227,7 @@ class ChatViewModelErrorHandlingTest {
             // Note: We don't check updateError clearing here as it might be
             // implementation-specific timing with debounce
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 }

@@ -12,7 +12,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import kotlin.coroutines.coroutineContext
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,11 +58,7 @@ class ChatViewModel @AssistedInject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val container = container<ChatUiState, Nothing>(ChatUiState.Loading()) {
-        println(
-            "Current job before coroutineScope: ${coroutineContext[Job]}, parent: ${coroutineContext[Job]?.parent}",
-        )
         coroutineScope {
-            println("Current job before launch: ${coroutineContext[Job]}")
             launch { observeChatUpdates() }
         }
     }
@@ -88,32 +83,16 @@ class ChatViewModel @AssistedInject constructor(
     )
     private suspend fun observeInputText() = subIntent {
         runOn<ChatUiState.Ready> {
-            println(
-                "observeInputText: Current job before repeatOnSubscription: ${coroutineContext[Job]}",
-            )
             repeatOnSubscription {
-                println(
-                    "observeInputText: Current job before snapshotFlow: ${coroutineContext[Job]}",
-                )
                 snapshotFlow { state.inputTextField.text }
                     .distinctUntilChanged()
                     .collect { inputText ->
                         ensureActive()
                         withContext(Dispatchers.Main) {
-                            println(
-                                "observeInputText: Current job before reduce: ${coroutineContext[Job]}",
-                            )
                             reduce {
                                 val error = validateInputText(inputText.toString())
-                                println(
-                                    "observeInputText: Validating input text: $inputText, " +
-                                        "error: $error",
-                                )
                                 state.copy(inputTextValidationError = error)
                             }
-                            println(
-                                "observeInputText: Current job after reduce: ${coroutineContext[Job]}",
-                            )
                         }
                     }
             }
@@ -203,27 +182,13 @@ class ChatViewModel @AssistedInject constructor(
     @OptIn(OrbitExperimental::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
     @Suppress("LongMethod")
     private suspend fun observeChatUpdates() = subIntent {
-        println(
-            "Current job before subIntent: ${coroutineContext[Job]}, " +
-                "parent: ${coroutineContext[Job]?.parent}",
-        )
-        println("Current job before repeatOnSubscription: ${coroutineContext[Job]}")
         repeatOnSubscription {
             receiveChatUpdatesUseCase(chatId)
                 .distinctUntilChanged()
                 .debounce(STATE_UPDATE_DEBOUNCE)
                 .collect { result ->
-                    println(
-                        "[${Thread.currentThread().name}] Current job in collect: ${coroutineContext[Job]}",
-                    )
                     withContext(Dispatchers.Main) {
-                        println(
-                            "[${Thread.currentThread().name}] ChatViewModel: observeChatUpdates: $result",
-                        )
                         reduce {
-                            println(
-                                "[${Thread.currentThread().name}] Reducing state with result",
-                            )
                             when (result) {
                                 is ResultWithError.Success -> {
                                     val chat = result.data
@@ -250,7 +215,6 @@ class ChatViewModel @AssistedInject constructor(
                     }
                     if (observeInputTextJob?.isActive != true) {
                         runOn<ChatUiState.Ready> {
-                            println("[${Thread.currentThread().name}] Launching observeInputText")
                             observeInputTextJob = launch {
                                 observeInputText()
                             }

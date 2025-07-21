@@ -54,7 +54,6 @@ class ChatViewModelMessageSendingTest {
             listOf(Sending(0), DeliveryStatus.Delivered),
             listOf(Sending(0), DeliveryStatus.Read),
         ).forEach { statuses ->
-            println("=== Starting test iteration with statuses: $statuses ===")
             val chatId = ChatId(UUID.randomUUID())
             val currentUserId = ParticipantId(UUID.randomUUID())
             val chat = createTestChat(chatId, currentUserId)
@@ -103,7 +102,6 @@ class ChatViewModelMessageSendingTest {
                 assertEquals("Test message 2", inputTextField.text)
                 job.cancelAndJoin()
             }
-            println("=== Finished test iteration with statuses: $statuses ===")
         }
     }
 
@@ -127,9 +125,7 @@ class ChatViewModelMessageSendingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-//            println("[${Thread.currentThread().name}] onCreate job: $job")
             testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-            println("[${Thread.currentThread().name}] before awaitState()")
             val readyState = awaitState()
             assertTrue(readyState is ChatUiState.Ready)
             assertNull(readyState.dialogError)

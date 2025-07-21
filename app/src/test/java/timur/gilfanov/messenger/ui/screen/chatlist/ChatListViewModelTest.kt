@@ -106,9 +106,7 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertNull(state.error)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -133,9 +131,7 @@ class ChatListViewModelTest {
             assertEquals(false, state.isLoading)
             assertNull(state.error)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -158,9 +154,7 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -183,9 +177,7 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteError, state.error)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -208,9 +200,7 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteUnreachable, state.error)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -233,9 +223,7 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.LocalError, state.error)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -270,9 +258,7 @@ class ChatListViewModelTest {
             val finalState = awaitState()
             assertEquals(false, finalState.isRefreshing)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -303,9 +289,7 @@ class ChatListViewModelTest {
             assertEquals(2, chatItem.unreadCount)
             assertEquals(testTimestamp, chatItem.lastMessageTime)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -337,9 +321,7 @@ class ChatListViewModelTest {
             assertTrue(updatedState.uiState is ChatListUiState.NotEmpty)
             assertEquals("Updated Chat", updatedState.uiState.chats[0].name)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -369,9 +351,7 @@ class ChatListViewModelTest {
             assertNull(successState.error)
             assertEquals(false, successState.isLoading)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 
@@ -393,9 +373,7 @@ class ChatListViewModelTest {
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
 
-            println("[${Thread.currentThread().name}] $testName - Test completed successfully")
             job.cancelAndJoin()
-            println("[${Thread.currentThread().name}] $testName - Job is cancelled and joined")
         }
     }
 }

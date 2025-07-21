@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
-@Suppress("LongParameterList")
 @Composable
 fun MessageInput(
     state: TextFieldState,

@@ -180,7 +180,6 @@ class ChatViewModel @AssistedInject constructor(
     }
 
     @OptIn(OrbitExperimental::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
-    @Suppress("LongMethod")
     private suspend fun observeChatUpdates() = subIntent {
         repeatOnSubscription {
             receiveChatUpdatesUseCase(chatId)

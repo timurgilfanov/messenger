@@ -18,10 +18,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -70,8 +68,6 @@ class ChatViewModel @AssistedInject constructor(
             launch { observeChatUpdates() }
         }
     }
-
-    var launched = false
 
     var observeInputTextJob: Job? = null
 
@@ -221,7 +217,6 @@ class ChatViewModel @AssistedInject constructor(
                     println(
                         "[${Thread.currentThread().name}] Current job in collect: ${coroutineContext[Job]}",
                     )
-//                ensureActive()
                     withContext(Dispatchers.Main) {
                         println(
                             "[${Thread.currentThread().name}] ChatViewModel: observeChatUpdates: $result",
@@ -237,25 +232,18 @@ class ChatViewModel @AssistedInject constructor(
                                     updateUiStateFromChat(state, chat)
                                 }
 
-                                is ResultWithError.Failure -> {
-                                    launched = false
-                                    when (result.error) {
-                                        ChatNotFound -> ChatUiState.Error(result.error)
-                                        NetworkNotAvailable,
-                                        ServerError,
-                                        ServerUnreachable,
-                                        UnknownError,
-                                        -> when (val s = state) {
-                                            is ChatUiState.Loading -> ChatUiState.Loading(
-                                                result.error,
-                                            )
-                                            is ChatUiState.Ready -> s.copy(
-                                                updateError = result.error,
-                                            )
-                                            is ChatUiState.Error -> error(
-                                                "Unexpected UI state Error",
-                                            )
-                                        }
+                                is ResultWithError.Failure -> when (result.error) {
+                                    ChatNotFound -> ChatUiState.Error(result.error)
+                                    NetworkNotAvailable,
+                                    ServerError,
+                                    ServerUnreachable,
+                                    UnknownError,
+                                    -> when (val s = state) {
+                                        is ChatUiState.Loading -> ChatUiState.Loading(result.error)
+
+                                        is ChatUiState.Ready -> s.copy(updateError = result.error)
+
+                                        is ChatUiState.Error -> error("Unexpected UI state Error")
                                     }
                                 }
                             }
@@ -268,24 +256,13 @@ class ChatViewModel @AssistedInject constructor(
                             "[${Thread.currentThread().name}] After yielding in observeChatUpdates",
                         )
                     }
-
-                    if (state is ChatUiState.Ready && !launched) {
-                        println(
-                            "[${Thread.currentThread().name}] Launching observeInputText",
-                        )
-                        launched = true
-                        observeInputTextJob = launch {
-                            observeInputText()
+                    if (observeInputTextJob?.isActive != true) {
+                        runOn<ChatUiState.Ready> {
+                            println("[${Thread.currentThread().name}] Launching observeInputText")
+                            observeInputTextJob = launch {
+                                observeInputText()
+                            }
                         }
-                    }
-                    if (state is ChatUiState.Error && launched) {
-                        println(
-                            "[${Thread.currentThread().name}] Not launching observeInputText, " +
-                                "current state is Error",
-                        )
-                        observeInputTextJob?.cancelAndJoin()
-                        println("[${Thread.currentThread().name}] observeInputTextJob cancelled")
-                        launched = false
                     }
                 }
         }

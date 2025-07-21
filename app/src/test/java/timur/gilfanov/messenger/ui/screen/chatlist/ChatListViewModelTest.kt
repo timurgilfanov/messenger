@@ -97,7 +97,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
             assertEquals(ChatListUiState.Empty, state.uiState)
@@ -120,7 +119,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
@@ -143,7 +141,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
             assertEquals(ChatListUiState.Empty, state.uiState)
@@ -165,7 +162,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
             assertEquals(ChatListUiState.Empty, state.uiState)
@@ -187,7 +183,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
             assertEquals(ChatListUiState.Empty, state.uiState)
@@ -209,7 +204,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
             assertEquals(ChatListUiState.Empty, state.uiState)
@@ -233,7 +227,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial state
             val initialState = awaitState()
@@ -271,7 +264,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
@@ -296,7 +288,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial state
             val initialState = awaitState()
@@ -327,7 +318,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial error state
             val errorState = awaitState()
@@ -355,7 +345,6 @@ class ChatListViewModelTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
 
             assertEquals(false, state.isLoading)

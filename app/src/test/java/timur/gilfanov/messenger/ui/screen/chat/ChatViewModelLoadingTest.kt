@@ -63,7 +63,6 @@ class ChatViewModelLoadingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
             assertEquals(
@@ -130,7 +129,6 @@ class ChatViewModelLoadingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
             val inputField = (state as ChatUiState.Ready).inputTextField
@@ -184,7 +182,6 @@ class ChatViewModelLoadingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             expectState {
                 ChatUiState.Loading(NetworkNotAvailable)
             }

@@ -62,7 +62,6 @@ class ChatViewModelErrorHandlingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Should transition to Error state for ChatNotFound
             val errorState = awaitState()
@@ -149,7 +148,6 @@ class ChatViewModelErrorHandlingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Should remain in Loading state with error
             val loadingErrorState = awaitState()
@@ -184,7 +182,6 @@ class ChatViewModelErrorHandlingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial state should be ready
             val initialState = awaitState()

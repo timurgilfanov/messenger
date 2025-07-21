@@ -73,7 +73,6 @@ class ChatViewModelMessageSendingTest {
             )
             viewModel.test(this) {
                 val job = runOnCreate()
-                testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
                 val inputTextField: TextFieldState
                 awaitState().let { state ->
                     assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
@@ -125,7 +124,6 @@ class ChatViewModelMessageSendingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
             val readyState = awaitState()
             assertTrue(readyState is ChatUiState.Ready)
             assertNull(readyState.dialogError)

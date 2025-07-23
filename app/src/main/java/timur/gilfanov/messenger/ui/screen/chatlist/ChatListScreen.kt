@@ -224,6 +224,32 @@ private fun ChatListScreenEmptyPreview() {
     }
 }
 
+@Preview(showBackground = true, widthDp = 1000, heightDp = 400)
+@Composable
+private fun ChatListScreenEmptyPortraitPreview() {
+    MessengerTheme {
+        ChatListScreenContent(
+            screenState = ChatListScreenState(
+                uiState = Empty,
+                currentUser = CurrentUserUiModel(
+                    id = ParticipantId(UUID.randomUUID()),
+                    name = "John Doe",
+                    pictureUrl = null,
+                ),
+                isLoading = false,
+                isRefreshing = false,
+                error = null,
+            ),
+            actions = ChatListContentActions(
+                onChatClick = {},
+                onNewChatClick = {},
+                onSearchClick = {},
+                onDeleteChat = {},
+            ),
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun ChatListScreenWithChatsPreview() {

@@ -93,6 +93,8 @@ class ChatListViewModel @AssistedInject constructor(
                                         ChatListUiState.NotEmpty(chatListItems)
                                     }
 
+                                    println("Chat list updated: $uiState")
+
                                     state.copy(
                                         uiState = uiState,
                                         isLoading = false,

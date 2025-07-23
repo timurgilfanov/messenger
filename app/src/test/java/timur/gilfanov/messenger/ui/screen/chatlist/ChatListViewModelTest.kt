@@ -10,7 +10,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import org.junit.Rule
@@ -38,8 +37,6 @@ class ChatListViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
-
-    private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
     private val testUserId = UUID.randomUUID()
     private val testChatId = ChatId(UUID.randomUUID())

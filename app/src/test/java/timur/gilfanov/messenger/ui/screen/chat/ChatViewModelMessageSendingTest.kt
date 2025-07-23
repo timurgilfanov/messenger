@@ -12,7 +12,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Rule
@@ -43,8 +42,6 @@ class ChatViewModelMessageSendingTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
-
-    private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
     @Test
     fun `sending a message clears input only once`() = runTest {

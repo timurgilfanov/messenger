@@ -66,7 +66,6 @@ class ChatViewModelUpdatesTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
-            // Initial state should be ready with no messages
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertTrue(initialState.messages.isEmpty())
@@ -125,8 +124,6 @@ class ChatViewModelUpdatesTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
-//            assertTrue(awaitState() is ChatUiState.Loading)
-            // Initial state should be ready with group chat status
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertEquals("Group Chat", initialState.title)
@@ -195,8 +192,6 @@ class ChatViewModelUpdatesTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
-//            assertTrue(awaitState() is ChatUiState.Loading)
-
             // Initial state should be ready
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
@@ -215,10 +210,9 @@ class ChatViewModelUpdatesTest {
                 createTestMessage(otherUserId, "Final Message", joinedAt = now, createdAt = now)
 
             // Emit updates rapidly
-            chatFlow.value =
-                Success(
-                    initialChat.copy(messages = persistentListOf(message1)),
-                )
+            chatFlow.value = Success(
+                initialChat.copy(messages = persistentListOf(message1)),
+            )
             testDispatcher.scheduler.advanceTimeBy(50L) // Less than debounce delay
 
             chatFlow.value = Success(

@@ -9,7 +9,6 @@ import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Rule
@@ -37,8 +36,6 @@ class ChatViewModelLoadingTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
-
-    private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
     @Test
     fun `loads chat successfully`() = runTest {

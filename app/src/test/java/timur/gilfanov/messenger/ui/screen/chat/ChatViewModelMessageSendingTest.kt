@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.runtime.snapshots.Snapshot
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -78,7 +79,9 @@ class ChatViewModelMessageSendingTest {
                     inputTextField = state.inputTextField
                 }
 
-                inputTextField.setTextAndPlaceCursorAtEnd("Test message")
+                Snapshot.withMutableSnapshot {
+                    inputTextField.setTextAndPlaceCursorAtEnd("Test message")
+                }
                 viewModel.sendMessage(message.id, now = now)
                 expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
 
@@ -93,7 +96,9 @@ class ChatViewModelMessageSendingTest {
                 )
                 expectStateOn<ChatUiState.Ready> { copy(isSending = false) }
                 assertEquals("", inputTextField.text)
-                inputTextField.setTextAndPlaceCursorAtEnd("Test message 2")
+                Snapshot.withMutableSnapshot {
+                    inputTextField.setTextAndPlaceCursorAtEnd("Test message 2")
+                }
                 expectStateOn<ChatUiState.Ready> { copy(messages = persistentListOf(messageUi)) }
                 assertEquals("Test message 2", inputTextField.text)
                 job.cancelAndJoin()

@@ -18,7 +18,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -87,7 +86,6 @@ class ChatViewModel @AssistedInject constructor(
                 snapshotFlow { state.inputTextField.text }
                     .distinctUntilChanged()
                     .collect { inputText ->
-                        ensureActive()
                         withContext(Dispatchers.Main) {
                             reduce {
                                 val error = validateInputText(inputText.toString())

@@ -24,12 +24,12 @@ import timur.gilfanov.annotations.Application
 class InputValidationApplicationTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
     @Test
     fun inputValidation_showsErrorForTooLongMessage() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
             onNodeWithText("Type a message...").assertIsDisplayed()
             onNodeWithText("Message can not be longer then 2000 characters").assertIsNotDisplayed()
             val tooLongMessage = "a".repeat(2001)
@@ -44,14 +44,13 @@ class InputValidationApplicationTest {
         val tooLongMessage = "a".repeat(2001)
         val errorText = "Message can not be longer then 2000 characters"
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
             onNodeWithText("Type a message...").assertIsDisplayed()
             repeat(100) {
-                println("Iteration: $it")
                 onNodeWithTag("message_input").performTextReplacement(tooLongMessage)
-                waitUntilAtLeastOneExists(hasText(errorText), timeoutMillis = 1_000)
+                waitUntilExactlyOneExists(hasText(errorText))
                 onNodeWithTag("message_input").performTextReplacement("Valid message")
-                waitUntilDoesNotExist(hasText(errorText), timeoutMillis = 1_000)
+                waitUntilDoesNotExist(hasText(errorText))
             }
         }
     }
@@ -59,7 +58,7 @@ class InputValidationApplicationTest {
     @Test
     fun inputValidation_emptyInputDoesNotShowError() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
             onNodeWithText("Type a message...").assertIsDisplayed()
             onNodeWithTag("message_input").performTextInput("Some text")
             onNodeWithTag("message_input").performTextClearance()

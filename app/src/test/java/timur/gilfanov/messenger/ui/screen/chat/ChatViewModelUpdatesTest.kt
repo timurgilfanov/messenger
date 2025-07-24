@@ -6,6 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -14,7 +15,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
-import timur.gilfanov.annotations.Feature
+import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -22,6 +23,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
@@ -31,7 +33,7 @@ import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createT
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@Category(Feature::class)
+@Category(Component::class)
 class ChatViewModelUpdatesTest {
 
     @get:Rule
@@ -63,12 +65,14 @@ class ChatViewModelUpdatesTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
-            // Initial state should be ready with no messages
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertTrue(initialState.messages.isEmpty())
+
+            expectStateOn<ChatUiState.Ready> {
+                copy(inputTextValidationError = TextValidationError.Empty)
+            }
 
             // Add a new message to the chat
             val newMessage = createTestMessage(
@@ -82,7 +86,6 @@ class ChatViewModelUpdatesTest {
             )
 
             chatFlow.value = Success(updatedChat)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Verify the new message appears in UI state
             val updatedState = awaitState()
@@ -91,8 +94,7 @@ class ChatViewModelUpdatesTest {
             assertEquals("Hello from other user!", updatedState.messages[0].text)
             assertEquals(otherUserId.id.toString(), updatedState.messages[0].senderId)
             assertFalse(updatedState.messages[0].isFromCurrentUser)
-
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 
@@ -121,15 +123,17 @@ class ChatViewModelUpdatesTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
-            // Initial state should be ready with group chat status
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertEquals("Group Chat", initialState.title)
             assertEquals(2, initialState.participants.size)
             assertTrue(initialState.isGroupChat)
             assertEquals(ChatStatus.Group(2), initialState.status)
+
+            expectStateOn<ChatUiState.Ready> {
+                copy(inputTextValidationError = TextValidationError.Empty)
+            }
 
             // Update chat metadata: change name and add new participant
             val newParticipant = buildParticipant {
@@ -146,7 +150,6 @@ class ChatViewModelUpdatesTest {
             )
 
             chatFlow.value = Success(updatedChat)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Verify metadata changes are reflected in UI state
             val updatedState = awaitState()
@@ -160,7 +163,7 @@ class ChatViewModelUpdatesTest {
             val newParticipantUi = updatedState.participants.find { it.id == newParticipantId }
             assertEquals("New Participant", newParticipantUi?.name)
 
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 
@@ -188,12 +191,15 @@ class ChatViewModelUpdatesTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial state should be ready
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertEquals("Direct Message", initialState.title)
+
+            expectStateOn<ChatUiState.Ready> {
+                copy(inputTextValidationError = TextValidationError.Empty)
+            }
 
             // Send rapid updates within debounce window (200ms)
             val message1 =
@@ -204,10 +210,9 @@ class ChatViewModelUpdatesTest {
                 createTestMessage(otherUserId, "Final Message", joinedAt = now, createdAt = now)
 
             // Emit updates rapidly
-            chatFlow.value =
-                Success(
-                    initialChat.copy(messages = persistentListOf(message1)),
-                )
+            chatFlow.value = Success(
+                initialChat.copy(messages = persistentListOf(message1)),
+            )
             testDispatcher.scheduler.advanceTimeBy(50L) // Less than debounce delay
 
             chatFlow.value = Success(
@@ -226,7 +231,7 @@ class ChatViewModelUpdatesTest {
             assertEquals(3, finalState.messages.size)
             assertEquals("Final Message", finalState.messages[2].text)
 
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 }

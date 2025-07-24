@@ -14,7 +14,7 @@ import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class ChatListScreenTestActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

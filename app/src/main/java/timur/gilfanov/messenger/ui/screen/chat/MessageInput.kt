@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
-@Suppress("LongParameterList")
 @Composable
 fun MessageInput(
     state: TextFieldState,
@@ -36,10 +35,6 @@ fun MessageInput(
     textValidationError: String? = null,
     onSendMessage: () -> Unit = {},
 ) {
-    println(
-        "${System.currentTimeMillis()}[${Thread.currentThread().name}] ChatScreen.MessageInput " +
-            "textValidationError: $textValidationError, text: ${state.text}",
-    )
     Row(
         modifier = modifier
             .fillMaxWidth()

@@ -1,0 +1,11 @@
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <application tools:ignore="MissingApplicationIcon">
+        <activity 
+            android:name="timur.gilfanov.messenger.ChatListScreenTestActivity"
+            android:exported="true" />
+        <activity 
+            android:name="timur.gilfanov.messenger.ChatScreenTestActivity"
+            android:exported="true" />
+    </application>
+</manifest>

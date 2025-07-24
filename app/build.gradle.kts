@@ -80,6 +80,7 @@ kover {
                     "androidx.compose.ui.tooling.preview.Preview",
                     "dagger.internal.DaggerGenerated",
                     "javax.annotation.processing.Generated",
+                    "timur.gilfanov.messenger.annotation.KoverIgnore",
                 )
                 classes(
                     "*.Hilt_*",
@@ -255,14 +256,20 @@ tasks.register("preCommit") {
                 "-Pcoverage",
             )
                 .directory(project.rootDir)
-                .inheritIO()
+                .redirectErrorStream(true)
                 .start()
 
+            val output = process.inputStream.bufferedReader().use { it.readText() }
             val exitCode = process.waitFor()
+
             if (exitCode != 0) {
-                throw GradleException(
-                    "$category tests failed with exit code $exitCode",
-                )
+                val errorMessage = buildString {
+                    appendLine("$category tests failed with exit code $exitCode")
+                    appendLine()
+                    appendLine("Error output:")
+                    appendLine(output.takeLast(2000))
+                }
+                throw GradleException(errorMessage)
             }
         }
 

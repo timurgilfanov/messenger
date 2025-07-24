@@ -1,19 +1,20 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.compose.foundation.text.input.TextFieldState
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
-import timur.gilfanov.annotations.Feature
+import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -21,6 +22,7 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
@@ -31,13 +33,11 @@ import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createT
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@Category(Feature::class)
+@Category(Component::class)
 class ChatViewModelErrorHandlingTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
-
-    private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
     @Test
     fun `No chat exists error propagates to UI state`() = runTest {
@@ -59,14 +59,13 @@ class ChatViewModelErrorHandlingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Should transition to Error state for ChatNotFound
             val errorState = awaitState()
             assertTrue(errorState is ChatUiState.Error)
             assertEquals(ChatNotFound, errorState.error)
 
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 
@@ -90,14 +89,26 @@ class ChatViewModelErrorHandlingTest {
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
         )
-
-        viewModel.test(this) {
+        val initialState = ChatUiState.Ready(
+            id = chatId,
+            title = "Direct Message",
+            participants = persistentListOf(
+                ParticipantUiModel(id = currentUserId, name = "Current User", pictureUrl = null),
+                ParticipantUiModel(id = otherUserId, name = "Other User", pictureUrl = null),
+            ),
+            isGroupChat = false,
+            messages = persistentListOf(),
+            inputTextField = TextFieldState(""),
+            isSending = false,
+            status = ChatStatus.OneToOne(null),
+            updateError = null,
+        )
+        viewModel.test(this, initialState) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
-            val initialState = awaitState()
-            assertTrue(initialState is ChatUiState.Ready)
-
+            expectStateOn<ChatUiState.Ready> {
+                copy(inputTextValidationError = TextValidationError.Empty)
+            }
             listOf(
                 ReceiveChatUpdatesError.NetworkNotAvailable,
                 ReceiveChatUpdatesError.ServerError,
@@ -105,14 +116,10 @@ class ChatViewModelErrorHandlingTest {
                 ReceiveChatUpdatesError.UnknownError,
             ).forEach { error ->
                 chatFlow.value = Failure(error)
-                testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
-
-                val errorState = awaitState()
-                assertTrue(errorState is ChatUiState.Ready)
-                assertEquals(error, errorState.updateError)
+                expectStateOn<ChatUiState.Ready> { copy(updateError = error) }
             }
 
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 
@@ -138,14 +145,13 @@ class ChatViewModelErrorHandlingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Should remain in Loading state with error
             val loadingErrorState = awaitState()
             assertTrue(loadingErrorState is ChatUiState.Loading)
             assertEquals(ReceiveChatUpdatesError.NetworkNotAvailable, loadingErrorState.error)
 
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 
@@ -173,17 +179,18 @@ class ChatViewModelErrorHandlingTest {
 
         viewModel.test(this) {
             val job = runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Initial state should be ready
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertNull(initialState.updateError)
 
+            expectStateOn<ChatUiState.Ready> {
+                copy(inputTextValidationError = TextValidationError.Empty)
+            }
+
             // Simulate transient network error
-            chatFlow.value =
-                Failure<Chat, ReceiveChatUpdatesError>(ReceiveChatUpdatesError.NetworkNotAvailable)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
+            chatFlow.value = Failure(ReceiveChatUpdatesError.NetworkNotAvailable)
 
             val errorState = awaitState()
             assertTrue(errorState is ChatUiState.Ready)
@@ -200,7 +207,6 @@ class ChatViewModelErrorHandlingTest {
                 messages = persistentListOf(newMessage),
             )
             chatFlow.value = Success(recoveredChat)
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
 
             // Should recover with successful state - focus on recovery being successful
             val recoveredState = awaitState()
@@ -211,7 +217,7 @@ class ChatViewModelErrorHandlingTest {
             // Note: We don't check updateError clearing here as it might be
             // implementation-specific timing with debounce
 
-            job.cancel()
+            job.cancelAndJoin()
         }
     }
 }

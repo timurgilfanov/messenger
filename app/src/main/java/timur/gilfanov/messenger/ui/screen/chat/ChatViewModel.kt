@@ -14,13 +14,12 @@ import java.util.Locale
 import java.util.UUID
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -56,21 +55,14 @@ class ChatViewModel @AssistedInject constructor(
 ) : ViewModel(),
     ContainerHost<ChatUiState, Nothing> {
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override val container = container<ChatUiState, Nothing>(ChatUiState.Loading()) {
         coroutineScope {
             launch { observeChatUpdates() }
         }
     }
 
-    var launched = false
-    init {
-        container.stateFlow
-            .filter { !launched && it is ChatUiState.Ready }
-            .onEach { state ->
-                launched = true
-                observeInputText()
-            }.launchIn(container.scope)
-    }
+    var observeInputTextJob: Job? = null
 
     private val chatId = ChatId(chatIdUuid)
     private val currentUserId = ParticipantId(currentUserIdUuid)
@@ -83,7 +75,11 @@ class ChatViewModel @AssistedInject constructor(
         ): ChatViewModel
     }
 
-    @OptIn(OrbitExperimental::class, FlowPreview::class)
+    @OptIn(
+        OrbitExperimental::class,
+        FlowPreview::class,
+        ExperimentalCoroutinesApi::class,
+    )
     private suspend fun observeInputText() = subIntent {
         runOn<ChatUiState.Ready> {
             repeatOnSubscription {
@@ -92,11 +88,8 @@ class ChatViewModel @AssistedInject constructor(
                     .collect { inputText ->
                         withContext(Dispatchers.Main) {
                             reduce {
-                                state.copy(
-                                    inputTextValidationError = validateInputText(
-                                        inputText.toString(),
-                                    ),
-                                )
+                                val error = validateInputText(inputText.toString())
+                                state.copy(inputTextValidationError = error)
                             }
                         }
                     }
@@ -184,7 +177,7 @@ class ChatViewModel @AssistedInject constructor(
         }
     }
 
-    @OptIn(OrbitExperimental::class, FlowPreview::class)
+    @OptIn(OrbitExperimental::class, FlowPreview::class, ExperimentalCoroutinesApi::class)
     private suspend fun observeChatUpdates() = subIntent {
         repeatOnSubscription {
             receiveChatUpdatesUseCase(chatId)
@@ -208,10 +201,19 @@ class ChatViewModel @AssistedInject constructor(
                                     UnknownError,
                                     -> when (val s = state) {
                                         is ChatUiState.Loading -> ChatUiState.Loading(result.error)
+
                                         is ChatUiState.Ready -> s.copy(updateError = result.error)
+
                                         is ChatUiState.Error -> error("Unexpected UI state Error")
                                     }
                                 }
+                            }
+                        }
+                    }
+                    if (observeInputTextJob?.isActive != true) {
+                        runOn<ChatUiState.Ready> {
+                            observeInputTextJob = launch {
+                                observeInputText()
                             }
                         }
                     }

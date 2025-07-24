@@ -17,6 +17,7 @@ interface ParticipantRepository {
     suspend fun sendMessage(message: Message): Flow<Message>
     suspend fun editMessage(message: Message): Flow<Message>
     suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>>
+    fun isChatListUpdating(): Flow<Boolean>
     suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,

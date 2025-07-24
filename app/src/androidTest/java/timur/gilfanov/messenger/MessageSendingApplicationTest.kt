@@ -30,13 +30,13 @@ import timur.gilfanov.annotations.ReleaseCandidate
 class MessageSendingApplicationTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
     @Category(ReleaseCandidate::class)
     @Test
     fun messageSending_completesSuccessfully() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1_000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
             onNodeWithText("Type a message...").assertIsDisplayed()
             val testMessage = "Hello, this is a test message!"
             onNodeWithTag("message_input").performTextInput(testMessage)
@@ -59,7 +59,7 @@ class MessageSendingApplicationTest {
     @Test
     fun messageSending_handlesEmptyInput() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1_000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
             onNodeWithText("Type a message...").assertIsDisplayed()
             onNodeWithTag("send_button").assertIsDisplayed()
             onNodeWithTag("send_button").performClick()
@@ -71,7 +71,7 @@ class MessageSendingApplicationTest {
     @Test
     fun messageSending_multipleMessagesSequentially() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1_000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
             onNodeWithText("Type a message...").assertIsDisplayed()
             onNodeWithTag("send_button").assertIsDisplayed()
             repeat(100) {
@@ -103,7 +103,7 @@ class MessageSendingApplicationTest {
     @Test
     fun messageSending_preservesInputDuringTyping() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1_000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
             onNodeWithText("Type a message...").assertIsDisplayed()
 
             val partialMessage = "This is a long message that I'm typing"

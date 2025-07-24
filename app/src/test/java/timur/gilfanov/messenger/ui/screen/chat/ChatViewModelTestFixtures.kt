@@ -4,6 +4,7 @@ import java.util.UUID
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -107,6 +108,7 @@ object ChatViewModelTestFixtures {
 
         private val chatFlow = MutableStateFlow(chat)
 
+        @OptIn(ExperimentalCoroutinesApi::class)
         override suspend fun sendMessage(message: Message): Flow<Message> = flowOf(
             *(statuses.map { (message as TextMessage).copy(deliveryStatus = it) }.toTypedArray()),
         ).onEach { msg ->

@@ -19,11 +19,11 @@ import timur.gilfanov.annotations.Application
 class ChatScreenDisplayApplicationTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
     @Test
     fun chatScreen_displaysCorrectlyOnAppLaunch() {
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+        composeTestRule.waitUntilExactlyOneExists(hasTestTag("message_input"))
 
         // Verify the message input field is displayed
         composeTestRule.onNodeWithTag("message_input")
@@ -42,10 +42,14 @@ class ChatScreenDisplayApplicationTest {
             .assertIsDisplayed()
     }
 
+    /* todo: this test is flaky, needs investigation
+    androidx.compose.ui.test.ComposeTimeoutException: Condition (exactly 1 nodes match (TestTag = 'loading_indicator')) still not satisfied after 1000 ms
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.waitUntil(ComposeUiTest.android.kt:441)
+     */
     @Test
     fun chatScreen_showsLoadingStateInitially() {
         // The loading state should be visible briefly when the app starts
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("loading_indicator"))
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+        composeTestRule.waitUntilExactlyOneExists(hasTestTag("loading_indicator"))
+        composeTestRule.waitUntilExactlyOneExists(hasTestTag("message_input"))
     }
 }

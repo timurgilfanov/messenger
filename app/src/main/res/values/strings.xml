@@ -3,4 +3,31 @@
     <string name="message_input_placeholder">Type a message...</string>
     <string name="send_message_content_description">Send message</string>
     <string name="message_input_error_too_long">Message can not be longer then %d characters</string>
+    
+    <!-- Chat List Screen -->
+    <string name="chat_list_search_content_description">Search chats</string>
+    <string name="chat_list_new_chat_content_description">New chat</string>
+    <string name="chat_list_empty_title">No chats yet</string>
+    <string name="chat_list_empty_message">Start a conversation by creating a new chat</string>
+    <string name="chat_list_status_loading">Loading...</string>
+    <string name="chat_list_status_no_chats">No chats</string>
+    <string name="chat_list_status_chats_count">%d chats</string>
+    <string name="chat_list_error_network">No internet connection</string>
+    <string name="chat_list_error_server">Server error</string>
+    <string name="chat_list_error_server_unreachable">Server unreachable</string>
+    <string name="chat_list_error_local">Local error</string>
+    <string name="chat_list_error_unknown">Unknown error</string>
+    <string name="chat_list_avatar_content_description">Avatar</string>
+    <string name="chat_list_group_content_description">Group chat</string>
+    <string name="chat_list_swipe_delete_content_description">Delete chat</string>
+    <string name="chat_list_swipe_archive_content_description">Archive chat</string>
+    <string name="chat_list_swipe_pin_content_description">Pin chat</string>
+    <string name="chat_list_swipe_mute_content_description">Mute chat</string>
+    <string name="chat_list_swipe_unmute_content_description">Unmute chat</string>
+    <string name="chat_list_swipe_more_content_description">More options</string>
+    <string name="chat_list_swipe_settings_content_description">Chat settings</string>
+    <string name="chat_list_swipe_notifications_content_description">Notifications</string>
+    
+    <!-- Time formatting -->
+    <string name="yesterday">Yesterday</string>
 </resources>

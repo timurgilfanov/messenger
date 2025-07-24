@@ -7,15 +7,15 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
-import timur.gilfanov.annotations.Feature
+import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -31,13 +31,11 @@ import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createT
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@Category(Feature::class)
+@Category(Component::class)
 class ChatViewModelLoadingTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
-
-    private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
     @Test
     fun `loads chat successfully`() = runTest {
@@ -61,11 +59,9 @@ class ChatViewModelLoadingTest {
         )
 
         viewModel.test(this) {
-            runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
+            val job = runOnCreate()
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
-            val inputField = (state as ChatUiState.Ready).inputTextField
             assertEquals(
                 ChatUiState.Ready(
                     id = chatId,
@@ -94,12 +90,14 @@ class ChatViewModelLoadingTest {
                             isFromCurrentUser = true,
                         ),
                     ),
-                    inputTextField = inputField,
+                    inputTextField = (state as ChatUiState.Ready).inputTextField,
                     isSending = false,
                     status = ChatStatus.OneToOne(null),
                 ),
                 state,
             )
+
+            job.cancelAndJoin()
         }
     }
 
@@ -127,8 +125,7 @@ class ChatViewModelLoadingTest {
         )
 
         viewModel.test(this) {
-            runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
+            val job = runOnCreate()
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
             val inputField = (state as ChatUiState.Ready).inputTextField
@@ -156,6 +153,8 @@ class ChatViewModelLoadingTest {
                 ),
                 state,
             )
+
+            job.cancelAndJoin()
         }
     }
 
@@ -179,11 +178,12 @@ class ChatViewModelLoadingTest {
         )
 
         viewModel.test(this) {
-            runOnCreate()
-            testDispatcher.scheduler.advanceUntilIdle() // Allow debounce to complete
+            val job = runOnCreate()
             expectState {
                 ChatUiState.Loading(NetworkNotAvailable)
             }
+
+            job.cancelAndJoin()
         }
     }
 }

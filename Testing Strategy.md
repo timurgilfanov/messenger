@@ -4,11 +4,11 @@ To balance between short time to find bug and waiting time for tests to run I ne
 
 ## Test Categories
 
+**Architecture** — verify architecture rules. Example: entity layer do not depend on any other layer. 
+
 **Unit** — test single method or class with minimal dependencies. Example: text validator.
 
-**Component** — test multiply classes together. Example: button behaviour or appearance, form validation.
-
-**Architecture** — verify architecture rules. Example: entity layer do not depend on any other layer. 
+**Component** — test multiply classes together. Example: button behaviour or appearance, form validation. 
 
 **Feature** — test integration between two or more components. Example: UI or ViewModel send a message to use case and handle different responses.
 
@@ -24,7 +24,7 @@ Test classes should be annotated with it's test category, so CI/CD could know wh
 |-------------------|-----------------------------------------|------------------------------------------------------|------------------------|--------------------------------|
 | Architecture      | No                                      | Local                                                | Debuggable             | Every commit                   |
 | Unit              | No                                      | Local                                                | Debuggable             | Every commit                   | 
-| Component         | No                                      | Local <br/> Robolectric <br/> Emulator               | Debuggable             | Every commit                   |
+| Component         | No                                      | Local <br/> Robolectric                              | Debuggable             | Every commit                   |
 | Feature           | Mocked                                  | Local <br/> Robolectric <br/> Emulator <br/> Devices | Debuggable             | Pre-merge                      |
 | Application       | Mocked <br/> **Staging** <br/> **Prod** | Emulator <br/> **Devices**                           | Debuggable             | Pre-merge <br/> **Post-merge** |
 | Release Candidate | Prod                                    | Emulator <br/> Devices                               | Minified release build | Post-merge <br/> Pre-release   |

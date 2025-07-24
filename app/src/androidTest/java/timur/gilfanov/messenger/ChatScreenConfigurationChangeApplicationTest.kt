@@ -21,15 +21,15 @@ import timur.gilfanov.annotations.ReleaseCandidate
 @OptIn(ExperimentalTestApi::class)
 @Category(Application::class)
 @RunWith(AndroidJUnit4::class)
-class ConfigurationChangeApplicationTest {
+class ChatScreenConfigurationChangeApplicationTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
     @Test
     fun chatScreen_preservesInputTextOnRotation() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
 
             val testMessage = "This message should survive rotation"
 
@@ -58,7 +58,7 @@ class ConfigurationChangeApplicationTest {
     @Test
     fun chatScreen_preservesUIStateOnRotation() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
 
             onNodeWithTag("message_input")
                 .assertIsDisplayed()
@@ -93,7 +93,7 @@ class ConfigurationChangeApplicationTest {
     @Test
     fun chatScreen_handlesMultipleRotations() {
         with(composeTestRule) {
-            waitUntilAtLeastOneExists(hasTestTag("message_input"), timeoutMillis = 1000)
+            waitUntilExactlyOneExists(hasTestTag("message_input"))
             val testMessage = "Multi-rotation test"
             onNodeWithTag("message_input").apply {
                 assertIsDisplayed()

@@ -20,4 +20,5 @@ class ParticipantRepositoryNotImplemented : ParticipantRepository {
         error("Not implemented in delegate")
     override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented in delegate")
     override suspend fun sendMessage(message: Message) = error("Not implemented in delegate")
+    override fun isChatListUpdating() = error("Not implemented in delegate")
 }

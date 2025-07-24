@@ -99,6 +99,13 @@ class MessageSendingApplicationTest {
         }
     }
 
+    /* todo: this test is failed on application-test-devices, needs investigation
+
+MessageSendingApplicationTest.messageSending_preservesInputDuringTyping: app/src/androidTest/java/timur/gilfanov/messenger/MessageSendingApplicationTest.kt#L116
+androidx.compose.ui.test.junit4.android.ComposeNotIdleException: Idling resource timed out: possibly due to compose being busy.
+IdlingResourceRegistry has the following idling resources registered:
+
+     */
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun messageSending_preservesInputDuringTyping() {

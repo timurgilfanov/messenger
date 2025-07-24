@@ -49,6 +49,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import timur.gilfanov.messenger.R
+import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.COMPACT_BUTTON_WIDTH
+import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.MAX_COMPACT_ACTIONS
+import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.MAX_STANDARD_ACTIONS
+import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.STANDARD_BUTTON_WIDTH
 
 data class SwipeAction(
     val icon: ImageVector,
@@ -146,9 +150,9 @@ data class SwipeContainerState(
 
 private fun getActionButtonWidth(actionCount: Int): Dp = when {
     actionCount == 0 -> 0.dp
-    actionCount <= SwipeActionDimensions.MAX_STANDARD_ACTIONS -> SwipeActionDimensions.STANDARD_BUTTON_WIDTH
-    actionCount <= SwipeActionDimensions.MAX_COMPACT_ACTIONS -> SwipeActionDimensions.COMPACT_BUTTON_WIDTH
-    else -> SwipeActionDimensions.COMPACT_BUTTON_WIDTH // Fallback for more than 3 actions
+    actionCount <= MAX_STANDARD_ACTIONS -> STANDARD_BUTTON_WIDTH
+    actionCount <= MAX_COMPACT_ACTIONS -> COMPACT_BUTTON_WIDTH
+    else -> COMPACT_BUTTON_WIDTH // Fallback for more than 3 actions
 }
 
 @Composable

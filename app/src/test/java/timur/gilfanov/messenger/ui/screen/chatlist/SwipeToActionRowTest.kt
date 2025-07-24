@@ -164,6 +164,7 @@ class SwipeToActionRowTest {
     }
 
     @Test
+    @Suppress("LongMethod")
     fun `SwipeToActionRow multiple actions are clickable`() {
         var archiveClicked by mutableIntStateOf(0)
         var pinClicked by mutableIntStateOf(0)
@@ -205,7 +206,6 @@ class SwipeToActionRowTest {
 
         composeTestRule.onNodeWithText("Multiple actions content").assertIsDisplayed()
 
-        // Verify all actions exist in the composition
         composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists().performClick()
         composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists().performClick()
         composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists().performClick()
@@ -213,12 +213,12 @@ class SwipeToActionRowTest {
         assertEquals(0, pinClicked)
         assertEquals(0, deleteClicked)
 
-        composeTestRule.onNodeWithText("Multiple actions content").performTouchInput {
-            swipeRight()
-        }
-        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists().performClick()
-        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists().performClick()
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists().performClick()
+        composeTestRule.onNodeWithText("Multiple actions content")
+            .performTouchInput { swipeRight() }
+
+        composeTestRule.onNode(hasContentDescription("Archive chat")).performClick()
+        composeTestRule.onNode(hasContentDescription("Pin chat")).performClick()
+        composeTestRule.onNode(hasContentDescription("Delete chat")).performClick()
         assertEquals(1, archiveClicked)
         assertEquals(1, pinClicked)
         assertEquals(0, deleteClicked)
@@ -227,15 +227,16 @@ class SwipeToActionRowTest {
             .performTouchInput { swipeLeft() }
             .performTouchInput { swipeLeft() }
 
-        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists().performClick()
-        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists().performClick()
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists().performClick()
+        composeTestRule.onNode(hasContentDescription("Archive chat")).performClick()
+        composeTestRule.onNode(hasContentDescription("Pin chat")).performClick()
+        composeTestRule.onNode(hasContentDescription("Delete chat")).performClick()
         assertEquals(1, archiveClicked)
         assertEquals(1, pinClicked)
         assertEquals(1, deleteClicked)
     }
 
     @Test
+    @Suppress("LongMethod")
     fun `SwipeToActionRow three actions per side are correctly configured`() {
         composeTestRule.setContent {
             MessengerTheme {

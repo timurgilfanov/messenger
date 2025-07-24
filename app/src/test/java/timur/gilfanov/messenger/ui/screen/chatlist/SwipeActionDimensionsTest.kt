@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.ui.screen.chatlist
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
@@ -11,9 +10,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -60,8 +57,6 @@ class SwipeActionDimensionsTest {
     fun `SwipeToActionRow uses standard width for 2 actions`() {
         composeTestRule.setContent {
             MessengerTheme {
-                val density = LocalDensity.current
-
                 SwipeToActionRow(
                     startActions = listOf(
                         createTestAction("Action1"),
@@ -86,8 +81,6 @@ class SwipeActionDimensionsTest {
     fun `SwipeToActionRow uses compact width for 3 actions`() {
         composeTestRule.setContent {
             MessengerTheme {
-                val density = LocalDensity.current
-
                 SwipeToActionRow(
                     startActions = listOf(
                         createTestAction("Action1"),
@@ -158,23 +151,4 @@ class SwipeActionDimensionsTest {
         iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
         onClick = {},
     )
-
-    @Composable
-    private fun TestButtonWidthCalculation() {
-        val density = LocalDensity.current
-
-        // Test width calculations for different scenarios
-        val width1Action = with(density) { 72.dp.toPx() }
-        val width2Actions = with(density) { 72.dp.toPx() * 2 }
-        val width3Actions = with(density) { 60.dp.toPx() * 3 }
-
-        Box(
-            modifier = Modifier
-                .width(200.dp)
-                .testTag("test-content"),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("Width calculation test: $width1Action, $width2Actions, $width3Actions")
-        }
-    }
 }

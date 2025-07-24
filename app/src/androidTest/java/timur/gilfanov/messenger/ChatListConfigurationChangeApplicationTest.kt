@@ -20,6 +20,10 @@ class ChatListConfigurationChangeApplicationTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ChatListScreenTestActivity>()
 
+    /* todo: this test is flaky, needs investigation
+    java.lang.IllegalStateException: No compose hierarchies found in the app. Possible reasons include: (1) the Activity that calls setContent did not launch; (2) setContent was not called; (3) setContent was called before the ComposeTestRule ran. If setContent is called by the Activity, make sure the Activity is launched after the ComposeTestRule runs
+	at androidx.compose.ui.test.TestContext.getAllSemanticsNodes$ui_test_release(TestOwner.kt:87)
+     */
     @Test
     fun chatListScreen_handlesMultipleRotations() {
         with(composeTestRule) {

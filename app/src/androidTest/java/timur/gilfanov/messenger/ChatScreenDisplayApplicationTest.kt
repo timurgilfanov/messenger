@@ -42,6 +42,10 @@ class ChatScreenDisplayApplicationTest {
             .assertIsDisplayed()
     }
 
+    /* todo: this test is flaky, needs investigation
+    androidx.compose.ui.test.ComposeTimeoutException: Condition (exactly 1 nodes match (TestTag = 'loading_indicator')) still not satisfied after 1000 ms
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.waitUntil(ComposeUiTest.android.kt:441)
+     */
     @Test
     fun chatScreen_showsLoadingStateInitially() {
         // The loading state should be visible briefly when the app starts

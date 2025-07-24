@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -58,7 +59,15 @@ fun ChatListItem(
 ) {
     SwipeToActionRow(
         modifier = modifier,
-        onStartAction = { onDelete(chatItem.id) },
+        endActions = listOf(
+            SwipeAction(
+                icon = Icons.Default.Delete,
+                labelRes = R.string.chat_list_swipe_delete_content_description,
+                backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                onClick = { onDelete(chatItem.id) },
+            ),
+        ),
     ) {
         Card(
             modifier = Modifier

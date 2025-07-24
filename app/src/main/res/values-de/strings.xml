@@ -20,6 +20,13 @@
     <string name="chat_list_avatar_content_description">Avatar</string>
     <string name="chat_list_group_content_description">Gruppenchat</string>
     <string name="chat_list_swipe_delete_content_description">Chat löschen</string>
+    <string name="chat_list_swipe_archive_content_description">Chat archivieren</string>
+    <string name="chat_list_swipe_pin_content_description">Chat anheften</string>
+    <string name="chat_list_swipe_mute_content_description">Chat stummschalten</string>
+    <string name="chat_list_swipe_unmute_content_description">Chat Stummschaltung aufheben</string>
+    <string name="chat_list_swipe_more_content_description">Weitere Optionen</string>
+    <string name="chat_list_swipe_settings_content_description">Chat-Einstellungen</string>
+    <string name="chat_list_swipe_notifications_content_description">Benachrichtigungen</string>
     
     <!-- Time formatting -->
     <string name="yesterday">Gestern</string>

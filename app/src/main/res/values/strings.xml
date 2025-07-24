@@ -20,6 +20,13 @@
     <string name="chat_list_avatar_content_description">Avatar</string>
     <string name="chat_list_group_content_description">Group chat</string>
     <string name="chat_list_swipe_delete_content_description">Delete chat</string>
+    <string name="chat_list_swipe_archive_content_description">Archive chat</string>
+    <string name="chat_list_swipe_pin_content_description">Pin chat</string>
+    <string name="chat_list_swipe_mute_content_description">Mute chat</string>
+    <string name="chat_list_swipe_unmute_content_description">Unmute chat</string>
+    <string name="chat_list_swipe_more_content_description">More options</string>
+    <string name="chat_list_swipe_settings_content_description">Chat settings</string>
+    <string name="chat_list_swipe_notifications_content_description">Notifications</string>
     
     <!-- Time formatting -->
     <string name="yesterday">Yesterday</string>

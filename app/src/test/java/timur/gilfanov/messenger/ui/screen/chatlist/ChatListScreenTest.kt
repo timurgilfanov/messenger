@@ -11,7 +11,6 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Clock
@@ -426,43 +425,10 @@ class ChatListScreenTest {
     }
 
     @Test
-    fun `ChatListScreen shows appropriate content description for buttons`() {
-        val screenState = createTestScreenState()
-
-        composeTestRule.setContent {
-            MessengerTheme {
-                ChatListScreenContent(
-                    screenState = screenState,
-                    actions = ChatListContentActions(
-                        onChatClick = {},
-                        onNewChatClick = {},
-                        onSearchClick = {},
-                        onDeleteChat = {},
-                    ),
-                )
-            }
-        }
-
-        // Verify buttons are displayed with proper content descriptions
-        composeTestRule.onNodeWithTag("search_button")
-            .assertIsDisplayed()
-        composeTestRule.onNodeWithTag("new_chat_button")
-            .assertIsDisplayed()
-
-        // Verify content descriptions use localized strings
-        composeTestRule.onNodeWithContentDescription(
-            composeTestRule.activity.getString(R.string.chat_list_search_content_description),
-        ).assertIsDisplayed()
-
-        composeTestRule.onNodeWithContentDescription(
-            composeTestRule.activity.getString(R.string.chat_list_new_chat_content_description),
-        ).assertIsDisplayed()
-    }
-
-    @Test
     fun `ChatListScreen handles empty state action correctly`() {
         val screenState = createTestScreenState(uiState = ChatListUiState.Empty)
-        var newChatClicked = false
+        var newChatClicked = 0
+        var searchClicked = 0
 
         composeTestRule.setContent {
             MessengerTheme {
@@ -470,8 +436,8 @@ class ChatListScreenTest {
                     screenState = screenState,
                     actions = ChatListContentActions(
                         onChatClick = {},
-                        onNewChatClick = { newChatClicked = true },
-                        onSearchClick = {},
+                        onNewChatClick = { newChatClicked++ },
+                        onSearchClick = { searchClicked++ },
                         onDeleteChat = {},
                     ),
                 )
@@ -482,8 +448,14 @@ class ChatListScreenTest {
         composeTestRule.onNodeWithTag("empty_state")
             .assertIsDisplayed()
 
-        // Note: Testing the empty state action would require knowing the internal
-        // structure of EmptyStateComponent, which is not part of this test's scope
-        assertFalse(newChatClicked) // Initially false
+        composeTestRule.onNodeWithContentDescription(
+            composeTestRule.activity.getString(R.string.chat_list_search_content_description),
+        ).assertIsDisplayed().performClick()
+        assertEquals(1, searchClicked)
+
+        composeTestRule.onNodeWithContentDescription(
+            composeTestRule.activity.getString(R.string.chat_list_new_chat_content_description),
+        ).assertIsDisplayed().performClick()
+        assertEquals(1, newChatClicked)
     }
 }

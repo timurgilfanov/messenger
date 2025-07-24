@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chatlist
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -46,7 +47,7 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 class SwipeToActionRowTest {
 
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun `SwipeToActionRow displays content correctly when no actions provided`() {
@@ -77,8 +78,20 @@ class SwipeToActionRowTest {
 
         composeTestRule.onNodeWithText("Content with start actions").assertIsDisplayed()
 
-        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_archive_content_description,
+                ),
+            ),
+        ).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_pin_content_description,
+                ),
+            ),
+        ).assertExists()
     }
 
     @Test
@@ -97,7 +110,13 @@ class SwipeToActionRowTest {
 
         composeTestRule.onNodeWithText("Content with end actions").assertIsDisplayed()
 
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_delete_content_description,
+                ),
+            ),
+        ).assertExists()
     }
 
     @Test
@@ -120,9 +139,27 @@ class SwipeToActionRowTest {
         composeTestRule.onNodeWithText("Content with both actions").assertIsDisplayed()
 
         // Verify all action buttons are present
-        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_archive_content_description,
+                ),
+            ),
+        ).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_pin_content_description,
+                ),
+            ),
+        ).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_delete_content_description,
+                ),
+            ),
+        ).assertExists()
     }
 
     @Test
@@ -148,8 +185,13 @@ class SwipeToActionRowTest {
         }
 
         composeTestRule.onNodeWithText("Clickable content").assertIsDisplayed()
-        composeTestRule.onNode(hasContentDescription("Delete chat"))
-            .assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_delete_content_description,
+                ),
+            ),
+        ).assertExists()
             .performClick() // it's hidden behind the content and performClick() will not work
         assertEquals(false, deleteClicked)
 
@@ -157,8 +199,13 @@ class SwipeToActionRowTest {
             swipeLeft()
         }
         assertEquals(false, deleteClicked)
-        composeTestRule.onNode(hasContentDescription("Delete chat"))
-            .performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_delete_content_description,
+                ),
+            ),
+        ).performClick()
 
         assertEquals(false, deleteClicked)
     }
@@ -206,9 +253,27 @@ class SwipeToActionRowTest {
 
         composeTestRule.onNodeWithText("Multiple actions content").assertIsDisplayed()
 
-        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists().performClick()
-        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists().performClick()
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists().performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_archive_content_description,
+                ),
+            ),
+        ).assertExists().performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_pin_content_description,
+                ),
+            ),
+        ).assertExists().performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_delete_content_description,
+                ),
+            ),
+        ).assertExists().performClick()
         assertEquals(0, archiveClicked)
         assertEquals(0, pinClicked)
         assertEquals(0, deleteClicked)
@@ -216,9 +281,27 @@ class SwipeToActionRowTest {
         composeTestRule.onNodeWithText("Multiple actions content")
             .performTouchInput { swipeRight() }
 
-        composeTestRule.onNode(hasContentDescription("Archive chat")).performClick()
-        composeTestRule.onNode(hasContentDescription("Pin chat")).performClick()
-        composeTestRule.onNode(hasContentDescription("Delete chat")).performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_archive_content_description,
+                ),
+            ),
+        ).performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_pin_content_description,
+                ),
+            ),
+        ).performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_delete_content_description,
+                ),
+            ),
+        ).performClick()
         assertEquals(1, archiveClicked)
         assertEquals(1, pinClicked)
         assertEquals(0, deleteClicked)
@@ -227,9 +310,27 @@ class SwipeToActionRowTest {
             .performTouchInput { swipeLeft() }
             .performTouchInput { swipeLeft() }
 
-        composeTestRule.onNode(hasContentDescription("Archive chat")).performClick()
-        composeTestRule.onNode(hasContentDescription("Pin chat")).performClick()
-        composeTestRule.onNode(hasContentDescription("Delete chat")).performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_archive_content_description,
+                ),
+            ),
+        ).performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_pin_content_description,
+                ),
+            ),
+        ).performClick()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_delete_content_description,
+                ),
+            ),
+        ).performClick()
         assertEquals(1, archiveClicked)
         assertEquals(1, pinClicked)
         assertEquals(1, deleteClicked)
@@ -293,12 +394,48 @@ class SwipeToActionRowTest {
             }
         }
 
-        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Chat settings")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists()
-        composeTestRule.onNode(hasContentDescription("More options")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Notifications")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_pin_content_description,
+                ),
+            ),
+        ).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_settings_content_description,
+                ),
+            ),
+        ).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_archive_content_description,
+                ),
+            ),
+        ).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_more_content_description,
+                ),
+            ),
+        ).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_notifications_content_description,
+                ),
+            ),
+        ).assertExists()
+        composeTestRule.onNode(
+            hasContentDescription(
+                composeTestRule.activity.getString(
+                    R.string.chat_list_swipe_delete_content_description,
+                ),
+            ),
+        ).assertExists()
 
         composeTestRule.onNodeWithText("Six actions content").assertIsDisplayed()
     }

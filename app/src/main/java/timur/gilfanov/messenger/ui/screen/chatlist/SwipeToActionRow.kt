@@ -61,8 +61,6 @@ data class SwipeAction(
     val backgroundColor: Color,
     val iconTint: Color,
     val onClick: () -> Unit,
-    @Deprecated("Use labelRes instead for proper internationalization")
-    val label: String? = null,
 )
 
 enum class SwipeState {
@@ -193,7 +191,7 @@ private fun SwipeActionButton(action: SwipeAction, width: Dp, hapticFeedback: Ha
     ) {
         Icon(
             imageVector = action.icon,
-            contentDescription = action.labelRes?.let { stringResource(it) } ?: action.label,
+            contentDescription = action.labelRes?.let { stringResource(it) },
             tint = action.iconTint,
             modifier = Modifier.size(24.dp),
         )

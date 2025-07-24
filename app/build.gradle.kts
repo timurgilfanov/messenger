@@ -80,6 +80,7 @@ kover {
                     "androidx.compose.ui.tooling.preview.Preview",
                     "dagger.internal.DaggerGenerated",
                     "javax.annotation.processing.Generated",
+                    "timur.gilfanov.messenger.annotation.KoverIgnore",
                 )
                 classes(
                     "*.Hilt_*",
@@ -93,7 +94,6 @@ kover {
                     "*_ComponentTreeDeps*",
                     "*_HiltComponents*",
                     "timur.gilfanov.messenger.di.*",
-                    "*PreviewContent*",
                 )
             }
         }

@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import timur.gilfanov.messenger.R
+import timur.gilfanov.messenger.annotation.KoverIgnore
 import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.COMPACT_BUTTON_WIDTH
 import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.MAX_COMPACT_ACTIONS
 import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.MAX_STANDARD_ACTIONS
@@ -638,6 +639,7 @@ private fun SwipeToActionRowDarkNarrowPreview() {
     }
 }
 
+@KoverIgnore("Preview helper function")
 @Composable
 private fun PreviewContent(text: String) {
     Box(

@@ -294,7 +294,7 @@ private fun SwipeToActionRowPreview() {
                 ),
             ),
         ) {
-            PreviewContent("← Pin, Archive (swipe left) | Delete →")
+            ContentPreview("← Pin, Archive (swipe left) | Delete →")
         }
     }
 }
@@ -351,7 +351,7 @@ private fun SwipeToActionRowMultiplePreview() {
                 ),
             ),
         ) {
-            PreviewContent("← Pin, Archive (swipe left) | Delete →")
+            ContentPreview("← Pin, Archive (swipe left) | Delete →")
         }
     }
 }
@@ -378,7 +378,7 @@ private fun SwipeToActionRowStartOnlyPreview() {
                 ),
             ),
         ) {
-            PreviewContent("← Pin, Archive (swipe left only)")
+            ContentPreview("← Pin, Archive (swipe left only)")
         }
     }
 }
@@ -398,7 +398,7 @@ private fun SwipeToActionRowEndOnlyPreview() {
                 ),
             ),
         ) {
-            PreviewContent("(swipe left only) → Delete")
+            ContentPreview("(swipe left only) → Delete")
         }
     }
 }
@@ -408,7 +408,7 @@ private fun SwipeToActionRowEndOnlyPreview() {
 private fun SwipeToActionRowNoActionsPreview() {
     MessengerTheme {
         SwipeToActionRow {
-            PreviewContent("No swipe actions (static content)")
+            ContentPreview("No swipe actions (static content)")
         }
     }
 }
@@ -448,7 +448,7 @@ private fun SwipeToActionRowDarkModePreview() {
                 ),
             ),
         ) {
-            PreviewContent("← Pin, Archive (swipe left) | Delete →")
+            ContentPreview("← Pin, Archive (swipe left) | Delete →")
         }
     }
 }
@@ -509,7 +509,7 @@ private fun SwipeToActionRowDarkModeMultiplePreview() {
                 ),
             ),
         ) {
-            PreviewContent("← Pin, Archive (swipe left) | Delete →")
+            ContentPreview("← Pin, Archive (swipe left) | Delete →")
         }
     }
 }
@@ -545,7 +545,7 @@ private fun SwipeToActionRowNarrowPreview() {
                 ),
             ),
         ) {
-            PreviewContent("Narrow (300dp): Pin, Archive (swipe left) | Delete →")
+            ContentPreview("Narrow (300dp): Pin, Archive (swipe left) | Delete →")
         }
     }
 }
@@ -574,7 +574,7 @@ private fun SwipeToActionRowVeryNarrowPreview() {
                 ),
             ),
         ) {
-            PreviewContent("Very Narrow (250dp): Archive ← | → Delete")
+            ContentPreview("Very Narrow (250dp): Archive ← | → Delete")
         }
     }
 }
@@ -594,7 +594,7 @@ private fun SwipeToActionRowExtraNarrowPreview() {
                 ),
             ),
         ) {
-            PreviewContent("Extra Narrow (200dp): → Delete only")
+            ContentPreview("Extra Narrow (200dp): → Delete only")
         }
     }
 }
@@ -635,13 +635,13 @@ private fun SwipeToActionRowDarkNarrowPreview() {
                 ),
             ),
         ) {
-            PreviewContent("Dark + Narrow: Pin ← | → Settings, Delete")
+            ContentPreview("Dark + Narrow: Pin ← | → Settings, Delete")
         }
     }
 }
 
 @Composable
-private fun PreviewContent(text: String) {
+private fun ContentPreview(text: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()

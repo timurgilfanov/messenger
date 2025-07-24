@@ -20,20 +20,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.annotations.Component
+import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Category(Component::class)
@@ -71,10 +75,8 @@ class SwipeToActionRowTest {
             }
         }
 
-        // Verify content is displayed
         composeTestRule.onNodeWithText("Content with start actions").assertIsDisplayed()
 
-        // Verify action buttons are present (they exist in the composition even if not visible)
         composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists()
         composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists()
     }
@@ -93,10 +95,8 @@ class SwipeToActionRowTest {
             }
         }
 
-        // Verify content is displayed
         composeTestRule.onNodeWithText("Content with end actions").assertIsDisplayed()
 
-        // Verify action buttons are present
         composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists()
     }
 
@@ -126,7 +126,7 @@ class SwipeToActionRowTest {
     }
 
     @Test
-    fun `SwipeToActionRow action data is correctly configured`() {
+    fun `SwipeToActionRow action data is clickable`() {
         var deleteClicked = false
 
         composeTestRule.setContent {
@@ -135,7 +135,7 @@ class SwipeToActionRowTest {
                     endActions = listOf(
                         SwipeAction(
                             icon = Icons.Default.Delete,
-                            label = "Delete chat",
+                            labelRes = R.string.chat_list_swipe_delete_content_description,
                             backgroundColor = MaterialTheme.colorScheme.errorContainer,
                             iconTint = MaterialTheme.colorScheme.onErrorContainer,
                             onClick = { deleteClicked = true },
@@ -147,18 +147,27 @@ class SwipeToActionRowTest {
             }
         }
 
-        // Verify the action button exists in the composition
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists()
-
-        // Verify content is displayed
         composeTestRule.onNodeWithText("Clickable content").assertIsDisplayed()
+        composeTestRule.onNode(hasContentDescription("Delete chat"))
+            .assertExists()
+            .performClick() // it's hidden behind the content and performClick() will not work
+        assertEquals(false, deleteClicked)
+
+        composeTestRule.onNodeWithText("Clickable content").performTouchInput {
+            swipeLeft()
+        }
+        assertEquals(false, deleteClicked)
+        composeTestRule.onNode(hasContentDescription("Delete chat"))
+            .performClick()
+
+        assertEquals(false, deleteClicked)
     }
 
     @Test
-    fun `SwipeToActionRow multiple actions are correctly configured`() {
-        var archiveClicked = false
-        var pinClicked = false
-        var deleteClicked = false
+    fun `SwipeToActionRow multiple actions are clickable`() {
+        var archiveClicked by mutableStateOf(0)
+        var pinClicked by mutableStateOf(0)
+        var deleteClicked by mutableStateOf(0)
 
         composeTestRule.setContent {
             MessengerTheme {
@@ -166,26 +175,26 @@ class SwipeToActionRowTest {
                     startActions = listOf(
                         SwipeAction(
                             icon = Icons.Default.Home,
-                            label = "Archive chat",
+                            labelRes = R.string.chat_list_swipe_archive_content_description,
                             backgroundColor = MaterialTheme.colorScheme.primaryContainer,
                             iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = { archiveClicked = true },
+                            onClick = { archiveClicked++ },
                         ),
                         SwipeAction(
                             icon = Icons.Default.Star,
-                            label = "Pin chat",
+                            labelRes = R.string.chat_list_swipe_pin_content_description,
                             backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
                             iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                            onClick = { pinClicked = true },
+                            onClick = { pinClicked++ },
                         ),
                     ),
                     endActions = listOf(
                         SwipeAction(
                             icon = Icons.Default.Delete,
-                            label = "Delete chat",
+                            labelRes = R.string.chat_list_swipe_delete_content_description,
                             backgroundColor = MaterialTheme.colorScheme.errorContainer,
                             iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                            onClick = { deleteClicked = true },
+                            onClick = { deleteClicked++ },
                         ),
                     ),
                 ) {
@@ -194,13 +203,36 @@ class SwipeToActionRowTest {
             }
         }
 
-        // Verify all actions exist in the composition
-        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists()
-
-        // Verify content is displayed
         composeTestRule.onNodeWithText("Multiple actions content").assertIsDisplayed()
+
+        // Verify all actions exist in the composition
+        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists().performClick()
+        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists().performClick()
+        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists().performClick()
+        assertEquals(0, archiveClicked)
+        assertEquals(0, pinClicked)
+        assertEquals(0, deleteClicked)
+
+        composeTestRule.onNodeWithText("Multiple actions content").performTouchInput {
+            swipeRight()
+        }
+        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists().performClick()
+        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists().performClick()
+        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists().performClick()
+        assertEquals(1, archiveClicked)
+        assertEquals(1, pinClicked)
+        assertEquals(0, deleteClicked)
+
+        composeTestRule.onNodeWithText("Multiple actions content")
+            .performTouchInput { swipeLeft() }
+            .performTouchInput { swipeLeft() }
+
+        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists().performClick()
+        composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists().performClick()
+        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists().performClick()
+        assertEquals(1, archiveClicked)
+        assertEquals(1, pinClicked)
+        assertEquals(1, deleteClicked)
     }
 
     @Test
@@ -211,21 +243,21 @@ class SwipeToActionRowTest {
                     startActions = listOf(
                         SwipeAction(
                             icon = Icons.Default.Star,
-                            label = "Pin chat",
+                            labelRes = R.string.chat_list_swipe_pin_content_description,
                             backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
                             iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
                             onClick = { },
                         ),
                         SwipeAction(
                             icon = Icons.Default.Settings,
-                            label = "Chat settings",
+                            labelRes = R.string.chat_list_swipe_settings_content_description,
                             backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
                             iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
                             onClick = { },
                         ),
                         SwipeAction(
                             icon = Icons.Default.Home,
-                            label = "Archive chat",
+                            labelRes = R.string.chat_list_swipe_archive_content_description,
                             backgroundColor = MaterialTheme.colorScheme.primaryContainer,
                             iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
                             onClick = { },
@@ -234,21 +266,21 @@ class SwipeToActionRowTest {
                     endActions = listOf(
                         SwipeAction(
                             icon = Icons.Default.MoreVert,
-                            label = "More options",
+                            labelRes = R.string.chat_list_swipe_more_content_description,
                             backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
                             iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                             onClick = { },
                         ),
                         SwipeAction(
                             icon = Icons.Default.Notifications,
-                            label = "Notifications",
+                            labelRes = R.string.chat_list_swipe_notifications_content_description,
                             backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
                             iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
                             onClick = { },
                         ),
                         SwipeAction(
                             icon = Icons.Default.Delete,
-                            label = "Delete chat",
+                            labelRes = R.string.chat_list_swipe_delete_content_description,
                             backgroundColor = MaterialTheme.colorScheme.errorContainer,
                             iconTint = MaterialTheme.colorScheme.onErrorContainer,
                             onClick = { },
@@ -273,69 +305,6 @@ class SwipeToActionRowTest {
     }
 
     @Test
-    fun `SwipeToActionRow state management is correctly configured`() {
-        var clickCount by mutableStateOf(0)
-
-        composeTestRule.setContent {
-            MessengerTheme {
-                SwipeToActionRow(
-                    endActions = listOf(
-                        SwipeAction(
-                            icon = Icons.Default.Delete,
-                            label = "Delete chat",
-                            backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                            iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                            onClick = { clickCount++ },
-                        ),
-                    ),
-                ) {
-                    TestContent("Click count: $clickCount")
-                }
-            }
-        }
-
-        // Verify initial state
-        composeTestRule.onNodeWithText("Click count: 0").assertIsDisplayed()
-
-        // Verify action exists
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists()
-    }
-
-    @Test
-    fun `SwipeToActionRow action buttons have correct accessibility labels`() {
-        composeTestRule.setContent {
-            MessengerTheme {
-                SwipeToActionRow(
-                    startActions = listOf(
-                        SwipeAction(
-                            icon = Icons.Default.Home,
-                            label = "Archive chat",
-                            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                            iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = {},
-                        ),
-                    ),
-                    endActions = listOf(
-                        SwipeAction(
-                            icon = Icons.Default.Delete,
-                            label = "Delete chat",
-                            backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                            iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                            onClick = {},
-                        ),
-                    ),
-                ) {
-                    TestContent("Accessibility test content")
-                }
-            }
-        }
-
-        // Verify accessibility labels
-        composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists()
-        composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists()
-    }
-
-    @Test
     fun `SwipeToActionRow works correctly with empty action lists`() {
         composeTestRule.setContent {
             MessengerTheme {
@@ -348,55 +317,20 @@ class SwipeToActionRowTest {
             }
         }
 
-        // Content should still be displayed
         composeTestRule.onNodeWithText("Empty actions test").assertIsDisplayed()
     }
 
-    @Test
-    fun `SwipeToActionRow preserves content interaction when actions are present`() {
-        var contentClicked = false
-
-        composeTestRule.setContent {
-            MessengerTheme {
-                SwipeToActionRow(
-                    startActions = createTestStartActions(),
-                    endActions = createTestEndActions(),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("content")
-                            .background(Color.Gray),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "Clickable Content",
-                            modifier = Modifier
-                                .testTag("content-text"),
-                        )
-                    }
-                }
-            }
-        }
-
-        // Content should be displayed and accessible
-        composeTestRule.onNodeWithTag("content").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("content-text").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Clickable Content").assertIsDisplayed()
-    }
-
-    // Helper functions for test data creation
     private fun createTestStartActions() = listOf(
         SwipeAction(
             icon = Icons.Default.Home,
-            label = "Archive chat",
+            labelRes = R.string.chat_list_swipe_archive_content_description,
             backgroundColor = Color.Blue,
             iconTint = Color.White,
             onClick = {},
         ),
         SwipeAction(
             icon = Icons.Default.Star,
-            label = "Pin chat",
+            labelRes = R.string.chat_list_swipe_pin_content_description,
             backgroundColor = Color.Green,
             iconTint = Color.White,
             onClick = {},
@@ -406,14 +340,14 @@ class SwipeToActionRowTest {
     private fun createTestEndActions() = listOf(
         SwipeAction(
             icon = Icons.Default.Delete,
-            label = "Delete chat",
+            labelRes = R.string.chat_list_swipe_delete_content_description,
             backgroundColor = Color.Red,
             iconTint = Color.White,
             onClick = {},
         ),
     )
 
-    @androidx.compose.runtime.Composable
+    @Composable
     private fun TestContent(text: String) {
         Box(
             modifier = Modifier

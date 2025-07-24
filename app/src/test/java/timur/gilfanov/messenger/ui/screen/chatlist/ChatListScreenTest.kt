@@ -4,6 +4,7 @@ import android.content.pm.ActivityInfo
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -443,11 +444,20 @@ class ChatListScreenTest {
             }
         }
 
-        // Test tags are used as content description identifiers
+        // Verify buttons are displayed with proper content descriptions
         composeTestRule.onNodeWithTag("search_button")
             .assertIsDisplayed()
         composeTestRule.onNodeWithTag("new_chat_button")
             .assertIsDisplayed()
+
+        // Verify content descriptions use localized strings
+        composeTestRule.onNodeWithContentDescription(
+            composeTestRule.activity.getString(R.string.chat_list_search_content_description),
+        ).assertIsDisplayed()
+
+        composeTestRule.onNodeWithContentDescription(
+            composeTestRule.activity.getString(R.string.chat_list_new_chat_content_description),
+        ).assertIsDisplayed()
     }
 
     @Test

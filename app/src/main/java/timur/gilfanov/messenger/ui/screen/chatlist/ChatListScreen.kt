@@ -167,7 +167,9 @@ private fun TopBar(
             ) {
                 Icon(
                     imageVector = Icons.Default.Search,
-                    contentDescription = "Search chats",
+                    contentDescription = stringResource(
+                        R.string.chat_list_search_content_description,
+                    ),
                 )
             }
 
@@ -177,7 +179,9 @@ private fun TopBar(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "New chat",
+                    contentDescription = stringResource(
+                        R.string.chat_list_new_chat_content_description,
+                    ),
                 )
             }
         },

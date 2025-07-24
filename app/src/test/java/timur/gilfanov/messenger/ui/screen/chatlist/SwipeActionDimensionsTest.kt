@@ -15,8 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
@@ -36,56 +37,27 @@ class SwipeActionDimensionsTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun `button width calculation returns correct values for different action counts`() {
-        composeTestRule.setContent {
-            MessengerTheme {
-                TestButtonWidthCalculation()
-            }
-        }
-
-        // The calculation logic is tested indirectly through the component behavior
-        // Direct access to private function isn't possible, but we can verify through
-        // the component's total width calculations
-        composeTestRule.onNodeWithTag("test-content").assertExists()
-    }
-
-    @Test
     fun `SwipeToActionRow uses standard width for 1-2 actions`() {
-        var actualStartWidth = 0f
-        var actualEndWidth = 0f
-
         composeTestRule.setContent {
             MessengerTheme {
-                val density = LocalDensity.current
-
                 // Test with 1 start action
                 SwipeToActionRow(
                     startActions = listOf(createTestAction("Action1")),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("content-1-action"),
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         Text("1 action test")
                     }
                 }
-
-                // Calculate expected width: 1 action * 72dp
-                actualStartWidth = with(density) { 72.dp.toPx() }
             }
         }
 
-        composeTestRule.onNodeWithTag("content-1-action").assertExists()
-
         // Verify that 72dp is used (standard width)
-        assert(actualStartWidth > 0) { "Start width should be calculated" }
+        composeTestRule.onNodeWithContentDescription("Action1")
+            .assertWidthIsEqualTo(72.dp)
     }
 
     @Test
     fun `SwipeToActionRow uses standard width for 2 actions`() {
-        var actualWidth = 0f
-
         composeTestRule.setContent {
             MessengerTheme {
                 val density = LocalDensity.current
@@ -96,30 +68,22 @@ class SwipeActionDimensionsTest {
                         createTestAction("Action2"),
                     ),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("content-2-actions"),
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         Text("2 actions test")
                     }
                 }
-
-                // Calculate expected width: 2 actions * 72dp
-                actualWidth = with(density) { 72.dp.toPx() * 2 }
             }
         }
 
-        composeTestRule.onNodeWithTag("content-2-actions").assertExists()
-
         // Verify that 72dp per action is used (standard width)
-        assert(actualWidth > 0) { "Width should be calculated for 2 actions" }
+        composeTestRule.onNodeWithContentDescription("Action1")
+            .assertWidthIsEqualTo(72.dp)
+        composeTestRule.onNodeWithContentDescription("Action2")
+            .assertWidthIsEqualTo(72.dp)
     }
 
     @Test
     fun `SwipeToActionRow uses compact width for 3 actions`() {
-        var actualWidth = 0f
-
         composeTestRule.setContent {
             MessengerTheme {
                 val density = LocalDensity.current
@@ -131,24 +95,19 @@ class SwipeActionDimensionsTest {
                         createTestAction("Action3"),
                     ),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("content-3-actions"),
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         Text("3 actions test")
                     }
                 }
-
-                // Calculate expected width: 3 actions * 60dp (compact)
-                actualWidth = with(density) { 60.dp.toPx() * 3 }
             }
         }
-
-        composeTestRule.onNodeWithTag("content-3-actions").assertExists()
-
-        // Verify that 60dp per action is used (compact width)
-        assert(actualWidth > 0) { "Width should be calculated for 3 actions with compact size" }
+        // Calculate expected width: 3 actions * 60dp (compact)
+        composeTestRule.onNodeWithContentDescription("Action1")
+            .assertWidthIsEqualTo(60.dp)
+        composeTestRule.onNodeWithContentDescription("Action2")
+            .assertWidthIsEqualTo(60.dp)
+        composeTestRule.onNodeWithContentDescription("Action3")
+            .assertWidthIsEqualTo(60.dp)
     }
 
     @Test
@@ -166,73 +125,23 @@ class SwipeActionDimensionsTest {
                         createTestAction("End3"),
                     ), // 3 actions -> 60dp each
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("content-mixed-actions"),
-                    ) {
+                    Box(modifier = Modifier.testTag("content-mixed-actions")) {
                         Text("Mixed actions test")
                     }
                 }
             }
         }
 
-        composeTestRule.onNodeWithTag("content-mixed-actions").assertExists()
-    }
-
-    @Test
-    fun `SwipeToActionRow handles zero actions correctly`() {
-        composeTestRule.setContent {
-            MessengerTheme {
-                SwipeToActionRow(
-                    startActions = emptyList(),
-                    endActions = emptyList(),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("content-no-actions"),
-                    ) {
-                        Text("No actions test")
-                    }
-                }
-            }
-        }
-
-        composeTestRule.onNodeWithTag("content-no-actions").assertExists()
-    }
-
-    @Test
-    fun `SwipeToActionRow width calculation is consistent across recompositions`() {
-        composeTestRule.setContent {
-            MessengerTheme {
-                // Test that width calculations remain consistent
-                SwipeToActionRow(
-                    startActions = listOf(
-                        createTestAction("Consistent1"),
-                        createTestAction("Consistent2"),
-                        createTestAction("Consistent3"),
-                    ),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("content-consistent"),
-                    ) {
-                        Text("Consistency test")
-                    }
-                }
-            }
-        }
-
-        // Verify component renders consistently
-        composeTestRule.onNodeWithTag("content-consistent").assertExists()
-
-        // Trigger recomposition by waiting
-        composeTestRule.waitForIdle()
-
-        // Verify still exists after recomposition
-        composeTestRule.onNodeWithTag("content-consistent").assertExists()
+        composeTestRule.onNodeWithContentDescription("Start1")
+            .assertWidthIsEqualTo(72.dp)
+        composeTestRule.onNodeWithContentDescription("Start2")
+            .assertWidthIsEqualTo(72.dp)
+        composeTestRule.onNodeWithContentDescription("End1")
+            .assertWidthIsEqualTo(60.dp)
+        composeTestRule.onNodeWithContentDescription("End1")
+            .assertWidthIsEqualTo(60.dp)
+        composeTestRule.onNodeWithContentDescription("End1")
+            .assertWidthIsEqualTo(60.dp)
     }
 
     // Helper functions

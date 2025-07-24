@@ -15,7 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -165,9 +165,9 @@ class SwipeToActionRowTest {
 
     @Test
     fun `SwipeToActionRow multiple actions are clickable`() {
-        var archiveClicked by mutableStateOf(0)
-        var pinClicked by mutableStateOf(0)
-        var deleteClicked by mutableStateOf(0)
+        var archiveClicked by mutableIntStateOf(0)
+        var pinClicked by mutableIntStateOf(0)
+        var deleteClicked by mutableIntStateOf(0)
 
         composeTestRule.setContent {
             MessengerTheme {
@@ -292,7 +292,6 @@ class SwipeToActionRowTest {
             }
         }
 
-        // Verify all actions are present in the composition
         composeTestRule.onNode(hasContentDescription("Pin chat")).assertExists()
         composeTestRule.onNode(hasContentDescription("Chat settings")).assertExists()
         composeTestRule.onNode(hasContentDescription("Archive chat")).assertExists()
@@ -300,7 +299,6 @@ class SwipeToActionRowTest {
         composeTestRule.onNode(hasContentDescription("Notifications")).assertExists()
         composeTestRule.onNode(hasContentDescription("Delete chat")).assertExists()
 
-        // Verify content is displayed
         composeTestRule.onNodeWithText("Six actions content").assertIsDisplayed()
     }
 

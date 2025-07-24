@@ -73,7 +73,6 @@ class ChatListScreenTest {
     @Test
     fun `ChatListScreen displays empty state correctly`() {
         val screenState = createTestScreenState(uiState = ChatListUiState.Empty)
-        var newChatClicked = false
 
         composeTestRule.setContent {
             MessengerTheme {
@@ -81,7 +80,7 @@ class ChatListScreenTest {
                     screenState = screenState,
                     actions = ChatListContentActions(
                         onChatClick = {},
-                        onNewChatClick = { newChatClicked = true },
+                        onNewChatClick = {},
                         onSearchClick = {},
                         onDeleteChat = {},
                     ),

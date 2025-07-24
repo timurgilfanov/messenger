@@ -93,6 +93,7 @@ kover {
                     "*_ComponentTreeDeps*",
                     "*_HiltComponents*",
                     "timur.gilfanov.messenger.di.*",
+                    "*PreviewContent*",
                 )
             }
         }

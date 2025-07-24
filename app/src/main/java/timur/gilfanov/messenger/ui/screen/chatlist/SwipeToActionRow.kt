@@ -53,6 +53,7 @@ import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.COMPACT
 import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.MAX_COMPACT_ACTIONS
 import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.MAX_STANDARD_ACTIONS
 import timur.gilfanov.messenger.ui.screen.chatlist.SwipeActionDimensions.STANDARD_BUTTON_WIDTH
+import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 data class SwipeAction(
     val icon: ImageVector,
@@ -271,134 +272,144 @@ private fun SwipeableContent(
 
 @Preview(name = "Basic - Archive & Delete", heightDp = 72)
 @Composable
-private fun SwipeToActionRowBasicPreview() {
-    SwipeToActionRow(
-        startActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Home,
-                labelRes = R.string.chat_list_swipe_archive_content_description,
-                backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                onClick = {},
+private fun SwipeToActionRowPreview() {
+    MessengerTheme {
+        SwipeToActionRow(
+            startActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Home,
+                    labelRes = R.string.chat_list_swipe_archive_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    onClick = {},
+                ),
             ),
-        ),
-        endActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Delete,
-                labelRes = R.string.chat_list_swipe_delete_content_description,
-                backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                onClick = {},
+            endActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Delete,
+                    labelRes = R.string.chat_list_swipe_delete_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                    onClick = {},
+                ),
             ),
-        ),
-    ) {
-        PreviewContent("Archive ← | → Delete")
+        ) {
+            PreviewContent("← Pin, Archive (swipe left) | Delete →")
+        }
     }
 }
 
 @Preview(name = "Multiple Actions - 3 on each side", heightDp = 72)
 @Composable
 private fun SwipeToActionRowMultiplePreview() {
-    SwipeToActionRow(
-        startActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Star,
-                labelRes = R.string.chat_list_swipe_pin_content_description,
-                backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                onClick = {},
+    MessengerTheme {
+        SwipeToActionRow(
+            startActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Star,
+                    labelRes = R.string.chat_list_swipe_pin_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Settings,
+                    labelRes = R.string.chat_list_swipe_mute_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Home,
+                    labelRes = R.string.chat_list_swipe_archive_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    onClick = {},
+                ),
             ),
-            SwipeAction(
-                icon = Icons.Default.Settings,
-                labelRes = R.string.chat_list_swipe_mute_content_description,
-                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                onClick = {},
+            endActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.MoreVert,
+                    labelRes = R.string.chat_list_swipe_more_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Notifications,
+                    labelRes = R.string.chat_list_swipe_notifications_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Delete,
+                    labelRes = R.string.chat_list_swipe_delete_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                    onClick = {},
+                ),
             ),
-            SwipeAction(
-                icon = Icons.Default.Home,
-                labelRes = R.string.chat_list_swipe_archive_content_description,
-                backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                onClick = {},
-            ),
-        ),
-        endActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.MoreVert,
-                labelRes = R.string.chat_list_swipe_more_content_description,
-                backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                onClick = {},
-            ),
-            SwipeAction(
-                icon = Icons.Default.Notifications,
-                labelRes = R.string.chat_list_swipe_notifications_content_description,
-                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                onClick = {},
-            ),
-            SwipeAction(
-                icon = Icons.Default.Delete,
-                labelRes = R.string.chat_list_swipe_delete_content_description,
-                backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                onClick = {},
-            ),
-        ),
-    ) {
-        PreviewContent("Pin, Mute, Archive ← | → More, Notify, Delete")
+        ) {
+            PreviewContent("← Pin, Archive (swipe left) | Delete →")
+        }
     }
 }
 
 @Preview(name = "Start Actions Only", heightDp = 72)
 @Composable
 private fun SwipeToActionRowStartOnlyPreview() {
-    SwipeToActionRow(
-        startActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Home,
-                labelRes = R.string.chat_list_swipe_archive_content_description,
-                backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                onClick = {},
+    MessengerTheme {
+        SwipeToActionRow(
+            startActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Home,
+                    labelRes = R.string.chat_list_swipe_archive_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Star,
+                    labelRes = R.string.chat_list_swipe_pin_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    onClick = {},
+                ),
             ),
-            SwipeAction(
-                icon = Icons.Default.Star,
-                labelRes = R.string.chat_list_swipe_pin_content_description,
-                backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                onClick = {},
-            ),
-        ),
-    ) {
-        PreviewContent("Archive, Pin ← (swipe right only)")
+        ) {
+            PreviewContent("← Pin, Archive (swipe left only)")
+        }
     }
 }
 
 @Preview(name = "End Actions Only", heightDp = 72)
 @Composable
 private fun SwipeToActionRowEndOnlyPreview() {
-    SwipeToActionRow(
-        endActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Delete,
-                labelRes = R.string.chat_list_swipe_delete_content_description,
-                backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                onClick = {},
+    MessengerTheme {
+        SwipeToActionRow(
+            endActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Delete,
+                    labelRes = R.string.chat_list_swipe_delete_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                    onClick = {},
+                ),
             ),
-        ),
-    ) {
-        PreviewContent("(swipe left only) → Delete")
+        ) {
+            PreviewContent("(swipe left only) → Delete")
+        }
     }
 }
 
 @Preview(name = "No Actions", heightDp = 72)
 @Composable
 private fun SwipeToActionRowNoActionsPreview() {
-    SwipeToActionRow {
-        PreviewContent("No swipe actions (static content)")
+    MessengerTheme {
+        SwipeToActionRow {
+            PreviewContent("No swipe actions (static content)")
+        }
     }
 }
 
@@ -409,34 +420,36 @@ private fun SwipeToActionRowNoActionsPreview() {
 )
 @Composable
 private fun SwipeToActionRowDarkModePreview() {
-    SwipeToActionRow(
-        startActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Star,
-                labelRes = R.string.chat_list_swipe_pin_content_description,
-                backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                onClick = {},
+    MessengerTheme {
+        SwipeToActionRow(
+            startActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Star,
+                    labelRes = R.string.chat_list_swipe_pin_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Home,
+                    labelRes = R.string.chat_list_swipe_archive_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    onClick = {},
+                ),
             ),
-            SwipeAction(
-                icon = Icons.Default.Home,
-                labelRes = R.string.chat_list_swipe_archive_content_description,
-                backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                onClick = {},
+            endActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Delete,
+                    labelRes = R.string.chat_list_swipe_delete_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                    onClick = {},
+                ),
             ),
-        ),
-        endActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Delete,
-                labelRes = R.string.chat_list_swipe_delete_content_description,
-                backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                onClick = {},
-            ),
-        ),
-    ) {
-        PreviewContent("Dark Mode: Pin, Archive ← | → Delete")
+        ) {
+            PreviewContent("← Pin, Archive (swipe left) | Delete →")
+        }
     }
 }
 
@@ -447,134 +460,142 @@ private fun SwipeToActionRowDarkModePreview() {
 )
 @Composable
 private fun SwipeToActionRowDarkModeMultiplePreview() {
-    SwipeToActionRow(
-        startActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Star,
-                labelRes = R.string.chat_list_swipe_pin_content_description,
-                backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                onClick = {},
+    MessengerTheme {
+        SwipeToActionRow(
+            startActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Star,
+                    labelRes = R.string.chat_list_swipe_pin_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Settings,
+                    labelRes = R.string.chat_list_swipe_mute_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Home,
+                    labelRes = R.string.chat_list_swipe_archive_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    onClick = {},
+                ),
             ),
-            SwipeAction(
-                icon = Icons.Default.Settings,
-                labelRes = R.string.chat_list_swipe_mute_content_description,
-                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                onClick = {},
+            endActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.MoreVert,
+                    labelRes = R.string.chat_list_swipe_more_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Notifications,
+                    labelRes = R.string.chat_list_swipe_notifications_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Delete,
+                    labelRes = R.string.chat_list_swipe_delete_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                    onClick = {},
+                ),
             ),
-            SwipeAction(
-                icon = Icons.Default.Home,
-                labelRes = R.string.chat_list_swipe_archive_content_description,
-                backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                onClick = {},
-            ),
-        ),
-        endActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.MoreVert,
-                labelRes = R.string.chat_list_swipe_more_content_description,
-                backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                onClick = {},
-            ),
-            SwipeAction(
-                icon = Icons.Default.Notifications,
-                labelRes = R.string.chat_list_swipe_notifications_content_description,
-                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                onClick = {},
-            ),
-            SwipeAction(
-                icon = Icons.Default.Delete,
-                labelRes = R.string.chat_list_swipe_delete_content_description,
-                backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                onClick = {},
-            ),
-        ),
-    ) {
-        PreviewContent("Dark Mode: 3 + 3 actions (60dp width)")
+        ) {
+            PreviewContent("← Pin, Archive (swipe left) | Delete →")
+        }
     }
 }
 
 @Preview(name = "Narrow Display - 3 Actions", heightDp = 72, widthDp = 300)
 @Composable
 private fun SwipeToActionRowNarrowPreview() {
-    SwipeToActionRow(
-        startActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Star,
-                labelRes = R.string.chat_list_swipe_pin_content_description,
-                backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                onClick = {},
+    MessengerTheme {
+        SwipeToActionRow(
+            startActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Star,
+                    labelRes = R.string.chat_list_swipe_pin_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Home,
+                    labelRes = R.string.chat_list_swipe_archive_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    onClick = {},
+                ),
             ),
-            SwipeAction(
-                icon = Icons.Default.Home,
-                labelRes = R.string.chat_list_swipe_archive_content_description,
-                backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                onClick = {},
+            endActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Delete,
+                    labelRes = R.string.chat_list_swipe_delete_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                    onClick = {},
+                ),
             ),
-        ),
-        endActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Delete,
-                labelRes = R.string.chat_list_swipe_delete_content_description,
-                backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                onClick = {},
-            ),
-        ),
-    ) {
-        PreviewContent("Narrow (300dp): Pin, Archive ← | → Delete")
+        ) {
+            PreviewContent("Narrow (300dp): Pin, Archive (swipe left) | Delete →")
+        }
     }
 }
 
 @Preview(name = "Very Narrow - Single Actions", heightDp = 72, widthDp = 250)
 @Composable
 private fun SwipeToActionRowVeryNarrowPreview() {
-    SwipeToActionRow(
-        startActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Home,
-                labelRes = R.string.chat_list_swipe_archive_content_description,
-                backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                onClick = {},
+    MessengerTheme {
+        SwipeToActionRow(
+            startActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Home,
+                    labelRes = R.string.chat_list_swipe_archive_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    onClick = {},
+                ),
             ),
-        ),
-        endActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Delete,
-                labelRes = R.string.chat_list_swipe_delete_content_description,
-                backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                onClick = {},
+            endActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Delete,
+                    labelRes = R.string.chat_list_swipe_delete_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                    onClick = {},
+                ),
             ),
-        ),
-    ) {
-        PreviewContent("Very Narrow (250dp): Archive ← | → Delete")
+        ) {
+            PreviewContent("Very Narrow (250dp): Archive ← | → Delete")
+        }
     }
 }
 
 @Preview(name = "Extra Narrow - End Only", heightDp = 72, widthDp = 200)
 @Composable
 private fun SwipeToActionRowExtraNarrowPreview() {
-    SwipeToActionRow(
-        endActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Delete,
-                labelRes = R.string.chat_list_swipe_delete_content_description,
-                backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                onClick = {},
+    MessengerTheme {
+        SwipeToActionRow(
+            endActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Delete,
+                    labelRes = R.string.chat_list_swipe_delete_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                    onClick = {},
+                ),
             ),
-        ),
-    ) {
-        PreviewContent("Extra Narrow (200dp): → Delete only")
+        ) {
+            PreviewContent("Extra Narrow (200dp): → Delete only")
+        }
     }
 }
 
@@ -586,34 +607,36 @@ private fun SwipeToActionRowExtraNarrowPreview() {
 )
 @Composable
 private fun SwipeToActionRowDarkNarrowPreview() {
-    SwipeToActionRow(
-        startActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Star,
-                labelRes = R.string.chat_list_swipe_pin_content_description,
-                backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                onClick = {},
+    MessengerTheme {
+        SwipeToActionRow(
+            startActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Star,
+                    labelRes = R.string.chat_list_swipe_pin_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    onClick = {},
+                ),
             ),
-        ),
-        endActions = listOf(
-            SwipeAction(
-                icon = Icons.Default.Settings,
-                labelRes = R.string.chat_list_swipe_settings_content_description,
-                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                onClick = {},
+            endActions = listOf(
+                SwipeAction(
+                    icon = Icons.Default.Settings,
+                    labelRes = R.string.chat_list_swipe_settings_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                    iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    onClick = {},
+                ),
+                SwipeAction(
+                    icon = Icons.Default.Delete,
+                    labelRes = R.string.chat_list_swipe_delete_content_description,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                    onClick = {},
+                ),
             ),
-            SwipeAction(
-                icon = Icons.Default.Delete,
-                labelRes = R.string.chat_list_swipe_delete_content_description,
-                backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                onClick = {},
-            ),
-        ),
-    ) {
-        PreviewContent("Dark + Narrow: Pin ← | → Settings, Delete")
+        ) {
+            PreviewContent("Dark + Narrow: Pin ← | → Settings, Delete")
+        }
     }
 }
 

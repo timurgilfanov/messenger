@@ -2,18 +2,26 @@ package timur.gilfanov.messenger.ui.screen.chatlist
 
 import android.content.pm.ActivityInfo
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.Clock
+import org.junit.Assert.assertEquals as junitAssertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -68,6 +76,22 @@ class ChatListScreenTest {
         isOnline = false,
         lastOnlineTime = null,
     )
+
+    private fun createScrollableTestData(itemCount: Int = 20) =
+        persistentListOf<ChatListItemUiModel>().run {
+            val builder = this.builder()
+            repeat(itemCount) { index ->
+                builder.add(
+                    createTestChatItem(
+                        id = ChatId(UUID.randomUUID()),
+                        name = "Chat Item ${index + 1}",
+                        lastMessage = "This is message ${index + 1} for testing scroll state",
+                        unreadCount = if (index % 3 == 0) index else 0,
+                    ),
+                )
+            }
+            builder.build()
+        }
 
     @Test
     fun `ChatListScreen displays empty state correctly`() {
@@ -457,5 +481,117 @@ class ChatListScreenTest {
             composeTestRule.activity.getString(R.string.chat_list_new_chat_content_description),
         ).assertIsDisplayed().performClick()
         assertEquals(1, newChatClicked)
+    }
+
+    @Test
+    fun `ChatListScreen with listState preserves scroll position during state restoration`() {
+        val chatItems = createScrollableTestData(30)
+        val screenState = createTestScreenState(
+            uiState = ChatListUiState.NotEmpty(chatItems),
+        )
+        val stateRestorationTester = StateRestorationTester(composeTestRule)
+
+        var listState: LazyListState? = null
+
+        stateRestorationTester.setContent {
+            val state = rememberLazyListState()
+            listState = state
+
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    listState = state,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        // Scroll to a specific position
+        composeTestRule.onNodeWithTag("chat_list")
+            .performScrollToIndex(15)
+
+        composeTestRule.waitForIdle()
+
+        // Get the initial scroll position
+        val initialFirstVisibleIndex = listState?.firstVisibleItemIndex ?: 0
+        val initialScrollOffset = listState?.firstVisibleItemScrollOffset ?: 0
+
+        // Verify we actually scrolled
+        assertTrue(initialFirstVisibleIndex >= 10, "Should have scrolled past index 10")
+
+        // Trigger state restoration
+        stateRestorationTester.emulateSavedInstanceStateRestore()
+
+        composeTestRule.waitForIdle()
+
+        // Verify the scroll position is preserved
+        val restoredFirstVisibleIndex = listState?.firstVisibleItemIndex ?: 0
+        val restoredScrollOffset = listState?.firstVisibleItemScrollOffset ?: 0
+
+        junitAssertEquals(
+            "First visible item index should be preserved",
+            initialFirstVisibleIndex,
+            restoredFirstVisibleIndex,
+        )
+        junitAssertEquals(
+            "Scroll offset should be preserved",
+            initialScrollOffset,
+            restoredScrollOffset,
+        )
+    }
+
+    @Test
+    fun `ChatListScreen without listState loses scroll position during state restoration`() {
+        val chatItems = createScrollableTestData(30)
+        val screenState = createTestScreenState(
+            uiState = ChatListUiState.NotEmpty(chatItems),
+        )
+        val stateRestorationTester = StateRestorationTester(composeTestRule)
+
+        var recreatedState by mutableStateOf(false)
+
+        stateRestorationTester.setContent {
+            // Create a new state each time instead of using rememberLazyListState
+            val state = if (recreatedState) {
+                LazyListState()
+            } else {
+                rememberLazyListState()
+            }
+
+            MessengerTheme {
+                ChatListScreenContent(
+                    screenState = screenState,
+                    listState = state,
+                    actions = ChatListContentActions(
+                        onChatClick = {},
+                        onNewChatClick = {},
+                        onSearchClick = {},
+                        onDeleteChat = {},
+                    ),
+                )
+            }
+        }
+
+        // Scroll to a specific position
+        composeTestRule.onNodeWithTag("chat_list")
+            .performScrollToIndex(15)
+
+        composeTestRule.waitForIdle()
+
+        // Simulate state recreation (like what happens without proper state management)
+        @Suppress("AssignedValueIsNeverRead")
+        recreatedState = true
+        stateRestorationTester.emulateSavedInstanceStateRestore()
+
+        composeTestRule.waitForIdle()
+
+        // Verify we're back at the top (scroll position lost)
+        composeTestRule.onNodeWithText("Chat Item 1")
+            .assertIsDisplayed()
     }
 }

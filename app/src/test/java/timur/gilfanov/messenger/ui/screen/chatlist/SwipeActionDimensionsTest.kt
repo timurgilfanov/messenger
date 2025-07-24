@@ -146,7 +146,7 @@ class SwipeActionDimensionsTest {
             '3' -> Icons.Default.Settings
             else -> Icons.Default.Delete
         },
-        label = label,
+        label = label, // todo use localized string to remove label SwipeAction
         backgroundColor = MaterialTheme.colorScheme.primaryContainer,
         iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
         onClick = {},

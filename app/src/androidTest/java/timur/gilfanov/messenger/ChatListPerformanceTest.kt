@@ -19,7 +19,7 @@ import timur.gilfanov.annotations.ReleaseCandidate
 class ChatListPerformanceTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<ChatListScreenWithChatsTestActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatListScreenTestActivity>()
 
     @Test
     fun chatListScreen_launchPerformance() {

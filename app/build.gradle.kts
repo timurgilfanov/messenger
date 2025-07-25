@@ -21,7 +21,10 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "timur.gilfanov.messenger.HiltTestRunner"
+        testInstrumentationRunnerArguments += mapOf(
+            "clearPackageData" to "true",
+        )
     }
 
     testOptions {
@@ -187,6 +190,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.kotlin.test)
     androidTestImplementation(project(":test-annotations"))
+    androidTestImplementation(libs.hilt.android.testing)
+    kaptAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     ktlintRuleset(libs.ktlint.compose)

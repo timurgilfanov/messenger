@@ -33,7 +33,6 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.Application
 import timur.gilfanov.annotations.ReleaseCandidate
 import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepository
-import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 

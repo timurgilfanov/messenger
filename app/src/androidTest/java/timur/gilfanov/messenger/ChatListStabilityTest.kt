@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -18,26 +19,21 @@ import timur.gilfanov.annotations.ReleaseCandidate
 class ChatListStabilityTest {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<ChatListScreenTestActivity>()
+    val composeTestRule = createAndroidComposeRule<ChatListScreenWithChatsTestActivity>()
 
-    /* todo: this test is flaky, needs investigation
-    java.lang.IllegalStateException: No compose hierarchies found in the app. Possible reasons include: (1) the Activity that calls setContent did not launch; (2) setContent was not called; (3) setContent was called before the ComposeTestRule ran. If setContent is called by the Activity, make sure the Activity is launched after the ComposeTestRule runs
-	at androidx.compose.ui.test.TestContext.getAllSemanticsNodes$ui_test_release(TestOwner.kt:87)
-     */
     @Test
     fun chatListScreen_handlesMultipleRotations() {
         with(composeTestRule) {
+            waitUntilExactlyOneExists(hasTestTag("chat_list"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
             repeat(100) { index ->
-                waitUntilExactlyOneExists(
-                    hasTestTag("empty_state")
-                        or hasTestTag("chat_list"),
-                )
-
                 activity.requestedOrientation = if (index % 2 == 0) {
                     SCREEN_ORIENTATION_LANDSCAPE
                 } else {
                     SCREEN_ORIENTATION_PORTRAIT
                 }
+                onNodeWithTag("chat_list").assertExists()
+                onNodeWithTag("chat_item_550e8400-e29b-41d4-a716-446655440002").assertExists()
             }
         }
     }

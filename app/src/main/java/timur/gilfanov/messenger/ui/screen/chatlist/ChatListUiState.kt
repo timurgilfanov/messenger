@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chatlist
 
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -25,7 +26,9 @@ data class ChatListItemUiModel(
 )
 
 data class ChatListScreenState(
-    val uiState: ChatListUiState = ChatListUiState.Empty,
+    val uiState: ChatListUiState = ChatListUiState.NotEmpty(
+        chats = emptyList<ChatListItemUiModel>().toPersistentList(),
+    ),
     val currentUser: CurrentUserUiModel =
         CurrentUserUiModel(ParticipantId(java.util.UUID.randomUUID()), "", null),
     val isLoading: Boolean = false,

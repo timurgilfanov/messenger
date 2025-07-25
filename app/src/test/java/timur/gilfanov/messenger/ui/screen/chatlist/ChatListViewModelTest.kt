@@ -140,7 +140,8 @@ class ChatListViewModelTest {
             val job = runOnCreate()
             val state = awaitState()
 
-            assertEquals(ChatListUiState.Empty, state.uiState)
+            assertTrue(state.uiState is ChatListUiState.NotEmpty)
+            assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
@@ -161,7 +162,8 @@ class ChatListViewModelTest {
             val job = runOnCreate()
             val state = awaitState()
 
-            assertEquals(ChatListUiState.Empty, state.uiState)
+            assertTrue(state.uiState is ChatListUiState.NotEmpty)
+            assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteError, state.error)
@@ -182,7 +184,8 @@ class ChatListViewModelTest {
             val job = runOnCreate()
             val state = awaitState()
 
-            assertEquals(ChatListUiState.Empty, state.uiState)
+            assertTrue(state.uiState is ChatListUiState.NotEmpty)
+            assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteUnreachable, state.error)
@@ -203,7 +206,8 @@ class ChatListViewModelTest {
             val job = runOnCreate()
             val state = awaitState()
 
-            assertEquals(ChatListUiState.Empty, state.uiState)
+            assertTrue(state.uiState is ChatListUiState.NotEmpty)
+            assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.LocalError, state.error)

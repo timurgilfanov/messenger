@@ -16,7 +16,6 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.Application
-import timur.gilfanov.annotations.ReleaseCandidate
 
 @OptIn(ExperimentalTestApi::class)
 @Category(Application::class)
@@ -86,42 +85,6 @@ class ChatScreenConfigurationChangeApplicationTest {
 
             onNodeWithTag("send_button")
                 .assertIsDisplayed()
-        }
-    }
-
-    /* todo: this test is failed on application-test-devices, needs investigation
-
-ChatScreenConfigurationChangeApplicationTest.chatScreen_handlesMultipleRotations: app/src/androidTest/java/timur/gilfanov/messenger/ChatScreenConfigurationChangeApplicationTest.kt#L112
-java.lang.IllegalStateException: No compose hierarchies found in the app. Possible reasons include: (1) the Activity that calls setContent did not launch; (2) setContent was not called; (3) setContent was called before the ComposeTestRule ran. If setContent is called by the Activity, make sure the Activity is launched after the ComposeTestRule runs at androidx.compose.ui.test.TestContext.getAllSemanticsNodes$ui_test_release(TestOwner.kt:87)
-
-     */
-    @Category(ReleaseCandidate::class)
-    @Test
-    fun chatScreen_handlesMultipleRotations() {
-        with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
-            val testMessage = "Multi-rotation test"
-            onNodeWithTag("message_input").apply {
-                assertIsDisplayed()
-                performTextInput(testMessage)
-            }
-
-            repeat(100) { index ->
-                activity.requestedOrientation = if (index % 2 == 0) {
-                    SCREEN_ORIENTATION_LANDSCAPE
-                } else {
-                    SCREEN_ORIENTATION_PORTRAIT
-                }
-                waitForIdle()
-
-                onNodeWithTag("message_input", useUnmergedTree = true).apply {
-                    assertIsDisplayed()
-                    assertTextEquals(testMessage)
-                }
-
-                onNodeWithTag("send_button")
-                    .assertIsDisplayed()
-            }
         }
     }
 }

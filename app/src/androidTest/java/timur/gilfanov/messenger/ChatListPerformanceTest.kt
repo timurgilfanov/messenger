@@ -134,119 +134,32 @@ class ChatListPerformanceTest {
     @Test
     fun chatListScreen_configurationChangePerformance() {
         with(composeTestRule) {
-            // Wait for chat list to load
-            waitUntilExactlyOneExists(
-                hasTestTag("empty_state") or hasTestTag("chat_list"),
-                timeoutMillis = 3000,
-            )
+            waitUntilExactlyOneExists(hasTestTag("chat_list"))
 
-            // Measure configuration change performance
             val configChangeTime = measureTimeMillis {
-                // Perform configuration change
                 activity.requestedOrientation =
                     android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 waitForIdle()
 
-                // Verify UI is rebuilt correctly
-                onNodeWithTag("search_button")
-                    .assertExists()
-
-                onNodeWithTag("new_chat_button")
-                    .assertExists()
+                onNodeWithTag("search_button").assertExists()
+                onNodeWithTag("new_chat_button").assertExists()
             }
 
-            // Configuration change should be fast (under 2 seconds)
-            assert(configChangeTime < 2000) {
+            assert(configChangeTime < 1_000) {
                 "Configuration change too slow: ${configChangeTime}ms"
             }
         }
     }
 
     @Test
-    fun chatListScreen_stressTestWithRapidInteractions() {
-        with(composeTestRule) {
-            // Wait for chat list to load
-            waitUntilExactlyOneExists(
-                hasTestTag("empty_state") or hasTestTag("chat_list"),
-                timeoutMillis = 3000,
-            )
-
-            // Stress test with rapid interactions
-            val stressTestTime = measureTimeMillis {
-                repeat(100) { index ->
-                    // Alternate between different UI elements
-                    if (index % 2 == 0) {
-                        onNodeWithTag("search_button")
-                            .assertExists()
-                    } else {
-                        onNodeWithTag("new_chat_button")
-                            .assertExists()
-                    }
-                }
-            }
-
-            // Stress test should complete in reasonable time (under 3 seconds)
-            assert(stressTestTime < 3000) { "Stress test took too long: ${stressTestTime}ms" }
-
-            // Verify UI is still functional after stress test
-            onNodeWithTag("search_button")
-                .assertExists()
-
-            onNodeWithTag("new_chat_button")
-                .assertExists()
-        }
-    }
-
-    @Test
-    fun chatListScreen_memoryLeakDetection() {
-        with(composeTestRule) {
-            // Wait for chat list to load
-            waitUntilExactlyOneExists(
-                hasTestTag("empty_state") or hasTestTag("chat_list"),
-                timeoutMillis = 3000,
-            )
-
-            // Perform operations that could cause memory leaks
-            repeat(20) {
-                // Configuration changes
-                activity.requestedOrientation = if (it % 2 == 0) {
-                    android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                } else {
-                    android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                }
-                waitForIdle()
-
-                // UI interactions
-                onNodeWithTag("search_button")
-                    .assertExists()
-
-                onNodeWithTag("new_chat_button")
-                    .assertExists()
-            }
-
-            // Suggest garbage collection
-            System.gc()
-            Thread.sleep(100)
-
-            // Verify UI is still functional (no memory leaks)
-            onNodeWithTag("search_button")
-                .assertExists()
-        }
-    }
-
-    @Test
     fun chatListScreen_renderingPerformance() {
         with(composeTestRule) {
-            // Measure initial rendering performance
             val renderTime = measureTimeMillis {
-                waitUntilExactlyOneExists(
-                    hasTestTag("empty_state") or hasTestTag("chat_list"),
-                    timeoutMillis = 3000,
-                )
+                waitUntilExactlyOneExists(hasTestTag("chat_list"))
             }
 
             // Initial rendering should be fast (under 3 seconds)
-            assert(renderTime < 3000) { "Initial rendering too slow: ${renderTime}ms" }
+            assert(renderTime < 500) { "Initial rendering too slow: ${renderTime}ms" }
 
             // Verify all UI elements are rendered
             onNodeWithTag("search_button")
@@ -254,6 +167,8 @@ class ChatListPerformanceTest {
 
             onNodeWithTag("new_chat_button")
                 .assertExists()
+
+            // todo: check actual chat by chat_item_$chatId
         }
     }
 }

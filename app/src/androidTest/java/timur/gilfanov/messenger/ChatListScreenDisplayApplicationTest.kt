@@ -1,8 +1,6 @@
 package timur.gilfanov.messenger
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -22,27 +20,16 @@ class ChatListScreenDisplayApplicationTest {
     val composeTestRule = createAndroidComposeRule<ChatListScreenTestActivity>()
 
     @Test
-    fun chatListScreen_showsEmptyStateInitiallyThenChatList() {
-        composeTestRule.waitUntilExactlyOneExists(
-            hasTestTag("empty_state"),
-        )
+    fun chatListScreen_whenThereAreChatsEmptyStateNotShownInitially() {
+        composeTestRule.waitUntilExactlyOneExists(hasTestTag("search_button"))
+        composeTestRule.onNodeWithTag("empty_state").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("chat_list").assertExists()
+    }
 
-        composeTestRule.onNodeWithTag("search_button")
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag("new_chat_button")
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag("start_first_chat_button")
-            .assertIsDisplayed()
-            .assertIsEnabled()
-
-        composeTestRule.waitUntilExactlyOneExists(hasTestTag("chat_list"))
-
-        composeTestRule.onNodeWithTag("search_button")
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag("new_chat_button")
-            .assertIsDisplayed()
+    @Test
+    fun chatListScreen_whenThereAreNoChatsEmptyStateIsShownInitially() {
+        composeTestRule.waitUntilExactlyOneExists(hasTestTag("search_button"))
+        composeTestRule.onNodeWithTag("empty_state").assertExists()
+        composeTestRule.onNodeWithTag("chat_list").assertDoesNotExist()
     }
 }

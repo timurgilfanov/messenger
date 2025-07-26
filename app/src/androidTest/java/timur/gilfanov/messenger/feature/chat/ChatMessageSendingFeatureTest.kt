@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger
+package timur.gilfanov.messenger.feature.chat
 
 import androidx.compose.ui.semantics.SemanticsProperties.Disabled
 import androidx.compose.ui.semantics.SemanticsProperties.EditableText
@@ -17,22 +17,53 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.text.TextRange
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.UninstallModules
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
-import timur.gilfanov.annotations.Application
-import timur.gilfanov.annotations.ReleaseCandidate
+import timur.gilfanov.annotations.ApplicationTest
+import timur.gilfanov.annotations.FeatureTest
+import timur.gilfanov.annotations.ReleaseCandidateTest
+import timur.gilfanov.messenger.ChatScreenTestActivity
+import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepository
+import timur.gilfanov.messenger.di.RepositoryModule
+import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
 @OptIn(ExperimentalTestApi::class)
-@Category(Application::class)
+@HiltAndroidTest
+@UninstallModules(RepositoryModule::class)
+@FeatureTest
 @RunWith(AndroidJUnit4::class)
-class MessageSendingApplicationTest {
+class ChatMessageSendingFeatureTest {
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val hiltRule = HiltAndroidRule(this)
+
+    @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
-    @Category(ReleaseCandidate::class)
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object MessageSendingTestRepositoryModule {
+        @Provides
+        @Singleton
+        fun provideParticipantRepository(): ParticipantRepository = InMemoryParticipantRepository()
+    }
+
+    @Before
+    fun setup() {
+        hiltRule.inject()
+    }
+
+    @ReleaseCandidateTest
     @Test
     fun messageSending_completesSuccessfully() {
         with(composeTestRule) {

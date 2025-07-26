@@ -44,7 +44,7 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 @Category(Component::class)
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
-class SwipeToActionRowTest {
+class SwipeToActionRowComponentTest {
 
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()

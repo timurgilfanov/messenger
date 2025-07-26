@@ -20,7 +20,7 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 @Category(Component::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
-class MessageBubbleTest {
+class MessageBubbleComponentTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()

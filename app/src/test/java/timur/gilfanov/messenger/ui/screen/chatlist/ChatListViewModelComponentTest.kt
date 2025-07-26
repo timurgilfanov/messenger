@@ -16,6 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
+import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -32,8 +33,8 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListUseC
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@Category(timur.gilfanov.annotations.Component::class)
-class ChatListViewModelTest {
+@Category(Component::class)
+class ChatListViewModelComponentTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -140,7 +141,8 @@ class ChatListViewModelTest {
             val job = runOnCreate()
             val state = awaitState()
 
-            assertEquals(ChatListUiState.Empty, state.uiState)
+            assertTrue(state.uiState is ChatListUiState.NotEmpty)
+            assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
@@ -161,7 +163,8 @@ class ChatListViewModelTest {
             val job = runOnCreate()
             val state = awaitState()
 
-            assertEquals(ChatListUiState.Empty, state.uiState)
+            assertTrue(state.uiState is ChatListUiState.NotEmpty)
+            assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteError, state.error)
@@ -182,7 +185,8 @@ class ChatListViewModelTest {
             val job = runOnCreate()
             val state = awaitState()
 
-            assertEquals(ChatListUiState.Empty, state.uiState)
+            assertTrue(state.uiState is ChatListUiState.NotEmpty)
+            assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.RemoteUnreachable, state.error)
@@ -203,7 +207,8 @@ class ChatListViewModelTest {
             val job = runOnCreate()
             val state = awaitState()
 
-            assertEquals(ChatListUiState.Empty, state.uiState)
+            assertTrue(state.uiState is ChatListUiState.NotEmpty)
+            assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
             assertEquals(FlowChatListError.LocalError, state.error)

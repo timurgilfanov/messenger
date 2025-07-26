@@ -2,6 +2,8 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -22,13 +24,14 @@ import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 @Category(Component::class)
-class ChatScreenTest {
+class ChatScreenComponentTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -305,5 +308,52 @@ class ChatScreenTest {
         }
 
         composeTestRule.onNodeWithText("Update failed: $updateError").assertIsDisplayed()
+    }
+
+    @Test
+    fun `chat screen with empty text input have disabled send button and don't show error`() {
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatScreenContent(
+                    uiState = ChatUiState.Ready(
+                        id = testChatId,
+                        title = "Test Chat",
+                        participants = persistentListOf(),
+                        isGroupChat = false,
+                        inputTextField = TextFieldState(""),
+                        inputTextValidationError = TextValidationError.Empty,
+                        status = ChatStatus.OneToOne(null),
+                    ),
+                    onSendMessage = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("send_button")
+            .assertIsDisplayed()
+            .assertIsNotEnabled()
+    }
+
+    @Test
+    fun `chat screen with valid text input have enabled send button and don't show error`() {
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatScreenContent(
+                    uiState = ChatUiState.Ready(
+                        id = testChatId,
+                        title = "Test Chat",
+                        participants = persistentListOf(),
+                        isGroupChat = false,
+                        inputTextField = TextFieldState("a"),
+                        status = ChatStatus.OneToOne(null),
+                    ),
+                    onSendMessage = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("send_button")
+            .assertIsDisplayed()
+            .assertIsEnabled()
     }
 }

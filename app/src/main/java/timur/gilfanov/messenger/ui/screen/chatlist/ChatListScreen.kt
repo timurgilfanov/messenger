@@ -88,12 +88,14 @@ fun ChatListScreenContent(
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
 ) {
+    println("ChatListScreenContent called with state: $screenState")
     Scaffold(
         modifier = modifier,
         topBar = { TopBar(screenState, actions.onSearchClick, actions.onNewChatClick) },
     ) { paddingValues ->
         when (screenState.uiState) {
             Empty -> {
+                println("ChatListScreenContent: Empty state")
                 EmptyStateComponent(
                     onStartFirstChat = actions.onNewChatClick,
                     modifier = Modifier
@@ -104,6 +106,9 @@ fun ChatListScreenContent(
             }
 
             is NotEmpty -> {
+                println(
+                    "ChatListScreenContent: NotEmpty state with ${screenState.uiState.chats.size} chats",
+                )
                 LazyColumn(
                     state = listState,
                     modifier = Modifier

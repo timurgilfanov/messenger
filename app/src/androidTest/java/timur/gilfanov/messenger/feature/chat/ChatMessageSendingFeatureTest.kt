@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger
+package timur.gilfanov.messenger.feature.chat
 
 import androidx.compose.ui.semantics.SemanticsProperties.Disabled
 import androidx.compose.ui.semantics.SemanticsProperties.EditableText
@@ -31,6 +31,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.ApplicationTest
 import timur.gilfanov.annotations.ReleaseCandidateTest
+import timur.gilfanov.messenger.ChatScreenTestActivity
 import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
@@ -40,7 +41,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 @UninstallModules(RepositoryModule::class)
 @ApplicationTest
 @RunWith(AndroidJUnit4::class)
-class MessageSendingApplicationTest {
+class ChatMessageSendingFeatureTest {
 
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -128,13 +129,6 @@ class MessageSendingApplicationTest {
         }
     }
 
-    /* todo: this test is failed on application-test-devices, needs investigation
-
-MessageSendingApplicationTest.messageSending_preservesInputDuringTyping: app/src/androidTest/java/timur/gilfanov/messenger/MessageSendingApplicationTest.kt#L116
-androidx.compose.ui.test.junit4.android.ComposeNotIdleException: Idling resource timed out: possibly due to compose being busy.
-IdlingResourceRegistry has the following idling resources registered:
-
-     */
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun messageSending_preservesInputDuringTyping() {

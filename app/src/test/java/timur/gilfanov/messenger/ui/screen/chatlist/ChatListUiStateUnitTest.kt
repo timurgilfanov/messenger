@@ -18,7 +18,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 
 @Category(timur.gilfanov.annotations.Unit::class)
-class ChatListUiStateTest {
+class ChatListUiStateUnitTest {
 
     private val testChatId = ChatId(UUID.randomUUID())
     private val testUserId = ParticipantId(UUID.randomUUID())

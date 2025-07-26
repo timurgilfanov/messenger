@@ -7,7 +7,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 
 @Category(timur.gilfanov.annotations.Unit::class)
-class ChatListTimeFormattingTest {
+class ChatListTimeFormattingUnitTest {
 
     @Test
     fun `getDaysDifference returns 0 for same day`() {

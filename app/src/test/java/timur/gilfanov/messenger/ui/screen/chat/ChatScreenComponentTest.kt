@@ -31,7 +31,7 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 @Category(Component::class)
-class ChatScreenTest {
+class ChatScreenComponentTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()

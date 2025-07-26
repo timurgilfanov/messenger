@@ -16,6 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
+import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -32,8 +33,8 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListUseC
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-@Category(timur.gilfanov.annotations.Component::class)
-class ChatListViewModelTest {
+@Category(Component::class)
+class ChatListViewModelComponentTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()

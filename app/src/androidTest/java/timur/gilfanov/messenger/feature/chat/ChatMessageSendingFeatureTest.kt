@@ -30,6 +30,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.ApplicationTest
+import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.annotations.ReleaseCandidateTest
 import timur.gilfanov.messenger.ChatScreenTestActivity
 import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepository
@@ -39,7 +40,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
 @UninstallModules(RepositoryModule::class)
-@ApplicationTest
+@FeatureTest
 @RunWith(AndroidJUnit4::class)
 class ChatMessageSendingFeatureTest {
 

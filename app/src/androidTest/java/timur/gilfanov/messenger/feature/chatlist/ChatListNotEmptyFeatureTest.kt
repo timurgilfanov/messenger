@@ -20,6 +20,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.ApplicationTest
+import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.messenger.ChatListScreenTestActivity
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
@@ -28,7 +29,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
 @UninstallModules(RepositoryModule::class)
-@ApplicationTest
+@FeatureTest
 @RunWith(AndroidJUnit4::class)
 class ChatListNotEmptyFeatureTest {
 

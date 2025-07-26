@@ -1,6 +1,7 @@
 package timur.gilfanov.annotations
 
 // JUnit Category interfaces for unit tests
+// todo: can we use annotations instead of JUnit test categories?
 interface Unit
 
 interface Component

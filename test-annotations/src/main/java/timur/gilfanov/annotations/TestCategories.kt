@@ -9,10 +9,6 @@ interface Architecture
 
 interface Feature
 
-interface Application
-
-interface ReleaseCandidate
-
 // Direct annotations for instrumentation test filtering
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)

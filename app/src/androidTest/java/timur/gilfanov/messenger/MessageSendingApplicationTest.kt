@@ -28,11 +28,8 @@ import javax.inject.Singleton
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
-import timur.gilfanov.annotations.Application
 import timur.gilfanov.annotations.ApplicationTest
-import timur.gilfanov.annotations.ReleaseCandidate
 import timur.gilfanov.annotations.ReleaseCandidateTest
 import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
@@ -41,7 +38,6 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
 @UninstallModules(RepositoryModule::class)
-@Category(Application::class)
 @ApplicationTest
 @RunWith(AndroidJUnit4::class)
 class MessageSendingApplicationTest {
@@ -65,7 +61,6 @@ class MessageSendingApplicationTest {
         hiltRule.inject()
     }
 
-    @Category(ReleaseCandidate::class)
     @ReleaseCandidateTest
     @Test
     fun messageSending_completesSuccessfully() {

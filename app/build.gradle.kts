@@ -25,11 +25,11 @@ android {
         testInstrumentationRunnerArguments += mapOf(
             "clearPackageData" to "true",
         )
-        
+
         // Add annotation filtering for instrumentation tests
         if (project.hasProperty("annotation")) {
             testInstrumentationRunnerArguments += mapOf(
-                "annotation" to (project.property("annotation") as String)
+                "annotation" to (project.property("annotation") as String),
             )
         }
     }

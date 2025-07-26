@@ -2,6 +2,7 @@ package timur.gilfanov.messenger
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -54,24 +55,19 @@ class ChatScreenDisplayApplicationTest {
     }
 
     @Test
-    fun chatScreen_displaysCorrectlyOnAppLaunch() {
+    fun chatScreen_inputAreaDisplaysCorrectly() {
         composeTestRule.waitUntilExactlyOneExists(hasTestTag("message_input"))
 
         // Verify the message input field is displayed
         composeTestRule.onNodeWithTag("message_input")
             .assertIsDisplayed()
 
-        // Verify the send button is displayed
-        composeTestRule.onNodeWithTag("send_button")
-            .assertIsDisplayed()
-
-        // Verify placeholder text is shown in empty input
         composeTestRule.onNodeWithText("Type a message...")
             .assertIsDisplayed()
 
-        // Verify send button icon is displayed (should show Send icon when input is empty)
         composeTestRule.onNodeWithTag("send_button")
             .assertIsDisplayed()
+            .assertIsNotEnabled()
     }
 
     /* todo: this test is flaky, needs investigation

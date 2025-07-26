@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import timur.gilfanov.messenger.R
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
@@ -32,7 +33,7 @@ fun MessageInput(
     state: TextFieldState,
     isSending: Boolean,
     modifier: Modifier = Modifier,
-    textValidationError: String? = null,
+    textValidationError: TextValidationError? = null,
     onSendMessage: () -> Unit = {},
 ) {
     Row(
@@ -41,6 +42,13 @@ fun MessageInput(
             .padding(16.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
+        val validationError = when (textValidationError) {
+            null, TextValidationError.Empty -> null
+            is TextValidationError.TooLong -> stringResource(
+                R.string.message_input_error_too_long,
+                textValidationError.maxLength,
+            )
+        }
         OutlinedTextField(
             value = TextFieldValue(
                 text = state.text.toString(),
@@ -53,11 +61,11 @@ fun MessageInput(
                 .testTag("message_input"),
             placeholder = { Text(stringResource(R.string.message_input_placeholder)) },
             shape = RoundedCornerShape(24.dp),
-            isError = textValidationError != null,
-            label = if (textValidationError != null) {
+            isError = validationError != null,
+            label = if (validationError != null) {
                 {
                     Text(
-                        text = textValidationError,
+                        text = validationError,
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -140,7 +148,7 @@ private fun MessageInputNotValidPreview() {
     MessengerTheme {
         MessageInput(
             state = TextFieldState("Hello, this is not valid message!"),
-            textValidationError = "This message is not valid",
+            textValidationError = TextValidationError.Empty,
             isSending = false,
         )
     }
@@ -148,13 +156,13 @@ private fun MessageInputNotValidPreview() {
 
 @Preview(showBackground = true, heightDp = 480)
 @Composable
+@Suppress("MagicNumber")
 private fun MessageInputTooLongPreview() {
     MessengerTheme {
-        @Suppress("MagicNumber")
         val longText = "a".repeat(2001)
         MessageInput(
             state = TextFieldState(longText),
-            textValidationError = "This message is not valid",
+            textValidationError = TextValidationError.TooLong(2000),
             isSending = false,
         )
     }

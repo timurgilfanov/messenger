@@ -20,18 +20,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.util.UUID
 import kotlinx.collections.immutable.persistentListOf
 import org.orbitmvi.orbit.compose.collectAsState
-import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
-import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -132,16 +129,9 @@ fun ChatContent(
             )
         },
         bottomBar = {
-            val textValidationError = when (state.inputTextValidationError) {
-                null, TextValidationError.Empty -> null
-                is TextValidationError.TooLong -> stringResource(
-                    R.string.message_input_error_too_long,
-                    state.inputTextValidationError.maxLength,
-                )
-            }
             MessageInput(
                 state = state.inputTextField,
-                textValidationError = textValidationError,
+                textValidationError = state.inputTextValidationError,
                 isSending = state.isSending,
                 onSendMessage = onSendMessage,
             )

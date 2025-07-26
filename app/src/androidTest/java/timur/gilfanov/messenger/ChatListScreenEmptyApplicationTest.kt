@@ -20,6 +20,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.Application
+import timur.gilfanov.annotations.ApplicationTest
 import timur.gilfanov.messenger.data.repository.EmptyParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
@@ -28,6 +29,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 @HiltAndroidTest
 @UninstallModules(RepositoryModule::class)
 @Category(Application::class)
+@ApplicationTest
 @RunWith(AndroidJUnit4::class)
 class ChatListScreenEmptyApplicationTest {
 

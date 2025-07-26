@@ -372,7 +372,7 @@ jobs:
             --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
             --device model=Pixel2.arm,version=30 \
             --timeout 5m \
-            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.Application \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.ApplicationTest \
             --directories-to-pull /sdcard/Download \
             --results-dir="" 2>&1 | tee emulator-run.log
 
@@ -536,7 +536,7 @@ jobs:
             --device model=MediumPhone.arm,version=33 \
             --device model=felix,version=33 \
             --timeout 5m \
-            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.Application \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.ApplicationTest \
             --directories-to-pull /sdcard/Download \
             --results-dir="" 2>&1 | tee run.log
 
@@ -735,7 +735,7 @@ jobs:
             --device model=felix,version=33 \
             --device model=MediumTablet.arm,version=30 \
             --timeout 10m \
-            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,testCategory=timur.gilfanov.messenger.ReleaseCandidate \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.ReleaseCandidateTest \
             --directories-to-pull /sdcard/Download \
             --results-dir="" 2>&1 | tee release-run.log
 

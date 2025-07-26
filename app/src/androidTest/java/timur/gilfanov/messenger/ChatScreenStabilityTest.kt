@@ -24,6 +24,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.ReleaseCandidate
+import timur.gilfanov.annotations.ReleaseCandidateTest
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
@@ -32,6 +33,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 @HiltAndroidTest
 @UninstallModules(RepositoryModule::class)
 @Category(ReleaseCandidate::class)
+@ReleaseCandidateTest
 @RunWith(AndroidJUnit4::class)
 class ChatScreenStabilityTest {
 

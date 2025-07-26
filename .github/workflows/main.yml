@@ -315,6 +315,141 @@ jobs:
           flags: local
           fail_ci_if_error: true
 
+      - name: Download Debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug
+
+      - name: Download AndroidTest APK
+        uses: actions/download-artifact@v4
+        with:
+          name: androidtest-apk
+          path: app/build/outputs/apk/androidTest/debug
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Install gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Run Feature Instrumentation Tests on Emulators
+        run: |
+          gcloud firebase test android run \
+            --type instrumentation \
+            --app app/build/outputs/apk/debug/app-debug.apk \
+            --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --device model=Pixel2.arm,version=30 \
+            --timeout 5m \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.FeatureTest \
+            --directories-to-pull /sdcard/Download \
+            --results-dir="" 2>&1 | tee emulator-run.log
+
+      - name: Upload Feature Emulator Test Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-emulator-test-log
+          path: emulator-run.log
+
+      - name: Extract Firebase Results Path
+        id: extract-results
+        run: |
+          CONSOLE_URL=$(grep 'Raw results will be stored in' emulator-run.log | awk '{print $NF}' | tr -d '[]')
+          if [ -z "$CONSOLE_URL" ]; then
+            echo "❌ Failed to extract CONSOLE_URL from emulator-run.log"; exit 1
+          fi
+          # Convert to gs:// URL
+          BUCKET_PATH=$(echo "$CONSOLE_URL" | sed 's|https://console.developers.google.com/storage/browser/|gs://|')
+          if [ -z "$BUCKET_PATH" ]; then
+            echo "❌ Failed to convert CONSOLE_URL to BUCKET_PATH"; exit 1
+          fi
+          echo "RESULTS_URL=$BUCKET_PATH" >> "$GITHUB_ENV"
+          echo "✅ RESULTS_URL set to $BUCKET_PATH"
+
+      - name: Download results from Firebase Test Lab
+        run: |
+          if [ -z "$RESULTS_URL" ]; then
+            echo "❌ RESULTS_URL is not set"; exit 1
+          fi
+          mkdir -p emulator-testlab-results
+          gsutil -m cp -r $RESULTS_URL emulator-testlab-results/        
+
+      - name: Sanitize all subdirectory names to remove colons
+        run: |
+          for dir in emulator-testlab-results/*; do
+            base=$(basename "$dir")
+            safe=$(echo "$base" | tr ':' '_')
+            if [ "$base" != "$safe" ]; then
+              mv "emulator-testlab-results/$base" "emulator-testlab-results/$safe"
+            fi
+          done
+
+      # Needs sanitized path without colons
+      - name: Upload Feature Emulator Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-emulator-test-results
+          path: emulator-testlab-results/
+
+      - name: Publish Feature Emulator Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: emulator-testlab-results/**/*.xml
+          check_name: "Feature Instrumentation Test Results (Emulator)"
+
+      - name: Download Kotlin class files for emulator coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: kotlin-classfiles
+          path: app/build/tmp/kotlin-classes/debug
+
+      - name: Generate Emulator Coverage Reports
+        run: |
+          # Create directory for coverage reports
+          mkdir -p coverage-reports
+
+          # Find emulator coverage files 
+          PHONE_COVERAGE_FILES=$(find emulator-testlab-results \
+                                 -path "*/artifacts/sdcard/Download/coverage.ec" \
+                                 -print0 | xargs -0)          
+          if [ -n "$PHONE_COVERAGE_FILES" ]; then
+            echo "Generating emulator coverage report using Gradle task..."
+            COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
+            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA"
+
+            # Copy generated report to expected location
+            cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml coverage-reports/feature-emulator-phone-report.xml
+            rm -rf app/build/reports/jacoco/firebaseTestLab
+          fi        
+
+      - name: Upload Feature Emulator Phone Coverage to Codecov (feature)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage-reports/feature-emulator-phone-report.xml
+          flags: feature
+          fail_ci_if_error: true
+
+      - name: Upload Feature Emulator Phone Coverage to Codecov (emulator)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage-reports/feature-emulator-phone-report.xml
+          flags: emulator
+          fail_ci_if_error: true
+
+      - name: Upload Feature Emulator Phone Coverage to Codecov (phone)
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage-reports/feature-emulator-phone-report.xml
+          flags: phone
+          fail_ci_if_error: true
+
   application-tests-emulator:
     if: github.event_name == 'pull_request'
     needs: build

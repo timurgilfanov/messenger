@@ -19,7 +19,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import timur.gilfanov.annotations.ApplicationTest
 import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.messenger.ChatListScreenTestActivity
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
@@ -69,6 +68,7 @@ class ChatListNotEmptyFeatureTest {
             waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            waitForIdle()
 
             onNodeWithTag("search_button").assertExists()
             onNodeWithTag("new_chat_button").assertExists()
@@ -87,6 +87,8 @@ class ChatListNotEmptyFeatureTest {
                 } else {
                     SCREEN_ORIENTATION_PORTRAIT
                 }
+                waitForIdle()
+
                 onNodeWithTag("chat_list").assertExists()
                 onNodeWithTag("chat_item_550e8400-e29b-41d4-a716-446655440002").assertExists()
             }

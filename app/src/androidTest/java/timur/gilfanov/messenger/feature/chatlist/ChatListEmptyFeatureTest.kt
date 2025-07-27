@@ -66,6 +66,7 @@ class ChatListEmptyFeatureTest {
             onNodeWithTag("new_chat_button").assertExists()
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            waitForIdle()
 
             onNodeWithTag("search_button").assertExists()
             onNodeWithTag("new_chat_button").assertExists()

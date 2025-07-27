@@ -74,14 +74,12 @@ flag_management:
   individual_flags:
     
     - name: unit
-      carryforward: true
       statuses:
         - type: project
           target: 80%
           threshold: 1%
     
     - name: component
-      carryforward: true
       statuses:
         - type: project
           target: 70%
@@ -95,7 +93,6 @@ flag_management:
           threshold: 1%
     
     - name: application
-      carryforward: true
       statuses:
         - type: project
           target: 40%

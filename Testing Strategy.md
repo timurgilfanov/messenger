@@ -35,14 +35,14 @@ Tests of all categories can be executed sequentially.
 
 ## Test Triggers Matrix
 
-| Category          | Environment (where)                   | Trigger (when) |
-|-------------------|---------------------------------------|----------------|
-| Architecture      | Local                                 | Every commit   |
-| Unit              | Local                                 | Every commit   |
-| Component         | Local                                 | Every commit   |
-| Feature           | Local, emulators                      | Pre-merge      |
-| Application       | Local, emulators, 1 phone, 1 foldable | Post-merge     |
-| Release Candidate | 8 phones, 1 foldable, 1 tablet        | Pre-release    |
+| Category          | Environment (where)                   | Trigger (when)        |
+|-------------------|---------------------------------------|-----------------------|
+| Architecture      | Local                                 | Every commit          |
+| Unit              | Local                                 | Every commit          |
+| Component         | Local                                 | Every commit          |
+| Feature           | Local, emulators                      | Pre-merge             |
+| Application       | Local, emulators, 1 phone, 1 foldable | Pre-merge, Post-merge |
+| Release Candidate | 8 phones, 1 foldable, 1 tablet        | Pre-release           |
 
 
 ## Device Coverage Strategy

@@ -50,7 +50,18 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         onlineAt = Clock.System.now(),
     )
 
-    private val sampleChat = Chat(
+    private val secondUserId =
+        ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440005"))
+
+    private val secondUser = Participant(
+        id = secondUserId,
+        name = "Bob",
+        pictureUrl = null,
+        joinedAt = Clock.System.now(),
+        onlineAt = Clock.System.now(),
+    )
+
+    private val firstChat = Chat(
         id = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")),
         participants = persistentSetOf(currentUser, otherUser),
         name = "Alice",
@@ -80,7 +91,28 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         ),
     )
 
-    private val chatListFlow = MutableStateFlow(listOf(sampleChat))
+    private val secondChat = Chat(
+        id = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006")),
+        participants = persistentSetOf(currentUser, secondUser),
+        name = "Bob",
+        pictureUrl = null,
+        rules = persistentSetOf(),
+        unreadMessagesCount = 1,
+        lastReadMessageId = null,
+        messages = persistentListOf(
+            TextMessage(
+                id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440007")),
+                text = "Hey there! How's the project going?",
+                parentId = null,
+                sender = secondUser,
+                recipient = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006")),
+                createdAt = Clock.System.now(),
+                deliveryStatus = DeliveryStatus.Delivered,
+            ),
+        ),
+    )
+
+    private val chatListFlow = MutableStateFlow(listOf(firstChat, secondChat))
 
     override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
         chatListFlow.map { ResultWithError.Success(it) }
@@ -89,13 +121,26 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> =
-        flowOf(ResultWithError.Success(sampleChat))
+    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
+        val chat = when (chatId) {
+            firstChat.id -> firstChat
+            secondChat.id -> secondChat
+            else -> firstChat
+        }
+        return flowOf(ResultWithError.Success(chat))
+    }
 
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, RepositoryJoinChatError> = ResultWithError.Success(sampleChat)
+    ): ResultWithError<Chat, RepositoryJoinChatError> {
+        val chat = when (chatId) {
+            firstChat.id -> firstChat
+            secondChat.id -> secondChat
+            else -> firstChat
+        }
+        return ResultWithError.Success(chat)
+    }
 
     override suspend fun leaveChat(
         chatId: ChatId,

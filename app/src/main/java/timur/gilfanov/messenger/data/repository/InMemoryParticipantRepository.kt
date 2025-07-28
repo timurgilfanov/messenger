@@ -48,6 +48,7 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
     private val currentUserId =
         ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
     private val otherUserId = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+    private val bobUserId = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440005"))
 
     private val currentUser = Participant(
         id = currentUserId,
@@ -65,7 +66,16 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         onlineAt = Clock.System.now(),
     )
 
+    private val bobUser = Participant(
+        id = bobUserId,
+        name = "Bob",
+        pictureUrl = null,
+        joinedAt = Clock.System.now(),
+        onlineAt = Clock.System.now(),
+    )
+
     private val defaultChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
+    private val secondChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006"))
     private val chatFlow = MutableStateFlow(
         Chat(
             id = defaultChatId,
@@ -98,29 +108,83 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         ),
     )
 
+    private val secondChatFlow = MutableStateFlow(
+        Chat(
+            id = secondChatId,
+            participants = persistentSetOf(currentUser, bobUser),
+            name = "Bob",
+            pictureUrl = null,
+            rules = persistentSetOf(),
+            unreadMessagesCount = 0,
+            lastReadMessageId = null,
+            messages = persistentListOf(
+                TextMessage(
+                    id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440007")),
+                    text = "Hey there! 🌟",
+                    parentId = null,
+                    sender = bobUser,
+                    recipient = secondChatId,
+                    createdAt = Clock.System.now(),
+                    deliveryStatus = Read,
+                ),
+                TextMessage(
+                    id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440008")),
+                    text = "How's your day going?",
+                    parentId = null,
+                    sender = currentUser,
+                    recipient = secondChatId,
+                    createdAt = Clock.System.now(),
+                    deliveryStatus = Delivered,
+                ),
+            ),
+        ),
+    )
+
     private val chatListFlow = MutableStateFlow(
-        listOf(chatFlow.value),
+        listOf(chatFlow.value, secondChatFlow.value),
     )
 
     private val isChatListUpdatingFlow = MutableStateFlow(false)
 
     override suspend fun sendMessage(message: Message): Flow<Message> = flow {
         fun updateChat(message: Message) {
-            val currentChat = chatFlow.value
-            val updatedChat = currentChat.copy(
-                messages = currentChat.messages.toMutableList().apply {
-                    if (message.id in this.map { it.id }) {
-                        // If message already exists, update it
-                        val index = indexOfFirst { it.id == message.id }
-                        set(index, message)
-                    } else {
-                        // Otherwise, add new message
-                        add(message)
-                    }
-                }.toImmutableList(),
-            )
-            chatFlow.update { updatedChat }
-            chatListFlow.update { listOf(updatedChat) }
+            val targetChatId = message.recipient
+            when (targetChatId) {
+                defaultChatId -> {
+                    val currentChat = chatFlow.value
+                    val updatedChat = currentChat.copy(
+                        messages = currentChat.messages.toMutableList().apply {
+                            if (message.id in this.map { it.id }) {
+                                // If message already exists, update it
+                                val index = indexOfFirst { it.id == message.id }
+                                set(index, message)
+                            } else {
+                                // Otherwise, add new message
+                                add(message)
+                            }
+                        }.toImmutableList(),
+                    )
+                    chatFlow.update { updatedChat }
+                    chatListFlow.update { listOf(updatedChat, secondChatFlow.value) }
+                }
+                secondChatId -> {
+                    val currentChat = secondChatFlow.value
+                    val updatedChat = currentChat.copy(
+                        messages = currentChat.messages.toMutableList().apply {
+                            if (message.id in this.map { it.id }) {
+                                // If message already exists, update it
+                                val index = indexOfFirst { it.id == message.id }
+                                set(index, message)
+                            } else {
+                                // Otherwise, add new message
+                                add(message)
+                            }
+                        }.toImmutableList(),
+                    )
+                    secondChatFlow.update { updatedChat }
+                    chatListFlow.update { listOf(chatFlow.value, updatedChat) }
+                }
+            }
         }
 
         (message as TextMessage).copy(
@@ -159,15 +223,32 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
     override suspend fun editMessage(message: Message): Flow<Message> = flow {
         delay(EDIT_DELAY_MS)
 
-        val currentChat = chatFlow.value
-        val messageIndex = currentChat.messages.indexOfFirst { it.id == message.id }
-        if (messageIndex >= 0) {
-            val updatedMessages = currentChat.messages.toMutableList().apply {
-                set(messageIndex, message)
-            }.toImmutableList()
-            val updatedChat = currentChat.copy(messages = updatedMessages)
-            chatFlow.update { updatedChat }
-            chatListFlow.update { listOf(updatedChat) }
+        val targetChatId = message.recipient
+        when (targetChatId) {
+            defaultChatId -> {
+                val currentChat = chatFlow.value
+                val messageIndex = currentChat.messages.indexOfFirst { it.id == message.id }
+                if (messageIndex >= 0) {
+                    val updatedMessages = currentChat.messages.toMutableList().apply {
+                        set(messageIndex, message)
+                    }.toImmutableList()
+                    val updatedChat = currentChat.copy(messages = updatedMessages)
+                    chatFlow.update { updatedChat }
+                    chatListFlow.update { listOf(updatedChat, secondChatFlow.value) }
+                }
+            }
+            secondChatId -> {
+                val currentChat = secondChatFlow.value
+                val messageIndex = currentChat.messages.indexOfFirst { it.id == message.id }
+                if (messageIndex >= 0) {
+                    val updatedMessages = currentChat.messages.toMutableList().apply {
+                        set(messageIndex, message)
+                    }.toImmutableList()
+                    val updatedChat = currentChat.copy(messages = updatedMessages)
+                    secondChatFlow.update { updatedChat }
+                    chatListFlow.update { listOf(chatFlow.value, updatedChat) }
+                }
+            }
         }
 
         emit(message)
@@ -182,21 +263,39 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         messageId: MessageId,
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RepositoryDeleteMessageError> {
-        val currentChat = chatFlow.value
-        val updatedMessages = currentChat.messages.toMutableList().apply {
-            removeAll { it.id == messageId }
-        }.toImmutableList()
-        val updatedChat = currentChat.copy(messages = updatedMessages)
-        chatFlow.update { updatedChat }
-        chatListFlow.update { listOf(updatedChat) }
+        // First, find which chat contains the message
+        val defaultChat = chatFlow.value
+        val secondChat = secondChatFlow.value
+
+        when {
+            defaultChat.messages.any { it.id == messageId } -> {
+                val updatedMessages = defaultChat.messages.toMutableList().apply {
+                    removeAll { it.id == messageId }
+                }.toImmutableList()
+                val updatedChat = defaultChat.copy(messages = updatedMessages)
+                chatFlow.update { updatedChat }
+                chatListFlow.update { listOf(updatedChat, secondChatFlow.value) }
+            }
+            secondChat.messages.any { it.id == messageId } -> {
+                val updatedMessages = secondChat.messages.toMutableList().apply {
+                    removeAll { it.id == messageId }
+                }.toImmutableList()
+                val updatedChat = secondChat.copy(messages = updatedMessages)
+                secondChatFlow.update { updatedChat }
+                chatListFlow.update { listOf(chatFlow.value, updatedChat) }
+            }
+        }
 
         return ResultWithError.Success(Unit)
     }
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> =
-        chatFlow.map { ResultWithError.Success(it) }
+    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = when (chatId) {
+        defaultChatId -> chatFlow.map { ResultWithError.Success(it) }
+        secondChatId -> secondChatFlow.map { ResultWithError.Success(it) }
+        else -> throw IllegalArgumentException("Unknown chat ID: $chatId")
+    }
 
     override suspend fun joinChat(
         chatId: ChatId,

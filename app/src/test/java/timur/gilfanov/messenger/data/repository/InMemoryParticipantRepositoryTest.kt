@@ -106,7 +106,7 @@ class InMemoryParticipantRepositoryTest {
         repository.flowChatList().test {
             val result = awaitItem()
             assertIs<Success<List<Chat>, FlowChatListError>>(result)
-            assertEquals(1, result.data.size)
+            assertEquals(2, result.data.size)
 
             val chat = result.data[0]
             assertEquals(ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")), chat.id)

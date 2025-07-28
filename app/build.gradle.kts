@@ -6,13 +6,14 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kover)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
     id("kotlin-kapt")
     id("jacoco")
 }
 
 android {
     namespace = "timur.gilfanov.messenger"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "timur.gilfanov.messenger"
@@ -178,6 +179,10 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.collections.immutable)
+    implementation(libs.kotlinx.serialization.core)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     kapt(libs.hilt.compiler)

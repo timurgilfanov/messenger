@@ -1,12 +1,15 @@
 package timur.gilfanov.messenger.feature.chatlist
 
+import android.content.Intent
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,6 +24,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.messenger.ChatListScreenTestActivity
+import timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
+import timur.gilfanov.messenger.data.repository.USER_ID
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
@@ -36,7 +41,9 @@ class ChatListNotEmptyFeatureTest {
     val hiltRule = HiltAndroidRule(this)
 
     @get:Rule(order = 1)
-    val composeTestRule = createAndroidComposeRule<ChatListScreenTestActivity>()
+    val composeTestRule = createComposeRule()
+
+    private lateinit var activityScenario: ActivityScenario<ChatListScreenTestActivity>
 
     @Module
     @InstallIn(SingletonComponent::class)
@@ -49,6 +56,13 @@ class ChatListNotEmptyFeatureTest {
     @Before
     fun setup() {
         hiltRule.inject()
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val intent = Intent(context, ChatListScreenTestActivity::class.java).apply {
+            putExtra(ChatListScreenTestActivity.EXTRA_CURRENT_USER_ID, USER_ID)
+        }
+
+        activityScenario = ActivityScenario.launch(intent)
     }
 
     @Test
@@ -65,14 +79,16 @@ class ChatListNotEmptyFeatureTest {
 
             onNodeWithTag("search_button").assertExists()
             onNodeWithTag("new_chat_button").assertExists()
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
 
-            activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            activityScenario.onActivity { activity ->
+                activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            }
             waitForIdle()
 
             onNodeWithTag("search_button").assertExists()
             onNodeWithTag("new_chat_button").assertExists()
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
         }
     }
 
@@ -80,17 +96,19 @@ class ChatListNotEmptyFeatureTest {
     fun chatListScreen_handlesMultipleRotations() {
         with(composeTestRule) {
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             repeat(100) { index ->
-                activity.requestedOrientation = if (index % 2 == 0) {
-                    SCREEN_ORIENTATION_LANDSCAPE
-                } else {
-                    SCREEN_ORIENTATION_PORTRAIT
+                activityScenario.onActivity { activity ->
+                    activity.requestedOrientation = if (index % 2 == 0) {
+                        SCREEN_ORIENTATION_LANDSCAPE
+                    } else {
+                        SCREEN_ORIENTATION_PORTRAIT
+                    }
                 }
                 waitForIdle()
 
                 onNodeWithTag("chat_list").assertExists()
-                onNodeWithTag("chat_item_550e8400-e29b-41d4-a716-446655440002").assertExists()
+                onNodeWithTag("chat_item_${ALICE_CHAT_ID}").assertExists()
             }
         }
     }

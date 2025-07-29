@@ -11,8 +11,6 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
-import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
@@ -29,9 +27,9 @@ class InMemoryParticipantRepositoryTest {
 
     @Test
     fun `sendMessage emits message with updated delivery status`() = runTest {
-        val repository = InMemoryParticipantRepository()
-        val chatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
-        val currentUserId = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
+        val repository = InMemoryParticipantRepositoryFake()
+        val currentUserId = repository.currentUserId
+        val chatId = repository.aliceChatId
 
         val sender = buildParticipant {
             id = currentUserId
@@ -73,8 +71,8 @@ class InMemoryParticipantRepositoryTest {
 
     @Test
     fun `editMessage updates message in chat`() = runTest {
-        val repository = InMemoryParticipantRepository()
-        val chatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
+        val repository = InMemoryParticipantRepositoryFake()
+        val chatId = repository.aliceChatId
 
         repository.receiveChatUpdates(chatId).test {
             val initialChat = (awaitItem() as Success<Chat, ReceiveChatUpdatesError>).data
@@ -101,7 +99,7 @@ class InMemoryParticipantRepositoryTest {
 
     @Test
     fun `flowChatList returns list of chats`() = runTest {
-        val repository = InMemoryParticipantRepository()
+        val repository = InMemoryParticipantRepositoryFake()
 
         repository.flowChatList().test {
             val result = awaitItem()
@@ -109,7 +107,7 @@ class InMemoryParticipantRepositoryTest {
             assertEquals(2, result.data.size)
 
             val chat = result.data[0]
-            assertEquals(ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")), chat.id)
+            assertEquals(repository.aliceChatId, chat.id)
             assertEquals(2, chat.messages.size)
             assertEquals(2, chat.participants.size)
 
@@ -119,8 +117,8 @@ class InMemoryParticipantRepositoryTest {
 
     @Test
     fun `deleteMessage removes message from chat`() = runTest {
-        val repository = InMemoryParticipantRepository()
-        val chatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
+        val repository = InMemoryParticipantRepositoryFake()
+        val chatId = repository.aliceChatId
 
         repository.receiveChatUpdates(chatId).test {
             val initialChat = (awaitItem() as Success<Chat, ReceiveChatUpdatesError>).data
@@ -142,16 +140,15 @@ class InMemoryParticipantRepositoryTest {
 
     @Test
     fun `receiveChatUpdates emits chat updates`() = runTest {
-        val repository = InMemoryParticipantRepository()
-        val chatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
+        val repository = InMemoryParticipantRepositoryFake()
+        val chatId = repository.aliceChatId
 
         repository.receiveChatUpdates(chatId).test {
             val initialResult = awaitItem()
             assertIs<Success<Chat, ReceiveChatUpdatesError>>(initialResult)
             assertEquals(chatId, initialResult.data.id)
 
-            val currentUserId =
-                ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
+            val currentUserId = repository.currentUserId
             val sender = buildParticipant {
                 id = currentUserId
                 name = "You"
@@ -180,8 +177,8 @@ class InMemoryParticipantRepositoryTest {
 
     @Test
     fun `joinChat returns chat`() = runTest {
-        val repository = InMemoryParticipantRepository()
-        val chatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
+        val repository = InMemoryParticipantRepositoryFake()
+        val chatId = repository.aliceChatId
 
         val result = repository.joinChat(chatId, null)
         assertIs<Success<Chat, RepositoryJoinChatError>>(result)
@@ -190,8 +187,8 @@ class InMemoryParticipantRepositoryTest {
 
     @Test
     fun `leaveChat returns success`() = runTest {
-        val repository = InMemoryParticipantRepository()
-        val chatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
+        val repository = InMemoryParticipantRepositoryFake()
+        val chatId = repository.aliceChatId
 
         val result = repository.leaveChat(chatId)
         assertIs<Success<Unit, RepositoryLeaveChatError>>(result)

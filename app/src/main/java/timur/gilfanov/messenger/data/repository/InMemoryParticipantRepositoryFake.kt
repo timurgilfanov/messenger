@@ -33,9 +33,9 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
 
 @Singleton
-class InMemoryParticipantRepository @Inject constructor() : ParticipantRepository {
+class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepository {
 
-    companion object {
+    companion object Companion {
         private const val SENDING_DELAY_MS = 500L
         private const val DELIVERY_DELAY_MS = 300L
         private const val READ_DELAY_MS = 2000L
@@ -45,9 +45,9 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         private const val SENDING_PROGRESS_COMPLETE = 100
     }
 
-    private val currentUserId =
+    val currentUserId =
         ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
-    private val otherUserId = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+    private val aliceUserId = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
     private val bobUserId = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440005"))
 
     private val currentUser = Participant(
@@ -58,8 +58,8 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         onlineAt = Clock.System.now(),
     )
 
-    private val otherUser = Participant(
-        id = otherUserId,
+    private val aliceUser = Participant(
+        id = aliceUserId,
         name = "Alice",
         pictureUrl = null,
         joinedAt = Clock.System.now(),
@@ -74,12 +74,11 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         onlineAt = Clock.System.now(),
     )
 
-    private val defaultChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
-    private val secondChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006"))
-    private val chatFlow = MutableStateFlow(
+    val aliceChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
+    private val aliceChatFlow = MutableStateFlow(
         Chat(
-            id = defaultChatId,
-            participants = persistentSetOf(currentUser, otherUser),
+            id = aliceChatId,
+            participants = persistentSetOf(currentUser, aliceUser),
             name = "Alice",
             pictureUrl = null,
             rules = persistentSetOf(),
@@ -90,8 +89,8 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                     id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440003")),
                     text = "Hello! 👋",
                     parentId = null,
-                    sender = otherUser,
-                    recipient = defaultChatId,
+                    sender = aliceUser,
+                    recipient = aliceChatId,
                     createdAt = Clock.System.now(),
                     deliveryStatus = Read,
                 ),
@@ -100,7 +99,7 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                     text = "How are you doing today?",
                     parentId = null,
                     sender = currentUser,
-                    recipient = defaultChatId,
+                    recipient = aliceChatId,
                     createdAt = Clock.System.now(),
                     deliveryStatus = Delivered,
                 ),
@@ -108,9 +107,11 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         ),
     )
 
-    private val secondChatFlow = MutableStateFlow(
+    private val bobChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006"))
+
+    private val bobChatFlow = MutableStateFlow(
         Chat(
-            id = secondChatId,
+            id = bobChatId,
             participants = persistentSetOf(currentUser, bobUser),
             name = "Bob",
             pictureUrl = null,
@@ -123,7 +124,7 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                     text = "Hey there! 🌟",
                     parentId = null,
                     sender = bobUser,
-                    recipient = secondChatId,
+                    recipient = bobChatId,
                     createdAt = Clock.System.now(),
                     deliveryStatus = Read,
                 ),
@@ -132,7 +133,7 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                     text = "How's your day going?",
                     parentId = null,
                     sender = currentUser,
-                    recipient = secondChatId,
+                    recipient = bobChatId,
                     createdAt = Clock.System.now(),
                     deliveryStatus = Delivered,
                 ),
@@ -141,7 +142,7 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
     )
 
     private val chatListFlow = MutableStateFlow(
-        listOf(chatFlow.value, secondChatFlow.value),
+        listOf(aliceChatFlow.value, bobChatFlow.value),
     )
 
     private val isChatListUpdatingFlow = MutableStateFlow(false)
@@ -150,8 +151,8 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         fun updateChat(message: Message) {
             val targetChatId = message.recipient
             when (targetChatId) {
-                defaultChatId -> {
-                    val currentChat = chatFlow.value
+                aliceChatId -> {
+                    val currentChat = aliceChatFlow.value
                     val updatedChat = currentChat.copy(
                         messages = currentChat.messages.toMutableList().apply {
                             if (message.id in this.map { it.id }) {
@@ -164,11 +165,11 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                             }
                         }.toImmutableList(),
                     )
-                    chatFlow.update { updatedChat }
-                    chatListFlow.update { listOf(updatedChat, secondChatFlow.value) }
+                    aliceChatFlow.update { updatedChat }
+                    chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
                 }
-                secondChatId -> {
-                    val currentChat = secondChatFlow.value
+                bobChatId -> {
+                    val currentChat = bobChatFlow.value
                     val updatedChat = currentChat.copy(
                         messages = currentChat.messages.toMutableList().apply {
                             if (message.id in this.map { it.id }) {
@@ -181,8 +182,8 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                             }
                         }.toImmutableList(),
                     )
-                    secondChatFlow.update { updatedChat }
-                    chatListFlow.update { listOf(chatFlow.value, updatedChat) }
+                    bobChatFlow.update { updatedChat }
+                    chatListFlow.update { listOf(aliceChatFlow.value, updatedChat) }
                 }
             }
         }
@@ -225,28 +226,28 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
 
         val targetChatId = message.recipient
         when (targetChatId) {
-            defaultChatId -> {
-                val currentChat = chatFlow.value
+            aliceChatId -> {
+                val currentChat = aliceChatFlow.value
                 val messageIndex = currentChat.messages.indexOfFirst { it.id == message.id }
                 if (messageIndex >= 0) {
                     val updatedMessages = currentChat.messages.toMutableList().apply {
                         set(messageIndex, message)
                     }.toImmutableList()
                     val updatedChat = currentChat.copy(messages = updatedMessages)
-                    chatFlow.update { updatedChat }
-                    chatListFlow.update { listOf(updatedChat, secondChatFlow.value) }
+                    aliceChatFlow.update { updatedChat }
+                    chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
                 }
             }
-            secondChatId -> {
-                val currentChat = secondChatFlow.value
+            bobChatId -> {
+                val currentChat = bobChatFlow.value
                 val messageIndex = currentChat.messages.indexOfFirst { it.id == message.id }
                 if (messageIndex >= 0) {
                     val updatedMessages = currentChat.messages.toMutableList().apply {
                         set(messageIndex, message)
                     }.toImmutableList()
                     val updatedChat = currentChat.copy(messages = updatedMessages)
-                    secondChatFlow.update { updatedChat }
-                    chatListFlow.update { listOf(chatFlow.value, updatedChat) }
+                    bobChatFlow.update { updatedChat }
+                    chatListFlow.update { listOf(aliceChatFlow.value, updatedChat) }
                 }
             }
         }
@@ -264,8 +265,8 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RepositoryDeleteMessageError> {
         // First, find which chat contains the message
-        val defaultChat = chatFlow.value
-        val secondChat = secondChatFlow.value
+        val defaultChat = aliceChatFlow.value
+        val secondChat = bobChatFlow.value
 
         when {
             defaultChat.messages.any { it.id == messageId } -> {
@@ -273,16 +274,16 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
                     removeAll { it.id == messageId }
                 }.toImmutableList()
                 val updatedChat = defaultChat.copy(messages = updatedMessages)
-                chatFlow.update { updatedChat }
-                chatListFlow.update { listOf(updatedChat, secondChatFlow.value) }
+                aliceChatFlow.update { updatedChat }
+                chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
             }
             secondChat.messages.any { it.id == messageId } -> {
                 val updatedMessages = secondChat.messages.toMutableList().apply {
                     removeAll { it.id == messageId }
                 }.toImmutableList()
                 val updatedChat = secondChat.copy(messages = updatedMessages)
-                secondChatFlow.update { updatedChat }
-                chatListFlow.update { listOf(chatFlow.value, updatedChat) }
+                bobChatFlow.update { updatedChat }
+                chatListFlow.update { listOf(aliceChatFlow.value, updatedChat) }
             }
         }
 
@@ -292,15 +293,15 @@ class InMemoryParticipantRepository @Inject constructor() : ParticipantRepositor
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
     ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = when (chatId) {
-        defaultChatId -> chatFlow.map { ResultWithError.Success(it) }
-        secondChatId -> secondChatFlow.map { ResultWithError.Success(it) }
+        aliceChatId -> aliceChatFlow.map { ResultWithError.Success(it) }
+        bobChatId -> bobChatFlow.map { ResultWithError.Success(it) }
         else -> throw IllegalArgumentException("Unknown chat ID: $chatId")
     }
 
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, RepositoryJoinChatError> = ResultWithError.Success(chatFlow.value)
+    ): ResultWithError<Chat, RepositoryJoinChatError> = ResultWithError.Success(aliceChatFlow.value)
 
     override suspend fun leaveChat(
         chatId: ChatId,

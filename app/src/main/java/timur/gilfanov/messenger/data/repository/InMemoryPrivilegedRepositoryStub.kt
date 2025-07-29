@@ -10,7 +10,7 @@ import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatEr
 import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
 
 @Singleton
-class InMemoryPrivilegedRepository @Inject constructor() : PrivilegedRepository {
+class InMemoryPrivilegedRepositoryStub @Inject constructor() : PrivilegedRepository {
 
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> =
         ResultWithError.Success(chat)

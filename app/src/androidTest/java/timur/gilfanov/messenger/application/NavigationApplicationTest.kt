@@ -24,6 +24,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.ApplicationTest
 import timur.gilfanov.messenger.MainActivity
+import timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
+import timur.gilfanov.messenger.data.repository.BOB_CHAT_ID
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
@@ -65,8 +67,8 @@ class NavigationApplicationTest {
             onNodeWithText("Bob").assertIsDisplayed()
 
             // Verify Alice chat is displayed and click it
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
-            onNodeWithTag("chat_item_550e8400-e29b-41d4-a716-446655440002").performClick()
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
+            onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
 
             // Wait for chat screen to load and verify we're in Alice's chat
             waitUntilExactlyOneExists(hasTestTag("message_input"))
@@ -85,11 +87,11 @@ class NavigationApplicationTest {
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
 
             // Verify both chats are displayed in the list
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440006"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
 
             // Click on Alice chat (first chat)
-            onNodeWithTag("chat_item_550e8400-e29b-41d4-a716-446655440002").performClick()
+            onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
 
             // Verify we're in Alice's chat
             waitUntilExactlyOneExists(hasTestTag("message_input"))
@@ -102,8 +104,8 @@ class NavigationApplicationTest {
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
 
             // Click on Bob chat (second chat)
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440006"))
-            onNodeWithTag("chat_item_550e8400-e29b-41d4-a716-446655440006").performClick()
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
+            onNodeWithTag("chat_item_${BOB_CHAT_ID}").performClick()
 
             // Verify we're now in Bob's chat (different content)
             waitUntilExactlyOneExists(hasTestTag("message_input"))

@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.feature.chat
 
+import android.content.Intent
 import androidx.compose.ui.semantics.SemanticsProperties.Disabled
 import androidx.compose.ui.semantics.SemanticsProperties.EditableText
 import androidx.compose.ui.semantics.getOrNull
@@ -9,14 +10,16 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.text.TextRange
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +35,9 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.annotations.ReleaseCandidateTest
 import timur.gilfanov.messenger.ChatScreenTestActivity
-import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepository
+import timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
+import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepositoryFake
+import timur.gilfanov.messenger.data.repository.USER_ID
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
@@ -47,19 +52,30 @@ class ChatMessageSendingFeatureTest {
     val hiltRule = HiltAndroidRule(this)
 
     @get:Rule(order = 1)
-    val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
+    val composeTestRule = createComposeRule()
+
+    private lateinit var activityScenario: ActivityScenario<ChatScreenTestActivity>
 
     @Module
     @InstallIn(SingletonComponent::class)
     object MessageSendingTestRepositoryModule {
         @Provides
         @Singleton
-        fun provideParticipantRepository(): ParticipantRepository = InMemoryParticipantRepository()
+        fun provideParticipantRepository(): ParticipantRepository =
+            InMemoryParticipantRepositoryFake()
     }
 
     @Before
     fun setup() {
         hiltRule.inject()
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val intent = Intent(context, ChatScreenTestActivity::class.java).apply {
+            putExtra(ChatScreenTestActivity.EXTRA_CHAT_ID, ALICE_CHAT_ID)
+            putExtra(ChatScreenTestActivity.EXTRA_CURRENT_USER_ID, USER_ID)
+        }
+
+        activityScenario = ActivityScenario.launch(intent)
     }
 
     @ReleaseCandidateTest

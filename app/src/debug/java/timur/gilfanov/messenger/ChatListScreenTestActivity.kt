@@ -15,15 +15,22 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @AndroidEntryPoint
 class ChatListScreenTestActivity : ComponentActivity() {
+
+    companion object {
+        const val EXTRA_CURRENT_USER_ID = "extra_current_user_id"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val currentUserId = ParticipantId(
+            UUID.fromString(intent.getStringExtra(EXTRA_CURRENT_USER_ID)),
+        )
+
         setContent {
             MessengerTheme {
                 ChatListScreen(
-                    currentUserId = ParticipantId(
-                        UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
-                    ),
+                    currentUserId = currentUserId,
                     actions = ChatListActions(
                         onChatClick = { chatId ->
                             // Navigation to chat screen will be implemented later

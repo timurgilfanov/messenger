@@ -32,7 +32,6 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
 
     private val currentUserId =
         ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
-    private val otherUserId = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
 
     private val currentUser = Participant(
         id = currentUserId,
@@ -42,8 +41,10 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         onlineAt = Clock.System.now(),
     )
 
+    private val firstUserId = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+
     private val otherUser = Participant(
-        id = otherUserId,
+        id = firstUserId,
         name = "Alice",
         pictureUrl = null,
         joinedAt = Clock.System.now(),
@@ -61,8 +62,9 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         onlineAt = Clock.System.now(),
     )
 
+    val firstChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
     private val firstChat = Chat(
-        id = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")),
+        id = firstChatId,
         participants = persistentSetOf(currentUser, otherUser),
         name = "Alice",
         pictureUrl = null,
@@ -75,7 +77,7 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
                 text = "Hello! 👋",
                 parentId = null,
                 sender = otherUser,
-                recipient = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")),
+                recipient = firstChatId,
                 createdAt = Clock.System.now(),
                 deliveryStatus = DeliveryStatus.Read,
             ),
@@ -84,15 +86,16 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
                 text = "How are you doing today?",
                 parentId = null,
                 sender = currentUser,
-                recipient = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")),
+                recipient = firstChatId,
                 createdAt = Clock.System.now(),
                 deliveryStatus = DeliveryStatus.Delivered,
             ),
         ),
     )
 
+    val secondChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006"))
     private val secondChat = Chat(
-        id = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006")),
+        id = secondChatId,
         participants = persistentSetOf(currentUser, secondUser),
         name = "Bob",
         pictureUrl = null,
@@ -105,7 +108,7 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
                 text = "Hey there! How's the project going?",
                 parentId = null,
                 sender = secondUser,
-                recipient = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006")),
+                recipient = secondChatId,
                 createdAt = Clock.System.now(),
                 deliveryStatus = DeliveryStatus.Delivered,
             ),
@@ -125,7 +128,7 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         val chat = when (chatId) {
             firstChat.id -> firstChat
             secondChat.id -> secondChat
-            else -> firstChat
+            else -> error("Unknown chat ID: $chatId")
         }
         return flowOf(ResultWithError.Success(chat))
     }

@@ -37,6 +37,12 @@ const val ALICE_CHAT_ID = "550e8400-e29b-41d4-a716-446655440002"
 
 const val BOB_CHAT_ID = "550e8400-e29b-41d4-a716-446655440006"
 
+const val ALICE_TEXT_1 = "Hello! 👋"
+
+private const val ALICE_TEXT_2 = "How are you doing today?"
+
+const val BOB_TEXT_1 = "Hey there! How's the project going?"
+
 @Singleton
 class WithChatsParticipantRepository @Inject constructor() : ParticipantRepository {
 
@@ -82,7 +88,7 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         messages = persistentListOf(
             TextMessage(
                 id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440003")),
-                text = "Hello! 👋",
+                text = ALICE_TEXT_1,
                 parentId = null,
                 sender = aliceUser,
                 recipient = aliceChatId,
@@ -91,7 +97,7 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
             ),
             TextMessage(
                 id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
-                text = "How are you doing today?",
+                text = ALICE_TEXT_2,
                 parentId = null,
                 sender = currentUser,
                 recipient = aliceChatId,
@@ -113,7 +119,7 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         messages = persistentListOf(
             TextMessage(
                 id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440007")),
-                text = "Hey there! How's the project going?",
+                text = BOB_TEXT_1,
                 parentId = null,
                 sender = bobUser,
                 recipient = bobChatId,

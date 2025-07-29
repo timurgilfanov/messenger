@@ -4,6 +4,7 @@ import android.view.KeyEvent.KEYCODE_BACK
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasTextExactly
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -25,7 +26,9 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.ApplicationTest
 import timur.gilfanov.messenger.MainActivity
 import timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
+import timur.gilfanov.messenger.data.repository.ALICE_TEXT_1
 import timur.gilfanov.messenger.data.repository.BOB_CHAT_ID
+import timur.gilfanov.messenger.data.repository.BOB_TEXT_1
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
@@ -70,11 +73,9 @@ class NavigationApplicationTest {
             waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
 
-            // Wait for chat screen to load and verify we're in Alice's chat
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
-            onNodeWithText("Hello! 👋").assertIsDisplayed()
+            waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
+            onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
 
-            // Verify input area is displayed
             onNodeWithTag("message_input").assertIsDisplayed()
             onNodeWithTag("send_button").assertIsDisplayed()
         }
@@ -83,40 +84,22 @@ class NavigationApplicationTest {
     @Test
     fun applicationTest_userCanNavigateBetweenMultipleChats() {
         with(composeTestRule) {
-            // Wait for chat list to load
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
 
-            // Verify both chats are displayed in the list
             waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
 
-            // Click on Alice chat (first chat)
             onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
+            waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
+            onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
 
-            // Verify we're in Alice's chat
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
-            onNodeWithText("Hello! 👋").assertIsDisplayed()
-
-            // Navigate back to chat list
             InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KEYCODE_BACK)
 
-            // Wait for chat list to reappear
-            waitUntilExactlyOneExists(hasTestTag("chat_list"))
-
-            // Click on Bob chat (second chat)
             waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
             onNodeWithTag("chat_item_${BOB_CHAT_ID}").performClick()
 
-            // Verify we're now in Bob's chat (different content)
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
-
-            // Wait a bit for the chat to load properly
-            waitForIdle()
-
-            // Verify we can navigate to a different chat by ensuring Alice's message is gone
-            // and the input area is still available (meaning we're in some chat screen)
-            onNodeWithText("Hello! 👋").assertDoesNotExist()
-            onNodeWithTag("message_input").assertIsDisplayed()
+            waitUntilExactlyOneExists(hasTextExactly(BOB_TEXT_1))
+            onNodeWithText(BOB_TEXT_1).assertIsDisplayed()
         }
     }
 }

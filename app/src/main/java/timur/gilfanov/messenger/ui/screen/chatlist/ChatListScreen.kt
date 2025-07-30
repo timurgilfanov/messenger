@@ -62,9 +62,12 @@ fun ChatListScreen(
     actions: ChatListActions,
     modifier: Modifier = Modifier,
     viewModel: ChatListViewModel =
-        hiltViewModel(creationCallback = { factory: ChatListViewModel.ChatListViewModelFactory ->
-            factory.create(currentUserId = currentUserId.id)
-        }),
+        hiltViewModel(
+            key = currentUserId.id.toString(),
+            creationCallback = { factory: ChatListViewModel.ChatListViewModelFactory ->
+                factory.create(currentUserId = currentUserId.id)
+            },
+        ),
 ) {
     val screenState by viewModel.collectAsState()
 

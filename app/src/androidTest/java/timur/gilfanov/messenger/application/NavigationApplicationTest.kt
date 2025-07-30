@@ -62,15 +62,11 @@ class NavigationApplicationTest {
     @Test
     fun applicationTest_userCanNavigateFromChatListToChatScreen() {
         with(composeTestRule) {
-            // Wait for chat list to load
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
 
-            // Debug: Check what chats are available
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             onNodeWithText("Alice").assertIsDisplayed()
             onNodeWithText("Bob").assertIsDisplayed()
-
-            // Verify Alice chat is displayed and click it
-            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
 
             waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))

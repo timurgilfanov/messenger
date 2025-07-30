@@ -7,7 +7,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dagger.Module
@@ -18,7 +18,6 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,7 +43,15 @@ class ChatListNotEmptyFeatureTest {
     @get:Rule(order = 1)
     val composeTestRule = createComposeRule()
 
-    private lateinit var activityScenario: ActivityScenario<ChatListScreenTestActivity>
+    @get:Rule(order = 2)
+    val activityScenarioRule = ActivityScenarioRule<ChatListScreenTestActivity>(
+        Intent(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            ChatListScreenTestActivity::class.java,
+        ).apply {
+            putExtra(ChatListScreenTestActivity.EXTRA_CURRENT_USER_ID, USER_ID)
+        },
+    )
 
     @Module
     @InstallIn(SingletonComponent::class)
@@ -57,18 +64,6 @@ class ChatListNotEmptyFeatureTest {
     @Before
     fun setup() {
         hiltRule.inject()
-
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val intent = Intent(context, ChatListScreenTestActivity::class.java).apply {
-            putExtra(ChatListScreenTestActivity.EXTRA_CURRENT_USER_ID, USER_ID)
-        }
-
-        activityScenario = ActivityScenario.launch(intent)
-    }
-
-    @After
-    fun tearDown() {
-        activityScenario.close()
     }
 
     @Test
@@ -87,7 +82,7 @@ class ChatListNotEmptyFeatureTest {
             onNodeWithTag("new_chat_button").assertExists()
             waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
 
-            activityScenario.onActivity { activity ->
+            activityScenarioRule.scenario.onActivity { activity ->
                 activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
             }
             waitForIdle()
@@ -104,7 +99,8 @@ class ChatListNotEmptyFeatureTest {
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
             waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             repeat(100) { index ->
-                activityScenario.onActivity { activity ->
+                println("Rotation index: $index")
+                activityScenarioRule.scenario.onActivity { activity ->
                     activity.requestedOrientation = if (index % 2 == 0) {
                         SCREEN_ORIENTATION_LANDSCAPE
                     } else {
@@ -113,7 +109,7 @@ class ChatListNotEmptyFeatureTest {
                 }
                 waitForIdle()
 
-                onNodeWithTag("chat_list").assertExists()
+                waitUntilExactlyOneExists(hasTestTag("chat_list"))
                 onNodeWithTag("chat_item_${ALICE_CHAT_ID}").assertExists()
             }
         }

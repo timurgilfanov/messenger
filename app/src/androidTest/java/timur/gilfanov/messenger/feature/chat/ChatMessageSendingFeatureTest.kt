@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.feature.chat
 
-import android.content.Intent
 import androidx.compose.ui.semantics.SemanticsProperties.Disabled
 import androidx.compose.ui.semantics.SemanticsProperties.EditableText
 import androidx.compose.ui.semantics.getOrNull
@@ -10,16 +9,14 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.text.TextRange
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,7 +25,6 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -36,15 +32,15 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.annotations.ReleaseCandidateTest
 import timur.gilfanov.messenger.ChatScreenTestActivity
-import timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
 import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepositoryFake
-import timur.gilfanov.messenger.data.repository.USER_ID
 import timur.gilfanov.messenger.di.RepositoryModule
+import timur.gilfanov.messenger.di.TestChatModule
+import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-@UninstallModules(RepositoryModule::class)
+@UninstallModules(RepositoryModule::class, TestUserModule::class, TestChatModule::class)
 @FeatureTest
 @RunWith(AndroidJUnit4::class)
 class ChatMessageSendingFeatureTest {
@@ -53,9 +49,7 @@ class ChatMessageSendingFeatureTest {
     val hiltRule = HiltAndroidRule(this)
 
     @get:Rule(order = 1)
-    val composeTestRule = createComposeRule()
-
-    private lateinit var activityScenario: ActivityScenario<ChatScreenTestActivity>
+    val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
     @Module
     @InstallIn(SingletonComponent::class)
@@ -66,22 +60,23 @@ class ChatMessageSendingFeatureTest {
             InMemoryParticipantRepositoryFake()
     }
 
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object TestUserChatTestModule {
+        @Provides
+        @Singleton
+        @timur.gilfanov.messenger.di.TestUserId
+        fun provideTestUserId(): String = timur.gilfanov.messenger.data.repository.USER_ID
+
+        @Provides
+        @Singleton
+        @timur.gilfanov.messenger.di.TestChatId
+        fun provideTestChatId(): String = timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
+    }
+
     @Before
     fun setup() {
         hiltRule.inject()
-
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val intent = Intent(context, ChatScreenTestActivity::class.java).apply {
-            putExtra(ChatScreenTestActivity.EXTRA_CHAT_ID, ALICE_CHAT_ID)
-            putExtra(ChatScreenTestActivity.EXTRA_CURRENT_USER_ID, USER_ID)
-        }
-
-        activityScenario = ActivityScenario.launch(intent)
-    }
-
-    @After
-    fun tearDown() {
-        activityScenario.close()
     }
 
     @ReleaseCandidateTest

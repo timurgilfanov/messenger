@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.UUID
+import javax.inject.Inject
+import timur.gilfanov.messenger.di.TestUserId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
@@ -16,16 +18,15 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 @AndroidEntryPoint
 class ChatListScreenTestActivity : ComponentActivity() {
 
-    companion object {
-        const val EXTRA_CURRENT_USER_ID = "extra_current_user_id"
-    }
+    @Inject
+    @TestUserId
+    lateinit var userIdString: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val currentUserId = ParticipantId(
-            UUID.fromString(intent.getStringExtra(EXTRA_CURRENT_USER_ID)),
-        )
+
+        val currentUserId = ParticipantId(UUID.fromString(userIdString))
 
         setContent {
             MessengerTheme {

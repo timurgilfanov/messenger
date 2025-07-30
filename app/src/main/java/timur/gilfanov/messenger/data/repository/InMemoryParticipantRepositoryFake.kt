@@ -107,7 +107,7 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
         ),
     )
 
-    private val bobChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006"))
+    val bobChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440006"))
 
     private val bobChatFlow = MutableStateFlow(
         Chat(

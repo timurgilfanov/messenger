@@ -18,6 +18,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -63,6 +64,11 @@ class ChatListNotEmptyFeatureTest {
         }
 
         activityScenario = ActivityScenario.launch(intent)
+    }
+
+    @After
+    fun tearDown() {
+        activityScenario.close()
     }
 
     @Test

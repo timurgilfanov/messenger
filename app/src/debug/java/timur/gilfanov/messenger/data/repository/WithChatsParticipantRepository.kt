@@ -139,7 +139,6 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
     ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
-        println("Receiving updates for chat ID: $chatId")
         val chat = when (chatId) {
             aliceChat.id -> aliceChat
             bobChat.id -> bobChat

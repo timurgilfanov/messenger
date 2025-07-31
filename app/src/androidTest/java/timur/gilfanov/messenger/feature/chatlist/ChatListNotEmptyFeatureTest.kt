@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.feature.chatlist
 
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -15,6 +14,9 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -87,19 +89,16 @@ class ChatListNotEmptyFeatureTest {
         }
     }
 
-    // todo: @Test had started to hanging after compileSDK was updated from 35 to 36
-    fun chatListScreen_handlesMultipleRotations() {
+    // Stress test to amplify memory leaks
+    @Test
+    fun chatListScreen_handlesMultipleActivityRecreation() = runTest {
         with(composeTestRule) {
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
             waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             repeat(100) { index ->
-                println("Rotation index: $index")
-                composeTestRule.activity.requestedOrientation = if (index % 2 == 0) {
-                    SCREEN_ORIENTATION_LANDSCAPE
-                } else {
-                    SCREEN_ORIENTATION_PORTRAIT
+                withContext(Dispatchers.Main) {
+                    composeTestRule.activity.recreate()
                 }
-                waitForIdle()
 
                 waitUntilExactlyOneExists(hasTestTag("chat_list"))
                 onNodeWithTag("chat_item_${ALICE_CHAT_ID}").assertExists()

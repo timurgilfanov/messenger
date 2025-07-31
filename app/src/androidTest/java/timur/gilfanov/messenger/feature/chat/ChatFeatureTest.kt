@@ -24,6 +24,9 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -96,8 +99,9 @@ class ChatFeatureTest {
             .assertIsNotEnabled()
     }
 
-    // todo: @Test had started to hanging after compileSDK was updated from 35 to 36
-    fun chatScreen_handlesMultipleRotations() {
+    // Stress test to amplify memory leaks using activity recreation
+    @Test
+    fun chatScreen_handlesMultipleRotations() = runTest {
         with(composeTestRule) {
             waitUntilExactlyOneExists(hasTestTag("message_input"))
             val testMessage = "Multi-rotation test"
@@ -107,13 +111,11 @@ class ChatFeatureTest {
             }
 
             repeat(100) { index ->
-                composeTestRule.activity.requestedOrientation = if (index % 2 == 0) {
-                    SCREEN_ORIENTATION_LANDSCAPE
-                } else {
-                    SCREEN_ORIENTATION_PORTRAIT
+                withContext(Dispatchers.Main) {
+                    composeTestRule.activity.recreate()
                 }
-                waitForIdle()
 
+                waitUntilExactlyOneExists(hasTestTag("message_input"))
                 onNodeWithTag("message_input", useUnmergedTree = true).apply {
                     assertIsDisplayed()
                     assertTextEquals(testMessage)

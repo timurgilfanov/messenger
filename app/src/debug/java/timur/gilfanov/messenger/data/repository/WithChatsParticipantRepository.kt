@@ -27,12 +27,26 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveC
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
 
+const val USER_ID = "550e8400-e29b-41d4-a716-446655440000"
+
+private const val ALICE_USER_ID = "550e8400-e29b-41d4-a716-446655440001"
+
+private const val BOB_USER_ID = "550e8400-e29b-41d4-a716-446655440005"
+
+const val ALICE_CHAT_ID = "550e8400-e29b-41d4-a716-446655440002"
+
+const val BOB_CHAT_ID = "550e8400-e29b-41d4-a716-446655440006"
+
+const val ALICE_TEXT_1 = "Hello! 👋"
+
+private const val ALICE_TEXT_2 = "How are you doing today?"
+
+const val BOB_TEXT_1 = "Hey there! How's the project going?"
+
 @Singleton
 class WithChatsParticipantRepository @Inject constructor() : ParticipantRepository {
 
-    private val currentUserId =
-        ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
-    private val otherUserId = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+    val currentUserId = ParticipantId(UUID.fromString(USER_ID))
 
     private val currentUser = Participant(
         id = currentUserId,
@@ -42,17 +56,30 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         onlineAt = Clock.System.now(),
     )
 
-    private val otherUser = Participant(
-        id = otherUserId,
+    private val aliceUserId = ParticipantId(UUID.fromString(ALICE_USER_ID))
+
+    private val aliceUser = Participant(
+        id = aliceUserId,
         name = "Alice",
         pictureUrl = null,
         joinedAt = Clock.System.now(),
         onlineAt = Clock.System.now(),
     )
 
-    private val sampleChat = Chat(
-        id = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")),
-        participants = persistentSetOf(currentUser, otherUser),
+    private val bobUserId = ParticipantId(UUID.fromString(BOB_USER_ID))
+
+    private val bobUser = Participant(
+        id = bobUserId,
+        name = "Bob",
+        pictureUrl = null,
+        joinedAt = Clock.System.now(),
+        onlineAt = Clock.System.now(),
+    )
+
+    val aliceChatId = ChatId(UUID.fromString(ALICE_CHAT_ID))
+    private val aliceChat = Chat(
+        id = aliceChatId,
+        participants = persistentSetOf(currentUser, aliceUser),
         name = "Alice",
         pictureUrl = null,
         rules = persistentSetOf(),
@@ -61,26 +88,48 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         messages = persistentListOf(
             TextMessage(
                 id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440003")),
-                text = "Hello! 👋",
+                text = ALICE_TEXT_1,
                 parentId = null,
-                sender = otherUser,
-                recipient = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")),
+                sender = aliceUser,
+                recipient = aliceChatId,
                 createdAt = Clock.System.now(),
                 deliveryStatus = DeliveryStatus.Read,
             ),
             TextMessage(
                 id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
-                text = "How are you doing today?",
+                text = ALICE_TEXT_2,
                 parentId = null,
                 sender = currentUser,
-                recipient = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")),
+                recipient = aliceChatId,
                 createdAt = Clock.System.now(),
                 deliveryStatus = DeliveryStatus.Delivered,
             ),
         ),
     )
 
-    private val chatListFlow = MutableStateFlow(listOf(sampleChat))
+    val bobChatId = ChatId(UUID.fromString(BOB_CHAT_ID))
+    private val bobChat = Chat(
+        id = bobChatId,
+        participants = persistentSetOf(currentUser, bobUser),
+        name = "Bob",
+        pictureUrl = null,
+        rules = persistentSetOf(),
+        unreadMessagesCount = 1,
+        lastReadMessageId = null,
+        messages = persistentListOf(
+            TextMessage(
+                id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440007")),
+                text = BOB_TEXT_1,
+                parentId = null,
+                sender = bobUser,
+                recipient = bobChatId,
+                createdAt = Clock.System.now(),
+                deliveryStatus = DeliveryStatus.Delivered,
+            ),
+        ),
+    )
+
+    private val chatListFlow = MutableStateFlow(listOf(aliceChat, bobChat))
 
     override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
         chatListFlow.map { ResultWithError.Success(it) }
@@ -89,13 +138,26 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> =
-        flowOf(ResultWithError.Success(sampleChat))
+    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
+        val chat = when (chatId) {
+            aliceChat.id -> aliceChat
+            bobChat.id -> bobChat
+            else -> error("Unknown chat ID: $chatId")
+        }
+        return flowOf(ResultWithError.Success(chat))
+    }
 
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, RepositoryJoinChatError> = ResultWithError.Success(sampleChat)
+    ): ResultWithError<Chat, RepositoryJoinChatError> {
+        val chat = when (chatId) {
+            aliceChat.id -> aliceChat
+            bobChat.id -> bobChat
+            else -> error("Unknown chat ID: $chatId")
+        }
+        return ResultWithError.Success(chat)
+    }
 
     override suspend fun leaveChat(
         chatId: ChatId,

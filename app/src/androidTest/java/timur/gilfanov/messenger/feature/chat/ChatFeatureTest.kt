@@ -24,6 +24,9 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -38,7 +41,11 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-@UninstallModules(RepositoryModule::class)
+@UninstallModules(
+    RepositoryModule::class,
+    timur.gilfanov.messenger.di.TestUserModule::class,
+    timur.gilfanov.messenger.di.TestChatModule::class,
+)
 @Category(Feature::class)
 @FeatureTest
 @RunWith(AndroidJUnit4::class)
@@ -56,6 +63,20 @@ class ChatFeatureTest {
         @Provides
         @Singleton
         fun provideParticipantRepository(): ParticipantRepository = WithChatsParticipantRepository()
+    }
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object TestUserChatModule {
+        @Provides
+        @Singleton
+        @timur.gilfanov.messenger.di.TestUserId
+        fun provideTestUserId(): String = timur.gilfanov.messenger.data.repository.USER_ID
+
+        @Provides
+        @Singleton
+        @timur.gilfanov.messenger.di.TestChatId
+        fun provideTestChatId(): String = timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
     }
 
     @Before
@@ -78,8 +99,9 @@ class ChatFeatureTest {
             .assertIsNotEnabled()
     }
 
+    // Stress test to amplify memory leaks using activity recreation
     @Test
-    fun chatScreen_handlesMultipleRotations() {
+    fun chatScreen_handlesMultipleRotations() = runTest {
         with(composeTestRule) {
             waitUntilExactlyOneExists(hasTestTag("message_input"))
             val testMessage = "Multi-rotation test"
@@ -89,13 +111,11 @@ class ChatFeatureTest {
             }
 
             repeat(100) { index ->
-                activity.requestedOrientation = if (index % 2 == 0) {
-                    SCREEN_ORIENTATION_LANDSCAPE
-                } else {
-                    SCREEN_ORIENTATION_PORTRAIT
+                withContext(Dispatchers.Main) {
+                    composeTestRule.activity.recreate()
                 }
-                waitForIdle()
 
+                waitUntilExactlyOneExists(hasTestTag("message_input"))
                 onNodeWithTag("message_input", useUnmergedTree = true).apply {
                     assertIsDisplayed()
                     assertTextEquals(testMessage)
@@ -120,7 +140,7 @@ class ChatFeatureTest {
                 assertTextEquals(testMessage)
             }
 
-            activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
             waitForIdle()
 
             onNodeWithTag("message_input").apply {
@@ -128,7 +148,7 @@ class ChatFeatureTest {
                 assertTextEquals(testMessage)
             }
 
-            activity.requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
+            composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
             waitForIdle()
 
             onNodeWithTag("message_input")
@@ -150,7 +170,7 @@ class ChatFeatureTest {
             onNodeWithText("Type a message...")
                 .assertIsDisplayed()
 
-            activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
             waitForIdle()
 
             onNodeWithTag("message_input")
@@ -159,7 +179,7 @@ class ChatFeatureTest {
             onNodeWithTag("send_button")
                 .assertIsDisplayed()
 
-            activity.requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
+            composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
             waitForIdle()
 
             onNodeWithTag("message_input")

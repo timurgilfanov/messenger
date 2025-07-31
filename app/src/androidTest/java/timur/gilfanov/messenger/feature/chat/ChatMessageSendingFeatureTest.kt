@@ -32,13 +32,15 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.annotations.ReleaseCandidateTest
 import timur.gilfanov.messenger.ChatScreenTestActivity
-import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepository
+import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepositoryFake
 import timur.gilfanov.messenger.di.RepositoryModule
+import timur.gilfanov.messenger.di.TestChatModule
+import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-@UninstallModules(RepositoryModule::class)
+@UninstallModules(RepositoryModule::class, TestUserModule::class, TestChatModule::class)
 @FeatureTest
 @RunWith(AndroidJUnit4::class)
 class ChatMessageSendingFeatureTest {
@@ -54,7 +56,22 @@ class ChatMessageSendingFeatureTest {
     object MessageSendingTestRepositoryModule {
         @Provides
         @Singleton
-        fun provideParticipantRepository(): ParticipantRepository = InMemoryParticipantRepository()
+        fun provideParticipantRepository(): ParticipantRepository =
+            InMemoryParticipantRepositoryFake()
+    }
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object TestUserChatTestModule {
+        @Provides
+        @Singleton
+        @timur.gilfanov.messenger.di.TestUserId
+        fun provideTestUserId(): String = timur.gilfanov.messenger.data.repository.USER_ID
+
+        @Provides
+        @Singleton
+        @timur.gilfanov.messenger.di.TestChatId
+        fun provideTestChatId(): String = timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
     }
 
     @Before

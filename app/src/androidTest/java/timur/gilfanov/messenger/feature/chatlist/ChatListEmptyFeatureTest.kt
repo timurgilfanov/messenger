@@ -26,7 +26,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-@UninstallModules(RepositoryModule::class)
+@UninstallModules(RepositoryModule::class, timur.gilfanov.messenger.di.TestUserModule::class)
 @FeatureTest
 @RunWith(AndroidJUnit4::class)
 class ChatListEmptyFeatureTest {
@@ -43,6 +43,15 @@ class ChatListEmptyFeatureTest {
         @Provides
         @Singleton
         fun provideParticipantRepository(): ParticipantRepository = EmptyParticipantRepository()
+    }
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object TestUserEmptyTestModule {
+        @Provides
+        @Singleton
+        @timur.gilfanov.messenger.di.TestUserId
+        fun provideTestUserId(): String = timur.gilfanov.messenger.data.repository.USER_ID
     }
 
     @Before
@@ -65,7 +74,7 @@ class ChatListEmptyFeatureTest {
             onNodeWithTag("search_button").assertExists()
             onNodeWithTag("new_chat_button").assertExists()
 
-            activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
             waitForIdle()
 
             onNodeWithTag("search_button").assertExists()

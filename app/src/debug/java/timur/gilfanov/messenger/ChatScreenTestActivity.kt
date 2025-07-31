@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.UUID
+import javax.inject.Inject
+import timur.gilfanov.messenger.di.TestChatId
+import timur.gilfanov.messenger.di.TestUserId
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
@@ -15,18 +18,27 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @AndroidEntryPoint
 class ChatScreenTestActivity : ComponentActivity() {
+
+    @Inject
+    @TestUserId
+    lateinit var userIdString: String
+
+    @Inject
+    @TestChatId
+    lateinit var chatIdString: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val currentUserId = ParticipantId(UUID.fromString(userIdString))
+        val chatId = ChatId(UUID.fromString(chatIdString))
+
         setContent {
             MessengerTheme {
                 ChatScreen(
-                    chatId = ChatId(
-                        UUID.fromString("550e8400-e29b-41d4-a716-446655440001"),
-                    ),
-                    currentUserId = ParticipantId(
-                        UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
-                    ),
+                    chatId = chatId,
+                    currentUserId = currentUserId,
                     modifier = Modifier.fillMaxSize(),
                 )
             }

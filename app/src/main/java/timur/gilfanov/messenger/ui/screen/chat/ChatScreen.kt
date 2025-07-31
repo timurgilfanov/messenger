@@ -38,12 +38,15 @@ fun ChatScreen(
     currentUserId: ParticipantId,
     modifier: Modifier = Modifier,
     viewModel: ChatViewModel =
-        hiltViewModel(creationCallback = { factory: ChatViewModel.ChatViewModelFactory ->
-            factory.create(
-                chatId = chatId.id,
-                currentUserId = currentUserId.id,
-            )
-        }),
+        hiltViewModel(
+            key = "${chatId.id}_${currentUserId.id}",
+            creationCallback = { factory: ChatViewModel.ChatViewModelFactory ->
+                factory.create(
+                    chatId = chatId.id,
+                    currentUserId = currentUserId.id,
+                )
+            },
+        ),
 ) {
     val uiState by viewModel.collectAsState()
     ChatScreenContent(

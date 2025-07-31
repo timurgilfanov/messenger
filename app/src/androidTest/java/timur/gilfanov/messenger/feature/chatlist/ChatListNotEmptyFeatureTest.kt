@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.feature.chatlist
 
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -15,19 +14,24 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.messenger.ChatListScreenTestActivity
+import timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
+import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-@UninstallModules(RepositoryModule::class)
+@UninstallModules(RepositoryModule::class, TestUserModule::class)
 @FeatureTest
 @RunWith(AndroidJUnit4::class)
 class ChatListNotEmptyFeatureTest {
@@ -44,6 +48,15 @@ class ChatListNotEmptyFeatureTest {
         @Provides
         @Singleton
         fun provideParticipantRepository(): ParticipantRepository = WithChatsParticipantRepository()
+    }
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object TestUserTestModule {
+        @Provides
+        @Singleton
+        @timur.gilfanov.messenger.di.TestUserId
+        fun provideTestUserId(): String = timur.gilfanov.messenger.data.repository.USER_ID
     }
 
     @Before
@@ -65,32 +78,30 @@ class ChatListNotEmptyFeatureTest {
 
             onNodeWithTag("search_button").assertExists()
             onNodeWithTag("new_chat_button").assertExists()
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
 
-            activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
             waitForIdle()
 
             onNodeWithTag("search_button").assertExists()
             onNodeWithTag("new_chat_button").assertExists()
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
         }
     }
 
+    // Stress test to amplify memory leaks
     @Test
-    fun chatListScreen_handlesMultipleRotations() {
+    fun chatListScreen_handlesMultipleActivityRecreation() = runTest {
         with(composeTestRule) {
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
-            waitUntilExactlyOneExists(hasTestTag("chat_item_550e8400-e29b-41d4-a716-446655440002"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             repeat(100) { index ->
-                activity.requestedOrientation = if (index % 2 == 0) {
-                    SCREEN_ORIENTATION_LANDSCAPE
-                } else {
-                    SCREEN_ORIENTATION_PORTRAIT
+                withContext(Dispatchers.Main) {
+                    composeTestRule.activity.recreate()
                 }
-                waitForIdle()
 
-                onNodeWithTag("chat_list").assertExists()
-                onNodeWithTag("chat_item_550e8400-e29b-41d4-a716-446655440002").assertExists()
+                waitUntilExactlyOneExists(hasTestTag("chat_list"))
+                onNodeWithTag("chat_item_${ALICE_CHAT_ID}").assertExists()
             }
         }
     }

@@ -62,9 +62,12 @@ fun ChatListScreen(
     actions: ChatListActions,
     modifier: Modifier = Modifier,
     viewModel: ChatListViewModel =
-        hiltViewModel(creationCallback = { factory: ChatListViewModel.ChatListViewModelFactory ->
-            factory.create(currentUserId = currentUserId.id)
-        }),
+        hiltViewModel(
+            key = currentUserId.id.toString(),
+            creationCallback = { factory: ChatListViewModel.ChatListViewModelFactory ->
+                factory.create(currentUserId = currentUserId.id)
+            },
+        ),
 ) {
     val screenState by viewModel.collectAsState()
 
@@ -88,47 +91,38 @@ fun ChatListScreenContent(
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
 ) {
-    println("ChatListScreenContent called with state: $screenState")
     Scaffold(
         modifier = modifier,
         topBar = { TopBar(screenState, actions.onSearchClick, actions.onNewChatClick) },
     ) { paddingValues ->
         when (screenState.uiState) {
-            Empty -> {
-                println("ChatListScreenContent: Empty state")
-                EmptyStateComponent(
-                    onStartFirstChat = actions.onNewChatClick,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .testTag("empty_state"),
-                )
-            }
+            Empty -> EmptyStateComponent(
+                onStartFirstChat = actions.onNewChatClick,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .testTag("empty_state"),
+            )
 
-            is NotEmpty -> {
-                println(
-                    "ChatListScreenContent: NotEmpty state with ${screenState.uiState.chats.size} chats",
-                )
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .testTag("chat_list"),
-                ) {
-                    items(
-                        items = screenState.uiState.chats,
-                        key = { it.id.id },
-                    ) { chatItem ->
-                        ChatListItem(
-                            chatItem = chatItem,
-                            onClick = actions.onChatClick,
-                            onDelete = actions.onDeleteChat,
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                                .testTag("chat_item_${chatItem.id.id}"),
-                        )
-                    }
+            is NotEmpty -> LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .testTag("chat_list"),
+            ) {
+                items(
+                    items = screenState.uiState.chats,
+                    key = { it.id.id },
+                ) { chatItem ->
+                    ChatListItem(
+                        chatItem = chatItem,
+                        onClick = actions.onChatClick,
+                        onDelete = actions.onDeleteChat,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .testTag("chat_item_${chatItem.id.id}"),
+                    )
                 }
             }
         }

@@ -111,7 +111,7 @@ class NavigationApplicationTest {
             waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
             onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
 
-            InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KEYCODE_BACK)
+            activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
 
             waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
             onNodeWithTag("chat_item_${BOB_CHAT_ID}").performClick()

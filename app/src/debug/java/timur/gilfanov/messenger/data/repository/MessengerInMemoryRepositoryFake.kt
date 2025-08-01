@@ -73,7 +73,7 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
         onlineAt = Clock.System.now(),
     )
 
-    private val bobUser = Participant(
+    val bobUser = Participant(
         id = bobUserId,
         name = "Bob",
         pictureUrl = null,
@@ -340,5 +340,47 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
     ): ResultWithError<Unit, RepositoryDeleteChatError> {
         // For demo purposes, just return success
         return ResultWithError.Success(Unit)
+    }
+
+    fun simulateBobSendingMessage(messageText: String) {
+        simulateIncomingMessage(bobUser, bobChatId, messageText)
+    }
+
+    /**
+     * Simulates receiving a new message from another participant.
+     * This will update the chat state, increment unread count, and trigger UI updates.
+     */
+    fun simulateIncomingMessage(fromUser: Participant, toChatId: ChatId, messageText: String) {
+        val messageId = MessageId(UUID.randomUUID())
+        val newMessage = TextMessage(
+            id = messageId,
+            text = messageText,
+            parentId = null,
+            sender = fromUser,
+            recipient = toChatId,
+            createdAt = Clock.System.now(),
+            deliveryStatus = DeliveryStatus.Delivered,
+        )
+
+        when (toChatId) {
+            aliceChatId -> {
+                val currentChat = aliceChatFlow.value
+                val updatedChat = currentChat.copy(
+                    messages = currentChat.messages.add(newMessage),
+                    unreadMessagesCount = currentChat.unreadMessagesCount + 1,
+                )
+                aliceChatFlow.update { updatedChat }
+                chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
+            }
+            bobChatId -> {
+                val currentChat = bobChatFlow.value
+                val updatedChat = currentChat.copy(
+                    messages = currentChat.messages.add(newMessage),
+                    unreadMessagesCount = currentChat.unreadMessagesCount + 1,
+                )
+                bobChatFlow.update { updatedChat }
+                chatListFlow.update { listOf(aliceChatFlow.value, updatedChat) }
+            }
+        }
     }
 }

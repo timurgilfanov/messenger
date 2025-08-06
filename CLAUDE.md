@@ -29,8 +29,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
 ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Application
-./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.annotations.Application
+./gradlew connectedDebugAndroidTest -Pannotation=timur.gilfanov.annotations.FeatureTest
+./gradlew connectedDebugAndroidTest -Pannotation=timur.gilfanov.annotations.ApplicationTest
 
 # Pre-commit checks
 ./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)

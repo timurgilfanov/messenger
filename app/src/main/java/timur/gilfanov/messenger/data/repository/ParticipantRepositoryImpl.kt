@@ -42,7 +42,6 @@ class ParticipantRepositoryImpl @Inject constructor(
     private val isUpdatingFlow = MutableStateFlow(false)
 
     init {
-        // Start delta sync for chat list on repository creation
         repositoryScope.launch {
             performDeltaSyncLoop()
         }

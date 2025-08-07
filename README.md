@@ -1,4 +1,6 @@
 # messenger
 [![codecov](https://codecov.io/gh/timurgilfanov/messenger/graph/badge.svg?token=MF0478WVBI)](https://codecov.io/gh/timurgilfanov/messenger)
 
-A showcase messenger application for Android to deepen my expertise in CI/CD, testing, Hilt, Orbit, and Clean Architecture.
+A showcase messenger application for Android to practice CI/CD, testing and Clean Architecture and to try Hilt and Orbit MVI.
+
+Gradle `preCommit` task covered all pre-commit checks according to [Testing Strategy](https://github.com/timurgilfanov/messenger/blob/main/Testing%20Strategy.md).

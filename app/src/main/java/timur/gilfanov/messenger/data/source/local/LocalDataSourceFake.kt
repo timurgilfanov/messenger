@@ -204,14 +204,13 @@ class LocalDataSourceFake @Inject constructor() : LocalDataSource {
         }
     }
 
-    override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> {
-        return if (shouldFailGetLastSyncTimestamp) {
+    override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =
+        if (shouldFailGetLastSyncTimestamp) {
             ResultWithError.Failure(LocalDataSourceError.DatabaseUnavailable)
         } else {
             val timestamp = syncTimestamp.value
             ResultWithError.Success(timestamp)
         }
-    }
 
     override suspend fun updateLastSyncTimestamp(
         timestamp: Instant,

@@ -11,7 +11,6 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
 
-@Suppress("TooManyFunctions")
 interface RemoteDataSource {
 
     suspend fun createChat(chat: Chat): ResultWithError<Chat, RemoteDataSourceError>

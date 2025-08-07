@@ -486,6 +486,18 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
         }
     }
 
+    fun deleteChatFromServer(chatId: ChatId) {
+        recordServerOperation("delete_chat_${chatId.id}")
+
+        serverChatsFlow.update { currentChats ->
+            if (chatId in currentChats) {
+                currentChats - chatId
+            } else {
+                error("Trying to delete non-existing chat from server: $chatId")
+            }
+        }
+    }
+
     fun clearServerData() {
         serverChatsFlow.update { emptyMap() }
         serverOperationTimestamps.clear()

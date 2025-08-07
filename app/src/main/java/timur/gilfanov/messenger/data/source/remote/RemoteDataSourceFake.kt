@@ -194,7 +194,6 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
-    @Suppress("LongMethod")
     private fun generateChatDelta(
         operationKey: String,
         chats: Map<ChatId, Chat>,

@@ -21,8 +21,6 @@ interface LocalDataSource {
 
     suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, LocalDataSourceError>
 
-    suspend fun getChat(chatId: ChatId): ResultWithError<Chat, LocalDataSourceError>
-
     fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>>
 
     fun flowChatUpdates(chatId: ChatId): Flow<ResultWithError<Chat, LocalDataSourceError>>

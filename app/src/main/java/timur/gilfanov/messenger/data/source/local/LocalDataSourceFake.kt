@@ -68,7 +68,7 @@ class LocalDataSourceFake @Inject constructor() : LocalDataSource {
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun getChat(chatId: ChatId): ResultWithError<Chat, LocalDataSourceError> {
+    fun getChat(chatId: ChatId): ResultWithError<Chat, LocalDataSourceError> {
         val chat = chatsFlow.value[chatId]
         return if (chat != null) {
             ResultWithError.Success(chat)

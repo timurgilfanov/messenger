@@ -13,3 +13,10 @@ sealed class SendMessageError { // todo make a interface
     data class DeliveryStatusUpdateNotValid(val error: DeliveryStatusValidationError) :
         SendMessageError()
 }
+
+sealed class RepositorySendMessageError : SendMessageError() {
+    object NetworkNotAvailable : RepositorySendMessageError()
+    object RemoteUnreachable : RepositorySendMessageError()
+    object RemoteError : RepositorySendMessageError()
+    object LocalError : RepositorySendMessageError()
+}

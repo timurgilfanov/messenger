@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.participant.message
 
 import kotlin.time.Duration
-import timur.gilfanov.messenger.domain.entity.message.MessageId
 
 sealed class DeleteMessageError {
     data class DeleteWindowExpired(val windowDuration: Duration) : DeleteMessageError()
@@ -16,5 +15,5 @@ sealed class RepositoryDeleteMessageError : DeleteMessageError() {
     object RemoteUnreachable : RepositoryDeleteMessageError()
     object RemoteError : RepositoryDeleteMessageError()
     object LocalError : RepositoryDeleteMessageError()
-    data class MessageNotFound(val messageId: MessageId) : RepositoryDeleteMessageError()
+    object MessageNotFound : RepositoryDeleteMessageError()
 }

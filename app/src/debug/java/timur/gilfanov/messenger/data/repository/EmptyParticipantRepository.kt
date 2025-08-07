@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
@@ -16,11 +17,13 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinCh
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
 
 @Singleton
 class EmptyParticipantRepository @Inject constructor() : ParticipantRepository {
 
-    override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
+    override suspend fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, FlowChatListError>> =
         flowOf(ResultWithError.Success(emptyList()))
 
     override fun isChatListUpdating(): Flow<Boolean> = flowOf(false)
@@ -49,9 +52,13 @@ class EmptyParticipantRepository @Inject constructor() : ParticipantRepository {
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryLeaveChatError> = ResultWithError.Success(Unit)
 
-    override suspend fun sendMessage(message: Message): Flow<Message> = flowOf()
+    override suspend fun sendMessage(
+        message: Message,
+    ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf()
 
-    override suspend fun editMessage(message: Message): Flow<Message> = flowOf()
+    override suspend fun editMessage(
+        message: Message,
+    ): Flow<ResultWithError<Message, RepositoryEditMessageError>> = flowOf()
 
     override suspend fun deleteMessage(
         messageId: MessageId,

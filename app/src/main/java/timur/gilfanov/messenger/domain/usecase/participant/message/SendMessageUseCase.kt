@@ -51,14 +51,23 @@ class SendMessageUseCase(
             }
 
             var prev = message.deliveryStatus
-            repository.sendMessage(message).collect { progress ->
-                deliveryStatusValidator.validate(prev, progress.deliveryStatus)
-                    .onSuccess { emit(Success(progress)) }
-                    .onFailure { error ->
-                        emit(Failure(DeliveryStatusUpdateNotValid(error)))
+            repository.sendMessage(message).collect { result ->
+                when (result) {
+                    is Success -> {
+                        val progress = result.data
+                        deliveryStatusValidator.validate(prev, progress.deliveryStatus)
+                            .onSuccess { emit(Success(progress)) }
+                            .onFailure { error ->
+                                emit(Failure(DeliveryStatusUpdateNotValid(error)))
+                                return@collect
+                            }
+                        prev = progress.deliveryStatus
+                    }
+                    is Failure -> {
+                        emit(Failure(result.error))
                         return@collect
                     }
-                prev = progress.deliveryStatus
+                }
             }
         }
 

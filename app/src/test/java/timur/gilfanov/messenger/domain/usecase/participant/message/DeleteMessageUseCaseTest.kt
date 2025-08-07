@@ -64,7 +64,6 @@ class DeleteMessageUseCaseTest {
         )
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
         assertIs<MessageNotFound>(result.error)
-        assertEquals(messageId, result.error.messageId)
     }
 
     @Test
@@ -475,7 +474,6 @@ class DeleteMessageUseCaseTest {
         )
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
         assertIs<MessageNotFound>(result.error)
-        assertEquals(message.id, result.error.messageId)
     }
 
     @Test

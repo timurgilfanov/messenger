@@ -49,14 +49,23 @@ class EditMessageUseCase(
             }
 
             var prev = message.deliveryStatus
-            repository.editMessage(message).collect { progress ->
-                deliveryStatusValidator.validate(prev, progress.deliveryStatus)
-                    .onSuccess { emit(Success(progress)) }
-                    .onFailure { error ->
-                        emit(Failure(DeliveryStatusUpdateNotValid(error)))
+            repository.editMessage(message).collect { result ->
+                when (result) {
+                    is Success -> {
+                        val progress = result.data
+                        deliveryStatusValidator.validate(prev, progress.deliveryStatus)
+                            .onSuccess { emit(Success(progress)) }
+                            .onFailure { error ->
+                                emit(Failure(DeliveryStatusUpdateNotValid(error)))
+                                return@collect
+                            }
+                        prev = progress.deliveryStatus
+                    }
+                    is Failure -> {
+                        emit(Failure(result.error))
                         return@collect
                     }
-                prev = progress.deliveryStatus
+                }
             }
         }
 

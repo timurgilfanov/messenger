@@ -4,8 +4,8 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepositoryFake
-import timur.gilfanov.messenger.data.repository.InMemoryPrivilegedRepositoryStub
+import timur.gilfanov.messenger.data.repository.ParticipantRepositoryImpl
+import timur.gilfanov.messenger.data.repository.PrivilegedRepositoryImpl
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.privileged.PrivilegedRepository
 
@@ -15,11 +15,11 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindParticipantRepository(
-        inMemoryParticipantRepository: InMemoryParticipantRepositoryFake,
+        participantRepositoryImpl: ParticipantRepositoryImpl,
     ): ParticipantRepository
 
     @Binds
     abstract fun bindPrivilegedRepository(
-        inMemoryPrivilegedRepository: InMemoryPrivilegedRepositoryStub,
+        privilegedRepositoryImpl: PrivilegedRepositoryImpl,
     ): PrivilegedRepository
 }

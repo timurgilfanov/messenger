@@ -13,6 +13,7 @@ import kotlinx.datetime.Clock
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
@@ -26,6 +27,8 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinCh
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
 
 const val USER_ID = "550e8400-e29b-41d4-a716-446655440000"
 
@@ -131,8 +134,13 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
 
     private val chatListFlow = MutableStateFlow(listOf(aliceChat, bobChat))
 
-    override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
-        chatListFlow.map { ResultWithError.Success(it) }
+    override suspend fun flowChatList(): Flow<
+        ResultWithError<List<ChatPreview>, FlowChatListError>,
+        > =
+        chatListFlow.map { chats ->
+            val chatPreviews = chats.map { ChatPreview.fromChat(it) }
+            ResultWithError.Success(chatPreviews)
+        }
 
     override fun isChatListUpdating(): Flow<Boolean> = flowOf(false)
 
@@ -163,12 +171,65 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryLeaveChatError> = ResultWithError.Success(Unit)
 
-    override suspend fun sendMessage(message: Message): Flow<Message> = flowOf()
+    override suspend fun sendMessage(
+        message: Message,
+    ): Flow<ResultWithError<Message, RepositorySendMessageError>> {
+        // Update the message with sent status and add to chat
+        val sentMessage = when (message) {
+            is TextMessage -> message.copy(deliveryStatus = DeliveryStatus.Sent)
+            else -> message
+        }
 
-    override suspend fun editMessage(message: Message): Flow<Message> = flowOf()
+        // Add the message to the appropriate chat
+        val chatId = message.recipient
+        val updatedChats = chatListFlow.value.map { chat ->
+            if (chat.id == chatId) {
+                chat.copy(
+                    messages = chat.messages.add(sentMessage),
+                    unreadMessagesCount = chat.unreadMessagesCount + 1,
+                )
+            } else {
+                chat
+            }
+        }
+        chatListFlow.value = updatedChats
+
+        return flowOf(ResultWithError.Success(sentMessage))
+    }
+
+    override suspend fun editMessage(
+        message: Message,
+    ): Flow<ResultWithError<Message, RepositoryEditMessageError>> {
+        // Update the message in the appropriate chat
+        val chatId = message.recipient
+        val updatedChats = chatListFlow.value.map { chat ->
+            if (chat.id == chatId) {
+                val updatedMessages = chat.messages.toMutableList().apply {
+                    val index = indexOfFirst { it.id == message.id }
+                    if (index != -1) {
+                        set(index, message)
+                    }
+                }
+                chat.copy(messages = persistentListOf<Message>().addAll(updatedMessages))
+            } else {
+                chat
+            }
+        }
+        chatListFlow.value = updatedChats
+
+        return flowOf(ResultWithError.Success(message))
+    }
 
     override suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RepositoryDeleteMessageError> = ResultWithError.Success(Unit)
+
+    private fun <T> kotlinx.collections.immutable.ImmutableList<T>.add(
+        item: T,
+    ): kotlinx.collections.immutable.ImmutableList<T> {
+        val mutableList = this.toMutableList()
+        mutableList.add(item)
+        return persistentListOf<T>().addAll(mutableList)
+    }
 }

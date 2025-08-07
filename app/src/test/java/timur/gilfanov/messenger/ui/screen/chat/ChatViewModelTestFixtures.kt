@@ -30,6 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
 
 object ChatViewModelTestFixtures {
 
@@ -88,12 +89,18 @@ object ChatViewModelTestFixtures {
         private val flowSendMessage: Flow<Message>? = null,
     ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
 
-        override suspend fun sendMessage(message: Message): Flow<Message> =
-            flowSendMessage ?: flowOf(
-                when (message) {
-                    is TextMessage -> message.copy(deliveryStatus = Sending(0))
-                    else -> message
-                },
+        override suspend fun sendMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowSendMessage?.map {
+            ResultWithError.Success<Message, RepositorySendMessageError>(it)
+        }
+            ?: flowOf(
+                ResultWithError.Success<Message, RepositorySendMessageError>(
+                    when (message) {
+                        is TextMessage -> message.copy(deliveryStatus = Sending(0))
+                        else -> message
+                    },
+                ),
             )
 
         override suspend fun receiveChatUpdates(
@@ -109,9 +116,18 @@ object ChatViewModelTestFixtures {
         private val chatFlow = MutableStateFlow(chat)
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        override suspend fun sendMessage(message: Message): Flow<Message> = flowOf(
-            *(statuses.map { (message as TextMessage).copy(deliveryStatus = it) }.toTypedArray()),
-        ).onEach { msg ->
+        override suspend fun sendMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf(
+            *(
+                statuses.map {
+                    ResultWithError.Success<Message, RepositorySendMessageError>(
+                        (message as TextMessage).copy(deliveryStatus = it),
+                    )
+                }.toTypedArray()
+                ),
+        ).onEach { result ->
+            val msg = (result as Success).data
             delay(10) // to pass immediate state updates, like text input
             chatFlow.update { currentChat ->
                 val messages = currentChat.messages.toMutableList().apply {

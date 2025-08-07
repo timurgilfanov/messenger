@@ -16,11 +16,10 @@ import kotlinx.datetime.Clock
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Delivered
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Read
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
@@ -31,6 +30,8 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinCh
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
 
 @Singleton
 class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepository {
@@ -92,7 +93,7 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
                     sender = aliceUser,
                     recipient = aliceChatId,
                     createdAt = Clock.System.now(),
-                    deliveryStatus = Read,
+                    deliveryStatus = DeliveryStatus.Read,
                 ),
                 TextMessage(
                     id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
@@ -101,7 +102,7 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
                     sender = currentUser,
                     recipient = aliceChatId,
                     createdAt = Clock.System.now(),
-                    deliveryStatus = Delivered,
+                    deliveryStatus = DeliveryStatus.Delivered,
                 ),
             ),
         ),
@@ -126,7 +127,7 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
                     sender = bobUser,
                     recipient = bobChatId,
                     createdAt = Clock.System.now(),
-                    deliveryStatus = Read,
+                    deliveryStatus = DeliveryStatus.Read,
                 ),
                 TextMessage(
                     id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440008")),
@@ -135,7 +136,7 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
                     sender = currentUser,
                     recipient = bobChatId,
                     createdAt = Clock.System.now(),
-                    deliveryStatus = Delivered,
+                    deliveryStatus = DeliveryStatus.Delivered,
                 ),
             ),
         ),
@@ -147,7 +148,9 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
 
     private val isChatListUpdatingFlow = MutableStateFlow(false)
 
-    override suspend fun sendMessage(message: Message): Flow<Message> = flow {
+    override suspend fun sendMessage(
+        message: Message,
+    ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flow {
         fun updateChat(message: Message) {
             val targetChatId = message.recipient
             when (targetChatId) {
@@ -168,6 +171,7 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
                     aliceChatFlow.update { updatedChat }
                     chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
                 }
+
                 bobChatId -> {
                     val currentChat = bobChatFlow.value
                     val updatedChat = currentChat.copy(
@@ -189,39 +193,42 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
         }
 
         (message as TextMessage).copy(
-            deliveryStatus = Sending(SENDING_PROGRESS_START),
+            deliveryStatus = DeliveryStatus.Sending(SENDING_PROGRESS_START),
         ).let { message ->
             updateChat(message)
-            emit(message)
+            emit(ResultWithError.Success(message))
         }
         delay(SENDING_DELAY_MS)
 
-        message.copy(deliveryStatus = Sending(SENDING_PROGRESS_MID)).let { message ->
+        message.copy(deliveryStatus = DeliveryStatus.Sending(SENDING_PROGRESS_MID)).let { message ->
             updateChat(message)
-            emit(message)
+            emit(ResultWithError.Success(message))
         }
         delay(SENDING_DELAY_MS)
 
-        message.copy(deliveryStatus = Sending(SENDING_PROGRESS_COMPLETE)).let { message ->
-            updateChat(message)
-            emit(message)
-        }
+        message.copy(deliveryStatus = DeliveryStatus.Sending(SENDING_PROGRESS_COMPLETE))
+            .let { message ->
+                updateChat(message)
+                emit(ResultWithError.Success(message))
+            }
         delay(DELIVERY_DELAY_MS)
 
-        message.copy(deliveryStatus = Delivered).let { message ->
+        message.copy(deliveryStatus = DeliveryStatus.Delivered).let { message ->
             updateChat(message)
-            emit(message)
+            emit(ResultWithError.Success(message))
         }
 
         delay(READ_DELAY_MS)
 
-        message.copy(deliveryStatus = Read).let { message ->
+        message.copy(deliveryStatus = DeliveryStatus.Read).let { message ->
             updateChat(message)
-            emit(message)
+            emit(ResultWithError.Success(message))
         }
     }
 
-    override suspend fun editMessage(message: Message): Flow<Message> = flow {
+    override suspend fun editMessage(
+        message: Message,
+    ): Flow<ResultWithError<Message, RepositoryEditMessageError>> = flow {
         delay(EDIT_DELAY_MS)
 
         val targetChatId = message.recipient
@@ -238,6 +245,7 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
                     chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
                 }
             }
+
             bobChatId -> {
                 val currentChat = bobChatFlow.value
                 val messageIndex = currentChat.messages.indexOfFirst { it.id == message.id }
@@ -252,11 +260,16 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
             }
         }
 
-        emit(message)
+        emit(ResultWithError.Success(message))
     }
 
-    override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
-        chatListFlow.map { ResultWithError.Success(it) }
+    override suspend fun flowChatList(): Flow<
+        ResultWithError<List<ChatPreview>, FlowChatListError>,
+        > =
+        chatListFlow.map { chats ->
+            val chatPreviews = chats.map { ChatPreview.Companion.fromChat(it) }
+            ResultWithError.Success(chatPreviews)
+        }
 
     override fun isChatListUpdating(): Flow<Boolean> = isChatListUpdatingFlow
 

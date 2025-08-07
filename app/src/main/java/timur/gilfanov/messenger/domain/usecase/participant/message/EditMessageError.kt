@@ -14,3 +14,10 @@ sealed class EditMessageError {
     object RecipientChanged : EditMessageError()
     object SenderIdChanged : EditMessageError()
 }
+
+sealed class RepositoryEditMessageError : EditMessageError() {
+    object NetworkNotAvailable : RepositoryEditMessageError()
+    object RemoteUnreachable : RepositoryEditMessageError()
+    object RemoteError : RepositoryEditMessageError()
+    object LocalError : RepositoryEditMessageError()
+}

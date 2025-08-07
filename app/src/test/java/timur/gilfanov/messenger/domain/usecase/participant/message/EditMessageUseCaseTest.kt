@@ -36,12 +36,16 @@ class EditMessageUseCaseTest {
 
     private class RepositoryFake : ParticipantRepository by ParticipantRepositoryNotImplemented() {
 
-        override suspend fun editMessage(message: Message): Flow<Message> {
+        override suspend fun editMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, RepositoryEditMessageError>> {
             val updatedMessage = when (message) {
                 is TextMessage -> message.copy(deliveryStatus = DeliveryStatus.Sent)
                 else -> message
             }
-            return flowOf(updatedMessage)
+            return flowOf(
+                ResultWithError.Success<Message, RepositoryEditMessageError>(updatedMessage),
+            )
         }
     }
 

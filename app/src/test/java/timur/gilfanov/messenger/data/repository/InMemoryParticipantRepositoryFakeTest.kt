@@ -9,10 +9,13 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
@@ -21,6 +24,8 @@ import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdat
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class InMemoryParticipantRepositoryFakeTest {
@@ -47,23 +52,34 @@ class InMemoryParticipantRepositoryFakeTest {
             }
 
             repository.sendMessage(message).test {
-                val sending0 = awaitItem()
-                assertIs<TextMessage>(sending0)
+                val result0 = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result0)
+                val sending0 = result0.data as TextMessage
                 assertIs<DeliveryStatus.Sending>(sending0.deliveryStatus)
                 assertEquals(0, sending0.deliveryStatus.progress)
 
-                val sending50 = awaitItem()
+                val result50 = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result50)
+                val sending50 = result50.data as TextMessage
                 assertIs<DeliveryStatus.Sending>(sending50.deliveryStatus)
-                assertEquals(50, (sending50.deliveryStatus as DeliveryStatus.Sending).progress)
+                assertEquals(50, sending50.deliveryStatus.progress)
 
-                val sending100 = awaitItem()
+                val result100 = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result100)
+                val sending100 = result100.data as TextMessage
                 assertIs<DeliveryStatus.Sending>(sending100.deliveryStatus)
-                assertEquals(100, (sending100.deliveryStatus as DeliveryStatus.Sending).progress)
+                assertEquals(100, sending100.deliveryStatus.progress)
 
-                val delivered = awaitItem()
+                val resultDelivered = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(
+                    resultDelivered,
+                )
+                val delivered = resultDelivered.data as TextMessage
                 assertEquals(DeliveryStatus.Delivered, delivered.deliveryStatus)
 
-                val read = awaitItem()
+                val resultRead = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(resultRead)
+                val read = resultRead.data as TextMessage
                 assertEquals(DeliveryStatus.Read, read.deliveryStatus)
 
                 awaitComplete()
@@ -88,7 +104,8 @@ class InMemoryParticipantRepositoryFakeTest {
 
                 repository.editMessage(editedMessage).test {
                     val result = awaitItem()
-                    assertEquals("Edited message", (result as TextMessage).text)
+                    assertIs<ResultWithError.Success<Message, RepositoryEditMessageError>>(result)
+                    assertEquals("Edited message", (result.data as TextMessage).text)
                     awaitComplete()
                 }
 
@@ -108,12 +125,11 @@ class InMemoryParticipantRepositoryFakeTest {
 
         repository.flowChatList().test {
             val result = awaitItem()
-            assertIs<Success<List<Chat>, FlowChatListError>>(result)
+            assertIs<Success<List<ChatPreview>, FlowChatListError>>(result)
             assertEquals(2, result.data.size)
 
             val chat = result.data[0]
             assertEquals(repository.aliceChatId, chat.id)
-            assertEquals(2, chat.messages.size)
             assertEquals(2, chat.participants.size)
 
             cancelAndIgnoreRemainingEvents()

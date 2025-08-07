@@ -37,7 +37,7 @@ class DeleteMessageUseCase(val repository: ParticipantRepository) {
         now: Instant = Clock.System.now(),
     ): ResultWithError<Unit, DeleteMessageError> {
         val message = chat.messages.find { it.id == messageId }
-            ?: return Failure(MessageNotFound(messageId))
+            ?: return Failure(MessageNotFound)
 
         checkRules(
             chat = chat,

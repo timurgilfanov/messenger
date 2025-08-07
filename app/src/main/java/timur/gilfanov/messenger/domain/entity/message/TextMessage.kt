@@ -29,6 +29,18 @@ data class TextMessage(
         return validator.validate(text)
     }
 
+    override fun toString(): String = buildString {
+        appendLine("TextMessage(")
+        appendLine("  id=$id, parentId=$parentId,")
+        appendLine("  sender=$sender,")
+        appendLine("  recipient=$recipient, ")
+        appendLine(
+            "  createdAt=$createdAt, sentAt=$sentAt, deliveredAt=$deliveredAt, editedAt=$editedAt,",
+        )
+        appendLine("  deliveryStatus=$deliveryStatus")
+        appendLine(")")
+    }
+
     companion object {
         const val MAX_TEXT_LENGTH = 2000
     }

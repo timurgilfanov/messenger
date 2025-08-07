@@ -16,7 +16,9 @@ import org.junit.experimental.categories.Category
 import timur.gilfanov.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
+import timur.gilfanov.messenger.data.source.local.LocalDataSources
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceFake
+import timur.gilfanov.messenger.data.source.remote.RemoteDataSources
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -870,11 +872,15 @@ class MessengerRepositoryImplTest {
     }
 
     private fun repositoryImpl(): MessengerRepositoryImpl = MessengerRepositoryImpl(
-        localDataSource,
-        localDataSource,
-        localDataSource,
-        remoteDataSource,
-        remoteDataSource,
-        remoteDataSource,
+        localDataSources = LocalDataSources(
+            chat = localDataSource,
+            message = localDataSource,
+            sync = localDataSource,
+        ),
+        remoteDataSources = RemoteDataSources(
+            chat = remoteDataSource,
+            message = remoteDataSource,
+            sync = remoteDataSource,
+        ),
     )
 }

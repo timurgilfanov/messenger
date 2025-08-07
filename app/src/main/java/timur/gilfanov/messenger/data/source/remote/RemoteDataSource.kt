@@ -27,10 +27,6 @@ interface RemoteDataSource {
 
     fun subscribeToChats(): Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>>
 
-    suspend fun getChatsDelta(
-        since: Instant?,
-    ): ResultWithError<ChatListDelta, RemoteDataSourceError>
-
     fun chatsDeltaUpdates(
         since: Instant?,
     ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>>

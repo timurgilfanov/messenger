@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -147,39 +146,6 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
                 ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
             }
         }
-
-    override suspend fun getChatsDelta(
-        since: Instant?,
-    ): ResultWithError<ChatListDelta, RemoteDataSourceError> {
-        delay(NETWORK_DELAY_MS)
-
-        if (!connectionStateFlow.value) {
-            return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
-        }
-
-        val currentChats = serverChatsFlow.value
-        val currentTimestamp = Clock.System.now()
-
-        // For simplicity, if since is null, return all chats as CREATE operations (full sync)
-        return if (since == null) {
-            val createDeltas = currentChats.values.map { chat ->
-                ChatCreatedDelta(
-                    chatId = chat.id,
-                    chatMetadata = ChatMetadata.fromChat(chat),
-                    initialMessages = chat.messages.toImmutableList(),
-                    timestamp = currentTimestamp,
-                )
-            }
-            ResultWithError.Success(
-                ChatListDelta.fullSync(createDeltas, currentTimestamp),
-            )
-        } else {
-            // For incremental sync, simulate checking timestamps
-            // In a real implementation, this would query the server for changes since timestamp
-            // For now, return empty delta (no changes)
-            ResultWithError.Success(ChatListDelta.empty(currentTimestamp))
-        }
-    }
 
     override fun chatsDeltaUpdates(
         since: Instant?,

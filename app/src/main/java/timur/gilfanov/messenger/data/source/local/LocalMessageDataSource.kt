@@ -1,0 +1,37 @@
+package timur.gilfanov.messenger.data.source.local
+
+import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.MessageId
+import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
+
+/**
+ * Local data source for message-related operations.
+ * Handles storage and retrieval of message data from local database.
+ */
+interface LocalMessageDataSource {
+
+    /**
+     * Inserts a new message into local storage.
+     */
+    suspend fun insertMessage(message: Message): ResultWithError<Message, LocalDataSourceError>
+
+    /**
+     * Updates an existing message in local storage.
+     */
+    suspend fun updateMessage(message: Message): ResultWithError<Message, LocalDataSourceError>
+
+    /**
+     * Deletes a message from local storage.
+     * @param mode Specifies whether to delete for sender only or for everyone.
+     */
+    suspend fun deleteMessage(
+        messageId: MessageId,
+        mode: DeleteMessageMode,
+    ): ResultWithError<Unit, LocalDataSourceError>
+
+    /**
+     * Retrieves a specific message from local storage.
+     */
+    suspend fun getMessage(messageId: MessageId): ResultWithError<Message, LocalDataSourceError>
+}

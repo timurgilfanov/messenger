@@ -24,7 +24,11 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 
 @Singleton
 @Suppress("TooManyFunctions")
-class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
+class RemoteDataSourceFake @Inject constructor() :
+    RemoteChatDataSource,
+    RemoteMessageDataSource,
+    RemoteSyncDataSource,
+    RemoteDataSource {
 
     companion object {
         private const val NETWORK_DELAY_MS = 300L
@@ -133,9 +137,7 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
         }
     }
 
-    override fun subscribeToChats(): Flow<
-        ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
-        > =
+    fun subscribeToChats(): Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
         serverChatsFlow.map { chats ->
             println("RemoteDataSourceFake: subscribeToChats called with ${chats.size} chats")
             if (connectionStateFlow.value) {

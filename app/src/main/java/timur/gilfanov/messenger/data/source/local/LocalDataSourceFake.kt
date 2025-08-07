@@ -24,7 +24,11 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 
 @Singleton
 @Suppress("TooManyFunctions")
-class LocalDataSourceFake @Inject constructor() : LocalDataSource {
+class LocalDataSourceFake @Inject constructor() :
+    LocalChatDataSource,
+    LocalMessageDataSource,
+    LocalSyncDataSource,
+    LocalDataSource {
 
     private val chatsFlow = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
     private val syncTimestamp = MutableStateFlow<Instant?>(null)

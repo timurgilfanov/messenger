@@ -6,7 +6,6 @@ import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
@@ -23,8 +22,6 @@ interface RemoteDataSource {
     ): ResultWithError<Chat, RemoteDataSourceError>
 
     suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, RemoteDataSourceError>
-
-    fun subscribeToChats(): Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>>
 
     fun chatsDeltaUpdates(
         since: Instant?,

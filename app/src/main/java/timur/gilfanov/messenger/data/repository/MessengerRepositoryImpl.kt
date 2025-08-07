@@ -12,9 +12,13 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import timur.gilfanov.messenger.data.source.local.LocalDataSource
-import timur.gilfanov.messenger.data.source.remote.RemoteDataSource
+import timur.gilfanov.messenger.data.source.local.LocalChatDataSource
+import timur.gilfanov.messenger.data.source.local.LocalMessageDataSource
+import timur.gilfanov.messenger.data.source.local.LocalSyncDataSource
+import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
+import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
+import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -38,8 +42,12 @@ import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatEr
 @Singleton
 @Suppress("TooManyFunctions") // Combines ChatRepository and MessageRepository interfaces
 class MessengerRepositoryImpl @Inject constructor(
-    private val localDataSource: LocalDataSource,
-    private val remoteDataSource: RemoteDataSource,
+    private val localChatDataSource: LocalChatDataSource,
+    private val localMessageDataSource: LocalMessageDataSource,
+    private val localSyncDataSource: LocalSyncDataSource,
+    private val remoteChatDataSource: RemoteChatDataSource,
+    private val remoteMessageDataSource: RemoteMessageDataSource,
+    private val remoteSyncDataSource: RemoteSyncDataSource,
 ) : ChatRepository,
     MessageRepository {
 
@@ -53,18 +61,18 @@ class MessengerRepositoryImpl @Inject constructor(
     }
 
     private suspend fun performDeltaSyncLoop() {
-        val lastSyncTimestamp = when (val result = localDataSource.getLastSyncTimestamp()) {
+        val lastSyncTimestamp = when (val result = localSyncDataSource.getLastSyncTimestamp()) {
             is ResultWithError.Success -> result.data
             is ResultWithError.Failure -> {
                 println("MessengerRepository: Failed to get last sync timestamp: ${result.error}")
                 null // Start from scratch if no timestamp available
             }
         }
-        remoteDataSource.chatsDeltaUpdates(lastSyncTimestamp)
+        remoteSyncDataSource.chatsDeltaUpdates(lastSyncTimestamp)
             .onEach { deltaResult ->
                 if (deltaResult is ResultWithError.Success) {
                     isUpdatingFlow.value = true
-                    localDataSource.applyChatListDelta(deltaResult.data)
+                    localSyncDataSource.applyChatListDelta(deltaResult.data)
                     isUpdatingFlow.value = false
                 } else {
                     println("MessengerRepository: Delta result was failure: $deltaResult")
@@ -79,9 +87,9 @@ class MessengerRepositoryImpl @Inject constructor(
 
     // ChatRepository implementation
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> =
-        when (val result = remoteDataSource.createChat(chat)) {
+        when (val result = remoteChatDataSource.createChat(chat)) {
             is ResultWithError.Success -> {
-                localDataSource.insertChat(result.data)
+                localChatDataSource.insertChat(result.data)
                 ResultWithError.Success(result.data)
             }
             is ResultWithError.Failure -> {
@@ -92,9 +100,9 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun deleteChat(
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryDeleteChatError> =
-        when (val result = remoteDataSource.deleteChat(chatId)) {
+        when (val result = remoteChatDataSource.deleteChat(chatId)) {
             is ResultWithError.Success -> {
-                localDataSource.deleteChat(chatId)
+                localChatDataSource.deleteChat(chatId)
                 ResultWithError.Success(Unit)
             }
             is ResultWithError.Failure -> {
@@ -106,9 +114,9 @@ class MessengerRepositoryImpl @Inject constructor(
         chatId: ChatId,
         inviteLink: String?,
     ): ResultWithError<Chat, RepositoryJoinChatError> =
-        when (val result = remoteDataSource.joinChat(chatId, inviteLink)) {
+        when (val result = remoteChatDataSource.joinChat(chatId, inviteLink)) {
             is ResultWithError.Success -> {
-                localDataSource.insertChat(result.data)
+                localChatDataSource.insertChat(result.data)
                 ResultWithError.Success(result.data)
             }
             is ResultWithError.Failure -> {
@@ -119,9 +127,9 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun leaveChat(
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryLeaveChatError> =
-        when (val result = remoteDataSource.leaveChat(chatId)) {
+        when (val result = remoteChatDataSource.leaveChat(chatId)) {
             is ResultWithError.Success -> {
-                localDataSource.deleteChat(chatId)
+                localChatDataSource.deleteChat(chatId)
                 ResultWithError.Success(Unit)
             }
             is ResultWithError.Failure -> {
@@ -132,7 +140,7 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun flowChatList(): Flow<
         ResultWithError<List<ChatPreview>, FlowChatListError>,
         > =
-        localDataSource.flowChatList().map { localResult ->
+        localChatDataSource.flowChatList().map { localResult ->
             when (localResult) {
                 is ResultWithError.Success -> ResultWithError.Success(localResult.data)
                 is ResultWithError.Failure -> ResultWithError.Failure(FlowChatListError.LocalError)
@@ -144,7 +152,7 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
     ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> =
-        localDataSource.flowChatUpdates(chatId).map { localResult ->
+        localChatDataSource.flowChatUpdates(chatId).map { localResult ->
             when (localResult) {
                 is ResultWithError.Success -> ResultWithError.Success(localResult.data)
                 is ResultWithError.Failure -> ResultWithError.Failure(ChatNotFound)
@@ -155,12 +163,12 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun sendMessage(
         message: Message,
     ): Flow<ResultWithError<Message, RepositorySendMessageError>> {
-        localDataSource.insertMessage(message)
+        localMessageDataSource.insertMessage(message)
 
-        return remoteDataSource.sendMessage(message).map { result ->
+        return remoteMessageDataSource.sendMessage(message).map { result ->
             when (result) {
                 is ResultWithError.Success -> {
-                    localDataSource.updateMessage(result.data)
+                    localMessageDataSource.updateMessage(result.data)
                     ResultWithError.Success(result.data)
                 }
                 is ResultWithError.Failure -> {
@@ -173,10 +181,10 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun editMessage(
         message: Message,
     ): Flow<ResultWithError<Message, RepositoryEditMessageError>> =
-        remoteDataSource.editMessage(message).map { result ->
+        remoteMessageDataSource.editMessage(message).map { result ->
             when (result) {
                 is ResultWithError.Success -> {
-                    localDataSource.updateMessage(result.data)
+                    localMessageDataSource.updateMessage(result.data)
                     ResultWithError.Success(result.data)
                 }
                 is ResultWithError.Failure -> {
@@ -189,9 +197,9 @@ class MessengerRepositoryImpl @Inject constructor(
         messageId: MessageId,
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RepositoryDeleteMessageError> =
-        when (val result = remoteDataSource.deleteMessage(messageId, mode)) {
+        when (val result = remoteMessageDataSource.deleteMessage(messageId, mode)) {
             is ResultWithError.Success -> {
-                localDataSource.deleteMessage(messageId, mode)
+                localMessageDataSource.deleteMessage(messageId, mode)
                 ResultWithError.Success(Unit)
             }
             is ResultWithError.Failure -> {

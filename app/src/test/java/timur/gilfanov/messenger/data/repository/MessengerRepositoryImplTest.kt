@@ -239,16 +239,23 @@ class MessengerRepositoryImplTest {
         remoteDataSource.addChatToServer(testChat)
         repository = repositoryImpl()
 
-        val initialChatResult = localDataSource.getChat(testChat.id)
-        assertIs<ResultWithError.Success<Chat, LocalDataSourceError>>(initialChatResult)
-        assertEquals(testChat.id, initialChatResult.data.id)
+        repository.flowChatList().test {
+            val initialResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(initialResult)
+            assertEquals(1, initialResult.data.size)
+            assertEquals(testChat.id, initialResult.data[0].id)
 
-        val result = repository.leaveChat(testChat.id)
-        assertIs<ResultWithError.Success<Unit, RepositoryLeaveChatError>>(result)
+            val result = repository.leaveChat(testChat.id)
+            assertIs<ResultWithError.Success<Unit, RepositoryLeaveChatError>>(result)
 
-        val deletedChatResult = localDataSource.getChat(testChat.id)
-        assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(deletedChatResult)
-        assertEquals(LocalDataSourceError.ChatNotFound, deletedChatResult.error)
+            val finalResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(finalResult)
+            assertEquals(0, finalResult.data.size)
+
+            val deletedChatResult = localDataSource.getChat(testChat.id)
+            assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(deletedChatResult)
+            assertEquals(LocalDataSourceError.ChatNotFound, deletedChatResult.error)
+        }
     }
 
     @Test
@@ -440,22 +447,31 @@ class MessengerRepositoryImplTest {
         // Given: Repository is created with empty state
         repository = repositoryImpl()
 
-        // When & Then: Test updating state changes during sync
-        repository.isChatListUpdating().test {
-            // Should start with false (not updating)
-            val initialState = awaitItem()
-            assertEquals(false, initialState)
+        repository.flowChatList().test {
+            val initialResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(initialResult)
+            assertEquals(0, initialResult.data.size)
 
-            // Add chat to remote to trigger delta sync
-            remoteDataSource.addChatToServer(testChat)
+            val chatListTestScope = this
 
-            // Should emit true when delta sync starts processing
-            val updatingState = awaitItem()
-            assertEquals(true, updatingState)
+            // When & Then: Test updating state changes during sync
+            repository.isChatListUpdating().test {
+                assertEquals(false, awaitItem())
 
-            // Should emit false when delta sync completes
-            val completedState = awaitItem()
-            assertEquals(false, completedState)
+                // Add chat to remote to trigger delta sync
+                remoteDataSource.addChatToServer(testChat)
+
+                // Should emit true when delta sync starts processing
+                assertEquals(true, awaitItem())
+
+                val finalResult = chatListTestScope.awaitItem()
+                assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(finalResult)
+                assertEquals(1, finalResult.data.size)
+                assertEquals(testChat.id, finalResult.data[0].id)
+
+                // Should emit false when delta sync completes
+                assertEquals(false, awaitItem())
+            }
         }
     }
 

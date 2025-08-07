@@ -36,13 +36,13 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ServerError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ServerUnreachable
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.UnknownError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.UnknownError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 
 private const val STATE_UPDATE_DEBOUNCE = 200L
 

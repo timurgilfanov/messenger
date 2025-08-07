@@ -25,7 +25,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @RunWith(RobolectricTestRunner::class)

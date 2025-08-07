@@ -22,9 +22,9 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.RepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat

@@ -31,7 +31,7 @@ import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Category(Component::class)

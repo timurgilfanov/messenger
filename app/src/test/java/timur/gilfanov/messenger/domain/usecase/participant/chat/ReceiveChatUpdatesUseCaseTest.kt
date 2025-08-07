@@ -13,18 +13,28 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class ReceiveChatUpdatesUseCaseTest {
 
     private class RepositoryFake(
         val chatUpdatesFlow: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>,
-    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
+    ) : ChatRepository {
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatUpdatesFlow
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
     }
 
     @Test

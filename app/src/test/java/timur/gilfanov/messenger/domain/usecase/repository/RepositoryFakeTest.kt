@@ -4,23 +4,26 @@ import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class RepositoryFakeTest {
@@ -46,15 +49,18 @@ class RepositoryFakeTest {
 
         repository.flowChatList().test {
             val initial = awaitItem()
-            assertIs<Success<List<Chat>, FlowChatListError>>(initial)
-            assertEquals(listOf(chat1), initial.data)
+            assertIs<Success<List<ChatPreview>, FlowChatListError>>(initial)
+            assertEquals(1, initial.data.size)
+            assertEquals(chat1.id, initial.data[0].id)
 
             val chat2 = chat1.copy(id = ChatId(UUID.randomUUID()), name = "Chat 2")
             repository.createChat(chat2)
 
             val second = awaitItem()
-            assertIs<Success<List<Chat>, FlowChatListError>>(second)
-            assertEquals(listOf(chat1, chat2), second.data)
+            assertIs<Success<List<ChatPreview>, FlowChatListError>>(second)
+            assertEquals(2, second.data.size)
+            assertTrue(second.data.any { it.id == chat1.id })
+            assertTrue(second.data.any { it.id == chat2.id })
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -100,7 +106,9 @@ class RepositoryFakeTest {
 
             var updatedMessage: Message? = null
             repository.sendMessage(message).test {
-                updatedMessage = awaitItem()
+                val result = awaitItem()
+                assertIs<ResultWithError.Success<Message, *>>(result)
+                updatedMessage = result.data
                 assertIs<TextMessage>(updatedMessage)
                 val textMessage = updatedMessage as TextMessage
                 assertEquals(message.id, textMessage.id)

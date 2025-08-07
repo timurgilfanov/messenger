@@ -5,9 +5,10 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 
 sealed interface ChatListUiState {
     data object Empty : ChatListUiState
@@ -41,6 +42,30 @@ data class CurrentUserUiModel(val id: ParticipantId, val name: String, val pictu
 fun Chat.toChatListItemUiModel(): ChatListItemUiModel {
     val lastMessage = messages.lastOrNull()
     val otherParticipant = if (isOneToOne && participants.size >= 2) {
+        participants.drop(1).firstOrNull()
+    } else {
+        null
+    }
+
+    return ChatListItemUiModel(
+        id = id,
+        name = name,
+        pictureUrl = pictureUrl,
+        lastMessage = lastMessage?.let {
+            when (it) {
+                is TextMessage -> it.text
+                else -> error("Unsupported message type for chat list: ${it::class.simpleName}")
+            }
+        },
+        lastMessageTime = lastMessage?.createdAt,
+        unreadCount = unreadMessagesCount,
+        isOnline = otherParticipant?.onlineAt != null,
+        lastOnlineTime = otherParticipant?.onlineAt,
+    )
+}
+
+fun ChatPreview.toChatListItemUiModel(): ChatListItemUiModel {
+    val otherParticipant = if (participants.size >= 2) {
         participants.drop(1).firstOrNull()
     } else {
         null

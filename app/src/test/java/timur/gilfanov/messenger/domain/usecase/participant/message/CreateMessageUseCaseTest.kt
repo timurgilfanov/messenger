@@ -29,8 +29,11 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 
@@ -38,13 +41,21 @@ typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError
 class CreateMessageUseCaseTest {
 
     private class RepositoryFake(
-        val sendMessageResult: Flow<Message> = flowOf(),
+        val sendMessageResult: Flow<ResultWithError<Message, RepositorySendMessageError>> =
+            flowOf(),
         val exception: Exception? = null,
-    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
-        override suspend fun sendMessage(message: Message): Flow<Message> {
+    ) : MessageRepository {
+        override suspend fun sendMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, RepositorySendMessageError>> {
             exception?.let { throw it }
             return sendMessageResult
         }
+
+        // Implement other required MessageRepository methods as not implemented for this test
+        override suspend fun editMessage(message: Message) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
     }
 
     class DeliveryStatusValidatorFake(
@@ -182,7 +193,8 @@ class CreateMessageUseCaseTest {
             messages = persistentListOf(lastMessage)
         }
 
-        val repository = RepositoryFake(sendMessageResult = flowOf(message))
+        val repository =
+            RepositoryFake(sendMessageResult = flowOf(ResultWithError.Success(message)))
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(
                 Pair(null, null) to ResultWithError.Success(Unit),
@@ -226,7 +238,8 @@ class CreateMessageUseCaseTest {
             rules = persistentSetOf(CreateMessageRule.CanNotWriteAfterJoining(5.minutes))
         }
 
-        val repository = RepositoryFake(sendMessageResult = flowOf(message))
+        val repository =
+            RepositoryFake(sendMessageResult = flowOf(ResultWithError.Success(message)))
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(
                 Pair(null, null) to ResultWithError.Success(Unit),
@@ -269,7 +282,8 @@ class CreateMessageUseCaseTest {
             rules = persistentSetOf()
         }
 
-        val repository = RepositoryFake(sendMessageResult = flowOf(message))
+        val repository =
+            RepositoryFake(sendMessageResult = flowOf(ResultWithError.Success(message)))
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(
                 Pair(null, null) to ResultWithError.Success(Unit),
@@ -348,11 +362,11 @@ class CreateMessageUseCaseTest {
 
         val repository = RepositoryFake(
             sendMessageResult = flow {
-                emit(sending50)
+                emit(ResultWithError.Success(sending50))
                 delay(1)
-                emit(sent)
+                emit(ResultWithError.Success(sent))
                 delay(1)
-                emit(sending100)
+                emit(ResultWithError.Success(sending100))
             },
         )
 
@@ -421,7 +435,7 @@ class CreateMessageUseCaseTest {
 
         val repository = RepositoryFake(
             sendMessageResult = flow {
-                emit(sending50)
+                emit(ResultWithError.Success(sending50))
             },
         )
 
@@ -638,7 +652,8 @@ class CreateMessageUseCaseTest {
             rules = persistentSetOf(CreateMessageRule.Debounce(30.seconds))
         }
 
-        val repository = RepositoryFake(sendMessageResult = flowOf(message))
+        val repository =
+            RepositoryFake(sendMessageResult = flowOf(ResultWithError.Success(message)))
         val deliveryStatusValidator = DeliveryStatusValidatorFake(
             validateResults = mapOf(
                 Pair(null, null) to ResultWithError.Success(Unit),

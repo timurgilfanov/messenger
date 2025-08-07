@@ -52,7 +52,7 @@ class ArchitectureTest {
     @Test
     fun `ui layer depends on usecase and entity layer only`() {
         Konsist
-            .scopeFromProject()
+            .scopeFromProduction()
             .assertArchitecture {
                 uiLayer.dependsOn(entityLayer)
                 uiLayer.dependsOn(usecaseLayer)

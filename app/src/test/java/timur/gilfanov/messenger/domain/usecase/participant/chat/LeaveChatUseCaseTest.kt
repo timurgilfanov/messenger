@@ -9,25 +9,37 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.LocalError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.NotParticipant
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.LocalError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.NotParticipant
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteUnreachable
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class LeaveChatUseCaseTest {
 
     private class RepositoryFake(val error: RepositoryLeaveChatError? = null) :
-        ParticipantRepository by ParticipantRepositoryNotImplemented() {
+        ChatRepository {
         override suspend fun leaveChat(
             chatId: ChatId,
         ): ResultWithError<Unit, RepositoryLeaveChatError> = error?.let {
             Failure(it)
         } ?: Success(Unit)
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun createChat(chat: timur.gilfanov.messenger.domain.entity.chat.Chat) =
+            error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
     }
 
     @Test

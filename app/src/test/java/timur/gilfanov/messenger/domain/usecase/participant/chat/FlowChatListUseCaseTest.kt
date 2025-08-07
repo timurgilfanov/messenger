@@ -5,33 +5,48 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class FlowChatListUseCaseTest {
 
     private class RepositoryFake(
-        val chatListFlow: Flow<ResultWithError<List<Chat>, FlowChatListError>>,
-    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
-        override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
+        val chatListFlow: Flow<ResultWithError<List<ChatPreview>, FlowChatListError>>,
+    ) : ChatRepository {
+        override suspend fun flowChatList(): Flow<
+            ResultWithError<List<ChatPreview>, FlowChatListError>,
+            > =
             chatListFlow
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override fun isChatListUpdating() = flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
     }
 
     @Test
     fun `returns chat list updates`() = runTest {
-        val chat1 = buildChat { name = "Chat 1" }
-        val chat2 = buildChat { name = "Chat 2" }
+        val chat1Preview = ChatPreview.fromChat(buildChat { name = "Chat 1" })
+        val chat2Preview = ChatPreview.fromChat(buildChat { name = "Chat 2" })
         val repository = RepositoryFake(
             chatListFlow = flow {
-                emit(ResultWithError.Success(listOf(chat1)))
-                emit(ResultWithError.Success(listOf(chat1, chat2)))
+                emit(ResultWithError.Success(listOf(chat1Preview)))
+                emit(ResultWithError.Success(listOf(chat1Preview, chat2Preview)))
             },
         )
 
@@ -39,12 +54,12 @@ class FlowChatListUseCaseTest {
 
         useCase().test {
             val first = awaitItem()
-            assertIs<ResultWithError.Success<List<Chat>, FlowChatListError>>(first)
-            assertEquals(listOf(chat1), first.data)
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(first)
+            assertEquals(listOf(chat1Preview), first.data)
 
             val second = awaitItem()
-            assertIs<ResultWithError.Success<List<Chat>, FlowChatListError>>(second)
-            assertEquals(listOf(chat1, chat2), second.data)
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(second)
+            assertEquals(listOf(chat1Preview, chat2Preview), second.data)
             awaitComplete()
         }
     }
@@ -105,7 +120,7 @@ class FlowChatListUseCaseTest {
             assertEquals(networkError, firstResult.error)
 
             val secondResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(secondResult)
+            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(secondResult)
             assertEquals(remoteError, secondResult.error)
             awaitComplete()
         }
@@ -113,7 +128,7 @@ class FlowChatListUseCaseTest {
 
     @Test
     fun `handles mixed success and errors`() = runTest {
-        val chat = buildChat { name = "Test Chat" }
+        val chat = ChatPreview.fromChat(buildChat { name = "Test Chat" })
         val networkError = FlowChatListError.NetworkNotAvailable
         val repository = RepositoryFake(
             chatListFlow = flow {
@@ -127,15 +142,15 @@ class FlowChatListUseCaseTest {
 
         useCase().test {
             val firstResult = awaitItem()
-            assertIs<ResultWithError.Success<List<Chat>, FlowChatListError>>(firstResult)
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(firstResult)
             assertEquals(listOf(chat), firstResult.data)
 
             val secondResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(secondResult)
+            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(secondResult)
             assertEquals(networkError, secondResult.error)
 
             val thirdResult = awaitItem()
-            assertIs<ResultWithError.Success<List<Chat>, FlowChatListError>>(thirdResult)
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(thirdResult)
             assertEquals(listOf(chat), thirdResult.data)
             awaitComplete()
         }
@@ -164,7 +179,7 @@ class FlowChatListUseCaseTest {
             assertEquals(networkError, firstResult.error)
 
             val secondResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(secondResult)
+            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(secondResult)
             assertEquals(remoteError, secondResult.error)
 
             val thirdResult = awaitItem()

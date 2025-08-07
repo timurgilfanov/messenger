@@ -29,9 +29,9 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.RepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.RepositoryFakeWithStatusFlow

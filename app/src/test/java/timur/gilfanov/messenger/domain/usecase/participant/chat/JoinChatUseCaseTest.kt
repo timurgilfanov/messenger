@@ -13,28 +13,30 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.AlreadyJoined
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.ChatClosed
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.ChatFull
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.CooldownActive
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.ExpiredInviteLink
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.InvalidInviteLink
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.LocalError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.OneToOneChatFull
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.RemoteUnreachable
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.UserBlocked
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError.UserNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.AlreadyJoined
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ChatClosed
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.CooldownActive
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ExpiredInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.InvalidInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.LocalError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.OneToOneChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.RemoteError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserBlocked
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserNotFound
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class JoinChatUseCaseTest {
 
     private class RepositoryFake(private val error: RepositoryJoinChatError? = null) :
-        ParticipantRepository by ParticipantRepositoryNotImplemented() {
+        ChatRepository {
         override suspend fun joinChat(
             chatId: ChatId,
             inviteLink: String?,
@@ -43,6 +45,14 @@ class JoinChatUseCaseTest {
         } else {
             Failure<Chat, RepositoryJoinChatError>(error)
         }
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
     }
 
     @Test

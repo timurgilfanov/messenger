@@ -9,25 +9,30 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `sendMessage emits message with updated delivery status`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val currentUserId = repository.currentUserId
         val chatIds = listOf(repository.aliceChatId, repository.bobChatId)
 
@@ -47,23 +52,34 @@ class InMemoryParticipantRepositoryFakeTest {
             }
 
             repository.sendMessage(message).test {
-                val sending0 = awaitItem()
-                assertIs<TextMessage>(sending0)
+                val result0 = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result0)
+                val sending0 = result0.data as TextMessage
                 assertIs<DeliveryStatus.Sending>(sending0.deliveryStatus)
                 assertEquals(0, sending0.deliveryStatus.progress)
 
-                val sending50 = awaitItem()
+                val result50 = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result50)
+                val sending50 = result50.data as TextMessage
                 assertIs<DeliveryStatus.Sending>(sending50.deliveryStatus)
-                assertEquals(50, (sending50.deliveryStatus as DeliveryStatus.Sending).progress)
+                assertEquals(50, sending50.deliveryStatus.progress)
 
-                val sending100 = awaitItem()
+                val result100 = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result100)
+                val sending100 = result100.data as TextMessage
                 assertIs<DeliveryStatus.Sending>(sending100.deliveryStatus)
-                assertEquals(100, (sending100.deliveryStatus as DeliveryStatus.Sending).progress)
+                assertEquals(100, sending100.deliveryStatus.progress)
 
-                val delivered = awaitItem()
+                val resultDelivered = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(
+                    resultDelivered,
+                )
+                val delivered = resultDelivered.data as TextMessage
                 assertEquals(DeliveryStatus.Delivered, delivered.deliveryStatus)
 
-                val read = awaitItem()
+                val resultRead = awaitItem()
+                assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(resultRead)
+                val read = resultRead.data as TextMessage
                 assertEquals(DeliveryStatus.Read, read.deliveryStatus)
 
                 awaitComplete()
@@ -73,7 +89,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `editMessage updates message in chat`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatIds = listOf(repository.aliceChatId, repository.bobChatId)
 
         chatIds.forEach { chatId ->
@@ -88,7 +104,8 @@ class InMemoryParticipantRepositoryFakeTest {
 
                 repository.editMessage(editedMessage).test {
                     val result = awaitItem()
-                    assertEquals("Edited message", (result as TextMessage).text)
+                    assertIs<ResultWithError.Success<Message, RepositoryEditMessageError>>(result)
+                    assertEquals("Edited message", (result.data as TextMessage).text)
                     awaitComplete()
                 }
 
@@ -104,16 +121,15 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `flowChatList returns list of chats`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
 
         repository.flowChatList().test {
             val result = awaitItem()
-            assertIs<Success<List<Chat>, FlowChatListError>>(result)
+            assertIs<Success<List<ChatPreview>, FlowChatListError>>(result)
             assertEquals(2, result.data.size)
 
             val chat = result.data[0]
             assertEquals(repository.aliceChatId, chat.id)
-            assertEquals(2, chat.messages.size)
             assertEquals(2, chat.participants.size)
 
             cancelAndIgnoreRemainingEvents()
@@ -122,7 +138,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `deleteMessage removes message from chat`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatIds = listOf(repository.aliceChatId, repository.bobChatId)
 
         chatIds.forEach { chatId ->
@@ -148,7 +164,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `receiveChatUpdates emits chat updates`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatIds = listOf(repository.aliceChatId, repository.bobChatId)
 
         chatIds.forEach { chatId ->
@@ -188,7 +204,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `receiveChatUpdates emits chat updates for bobChatId`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatId = repository.bobChatId
 
         repository.receiveChatUpdates(chatId).test {
@@ -225,7 +241,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `joinChat returns chat`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatId = repository.aliceChatId
 
         val result = repository.joinChat(chatId, null)
@@ -235,7 +251,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `leaveChat returns success`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatId = repository.aliceChatId
 
         val result = repository.leaveChat(chatId)

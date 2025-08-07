@@ -33,11 +33,11 @@ import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.LocalError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteUnreachable
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.NotEmpty
 import timur.gilfanov.messenger.ui.theme.MessengerTheme

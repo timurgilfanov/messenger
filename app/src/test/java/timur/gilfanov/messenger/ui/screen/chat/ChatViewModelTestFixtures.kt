@@ -26,10 +26,12 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
 object ChatViewModelTestFixtures {
 
@@ -86,14 +88,21 @@ object ChatViewModelTestFixtures {
         private val chat: Chat? = null,
         private val flowChat: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>? = null,
         private val flowSendMessage: Flow<Message>? = null,
-    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
+    ) : ChatRepository,
+        MessageRepository {
 
-        override suspend fun sendMessage(message: Message): Flow<Message> =
-            flowSendMessage ?: flowOf(
-                when (message) {
-                    is TextMessage -> message.copy(deliveryStatus = Sending(0))
-                    else -> message
-                },
+        override suspend fun sendMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowSendMessage?.map {
+            ResultWithError.Success<Message, RepositorySendMessageError>(it)
+        }
+            ?: flowOf(
+                ResultWithError.Success<Message, RepositorySendMessageError>(
+                    when (message) {
+                        is TextMessage -> message.copy(deliveryStatus = Sending(0))
+                        else -> message
+                    },
+                ),
             )
 
         override suspend fun receiveChatUpdates(
@@ -101,17 +110,43 @@ object ChatViewModelTestFixtures {
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = flowChat ?: flowOf(
             chat?.let { Success(it) } ?: Failure(ChatNotFound),
         )
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+
+        // Implement other required MessageRepository methods as not implemented for this test
+        override suspend fun editMessage(message: Message) = error("Not implemented")
+        override suspend fun deleteMessage(
+            messageId: timur.gilfanov.messenger.domain.entity.message.MessageId,
+            mode: DeleteMessageMode,
+        ) = error("Not implemented")
     }
 
     class RepositoryFakeWithStatusFlow(chat: Chat, val statuses: List<DeliveryStatus>) :
-        ParticipantRepository by ParticipantRepositoryNotImplemented() {
+        ChatRepository,
+        MessageRepository {
 
         private val chatFlow = MutableStateFlow(chat)
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        override suspend fun sendMessage(message: Message): Flow<Message> = flowOf(
-            *(statuses.map { (message as TextMessage).copy(deliveryStatus = it) }.toTypedArray()),
-        ).onEach { msg ->
+        override suspend fun sendMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf(
+            *(
+                statuses.map {
+                    ResultWithError.Success<Message, RepositorySendMessageError>(
+                        (message as TextMessage).copy(deliveryStatus = it),
+                    )
+                }.toTypedArray()
+                ),
+        ).onEach { result ->
+            val msg = (result as Success).data
             delay(10) // to pass immediate state updates, like text input
             chatFlow.update { currentChat ->
                 val messages = currentChat.messages.toMutableList().apply {
@@ -131,5 +166,21 @@ object ChatViewModelTestFixtures {
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatFlow.map { chat ->
             Success(chat)
         }
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+
+        // Implement other required MessageRepository methods as not implemented for this test
+        override suspend fun editMessage(message: Message) = error("Not implemented")
+        override suspend fun deleteMessage(
+            messageId: timur.gilfanov.messenger.domain.entity.message.MessageId,
+            mode: DeleteMessageMode,
+        ) = error("Not implemented")
     }
 }

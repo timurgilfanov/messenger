@@ -34,6 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Pre-commit checks
 ./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)
+                                      # IMPORTANT: Run this before committing when changes are ready for compilation and testing
 
 # Exclude specific categories
 ./gradlew testDebugUnitTest -PexcludeCategory=timur.gilfanov.annotations.Architecture
@@ -206,3 +207,7 @@ domain/
   - Hilt 2.56.2: Same issue persists - method names like `chatId-aANd5Fw` are invalid Java identifiers
   - Root cause: Known bug in KSP+Hilt integration where generated method names contain invalid characters
   - Decision: Stay with KAPT until KSP+Hilt compatibility is fully resolved
+
+## Testing
+- Use test doubles other than mock or spy by default. We test behaviour not implementation.
+- Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.

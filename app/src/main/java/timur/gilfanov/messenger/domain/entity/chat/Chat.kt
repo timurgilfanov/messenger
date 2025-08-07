@@ -21,4 +21,20 @@ data class Chat(
     val isClosed: Boolean = false,
     val isArchived: Boolean = false,
     val isOneToOne: Boolean = false,
-)
+) {
+    override fun toString(): String = buildString {
+        appendLine("Chat(")
+        appendLine("  id=$id")
+        appendLine("  name='$name'")
+        appendLine("  pictureUrl=${pictureUrl?.let { "'$it'" } ?: "null"}")
+        appendLine("  messages=${messages.size} items (${messages.joinToString()})")
+        appendLine("  participants=${participants.size} items")
+        appendLine("  rules=${rules.size} items")
+        appendLine("  unreadMessagesCount=$unreadMessagesCount")
+        appendLine("  lastReadMessageId=$lastReadMessageId")
+        appendLine("  isClosed=$isClosed")
+        appendLine("  isArchived=$isArchived")
+        appendLine("  isOneToOne=$isOneToOne")
+        append(")")
+    }
+}

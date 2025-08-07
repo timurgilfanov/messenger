@@ -28,21 +28,33 @@ import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class EditMessageUseCaseTest {
 
-    private class RepositoryFake : ParticipantRepository by ParticipantRepositoryNotImplemented() {
+    private class RepositoryFake : MessageRepository {
 
-        override suspend fun editMessage(message: Message): Flow<Message> {
+        override suspend fun editMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, RepositoryEditMessageError>> {
             val updatedMessage = when (message) {
                 is TextMessage -> message.copy(deliveryStatus = DeliveryStatus.Sent)
                 else -> message
             }
-            return flowOf(updatedMessage)
+            return flowOf(
+                ResultWithError.Success<Message, RepositoryEditMessageError>(updatedMessage),
+            )
         }
+
+        // Implement other required MessageRepository methods as not implemented for this test
+        override suspend fun sendMessage(message: Message) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
     }
 
     private class DeliveryStatusValidatorFake(

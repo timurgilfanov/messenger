@@ -13,26 +13,27 @@ import kotlinx.coroutines.flow.onStart
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.privileged.PrivilegedRepository
-import timur.gilfanov.messenger.domain.usecase.privileged.PrivilegedRepositoryNotImplemented
-import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
 class RepositoryFake :
-    ParticipantRepository by ParticipantRepositoryNotImplemented(),
-    PrivilegedRepository by PrivilegedRepositoryNotImplemented() {
+    ChatRepository,
+    MessageRepository {
     private val chats = mutableMapOf<ChatId, Chat>()
 
     private val chatListFlow = MutableSharedFlow<List<Chat>>(
@@ -51,11 +52,13 @@ class RepositoryFake :
         chatListFlow.emit(chats.values.toList())
     }
 
-    override suspend fun flowChatList(): Flow<ResultWithError<List<Chat>, FlowChatListError>> =
+    override suspend fun flowChatList(): Flow<
+        ResultWithError<List<ChatPreview>, FlowChatListError>,
+        > =
         chatListFlow
             .onStart { emit(chats.values.toList()) }
             .distinctUntilChanged()
-            .map { ResultWithError.Success(it) }
+            .map { chats -> ResultWithError.Success(chats.map { ChatPreview.fromChat(it) }) }
 
     override fun isChatListUpdating(): Flow<Boolean> = kotlinx.coroutines.flow.flowOf(false)
 
@@ -66,7 +69,9 @@ class RepositoryFake :
         return ResultWithError.Success(chat)
     }
 
-    override suspend fun sendMessage(message: Message): Flow<Message> {
+    override suspend fun sendMessage(
+        message: Message,
+    ): Flow<ResultWithError<Message, RepositorySendMessageError>> {
         val chatId = message.recipient
         val chat = chats[chatId]!!
 
@@ -84,10 +89,12 @@ class RepositoryFake :
         chatUpdates.emit(updatedChat)
         emitChatList()
 
-        return flowOf(updatedMessage)
+        return flowOf(ResultWithError.Success(updatedMessage))
     }
 
-    override suspend fun editMessage(message: Message): Flow<Message> {
+    override suspend fun editMessage(
+        message: Message,
+    ): Flow<ResultWithError<Message, RepositoryEditMessageError>> {
         val chatId = message.recipient
         val chat = chats[chatId]!!
 
@@ -111,7 +118,7 @@ class RepositoryFake :
         chatUpdates.emit(updatedChat)
         emitChatList()
 
-        return flowOf(updatedMessage)
+        return flowOf(ResultWithError.Success(updatedMessage))
     }
 
     override suspend fun deleteMessage(

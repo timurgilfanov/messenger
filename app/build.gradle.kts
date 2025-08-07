@@ -196,6 +196,7 @@ dependencies {
     testImplementation(libs.androidx.ui.test.junit4)
     testImplementation(libs.androidx.ui.test.manifest)
     testImplementation(project(":test-annotations"))
+    testImplementation(libs.hilt.android.testing)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -4,22 +4,21 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepositoryFake
-import timur.gilfanov.messenger.data.repository.InMemoryPrivilegedRepositoryStub
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.privileged.PrivilegedRepository
+import timur.gilfanov.messenger.data.repository.MessengerRepositoryImpl
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
     @Binds
-    abstract fun bindParticipantRepository(
-        inMemoryParticipantRepository: InMemoryParticipantRepositoryFake,
-    ): ParticipantRepository
+    abstract fun bindChatRepository(
+        messengerRepositoryImpl: MessengerRepositoryImpl,
+    ): ChatRepository
 
     @Binds
-    abstract fun bindPrivilegedRepository(
-        inMemoryPrivilegedRepository: InMemoryPrivilegedRepositoryStub,
-    ): PrivilegedRepository
+    abstract fun bindMessageRepository(
+        messengerRepositoryImpl: MessengerRepositoryImpl,
+    ): MessageRepository
 }

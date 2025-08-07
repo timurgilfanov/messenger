@@ -29,6 +29,10 @@ class LocalDataSourceFake @Inject constructor() : LocalDataSource {
     private val chatsFlow = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
     private val syncTimestamp = MutableStateFlow<Instant?>(null)
 
+    // Test control flags for simulating failures
+    private var shouldFailGetLastSyncTimestamp = false
+    private var shouldFailFlowChatList = false
+
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         println("LocalDataSourceFake: insertChat called with chat id ${chat.id}")
         chatsFlow.update { currentChats ->
@@ -76,8 +80,12 @@ class LocalDataSourceFake @Inject constructor() : LocalDataSource {
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
         chatsFlow.map { chats ->
             println("LocalDataSourceFake: flowChatList called with ${chats.size} chats")
-            val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
-            ResultWithError.Success(chatPreviews)
+            if (shouldFailFlowChatList) {
+                ResultWithError.Failure(LocalDataSourceError.DatabaseUnavailable)
+            } else {
+                val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
+                ResultWithError.Success(chatPreviews)
+            }
         }
 
     override fun flowChatUpdates(
@@ -197,8 +205,12 @@ class LocalDataSourceFake @Inject constructor() : LocalDataSource {
     }
 
     override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> {
-        val timestamp = syncTimestamp.value
-        return ResultWithError.Success(timestamp)
+        return if (shouldFailGetLastSyncTimestamp) {
+            ResultWithError.Failure(LocalDataSourceError.DatabaseUnavailable)
+        } else {
+            val timestamp = syncTimestamp.value
+            ResultWithError.Success(timestamp)
+        }
     }
 
     override suspend fun updateLastSyncTimestamp(
@@ -299,5 +311,14 @@ class LocalDataSourceFake @Inject constructor() : LocalDataSource {
         chatsFlow.update { emptyMap() }
         syncTimestamp.update { null }
         return ResultWithError.Success(Unit)
+    }
+
+    // Test control methods for simulating failures
+    fun simulateGetLastSyncTimestampFailure(shouldFail: Boolean) {
+        shouldFailGetLastSyncTimestamp = shouldFail
+    }
+
+    fun simulateFlowChatListFailure(shouldFail: Boolean) {
+        shouldFailFlowChatList = shouldFail
     }
 }

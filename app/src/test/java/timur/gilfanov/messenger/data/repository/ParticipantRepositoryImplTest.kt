@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
@@ -23,14 +24,17 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode.FOR_SENDER_ONLY
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
 
 @Category(Unit::class)
 class ParticipantRepositoryImplTest {
@@ -342,7 +346,7 @@ class ParticipantRepositoryImplTest {
         repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
 
         // When: Delete message
-        val result = repository.deleteMessage(testMessage.id, DeleteMessageMode.FOR_SENDER_ONLY)
+        val result = repository.deleteMessage(testMessage.id, FOR_SENDER_ONLY)
 
         // Then: Should succeed
         assertIs<ResultWithError.Success<Unit, RepositoryDeleteMessageError>>(result)
@@ -359,7 +363,7 @@ class ParticipantRepositoryImplTest {
         // When: Try to delete non-existent message
         val result = repository.deleteMessage(
             nonExistentMessageId,
-            DeleteMessageMode.FOR_SENDER_ONLY,
+            FOR_SENDER_ONLY,
         )
 
         // Then: Should return error
@@ -599,5 +603,173 @@ class ParticipantRepositoryImplTest {
         // Then: Should return error
         assertIs<ResultWithError.Failure<Unit, RepositoryLeaveChatError>>(result)
         assertEquals(RepositoryLeaveChatError.ChatNotFound, result.error)
+    }
+
+    // Failure Branch Coverage Tests
+
+    @Test
+    fun `repository should handle getLastSyncTimestamp failure during initialization`() = runTest {
+        // Given: Local data source fails to get sync timestamp
+        localDataSource.simulateGetLastSyncTimestampFailure(true)
+
+        // When: Repository is created (this triggers performDeltaSyncLoop)
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+
+        // Then: Repository should handle the failure gracefully and continue working
+        // The delta sync should start from null timestamp (from scratch)
+        repository.flowChatList().test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(result)
+            assertEquals(0, result.data.size) // Empty initially
+        }
+
+        // Cleanup
+        localDataSource.simulateGetLastSyncTimestampFailure(false)
+    }
+
+    @Test
+    fun `flowChatList should handle local data source failures`() = runTest {
+        // Given: Local data source fails to provide chat list
+        localDataSource.simulateFlowChatListFailure(true)
+
+        // Create repository after setting up failure
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+
+        // When & Then: Should return failure with LocalError
+        repository.flowChatList().test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(result)
+            assertEquals(FlowChatListError.LocalError, result.error)
+        }
+
+        // Cleanup
+        localDataSource.simulateFlowChatListFailure(false)
+    }
+
+    @Test
+    fun `sendMessage should handle network failures`() = runTest {
+        localDataSource.insertChat(testChat)
+        remoteDataSource.setConnectionState(false)
+
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+
+        val message = TextMessage(
+            id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
+            text = "Test message",
+            parentId = null,
+            sender = testParticipant,
+            recipient = testChat.id,
+            createdAt = Instant.fromEpochMilliseconds(101_000),
+            deliveryStatus = DeliveryStatus.Sending(0),
+        )
+
+        repository.sendMessage(message).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<Message, RepositorySendMessageError>>(result)
+            assertEquals(RepositorySendMessageError.NetworkNotAvailable, result.error)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `deleteMessage should handle message not found error`() = runTest {
+        val nonExistentMessageId = MessageId(UUID.randomUUID())
+
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+
+        val result = repository.deleteMessage(nonExistentMessageId, FOR_SENDER_ONLY)
+
+        assertIs<ResultWithError.Failure<Unit, RepositoryDeleteMessageError>>(result)
+        assertEquals(RepositoryDeleteMessageError.MessageNotFound, result.error)
+    }
+
+    @Test
+    fun `receiveChatUpdates should handle non-existent chat`() = runTest {
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        val nonExistentChatId = ChatId(UUID.randomUUID())
+
+        repository.receiveChatUpdates(nonExistentChatId).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
+            assertEquals(ReceiveChatUpdatesError.ChatNotFound, result.error)
+        }
+    }
+
+    @Test
+    fun `joinChat should handle various remote failures`() = runTest {
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        val nonExistentChatId = ChatId(UUID.randomUUID())
+
+        val result = repository.joinChat(nonExistentChatId, null)
+
+        assertIs<ResultWithError.Failure<Chat, RepositoryJoinChatError>>(result)
+        assertEquals(RepositoryJoinChatError.ChatNotFound, result.error)
+    }
+
+    @Test
+    fun `joinChat should handle network failures`() = runTest {
+        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.setConnectionState(false)
+
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+
+        val result = repository.joinChat(testChat.id, null)
+
+        assertIs<ResultWithError.Failure<Chat, RepositoryJoinChatError>>(result)
+        assertEquals(RepositoryJoinChatError.NetworkNotAvailable, result.error)
+    }
+
+    @Test
+    fun `leaveChat should handle network failures`() = runTest {
+        localDataSource.insertChat(testChat)
+        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.setConnectionState(false)
+
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+
+        val result = repository.leaveChat(testChat.id)
+
+        assertIs<ResultWithError.Failure<Unit, RepositoryLeaveChatError>>(result)
+        assertEquals(RepositoryLeaveChatError.NetworkNotAvailable, result.error)
+    }
+
+    @Test
+    fun `editMessage should handle network failures`() = runTest {
+        localDataSource.insertChat(testChat)
+        remoteDataSource.setConnectionState(false)
+
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+
+        val updatedMessage = testMessage.copy(text = "Updated text")
+
+        repository.editMessage(updatedMessage).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<Message, RepositoryEditMessageError>>(result)
+            assertEquals(RepositoryEditMessageError.NetworkNotAvailable, result.error)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `delta sync should handle network failures gracefully`() = runTest {
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+
+        repository.flowChatList().test {
+            val initialResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(initialResult)
+            assertEquals(0, initialResult.data.size)
+
+            remoteDataSource.setConnectionState(false)
+            remoteDataSource.addChatToServer(testChat)
+
+            localDataSource.getLastSyncTimestamp().let {
+                assertIs<ResultWithError.Success<Instant, LocalDataSourceError>>(it)
+                assertNull(it.data)
+            }
+            localDataSource.getChat(testChat.id).let {
+                assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(it)
+                assertEquals(LocalDataSourceError.ChatNotFound, it.error)
+            }
+        }
     }
 }

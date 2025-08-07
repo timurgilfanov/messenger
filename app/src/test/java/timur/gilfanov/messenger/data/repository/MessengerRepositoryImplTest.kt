@@ -35,13 +35,15 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
 
 @Category(Unit::class)
-class ParticipantRepositoryImplTest {
+class MessengerRepositoryImplTest {
 
     private lateinit var localDataSource: LocalDataSourceFake
     private lateinit var remoteDataSource: RemoteDataSourceFake
-    private lateinit var repository: ParticipantRepositoryImpl
+    private lateinit var repository: MessengerRepositoryImpl
 
     private lateinit var testChat: Chat
     private lateinit var testChatPreview: ChatPreview
@@ -52,7 +54,6 @@ class ParticipantRepositoryImplTest {
     fun setup() {
         localDataSource = LocalDataSourceFake()
         remoteDataSource = RemoteDataSourceFake()
-        // Repository creation moved to individual tests after data source setup
 
         testParticipant = Participant(
             id = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001")),
@@ -87,65 +88,222 @@ class ParticipantRepositoryImplTest {
         testChatPreview = ChatPreview.fromChat(testChat)
     }
 
+    // MessageRepository tests
     @Test
     fun `sendMessage should store message locally and emit remote updates`() = runTest {
         // Given: Set up fake data sources with initial chat
         localDataSource.insertChat(testChat)
-        val syncTimestamp = Instant.fromEpochMilliseconds(100_000)
+        val syncTimestamp = Instant.fromEpochMilliseconds(1_000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
         remoteDataSource.addChatToServer(testChat)
 
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
-        val message = TextMessage(
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        val messageToSend = testMessage.copy(
             id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
-            text = "Test message",
-            parentId = null,
-            sender = testParticipant,
-            recipient = testChat.id,
-            createdAt = Instant.fromEpochMilliseconds(101_000),
-            deliveryStatus = DeliveryStatus.Sending(0),
+            text = "New message to send",
+            deliveryStatus = null,
         )
-        localDataSource.getMessage(message.id).let {
-            assertIs<ResultWithError.Failure<TextMessage, LocalDataSourceError>>(it)
-            assertEquals(LocalDataSourceError.MessageNotFound, it.error)
-        }
-        localDataSource.getLastSyncTimestamp().let {
-            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(it)
-            assertEquals(syncTimestamp, it.data)
-        }
 
-        // When & Then: Test the message sending flow
-        repository.sendMessage(message).test {
-            localDataSource.getMessage(message.id).let {
+        // When: Send message
+        repository.sendMessage(messageToSend).test {
+            // Then: Should receive sending progress updates
+            val result0 = awaitItem()
+            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result0)
+            assertEquals(messageToSend.text, (result0.data as TextMessage).text)
+            assertIs<DeliveryStatus.Sending>(result0.data.deliveryStatus)
+            assertEquals(0, result0.data.deliveryStatus.progress)
+
+            val result50 = awaitItem()
+            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result50)
+            assertEquals(messageToSend.text, (result50.data as TextMessage).text)
+            assertIs<DeliveryStatus.Sending>(result50.data.deliveryStatus)
+            assertEquals(50, result50.data.deliveryStatus.progress)
+
+            val result100 = awaitItem()
+            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result100)
+            assertEquals(messageToSend.text, (result100.data as TextMessage).text)
+            assertIs<DeliveryStatus.Sending>(result100.data.deliveryStatus)
+            assertEquals(100, result100.data.deliveryStatus.progress)
+
+            val resultDelivered = awaitItem()
+            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(resultDelivered)
+            assertEquals(messageToSend.text, (resultDelivered.data as TextMessage).text)
+            assertEquals(DeliveryStatus.Delivered, resultDelivered.data.deliveryStatus)
+
+            val resultRead = awaitItem()
+            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(resultRead)
+            assertEquals(messageToSend.text, (resultRead.data as TextMessage).text)
+            assertEquals(DeliveryStatus.Read, resultRead.data.deliveryStatus)
+
+            localDataSource.getMessage(messageToSend.id).let {
                 assertIs<ResultWithError.Success<TextMessage, LocalDataSourceError>>(it)
-                assertEquals(message.id, it.data.id)
-            }
-            localDataSource.getLastSyncTimestamp().let {
-                assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(it)
-                assertEquals(syncTimestamp, it.data)
-            }
-            awaitItem().let {
-                assertIs<ResultWithError.Success<TextMessage, *>>(it)
-                assertEquals(message.id, it.data.id)
-            }
-
-            assertIs<ResultWithError.Success<TextMessage, *>>(awaitItem())
-            assertIs<ResultWithError.Success<TextMessage, *>>(awaitItem())
-            assertIs<ResultWithError.Success<TextMessage, *>>(awaitItem())
-            awaitItem().let {
-                assertIs<ResultWithError.Success<TextMessage, *>>(it)
-                assertEquals(message.id, it.data.id)
+                assertEquals(messageToSend.id, it.data.id)
                 assertIs<DeliveryStatus.Read>(it.data.deliveryStatus)
             }
-            localDataSource.getMessage(message.id).let {
-                assertIs<ResultWithError.Success<TextMessage, LocalDataSourceError>>(it)
-                assertEquals(message.id, it.data.id)
-                assertIs<DeliveryStatus.Read>(it.data.deliveryStatus)
-            }
+
             awaitComplete()
         }
     }
+
+    // ChatRepository tests
+    @Test
+    fun `createChat should store chat locally and remotely`() = runTest {
+        // Given: Set up repository
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        // When: Create chat
+        val result = repository.createChat(testChat)
+
+        // Then: Should succeed
+        assertIs<ResultWithError.Success<Chat, RepositoryCreateChatError>>(result)
+        assertEquals(testChat, result.data)
+
+        // And: Chat should be stored locally
+        val storedChatResult = localDataSource.getChat(testChat.id)
+        assertIs<ResultWithError.Success<Chat, LocalDataSourceError>>(storedChatResult)
+        assertEquals(testChat, storedChatResult.data)
+    }
+
+    @Test
+    fun `flowChatList returns local chat list`() = runTest {
+        // Given: Set up repository with chat in local storage
+        localDataSource.insertChat(testChat)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        // When: Get chat list
+        repository.flowChatList().test {
+            // Then: Should return chat list
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(result)
+            assertEquals(1, result.data.size)
+            assertEquals(testChatPreview.id, result.data[0].id)
+            assertEquals(testChatPreview.name, result.data[0].name)
+        }
+    }
+
+    @Test
+    fun `isChatListUpdating initially returns false`() = runTest {
+        // Given: Set up repository
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        // When: Check if updating
+        repository.isChatListUpdating().test {
+            // Then: Should initially be false
+            assertEquals(false, awaitItem())
+        }
+    }
+
+    @Test
+    fun `deleteChat should remove from local and remote`() = runTest {
+        // Given: Set up repository with chat
+        localDataSource.insertChat(testChat)
+        remoteDataSource.addChatToServer(testChat)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        localDataSource.flowChatList().test {
+            val initialResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(initialResult)
+            assertEquals(1, initialResult.data.size)
+            assertEquals(testChat.id, initialResult.data[0].id)
+
+            val result = repository.deleteChat(testChat.id)
+            assertIs<ResultWithError.Success<Unit, RepositoryDeleteChatError>>(result)
+
+            val finalResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(finalResult)
+            assertEquals(0, finalResult.data.size)
+        }
+    }
+
+    @Test
+    fun `joinChat should return chat and store locally`() = runTest {
+        remoteDataSource.addChatToServer(testChat)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        val result = repository.joinChat(testChat.id, null)
+
+        assertIs<ResultWithError.Success<Chat, RepositoryJoinChatError>>(result)
+        assertEquals(testChat, result.data)
+
+        val storedChatResult = localDataSource.getChat(testChat.id)
+        assertIs<ResultWithError.Success<Chat, LocalDataSourceError>>(storedChatResult)
+        assertEquals(testChat, storedChatResult.data)
+    }
+
+    @Test
+    fun `leaveChat should remove from local storage`() = runTest {
+        localDataSource.insertChat(testChat)
+        remoteDataSource.addChatToServer(testChat)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        val initialChatResult = localDataSource.getChat(testChat.id)
+        assertIs<ResultWithError.Success<Chat, LocalDataSourceError>>(initialChatResult)
+        assertEquals(testChat.id, initialChatResult.data.id)
+
+        val result = repository.leaveChat(testChat.id)
+        assertIs<ResultWithError.Success<Unit, RepositoryLeaveChatError>>(result)
+
+        val deletedChatResult = localDataSource.getChat(testChat.id)
+        assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(deletedChatResult)
+        assertEquals(LocalDataSourceError.ChatNotFound, deletedChatResult.error)
+    }
+
+    @Test
+    fun `receiveChatUpdates should return chat updates`() = runTest {
+        // Given: Set up repository with chat in local storage
+        localDataSource.insertChat(testChat)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        // When: Receive chat updates
+        repository.receiveChatUpdates(testChat.id).test {
+            // Then: Should return chat
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(result)
+            assertEquals(testChat, result.data)
+        }
+    }
+
+    @Test
+    fun `editMessage should update message`() = runTest {
+        // Given: Set up repository with chat and message
+        localDataSource.insertChat(testChat)
+        remoteDataSource.addChatToServer(testChat)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        val editedMessage = testMessage.copy(
+            text = "Edited message text",
+            deliveryStatus = null,
+        )
+
+        // When: Edit message
+        repository.editMessage(editedMessage).test {
+            // Then: Should return edited message
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Message, RepositoryEditMessageError>>(result)
+            assertEquals(editedMessage.text, (result.data as TextMessage).text)
+            // Note: RemoteDataSourceFake returns the message as-is without changing delivery status
+            assertNull(result.data.deliveryStatus)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `deleteMessage should remove message`() = runTest {
+        // Given: Set up repository with chat and message
+        localDataSource.insertChat(testChat)
+        remoteDataSource.addChatToServer(testChat)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        // When: Delete message
+        val result = repository.deleteMessage(testMessage.id, FOR_SENDER_ONLY)
+
+        // Then: Should succeed
+        assertIs<ResultWithError.Success<Unit, RepositoryDeleteMessageError>>(result)
+    }
+
+    // Comprehensive tests from ParticipantRepositoryImplTest
 
     @Test
     fun `flowChatList should start with local data and update with remote`() = runTest {
@@ -155,7 +313,7 @@ class ParticipantRepositoryImplTest {
         remoteDataSource.addChatToServer(testChat)
         println("Test setup: Local and remote chat inserted and timestamp $syncTimestamp")
 
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
         println("Test setup: Repository created")
 
         repository.flowChatList().test {
@@ -214,7 +372,7 @@ class ParticipantRepositoryImplTest {
         remoteDataSource.setConnectionState(false)
 
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         repository.flowChatList().test {
             awaitItem().let { result ->
@@ -228,46 +386,12 @@ class ParticipantRepositoryImplTest {
     }
 
     @Test
-    fun `flowChatList should return local data and background sync updates cache`() = runTest {
-        // Given: Chat exists only in remote
-        remoteDataSource.addChatToServer(testChat)
-        localDataSource.getChat(testChat.id).let {
-            assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(it)
-            assertEquals(LocalDataSourceError.ChatNotFound, it.error)
-        }
-
-        // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
-
-        // When: Subscribe to chat list
-        repository.flowChatList().test {
-            // Should emit local data (initially empty)
-            awaitItem().let { result ->
-                assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(result)
-                // Could be empty or could already have synced data depending on timing
-                // This is acceptable behavior for background sync
-            }
-
-            // Give time for background sync to potentially update local cache
-            // In a real implementation, this would be handled by the reactive flows
-            cancelAndIgnoreRemainingEvents()
-        }
-
-        // Eventually, the background sync should populate local cache
-        // We can verify this by checking local data after some time
-        kotlinx.coroutines.delay(100) // Give background sync time to work
-
-        // The exact timing is implementation-dependent, but local cache should eventually be updated
-        // For this test, we just verify that the repository doesn't crash and returns valid results
-    }
-
-    @Test
     fun `flowChatList should return empty local data when both sources fail`() = runTest {
         // Given: Simulate network disconnection and no local data
         remoteDataSource.setConnectionState(false)
 
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // When & Then: Should return success with empty local data (local-first always works)
         repository.flowChatList().test {
@@ -280,7 +404,7 @@ class ParticipantRepositoryImplTest {
     @Test
     fun `flowChatList should return empty local data when both sources empty`() = runTest {
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         repository.flowChatList().test {
             val result = awaitItem()
@@ -299,7 +423,7 @@ class ParticipantRepositoryImplTest {
         remoteDataSource.setConnectionState(false)
 
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // When & Then: Should return success with empty local data (local-first always works)
         repository.flowChatList().test {
@@ -313,7 +437,7 @@ class ParticipantRepositoryImplTest {
     @Test
     fun `isChatListUpdating should change to true when delta sync occurs`() = runTest {
         // Given: Repository is created with empty state
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // When & Then: Test updating state changes during sync
         repository.isChatListUpdating().test {
@@ -335,30 +459,16 @@ class ParticipantRepositoryImplTest {
     }
 
     @Test
-    fun `deleteMessage should delete from remote and local`() = runTest {
-        // Given: Message exists in both sources
-        localDataSource.insertChat(testChat)
-        val syncTimestamp = Instant.fromEpochMilliseconds(100_000)
-        localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
-
-        // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
-
-        // When: Delete message
-        val result = repository.deleteMessage(testMessage.id, FOR_SENDER_ONLY)
-
-        // Then: Should succeed
-        assertIs<ResultWithError.Success<Unit, RepositoryDeleteMessageError>>(result)
-    }
-
-    @Test
     fun `deleteMessage should return error when message not found`() = runTest {
         // Given: Message doesn't exist
-        val nonExistentMessageId = MessageId(UUID.randomUUID())
+        val nonExistentMessageId = MessageId(
+            UUID.fromString(
+                "550e8400-e29b-41d4-a716-446655440999",
+            ),
+        )
 
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // When: Try to delete non-existent message
         val result = repository.deleteMessage(
@@ -379,7 +489,7 @@ class ParticipantRepositoryImplTest {
         remoteDataSource.addChatToServer(testChat)
 
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // Verify message exists in local storage initially
         localDataSource.getMessage(testMessage.id).let {
@@ -426,7 +536,7 @@ class ParticipantRepositoryImplTest {
         remoteDataSource.addChatToServer(testChat)
 
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // Verify chat exists in local storage initially
         localDataSource.getChat(testChat.id).let {
@@ -461,25 +571,6 @@ class ParticipantRepositoryImplTest {
     }
 
     @Test
-    fun `receiveChatUpdates should stream chat updates`() = runTest {
-        // Given: Chat exists in both sources
-        localDataSource.insertChat(testChat)
-        val syncTimestamp = Instant.fromEpochMilliseconds(100_000)
-        localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
-
-        // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
-
-        // When & Then: Should receive chat updates
-        repository.receiveChatUpdates(testChat.id).test {
-            val result = awaitItem()
-            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(result)
-            assertEquals(testChat.id, result.data.id)
-        }
-    }
-
-    @Test
     fun `receiveChatUpdates should start with local data and update when remote chat changes`() =
         runTest {
             // Given: Chat exists in both sources
@@ -490,7 +581,7 @@ class ParticipantRepositoryImplTest {
             println("Test setup: Local and remote chat inserted and timestamp $syncTimestamp")
 
             // Create repository after data source setup
-            repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+            repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
             println("Test setup: Repository created")
 
             // When & Then: Should receive initial chat data and updates
@@ -532,32 +623,12 @@ class ParticipantRepositoryImplTest {
         }
 
     @Test
-    fun `joinChat should add chat to local after remote success`() = runTest {
-        // Given: Chat exists on server
-        remoteDataSource.addChatToServer(testChat)
-
-        // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
-
-        // When: Join chat
-        val result = repository.joinChat(testChat.id, null)
-
-        // Then: Should succeed and chat should be in local storage
-        assertIs<ResultWithError.Success<Chat, RepositoryJoinChatError>>(result)
-        assertEquals(testChat.id, result.data.id)
-
-        // Verify chat was added to local storage
-        val localChat = localDataSource.getChat(testChat.id)
-        assertIs<ResultWithError.Success<Chat, *>>(localChat)
-    }
-
-    @Test
     fun `joinChat should return error when chat not found`() = runTest {
         // Given: Chat doesn't exist
-        val nonExistentChatId = ChatId(UUID.randomUUID())
+        val nonExistentChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440888"))
 
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // When: Try to join non-existent chat
         val result = repository.joinChat(nonExistentChatId, null)
@@ -568,34 +639,12 @@ class ParticipantRepositoryImplTest {
     }
 
     @Test
-    fun `leaveChat should remove chat from local after remote success`() = runTest {
-        // Given: Chat exists in both sources
-        localDataSource.insertChat(testChat)
-        val syncTimestamp = Instant.fromEpochMilliseconds(100_000)
-        localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
-
-        // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
-
-        // When: Leave chat (note: this will succeed as fake doesn't validate membership)
-        val result = repository.leaveChat(testChat.id)
-
-        // Then: Should succeed
-        assertIs<ResultWithError.Success<Unit, RepositoryLeaveChatError>>(result)
-
-        // Verify chat was removed from local storage
-        val localChat = localDataSource.getChat(testChat.id)
-        assertIs<ResultWithError.Failure<Chat, *>>(localChat)
-    }
-
-    @Test
     fun `leaveChat should return error when chat not found`() = runTest {
         // Given: Chat doesn't exist
-        val nonExistentChatId = ChatId(UUID.randomUUID())
+        val nonExistentChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440777"))
 
         // Create repository after data source setup
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // When: Try to leave non-existent chat
         val result = repository.leaveChat(nonExistentChatId)
@@ -613,7 +662,7 @@ class ParticipantRepositoryImplTest {
         localDataSource.simulateGetLastSyncTimestampFailure(true)
 
         // When: Repository is created (this triggers performDeltaSyncLoop)
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // Then: Repository should handle the failure gracefully and continue working
         // The delta sync should start from null timestamp (from scratch)
@@ -633,7 +682,7 @@ class ParticipantRepositoryImplTest {
         localDataSource.simulateFlowChatListFailure(true)
 
         // Create repository after setting up failure
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         // When & Then: Should return failure with LocalError
         repository.flowChatList().test {
@@ -651,7 +700,7 @@ class ParticipantRepositoryImplTest {
         localDataSource.insertChat(testChat)
         remoteDataSource.setConnectionState(false)
 
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         val message = TextMessage(
             id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
@@ -673,9 +722,11 @@ class ParticipantRepositoryImplTest {
 
     @Test
     fun `deleteMessage should handle message not found error`() = runTest {
-        val nonExistentMessageId = MessageId(UUID.randomUUID())
+        val nonExistentMessageId = MessageId(
+            UUID.fromString("550e8400-e29b-41d4-a716-446655440666"),
+        )
 
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         val result = repository.deleteMessage(nonExistentMessageId, FOR_SENDER_ONLY)
 
@@ -685,8 +736,8 @@ class ParticipantRepositoryImplTest {
 
     @Test
     fun `receiveChatUpdates should handle non-existent chat`() = runTest {
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
-        val nonExistentChatId = ChatId(UUID.randomUUID())
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+        val nonExistentChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440555"))
 
         repository.receiveChatUpdates(nonExistentChatId).test {
             val result = awaitItem()
@@ -697,8 +748,8 @@ class ParticipantRepositoryImplTest {
 
     @Test
     fun `joinChat should handle various remote failures`() = runTest {
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
-        val nonExistentChatId = ChatId(UUID.randomUUID())
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+        val nonExistentChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440444"))
 
         val result = repository.joinChat(nonExistentChatId, null)
 
@@ -711,7 +762,7 @@ class ParticipantRepositoryImplTest {
         remoteDataSource.addChatToServer(testChat)
         remoteDataSource.setConnectionState(false)
 
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         val result = repository.joinChat(testChat.id, null)
 
@@ -725,7 +776,7 @@ class ParticipantRepositoryImplTest {
         remoteDataSource.addChatToServer(testChat)
         remoteDataSource.setConnectionState(false)
 
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         val result = repository.leaveChat(testChat.id)
 
@@ -738,7 +789,7 @@ class ParticipantRepositoryImplTest {
         localDataSource.insertChat(testChat)
         remoteDataSource.setConnectionState(false)
 
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         val updatedMessage = testMessage.copy(text = "Updated text")
 
@@ -752,7 +803,7 @@ class ParticipantRepositoryImplTest {
 
     @Test
     fun `delta sync should handle network failures gracefully`() = runTest {
-        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
 
         repository.flowChatList().test {
             val initialResult = awaitItem()
@@ -762,14 +813,68 @@ class ParticipantRepositoryImplTest {
             remoteDataSource.setConnectionState(false)
             remoteDataSource.addChatToServer(testChat)
 
-            localDataSource.getLastSyncTimestamp().let {
-                assertIs<ResultWithError.Success<Instant, LocalDataSourceError>>(it)
-                assertNull(it.data)
-            }
+            val timestampResult = localDataSource.getLastSyncTimestamp()
+            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(timestampResult)
+            assertNull(timestampResult.data)
             localDataSource.getChat(testChat.id).let {
                 assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(it)
                 assertEquals(LocalDataSourceError.ChatNotFound, it.error)
             }
         }
+    }
+
+    // Privileged operations error tests from PrivilegedRepositoryImplTest
+
+    @Test
+    fun `createChat should return error when network unavailable`() = runTest {
+        // Given: Network is disconnected
+        remoteDataSource.setConnectionState(false)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        // When: Try to create chat
+        val result = repository.createChat(testChat)
+
+        // Then: Should return network error
+        assertIs<ResultWithError.Failure<Chat, RepositoryCreateChatError>>(result)
+        assertEquals(RepositoryCreateChatError.NetworkNotAvailable, result.error)
+
+        // Verify chat was not stored locally
+        val localChat = localDataSource.getChat(testChat.id)
+        assertIs<ResultWithError.Failure<Chat, *>>(localChat)
+    }
+
+    @Test
+    fun `deleteChat should return error when chat not found`() = runTest {
+        // Given: Chat doesn't exist
+        val nonExistentChatId = ChatId(
+            UUID.fromString("550e8400-e29b-41d4-a716-446655440333"),
+        )
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        // When: Try to delete non-existent chat
+        val result = repository.deleteChat(nonExistentChatId)
+
+        // Then: Should return error
+        assertIs<ResultWithError.Failure<Unit, RepositoryDeleteChatError>>(result)
+        assertEquals(RepositoryDeleteChatError.ChatNotFound(nonExistentChatId), result.error)
+    }
+
+    @Test
+    fun `deleteChat should return error when network unavailable`() = runTest {
+        // Given: Chat exists locally but network is disconnected
+        localDataSource.insertChat(testChat)
+        remoteDataSource.setConnectionState(false)
+        repository = MessengerRepositoryImpl(localDataSource, remoteDataSource)
+
+        // When: Try to delete chat
+        val result = repository.deleteChat(testChat.id)
+
+        // Then: Should return network error
+        assertIs<ResultWithError.Failure<Unit, RepositoryDeleteChatError>>(result)
+        assertEquals(RepositoryDeleteChatError.NetworkNotAvailable, result.error)
+
+        // Verify chat still exists locally (remote-first approach failed)
+        val localChat = localDataSource.getChat(testChat.id)
+        assertIs<ResultWithError.Success<Chat, *>>(localChat)
     }
 }

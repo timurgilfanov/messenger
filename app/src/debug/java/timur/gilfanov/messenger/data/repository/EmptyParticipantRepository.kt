@@ -10,7 +10,8 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
@@ -19,11 +20,25 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
 
 @Singleton
-class EmptyParticipantRepository @Inject constructor() : ParticipantRepository {
+class EmptyParticipantRepository @Inject constructor() :
+    ChatRepository,
+    MessageRepository {
 
-    override suspend fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, FlowChatListError>> =
+    // ChatRepository implementation
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> =
+        ResultWithError.Success(chat)
+
+    override suspend fun deleteChat(
+        chatId: ChatId,
+    ): ResultWithError<Unit, RepositoryDeleteChatError> = ResultWithError.Success(Unit)
+
+    override suspend fun flowChatList(): Flow<
+        ResultWithError<List<ChatPreview>, FlowChatListError>,
+        > =
         flowOf(ResultWithError.Success(emptyList()))
 
     override fun isChatListUpdating(): Flow<Boolean> = flowOf(false)
@@ -52,6 +67,7 @@ class EmptyParticipantRepository @Inject constructor() : ParticipantRepository {
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryLeaveChatError> = ResultWithError.Success(Unit)
 
+    // MessageRepository implementation
     override suspend fun sendMessage(
         message: Message,
     ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf()

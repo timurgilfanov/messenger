@@ -37,7 +37,8 @@ import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.messenger.ChatScreenTestActivity
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -62,7 +63,11 @@ class ChatFeatureTest {
     object ChatScreenDisplayTestRepositoryModule {
         @Provides
         @Singleton
-        fun provideParticipantRepository(): ParticipantRepository = WithChatsParticipantRepository()
+        fun provideChatRepository(): ChatRepository = WithChatsParticipantRepository()
+
+        @Provides
+        @Singleton
+        fun provideMessageRepository(): MessageRepository = WithChatsParticipantRepository()
     }
 
     @Module

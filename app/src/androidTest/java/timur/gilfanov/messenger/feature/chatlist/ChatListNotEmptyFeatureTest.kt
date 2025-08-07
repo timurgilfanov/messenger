@@ -27,7 +27,8 @@ import timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestUserModule
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -47,7 +48,11 @@ class ChatListNotEmptyFeatureTest {
     object WithChatsRepositoryTestModule {
         @Provides
         @Singleton
-        fun provideParticipantRepository(): ParticipantRepository = WithChatsParticipantRepository()
+        fun provideChatRepository(): ChatRepository = WithChatsParticipantRepository()
+
+        @Provides
+        @Singleton
+        fun provideMessageRepository(): MessageRepository = WithChatsParticipantRepository()
     }
 
     @Module

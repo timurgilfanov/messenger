@@ -20,7 +20,8 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
@@ -29,6 +30,8 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
 
 const val USER_ID = "550e8400-e29b-41d4-a716-446655440000"
 
@@ -47,7 +50,9 @@ private const val ALICE_TEXT_2 = "How are you doing today?"
 const val BOB_TEXT_1 = "Hey there! How's the project going?"
 
 @Singleton
-class WithChatsParticipantRepository @Inject constructor() : ParticipantRepository {
+class WithChatsParticipantRepository @Inject constructor() :
+    ChatRepository,
+    MessageRepository {
 
     val currentUserId = ParticipantId(UUID.fromString(USER_ID))
 
@@ -134,6 +139,14 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
 
     private val chatListFlow = MutableStateFlow(listOf(aliceChat, bobChat))
 
+    // ChatRepository implementation
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> =
+        ResultWithError.Success(chat)
+
+    override suspend fun deleteChat(
+        chatId: ChatId,
+    ): ResultWithError<Unit, RepositoryDeleteChatError> = ResultWithError.Success(Unit)
+
     override suspend fun flowChatList(): Flow<
         ResultWithError<List<ChatPreview>, FlowChatListError>,
         > =
@@ -171,6 +184,7 @@ class WithChatsParticipantRepository @Inject constructor() : ParticipantReposito
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryLeaveChatError> = ResultWithError.Success(Unit)
 
+    // MessageRepository implementation
     override suspend fun sendMessage(
         message: Message,
     ): Flow<ResultWithError<Message, RepositorySendMessageError>> {

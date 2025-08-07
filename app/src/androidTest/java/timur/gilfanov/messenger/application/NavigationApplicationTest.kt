@@ -31,7 +31,8 @@ import timur.gilfanov.messenger.data.repository.BOB_CHAT_ID
 import timur.gilfanov.messenger.data.repository.BOB_TEXT_1
 import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
 import timur.gilfanov.messenger.di.RepositoryModule
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -51,7 +52,11 @@ class NavigationApplicationTest {
     object NavigationTestRepositoryModule {
         @Provides
         @Singleton
-        fun provideParticipantRepository(): ParticipantRepository = WithChatsParticipantRepository()
+        fun provideChatRepository(): ChatRepository = WithChatsParticipantRepository()
+
+        @Provides
+        @Singleton
+        fun provideMessageRepository(): MessageRepository = WithChatsParticipantRepository()
     }
 
     @Before

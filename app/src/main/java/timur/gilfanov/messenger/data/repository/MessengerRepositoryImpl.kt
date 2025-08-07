@@ -198,33 +198,33 @@ class MessengerRepositoryImpl @Inject constructor(
                 ResultWithError.Failure(mapRemoteErrorToDeleteMessageError(result.error))
             }
         }
+}
 
-    // Error mapping functions
-    private fun mapRemoteErrorToCreateChatError(
-        error: RemoteDataSourceError,
-    ): RepositoryCreateChatError = when (error) {
-        RemoteDataSourceError.NetworkNotAvailable -> RepositoryCreateChatError.NetworkNotAvailable
-        RemoteDataSourceError.ServerUnreachable -> RepositoryCreateChatError.ServerUnreachable
-        RemoteDataSourceError.ServerError -> RepositoryCreateChatError.ServerError
-        RemoteDataSourceError.Unauthorized -> RepositoryCreateChatError.UnknownError
-        else -> RepositoryCreateChatError.UnknownError
-    }
+// Error mapping functions
+private fun mapRemoteErrorToCreateChatError(
+    error: RemoteDataSourceError,
+): RepositoryCreateChatError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable -> RepositoryCreateChatError.NetworkNotAvailable
+    RemoteDataSourceError.ServerUnreachable -> RepositoryCreateChatError.ServerUnreachable
+    RemoteDataSourceError.ServerError -> RepositoryCreateChatError.ServerError
+    RemoteDataSourceError.Unauthorized -> RepositoryCreateChatError.UnknownError
+    else -> RepositoryCreateChatError.UnknownError
+}
 
-    private fun mapRemoteErrorToDeleteChatError(
-        error: RemoteDataSourceError,
-        chatId: ChatId,
-    ): RepositoryDeleteChatError = when (error) {
-        RemoteDataSourceError.NetworkNotAvailable -> RepositoryDeleteChatError.NetworkNotAvailable
-        RemoteDataSourceError.ServerUnreachable -> RepositoryDeleteChatError.RemoteUnreachable
-        RemoteDataSourceError.ServerError -> RepositoryDeleteChatError.RemoteError
-        RemoteDataSourceError.Unauthorized -> RepositoryDeleteChatError.LocalError
-        RemoteDataSourceError.ChatNotFound -> RepositoryDeleteChatError.ChatNotFound(chatId)
-        else -> RepositoryDeleteChatError.LocalError
-    }
+private fun mapRemoteErrorToDeleteChatError(
+    error: RemoteDataSourceError,
+    chatId: ChatId,
+): RepositoryDeleteChatError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable -> RepositoryDeleteChatError.NetworkNotAvailable
+    RemoteDataSourceError.ServerUnreachable -> RepositoryDeleteChatError.RemoteUnreachable
+    RemoteDataSourceError.ServerError -> RepositoryDeleteChatError.RemoteError
+    RemoteDataSourceError.Unauthorized -> RepositoryDeleteChatError.LocalError
+    RemoteDataSourceError.ChatNotFound -> RepositoryDeleteChatError.ChatNotFound(chatId)
+    else -> RepositoryDeleteChatError.LocalError
+}
 
-    private fun mapRemoteErrorToJoinChatError(
-        error: RemoteDataSourceError,
-    ): RepositoryJoinChatError = when (error) {
+private fun mapRemoteErrorToJoinChatError(error: RemoteDataSourceError): RepositoryJoinChatError =
+    when (error) {
         RemoteDataSourceError.NetworkNotAvailable -> RepositoryJoinChatError.NetworkNotAvailable
         RemoteDataSourceError.ServerUnreachable -> RepositoryJoinChatError.RemoteUnreachable
         RemoteDataSourceError.ServerError -> RepositoryJoinChatError.RemoteError
@@ -241,41 +241,39 @@ class MessengerRepositoryImpl @Inject constructor(
         else -> RepositoryJoinChatError.LocalError
     }
 
-    private fun mapRemoteErrorToLeaveChatError(
-        error: RemoteDataSourceError,
-    ): RepositoryLeaveChatError = when (error) {
-        RemoteDataSourceError.NetworkNotAvailable -> RepositoryLeaveChatError.NetworkNotAvailable
-        RemoteDataSourceError.ServerUnreachable -> RepositoryLeaveChatError.RemoteUnreachable
-        RemoteDataSourceError.ServerError -> RepositoryLeaveChatError.RemoteError
-        RemoteDataSourceError.ChatNotFound -> RepositoryLeaveChatError.ChatNotFound
-        else -> RepositoryLeaveChatError.LocalError
-    }
+private fun mapRemoteErrorToLeaveChatError(
+    error: RemoteDataSourceError,
+): RepositoryLeaveChatError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable -> RepositoryLeaveChatError.NetworkNotAvailable
+    RemoteDataSourceError.ServerUnreachable -> RepositoryLeaveChatError.RemoteUnreachable
+    RemoteDataSourceError.ServerError -> RepositoryLeaveChatError.RemoteError
+    RemoteDataSourceError.ChatNotFound -> RepositoryLeaveChatError.ChatNotFound
+    else -> RepositoryLeaveChatError.LocalError
+}
 
-    private fun mapRemoteErrorToSendMessageError(
-        error: RemoteDataSourceError,
-    ): RepositorySendMessageError = when (error) {
-        RemoteDataSourceError.NetworkNotAvailable -> RepositorySendMessageError.NetworkNotAvailable
-        RemoteDataSourceError.ServerUnreachable -> RepositorySendMessageError.RemoteUnreachable
-        RemoteDataSourceError.ServerError -> RepositorySendMessageError.RemoteError
-        else -> RepositorySendMessageError.RemoteError
-    }
+private fun mapRemoteErrorToSendMessageError(
+    error: RemoteDataSourceError,
+): RepositorySendMessageError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable -> RepositorySendMessageError.NetworkNotAvailable
+    RemoteDataSourceError.ServerUnreachable -> RepositorySendMessageError.RemoteUnreachable
+    RemoteDataSourceError.ServerError -> RepositorySendMessageError.RemoteError
+    else -> RepositorySendMessageError.RemoteError
+}
 
-    private fun mapRemoteErrorToEditMessageError(
-        error: RemoteDataSourceError,
-    ): RepositoryEditMessageError = when (error) {
-        RemoteDataSourceError.NetworkNotAvailable -> RepositoryEditMessageError.NetworkNotAvailable
-        RemoteDataSourceError.ServerUnreachable -> RepositoryEditMessageError.RemoteUnreachable
-        RemoteDataSourceError.ServerError -> RepositoryEditMessageError.RemoteError
-        else -> RepositoryEditMessageError.RemoteError
-    }
+private fun mapRemoteErrorToEditMessageError(
+    error: RemoteDataSourceError,
+): RepositoryEditMessageError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable -> RepositoryEditMessageError.NetworkNotAvailable
+    RemoteDataSourceError.ServerUnreachable -> RepositoryEditMessageError.RemoteUnreachable
+    RemoteDataSourceError.ServerError -> RepositoryEditMessageError.RemoteError
+    else -> RepositoryEditMessageError.RemoteError
+}
 
-    private fun mapRemoteErrorToDeleteMessageError(
-        error: RemoteDataSourceError,
-    ): RepositoryDeleteMessageError = when (error) {
-        RemoteDataSourceError.NetworkNotAvailable ->
-            RepositoryDeleteMessageError.NetworkNotAvailable
-        RemoteDataSourceError.ServerUnreachable -> RepositoryDeleteMessageError.RemoteUnreachable
-        RemoteDataSourceError.MessageNotFound -> RepositoryDeleteMessageError.MessageNotFound
-        else -> RepositoryDeleteMessageError.RemoteError
-    }
+private fun mapRemoteErrorToDeleteMessageError(
+    error: RemoteDataSourceError,
+): RepositoryDeleteMessageError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable -> RepositoryDeleteMessageError.NetworkNotAvailable
+    RemoteDataSourceError.ServerUnreachable -> RepositoryDeleteMessageError.RemoteUnreachable
+    RemoteDataSourceError.MessageNotFound -> RepositoryDeleteMessageError.MessageNotFound
+    else -> RepositoryDeleteMessageError.RemoteError
 }

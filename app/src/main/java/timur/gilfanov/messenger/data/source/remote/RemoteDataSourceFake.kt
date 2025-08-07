@@ -168,6 +168,7 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
                     operation = DeltaOperation.CREATE,
                     chatMetadata = ChatMetadata.fromChat(chat),
                     incrementalMessages = chat.messages.toImmutableList(),
+                    messagesToDelete = emptyList<MessageId>().toImmutableList(),
                     timestamp = currentTimestamp,
                 )
             }
@@ -228,6 +229,7 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
         }
     }
 
+    @Suppress("LongMethod")
     private fun generateChatDelta(
         operationKey: String,
         chats: Map<ChatId, Chat>,
@@ -242,6 +244,7 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
                 operation = DeltaOperation.CREATE,
                 chatMetadata = ChatMetadata.fromChat(chat),
                 incrementalMessages = chat.messages.toImmutableList(),
+                messagesToDelete = emptyList<MessageId>().toImmutableList(),
                 timestamp = timestamp,
             )
         }
@@ -254,22 +257,19 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
                 operation = DeltaOperation.DELETE,
                 chatMetadata = null,
                 incrementalMessages = emptyList<Message>().toImmutableList(),
+                messagesToDelete = emptyList<MessageId>().toImmutableList(),
                 timestamp = timestamp,
             )
         }
 
         operationKey.startsWith("add_message_") ||
             operationKey.startsWith("update_message_") -> {
-            println(
-                "RemoteDataSourceFake: Generating delta for operation '$operationKey' at $timestamp",
-            )
             val chatId = when {
                 operationKey.contains("_to_") -> operationKey.substringAfterLast("_to_")
                 operationKey.contains("_in_") -> operationKey.substringAfterLast("_in_")
                 else -> error("Unexpected operation key format: $operationKey")
             }
             val chat = chats[ChatId(UUID.fromString(chatId))]!!
-            println("RemoteDataSourceFake: Found chat for delta: $chat")
             val incrementalMessages = if (since != null) {
                 chat.messages.filter { it.createdAt > since }
             } else {
@@ -281,6 +281,26 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
                 operation = DeltaOperation.UPDATE,
                 chatMetadata = ChatMetadata.fromChat(chat),
                 incrementalMessages = incrementalMessages,
+                messagesToDelete = emptyList<MessageId>().toImmutableList(),
+                timestamp = timestamp,
+            )
+        }
+
+        operationKey.startsWith("delete_message_") && operationKey.contains("_from_") -> {
+            val messageIdString = operationKey.substringAfter(
+                "delete_message_",
+            ).substringBefore("_from_")
+            val chatIdString = operationKey.substringAfterLast("_from_")
+            val messageId = MessageId(UUID.fromString(messageIdString))
+            val chatId = ChatId(UUID.fromString(chatIdString))
+            val chat = chats[chatId] ?: return null
+
+            ChatDelta(
+                chatId = chat.id,
+                operation = DeltaOperation.UPDATE,
+                chatMetadata = ChatMetadata.fromChat(chat),
+                incrementalMessages = emptyList<Message>().toImmutableList(),
+                messagesToDelete = listOf(messageId).toImmutableList(),
                 timestamp = timestamp,
             )
         }
@@ -298,6 +318,7 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
                 operation = DeltaOperation.CREATE,
                 chatMetadata = ChatMetadata.fromChat(chat),
                 incrementalMessages = chat.messages.toImmutableList(),
+                messagesToDelete = emptyList<MessageId>().toImmutableList(),
                 timestamp = timestamp,
             )
         }
@@ -482,6 +503,31 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
                 currentChats + (chatId to updatedChat)
             } else {
                 error("Trying to add message to non-existing chat: $chatId")
+            }
+        }
+    }
+
+    fun deleteMessageFromServerChat(messageId: MessageId) {
+        serverChatsFlow.update { currentChats ->
+            val chatWithMessage = currentChats.values.find { chat ->
+                chat.messages.any { it.id == messageId }
+            }
+
+            if (chatWithMessage != null) {
+                recordServerOperation(
+                    "delete_message_${messageId.id}_from_${chatWithMessage.id.id}",
+                )
+
+                val updatedMessages = chatWithMessage.messages.toMutableList().apply {
+                    removeAll { it.id == messageId }
+                }.toImmutableList()
+                val updatedChat = chatWithMessage.copy(
+                    messages = updatedMessages,
+                    unreadMessagesCount = maxOf(0, chatWithMessage.unreadMessagesCount - 1),
+                )
+                currentChats + (chatWithMessage.id to updatedChat)
+            } else {
+                error("Trying to delete message from non-existing chat: $messageId")
             }
         }
     }

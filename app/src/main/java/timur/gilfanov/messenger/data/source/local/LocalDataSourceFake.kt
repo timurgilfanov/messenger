@@ -258,6 +258,12 @@ class LocalDataSourceFake @Inject constructor() : LocalDataSource {
     private fun updateMessages(chat: Chat, delta: ChatDelta): ImmutableList<Message> {
         val existingMessages = chat.messages.toMutableList()
 
+        // First: Remove deleted messages
+        delta.messagesToDelete.forEach { messageId ->
+            existingMessages.removeAll { it.id == messageId }
+        }
+
+        // Then: Add/update incremental messages
         delta.incrementalMessages.forEach { newMessage ->
             if (existingMessages.none { it.id == newMessage.id }) {
                 existingMessages.add(newMessage)

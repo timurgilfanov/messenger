@@ -360,7 +360,52 @@ class ParticipantRepositoryImplTest {
         assertIs<ResultWithError.Failure<Unit, RepositoryDeleteMessageError>>(result)
     }
 
-    // todo: add test of message deletion on remote data source led to local deletion
+    @Test
+    fun `deleteMessage should sync remote deletion to local storage via delta updates`() = runTest {
+        // Given: Message exists in both local and remote sources
+        localDataSource.insertChat(testChat)
+        val syncTimestamp = Instant.fromEpochMilliseconds(1000)
+        localDataSource.updateLastSyncTimestamp(syncTimestamp)
+        remoteDataSource.addChatToServer(testChat)
+
+        // Create repository after data source setup
+        repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
+
+        // Verify message exists in local storage initially
+        localDataSource.getMessage(testMessage.id).let {
+            assertIs<ResultWithError.Success<TextMessage, LocalDataSourceError>>(it)
+            assertEquals(testMessage.id, it.data.id)
+        }
+
+        // Then: Verify local storage is updated through delta sync via chat list
+        repository.flowChatList().test {
+            println("Test: await first item (initial local data)")
+            val firstResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(firstResult)
+            assertEquals(1, firstResult.data.size)
+            val firstChatPreview = firstResult.data.first()
+            assertEquals(testChat.id, firstChatPreview.id)
+            assertEquals(testMessage.id, firstChatPreview.lastMessage?.id)
+
+            // When: Delete message from remote source only (simulating external deletion)
+            remoteDataSource.deleteMessageFromServerChat(testMessage.id)
+            println("Test setup: Deleted message ${testMessage.id} from remote chat")
+
+            println("Test: await second item (after remote deletion sync)")
+            val secondResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(secondResult)
+            assertEquals(1, secondResult.data.size)
+            val secondChatPreview = secondResult.data.first()
+            assertEquals(testChat.id, secondChatPreview.id)
+            assertEquals(null, secondChatPreview.lastMessage) // No messages left
+
+            // Verify message is deleted from local storage
+            localDataSource.getMessage(testMessage.id).let {
+                assertIs<ResultWithError.Failure<TextMessage, LocalDataSourceError>>(it)
+                assertEquals(LocalDataSourceError.MessageNotFound, it.error)
+            }
+        }
+    }
 
     @Test
     fun `receiveChatUpdates should stream chat updates`() = runTest {

@@ -19,17 +19,29 @@ data class ChatDelta(
     val operation: DeltaOperation,
     val chatMetadata: ChatMetadata?, // null for DELETE operations
     val incrementalMessages: ImmutableList<Message>, // Only messages since last sync
+    val messagesToDelete: ImmutableList<MessageId>,
     val timestamp: Instant,
 ) {
     init {
         when (operation) {
-            DeltaOperation.CREATE, DeltaOperation.UPDATE -> {
+            DeltaOperation.CREATE -> {
+                require(chatMetadata != null) {
+                    "ChatMetadata required for CREATE/UPDATE operations"
+                }
+                require(messagesToDelete.isEmpty()) {
+                    "MessagesToDelete must be empty for CREATE operations"
+                }
+            }
+            DeltaOperation.UPDATE -> {
                 require(chatMetadata != null) {
                     "ChatMetadata required for CREATE/UPDATE operations"
                 }
             }
             DeltaOperation.DELETE -> {
                 require(chatMetadata == null) { "ChatMetadata must be null for DELETE operations" }
+                require(messagesToDelete.isEmpty()) {
+                    "MessagesToDelete must be empty for CREATE operations"
+                }
             }
         }
     }

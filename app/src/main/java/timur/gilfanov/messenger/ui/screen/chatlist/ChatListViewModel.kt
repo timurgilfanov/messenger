@@ -24,6 +24,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListUseCase
 
 private const val STATE_UPDATE_DEBOUNCE = 200L
+private const val UPDATING_DEBOUNCE = 1000L
 
 @HiltViewModel(assistedFactory = ChatListViewModel.ChatListViewModelFactory::class)
 class ChatListViewModel @AssistedInject constructor(
@@ -59,6 +60,7 @@ class ChatListViewModel @AssistedInject constructor(
         repeatOnSubscription {
             participantRepository.isChatListUpdating()
                 .distinctUntilChanged()
+                .debounce(UPDATING_DEBOUNCE)
                 .collect { isUpdating ->
                     ensureActive()
                     withContext(Dispatchers.Main) {

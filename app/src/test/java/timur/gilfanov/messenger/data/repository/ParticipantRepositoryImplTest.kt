@@ -307,20 +307,26 @@ class ParticipantRepositoryImplTest {
     }
 
     @Test
-    fun `isChatListUpdating should return opposite of connection state`() = runTest {
-        // Given: Connection state changes
-        remoteDataSource.setConnectionState(true)
-
-        // Create repository after data source setup
+    fun `isChatListUpdating should change to true when delta sync occurs`() = runTest {
+        // Given: Repository is created with empty state
         repository = ParticipantRepositoryImpl(localDataSource, remoteDataSource)
 
-        // When & Then: Should reflect connection state
+        // When & Then: Test updating state changes during sync
         repository.isChatListUpdating().test {
-            assertEquals(false, awaitItem()) // connected = not updating
+            // Should start with false (not updating)
+            val initialState = awaitItem()
+            assertEquals(false, initialState)
 
-            // Change connection state
-            remoteDataSource.setConnectionState(false)
-            assertEquals(true, awaitItem()) // disconnected = updating
+            // Add chat to remote to trigger delta sync
+            remoteDataSource.addChatToServer(testChat)
+
+            // Should emit true when delta sync starts processing
+            val updatingState = awaitItem()
+            assertEquals(true, updatingState)
+
+            // Should emit false when delta sync completes
+            val completedState = awaitItem()
+            assertEquals(false, completedState)
         }
     }
 

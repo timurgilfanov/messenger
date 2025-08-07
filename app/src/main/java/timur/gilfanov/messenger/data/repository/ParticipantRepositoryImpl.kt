@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -37,6 +38,7 @@ class ParticipantRepositoryImpl @Inject constructor(
 ) : ParticipantRepository {
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val isUpdatingFlow = MutableStateFlow(false)
 
     init {
         // Start delta sync for chat list on repository creation
@@ -67,7 +69,9 @@ class ParticipantRepositoryImpl @Inject constructor(
         remoteDataSource.chatsDeltaUpdates(lastSyncTimestamp)
             .onEach { deltaResult ->
                 if (deltaResult is ResultWithError.Success) {
+                    isUpdatingFlow.value = true
                     localDataSource.applyChatListDelta(deltaResult.data)
+                    isUpdatingFlow.value = false
                 } else {
                     println("ParticipantRepository: Delta result was failure: $deltaResult")
                 }
@@ -112,7 +116,9 @@ class ParticipantRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, FlowChatListError>> =
+    override suspend fun flowChatList(): Flow<
+        ResultWithError<List<ChatPreview>, FlowChatListError>,
+        > =
         localDataSource.flowChatList().map { localResult ->
             when (localResult) {
                 is ResultWithError.Success -> ResultWithError.Success(localResult.data)
@@ -120,11 +126,7 @@ class ParticipantRepositoryImpl @Inject constructor(
             }
         }
 
-    override fun isChatListUpdating(): Flow<Boolean> =
-        remoteDataSource.isConnected().map { connected ->
-            // Simple implementation: updating when not connected
-            !connected
-        }
+    override fun isChatListUpdating(): Flow<Boolean> = isUpdatingFlow
 
     override suspend fun deleteMessage(
         messageId: MessageId,

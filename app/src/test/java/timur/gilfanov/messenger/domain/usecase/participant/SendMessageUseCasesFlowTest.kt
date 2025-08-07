@@ -26,12 +26,12 @@ import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
-import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatError
-import timur.gilfanov.messenger.domain.usecase.privileged.CreateChatUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.domain.usecase.repository.RepositoryFake
 
 @Category(Component::class)

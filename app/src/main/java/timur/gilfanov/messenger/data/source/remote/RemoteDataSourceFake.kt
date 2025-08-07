@@ -20,7 +20,7 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 
 @Singleton
 @Suppress("TooManyFunctions")

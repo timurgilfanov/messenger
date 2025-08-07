@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.participant.message
+package timur.gilfanov.messenger.domain.usecase.message
 
 import kotlin.time.Duration
 

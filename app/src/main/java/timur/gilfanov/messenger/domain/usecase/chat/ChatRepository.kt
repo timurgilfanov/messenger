@@ -1,16 +1,10 @@
-package timur.gilfanov.messenger.domain.usecase
+package timur.gilfanov.messenger.domain.usecase.chat
 
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
 
 /**
  * Repository interface for all chat-related operations.

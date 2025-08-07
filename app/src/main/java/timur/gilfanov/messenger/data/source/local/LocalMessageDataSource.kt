@@ -3,7 +3,7 @@ package timur.gilfanov.messenger.data.source.local
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 
 /**
  * Local data source for message-related operations.

@@ -20,18 +20,18 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
-import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
 const val USER_ID = "550e8400-e29b-41d4-a716-446655440000"
 
@@ -50,7 +50,8 @@ private const val ALICE_TEXT_2 = "How are you doing today?"
 const val BOB_TEXT_1 = "Hey there! How's the project going?"
 
 @Singleton
-class WithChatsParticipantRepository @Inject constructor() :
+@Suppress("TooManyFunctions")
+class MessengerNotEmptyRepositoryFake @Inject constructor() :
     ChatRepository,
     MessageRepository {
 

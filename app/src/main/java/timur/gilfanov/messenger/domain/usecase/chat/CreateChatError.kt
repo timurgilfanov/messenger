@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.privileged
+package timur.gilfanov.messenger.domain.usecase.chat
 
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 

@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.participant.chat
+package timur.gilfanov.messenger.domain.usecase.chat
 
 sealed class ReceiveChatUpdatesError {
     object ChatNotFound : ReceiveChatUpdatesError()

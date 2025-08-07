@@ -14,12 +14,17 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
+import timur.gilfanov.messenger.domain.usecase.chat.ChatIsNotValid
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class CreateChatUseCaseTest {
 
     private class RepositoryFake(val error: RepositoryCreateChatError? = null) :
-        timur.gilfanov.messenger.domain.usecase.ChatRepository {
+        ChatRepository {
         val chats = mutableSetOf<Chat>()
 
         override suspend fun createChat(

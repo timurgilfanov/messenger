@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.participant.message
+package timur.gilfanov.messenger.domain.usecase.message
 
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.Clock
@@ -15,12 +15,11 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.onSuccess
-import timur.gilfanov.messenger.domain.usecase.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError.DeliveryStatusAlreadySet
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError.DeliveryStatusUpdateNotValid
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError.MessageIsNotValid
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError.WaitAfterJoining
-import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError.WaitDebounce
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.DeliveryStatusAlreadySet
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.DeliveryStatusUpdateNotValid
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.MessageIsNotValid
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.WaitAfterJoining
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.WaitDebounce
 
 /**
  * TODO Get chat by chat id and current user from repository, not call from call params.

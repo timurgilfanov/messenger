@@ -26,11 +26,12 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
-import timur.gilfanov.messenger.domain.usecase.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
 object ChatViewModelTestFixtures {
 
@@ -123,7 +124,7 @@ object ChatViewModelTestFixtures {
         override suspend fun editMessage(message: Message) = error("Not implemented")
         override suspend fun deleteMessage(
             messageId: timur.gilfanov.messenger.domain.entity.message.MessageId,
-            mode: timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode,
+            mode: DeleteMessageMode,
         ) = error("Not implemented")
     }
 
@@ -179,7 +180,7 @@ object ChatViewModelTestFixtures {
         override suspend fun editMessage(message: Message) = error("Not implemented")
         override suspend fun deleteMessage(
             messageId: timur.gilfanov.messenger.domain.entity.message.MessageId,
-            mode: timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode,
+            mode: DeleteMessageMode,
         ) = error("Not implemented")
     }
 }

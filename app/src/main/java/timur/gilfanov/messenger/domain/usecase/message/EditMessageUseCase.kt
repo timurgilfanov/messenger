@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.participant.message
+package timur.gilfanov.messenger.domain.usecase.message
 
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.Clock
@@ -16,14 +16,13 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.onSuccess
-import timur.gilfanov.messenger.domain.usecase.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.CreationTimeChanged
-import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.DeliveryStatusAlreadySet
-import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.DeliveryStatusUpdateNotValid
-import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.EditWindowExpired
-import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.MessageIsNotValid
-import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.RecipientChanged
-import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.SenderIdChanged
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.CreationTimeChanged
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusAlreadySet
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.DeliveryStatusUpdateNotValid
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.EditWindowExpired
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.MessageIsNotValid
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.RecipientChanged
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.SenderIdChanged
 
 class EditMessageUseCase(
     val repository: MessageRepository,

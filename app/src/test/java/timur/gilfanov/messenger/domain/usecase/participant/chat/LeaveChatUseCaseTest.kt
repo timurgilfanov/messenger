@@ -9,13 +9,16 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.usecase.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.LocalError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.NotParticipant
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.LocalError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.NotParticipant
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteUnreachable
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class LeaveChatUseCaseTest {

@@ -8,7 +8,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 
 sealed interface ChatListUiState {
     data object Empty : ChatListUiState

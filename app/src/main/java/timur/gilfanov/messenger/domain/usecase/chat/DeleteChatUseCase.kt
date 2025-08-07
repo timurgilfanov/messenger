@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.privileged
+package timur.gilfanov.messenger.domain.usecase.chat
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
@@ -7,7 +7,6 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDelete
 import timur.gilfanov.messenger.domain.entity.chat.Participant
-import timur.gilfanov.messenger.domain.usecase.ChatRepository
 
 class DeleteChatUseCase(private val repository: ChatRepository) {
     suspend operator fun invoke(

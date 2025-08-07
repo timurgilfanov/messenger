@@ -29,14 +29,14 @@ component_management:
       name: "Chat Feature"
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/domain/entity/chat/**"
-        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/participant/chat/**"
+        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/chat/**"
         - "app/src/main/java/timur/gilfanov/messenger/ui/screen/chat/**"
     
     - component_id: message_feature
       name: "Message Feature"
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/domain/entity/message/**"
-        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/participant/message/**"
+        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/message/**"
     
     - component_id: ui_screens
       name: "UI Screens"

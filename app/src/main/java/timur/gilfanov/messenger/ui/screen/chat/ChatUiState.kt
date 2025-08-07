@@ -8,7 +8,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 
 sealed interface ChatUiState {
     data class Loading(val error: ReceiveChatUpdatesError? = null) : ChatUiState
@@ -31,7 +31,7 @@ sealed interface ChatUiState {
 
 sealed interface ReadyError {
     data class SendMessageError(
-        val error: timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageError,
+        val error: timur.gilfanov.messenger.domain.usecase.message.SendMessageError,
     ) : ReadyError
 }
 

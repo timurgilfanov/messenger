@@ -35,10 +35,10 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.Feature
 import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.messenger.ChatScreenTestActivity
-import timur.gilfanov.messenger.data.repository.WithChatsParticipantRepository
+import timur.gilfanov.messenger.data.repository.MessengerNotEmptyRepositoryFake
 import timur.gilfanov.messenger.di.RepositoryModule
-import timur.gilfanov.messenger.domain.usecase.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -63,11 +63,11 @@ class ChatFeatureTest {
     object ChatScreenDisplayTestRepositoryModule {
         @Provides
         @Singleton
-        fun provideChatRepository(): ChatRepository = WithChatsParticipantRepository()
+        fun provideChatRepository(): ChatRepository = MessengerNotEmptyRepositoryFake()
 
         @Provides
         @Singleton
-        fun provideMessageRepository(): MessageRepository = WithChatsParticipantRepository()
+        fun provideMessageRepository(): MessageRepository = MessengerNotEmptyRepositoryFake()
     }
 
     @Module

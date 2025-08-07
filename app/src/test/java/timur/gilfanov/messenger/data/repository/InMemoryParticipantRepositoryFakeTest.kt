@@ -19,20 +19,20 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `sendMessage emits message with updated delivery status`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val currentUserId = repository.currentUserId
         val chatIds = listOf(repository.aliceChatId, repository.bobChatId)
 
@@ -89,7 +89,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `editMessage updates message in chat`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatIds = listOf(repository.aliceChatId, repository.bobChatId)
 
         chatIds.forEach { chatId ->
@@ -121,7 +121,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `flowChatList returns list of chats`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
 
         repository.flowChatList().test {
             val result = awaitItem()
@@ -138,7 +138,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `deleteMessage removes message from chat`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatIds = listOf(repository.aliceChatId, repository.bobChatId)
 
         chatIds.forEach { chatId ->
@@ -164,7 +164,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `receiveChatUpdates emits chat updates`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatIds = listOf(repository.aliceChatId, repository.bobChatId)
 
         chatIds.forEach { chatId ->
@@ -204,7 +204,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `receiveChatUpdates emits chat updates for bobChatId`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatId = repository.bobChatId
 
         repository.receiveChatUpdates(chatId).test {
@@ -241,7 +241,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `joinChat returns chat`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatId = repository.aliceChatId
 
         val result = repository.joinChat(chatId, null)
@@ -251,7 +251,7 @@ class InMemoryParticipantRepositoryFakeTest {
 
     @Test
     fun `leaveChat returns success`() = runTest {
-        val repository = InMemoryParticipantRepositoryFake()
+        val repository = MessengerInMemoryRepositoryFake()
         val chatId = repository.aliceChatId
 
         val result = repository.leaveChat(chatId)

@@ -18,18 +18,18 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
-import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
 class RepositoryFake :
     ChatRepository,

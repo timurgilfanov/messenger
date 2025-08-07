@@ -1,13 +1,9 @@
-package timur.gilfanov.messenger.domain.usecase
+package timur.gilfanov.messenger.domain.usecase.message
 
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
-import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
 
 /**
  * Repository interface for all message-related operations.

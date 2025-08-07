@@ -17,9 +17,13 @@ import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
-import timur.gilfanov.messenger.domain.usecase.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.MessageNotFound
-import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.RemoteError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError.MessageNotFound
+import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError.RemoteError
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class DeleteMessageUseCaseTest {

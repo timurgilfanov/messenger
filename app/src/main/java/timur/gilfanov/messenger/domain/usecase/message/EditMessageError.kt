@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.participant.message
+package timur.gilfanov.messenger.domain.usecase.message
 
 import timur.gilfanov.messenger.domain.entity.ValidationError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus

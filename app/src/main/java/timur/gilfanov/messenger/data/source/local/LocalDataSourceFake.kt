@@ -37,7 +37,6 @@ class LocalDataSourceFake @Inject constructor() :
     private var shouldFailFlowChatList = false
 
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
-        println("LocalDataSourceFake: insertChat called with chat id ${chat.id}")
         chatsFlow.update { currentChats ->
             currentChats + (chat.id to chat)
         }
@@ -58,16 +57,13 @@ class LocalDataSourceFake @Inject constructor() :
 
     override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, LocalDataSourceError> {
         val currentChats = chatsFlow.value
-        println("LocalDataSourceFake: deleteChat called with chat id $chatId")
         if (chatId !in currentChats) {
-            println("LocalDataSourceFake: Chat with id $chatId not found")
             return ResultWithError.Failure(LocalDataSourceError.ChatNotFound)
         }
 
         chatsFlow.update { currentChats ->
             currentChats - chatId
         }
-        println("LocalDataSourceFake: Chat with id $chatId deleted successfully")
         return ResultWithError.Success(Unit)
     }
 
@@ -82,7 +78,6 @@ class LocalDataSourceFake @Inject constructor() :
 
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
         chatsFlow.map { chats ->
-            println("LocalDataSourceFake: flowChatList called with ${chats.size} chats")
             if (shouldFailFlowChatList) {
                 ResultWithError.Failure(LocalDataSourceError.DatabaseUnavailable)
             } else {
@@ -288,9 +283,6 @@ class LocalDataSourceFake @Inject constructor() :
         delta.changes.sortedBy { it.timestamp }.forEach { chatDelta ->
             val result = applyChatDelta(chatDelta)
             if (result is ResultWithError.Failure) {
-                println(
-                    "LocalDataSourceFake: Failed to apply chat delta: $chatDelta, error: ${result.error}",
-                )
                 return result
             }
             updateLastSyncTimestamp(delta.toTimestamp)

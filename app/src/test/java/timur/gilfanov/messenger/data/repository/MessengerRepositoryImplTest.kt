@@ -311,23 +311,17 @@ class MessengerRepositoryImplTest {
         assertIs<ResultWithError.Success<Unit, RepositoryDeleteMessageError>>(result)
     }
 
-    // Comprehensive tests from ParticipantRepositoryImplTest
-
     @Test
     fun `flowChatList should start with local data and update with remote`() = runTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(1000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
         remoteDataSource.addChatToServer(testChat)
-        println("Test setup: Local and remote chat inserted and timestamp $syncTimestamp")
 
         repository = repositoryImpl()
-        println("Test setup: Repository created")
 
         repository.flowChatList().test {
-            println("Test: await first item (local data)")
             val firstResult = awaitItem()
-            println("First item: $firstResult")
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(firstResult)
             assertEquals(1, firstResult.data.size)
             val firstChatPreview = firstResult.data.first()
@@ -345,11 +339,8 @@ class MessengerRepositoryImplTest {
             )
             // Add message to existing remote chat instead of replacing entire chat
             remoteDataSource.addMessageToServerChat(newMessage)
-            println("Test setup: Added message ${newMessage.id} to remote chat")
 
-            println("Test: await second item (after delta sync)")
             val secondResult = awaitItem()
-            println("Second item: $secondResult")
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(secondResult)
             assertEquals(1, secondResult.data.size)
             val secondChatPreview = secondResult.data.first()
@@ -516,7 +507,6 @@ class MessengerRepositoryImplTest {
 
         // Then: Verify local storage is updated through delta sync via chat list
         repository.flowChatList().test {
-            println("Test: await first item (initial local data)")
             val firstResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(firstResult)
             assertEquals(1, firstResult.data.size)
@@ -526,9 +516,7 @@ class MessengerRepositoryImplTest {
 
             // When: Delete message from remote source only (simulating external deletion)
             remoteDataSource.deleteMessageFromServerChat(testMessage.id)
-            println("Test setup: Deleted message ${testMessage.id} from remote chat")
 
-            println("Test: await second item (after remote deletion sync)")
             val secondResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(secondResult)
             assertEquals(1, secondResult.data.size)
@@ -563,7 +551,6 @@ class MessengerRepositoryImplTest {
 
         // Then: Verify local storage is updated through delta sync via chat list
         repository.flowChatList().test {
-            println("Test: await first item (initial local data)")
             val firstResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(firstResult)
             assertEquals(1, firstResult.data.size)
@@ -572,9 +559,7 @@ class MessengerRepositoryImplTest {
 
             // When: Delete chat from remote source only (simulating external deletion)
             remoteDataSource.deleteChatFromServer(testChat.id)
-            println("Test setup: Deleted chat ${testChat.id} from remote server")
 
-            println("Test: await second item (after remote chat deletion sync)")
             val secondResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(secondResult)
             assertEquals(0, secondResult.data.size)
@@ -595,17 +580,13 @@ class MessengerRepositoryImplTest {
             val syncTimestamp = Instant.fromEpochMilliseconds(800)
             localDataSource.updateLastSyncTimestamp(syncTimestamp)
             remoteDataSource.addChatToServer(testChat)
-            println("Test setup: Local and remote chat inserted and timestamp $syncTimestamp")
 
             // Create repository after data source setup
             repository = repositoryImpl()
-            println("Test setup: Repository created")
 
             // When & Then: Should receive initial chat data and updates
             repository.receiveChatUpdates(testChat.id).test {
-                println("Test: await first item (local data)")
                 val firstResult = awaitItem()
-                println("First item: $firstResult")
                 assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(firstResult)
                 assertEquals(testChat.id, firstResult.data.id)
                 assertEquals(1, firstResult.data.messages.size)
@@ -622,11 +603,8 @@ class MessengerRepositoryImplTest {
                 )
                 // Add message to existing remote chat to simulate remote change
                 remoteDataSource.addMessageToServerChat(newMessage)
-                println("Test setup: Added message ${newMessage.id} to remote chat")
 
-                println("Test: await second item (after remote update)")
                 val secondResult = awaitItem()
-                println("Second item: $secondResult")
                 assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(secondResult)
                 assertEquals(testChat.id, secondResult.data.id)
                 assertEquals(2, secondResult.data.messages.size)

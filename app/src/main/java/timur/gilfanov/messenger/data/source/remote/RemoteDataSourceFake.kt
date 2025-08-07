@@ -48,13 +48,11 @@ class RemoteDataSourceFake @Inject constructor() :
 
     private fun getNextServerTimestamp(): Instant {
         currentServerTimestamp = currentServerTimestamp.plus(1.seconds)
-        println("RemoteDataSourceFake: Updated server timestamp to $currentServerTimestamp")
         return currentServerTimestamp
     }
 
     private fun recordServerOperation(operationKey: String): Instant {
         val timestamp = getNextServerTimestamp()
-        println("RemoteDataSourceFake: Recording operation '$operationKey' at $timestamp")
         serverOperationTimestamps[operationKey] = timestamp
         return timestamp
     }
@@ -138,10 +136,8 @@ class RemoteDataSourceFake @Inject constructor() :
 
     fun subscribeToChats(): Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
         serverChatsFlow.map { chats ->
-            println("RemoteDataSourceFake: subscribeToChats called with ${chats.size} chats")
             if (connectionStateFlow.value) {
                 val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
-                println("RemoteDataSourceFake: Returning $chatPreviews chat previews")
                 ResultWithError.Success(chatPreviews)
             } else {
                 ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
@@ -151,7 +147,6 @@ class RemoteDataSourceFake @Inject constructor() :
     override fun chatsDeltaUpdates(
         since: Instant?,
     ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>> = serverChatsFlow.map { chats ->
-        println("RemoteDataSourceFake: chatsDeltaUpdates called with ${chats.size} chats")
         if (!connectionStateFlow.value) {
             ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         } else {
@@ -161,10 +156,6 @@ class RemoteDataSourceFake @Inject constructor() :
                 val recentOperations = serverOperationTimestamps.filter { (_, timestamp) ->
                     timestamp > since
                 }.toList().sortedBy { it.second }
-
-                println(
-                    "RemoteDataSourceFake: Found ${recentOperations.size} recent operations since $since",
-                )
 
                 if (recentOperations.isEmpty()) {
                     ResultWithError.Success(

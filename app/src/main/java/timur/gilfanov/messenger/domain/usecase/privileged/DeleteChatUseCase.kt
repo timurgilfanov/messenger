@@ -7,8 +7,9 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDelete
 import timur.gilfanov.messenger.domain.entity.chat.Participant
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
 
-class DeleteChatUseCase(private val repository: PrivilegedRepository) {
+class DeleteChatUseCase(private val repository: ChatRepository) {
     suspend operator fun invoke(
         chat: Chat,
         currentUser: Participant,

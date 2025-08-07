@@ -18,7 +18,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.DeleteForEveryoneWindowExpired
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.DeleteWindowExpired
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageError.MessageAlreadyDelivered
@@ -26,7 +26,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode.FOR_SENDER_ONLY
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.MessageNotFound
 
-class DeleteMessageUseCase(val repository: ParticipantRepository) {
+class DeleteMessageUseCase(val repository: MessageRepository) {
 
     @Suppress("ReturnCount")
     suspend operator fun invoke(

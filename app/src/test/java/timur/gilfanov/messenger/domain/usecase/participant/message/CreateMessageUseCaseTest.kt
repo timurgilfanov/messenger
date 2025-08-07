@@ -29,8 +29,7 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 
@@ -41,13 +40,18 @@ class CreateMessageUseCaseTest {
         val sendMessageResult: Flow<ResultWithError<Message, RepositorySendMessageError>> =
             flowOf(),
         val exception: Exception? = null,
-    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
+    ) : MessageRepository {
         override suspend fun sendMessage(
             message: Message,
         ): Flow<ResultWithError<Message, RepositorySendMessageError>> {
             exception?.let { throw it }
             return sendMessageResult
         }
+
+        // Implement other required MessageRepository methods as not implemented for this test
+        override suspend fun editMessage(message: Message) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
     }
 
     class DeliveryStatusValidatorFake(

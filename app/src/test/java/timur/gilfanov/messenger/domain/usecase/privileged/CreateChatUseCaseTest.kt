@@ -19,7 +19,7 @@ import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
 class CreateChatUseCaseTest {
 
     private class RepositoryFake(val error: RepositoryCreateChatError? = null) :
-        PrivilegedRepository by PrivilegedRepositoryNotImplemented() {
+        timur.gilfanov.messenger.domain.usecase.ChatRepository {
         val chats = mutableSetOf<Chat>()
 
         override suspend fun createChat(
@@ -35,6 +35,15 @@ class CreateChatUseCaseTest {
                 ResultWithError.Success(chat)
             }
         }
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
     }
 
     private class ChatValidatorFake(val error: ChatValidationError? = null) : ChatValidator {

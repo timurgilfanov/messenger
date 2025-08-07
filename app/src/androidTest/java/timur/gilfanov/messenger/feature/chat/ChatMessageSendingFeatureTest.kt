@@ -36,7 +36,8 @@ import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepositoryFak
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestChatModule
 import timur.gilfanov.messenger.di.TestUserModule
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -56,8 +57,11 @@ class ChatMessageSendingFeatureTest {
     object MessageSendingTestRepositoryModule {
         @Provides
         @Singleton
-        fun provideParticipantRepository(): ParticipantRepository =
-            InMemoryParticipantRepositoryFake()
+        fun provideChatRepository(): ChatRepository = InMemoryParticipantRepositoryFake()
+
+        @Provides
+        @Singleton
+        fun provideMessageRepository(): MessageRepository = InMemoryParticipantRepositoryFake()
     }
 
     @Module

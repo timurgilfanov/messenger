@@ -6,9 +6,10 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidatorImpl
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
 
 class CreateChatUseCase(
-    private val repository: PrivilegedRepository,
+    private val repository: ChatRepository,
     private val validator: ChatValidator = ChatValidatorImpl(),
 ) {
     suspend operator fun invoke(chat: Chat): ResultWithError<Chat, CreateChatError> {

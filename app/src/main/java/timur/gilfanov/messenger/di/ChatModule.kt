@@ -7,7 +7,8 @@ import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.scopes.ViewModelScoped
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.participant.message.SendMessageUseCase
@@ -23,18 +24,17 @@ object ChatModule {
     @Provides
     @ViewModelScoped
     fun provideSendMessageUseCase(
-        repository: ParticipantRepository,
+        repository: MessageRepository,
         deliveryStatusValidator: DeliveryStatusValidator,
     ): SendMessageUseCase = SendMessageUseCase(repository, deliveryStatusValidator)
 
     @Provides
     @ViewModelScoped
-    fun provideReceiveChatUpdatesUseCase(
-        repository: ParticipantRepository,
-    ): ReceiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
+    fun provideReceiveChatUpdatesUseCase(repository: ChatRepository): ReceiveChatUpdatesUseCase =
+        ReceiveChatUpdatesUseCase(repository)
 
     @Provides
     @ViewModelScoped
-    fun provideFlowChatListUseCase(repository: ParticipantRepository): FlowChatListUseCase =
+    fun provideFlowChatListUseCase(repository: ChatRepository): FlowChatListUseCase =
         FlowChatListUseCase(repository)
 }

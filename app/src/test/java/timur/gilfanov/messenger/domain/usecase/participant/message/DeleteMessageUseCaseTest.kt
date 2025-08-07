@@ -17,8 +17,7 @@ import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.MessageNotFound
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError.RemoteError
 
@@ -28,11 +27,19 @@ class DeleteMessageUseCaseTest {
     private class RepositoryFake(
         private val deleteMessageResult: ResultWithError<Unit, RepositoryDeleteMessageError> =
             ResultWithError.Success(Unit),
-    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
+    ) : MessageRepository {
         override suspend fun deleteMessage(
             messageId: MessageId,
             mode: DeleteMessageMode,
         ): ResultWithError<Unit, RepositoryDeleteMessageError> = deleteMessageResult
+
+        // Implement other required MessageRepository methods as not implemented for this test
+        override suspend fun sendMessage(
+            message: timur.gilfanov.messenger.domain.entity.message.Message,
+        ) = error("Not implemented")
+        override suspend fun editMessage(
+            message: timur.gilfanov.messenger.domain.entity.message.Message,
+        ) = error("Not implemented")
     }
 
     @Test

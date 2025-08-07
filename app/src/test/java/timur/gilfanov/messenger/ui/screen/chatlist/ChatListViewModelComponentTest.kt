@@ -26,8 +26,7 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -78,12 +77,23 @@ class ChatListViewModelComponentTest {
                 Success(emptyList()),
             ),
         private val updatingFlow: Flow<Boolean> = flowOf(false),
-    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
+    ) : ChatRepository {
 
-        override suspend fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, FlowChatListError>> =
+        override suspend fun flowChatList(): Flow<
+            ResultWithError<List<ChatPreview>, FlowChatListError>,
+            > =
             chatListFlow
 
         override fun isChatListUpdating(): Flow<Boolean> = updatingFlow
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun createChat(chat: timur.gilfanov.messenger.domain.entity.chat.Chat) =
+            error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
     }
 
     @Test

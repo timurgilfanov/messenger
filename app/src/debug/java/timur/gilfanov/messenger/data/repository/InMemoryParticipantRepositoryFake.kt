@@ -23,7 +23,8 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
@@ -32,9 +33,13 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
 
 @Singleton
-class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepository {
+class InMemoryParticipantRepositoryFake @Inject constructor() :
+    ChatRepository,
+    MessageRepository {
 
     companion object Companion {
         private const val SENDING_DELAY_MS = 500L
@@ -319,4 +324,16 @@ class InMemoryParticipantRepositoryFake @Inject constructor() : ParticipantRepos
     override suspend fun leaveChat(
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryLeaveChatError> = ResultWithError.Success(Unit)
+
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> {
+        // For demo purposes, just return success
+        return ResultWithError.Success(chat)
+    }
+
+    override suspend fun deleteChat(
+        chatId: ChatId,
+    ): ResultWithError<Unit, RepositoryDeleteChatError> {
+        // For demo purposes, just return success
+        return ResultWithError.Success(Unit)
+    }
 }

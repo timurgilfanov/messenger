@@ -20,7 +20,7 @@ import org.orbitmvi.orbit.annotation.OrbitExperimental
 import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListUseCase
 
 private const val STATE_UPDATE_DEBOUNCE = 200L
@@ -30,7 +30,7 @@ private const val UPDATING_DEBOUNCE = 1000L
 class ChatListViewModel @AssistedInject constructor(
     @Assisted("currentUserId") currentUserIdUuid: UUID,
     private val flowChatListUseCase: FlowChatListUseCase,
-    private val participantRepository: ParticipantRepository,
+    private val chatRepository: ChatRepository,
 ) : ViewModel(),
     ContainerHost<ChatListScreenState, Nothing> {
 
@@ -58,7 +58,7 @@ class ChatListViewModel @AssistedInject constructor(
     @OptIn(OrbitExperimental::class, FlowPreview::class)
     private suspend fun observeChatListUpdating() = subIntent {
         repeatOnSubscription {
-            participantRepository.isChatListUpdating()
+            chatRepository.isChatListUpdating()
                 .distinctUntilChanged()
                 .debounce(UPDATING_DEBOUNCE)
                 .collect { isUpdating ->

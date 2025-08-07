@@ -18,8 +18,8 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
@@ -28,14 +28,12 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.participant.message.RepositorySendMessageError
-import timur.gilfanov.messenger.domain.usecase.privileged.PrivilegedRepository
-import timur.gilfanov.messenger.domain.usecase.privileged.PrivilegedRepositoryNotImplemented
 import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.privileged.RepositoryDeleteChatError
 
 class RepositoryFake :
-    ParticipantRepository by ParticipantRepositoryNotImplemented(),
-    PrivilegedRepository by PrivilegedRepositoryNotImplemented() {
+    ChatRepository,
+    MessageRepository {
     private val chats = mutableMapOf<ChatId, Chat>()
 
     private val chatListFlow = MutableSharedFlow<List<Chat>>(

@@ -5,24 +5,36 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepositoryNotImplemented
+import timur.gilfanov.messenger.domain.usecase.ChatRepository
 
 @Category(timur.gilfanov.annotations.Unit::class)
 class FlowChatListUseCaseTest {
 
     private class RepositoryFake(
         val chatListFlow: Flow<ResultWithError<List<ChatPreview>, FlowChatListError>>,
-    ) : ParticipantRepository by ParticipantRepositoryNotImplemented() {
-        override suspend fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, FlowChatListError>> =
+    ) : ChatRepository {
+        override suspend fun flowChatList(): Flow<
+            ResultWithError<List<ChatPreview>, FlowChatListError>,
+            > =
             chatListFlow
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override fun isChatListUpdating() = flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
     }
 
     @Test

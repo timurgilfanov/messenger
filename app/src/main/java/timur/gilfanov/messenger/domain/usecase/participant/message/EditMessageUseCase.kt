@@ -16,7 +16,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.onSuccess
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.domain.usecase.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.CreationTimeChanged
 import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.DeliveryStatusAlreadySet
 import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.DeliveryStatusUpdateNotValid
@@ -26,7 +26,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageEr
 import timur.gilfanov.messenger.domain.usecase.participant.message.EditMessageError.SenderIdChanged
 
 class EditMessageUseCase(
-    val repository: ParticipantRepository,
+    val repository: MessageRepository,
     val deliveryStatusValidator: DeliveryStatusValidator,
 ) {
 

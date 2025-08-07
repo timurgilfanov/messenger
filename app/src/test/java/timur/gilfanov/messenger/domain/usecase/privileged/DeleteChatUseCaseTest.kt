@@ -19,10 +19,20 @@ class DeleteChatUseCaseTest {
     private class RepositoryFake(
         private val deleteChatResult: ResultWithError<Unit, RepositoryDeleteChatError> =
             Success(Unit),
-    ) : PrivilegedRepository by PrivilegedRepositoryNotImplemented() {
+    ) : timur.gilfanov.messenger.domain.usecase.ChatRepository {
         override suspend fun deleteChat(
             chatId: ChatId,
         ): ResultWithError<Unit, RepositoryDeleteChatError> = deleteChatResult
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun createChat(chat: timur.gilfanov.messenger.domain.entity.chat.Chat) =
+            error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
     }
 
     @Test

@@ -15,13 +15,6 @@ data class ChatListDelta(
     val hasMoreChanges: Boolean = false, // true if there are more changes to fetch
 ) {
     companion object {
-        fun empty(timestamp: Instant) = ChatListDelta(
-            changes = emptyList<ChatDelta>().toImmutableList(),
-            fromTimestamp = timestamp,
-            toTimestamp = timestamp,
-            hasMoreChanges = false,
-        )
-
         fun fullSync(changes: List<ChatDelta>, timestamp: Instant) = ChatListDelta(
             changes = changes.toImmutableList(),
             fromTimestamp = null, // null indicates this is a full sync

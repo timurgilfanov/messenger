@@ -24,6 +24,7 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
 import timur.gilfanov.messenger.domain.usecase.participant.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.participant.chat.ReceiveChatUpdatesError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.participant.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessageMode
@@ -148,9 +149,7 @@ class ParticipantRepositoryImpl @Inject constructor(
         localDataSource.flowChatUpdates(chatId).map { localResult ->
             when (localResult) {
                 is ResultWithError.Success -> ResultWithError.Success(localResult.data)
-                is ResultWithError.Failure -> ResultWithError.Failure(
-                    ReceiveChatUpdatesError.ChatNotFound,
-                )
+                is ResultWithError.Failure -> ResultWithError.Failure(ChatNotFound)
             }
         }
 

@@ -163,12 +163,10 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
         // For simplicity, if since is null, return all chats as CREATE operations (full sync)
         return if (since == null) {
             val createDeltas = currentChats.values.map { chat ->
-                ChatDelta(
+                ChatCreatedDelta(
                     chatId = chat.id,
-                    operation = DeltaOperation.CREATE,
                     chatMetadata = ChatMetadata.fromChat(chat),
-                    incrementalMessages = chat.messages.toImmutableList(),
-                    messagesToDelete = emptyList<MessageId>().toImmutableList(),
+                    initialMessages = chat.messages.toImmutableList(),
                     timestamp = currentTimestamp,
                 )
             }
@@ -239,12 +237,10 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
         operationKey.startsWith("create_chat_") -> {
             val chatId = operationKey.substringAfterLast("_")
             val chat = chats[ChatId(UUID.fromString(chatId))]!!
-            ChatDelta(
+            ChatCreatedDelta(
                 chatId = chat.id,
-                operation = DeltaOperation.CREATE,
                 chatMetadata = ChatMetadata.fromChat(chat),
-                incrementalMessages = chat.messages.toImmutableList(),
-                messagesToDelete = emptyList<MessageId>().toImmutableList(),
+                initialMessages = chat.messages.toImmutableList(),
                 timestamp = timestamp,
             )
         }
@@ -252,12 +248,8 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
         operationKey.startsWith("delete_chat_") ||
             operationKey.startsWith("leave_chat_") -> {
             val chatId = operationKey.substringAfterLast("_")
-            ChatDelta(
+            ChatDeletedDelta(
                 chatId = ChatId(UUID.fromString(chatId)),
-                operation = DeltaOperation.DELETE,
-                chatMetadata = null,
-                incrementalMessages = emptyList<Message>().toImmutableList(),
-                messagesToDelete = emptyList<MessageId>().toImmutableList(),
                 timestamp = timestamp,
             )
         }
@@ -276,11 +268,10 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
                 chat.messages
             }.toImmutableList()
 
-            ChatDelta(
+            ChatUpdatedDelta(
                 chatId = chat.id,
-                operation = DeltaOperation.UPDATE,
                 chatMetadata = ChatMetadata.fromChat(chat),
-                incrementalMessages = incrementalMessages,
+                messagesToAdd = incrementalMessages,
                 messagesToDelete = emptyList<MessageId>().toImmutableList(),
                 timestamp = timestamp,
             )
@@ -295,11 +286,10 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
             val chatId = ChatId(UUID.fromString(chatIdString))
             val chat = chats[chatId] ?: return null
 
-            ChatDelta(
+            ChatUpdatedDelta(
                 chatId = chat.id,
-                operation = DeltaOperation.UPDATE,
                 chatMetadata = ChatMetadata.fromChat(chat),
-                incrementalMessages = emptyList<Message>().toImmutableList(),
+                messagesToAdd = emptyList<Message>().toImmutableList(),
                 messagesToDelete = listOf(messageId).toImmutableList(),
                 timestamp = timestamp,
             )
@@ -313,12 +303,10 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
     ): ResultWithError.Success<ChatListDelta, RemoteDataSourceError> {
         val timestamp = getNextServerTimestamp()
         val createDeltas = chats.values.map { chat ->
-            ChatDelta(
+            ChatCreatedDelta(
                 chatId = chat.id,
-                operation = DeltaOperation.CREATE,
                 chatMetadata = ChatMetadata.fromChat(chat),
-                incrementalMessages = chat.messages.toImmutableList(),
-                messagesToDelete = emptyList<MessageId>().toImmutableList(),
+                initialMessages = chat.messages.toImmutableList(),
                 timestamp = timestamp,
             )
         }

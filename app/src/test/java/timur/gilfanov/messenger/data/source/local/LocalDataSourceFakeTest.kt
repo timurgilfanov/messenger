@@ -305,20 +305,6 @@ class LocalDataSourceFakeTest {
     }
 
     @Test
-    fun `getMessagesForChat should return chat messages`() = runTest {
-        // Given
-        localDataSource.insertChat(testChat)
-
-        // When
-        val result = localDataSource.getMessagesForChat(testChat.id)
-
-        // Then
-        assertIs<ResultWithError.Success<List<TextMessage>, LocalDataSourceError>>(result)
-        assertEquals(1, result.data.size)
-        assertEquals(testMessage, result.data.first())
-    }
-
-    @Test
     fun `clearAllData should remove all chats`() = runTest {
         // Given
         localDataSource.insertChat(testChat)

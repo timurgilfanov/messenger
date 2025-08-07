@@ -193,17 +193,6 @@ class LocalDataSourceFake @Inject constructor() : LocalDataSource {
         return ResultWithError.Failure(LocalDataSourceError.MessageNotFound)
     }
 
-    override suspend fun getMessagesForChat(
-        chatId: ChatId,
-    ): ResultWithError<List<Message>, LocalDataSourceError> {
-        val chat = chatsFlow.value[chatId]
-        return if (chat != null) {
-            ResultWithError.Success(chat.messages)
-        } else {
-            ResultWithError.Failure(LocalDataSourceError.ChatNotFound)
-        }
-    }
-
     override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =
         if (shouldFailGetLastSyncTimestamp) {
             ResultWithError.Failure(LocalDataSourceError.DatabaseUnavailable)

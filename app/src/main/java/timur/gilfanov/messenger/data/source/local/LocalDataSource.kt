@@ -36,10 +36,6 @@ interface LocalDataSource {
 
     suspend fun getMessage(messageId: MessageId): ResultWithError<Message, LocalDataSourceError>
 
-    suspend fun getMessagesForChat(
-        chatId: ChatId,
-    ): ResultWithError<List<Message>, LocalDataSourceError>
-
     suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError>
 
     suspend fun updateLastSyncTimestamp(

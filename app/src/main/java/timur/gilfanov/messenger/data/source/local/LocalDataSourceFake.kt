@@ -27,8 +27,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 class LocalDataSourceFake @Inject constructor() :
     LocalChatDataSource,
     LocalMessageDataSource,
-    LocalSyncDataSource,
-    LocalDataSource {
+    LocalSyncDataSource {
 
     private val chatsFlow = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
     private val syncTimestamp = MutableStateFlow<Instant?>(null)

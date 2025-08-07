@@ -27,8 +27,7 @@ import timur.gilfanov.messenger.domain.usecase.participant.message.DeleteMessage
 class RemoteDataSourceFake @Inject constructor() :
     RemoteChatDataSource,
     RemoteMessageDataSource,
-    RemoteSyncDataSource,
-    RemoteDataSource {
+    RemoteSyncDataSource {
 
     companion object {
         private const val NETWORK_DELAY_MS = 300L

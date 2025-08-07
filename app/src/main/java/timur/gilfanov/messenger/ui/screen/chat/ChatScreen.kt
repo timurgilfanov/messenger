@@ -63,7 +63,6 @@ fun ChatScreenContent(
     onSendMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    println("ChatScreenContent: $uiState")
     when (uiState) {
         is ChatUiState.Loading -> {
             Box(

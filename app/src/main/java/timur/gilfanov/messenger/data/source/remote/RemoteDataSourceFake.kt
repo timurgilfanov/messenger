@@ -427,8 +427,6 @@ class RemoteDataSourceFake @Inject constructor() : RemoteDataSource {
         }
     }
 
-    override fun isConnected(): Flow<Boolean> = connectionStateFlow
-
     fun setConnectionState(connected: Boolean) {
         connectionStateFlow.update { connected }
     }

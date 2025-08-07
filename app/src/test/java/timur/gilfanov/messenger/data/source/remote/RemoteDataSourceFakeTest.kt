@@ -325,23 +325,6 @@ class RemoteDataSourceFakeTest {
     }
 
     @Test
-    fun `isConnected should emit connection state changes`() = runTest {
-        // When & Then
-        remoteDataSource.isConnected().test {
-            // Initial state should be true
-            assertEquals(true, awaitItem())
-
-            // Change connection state
-            remoteDataSource.setConnectionState(false)
-            assertEquals(false, awaitItem())
-
-            // Change back to connected
-            remoteDataSource.setConnectionState(true)
-            assertEquals(true, awaitItem())
-        }
-    }
-
-    @Test
     fun `clearServerData should remove all chats`() = runTest {
         // Given
         remoteDataSource.addChatToServer(testChat)

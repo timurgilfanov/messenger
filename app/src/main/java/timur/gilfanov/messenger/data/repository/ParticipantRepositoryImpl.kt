@@ -46,17 +46,6 @@ class ParticipantRepositoryImpl @Inject constructor(
         repositoryScope.launch {
             performDeltaSyncLoop()
         }
-
-        // Start background connection monitoring
-        remoteDataSource.isConnected()
-            .onEach { connected ->
-                // Handle connection state changes - could trigger immediate sync when reconnected
-            }
-            .catch {
-                println("ParticipantRepository: Error monitoring connection state: ${it.message}")
-                it.printStackTrace()
-            }
-            .launchIn(repositoryScope)
     }
 
     private suspend fun performDeltaSyncLoop() {

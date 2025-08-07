@@ -39,8 +39,6 @@ interface RemoteDataSource {
         messageId: MessageId,
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RemoteDataSourceError>
-
-    fun isConnected(): Flow<Boolean>
 }
 
 sealed interface RemoteDataSourceError {

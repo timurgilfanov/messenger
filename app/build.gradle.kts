@@ -203,6 +203,8 @@ dependencies {
     testImplementation(project(":test-annotations"))
     testImplementation(libs.hilt.android.testing)
     testImplementation(libs.androidx.room.testing)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

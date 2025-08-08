@@ -78,7 +78,7 @@ class LocalDataSourceFake @Inject constructor() :
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
         chatsFlow.map { chats ->
             if (shouldFailFlowChatList) {
-                ResultWithError.Failure(LocalDataSourceError.DatabaseUnavailable)
+                ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
             } else {
                 val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
                 ResultWithError.Success(chatPreviews)
@@ -191,7 +191,7 @@ class LocalDataSourceFake @Inject constructor() :
 
     override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =
         if (shouldFailGetLastSyncTimestamp) {
-            ResultWithError.Failure(LocalDataSourceError.DatabaseUnavailable)
+            ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
         } else {
             val timestamp = syncTimestamp.value
             ResultWithError.Success(timestamp)

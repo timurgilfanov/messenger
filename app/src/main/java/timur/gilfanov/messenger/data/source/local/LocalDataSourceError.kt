@@ -25,10 +25,6 @@ sealed interface LocalDataSourceError {
     // Validation
     data class InvalidData(val field: String, val reason: String) : LocalDataSourceError
 
-    // Legacy errors (kept for compatibility, can be deprecated later)
-    data object DatabaseUnavailable : LocalDataSourceError
-    data object StorageFailure : LocalDataSourceError
-
     // Fallback
     data class UnknownError(val cause: Throwable) : LocalDataSourceError
 }

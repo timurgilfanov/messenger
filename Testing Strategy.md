@@ -20,38 +20,14 @@ Test classes should be annotated with it's test category, so CI/CD could know wh
 
 ## Execution Matrix
 
-| Category          | Network access                          | Execution                                            | Build type             | Lifecycle                      |
-|-------------------|-----------------------------------------|------------------------------------------------------|------------------------|--------------------------------|
-| Architecture      | No                                      | Local                                                | Debuggable             | Every commit                   |
-| Unit              | No                                      | Local                                                | Debuggable             | Every commit                   | 
-| Component         | No                                      | Local <br/> Robolectric                              | Debuggable             | Every commit                   |
-| Feature           | Mocked                                  | Local <br/> Robolectric <br/> Emulator <br/> Devices | Debuggable             | Pre-merge                      |
-| Application       | Mocked <br/> **Staging** <br/> **Prod** | Emulator <br/> **Devices**                           | Debuggable             | Pre-merge <br/> **Post-merge** |
-| Release Candidate | Prod                                    | Emulator <br/> Devices                               | Minified release build | Post-merge <br/> Pre-release   |
-
-Bold in application test type row means that running against staging and production backend is preferable on post-merge state. It can and should be calibrated based on real life metrics of time to bug and time to merge.
-
-Tests of all categories can be executed sequentially.
-
-## Test Triggers Matrix
-
-| Category          | Environment (where)                   | Trigger (when)        |
-|-------------------|---------------------------------------|-----------------------|
-| Architecture      | Local                                 | Every commit          |
-| Unit              | Local                                 | Every commit          |
-| Component         | Local                                 | Every commit          |
-| Feature           | Local, emulators                      | Pre-merge             |
-| Application       | Local, emulators, 1 phone, 1 foldable | Pre-merge, Post-merge |
-| Release Candidate | 8 phones, 1 foldable, 1 tablet        | Pre-release           |
-
-
-## Device Coverage Strategy
-
-| Category          | Devices                        | OS Versions                             | Screen Sizes     |
-|-------------------|--------------------------------|-----------------------------------------|------------------|
-| Feature           | Emulator                       | Latest 1 major versions                 | Phone only       |
-| Application       | 1 phone, 1 foldable            | Latest 2 major versions                 | Phone, Foldable  |
-| Release Candidate | 4 phones, 1 foldable, 1 tablet | Latest 4 major versions + older popular | All form factors |
+| Category          | Data layer         | Network access                          | Execution                                         | OS Versions                             | Build type             | Lifecycle                        |
+|-------------------|--------------------|-----------------------------------------|---------------------------------------------------|-----------------------------------------|------------------------|----------------------------------|
+| Architecture      | N/A                | No                                      | Local                                             | N/A                                     | Debuggable             | Every commit                     |
+| Unit              | Fakes              | No                                      | Local                                             | N/A                                     | Debuggable             | Every commit                     | 
+| Component         | Fakes              | No                                      | Local <br/> Robolectric                           | N/A                                     | Debuggable             | Every commit                     |
+| Feature           | Real, in-memory DB | Mocked                                  | Local <br/> Robolectric <br/> Emulator            | N/A                                     | Debuggable             | Pre-merge                        |
+| Application       | Real, in-memory DB | Mocked <br/> **Staging** <br/> **Prod** | Emulator <br/> **1 phone, 1 foldable**            | Latest 2 major                          | Debuggable             | Pre-merge <br/> **Post-merge**   |
+| Release Candidate | Real               | Prod                                    | Emulator <br/> **4 phones, 1 foldable, 1 tablet** | Latest 4 major versions + older popular | Minified release build | Post-merge <br/> **Pre-release** |
 
 ## Test Pyramid
 
@@ -76,12 +52,6 @@ Tests of all categories can be executed sequentially.
 
 ### Pre-release
 * No performance regressions > 10%
-
-## Test Data Management Strategy
-* Unit/Component: Use builders or fixtures
-* Feature: Use fake repositories
-* Application: Use fake repositories without network and seeded test accounts on stage and prod.
-* Release Candidate: Use production-like data sets
 
 ## Flaky Test Handling
 Let's try zero tolerance.

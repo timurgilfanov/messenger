@@ -26,7 +26,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import timur.gilfanov.annotations.Feature
 import timur.gilfanov.messenger.ChatScreenTestActivity
-import timur.gilfanov.messenger.data.repository.MessengerNotEmptyRepositoryFake
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
@@ -51,13 +50,15 @@ class ChatFeatureTest {
     @Module
     @InstallIn(SingletonComponent::class)
     object ChatScreenDisplayTestRepositoryModule {
-        @Provides
-        @Singleton
-        fun provideChatRepository(): ChatRepository = MessengerNotEmptyRepositoryFake()
+        private val repositoryInstance = TestRepositoryWithRealImplementation()
 
         @Provides
         @Singleton
-        fun provideMessageRepository(): MessageRepository = MessengerNotEmptyRepositoryFake()
+        fun provideChatRepository(): ChatRepository = repositoryInstance
+
+        @Provides
+        @Singleton
+        fun provideMessageRepository(): MessageRepository = repositoryInstance
     }
 
     @Module
@@ -66,12 +67,12 @@ class ChatFeatureTest {
         @Provides
         @Singleton
         @timur.gilfanov.messenger.di.TestUserId
-        fun provideTestUserId(): String = timur.gilfanov.messenger.data.repository.USER_ID
+        fun provideTestUserId(): String = ChatFeatureTestDataHelper.USER_ID
 
         @Provides
         @Singleton
         @timur.gilfanov.messenger.di.TestChatId
-        fun provideTestChatId(): String = timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
+        fun provideTestChatId(): String = ChatFeatureTestDataHelper.ALICE_CHAT_ID
     }
 
     @Before
@@ -81,7 +82,10 @@ class ChatFeatureTest {
 
     @Test
     fun `chat screen by default have disabled send button`() {
-        composeTestRule.waitUntilExactlyOneExists(hasTestTag("message_input"))
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag("message_input"),
+            timeoutMillis = 5_000L,
+        )
 
         composeTestRule.onNodeWithTag("send_button")
             .assertIsDisplayed()

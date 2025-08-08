@@ -5,7 +5,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
@@ -19,7 +18,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -27,7 +25,6 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.annotations.Component
-import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatListDelta
@@ -40,6 +37,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -51,7 +49,8 @@ class LocalSyncDataSourceImplTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var database: MessengerDatabase
+    @get:Rule
+    val databaseRule = InMemoryDatabaseRule()
     private lateinit var dataStore: DataStore<Preferences>
     private lateinit var localSyncDataSource: LocalSyncDataSource
     private val testScope = TestScope(mainDispatcherRule.testDispatcher)
@@ -59,11 +58,6 @@ class LocalSyncDataSourceImplTest {
     @Before
     fun setup() {
         val context: Context = ApplicationProvider.getApplicationContext()
-
-        database = Room.inMemoryDatabaseBuilder(
-            context,
-            MessengerDatabase::class.java,
-        ).allowMainThreadQueries().build()
 
         // Create test DataStore
         dataStore = PreferenceDataStoreFactory.create(
@@ -73,16 +67,11 @@ class LocalSyncDataSourceImplTest {
 
         localSyncDataSource = LocalSyncDataSourceImpl(
             dataStore = dataStore,
-            database = database,
-            chatDao = database.chatDao(),
-            messageDao = database.messageDao(),
-            participantDao = database.participantDao(),
+            database = databaseRule.database,
+            chatDao = databaseRule.chatDao,
+            messageDao = databaseRule.messageDao,
+            participantDao = databaseRule.participantDao,
         )
-    }
-
-    @After
-    fun tearDown() {
-        database.close()
     }
 
     @Test
@@ -139,12 +128,12 @@ class LocalSyncDataSourceImplTest {
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
 
         // Verify chat was created
-        val storedChat = database.chatDao().getChatById(chatId.id.toString())
+        val storedChat = databaseRule.chatDao.getChatById(chatId.id.toString())
         assertNotNull(storedChat)
         assertEquals("New Chat", storedChat.name)
 
         // Verify messages were created
-        val storedMessages = database.messageDao().getMessagesByChatId(chatId.id.toString())
+        val storedMessages = databaseRule.messageDao.getMessagesByChatId(chatId.id.toString())
         assertEquals(messages.size, storedMessages.size)
     }
 
@@ -191,13 +180,13 @@ class LocalSyncDataSourceImplTest {
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
 
         // Verify chat was updated
-        val storedChat = database.chatDao().getChatById(chatId.id.toString())
+        val storedChat = databaseRule.chatDao.getChatById(chatId.id.toString())
         assertNotNull(storedChat)
         assertEquals("Updated Chat", storedChat.name)
         assertEquals(1, storedChat.unreadMessagesCount)
 
         // Verify message was added
-        val storedMessages = database.messageDao().getMessagesByChatId(chatId.id.toString())
+        val storedMessages = databaseRule.messageDao.getMessagesByChatId(chatId.id.toString())
         assertEquals(1, storedMessages.size)
     }
 
@@ -232,7 +221,7 @@ class LocalSyncDataSourceImplTest {
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
 
         // Verify chat was deleted
-        val storedChat = database.chatDao().getChatById(chatId.id.toString())
+        val storedChat = databaseRule.chatDao.getChatById(chatId.id.toString())
         assertNull(storedChat)
     }
 
@@ -286,11 +275,11 @@ class LocalSyncDataSourceImplTest {
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
 
         // Verify both chats were created
-        val storedChat1 = database.chatDao().getChatById(chatId1.id.toString())
+        val storedChat1 = databaseRule.chatDao.getChatById(chatId1.id.toString())
         assertNotNull(storedChat1)
         assertEquals("Chat 1", storedChat1.name)
 
-        val storedChat2 = database.chatDao().getChatById(chatId2.id.toString())
+        val storedChat2 = databaseRule.chatDao.getChatById(chatId2.id.toString())
         assertNotNull(storedChat2)
         assertEquals("Chat 2", storedChat2.name)
 

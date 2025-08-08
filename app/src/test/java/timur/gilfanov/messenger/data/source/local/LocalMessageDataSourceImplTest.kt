@@ -1,7 +1,5 @@
 package timur.gilfanov.messenger.data.source.local
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -10,14 +8,13 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.annotations.Component
-import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.ParticipantEntity
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -28,35 +25,28 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
 @Category(Component::class)
 class LocalMessageDataSourceImplTest {
 
-    private lateinit var database: MessengerDatabase
-    private lateinit var localMessageDataSource: LocalMessageDataSource
+    @get:Rule
+    val databaseRule = InMemoryDatabaseRule()
+
+    private val localMessageDataSource: LocalMessageDataSource by lazy {
+        LocalMessageDataSourceImpl(
+            messageDao = databaseRule.messageDao,
+            chatDao = databaseRule.chatDao,
+            database = databaseRule.database,
+        )
+    }
 
     @Before
     fun setup() = runTest {
-        database = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            MessengerDatabase::class.java,
-        ).allowMainThreadQueries().build()
-
-        localMessageDataSource = LocalMessageDataSourceImpl(
-            messageDao = database.messageDao(),
-            chatDao = database.chatDao(),
-            database = database,
-        )
-
         // Setup required chat and participant for foreign key constraints
         setupTestChatAndParticipant()
-    }
-
-    @After
-    fun tearDown() {
-        database.close()
     }
 
     @Test
@@ -72,7 +62,7 @@ class LocalMessageDataSourceImplTest {
         assertEquals(message, result.data)
 
         // Verify in database
-        val storedMessage = database.messageDao().getMessageById(message.id.id.toString())
+        val storedMessage = databaseRule.messageDao.getMessageById(message.id.id.toString())
         assertNotNull(storedMessage)
         assertEquals(message.id.id.toString(), storedMessage.id)
         assertEquals(message.text, storedMessage.text)
@@ -97,14 +87,14 @@ class LocalMessageDataSourceImplTest {
         assertEquals(updatedMessage, result.data)
 
         // Verify in database
-        val storedMessage = database.messageDao().getMessageById(updatedMessage.id.id.toString())
+        val storedMessage = databaseRule.messageDao.getMessageById(updatedMessage.id.id.toString())
         assertNotNull(storedMessage)
         assertEquals("Updated message text", storedMessage.text)
         assertNotNull(storedMessage.editedAt)
     }
 
     @Test
-    fun `delete message FOR_SENDER successfully removes message`() = runTest {
+    fun `delete message successfully removes message`() = runTest {
         // Given
         val message = createTestMessage()
         localMessageDataSource.insertMessage(message)
@@ -116,24 +106,7 @@ class LocalMessageDataSourceImplTest {
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
 
         // Verify message is removed from database
-        val storedMessage = database.messageDao().getMessageById(message.id.id.toString())
-        assertNull(storedMessage)
-    }
-
-    @Test
-    fun `delete message FOR_EVERYONE successfully removes message`() = runTest {
-        // Given
-        val message = createTestMessage()
-        localMessageDataSource.insertMessage(message)
-
-        // When
-        val result = localMessageDataSource.deleteMessage(messageId = message.id)
-
-        // Then
-        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
-
-        // Verify message is removed from database
-        val storedMessage = database.messageDao().getMessageById(message.id.id.toString())
+        val storedMessage = databaseRule.messageDao.getMessageById(message.id.id.toString())
         assertNull(storedMessage)
     }
 
@@ -202,7 +175,7 @@ class LocalMessageDataSourceImplTest {
         assertIs<ResultWithError.Success<Message, LocalDataSourceError>>(result)
 
         // Verify parent reference in database
-        val storedMessage = database.messageDao().getMessageById(replyMessage.id.id.toString())
+        val storedMessage = databaseRule.messageDao.getMessageById(replyMessage.id.id.toString())
         assertNotNull(storedMessage)
         assertEquals(parentMessage.id.id.toString(), storedMessage.parentId)
     }
@@ -219,7 +192,7 @@ class LocalMessageDataSourceImplTest {
             createdAt = Instant.fromEpochMilliseconds(1000000),
             updatedAt = Instant.fromEpochMilliseconds(1000000),
         )
-        database.chatDao().insertChat(chatEntity)
+        databaseRule.chatDao.insertChat(chatEntity)
 
         // Insert test participant
         val participantEntity = ParticipantEntity(
@@ -231,10 +204,10 @@ class LocalMessageDataSourceImplTest {
             isAdmin = false,
             isModerator = false,
         )
-        database.participantDao().insertParticipant(participantEntity)
+        databaseRule.participantDao.insertParticipant(participantEntity)
 
         // Create association between chat and participant
-        database.chatDao().insertChatParticipantCrossRef(
+        databaseRule.chatDao.insertChatParticipantCrossRef(
             timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef(
                 chatId = "11111111-1111-1111-1111-111111111111",
                 participantId = "22222222-2222-2222-2222-222222222222",

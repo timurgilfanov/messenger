@@ -1,7 +1,5 @@
 package timur.gilfanov.messenger.data.source.local
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import java.util.UUID
@@ -12,46 +10,34 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
-import org.junit.After
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.annotations.Component
-import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
 @Category(Component::class)
 class LocalChatDataSourceImplTest {
 
-    private lateinit var database: MessengerDatabase
-    private lateinit var localChatDataSource: LocalChatDataSource
+    @get:Rule
+    val databaseRule = InMemoryDatabaseRule()
 
-    @Before
-    fun setup() {
-        database = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            MessengerDatabase::class.java,
-        ).allowMainThreadQueries().build()
-
-        localChatDataSource = LocalChatDataSourceImpl(
-            chatDao = database.chatDao(),
-            participantDao = database.participantDao(),
-            database = database,
+    private val localChatDataSource: LocalChatDataSource by lazy {
+        LocalChatDataSourceImpl(
+            chatDao = databaseRule.chatDao,
+            participantDao = databaseRule.participantDao,
+            database = databaseRule.database,
         )
-    }
-
-    @After
-    fun tearDown() {
-        database.close()
     }
 
     @Test
@@ -67,7 +53,7 @@ class LocalChatDataSourceImplTest {
         assertEquals(chat, result.data)
 
         // Verify in database
-        val storedChat = database.chatDao().getChatById(chat.id.id.toString())
+        val storedChat = databaseRule.chatDao.getChatById(chat.id.id.toString())
         assertEquals(chat.id.id.toString(), storedChat?.id)
         assertEquals(chat.name, storedChat?.name)
     }
@@ -91,7 +77,7 @@ class LocalChatDataSourceImplTest {
         assertEquals(updatedChat, result.data)
 
         // Verify in database
-        val storedChat = database.chatDao().getChatById(updatedChat.id.id.toString())
+        val storedChat = databaseRule.chatDao.getChatById(updatedChat.id.id.toString())
         assertEquals("Updated Chat Name", storedChat?.name)
         assertEquals(5, storedChat?.unreadMessagesCount)
     }
@@ -109,7 +95,7 @@ class LocalChatDataSourceImplTest {
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
 
         // Verify chat is removed from database
-        val storedChat = database.chatDao().getChatById(chat.id.toString())
+        val storedChat = databaseRule.chatDao.getChatById(chat.id.id.toString())
         assertEquals(null, storedChat)
     }
 

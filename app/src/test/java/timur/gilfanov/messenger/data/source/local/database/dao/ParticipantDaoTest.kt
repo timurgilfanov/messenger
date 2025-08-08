@@ -1,7 +1,5 @@
 package timur.gilfanov.messenger.data.source.local.database.dao
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -10,38 +8,25 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
-import org.junit.After
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.annotations.Component
-import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.entity.ParticipantEntity
+import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
 @Category(Component::class)
 class ParticipantDaoTest {
 
-    private lateinit var database: MessengerDatabase
-    private lateinit var participantDao: ParticipantDao
+    @get:Rule
+    val databaseRule = InMemoryDatabaseRule()
 
-    @Before
-    fun setup() {
-        database = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            MessengerDatabase::class.java,
-        ).allowMainThreadQueries().build()
-
-        participantDao = database.participantDao()
-    }
-
-    @After
-    fun tearDown() {
-        database.close()
-    }
+    private val participantDao: ParticipantDao
+        get() = databaseRule.participantDao
 
     @Test
     fun `insert and get participant by id`() = runTest {

@@ -15,16 +15,13 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Instant
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
@@ -43,6 +40,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -50,16 +48,16 @@ import timur.gilfanov.messenger.domain.entity.message.TextMessage
 @Category(Component::class)
 class LocalSyncDataSourceImplTest {
 
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
     private lateinit var database: MessengerDatabase
     private lateinit var dataStore: DataStore<Preferences>
     private lateinit var localSyncDataSource: LocalSyncDataSource
-    private val testDispatcher = StandardTestDispatcher()
-    private val testScope = TestScope(testDispatcher)
+    private val testScope = TestScope(mainDispatcherRule.testDispatcher)
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-
         val context: Context = ApplicationProvider.getApplicationContext()
 
         database = Room.inMemoryDatabaseBuilder(
@@ -84,7 +82,6 @@ class LocalSyncDataSourceImplTest {
     @After
     fun tearDown() {
         database.close()
-        Dispatchers.resetMain()
     }
 
     @Test

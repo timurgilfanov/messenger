@@ -46,4 +46,3 @@ interface ParticipantDao {
     @Query("UPDATE participants SET onlineAt = :timestamp WHERE id = :participantId")
     suspend fun updateParticipantOnlineStatus(participantId: String, timestamp: Long?)
 }
-

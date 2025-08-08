@@ -59,4 +59,3 @@ interface ChatDao {
     @Query("DELETE FROM chat_participants WHERE chatId = :chatId")
     suspend fun removeAllChatParticipants(chatId: String)
 }
-

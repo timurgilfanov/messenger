@@ -43,6 +43,9 @@ data class MessageEntity(
     val imageUrl: String?, // For image messages
     val deliveryStatus: String?, // Serialized DeliveryStatus
     val createdAt: Instant,
+    val sentAt: Instant? = null,
+    val deliveredAt: Instant? = null,
+    val editedAt: Instant? = null,
     val updatedAt: Instant,
 )
 
@@ -50,4 +53,3 @@ enum class MessageType {
     TEXT,
     IMAGE,
 }
-

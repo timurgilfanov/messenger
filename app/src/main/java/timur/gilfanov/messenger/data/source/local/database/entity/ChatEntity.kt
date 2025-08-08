@@ -20,4 +20,3 @@ data class ChatEntity(
     val createdAt: Instant,
     val updatedAt: Instant,
 )
-

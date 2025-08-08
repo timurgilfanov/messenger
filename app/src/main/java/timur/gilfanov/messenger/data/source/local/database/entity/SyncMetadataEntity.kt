@@ -23,4 +23,3 @@ enum class SyncStatus {
     IN_PROGRESS,
     ERROR,
 }
-

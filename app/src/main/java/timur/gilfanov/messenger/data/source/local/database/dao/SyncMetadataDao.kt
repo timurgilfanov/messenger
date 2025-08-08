@@ -46,4 +46,3 @@ interface SyncMetadataDao {
     @Query("DELETE FROM sync_metadata")
     suspend fun clearAllSyncMetadata()
 }
-

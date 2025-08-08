@@ -55,4 +55,3 @@ interface MessageDao {
     )
     suspend fun getUnreadMessageCount(chatId: String, lastReadMessageId: String): Int
 }
-

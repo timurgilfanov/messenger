@@ -26,4 +26,3 @@ data class ChatWithParticipantsAndMessages(
     )
     val messages: List<MessageEntity>,
 )
-

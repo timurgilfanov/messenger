@@ -30,4 +30,3 @@ import androidx.room.Index
     ],
 )
 data class ChatParticipantCrossRef(val chatId: String, val participantId: String)
-

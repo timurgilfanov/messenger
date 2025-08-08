@@ -29,4 +29,3 @@ class Converters {
     @TypeConverter
     fun toSyncStatus(status: String): SyncStatus = SyncStatus.valueOf(status)
 }
-

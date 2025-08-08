@@ -40,4 +40,3 @@ abstract class MessengerDatabase : RoomDatabase() {
         const val DATABASE_NAME = "messenger_database"
     }
 }
-

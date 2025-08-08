@@ -16,5 +16,6 @@ data class ParticipantEntity(
     val pictureUrl: String?,
     val joinedAt: Instant,
     val onlineAt: Instant?,
+    val isAdmin: Boolean = false,
+    val isModerator: Boolean = false,
 )
-

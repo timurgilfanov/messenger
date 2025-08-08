@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.local
 
+import android.database.sqlite.SQLiteException
 import androidx.room.withTransaction
 import javax.inject.Inject
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
@@ -17,11 +18,9 @@ class LocalMessageDataSourceImpl @Inject constructor(
     private val chatDao: ChatDao,
 ) : LocalMessageDataSource {
 
-    @Suppress("TooGenericExceptionCaught") // DatabaseErrorHandler maps all exception types
     override suspend fun insertMessage(
         message: Message,
     ): ResultWithError<Message, LocalDataSourceError> {
-        // Validation
         val validationError = validateMessageForInsert(message)
         if (validationError != null) {
             return ResultWithError.Failure(validationError)
@@ -33,16 +32,14 @@ class LocalMessageDataSourceImpl @Inject constructor(
                 messageDao.insertMessage(messageEntity)
             }
             ResultWithError.Success(message)
-        } catch (e: Exception) {
+        } catch (e: SQLiteException) {
             ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
         }
     }
 
-    @Suppress("TooGenericExceptionCaught") // DatabaseErrorHandler maps all exception types
     override suspend fun updateMessage(
         message: Message,
     ): ResultWithError<Message, LocalDataSourceError> {
-        // Validation
         val validationError = validateMessageForUpdate(message)
         if (validationError != null) {
             return ResultWithError.Failure(validationError)
@@ -54,12 +51,11 @@ class LocalMessageDataSourceImpl @Inject constructor(
                 messageDao.updateMessage(messageEntity)
             }
             ResultWithError.Success(message)
-        } catch (e: Exception) {
+        } catch (e: SQLiteException) {
             ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
         }
     }
 
-    @Suppress("TooGenericExceptionCaught") // DatabaseErrorHandler maps all exception types
     override suspend fun deleteMessage(
         messageId: MessageId,
     ): ResultWithError<Unit, LocalDataSourceError> = try {
@@ -72,11 +68,10 @@ class LocalMessageDataSourceImpl @Inject constructor(
                 ResultWithError.Failure(LocalDataSourceError.MessageNotFound)
             }
         }
-    } catch (e: Exception) {
+    } catch (e: SQLiteException) {
         ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
     }
 
-    @Suppress("TooGenericExceptionCaught") // DatabaseErrorHandler maps all exception types
     override suspend fun getMessage(
         messageId: MessageId,
     ): ResultWithError<Message, LocalDataSourceError> = try {
@@ -89,30 +84,32 @@ class LocalMessageDataSourceImpl @Inject constructor(
         } else {
             ResultWithError.Failure(LocalDataSourceError.MessageNotFound)
         }
-    } catch (e: Exception) {
+    } catch (e: SQLiteException) {
         ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
     }
 
     private fun validateMessageForInsert(message: Message): LocalDataSourceError? {
-        // Check if it's a TextMessage for text-specific validation
-        val textError = if (message is TextMessage) {
-            when {
-                message.text.isBlank() ->
-                    LocalDataSourceError.InvalidData("text", "Message text cannot be blank")
-                message.text.length > TextMessage.MAX_TEXT_LENGTH ->
-                    LocalDataSourceError.InvalidData(
-                        "text",
-                        "Message text cannot exceed ${TextMessage.MAX_TEXT_LENGTH} characters",
-                    )
-                else -> null
+        val textError = when (message) {
+            is TextMessage -> {
+                when {
+                    message.text.isBlank() ->
+                        LocalDataSourceError.InvalidData("text", "Message text cannot be blank")
+                    message.text.length > TextMessage.MAX_TEXT_LENGTH ->
+                        LocalDataSourceError.InvalidData(
+                            "text",
+                            "Message text cannot exceed ${TextMessage.MAX_TEXT_LENGTH} characters",
+                        )
+                    else -> null
+                }
             }
-        } else {
-            null
+
+            else -> {
+                null
+            }
         }
 
         if (textError != null) return textError
 
-        // General message validation with proper null handling
         val sentAt = message.sentAt
         val deliveredAt = message.deliveredAt
 
@@ -131,8 +128,6 @@ class LocalMessageDataSourceImpl @Inject constructor(
         }
     }
 
-    private fun validateMessageForUpdate(message: Message): LocalDataSourceError? {
-        // Similar validation for updates
-        return validateMessageForInsert(message)
-    }
+    private fun validateMessageForUpdate(message: Message): LocalDataSourceError? =
+        validateMessageForInsert(message)
 }

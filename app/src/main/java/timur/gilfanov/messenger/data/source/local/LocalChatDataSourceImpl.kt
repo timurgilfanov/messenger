@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.local
 
+import android.database.sqlite.SQLiteException
 import androidx.room.withTransaction
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +23,6 @@ class LocalChatDataSourceImpl @Inject constructor(
     private val participantDao: ParticipantDao,
 ) : LocalChatDataSource {
 
-    @Suppress("TooGenericExceptionCaught") // DatabaseErrorHandler maps all exception types
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         val validationError = validateChatForInsert(chat)
         if (validationError != null) {
@@ -51,12 +51,11 @@ class LocalChatDataSourceImpl @Inject constructor(
             }
 
             ResultWithError.Success(chat)
-        } catch (e: Exception) {
+        } catch (e: SQLiteException) {
             ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
         }
     }
 
-    @Suppress("TooGenericExceptionCaught") // DatabaseErrorHandler maps all exception types
     override suspend fun updateChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         val validationError = validateChatForUpdate(chat)
         if (validationError != null) {
@@ -86,12 +85,11 @@ class LocalChatDataSourceImpl @Inject constructor(
             }
 
             ResultWithError.Success(chat)
-        } catch (e: Exception) {
+        } catch (e: SQLiteException) {
             ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
         }
     }
 
-    @Suppress("TooGenericExceptionCaught") // DatabaseErrorHandler maps all exception types
     override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, LocalDataSourceError> =
         try {
             database.withTransaction {
@@ -105,7 +103,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                     )
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: SQLiteException) {
             ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
         }
 
@@ -121,7 +119,12 @@ class LocalChatDataSourceImpl @Inject constructor(
                 ResultWithError.Success(chatPreviews)
             }
             .catch { e ->
-                emit(ResultWithError.Failure(DatabaseErrorHandler.mapException(e as Exception)))
+                when (e) {
+                    is SQLiteException -> emit(
+                        ResultWithError.Failure(DatabaseErrorHandler.mapException(e)),
+                    )
+                    else -> throw e
+                }
             }
 
     override fun flowChatUpdates(
@@ -141,7 +144,12 @@ class LocalChatDataSourceImpl @Inject constructor(
                 }
             }
             .catch { e ->
-                emit(ResultWithError.Failure(DatabaseErrorHandler.mapException(e as Exception)))
+                when (e) {
+                    is SQLiteException -> emit(
+                        ResultWithError.Failure(DatabaseErrorHandler.mapException(e)),
+                    )
+                    else -> throw e
+                }
             }
 
     private fun validateChatForInsert(chat: Chat): LocalDataSourceError? = when {
@@ -155,8 +163,6 @@ class LocalChatDataSourceImpl @Inject constructor(
         else -> null
     }
 
-    private fun validateChatForUpdate(chat: Chat): LocalDataSourceError? {
-        // Similar validation for updates
-        return validateChatForInsert(chat)
-    }
+    private fun validateChatForUpdate(chat: Chat): LocalDataSourceError? =
+        validateChatForInsert(chat)
 }

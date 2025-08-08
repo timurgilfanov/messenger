@@ -73,6 +73,7 @@ class LocalSyncDataSourceImplTest {
 
         localSyncDataSource = LocalSyncDataSourceImpl(
             dataStore = dataStore,
+            database = database,
             chatDao = database.chatDao(),
             messageDao = database.messageDao(),
             participantDao = database.participantDao(),

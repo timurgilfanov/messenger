@@ -1,34 +1,77 @@
 package timur.gilfanov.messenger.data.source.local
 
+import android.database.sqlite.SQLiteAccessPermException
 import android.database.sqlite.SQLiteConstraintException
+import android.database.sqlite.SQLiteDatabaseCorruptException
 import android.database.sqlite.SQLiteDatabaseLockedException
+import android.database.sqlite.SQLiteDiskIOException
 import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteFullException
+import android.database.sqlite.SQLiteOutOfMemoryException
+import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import android.util.Log
 
 /**
  * Maps SQLite exceptions to domain-oriented errors while logging technical details for debugging.
  * This handler abstracts database-specific errors into business-meaningful errors.
+ *
+ * IMPORTANT: This handler only processes SQLiteException and its subclasses.
+ * CancellationException and other system exceptions must be handled separately.
  */
 internal object DatabaseErrorHandler {
     private const val TAG = "DatabaseErrorHandler"
 
-    fun mapException(exception: Exception): LocalDataSourceError {
-        // Log technical details for debugging
+    /**
+     * Maps SQLiteException to domain-oriented errors.
+     *
+     * @param exception SQLiteException or its subclass to map
+     * @return Domain-oriented error representation
+     * @throws IllegalArgumentException if exception is not SQLiteException
+     */
+    fun mapException(exception: SQLiteException): LocalDataSourceError {
         Log.e(TAG, "Database operation failed", exception)
 
         return when (exception) {
-            is SQLiteConstraintException -> mapConstraintError(exception)
+            is SQLiteDatabaseCorruptException -> {
+                Log.e(TAG, "Database corrupted")
+                LocalDataSourceError.StorageUnavailable
+            }
+            is SQLiteOutOfMemoryException -> {
+                Log.e(TAG, "SQLite out of memory")
+                LocalDataSourceError.StorageFull
+            }
+
+            // Permission and access issues
+            is SQLiteAccessPermException -> {
+                Log.e(TAG, "Database access permission denied")
+                LocalDataSourceError.StorageUnavailable
+            }
+            is SQLiteReadOnlyDatabaseException -> {
+                Log.w(TAG, "Database is read-only")
+                LocalDataSourceError.StorageUnavailable
+            }
+
+            // Disk and storage issues
             is SQLiteFullException -> {
                 Log.w(TAG, "Storage is full")
                 LocalDataSourceError.StorageFull
             }
+            is SQLiteDiskIOException -> {
+                Log.e(TAG, "Disk I/O error")
+                LocalDataSourceError.StorageUnavailable
+            }
+
+            // Concurrency issues
             is SQLiteDatabaseLockedException -> {
                 Log.w(TAG, "Database locked - concurrent modification")
                 LocalDataSourceError.ConcurrentModificationError
             }
-            is SQLiteException -> mapGeneralSQLiteError(exception)
-            else -> LocalDataSourceError.UnknownError(exception)
+
+            // Constraint violations
+            is SQLiteConstraintException -> mapConstraintError(exception)
+
+            // Other SQLite errors
+            else -> mapGeneralSQLiteError(exception)
         }
     }
 

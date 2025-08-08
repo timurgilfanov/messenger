@@ -1,11 +1,14 @@
 package timur.gilfanov.messenger.data.source.local
 
+import android.database.sqlite.SQLiteException
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.room.withTransaction
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Instant
+import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
@@ -23,6 +26,7 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 @Suppress("TooGenericExceptionCaught")
 class LocalSyncDataSourceImpl @Inject constructor(
     private val dataStore: DataStore<Preferences>,
+    private val database: MessengerDatabase,
     private val chatDao: ChatDao,
     private val messageDao: MessageDao,
     private val participantDao: ParticipantDao,
@@ -56,12 +60,16 @@ class LocalSyncDataSourceImpl @Inject constructor(
     override suspend fun applyChatDelta(
         delta: ChatDelta,
     ): ResultWithError<Unit, LocalDataSourceError> = try {
-        when (delta) {
-            is ChatCreatedDelta -> applyChatCreatedDelta(delta)
-            is ChatUpdatedDelta -> applyChatUpdatedDelta(delta)
-            is ChatDeletedDelta -> applyChatDeletedDelta(delta)
+        database.withTransaction {
+            when (delta) {
+                is ChatCreatedDelta -> applyChatCreatedDelta(delta)
+                is ChatUpdatedDelta -> applyChatUpdatedDelta(delta)
+                is ChatDeletedDelta -> applyChatDeletedDelta(delta)
+            }
         }
         ResultWithError.Success(Unit)
+    } catch (e: SQLiteException) {
+        ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
     } catch (e: Exception) {
         ResultWithError.Failure(
             LocalDataSourceError.UnknownError(e),
@@ -72,23 +80,28 @@ class LocalSyncDataSourceImpl @Inject constructor(
         delta: ChatListDelta,
     ): ResultWithError<Unit, LocalDataSourceError> {
         return try {
-            // Apply each delta in order
-            delta.changes.forEach { chatDelta ->
-                val result = applyChatDelta(chatDelta)
-                if (result is ResultWithError.Failure) {
-                    // If any delta fails, return the error
-                    // We don't update timestamp on failure, so next sync will retry from same point
-                    return result
+            // Apply all deltas in a single transaction for atomicity
+            database.withTransaction {
+                // Apply each delta in order
+                delta.changes.forEach { chatDelta ->
+                    when (chatDelta) {
+                        is ChatCreatedDelta -> applyChatCreatedDelta(chatDelta)
+                        is ChatUpdatedDelta -> applyChatUpdatedDelta(chatDelta)
+                        is ChatDeletedDelta -> applyChatDeletedDelta(chatDelta)
+                    }
                 }
             }
 
-            // Update sync timestamp on success
+            // Update sync timestamp on success (outside transaction for better performance)
             dataStore.edit { preferences ->
                 preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] =
                     delta.toTimestamp.toEpochMilliseconds()
             }
 
             ResultWithError.Success(Unit)
+        } catch (e: SQLiteException) {
+            // Don't update timestamp on database error - will retry from last successful sync
+            ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
         } catch (e: Exception) {
             // Don't update timestamp on error - will retry from last successful sync
             ResultWithError.Failure(

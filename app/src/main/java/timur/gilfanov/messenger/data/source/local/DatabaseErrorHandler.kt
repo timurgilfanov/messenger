@@ -11,23 +11,9 @@ import android.database.sqlite.SQLiteOutOfMemoryException
 import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import android.util.Log
 
-/**
- * Maps SQLite exceptions to domain-oriented errors while logging technical details for debugging.
- * This handler abstracts database-specific errors into business-meaningful errors.
- *
- * IMPORTANT: This handler only processes SQLiteException and its subclasses.
- * CancellationException and other system exceptions must be handled separately.
- */
 internal object DatabaseErrorHandler {
     private const val TAG = "DatabaseErrorHandler"
 
-    /**
-     * Maps SQLiteException to domain-oriented errors.
-     *
-     * @param exception SQLiteException or its subclass to map
-     * @return Domain-oriented error representation
-     * @throws IllegalArgumentException if exception is not SQLiteException
-     */
     fun mapException(exception: SQLiteException): LocalDataSourceError {
         Log.e(TAG, "Database operation failed", exception)
 

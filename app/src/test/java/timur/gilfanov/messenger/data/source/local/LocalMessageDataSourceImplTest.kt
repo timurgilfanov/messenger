@@ -28,7 +28,6 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
@@ -111,10 +110,7 @@ class LocalMessageDataSourceImplTest {
         localMessageDataSource.insertMessage(message)
 
         // When
-        val result = localMessageDataSource.deleteMessage(
-            messageId = message.id,
-            mode = DeleteMessageMode.FOR_SENDER_ONLY,
-        )
+        val result = localMessageDataSource.deleteMessage(messageId = message.id)
 
         // Then
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
@@ -131,10 +127,7 @@ class LocalMessageDataSourceImplTest {
         localMessageDataSource.insertMessage(message)
 
         // When
-        val result = localMessageDataSource.deleteMessage(
-            messageId = message.id,
-            mode = DeleteMessageMode.FOR_EVERYONE,
-        )
+        val result = localMessageDataSource.deleteMessage(messageId = message.id)
 
         // Then
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
@@ -151,10 +144,7 @@ class LocalMessageDataSourceImplTest {
             MessageId(UUID.fromString("99999999-9999-9999-9999-999999999999"))
 
         // When
-        val result = localMessageDataSource.deleteMessage(
-            messageId = nonExistentMessageId,
-            mode = DeleteMessageMode.FOR_SENDER_ONLY,
-        )
+        val result = localMessageDataSource.deleteMessage(messageId = nonExistentMessageId)
 
         // Then
         assertIs<ResultWithError.Failure<Unit, LocalDataSourceError>>(result)

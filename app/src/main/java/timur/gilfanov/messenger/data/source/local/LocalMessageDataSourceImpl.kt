@@ -10,7 +10,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 
 class LocalMessageDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
@@ -63,7 +62,6 @@ class LocalMessageDataSourceImpl @Inject constructor(
     @Suppress("TooGenericExceptionCaught") // DatabaseErrorHandler maps all exception types
     override suspend fun deleteMessage(
         messageId: MessageId,
-        mode: DeleteMessageMode,
     ): ResultWithError<Unit, LocalDataSourceError> = try {
         database.withTransaction {
             val messageEntity = messageDao.getMessageById(messageId.id.toString())

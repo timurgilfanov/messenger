@@ -20,7 +20,6 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
-import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 
 @Singleton
 @Suppress("TooManyFunctions")
@@ -150,7 +149,6 @@ class LocalDataSourceFake @Inject constructor() :
 
     override suspend fun deleteMessage(
         messageId: MessageId,
-        mode: DeleteMessageMode,
     ): ResultWithError<Unit, LocalDataSourceError> {
         val currentChats = chatsFlow.value
 

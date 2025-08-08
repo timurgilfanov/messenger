@@ -191,7 +191,7 @@ class MessengerRepositoryImpl @Inject constructor(
     ): ResultWithError<Unit, RepositoryDeleteMessageError> =
         when (val result = remoteDataSources.message.deleteMessage(messageId, mode)) {
             is ResultWithError.Success -> {
-                localDataSources.message.deleteMessage(messageId, mode)
+                localDataSources.message.deleteMessage(messageId)
                 ResultWithError.Success(Unit)
             }
             is ResultWithError.Failure -> {

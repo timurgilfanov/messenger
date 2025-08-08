@@ -6,9 +6,11 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import timur.gilfanov.messenger.data.source.local.LocalChatDataSource
-import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
+import timur.gilfanov.messenger.data.source.local.LocalChatDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalMessageDataSource
+import timur.gilfanov.messenger.data.source.local.LocalMessageDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalSyncDataSource
+import timur.gilfanov.messenger.data.source.local.LocalSyncDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
@@ -18,23 +20,23 @@ import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
 @InstallIn(SingletonComponent::class)
 abstract class DataSourceModule {
 
-    // Local data source bindings - all interfaces bound to the same implementation
+    // Local data source bindings
     @Binds
     @Singleton
     abstract fun bindLocalChatDataSource(
-        localDataSourceFake: LocalDataSourceFake,
+        localChatDataSourceImpl: LocalChatDataSourceImpl,
     ): LocalChatDataSource
 
     @Binds
     @Singleton
     abstract fun bindLocalMessageDataSource(
-        localDataSourceFake: LocalDataSourceFake,
+        localMessageDataSourceImpl: LocalMessageDataSourceImpl,
     ): LocalMessageDataSource
 
     @Binds
     @Singleton
     abstract fun bindLocalSyncDataSource(
-        localDataSourceFake: LocalDataSourceFake,
+        localSyncDataSourceImpl: LocalSyncDataSourceImpl,
     ): LocalSyncDataSource
 
     // Remote data source bindings - all interfaces bound to the same implementation

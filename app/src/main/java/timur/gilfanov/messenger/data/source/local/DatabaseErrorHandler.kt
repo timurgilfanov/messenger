@@ -9,47 +9,50 @@ import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteFullException
 import android.database.sqlite.SQLiteOutOfMemoryException
 import android.database.sqlite.SQLiteReadOnlyDatabaseException
-import android.util.Log
+import timur.gilfanov.messenger.util.Logger
 
-internal object DatabaseErrorHandler {
-    private const val TAG = "DatabaseErrorHandler"
+internal class DatabaseErrorHandler(private val logger: Logger) {
+
+    companion object {
+        private const val TAG = "DatabaseErrorHandler"
+    }
 
     fun mapException(exception: SQLiteException): LocalDataSourceError {
-        Log.e(TAG, "Database operation failed", exception)
+        logger.e(TAG, "Database operation failed", exception)
 
         return when (exception) {
             is SQLiteDatabaseCorruptException -> {
-                Log.e(TAG, "Database corrupted")
+                logger.e(TAG, "Database corrupted")
                 LocalDataSourceError.StorageUnavailable
             }
             is SQLiteOutOfMemoryException -> {
-                Log.e(TAG, "SQLite out of memory")
+                logger.e(TAG, "SQLite out of memory")
                 LocalDataSourceError.StorageFull
             }
 
             // Permission and access issues
             is SQLiteAccessPermException -> {
-                Log.e(TAG, "Database access permission denied")
+                logger.e(TAG, "Database access permission denied")
                 LocalDataSourceError.StorageUnavailable
             }
             is SQLiteReadOnlyDatabaseException -> {
-                Log.w(TAG, "Database is read-only")
+                logger.w(TAG, "Database is read-only")
                 LocalDataSourceError.StorageUnavailable
             }
 
             // Disk and storage issues
             is SQLiteFullException -> {
-                Log.w(TAG, "Storage is full")
+                logger.w(TAG, "Storage is full")
                 LocalDataSourceError.StorageFull
             }
             is SQLiteDiskIOException -> {
-                Log.e(TAG, "Disk I/O error")
+                logger.e(TAG, "Disk I/O error")
                 LocalDataSourceError.StorageUnavailable
             }
 
             // Concurrency issues
             is SQLiteDatabaseLockedException -> {
-                Log.w(TAG, "Database locked - concurrent modification")
+                logger.w(TAG, "Database locked - concurrent modification")
                 LocalDataSourceError.ConcurrentModificationError
             }
 
@@ -63,7 +66,7 @@ internal object DatabaseErrorHandler {
 
     private fun mapConstraintError(e: SQLiteConstraintException): LocalDataSourceError {
         val message = e.message ?: ""
-        Log.d(TAG, "Constraint violation: $message")
+        logger.d(TAG, "Constraint violation: $message")
 
         return when {
             // UNIQUE constraint violations
@@ -100,14 +103,14 @@ internal object DatabaseErrorHandler {
                         LocalDataSourceError.RelatedEntityMissing("participant", id)
                     }
                     else -> {
-                        Log.w(TAG, "Unmapped foreign key violation: $message")
+                        logger.w(TAG, "Unmapped foreign key violation: $message")
                         LocalDataSourceError.UnknownError(e)
                     }
                 }
             }
 
             else -> {
-                Log.w(TAG, "Unmapped constraint error: $message")
+                logger.w(TAG, "Unmapped constraint error: $message")
                 LocalDataSourceError.UnknownError(e)
             }
         }
@@ -117,19 +120,19 @@ internal object DatabaseErrorHandler {
         val message = e.message ?: ""
         return when {
             message.contains("database is locked") -> {
-                Log.w(TAG, "Database locked")
+                logger.w(TAG, "Database locked")
                 LocalDataSourceError.ConcurrentModificationError
             }
             message.contains("no such table") || message.contains("no such column") -> {
-                Log.e(TAG, "Database schema error: $message")
+                logger.e(TAG, "Database schema error: $message")
                 LocalDataSourceError.StorageUnavailable
             }
             message.contains("database disk image is malformed") -> {
-                Log.e(TAG, "Database corrupted: $message")
+                logger.e(TAG, "Database corrupted: $message")
                 LocalDataSourceError.StorageUnavailable
             }
             else -> {
-                Log.w(TAG, "Unmapped SQLite error: $message")
+                logger.w(TAG, "Unmapped SQLite error: $message")
                 LocalDataSourceError.UnknownError(e)
             }
         }

@@ -22,6 +22,7 @@ import timur.gilfanov.messenger.data.source.remote.ChatListDelta
 import timur.gilfanov.messenger.data.source.remote.ChatUpdatedDelta
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.util.Logger
 
 class LocalSyncDataSourceImpl @Inject constructor(
     private val dataStore: DataStore<Preferences>,
@@ -29,7 +30,10 @@ class LocalSyncDataSourceImpl @Inject constructor(
     private val chatDao: ChatDao,
     private val messageDao: MessageDao,
     private val participantDao: ParticipantDao,
+    logger: Logger,
 ) : LocalSyncDataSource {
+
+    private val errorHandler = DatabaseErrorHandler(logger)
 
     override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =
         try {
@@ -64,7 +68,7 @@ class LocalSyncDataSourceImpl @Inject constructor(
         }
         ResultWithError.Success(Unit)
     } catch (e: SQLiteException) {
-        ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
+        ResultWithError.Failure(errorHandler.mapException(e))
     }
 
     override suspend fun applyChatListDelta(
@@ -87,7 +91,7 @@ class LocalSyncDataSourceImpl @Inject constructor(
 
         ResultWithError.Success(Unit)
     } catch (e: SQLiteException) {
-        ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
+        ResultWithError.Failure(errorHandler.mapException(e))
     } catch (@Suppress("SwallowedException") e: androidx.datastore.core.IOException) {
         ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
     }

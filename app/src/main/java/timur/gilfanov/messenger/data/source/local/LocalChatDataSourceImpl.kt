@@ -16,12 +16,16 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
+import timur.gilfanov.messenger.util.Logger
 
 class LocalChatDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
     private val chatDao: ChatDao,
     private val participantDao: ParticipantDao,
+    logger: Logger,
 ) : LocalChatDataSource {
+
+    private val errorHandler = DatabaseErrorHandler(logger)
 
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         val validationError = validateChatForInsert(chat)
@@ -52,7 +56,7 @@ class LocalChatDataSourceImpl @Inject constructor(
 
             ResultWithError.Success(chat)
         } catch (e: SQLiteException) {
-            ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
+            ResultWithError.Failure(errorHandler.mapException(e))
         }
     }
 
@@ -86,7 +90,7 @@ class LocalChatDataSourceImpl @Inject constructor(
 
             ResultWithError.Success(chat)
         } catch (e: SQLiteException) {
-            ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
+            ResultWithError.Failure(errorHandler.mapException(e))
         }
     }
 
@@ -104,7 +108,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                 }
             }
         } catch (e: SQLiteException) {
-            ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
+            ResultWithError.Failure(errorHandler.mapException(e))
         }
 
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
@@ -121,7 +125,7 @@ class LocalChatDataSourceImpl @Inject constructor(
             .catch { e ->
                 when (e) {
                     is SQLiteException -> emit(
-                        ResultWithError.Failure(DatabaseErrorHandler.mapException(e)),
+                        ResultWithError.Failure(errorHandler.mapException(e)),
                     )
                     else -> throw e
                 }
@@ -146,7 +150,7 @@ class LocalChatDataSourceImpl @Inject constructor(
             .catch { e ->
                 when (e) {
                     is SQLiteException -> emit(
-                        ResultWithError.Failure(DatabaseErrorHandler.mapException(e)),
+                        ResultWithError.Failure(errorHandler.mapException(e)),
                     )
                     else -> throw e
                 }

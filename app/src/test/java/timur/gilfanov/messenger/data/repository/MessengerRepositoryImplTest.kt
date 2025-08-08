@@ -39,6 +39,7 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode.FOR_SEN
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.util.NoOpLogger
 
 @Category(Unit::class)
 @Suppress("LargeClass") // Comprehensive repository test suite
@@ -884,5 +885,6 @@ class MessengerRepositoryImplTest {
             message = remoteDataSource,
             sync = remoteDataSource,
         ),
+        logger = NoOpLogger(),
     )
 }

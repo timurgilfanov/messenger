@@ -11,12 +11,16 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.util.Logger
 
 class LocalMessageDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
     private val messageDao: MessageDao,
     private val chatDao: ChatDao,
+    logger: Logger,
 ) : LocalMessageDataSource {
+
+    private val errorHandler = DatabaseErrorHandler(logger)
 
     override suspend fun insertMessage(
         message: Message,
@@ -33,7 +37,7 @@ class LocalMessageDataSourceImpl @Inject constructor(
             }
             ResultWithError.Success(message)
         } catch (e: SQLiteException) {
-            ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
+            ResultWithError.Failure(errorHandler.mapException(e))
         }
     }
 
@@ -52,7 +56,7 @@ class LocalMessageDataSourceImpl @Inject constructor(
             }
             ResultWithError.Success(message)
         } catch (e: SQLiteException) {
-            ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
+            ResultWithError.Failure(errorHandler.mapException(e))
         }
     }
 
@@ -69,7 +73,7 @@ class LocalMessageDataSourceImpl @Inject constructor(
             }
         }
     } catch (e: SQLiteException) {
-        ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
+        ResultWithError.Failure(errorHandler.mapException(e))
     }
 
     override suspend fun getMessage(
@@ -85,7 +89,7 @@ class LocalMessageDataSourceImpl @Inject constructor(
             ResultWithError.Failure(LocalDataSourceError.MessageNotFound)
         }
     } catch (e: SQLiteException) {
-        ResultWithError.Failure(DatabaseErrorHandler.mapException(e))
+        ResultWithError.Failure(errorHandler.mapException(e))
     }
 
     private fun validateMessageForInsert(message: Message): LocalDataSourceError? {

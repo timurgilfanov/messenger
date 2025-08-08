@@ -27,6 +27,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
+import timur.gilfanov.messenger.util.NoOpLogger
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
@@ -41,6 +42,7 @@ class LocalMessageDataSourceImplTest {
             messageDao = databaseRule.messageDao,
             chatDao = databaseRule.chatDao,
             database = databaseRule.database,
+            logger = NoOpLogger(),
         )
     }
 

@@ -48,6 +48,7 @@ class LocalMessageDataSourceImplTest {
         localMessageDataSource = LocalMessageDataSourceImpl(
             messageDao = database.messageDao(),
             chatDao = database.chatDao(),
+            database = database,
         )
 
         // Setup required chat and participant for foreign key constraints

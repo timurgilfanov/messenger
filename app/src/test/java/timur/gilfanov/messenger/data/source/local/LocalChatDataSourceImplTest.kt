@@ -45,6 +45,7 @@ class LocalChatDataSourceImplTest {
         localChatDataSource = LocalChatDataSourceImpl(
             chatDao = database.chatDao(),
             participantDao = database.participantDao(),
+            database = database,
         )
     }
 

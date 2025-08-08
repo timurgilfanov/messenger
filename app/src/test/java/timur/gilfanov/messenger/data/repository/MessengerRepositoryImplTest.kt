@@ -188,13 +188,15 @@ class MessengerRepositoryImplTest {
 
     @Test
     fun `isChatListUpdating initially returns false`() = runTest {
-        // Given: Set up repository
         repository = repositoryImpl()
+        repository.flowChatList().test {
+            val initialResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(initialResult)
+            assertEquals(0, initialResult.data.size)
 
-        // When: Check if updating
-        repository.isChatListUpdating().test {
-            // Then: Should initially be false
-            assertEquals(false, awaitItem())
+            repository.isChatListUpdating().test {
+                assertEquals(false, awaitItem())
+            }
         }
     }
 

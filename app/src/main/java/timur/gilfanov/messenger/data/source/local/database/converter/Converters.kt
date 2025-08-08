@@ -3,7 +3,6 @@ package timur.gilfanov.messenger.data.source.local.database.converter
 import androidx.room.TypeConverter
 import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.data.source.local.database.entity.MessageType
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 
 /**
  * Type converters for Room database.
@@ -22,10 +21,4 @@ class Converters {
 
     @TypeConverter
     fun toMessageType(type: String): MessageType = MessageType.valueOf(type)
-
-    @TypeConverter
-    fun fromSyncStatus(status: SyncStatus): String = status.name
-
-    @TypeConverter
-    fun toSyncStatus(status: String): SyncStatus = SyncStatus.valueOf(status)
 }

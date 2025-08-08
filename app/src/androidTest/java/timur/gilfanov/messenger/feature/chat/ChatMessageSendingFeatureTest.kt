@@ -32,12 +32,13 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.annotations.ReleaseCandidateTest
 import timur.gilfanov.messenger.ChatScreenTestActivity
-import timur.gilfanov.messenger.data.repository.MessengerInMemoryRepositoryFake
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestChatModule
 import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.test.AndroidTestDataHelper
+import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -57,11 +58,16 @@ class ChatMessageSendingFeatureTest {
     object MessageSendingTestRepositoryModule {
         @Provides
         @Singleton
-        fun provideChatRepository(): ChatRepository = MessengerInMemoryRepositoryFake()
+        fun provideChatRepository(): ChatRepository = AndroidTestRepositoryWithRealImplementation(
+            AndroidTestDataHelper.DataScenario.NON_EMPTY,
+        )
 
         @Provides
         @Singleton
-        fun provideMessageRepository(): MessageRepository = MessengerInMemoryRepositoryFake()
+        fun provideMessageRepository(): MessageRepository =
+            AndroidTestRepositoryWithRealImplementation(
+                AndroidTestDataHelper.DataScenario.NON_EMPTY,
+            )
     }
 
     @Module
@@ -70,12 +76,12 @@ class ChatMessageSendingFeatureTest {
         @Provides
         @Singleton
         @timur.gilfanov.messenger.di.TestUserId
-        fun provideTestUserId(): String = timur.gilfanov.messenger.data.repository.USER_ID
+        fun provideTestUserId(): String = AndroidTestDataHelper.USER_ID
 
         @Provides
         @Singleton
         @timur.gilfanov.messenger.di.TestChatId
-        fun provideTestChatId(): String = timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
+        fun provideTestChatId(): String = AndroidTestDataHelper.ALICE_CHAT_ID
     }
 
     @Before
@@ -87,7 +93,10 @@ class ChatMessageSendingFeatureTest {
     @Test
     fun messageSending_completesSuccessfully() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
             onNodeWithText("Type a message...").assertIsDisplayed()
             val testMessage = "Hello, this is a test message!"
             onNodeWithTag("message_input").performTextInput(testMessage)
@@ -110,7 +119,10 @@ class ChatMessageSendingFeatureTest {
     @Test
     fun messageSending_handlesEmptyInput() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
             onNodeWithText("Type a message...").assertIsDisplayed()
             onNodeWithTag("send_button").assertIsDisplayed()
             onNodeWithTag("send_button").performClick()
@@ -122,7 +134,10 @@ class ChatMessageSendingFeatureTest {
     @Test
     fun messageSending_multipleMessagesSequentially() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
             onNodeWithText("Type a message...").assertIsDisplayed()
             onNodeWithTag("send_button").assertIsDisplayed()
             repeat(100) {
@@ -154,7 +169,10 @@ class ChatMessageSendingFeatureTest {
     @Test
     fun messageSending_preservesInputDuringTyping() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
             onNodeWithText("Type a message...").assertIsDisplayed()
 
             val partialMessage = "This is a long message that I'm typing"

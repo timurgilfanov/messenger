@@ -41,9 +41,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 
 ### Code Quality
+Run code quality checks and auto corrections after completion of code editing.
 ```bash
-# Run detekt static analysis
-./gradlew detekt
+# Run detekt static analysis with autocorrection when possible
+./gradlew detekt --auto-correct
 
 # Run ktlint formatting check
 ./gradlew ktlintCheck

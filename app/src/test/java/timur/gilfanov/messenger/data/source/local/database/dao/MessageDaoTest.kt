@@ -228,7 +228,6 @@ class MessageDaoTest {
             rules = "[]",
             unreadMessagesCount = 0,
             lastReadMessageId = null,
-            createdAt = Instant.fromEpochMilliseconds(1000000),
             updatedAt = Instant.fromEpochMilliseconds(1000000),
         )
         val participant = ParticipantEntity(
@@ -257,6 +256,5 @@ class MessageDaoTest {
         sentAt = null,
         deliveredAt = null,
         editedAt = null,
-        updatedAt = Instant.fromEpochMilliseconds(1100000),
     )
 }

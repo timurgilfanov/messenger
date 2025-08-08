@@ -3,7 +3,6 @@ package timur.gilfanov.messenger.data.source.local.database.mapper
 import java.util.UUID
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
-import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
@@ -42,8 +41,7 @@ object EntityMappers {
         rules = json.encodeToString(rules.map { it.toDto() }),
         unreadMessagesCount = unreadMessagesCount,
         lastReadMessageId = lastReadMessageId?.id?.toString(),
-        createdAt = messages.minOfOrNull { it.createdAt } ?: Clock.System.now(),
-        updatedAt = Clock.System.now(),
+        updatedAt = messages.maxOfOrNull { it.createdAt },
     )
 
     /**
@@ -78,7 +76,6 @@ object EntityMappers {
                 sentAt = sentAt,
                 deliveredAt = deliveredAt,
                 editedAt = editedAt,
-                updatedAt = Clock.System.now(),
             )
             else -> throw IllegalArgumentException("Unsupported message type: ${this::class}")
         }

@@ -284,7 +284,6 @@ class LocalMessageDataSourceImplTest {
             rules = "[]",
             unreadMessagesCount = 0,
             lastReadMessageId = null,
-            createdAt = Instant.fromEpochMilliseconds(1000000),
             updatedAt = Instant.fromEpochMilliseconds(1000000),
         )
         databaseRule.chatDao.insertChat(chatEntity)

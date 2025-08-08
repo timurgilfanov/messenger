@@ -17,6 +17,5 @@ data class ChatEntity(
     val rules: String, // JSON serialized set of rules
     val unreadMessagesCount: Int,
     val lastReadMessageId: String?,
-    val createdAt: Instant,
-    val updatedAt: Instant,
+    val updatedAt: Instant?,
 )

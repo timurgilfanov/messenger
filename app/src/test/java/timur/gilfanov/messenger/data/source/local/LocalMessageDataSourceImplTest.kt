@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Before
@@ -45,7 +46,6 @@ class LocalMessageDataSourceImplTest {
 
     @Before
     fun setup() = runTest {
-        // Setup required chat and participant for foreign key constraints
         setupTestChatAndParticipant()
     }
 
@@ -180,6 +180,99 @@ class LocalMessageDataSourceImplTest {
         assertEquals(parentMessage.id.id.toString(), storedMessage.parentId)
     }
 
+    // Validation error tests
+    @Test
+    fun `insert message with blank text returns InvalidData error`() = runTest {
+        // Given
+        setupTestChatAndParticipant()
+        val invalidMessage = createTestMessage().copy(text = "")
+
+        // When
+        val result = localMessageDataSource.insertMessage(invalidMessage)
+
+        // Then
+        assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
+        assertIs<LocalDataSourceError.InvalidData>(result.error)
+        assertEquals("text", result.error.field)
+        assertEquals("Message text cannot be blank", result.error.reason)
+    }
+
+    @Test
+    fun `insert message with text exceeding max length returns InvalidData error`() = runTest {
+        // Given
+        setupTestChatAndParticipant()
+        val longText = "a".repeat(TextMessage.MAX_TEXT_LENGTH + 1)
+        val invalidMessage = createTestMessage().copy(text = longText)
+
+        // When
+        val result = localMessageDataSource.insertMessage(invalidMessage)
+
+        // Then
+        assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
+        assertIs<LocalDataSourceError.InvalidData>(result.error)
+        assertEquals("text", result.error.field)
+        assertTrue(result.error.reason.contains("cannot exceed"))
+    }
+
+    @Test
+    fun `insert message with invalid timestamps returns InvalidData error`() = runTest {
+        // Given
+        setupTestChatAndParticipant()
+        val invalidMessage = createTestMessage().copy(
+            createdAt = Instant.fromEpochMilliseconds(2000000),
+            sentAt = Instant.fromEpochMilliseconds(1500000), // sentAt before createdAt
+        )
+
+        // When
+        val result = localMessageDataSource.insertMessage(invalidMessage)
+
+        // Then
+        assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
+        assertIs<LocalDataSourceError.InvalidData>(result.error)
+        assertEquals("timestamps", result.error.field)
+        assertEquals("Created time cannot be after sent time", result.error.reason)
+    }
+
+    @Test
+    fun `update message with blank text returns InvalidData error`() = runTest {
+        // Given
+        setupTestChatAndParticipant()
+        val originalMessage = createTestMessage()
+        localMessageDataSource.insertMessage(originalMessage)
+
+        val invalidMessage = originalMessage.copy(text = "")
+
+        // When
+        val result = localMessageDataSource.updateMessage(invalidMessage)
+
+        // Then
+        assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
+        assertIs<LocalDataSourceError.InvalidData>(result.error)
+        assertEquals("text", result.error.field)
+    }
+
+    // Upsert behavior tests (Room uses OnConflictStrategy.REPLACE)
+    @Test
+    fun `insert duplicate message successfully updates existing message`() = runTest {
+        // Given
+        setupTestChatAndParticipant()
+        val message = createTestMessage()
+        val insertResult = localMessageDataSource.insertMessage(message)
+        assertIs<ResultWithError.Success<Message, LocalDataSourceError>>(insertResult)
+
+        // When - insert same ID with different text
+        val updatedMessage = message.copy(text = "Updated message text via insert")
+        val result = localMessageDataSource.insertMessage(updatedMessage)
+
+        // Then - verify it succeeded and updated
+        assertIs<ResultWithError.Success<Message, LocalDataSourceError>>(result)
+        assertEquals(updatedMessage, result.data)
+
+        val storedMessage = databaseRule.messageDao.getMessageById(message.id.id.toString())
+        assertNotNull(storedMessage)
+        assertEquals("Updated message text via insert", storedMessage.text)
+    }
+
     private suspend fun setupTestChatAndParticipant() {
         // Insert test chat
         val chatEntity = ChatEntity(
@@ -215,14 +308,21 @@ class LocalMessageDataSourceImplTest {
         )
     }
 
+    @Suppress("LongParameterList") // Test helper needs flexibility
     private fun createTestMessage(
         id: String = "33333333-3333-3333-3333-333333333333",
+        chatId: String = "11111111-1111-1111-1111-111111111111",
+        senderId: String = "22222222-2222-2222-2222-222222222222",
         parentId: MessageId? = null,
+        text: String = "Test message content",
+        createdAt: Instant = Instant.fromEpochMilliseconds(1500000),
+        sentAt: Instant? = Instant.fromEpochMilliseconds(1500000),
+        deliveredAt: Instant? = null,
     ) = TextMessage(
         id = MessageId(UUID.fromString(id)),
-        recipient = ChatId(UUID.fromString("11111111-1111-1111-1111-111111111111")),
+        recipient = ChatId(UUID.fromString(chatId)),
         sender = Participant(
-            id = ParticipantId(UUID.fromString("22222222-2222-2222-2222-222222222222")),
+            id = ParticipantId(UUID.fromString(senderId)),
             name = "Test Sender",
             pictureUrl = null,
             joinedAt = Instant.fromEpochMilliseconds(900000),
@@ -231,11 +331,11 @@ class LocalMessageDataSourceImplTest {
             isModerator = false,
         ),
         parentId = parentId,
-        text = "Test message content",
+        text = text,
         deliveryStatus = DeliveryStatus.Sent,
-        createdAt = Instant.fromEpochMilliseconds(1500000),
-        sentAt = Instant.fromEpochMilliseconds(1500000),
-        deliveredAt = null,
+        createdAt = createdAt,
+        sentAt = sentAt,
+        deliveredAt = deliveredAt,
         editedAt = null,
     )
 }

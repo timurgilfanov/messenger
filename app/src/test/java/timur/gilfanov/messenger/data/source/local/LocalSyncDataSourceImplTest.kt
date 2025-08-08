@@ -225,6 +225,74 @@ class LocalSyncDataSourceImplTest {
         assertNull(storedChat)
     }
 
+    // Upsert behavior tests (Room uses OnConflictStrategy.REPLACE)
+    @Test
+    fun `applyChatDelta with duplicate chat successfully updates existing chat`() = runTest {
+        // Given - insert initial chat
+        val chatId = ChatId(UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"))
+        val createDelta = ChatCreatedDelta(
+            chatId = chatId,
+            chatMetadata = ChatMetadata(
+                name = "Initial Chat",
+                participants = createTestParticipants(),
+                pictureUrl = null,
+                rules = persistentSetOf(),
+                unreadMessagesCount = 0,
+                lastReadMessageId = null,
+                lastActivityAt = null,
+            ),
+            initialMessages = persistentListOf(),
+            timestamp = Instant.fromEpochMilliseconds(1000000),
+        )
+
+        // Insert the chat first time
+        val firstResult = localSyncDataSource.applyChatDelta(createDelta)
+        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(firstResult)
+
+        // When - apply same chat ID with updated name
+        val updateDelta = createDelta.copy(
+            chatMetadata = createDelta.chatMetadata.copy(name = "Updated via Delta"),
+        )
+        val result = localSyncDataSource.applyChatDelta(updateDelta)
+
+        // Then - verify it succeeded and updated
+        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
+        val storedChat = databaseRule.chatDao.getChatById(chatId.id.toString())
+        assertNotNull(storedChat)
+        assertEquals("Updated via Delta", storedChat.name)
+    }
+
+    @Test
+    fun `applyChatDelta with ChatUpdatedDelta for non-existent chat does nothing`() = runTest {
+        // Given
+        val chatId = ChatId(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"))
+        val updateDelta = ChatUpdatedDelta(
+            chatId = chatId,
+            chatMetadata = ChatMetadata(
+                name = "New Chat from Update",
+                participants = createTestParticipants(),
+                pictureUrl = null,
+                rules = persistentSetOf(),
+                unreadMessagesCount = 0,
+                lastReadMessageId = null,
+                lastActivityAt = null,
+            ),
+            messagesToAdd = persistentListOf(),
+            messagesToDelete = persistentListOf(),
+            timestamp = Instant.fromEpochMilliseconds(2000000),
+        )
+
+        // When - apply update delta for non-existent chat
+        val result = localSyncDataSource.applyChatDelta(updateDelta)
+
+        // Then - should succeed but not create the chat
+        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
+
+        // Verify chat was NOT created (update only updates existing chats)
+        val storedChat = databaseRule.chatDao.getChatById(chatId.id.toString())
+        assertNull(storedChat)
+    }
+
     @Test
     fun `applyChatListDelta applies multiple deltas in order`() = runTest {
         // Given

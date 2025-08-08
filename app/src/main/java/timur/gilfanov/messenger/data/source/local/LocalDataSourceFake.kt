@@ -290,12 +290,6 @@ class LocalDataSourceFake @Inject constructor() :
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun clearAllData(): ResultWithError<Unit, LocalDataSourceError> {
-        chatsFlow.update { emptyMap() }
-        syncTimestamp.update { null }
-        return ResultWithError.Success(Unit)
-    }
-
     // Test control methods for simulating failures
     fun simulateGetLastSyncTimestampFailure(shouldFail: Boolean) {
         shouldFailGetLastSyncTimestamp = shouldFail

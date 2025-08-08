@@ -303,23 +303,4 @@ class LocalDataSourceFakeTest {
         assertIs<ResultWithError.Failure<TextMessage, LocalDataSourceError>>(result)
         assertEquals(LocalDataSourceError.MessageNotFound, result.error)
     }
-
-    @Test
-    fun `clearAllData should remove all chats`() = runTest {
-        // Given
-        localDataSource.insertChat(testChat)
-
-        // When
-        val result = localDataSource.clearAllData()
-
-        // Then
-        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
-
-        // Verify all data is cleared
-        localDataSource.flowChatList().test {
-            val flowResult = awaitItem()
-            assertIs<ResultWithError.Success<List<ChatPreview>, LocalDataSourceError>>(flowResult)
-            assertTrue(flowResult.data.isEmpty())
-        }
-    }
 }

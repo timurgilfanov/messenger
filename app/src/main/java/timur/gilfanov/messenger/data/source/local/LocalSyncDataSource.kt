@@ -37,10 +37,4 @@ interface LocalSyncDataSource {
     suspend fun applyChatListDelta(
         delta: ChatListDelta,
     ): ResultWithError<Unit, LocalDataSourceError>
-
-    /**
-     * Clears all local data.
-     * Used for logout or data reset scenarios.
-     */
-    suspend fun clearAllData(): ResultWithError<Unit, LocalDataSourceError>
 }

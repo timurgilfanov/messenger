@@ -39,6 +39,7 @@ import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 
 @OptIn(ExperimentalTestApi::class)
@@ -62,18 +63,15 @@ class ChatFeatureTest {
     @Module
     @InstallIn(SingletonComponent::class)
     object ChatScreenDisplayTestRepositoryModule {
-        @Provides
-        @Singleton
-        fun provideChatRepository(): ChatRepository = AndroidTestRepositoryWithRealImplementation(
-            AndroidTestDataHelper.DataScenario.NON_EMPTY,
-        )
+        val repository = AndroidTestRepositoryWithRealImplementation(NON_EMPTY)
 
         @Provides
         @Singleton
-        fun provideMessageRepository(): MessageRepository =
-            AndroidTestRepositoryWithRealImplementation(
-                AndroidTestDataHelper.DataScenario.NON_EMPTY,
-            )
+        fun provideChatRepository(): ChatRepository = repository
+
+        @Provides
+        @Singleton
+        fun provideMessageRepository(): MessageRepository = repository
     }
 
     @Module

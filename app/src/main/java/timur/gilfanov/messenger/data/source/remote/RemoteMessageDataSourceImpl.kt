@@ -12,7 +12,6 @@ import io.ktor.http.contentType
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerializationException
@@ -25,7 +24,6 @@ import timur.gilfanov.messenger.data.source.remote.dto.toSendRequest
 import timur.gilfanov.messenger.data.source.remote.network.ApiRoutes
 import timur.gilfanov.messenger.data.source.remote.network.ErrorMapper
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
@@ -39,8 +37,6 @@ class RemoteMessageDataSourceImpl @Inject constructor(
 
     companion object {
         private const val TAG = "RemoteMessageDataSource"
-        private const val SENDING_SIMULATION_DELAY_MS = 100L
-        private const val SENDING_PROGRESS_STEPS = 10
     }
 
     private fun handleApiError(response: ApiResponse<*>): RemoteDataSourceError {
@@ -57,21 +53,6 @@ class RemoteMessageDataSourceImpl @Inject constructor(
             logger.d(TAG, "Sending message: ${message.id}")
             val request = message.toSendRequest()
 
-            // Emit sending progress updates
-            for (progress in 1..SENDING_PROGRESS_STEPS) {
-                @Suppress("MagicNumber") // Standard percentage calculation
-                val progressPercent = (progress * 100) / SENDING_PROGRESS_STEPS
-                val updatedMessage = when (message) {
-                    is timur.gilfanov.messenger.domain.entity.message.TextMessage -> message.copy(
-                        deliveryStatus = DeliveryStatus.Sending(progressPercent),
-                    )
-                    else -> message
-                }
-                emit(ResultWithError.Success(updatedMessage))
-                delay(SENDING_SIMULATION_DELAY_MS)
-            }
-
-            // Send actual request to server
             val response: ApiResponse<MessageDto> = httpClient.post(ApiRoutes.SEND_MESSAGE) {
                 contentType(ContentType.Application.Json)
                 setBody(request)

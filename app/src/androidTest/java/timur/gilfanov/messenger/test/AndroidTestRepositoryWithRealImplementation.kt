@@ -43,7 +43,7 @@ class AndroidTestRepositoryWithRealImplementation(
 ) : ChatRepository,
     MessageRepository {
 
-    private val realRepository: MessengerRepositoryImpl by lazy {
+    private val realRepository: MessengerRepositoryImpl = run {
         val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
 
         // Create in-memory database

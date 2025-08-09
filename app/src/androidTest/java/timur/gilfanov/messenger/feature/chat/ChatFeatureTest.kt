@@ -112,7 +112,7 @@ class ChatFeatureTest {
     }
 
     // Stress test to amplify memory leaks using activity recreation
-//    @Test
+    @Test
     fun chatScreen_handlesMultipleRotations() = runTest {
         with(composeTestRule) {
             waitUntilExactlyOneExists(
@@ -145,8 +145,7 @@ class ChatFeatureTest {
         }
     }
 
-    // TODO: Fix rotation test hanging issue
-    // @Test
+    @Test
     fun chatScreen_preservesInputTextOnRotation() {
         with(composeTestRule) {
             waitUntilExactlyOneExists(
@@ -178,8 +177,7 @@ class ChatFeatureTest {
         }
     }
 
-    // TODO: Fix rotation test hanging issue
-    // @Test
+    @Test
     fun chatScreen_preservesUIStateOnRotation() {
         with(composeTestRule) {
             waitUntilExactlyOneExists(

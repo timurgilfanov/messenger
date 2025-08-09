@@ -82,8 +82,7 @@ class ChatListNotEmptyFeatureTest {
         composeTestRule.onNodeWithTag("chat_list").assertExists()
     }
 
-    // TODO: Fix rotation test hanging issue
-    // @Test
+    @Test
     fun chatListScreenWithChats_handlesRotations() {
         with(composeTestRule) {
             waitUntilExactlyOneExists(
@@ -108,9 +107,8 @@ class ChatListNotEmptyFeatureTest {
         }
     }
 
-    // TODO: Fix stress test performance issue
     // Stress test to amplify memory leaks
-    // @Test
+    @Test
     fun chatListScreen_handlesMultipleActivityRecreation() = runTest {
         with(composeTestRule) {
             waitUntilExactlyOneExists(

@@ -79,8 +79,7 @@ class ChatListEmptyFeatureTest {
         composeTestRule.onNodeWithTag("chat_list").assertDoesNotExist()
     }
 
-    // TODO: Fix rotation test hanging issue
-    // @Test
+    @Test
     fun chatListScreenEmpty_handlesRotations() {
         with(composeTestRule) {
             waitUntilExactlyOneExists(hasTestTag("empty_state"))

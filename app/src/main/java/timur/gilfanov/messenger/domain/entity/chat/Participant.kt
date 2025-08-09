@@ -14,4 +14,6 @@ data class Participant(
     val onlineAt: Instant?,
     val isAdmin: Boolean = false,
     val isModerator: Boolean = false,
-)
+) {
+    override fun toString(): String = name
+}

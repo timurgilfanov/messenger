@@ -22,7 +22,6 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 
 @Category(Unit::class)
 class LocalDataSourceFakeTest {
@@ -254,10 +253,7 @@ class LocalDataSourceFakeTest {
         localDataSource.insertChat(testChat)
 
         // When
-        val result = localDataSource.deleteMessage(
-            testMessage.id,
-            DeleteMessageMode.FOR_EVERYONE,
-        )
+        val result = localDataSource.deleteMessage(testMessage.id)
 
         // Then
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
@@ -271,10 +267,7 @@ class LocalDataSourceFakeTest {
     @Test
     fun `deleteMessage should return error for non-existent message`() = runTest {
         // When
-        val result = localDataSource.deleteMessage(
-            MessageId(UUID.randomUUID()),
-            DeleteMessageMode.FOR_EVERYONE,
-        )
+        val result = localDataSource.deleteMessage(MessageId(UUID.randomUUID()))
 
         // Then
         assertIs<ResultWithError.Failure<Unit, LocalDataSourceError>>(result)
@@ -302,24 +295,5 @@ class LocalDataSourceFakeTest {
         // Then
         assertIs<ResultWithError.Failure<TextMessage, LocalDataSourceError>>(result)
         assertEquals(LocalDataSourceError.MessageNotFound, result.error)
-    }
-
-    @Test
-    fun `clearAllData should remove all chats`() = runTest {
-        // Given
-        localDataSource.insertChat(testChat)
-
-        // When
-        val result = localDataSource.clearAllData()
-
-        // Then
-        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
-
-        // Verify all data is cleared
-        localDataSource.flowChatList().test {
-            val flowResult = awaitItem()
-            assertIs<ResultWithError.Success<List<ChatPreview>, LocalDataSourceError>>(flowResult)
-            assertTrue(flowResult.data.isEmpty())
-        }
     }
 }

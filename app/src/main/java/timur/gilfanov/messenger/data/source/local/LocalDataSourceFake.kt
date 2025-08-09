@@ -20,7 +20,6 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
-import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 
 @Singleton
 @Suppress("TooManyFunctions")
@@ -79,7 +78,7 @@ class LocalDataSourceFake @Inject constructor() :
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
         chatsFlow.map { chats ->
             if (shouldFailFlowChatList) {
-                ResultWithError.Failure(LocalDataSourceError.DatabaseUnavailable)
+                ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
             } else {
                 val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
                 ResultWithError.Success(chatPreviews)
@@ -150,7 +149,6 @@ class LocalDataSourceFake @Inject constructor() :
 
     override suspend fun deleteMessage(
         messageId: MessageId,
-        mode: DeleteMessageMode,
     ): ResultWithError<Unit, LocalDataSourceError> {
         val currentChats = chatsFlow.value
 
@@ -193,7 +191,7 @@ class LocalDataSourceFake @Inject constructor() :
 
     override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =
         if (shouldFailGetLastSyncTimestamp) {
-            ResultWithError.Failure(LocalDataSourceError.DatabaseUnavailable)
+            ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
         } else {
             val timestamp = syncTimestamp.value
             ResultWithError.Success(timestamp)
@@ -287,12 +285,6 @@ class LocalDataSourceFake @Inject constructor() :
             }
             updateLastSyncTimestamp(delta.toTimestamp)
         }
-        return ResultWithError.Success(Unit)
-    }
-
-    override suspend fun clearAllData(): ResultWithError<Unit, LocalDataSourceError> {
-        chatsFlow.update { emptyMap() }
-        syncTimestamp.update { null }
         return ResultWithError.Success(Unit)
     }
 

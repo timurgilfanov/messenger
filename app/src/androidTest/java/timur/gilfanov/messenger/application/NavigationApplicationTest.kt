@@ -25,18 +25,21 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.annotations.ApplicationTest
 import timur.gilfanov.messenger.MainActivity
-import timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
-import timur.gilfanov.messenger.data.repository.ALICE_TEXT_1
-import timur.gilfanov.messenger.data.repository.BOB_CHAT_ID
-import timur.gilfanov.messenger.data.repository.BOB_TEXT_1
-import timur.gilfanov.messenger.data.repository.MessengerNotEmptyRepositoryFake
 import timur.gilfanov.messenger.di.RepositoryModule
+import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.test.AndroidTestDataHelper
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.ALICE_CHAT_ID
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.ALICE_TEXT_1
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.BOB_CHAT_ID
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.BOB_TEXT_1
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
+import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-@UninstallModules(RepositoryModule::class)
+@UninstallModules(RepositoryModule::class, TestUserModule::class)
 @ApplicationTest
 @RunWith(AndroidJUnit4::class)
 class NavigationApplicationTest {
@@ -50,13 +53,24 @@ class NavigationApplicationTest {
     @Module
     @InstallIn(SingletonComponent::class)
     object NavigationTestRepositoryModule {
-        @Provides
-        @Singleton
-        fun provideChatRepository(): ChatRepository = MessengerNotEmptyRepositoryFake()
+        val repository = AndroidTestRepositoryWithRealImplementation(NON_EMPTY)
 
         @Provides
         @Singleton
-        fun provideMessageRepository(): MessageRepository = MessengerNotEmptyRepositoryFake()
+        fun provideChatRepository(): ChatRepository = repository
+
+        @Provides
+        @Singleton
+        fun provideMessageRepository(): MessageRepository = repository
+    }
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object TestUserNavigationTestModule {
+        @Provides
+        @Singleton
+        @timur.gilfanov.messenger.di.TestUserId
+        fun provideTestUserId(): String = AndroidTestDataHelper.USER_ID
     }
 
     @Before
@@ -67,7 +81,10 @@ class NavigationApplicationTest {
     @Test
     fun applicationTest_userCanNavigateFromChatListToChatScreen() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("chat_list"))
+            waitUntilExactlyOneExists(
+                hasTestTag("chat_list"),
+                timeoutMillis = 5_000L,
+            )
 
             waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             onNodeWithText("Alice").assertIsDisplayed()
@@ -85,7 +102,7 @@ class NavigationApplicationTest {
     @Test
     fun applicationTest_userCanNavigateBetweenMultipleChats() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("chat_list"))
+            waitUntilExactlyOneExists(hasTestTag("chat_list"), timeoutMillis = 5_000L)
 
             waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))

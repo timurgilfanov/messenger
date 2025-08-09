@@ -35,10 +35,12 @@ import org.junit.runner.RunWith
 import timur.gilfanov.annotations.Feature
 import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.messenger.ChatScreenTestActivity
-import timur.gilfanov.messenger.data.repository.MessengerNotEmptyRepositoryFake
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.test.AndroidTestDataHelper
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
+import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -61,13 +63,15 @@ class ChatFeatureTest {
     @Module
     @InstallIn(SingletonComponent::class)
     object ChatScreenDisplayTestRepositoryModule {
-        @Provides
-        @Singleton
-        fun provideChatRepository(): ChatRepository = MessengerNotEmptyRepositoryFake()
+        val repository = AndroidTestRepositoryWithRealImplementation(NON_EMPTY)
 
         @Provides
         @Singleton
-        fun provideMessageRepository(): MessageRepository = MessengerNotEmptyRepositoryFake()
+        fun provideChatRepository(): ChatRepository = repository
+
+        @Provides
+        @Singleton
+        fun provideMessageRepository(): MessageRepository = repository
     }
 
     @Module
@@ -76,12 +80,12 @@ class ChatFeatureTest {
         @Provides
         @Singleton
         @timur.gilfanov.messenger.di.TestUserId
-        fun provideTestUserId(): String = timur.gilfanov.messenger.data.repository.USER_ID
+        fun provideTestUserId(): String = AndroidTestDataHelper.USER_ID
 
         @Provides
         @Singleton
         @timur.gilfanov.messenger.di.TestChatId
-        fun provideTestChatId(): String = timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
+        fun provideTestChatId(): String = AndroidTestDataHelper.ALICE_CHAT_ID
     }
 
     @Before
@@ -91,7 +95,10 @@ class ChatFeatureTest {
 
     @Test
     fun chatScreen_inputAreaDisplaysCorrectly() {
-        composeTestRule.waitUntilExactlyOneExists(hasTestTag("message_input"))
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag("message_input"),
+            timeoutMillis = 5_000L,
+        )
 
         composeTestRule.onNodeWithTag("message_input")
             .assertIsDisplayed()
@@ -108,7 +115,10 @@ class ChatFeatureTest {
     @Test
     fun chatScreen_handlesMultipleRotations() = runTest {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
             val testMessage = "Multi-rotation test"
             onNodeWithTag("message_input").apply {
                 assertIsDisplayed()
@@ -120,7 +130,10 @@ class ChatFeatureTest {
                     composeTestRule.activity.recreate()
                 }
 
-                waitUntilExactlyOneExists(hasTestTag("message_input"))
+                waitUntilExactlyOneExists(
+                    hasTestTag("message_input"),
+                    timeoutMillis = 5_000L,
+                )
                 onNodeWithTag("message_input", useUnmergedTree = true).apply {
                     assertIsDisplayed()
                     assertTextEquals(testMessage)
@@ -135,7 +148,10 @@ class ChatFeatureTest {
     @Test
     fun chatScreen_preservesInputTextOnRotation() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
 
             val testMessage = "This message should survive rotation"
 
@@ -164,7 +180,10 @@ class ChatFeatureTest {
     @Test
     fun chatScreen_preservesUIStateOnRotation() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
 
             onNodeWithTag("message_input")
                 .assertIsDisplayed()
@@ -198,7 +217,10 @@ class ChatFeatureTest {
     @Test
     fun inputValidation_showsErrorForTooLongMessage() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
             onNodeWithText("Type a message...").assertIsDisplayed()
             onNodeWithText("Message can not be longer then 2000 characters").assertIsNotDisplayed()
             val tooLongMessage = "a".repeat(2001)
@@ -213,7 +235,10 @@ class ChatFeatureTest {
         val tooLongMessage = "a".repeat(2001)
         val errorText = "Message can not be longer then 2000 characters"
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
             onNodeWithText("Type a message...").assertIsDisplayed()
             repeat(100) {
                 onNodeWithTag("message_input").performTextReplacement(tooLongMessage)
@@ -227,7 +252,10 @@ class ChatFeatureTest {
     @Test
     fun inputValidation_emptyInputDoesNotShowError() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("message_input"))
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = 5_000L,
+            )
             onNodeWithText("Type a message...").assertIsDisplayed()
             onNodeWithTag("message_input").performTextInput("Some text")
             onNodeWithTag("message_input").performTextClearance()

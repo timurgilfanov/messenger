@@ -39,6 +39,7 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode.FOR_SEN
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.util.NoOpLogger
 
 @Category(Unit::class)
 @Suppress("LargeClass") // Comprehensive repository test suite
@@ -188,13 +189,15 @@ class MessengerRepositoryImplTest {
 
     @Test
     fun `isChatListUpdating initially returns false`() = runTest {
-        // Given: Set up repository
         repository = repositoryImpl()
+        repository.flowChatList().test {
+            val initialResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(initialResult)
+            assertEquals(0, initialResult.data.size)
 
-        // When: Check if updating
-        repository.isChatListUpdating().test {
-            // Then: Should initially be false
-            assertEquals(false, awaitItem())
+            repository.isChatListUpdating().test {
+                assertEquals(false, awaitItem())
+            }
         }
     }
 
@@ -882,5 +885,6 @@ class MessengerRepositoryImplTest {
             message = remoteDataSource,
             sync = remoteDataSource,
         ),
+        logger = NoOpLogger(),
     )
 }

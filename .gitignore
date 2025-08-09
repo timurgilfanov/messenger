@@ -35,3 +35,6 @@ google-services.json
 
 # Code review artifacts
 review
+
+# Kotlin generated files
+.kotlin

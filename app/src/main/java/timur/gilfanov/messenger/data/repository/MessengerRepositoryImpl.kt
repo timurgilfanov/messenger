@@ -34,14 +34,20 @@ import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.util.Logger
 
 @Singleton
 @Suppress("TooManyFunctions") // Combines ChatRepository and MessageRepository interfaces
 class MessengerRepositoryImpl @Inject constructor(
     private val localDataSources: LocalDataSources,
     private val remoteDataSources: RemoteDataSources,
+    private val logger: Logger,
 ) : ChatRepository,
     MessageRepository {
+
+    companion object {
+        private const val TAG = "MessengerRepository"
+    }
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val isUpdatingFlow = MutableStateFlow(false)
@@ -56,7 +62,7 @@ class MessengerRepositoryImpl @Inject constructor(
         val lastSyncTimestamp = when (val result = localDataSources.sync.getLastSyncTimestamp()) {
             is ResultWithError.Success -> result.data
             is ResultWithError.Failure -> {
-                println("MessengerRepository: Failed to get last sync timestamp: ${result.error}")
+                logger.w(TAG, "Failed to get last sync timestamp: ${result.error}")
                 null // Start from scratch if no timestamp available
             }
         }
@@ -67,12 +73,11 @@ class MessengerRepositoryImpl @Inject constructor(
                     localDataSources.sync.applyChatListDelta(deltaResult.data)
                     isUpdatingFlow.value = false
                 } else {
-                    println("MessengerRepository: Delta result was failure: $deltaResult")
+                    logger.w(TAG, "Delta result was failure: $deltaResult")
                 }
             }
             .catch { e ->
-                println("MessengerRepository: Error collecting chatsDeltaUpdates: ${e.message}")
-                e.printStackTrace()
+                logger.e(TAG, "Error collecting chatsDeltaUpdates", e)
             }
             .launchIn(repositoryScope)
     }
@@ -191,7 +196,7 @@ class MessengerRepositoryImpl @Inject constructor(
     ): ResultWithError<Unit, RepositoryDeleteMessageError> =
         when (val result = remoteDataSources.message.deleteMessage(messageId, mode)) {
             is ResultWithError.Success -> {
-                localDataSources.message.deleteMessage(messageId, mode)
+                localDataSources.message.deleteMessage(messageId)
                 ResultWithError.Success(Unit)
             }
             is ResultWithError.Failure -> {

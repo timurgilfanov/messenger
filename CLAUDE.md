@@ -41,9 +41,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 
 ### Code Quality
+Run code quality checks and auto corrections after completion of code editing.
 ```bash
-# Run detekt static analysis
-./gradlew detekt
+# Run detekt static analysis with autocorrection when possible
+./gradlew detekt --auto-correct
 
 # Run ktlint formatting check
 ./gradlew ktlintCheck
@@ -143,16 +144,14 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 - **Validation Pattern**: Separate validator classes with specific error types
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
 
-### Testing Strategy
+### Testing
 Full strategy in `Testing Strategy.md`.
-- **Fakes over Mocks**: Uses fake implementations (`RepositoryFake`) instead of mocking frameworks
-- **Builder Pattern**: Test builders for domain entities (`ChatBuilder`, `MessageBuilder`)
-- **Integration Tests**: Tests cover use case interactions with repository layer
-- **Turbine**: For testing Kotlin Flow emissions
-- **Test Categories**: Tests are organized by category using JUnit's `@Category` annotation (as defined in Testing Strategy.md):
+- **Fakes over Mocks**: Use test doubles other than mock or spy by default. We test behaviour not implementation.
+- **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
+- **Test Categories**: Tests are organized by category:
+  - `Architecture`: Verify architecture rules
   - `Unit`: Test single method or class with minimal dependencies
   - `Component`: Test multiply classes together  
-  - `Architecture`: Verify architecture rules
   - `Feature`: Test integration between two or more components
   - `Application`: Test deployable binary to verify application functionality
   - `ReleaseCandidate`: Verifies the critical user journeys of a release build and performance
@@ -208,6 +207,21 @@ domain/
   - Root cause: Known bug in KSP+Hilt integration where generated method names contain invalid characters
   - Decision: Stay with KAPT until KSP+Hilt compatibility is fully resolved
 
-## Testing
-- Use test doubles other than mock or spy by default. We test behaviour not implementation.
-- Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
+## Technical Debt & Improvement Areas
+
+### Data Layer Optimizations
+- **LocalSyncDataSourceImpl.applyChatUpdatedDelta()** - Consider incremental participant updates instead of full replace operation for better performance with large participant lists
+- **applyChatDeletedDelta()** - Implement proper cascade deletion handling for associated messages and participants when chat is deleted
+- **ParticipantDao foreign key strategy** - Monitor performance impact of OnConflictStrategy.IGNORE vs REPLACE with the new schema
+
+### Database Performance
+- **Room relationship queries** - Verify optimal query performance for ChatWithParticipantsAndMessages with large datasets
+- **Participant cross-reference queries** - Consider indexing strategies for chat-participant junction table queries
+- **Message pagination** - Future consideration for handling large chat histories efficiently
+
+### Testing Coverage
+- **Multi-chat stress testing** - Add performance tests for scenarios with many chats and participants
+- **Edge case testing** - Add tests for participant role changes, permission updates, and concurrent chat operations
+- **Integration test scenarios** - Expand coverage for complex delta synchronization patterns
+
+*Use GitHub issues to track specific items from this list with priorities and milestones.*

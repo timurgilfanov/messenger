@@ -12,7 +12,6 @@ import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
-import timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
 import timur.gilfanov.messenger.data.source.local.datastore.SyncPreferences
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
@@ -30,7 +29,7 @@ class LocalSyncDataSourceImpl @Inject constructor(
     private val chatDao: ChatDao,
     private val messageDao: MessageDao,
     private val participantDao: ParticipantDao,
-    logger: Logger,
+    private val logger: Logger,
 ) : LocalSyncDataSource {
 
     private val errorHandler = DatabaseErrorHandler(logger)
@@ -111,19 +110,19 @@ class LocalSyncDataSourceImpl @Inject constructor(
         val chatEntity = with(EntityMappers) { chat.toChatEntity() }
         chatDao.insertChat(chatEntity)
 
+        // Insert global participant identities
         val participantEntities = delta.chatMetadata.participants.map { participant ->
             with(EntityMappers) { participant.toParticipantEntity() }
         }
         participantDao.insertParticipants(participantEntities)
 
-        delta.chatMetadata.participants.forEach { participant ->
-            chatDao.insertChatParticipantCrossRef(
-                ChatParticipantCrossRef(
-                    chatId = delta.chatId.id.toString(),
-                    participantId = participant.id.id.toString(),
-                ),
-            )
+        // Insert chat-specific participant relationships
+        val crossRefs = delta.chatMetadata.participants.map { participant ->
+            with(EntityMappers) {
+                participant.toChatParticipantCrossRef(delta.chatId.id.toString())
+            }
         }
+        chatDao.insertChatParticipantCrossRefs(crossRefs)
 
         delta.initialMessages.forEach { message ->
             val messageEntity = with(EntityMappers) { message.toMessageEntity() }
@@ -149,19 +148,20 @@ class LocalSyncDataSourceImpl @Inject constructor(
             chatDao.updateChat(updatedChatEntity)
 
             chatDao.removeAllChatParticipants(delta.chatId.id.toString())
+
+            // Insert/update global participant identities
             val participantEntities = delta.chatMetadata.participants.map { participant ->
                 with(EntityMappers) { participant.toParticipantEntity() }
             }
             participantDao.insertParticipants(participantEntities)
 
-            delta.chatMetadata.participants.forEach { participant ->
-                chatDao.insertChatParticipantCrossRef(
-                    ChatParticipantCrossRef(
-                        chatId = delta.chatId.id.toString(),
-                        participantId = participant.id.id.toString(),
-                    ),
-                )
+            // Insert new chat-specific participant relationships
+            val crossRefs = delta.chatMetadata.participants.map { participant ->
+                with(EntityMappers) {
+                    participant.toChatParticipantCrossRef(delta.chatId.id.toString())
+                }
             }
+            chatDao.insertChatParticipantCrossRefs(crossRefs)
 
             delta.messagesToAdd.forEach { message ->
                 val messageEntity = with(EntityMappers) { message.toMessageEntity() }

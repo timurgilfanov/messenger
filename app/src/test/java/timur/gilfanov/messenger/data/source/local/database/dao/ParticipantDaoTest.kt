@@ -14,6 +14,8 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.annotations.Component
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef
 import timur.gilfanov.messenger.data.source.local.database.entity.ParticipantEntity
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 
@@ -27,6 +29,9 @@ class ParticipantDaoTest {
 
     private val participantDao: ParticipantDao
         get() = databaseRule.participantDao
+
+    private val chatDao: ChatDao
+        get() = databaseRule.chatDao
 
     @Test
     fun `insert and get participant by id`() = runTest {
@@ -62,47 +67,43 @@ class ParticipantDaoTest {
     }
 
     @Test
-    fun `update participant changes data`() = runTest {
+    fun `update participant changes data through different methods`() = runTest {
         // Given
         val participantId = UUID.randomUUID().toString()
-        val participant = createTestParticipant(participantId)
-        val updatedParticipant = participant.copy(
-            name = "Updated Name",
-            onlineAt = Instant.fromEpochMilliseconds(2500000),
-        )
+        val participant = createTestParticipant(participantId, "Original Name")
+        val onlineTime = Instant.fromEpochMilliseconds(2000000)
 
-        // When
+        // When - Insert initial participant
         participantDao.insertParticipant(participant)
         val initialResult = participantDao.getParticipantById(participantId)
 
+        // Update via updateParticipant method
+        val updatedParticipant = participant.copy(
+            name = "Updated Name",
+            onlineAt = onlineTime,
+        )
         participantDao.updateParticipant(updatedParticipant)
         val updatedResult = participantDao.getParticipantById(participantId)
 
-        // Then
+        // Update via updateParticipantOnlineStatus method
+        val newOnlineTime = Instant.fromEpochMilliseconds(2500000).toEpochMilliseconds()
+        participantDao.updateParticipantOnlineStatus(participantId, newOnlineTime)
+        val finalResult = participantDao.getParticipantById(participantId)
+
+        // Then - Verify initial state
         assertNotNull(initialResult)
-        assertEquals(participant.name, initialResult.name)
+        assertEquals("Original Name", initialResult.name)
         assertNull(initialResult.onlineAt)
 
+        // Verify updateParticipant worked
         assertNotNull(updatedResult)
         assertEquals("Updated Name", updatedResult.name)
-        assertNotNull(updatedResult.onlineAt)
-    }
+        assertEquals(onlineTime, updatedResult.onlineAt)
 
-    @Test
-    fun `update participant online status`() = runTest {
-        // Given
-        val participantId = UUID.randomUUID().toString()
-        val participant = createTestParticipant(participantId)
-        val onlineTime = Instant.fromEpochMilliseconds(2000000).toEpochMilliseconds()
-
-        // When
-        participantDao.insertParticipant(participant)
-        participantDao.updateParticipantOnlineStatus(participantId, onlineTime)
-        val result = participantDao.getParticipantById(participantId)
-
-        // Then
-        assertNotNull(result)
-        assertEquals(onlineTime, result.onlineAt?.toEpochMilliseconds())
+        // Verify updateParticipantOnlineStatus worked
+        assertNotNull(finalResult)
+        assertEquals("Updated Name", finalResult.name) // Name should remain
+        assertEquals(newOnlineTime, finalResult.onlineAt?.toEpochMilliseconds())
     }
 
     @Test
@@ -121,67 +122,97 @@ class ParticipantDaoTest {
     }
 
     @Test
-    fun `participant with admin role is properly stored`() = runTest {
+    fun `participant with admin role is properly stored via cross-reference`() = runTest {
         // Given
         val participantId = UUID.randomUUID().toString()
-        val participant = createTestParticipant(participantId).copy(
+        val chatId = UUID.randomUUID().toString()
+        val participant = createTestParticipant(participantId)
+
+        // Create test chat first
+        val chat = ChatEntity(
+            id = chatId,
+            name = "Test Chat",
+            pictureUrl = null,
+            rules = "[]",
+            unreadMessagesCount = 0,
+            lastReadMessageId = null,
+            updatedAt = Instant.fromEpochMilliseconds(1000000),
+        )
+
+        val crossRef = ChatParticipantCrossRef(
+            chatId = chatId,
+            participantId = participantId,
+            joinedAt = Instant.fromEpochMilliseconds(900000),
             isAdmin = true,
             isModerator = false,
         )
 
         // When
         participantDao.insertParticipant(participant)
-        val result = participantDao.getParticipantById(participantId)
+        chatDao.insertChat(chat)
+        chatDao.insertChatParticipantCrossRef(crossRef)
+
+        val chatWithDetails = chatDao.getChatWithParticipantsAndMessages(chatId)
 
         // Then
-        assertNotNull(result)
-        assertEquals(true, result.isAdmin)
-        assertEquals(false, result.isModerator)
+        assertNotNull(chatWithDetails)
+        val adminCrossRef = chatWithDetails!!.participantCrossRefs.find {
+            it.participantId ==
+                participantId
+        }
+        assertNotNull(adminCrossRef)
+        assertEquals(true, adminCrossRef!!.isAdmin)
+        assertEquals(false, adminCrossRef.isModerator)
     }
 
     @Test
-    fun `participant with moderator role is properly stored`() = runTest {
+    fun `participant with moderator role is properly stored via cross-reference`() = runTest {
         // Given
         val participantId = UUID.randomUUID().toString()
-        val participant = createTestParticipant(participantId).copy(
+        val chatId = UUID.randomUUID().toString()
+        val participant = createTestParticipant(participantId)
+
+        // Create test chat first
+        val chat = ChatEntity(
+            id = chatId,
+            name = "Test Chat",
+            pictureUrl = null,
+            rules = "[]",
+            unreadMessagesCount = 0,
+            lastReadMessageId = null,
+            updatedAt = Instant.fromEpochMilliseconds(1000000),
+        )
+
+        val crossRef = ChatParticipantCrossRef(
+            chatId = chatId,
+            participantId = participantId,
+            joinedAt = Instant.fromEpochMilliseconds(900000),
             isAdmin = false,
             isModerator = true,
         )
 
         // When
         participantDao.insertParticipant(participant)
-        val result = participantDao.getParticipantById(participantId)
+        chatDao.insertChat(chat)
+        chatDao.insertChatParticipantCrossRef(crossRef)
+
+        val chatWithDetails = chatDao.getChatWithParticipantsAndMessages(chatId)
 
         // Then
-        assertNotNull(result)
-        assertEquals(false, result.isAdmin)
-        assertEquals(true, result.isModerator)
-    }
-
-    @Test
-    fun `upsert participant updates existing entry`() = runTest {
-        // Given
-        val participantId = UUID.randomUUID().toString()
-        val participant = createTestParticipant(participantId, "Original Name")
-        val updatedParticipant = participant.copy(name = "Updated Name")
-
-        // When
-        participantDao.insertParticipant(participant)
-        participantDao.insertParticipant(updatedParticipant) // Upsert
-        val result = participantDao.getParticipantById(participantId)
-
-        // Then
-        assertNotNull(result)
-        assertEquals("Updated Name", result.name)
+        assertNotNull(chatWithDetails)
+        val moderatorCrossRef = chatWithDetails!!.participantCrossRefs.find {
+            it.participantId ==
+                participantId
+        }
+        assertNotNull(moderatorCrossRef)
+        assertEquals(false, moderatorCrossRef!!.isAdmin)
+        assertEquals(true, moderatorCrossRef.isModerator)
     }
 
     private fun createTestParticipant(id: String, name: String = "Test User") = ParticipantEntity(
         id = id,
         name = name,
         pictureUrl = null,
-        joinedAt = Instant.fromEpochMilliseconds(900000),
         onlineAt = null,
-        isAdmin = false,
-        isModerator = false,
     )
 }

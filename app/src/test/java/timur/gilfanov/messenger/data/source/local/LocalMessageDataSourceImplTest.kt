@@ -293,10 +293,7 @@ class LocalMessageDataSourceImplTest {
             id = "22222222-2222-2222-2222-222222222222", // Fixed UUID to match message
             name = "Test Sender",
             pictureUrl = null,
-            joinedAt = Instant.fromEpochMilliseconds(900000),
             onlineAt = null,
-            isAdmin = false,
-            isModerator = false,
         )
         databaseRule.participantDao.insertParticipant(participantEntity)
 
@@ -305,6 +302,9 @@ class LocalMessageDataSourceImplTest {
             timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef(
                 chatId = "11111111-1111-1111-1111-111111111111",
                 participantId = "22222222-2222-2222-2222-222222222222",
+                joinedAt = Instant.fromEpochMilliseconds(900000),
+                isAdmin = false,
+                isModerator = false,
             ),
         )
     }

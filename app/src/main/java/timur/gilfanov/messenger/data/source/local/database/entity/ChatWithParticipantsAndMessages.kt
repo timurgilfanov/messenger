@@ -11,6 +11,13 @@ import androidx.room.Relation
 data class ChatWithParticipantsAndMessages(
     @Embedded val chat: ChatEntity,
     @Relation(
+        entity = ChatParticipantCrossRef::class,
+        parentColumn = "id",
+        entityColumn = "chatId",
+    )
+    val participantCrossRefs: List<ChatParticipantCrossRef>,
+    @Relation(
+        entity = ParticipantEntity::class,
         parentColumn = "id",
         entityColumn = "id",
         associateBy = Junction(

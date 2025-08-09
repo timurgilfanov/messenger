@@ -190,7 +190,6 @@ object AndroidTestDataHelper {
                 id = USER_ID,
                 name = "You",
                 pictureUrl = null,
-                joinedAt = FIXED_TIMESTAMP,
                 onlineAt = FIXED_TIMESTAMP,
             ),
         )
@@ -199,7 +198,6 @@ object AndroidTestDataHelper {
                 id = ALICE_USER_ID,
                 name = "Alice",
                 pictureUrl = null,
-                joinedAt = ALICE_JOIN_TIME,
                 onlineAt = ALICE_JOIN_TIME,
             ),
         )
@@ -208,27 +206,50 @@ object AndroidTestDataHelper {
                 id = BOB_USER_ID,
                 name = "Bob",
                 pictureUrl = null,
-                joinedAt = BOB_JOIN_TIME,
                 onlineAt = BOB_JOIN_TIME,
             ),
         )
     }
 
     private suspend fun insertChatParticipantCrossRef(chatDao: ChatDao) {
-        // Insert Alice chat participants
+        // Insert Alice chat participants with chat-specific properties
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chatId = ALICE_CHAT_ID, participantId = USER_ID),
+            ChatParticipantCrossRef(
+                chatId = ALICE_CHAT_ID,
+                participantId = USER_ID,
+                joinedAt = FIXED_TIMESTAMP,
+                isAdmin = false,
+                isModerator = false,
+            ),
         )
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chatId = ALICE_CHAT_ID, participantId = ALICE_USER_ID),
+            ChatParticipantCrossRef(
+                chatId = ALICE_CHAT_ID,
+                participantId = ALICE_USER_ID,
+                joinedAt = ALICE_JOIN_TIME,
+                isAdmin = false,
+                isModerator = false,
+            ),
         )
 
-        // Insert Bob chat participants
+        // Insert Bob chat participants with chat-specific properties
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chatId = BOB_CHAT_ID, participantId = USER_ID),
+            ChatParticipantCrossRef(
+                chatId = BOB_CHAT_ID,
+                participantId = USER_ID,
+                joinedAt = FIXED_TIMESTAMP,
+                isAdmin = false,
+                isModerator = false,
+            ),
         )
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chatId = BOB_CHAT_ID, participantId = BOB_USER_ID),
+            ChatParticipantCrossRef(
+                chatId = BOB_CHAT_ID,
+                participantId = BOB_USER_ID,
+                joinedAt = BOB_JOIN_TIME,
+                isAdmin = false,
+                isModerator = false,
+            ),
         )
     }
 
@@ -286,9 +307,7 @@ object AndroidTestDataHelper {
     }
 
     fun prepopulateRemoteDataSource(remoteDataSourceFake: RemoteDataSourceFake) {
-        // Apply the order fix discovered earlier (Bob first, then Alice)
-        // TODO: order of adding chats can crash the tests, investigate root cause
-        remoteDataSourceFake.addChatToServer(bobChat)
         remoteDataSourceFake.addChatToServer(aliceChat)
+        remoteDataSourceFake.addChatToServer(bobChat)
     }
 }

@@ -83,7 +83,10 @@ class LocalMessageDataSourceImpl @Inject constructor(
         if (messageEntity != null) {
             val chat = chatDao.getChatWithParticipantsAndMessages(messageEntity.chatId)
             val participants = chat?.participants ?: emptyList()
-            val message = with(EntityMappers) { messageEntity.toMessage(participants) }
+            val participantCrossRefs = chat?.participantCrossRefs ?: emptyList()
+            val message = with(EntityMappers) {
+                messageEntity.toMessage(participants, participantCrossRefs)
+            }
             ResultWithError.Success(message)
         } else {
             ResultWithError.Failure(LocalDataSourceError.MessageNotFound)

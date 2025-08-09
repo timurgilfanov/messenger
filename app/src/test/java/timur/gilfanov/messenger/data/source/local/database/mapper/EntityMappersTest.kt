@@ -76,15 +76,21 @@ class EntityMappersTest {
 
         // When
         val entity = participant.toParticipantEntity()
-        val restored = entity.toParticipant()
+        val crossRef = with(EntityMappers) {
+            participant.toChatParticipantCrossRef("test-chat-id")
+        }
+        val restored = entity.toParticipant(crossRef)
 
         // Then
         assertEquals(participant, restored)
         assertEquals(participant.id.id.toString(), entity.id)
         assertEquals(participant.name, entity.name)
         assertEquals(participant.pictureUrl, entity.pictureUrl)
-        assertEquals(participant.joinedAt, entity.joinedAt)
         assertEquals(participant.onlineAt, entity.onlineAt)
+        // Chat-specific properties come from crossRef
+        assertEquals(participant.joinedAt, crossRef.joinedAt)
+        assertEquals(participant.isAdmin, crossRef.isAdmin)
+        assertEquals(participant.isModerator, crossRef.isModerator)
     }
 
     @Test
@@ -100,7 +106,10 @@ class EntityMappersTest {
 
         // When
         val entity = participant.toParticipantEntity()
-        val restored = entity.toParticipant()
+        val crossRef = with(EntityMappers) {
+            participant.toChatParticipantCrossRef("test-chat-id")
+        }
+        val restored = entity.toParticipant(crossRef)
 
         // Then
         assertEquals(participant, restored)
@@ -123,7 +132,13 @@ class EntityMappersTest {
 
         // When
         val entity = message.toMessageEntity()
-        val restored = entity.toMessage(listOf(testParticipant.toParticipantEntity()))
+        val crossRef = with(EntityMappers) {
+            testParticipant.toChatParticipantCrossRef(message.recipient.id.toString())
+        }
+        val restored = entity.toMessage(
+            listOf(testParticipant.toParticipantEntity()),
+            listOf(crossRef)
+        )
 
         // Then
         assertIs<TextMessage>(restored)
@@ -151,7 +166,13 @@ class EntityMappersTest {
 
         // When
         val entity = message.toMessageEntity()
-        val restored = entity.toMessage(listOf(testParticipant.toParticipantEntity()))
+        val crossRef = with(EntityMappers) {
+            testParticipant.toChatParticipantCrossRef(message.recipient.id.toString())
+        }
+        val restored = entity.toMessage(
+            listOf(testParticipant.toParticipantEntity()),
+            listOf(crossRef)
+        )
 
         // Then
         assertIs<TextMessage>(restored)
@@ -201,10 +222,14 @@ class EntityMappersTest {
         val chatEntity = testChat.toChatEntity()
         val participantEntities = testChat.participants.map { it.toParticipantEntity() }
         val messageEntities = testChat.messages.map { it.toMessageEntity() }
+        val participantCrossRefs = testChat.participants.map { participant ->
+            with(EntityMappers) { participant.toChatParticipantCrossRef(testChat.id.id.toString()) }
+        }
 
         val chatWithRelations = ChatWithParticipantsAndMessages(
             chat = chatEntity,
             participants = participantEntities,
+            participantCrossRefs = participantCrossRefs,
             messages = messageEntities,
         )
 
@@ -227,10 +252,14 @@ class EntityMappersTest {
         val chatEntity = testChat.toChatEntity()
         val participantEntities = testChat.participants.map { it.toParticipantEntity() }
         val messageEntities = testChat.messages.map { it.toMessageEntity() }
+        val participantCrossRefs = testChat.participants.map { participant ->
+            with(EntityMappers) { participant.toChatParticipantCrossRef(testChat.id.id.toString()) }
+        }
 
         val chatWithRelations = ChatWithParticipantsAndMessages(
             chat = chatEntity,
             participants = participantEntities,
+            participantCrossRefs = participantCrossRefs,
             messages = messageEntities,
         )
 
@@ -250,10 +279,14 @@ class EntityMappersTest {
         // Given
         val chatEntity = testChat.copy(messages = persistentListOf()).toChatEntity()
         val participantEntities = testChat.participants.map { it.toParticipantEntity() }
+        val participantCrossRefs = testChat.participants.map { participant ->
+            with(EntityMappers) { participant.toChatParticipantCrossRef(testChat.id.id.toString()) }
+        }
 
         val chatWithRelations = ChatWithParticipantsAndMessages(
             chat = chatEntity,
             participants = participantEntities,
+            participantCrossRefs = participantCrossRefs,
             messages = emptyList(),
         )
 

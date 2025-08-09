@@ -184,7 +184,6 @@ object ChatFeatureTestDataHelper {
                 id = USER_ID,
                 name = "You",
                 pictureUrl = null,
-                joinedAt = FIXED_TIMESTAMP,
                 onlineAt = FIXED_TIMESTAMP,
             ),
         )
@@ -193,7 +192,6 @@ object ChatFeatureTestDataHelper {
                 id = ALICE_USER_ID,
                 name = "Alice",
                 pictureUrl = null,
-                joinedAt = ALICE_JOIN_TIME,
                 onlineAt = ALICE_JOIN_TIME,
             ),
         )
@@ -202,7 +200,6 @@ object ChatFeatureTestDataHelper {
                 id = BOB_USER_ID,
                 name = "Bob",
                 pictureUrl = null,
-                joinedAt = BOB_JOIN_TIME,
                 onlineAt = BOB_JOIN_TIME,
             ),
         )
@@ -211,18 +208,42 @@ object ChatFeatureTestDataHelper {
     private suspend fun insertChatParticipantCrossRef(chatDao: ChatDao) {
         // Insert Alice chat participants
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chatId = ALICE_CHAT_ID, participantId = USER_ID),
+            ChatParticipantCrossRef(
+                chatId = ALICE_CHAT_ID,
+                participantId = USER_ID,
+                joinedAt = FIXED_TIMESTAMP,
+                isAdmin = false,
+                isModerator = false
+            ),
         )
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chatId = ALICE_CHAT_ID, participantId = ALICE_USER_ID),
+            ChatParticipantCrossRef(
+                chatId = ALICE_CHAT_ID,
+                participantId = ALICE_USER_ID,
+                joinedAt = ALICE_JOIN_TIME,
+                isAdmin = false,
+                isModerator = false
+            ),
         )
 
         // Insert Bob chat participants
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chatId = BOB_CHAT_ID, participantId = USER_ID),
+            ChatParticipantCrossRef(
+                chatId = BOB_CHAT_ID,
+                participantId = USER_ID,
+                joinedAt = FIXED_TIMESTAMP,
+                isAdmin = false,
+                isModerator = false
+            ),
         )
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chatId = BOB_CHAT_ID, participantId = BOB_USER_ID),
+            ChatParticipantCrossRef(
+                chatId = BOB_CHAT_ID,
+                participantId = BOB_USER_ID,
+                joinedAt = BOB_JOIN_TIME,
+                isAdmin = false,
+                isModerator = false
+            ),
         )
     }
 

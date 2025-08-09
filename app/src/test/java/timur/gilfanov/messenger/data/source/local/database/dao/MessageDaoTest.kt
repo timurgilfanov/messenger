@@ -234,10 +234,7 @@ class MessageDaoTest {
             id = participantId,
             name = "Test User",
             pictureUrl = null,
-            joinedAt = Instant.fromEpochMilliseconds(900000),
             onlineAt = null,
-            isAdmin = false,
-            isModerator = false,
         )
         chatDao.insertChat(chat)
         participantDao.insertParticipant(participant)

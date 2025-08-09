@@ -45,17 +45,26 @@ object EntityMappers {
     )
 
     /**
-     * Maps Participant domain model to ParticipantEntity.
+     * Maps Participant domain model to ParticipantEntity (global identity only).
      */
     fun Participant.toParticipantEntity(): ParticipantEntity = ParticipantEntity(
         id = id.id.toString(),
         name = name,
         pictureUrl = pictureUrl,
-        joinedAt = joinedAt,
         onlineAt = onlineAt,
-        isAdmin = isAdmin,
-        isModerator = isModerator,
     )
+
+    /**
+     * Maps Participant domain model to ChatParticipantCrossRef (chat-specific properties).
+     */
+    fun Participant.toChatParticipantCrossRef(chatId: String): ChatParticipantCrossRef =
+        ChatParticipantCrossRef(
+            chatId = chatId,
+            participantId = id.id.toString(),
+            joinedAt = joinedAt,
+            isAdmin = isAdmin,
+            isModerator = isModerator,
+        )
 
     /**
      * Maps Message domain model to MessageEntity.
@@ -91,6 +100,9 @@ object EntityMappers {
         ChatParticipantCrossRef(
             chatId = chatId.id.toString(),
             participantId = participant.id.id.toString(),
+            joinedAt = participant.joinedAt,
+            isAdmin = participant.isAdmin,
+            isModerator = participant.isModerator,
         )
     }
 
@@ -101,8 +113,14 @@ object EntityMappers {
         id = ChatId(UUID.fromString(chat.id)),
         name = chat.name,
         pictureUrl = chat.pictureUrl,
-        messages = messages.map { it.toMessage(participants) }.toImmutableList(),
-        participants = participants.map { it.toParticipant() }.toImmutableSet(),
+        messages = messages.map {
+            it.toMessage(participants, participantCrossRefs)
+        }.toImmutableList(),
+        participants = participants.mapIndexed { index, participant ->
+            val crossRef = participantCrossRefs.find { it.participantId == participant.id }
+                ?: error("No cross-reference found for participant ${participant.id}")
+            participant.toParticipant(crossRef)
+        }.toImmutableSet(),
         rules = chat.rules.let { rulesJson ->
             json.decodeFromString<List<RuleDto>>(rulesJson).map { it.toDomain() }.toImmutableSet()
         },
@@ -120,7 +138,11 @@ object EntityMappers {
         val lastMessage = messages.maxByOrNull { it.createdAt }
         return ChatPreview(
             id = ChatId(UUID.fromString(chat.id)),
-            participants = participants.map { it.toParticipant() }.toImmutableSet(),
+            participants = participants.map { participant ->
+                val crossRef = participantCrossRefs.find { it.participantId == participant.id }
+                    ?: error("No cross-reference found for participant ${participant.id}")
+                participant.toParticipant(crossRef)
+            }.toImmutableSet(),
             name = chat.name,
             pictureUrl = chat.pictureUrl,
             rules = chat.rules.let { rulesJson ->
@@ -130,31 +152,39 @@ object EntityMappers {
             },
             unreadMessagesCount = chat.unreadMessagesCount,
             lastReadMessageId = chat.lastReadMessageId?.let { MessageId(UUID.fromString(it)) },
-            lastMessage = lastMessage?.toMessage(participants),
+            lastMessage = lastMessage?.toMessage(participants, participantCrossRefs),
             lastActivityAt = lastMessage?.createdAt,
         )
     }
 
     /**
      * Maps ParticipantEntity to Participant domain model.
+     * Requires ChatParticipantCrossRef for chat-specific properties.
      */
-    fun ParticipantEntity.toParticipant(): Participant = Participant(
-        id = ParticipantId(UUID.fromString(id)),
-        name = name,
-        pictureUrl = pictureUrl,
-        joinedAt = joinedAt,
-        onlineAt = onlineAt,
-        isAdmin = isAdmin,
-        isModerator = isModerator,
-    )
+    fun ParticipantEntity.toParticipant(crossRef: ChatParticipantCrossRef): Participant =
+        Participant(
+            id = ParticipantId(UUID.fromString(id)),
+            name = name,
+            pictureUrl = pictureUrl,
+            joinedAt = crossRef.joinedAt,
+            onlineAt = onlineAt,
+            isAdmin = crossRef.isAdmin,
+            isModerator = crossRef.isModerator,
+        )
 
     /**
      * Maps MessageEntity to Message domain model.
-     * Requires participants list to find the sender.
+     * Requires participants list and cross-references to find the sender.
      */
-    fun MessageEntity.toMessage(participants: List<ParticipantEntity>): Message {
-        val sender = participants.find { it.id == senderId }?.toParticipant()
+    fun MessageEntity.toMessage(
+        participants: List<ParticipantEntity>,
+        participantCrossRefs: List<ChatParticipantCrossRef>,
+    ): Message {
+        val senderEntity = participants.find { it.id == senderId }
             ?: error("Sender not found for message $id")
+        val senderCrossRef = participantCrossRefs.find { it.participantId == senderId }
+            ?: error("Sender cross-reference not found for message $id")
+        val sender = senderEntity.toParticipant(senderCrossRef)
 
         val deliveryStatus = deliveryStatus?.let {
             json.decodeFromString<DeliveryStatusDto>(it).toDomain()

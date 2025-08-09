@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
-import timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -36,22 +35,21 @@ class LocalChatDataSourceImpl @Inject constructor(
         return try {
             database.withTransaction {
                 val chatEntity = with(EntityMappers) { chat.toChatEntity() }
+                chatDao.insertChat(chatEntity)
+
+                // Insert global participant identities
                 val participantEntities = chat.participants.map { participant ->
                     with(EntityMappers) { participant.toParticipantEntity() }
                 }
-
-                chatDao.insertChat(chatEntity)
-
                 participantDao.insertParticipants(participantEntities)
 
-                chat.participants.forEach { participant ->
-                    chatDao.insertChatParticipantCrossRef(
-                        ChatParticipantCrossRef(
-                            chatId = chat.id.id.toString(),
-                            participantId = participant.id.id.toString(),
-                        ),
-                    )
+                // Insert chat-specific participant relationships
+                val crossRefs = chat.participants.map { participant ->
+                    with(EntityMappers) {
+                        participant.toChatParticipantCrossRef(chat.id.id.toString())
+                    }
                 }
+                chatDao.insertChatParticipantCrossRefs(crossRefs)
             }
 
             ResultWithError.Success(chat)
@@ -73,19 +71,19 @@ class LocalChatDataSourceImpl @Inject constructor(
 
                 chatDao.removeAllChatParticipants(chat.id.id.toString())
 
+                // Insert/update global participant identities
                 val participantEntities = chat.participants.map { participant ->
                     with(EntityMappers) { participant.toParticipantEntity() }
                 }
                 participantDao.insertParticipants(participantEntities)
 
-                chat.participants.forEach { participant ->
-                    chatDao.insertChatParticipantCrossRef(
-                        ChatParticipantCrossRef(
-                            chatId = chat.id.id.toString(),
-                            participantId = participant.id.id.toString(),
-                        ),
-                    )
+                // Insert new chat-specific participant relationships
+                val crossRefs = chat.participants.map { participant ->
+                    with(EntityMappers) {
+                        participant.toChatParticipantCrossRef(chat.id.id.toString())
+                    }
                 }
+                chatDao.insertChatParticipantCrossRefs(crossRefs)
             }
 
             ResultWithError.Success(chat)

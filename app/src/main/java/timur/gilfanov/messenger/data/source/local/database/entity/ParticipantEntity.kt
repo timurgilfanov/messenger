@@ -5,8 +5,8 @@ import androidx.room.PrimaryKey
 import kotlinx.datetime.Instant
 
 /**
- * Room entity representing a participant in the database.
- * Maps to the Participant domain model.
+ * Room entity representing a participant's global identity in the database.
+ * Chat-specific properties (joinedAt, isAdmin, isModerator) are stored in ChatParticipantCrossRef.
  */
 @Entity(tableName = "participants")
 data class ParticipantEntity(
@@ -14,8 +14,5 @@ data class ParticipantEntity(
     val id: String,
     val name: String,
     val pictureUrl: String?,
-    val joinedAt: Instant,
     val onlineAt: Instant?,
-    val isAdmin: Boolean = false,
-    val isModerator: Boolean = false,
 )

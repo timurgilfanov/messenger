@@ -13,14 +13,17 @@ import timur.gilfanov.messenger.data.source.local.database.entity.ParticipantEnt
  */
 @Dao
 interface ParticipantDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertParticipant(participant: ParticipantEntity): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertParticipants(participants: List<ParticipantEntity>)
 
     @Update
     suspend fun updateParticipant(participant: ParticipantEntity)
+
+    @Query("UPDATE participants SET onlineAt = :timestamp WHERE id = :participantId")
+    suspend fun updateParticipantOnlineStatus(participantId: String, timestamp: Long?)
 
     @Delete
     suspend fun deleteParticipant(participant: ParticipantEntity)
@@ -42,7 +45,4 @@ interface ParticipantDao {
     """,
     )
     suspend fun getParticipantsByChatId(chatId: String): List<ParticipantEntity>
-
-    @Query("UPDATE participants SET onlineAt = :timestamp WHERE id = :participantId")
-    suspend fun updateParticipantOnlineStatus(participantId: String, timestamp: Long?)
 }

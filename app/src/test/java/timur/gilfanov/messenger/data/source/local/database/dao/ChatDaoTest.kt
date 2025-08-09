@@ -67,10 +67,22 @@ class ChatDaoTest {
         chatDao.insertChat(chat1)
         chatDao.insertChat(chat2)
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chat1.id, participant.id),
+            ChatParticipantCrossRef(
+                chatId = chat1.id,
+                participantId = participant.id,
+                joinedAt = Instant.fromEpochMilliseconds(1000),
+                isAdmin = false,
+                isModerator = false
+            ),
         )
         chatDao.insertChatParticipantCrossRef(
-            ChatParticipantCrossRef(chat2.id, participant.id),
+            ChatParticipantCrossRef(
+                chatId = chat2.id,
+                participantId = participant.id,
+                joinedAt = Instant.fromEpochMilliseconds(1000),
+                isAdmin = false,
+                isModerator = false
+            ),
         )
 
         val result = chatDao.flowAllChats().first()
@@ -109,7 +121,13 @@ class ChatDaoTest {
         val participantId = UUID.randomUUID().toString()
         val chat = createTestChat(chatId)
         val participant = createTestParticipant(participantId)
-        val crossRef = ChatParticipantCrossRef(chatId, participantId)
+        val crossRef = ChatParticipantCrossRef(
+            chatId = chatId,
+            participantId = participantId,
+            joinedAt = Instant.fromEpochMilliseconds(1000),
+            isAdmin = false,
+            isModerator = false
+        )
 
         // When
         participantDao.insertParticipant(participant)
@@ -133,7 +151,13 @@ class ChatDaoTest {
         val chat = createTestChat(chatId)
         val participant = createTestParticipant(participantId)
         val message = createTestMessage(messageId, chatId, participantId)
-        val crossRef = ChatParticipantCrossRef(chatId, participantId)
+        val crossRef = ChatParticipantCrossRef(
+            chatId = chatId,
+            participantId = participantId,
+            joinedAt = Instant.fromEpochMilliseconds(1000),
+            isAdmin = false,
+            isModerator = false
+        )
 
         // When
         participantDao.insertParticipant(participant)
@@ -189,10 +213,7 @@ class ChatDaoTest {
         id = id,
         name = "Test User",
         pictureUrl = null,
-        joinedAt = Instant.fromEpochMilliseconds(900000),
         onlineAt = null,
-        isAdmin = false,
-        isModerator = false,
     )
 
     private fun createTestMessage(id: String, chatId: String, senderId: String) = MessageEntity(

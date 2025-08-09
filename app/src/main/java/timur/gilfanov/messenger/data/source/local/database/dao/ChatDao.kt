@@ -51,6 +51,9 @@ interface ChatDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertChatParticipantCrossRef(crossRef: ChatParticipantCrossRef)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertChatParticipantCrossRefs(crossRefs: List<ChatParticipantCrossRef>)
+
     @Query(
         "DELETE FROM chat_participants WHERE chatId = :chatId AND participantId = :participantId",
     )

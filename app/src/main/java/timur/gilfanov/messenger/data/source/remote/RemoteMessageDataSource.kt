@@ -14,13 +14,18 @@ interface RemoteMessageDataSource {
 
     /**
      * Sends a message to the remote server.
-     * Returns a flow that emits message status updates (sending progress, delivered, read).
+     * Returns a flow that emits the final message result.
+     *
+     * Note: Flow architecture is maintained for future file upload progress monitoring
+     * using Ktor's onUpload callback when file attachments are implemented.
      */
     suspend fun sendMessage(message: Message): Flow<ResultWithError<Message, RemoteDataSourceError>>
 
     /**
      * Edits an existing message on the remote server.
-     * Returns a flow that emits the updated message.
+     * Returns a flow that emits the updated message result.
+     *
+     * Note: Flow maintained for consistency and future file edit progress.
      */
     suspend fun editMessage(message: Message): Flow<ResultWithError<Message, RemoteDataSourceError>>
 

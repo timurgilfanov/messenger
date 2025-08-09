@@ -51,7 +51,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Lint
-        run: ./gradlew lintDebug &> lint.log
+        run: ./gradlew lintMockDebug &> lint.log
         
       - name: Run Detekt
         id: detekt
@@ -77,40 +77,40 @@ jobs:
           exit 1
 
       - name: Run Architecture Tests
-        run: ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
+        run: ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
 
       - name: Upload Architecture Test Report
         uses: actions/upload-artifact@v4
         with:
           name: architecture-test-report
-          path: app/build/reports/tests/testDebugUnitTest
+          path: app/build/reports/tests/testMockDebugUnitTest
 
       - name: Publish Architecture Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
           check_name: "Architecture Test Results"
 
       - name: Build Debug and AndroidTest APKs
-        run: ./gradlew -Pcoverage assembleDebug assembleDebugAndroidTest
+        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/mock/debug/app-mock-debug.apk
 
       - name: Upload AndroidTest APK
         uses: actions/upload-artifact@v4
         with:
           name: androidtest-apk
-          path: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          path: app/build/outputs/apk/androidTest/mock/debug/app-mock-debug-androidTest.apk
 
       - name: Upload Kotlin class files
         uses: actions/upload-artifact@v4
         with:
           name: kotlin-classfiles
-          path: app/build/tmp/kotlin-classes/debug
+          path: app/build/tmp/kotlin-classes/mockDebug
 
   unit-component-tests:
     needs: build
@@ -142,13 +142,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug
+          path: app/build/outputs/apk/mock/debug
 
       - name: Run Unit Tests
         id: run_unit_tests
         continue-on-error: true
         run: |
-          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage | tee unit-test.log
+          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage | tee unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
@@ -157,19 +157,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-report
-          path: app/build/reports/tests/testDebugUnitTest
+          path: app/build/reports/tests/testMockDebugUnitTest
           
       - name: Publish Unit Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
           check_name: "Unit Test Results"
           
       - name: Run Component Tests
         id: run_component_tests
         continue-on-error: true
         run: |
-          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage | tee component-test.log
+          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage | tee component-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
@@ -178,12 +178,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: component-test-report
-          path: app/build/reports/tests/testDebugUnitTest
+          path: app/build/reports/tests/testMockDebugUnitTest
 
       - name: Publish Component Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
           check_name: "Component Test Results"
           
       - name: Fail if Unit or Component Tests Failed
@@ -194,7 +194,7 @@ jobs:
 
       - name: Generate Unit Coverage Report
         run: |
-          ./gradlew koverXmlReportDebug
+          ./gradlew koverXmlReportMockDebug
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
 
       - name: Upload Unit Coverage to Codecov (Unit)
@@ -215,7 +215,7 @@ jobs:
 
       - name: Generate Component Coverage Report
         run: |
-          ./gradlew koverXmlReportDebug
+          ./gradlew koverXmlReportMockDebug
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Component
 
       - name: Upload Component Coverage to Codecov (Component)
@@ -238,7 +238,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-component-report
-          path: app/build/reports/kover/reportDebug.xml
+          path: app/build/reports/kover/reportMockDebug.xml
 
   feature-tests:
     if: github.event_name == 'pull_request'
@@ -271,7 +271,7 @@ jobs:
         id: run_feature_tests
         continue-on-error: true
         run: |
-          ./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature -Pcoverage | tee feature-test.log
+          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature -Pcoverage | tee feature-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat feature-test.log
           exit $EXIT
@@ -280,12 +280,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: feature-test-report
-          path: app/build/reports/tests/testDebugUnitTest
+          path: app/build/reports/tests/testMockDebugUnitTest
 
       - name: Publish Feature Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testDebugUnitTest/*.xml
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
           check_name: "Feature Test Results"
 
       - name: Fail if Feature Tests Failed
@@ -296,7 +296,7 @@ jobs:
 
       - name: Generate Feature Coverage Report
         run: |
-          ./gradlew koverXmlReportDebug
+          ./gradlew koverXmlReportMockDebug
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Feature
 
       - name: Upload Feature Coverage to Codecov (Feature)
@@ -319,13 +319,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug
+          path: app/build/outputs/apk/mock/debug
 
       - name: Download AndroidTest APK
         uses: actions/download-artifact@v4
         with:
           name: androidtest-apk
-          path: app/build/outputs/apk/androidTest/debug
+          path: app/build/outputs/apk/androidTest/mock/debug
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -341,8 +341,8 @@ jobs:
         run: |
           gcloud firebase test android run \
             --type instrumentation \
-            --app app/build/outputs/apk/debug/app-debug.apk \
-            --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --app app/build/outputs/apk/mock/debug/app-mock-debug.apk \
+            --test app/build/outputs/apk/androidTest/mock/debug/app-mock-debug-androidTest.apk \
             --device model=Pixel2.arm,version=30 \
             --timeout 5m \
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.FeatureTest \
@@ -405,7 +405,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: kotlin-classfiles
-          path: app/build/tmp/kotlin-classes/debug
+          path: app/build/tmp/kotlin-classes/mockDebug
 
       - name: Generate Emulator Coverage Reports
         run: |
@@ -481,13 +481,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug
+          path: app/build/outputs/apk/mock/debug
 
       - name: Download AndroidTest APK
         uses: actions/download-artifact@v4
         with:
           name: androidtest-apk
-          path: app/build/outputs/apk/androidTest/debug
+          path: app/build/outputs/apk/androidTest/mock/debug
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -503,8 +503,8 @@ jobs:
         run: |
           gcloud firebase test android run \
             --type instrumentation \
-            --app app/build/outputs/apk/debug/app-debug.apk \
-            --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --app app/build/outputs/apk/mock/debug/app-mock-debug.apk \
+            --test app/build/outputs/apk/androidTest/mock/debug/app-mock-debug-androidTest.apk \
             --device model=Pixel2.arm,version=30 \
             --timeout 5m \
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.ApplicationTest \
@@ -567,7 +567,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: kotlin-classfiles
-          path: app/build/tmp/kotlin-classes/debug
+          path: app/build/tmp/kotlin-classes/mockDebug
 
       - name: Generate Emulator Coverage Reports
         run: |
@@ -643,13 +643,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug
+          path: app/build/outputs/apk/mock/debug
 
       - name: Download AndroidTest APK
         uses: actions/download-artifact@v4
         with:
           name: androidtest-apk
-          path: app/build/outputs/apk/androidTest/debug
+          path: app/build/outputs/apk/androidTest/mock/debug
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -665,8 +665,8 @@ jobs:
         run: |
           gcloud firebase test android run \
             --type instrumentation \
-            --app app/build/outputs/apk/debug/app-debug.apk \
-            --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --app app/build/outputs/apk/mock/debug/app-mock-debug.apk \
+            --test app/build/outputs/apk/androidTest/mock/debug/app-mock-debug-androidTest.apk \
             --device model=MediumPhone.arm,version=30 \
             --device model=MediumPhone.arm,version=33 \
             --device model=felix,version=33 \

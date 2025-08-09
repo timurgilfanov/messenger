@@ -34,6 +34,10 @@ android {
                 "annotation" to (project.property("annotation") as String),
             )
         }
+
+        // Build config fields for API configuration
+        buildConfigField("String", "API_BASE_URL", "\"https://api.messenger.example.com/v1\"")
+        buildConfigField("boolean", "USE_REAL_REMOTE_DATA_SOURCES", "false")
     }
 
     testOptions {
@@ -63,6 +67,43 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("mock") {
+            dimension = "environment"
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://mock.api.messenger.example.com/v1\"",
+            )
+            buildConfigField("boolean", "USE_REAL_REMOTE_DATA_SOURCES", "false")
+        }
+        create("dev") {
+            dimension = "environment"
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://dev.api.messenger.example.com/v1\"",
+            )
+            buildConfigField("boolean", "USE_REAL_REMOTE_DATA_SOURCES", "true")
+        }
+        create("staging") {
+            dimension = "environment"
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://staging.api.messenger.example.com/v1\"",
+            )
+            buildConfigField("boolean", "USE_REAL_REMOTE_DATA_SOURCES", "true")
+        }
+        create("production") {
+            dimension = "environment"
+            buildConfigField("String", "API_BASE_URL", "\"https://api.messenger.example.com/v1\"")
+            buildConfigField("boolean", "USE_REAL_REMOTE_DATA_SOURCES", "true")
+        }
     }
 }
 
@@ -196,6 +237,11 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.logging)
     testImplementation(libs.junit)
     testImplementation(libs.konsist)
     testImplementation(libs.kotlin.test)
@@ -210,6 +256,7 @@ dependencies {
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.junit)
+    testImplementation(libs.ktor.client.mock)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -264,7 +311,7 @@ tasks.register("preCommit") {
     group = "verification"
     description = "Run all pre-commit checks locally"
 
-    dependsOn("ktlintFormat", "lintDebug", "detekt")
+    dependsOn("ktlintFormat", "lintMockDebug", "detekt")
 
     doLast {
         println("✅ Pre-commit formatting, lint, and static analysis complete!")
@@ -282,7 +329,7 @@ tasks.register("preCommit") {
 
             val process = ProcessBuilder(
                 "./gradlew",
-                "testDebugUnitTest",
+                "testMockDebugUnitTest",
                 "-PtestCategory=timur.gilfanov.annotations.$category",
                 "-Pcoverage",
             )

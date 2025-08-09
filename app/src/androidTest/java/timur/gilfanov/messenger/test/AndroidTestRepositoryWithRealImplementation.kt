@@ -40,6 +40,7 @@ import timur.gilfanov.messenger.util.Logger
 
 class AndroidTestRepositoryWithRealImplementation(
     private val dataScenario: AndroidTestDataHelper.DataScenario,
+    private val logger: Logger = TestLogger(),
 ) : ChatRepository,
     MessageRepository {
 
@@ -79,8 +80,6 @@ class AndroidTestRepositoryWithRealImplementation(
                 }
             }
         }
-
-        val logger: Logger = TestLogger()
 
         val localDataSources = LocalDataSources(
             chat = LocalChatDataSourceImpl(

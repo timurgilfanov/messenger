@@ -9,35 +9,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Build the project
 ./gradlew build
 
-# Run unit tests
-./gradlew testDebugUnitTest
+# Run unit tests (default: mock flavor)
+./gradlew testMockDebugUnitTest
 
-# Run instrumentation tests 
-./gradlew connectedDebugAndroidTest
+# Run unit tests for specific flavors
+./gradlew testDevDebugUnitTest     # Development environment
+./gradlew testStagingDebugUnitTest # Staging environment
+./gradlew testProductionDebugUnitTest # Production environment
+
+# Run instrumentation tests
+./gradlew connectedMockDebugAndroidTest
 
 # Run tests with coverage
-./gradlew testDebugUnitTest -Pcoverage
+./gradlew testMockDebugUnitTest -Pcoverage
 
 # Run a single test class
-./gradlew testDebugUnitTest --tests "ClassName"
+./gradlew testMockDebugUnitTest --tests "ClassName"
 
 # Run a single test method
-./gradlew testDebugUnitTest --tests "ClassName.testMethodName"
+./gradlew testMockDebugUnitTest --tests "ClassName.testMethodName"
 
 # Run tests by category (property-based approach)
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Application
-./gradlew connectedDebugAndroidTest -PtestCategory=timur.gilfanov.annotations.Application
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Application
+./gradlew connectedMockDebugAndroidTest -PtestCategory=timur.gilfanov.annotations.Application
 
 # Pre-commit checks
 ./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)
                                       # IMPORTANT: Run this before committing when changes are ready for compilation and testing
 
 # Exclude specific categories
-./gradlew testDebugUnitTest -PexcludeCategory=timur.gilfanov.annotations.Architecture
+./gradlew testMockDebugUnitTest -PexcludeCategory=timur.gilfanov.annotations.Architecture
 ```
 
 ### Code Quality
@@ -47,17 +52,17 @@ Run code quality checks and auto corrections after code editing.
 ./gradlew ktlintFormat detekt --auto-correct
 
 # Run kover test coverage
-./gradlew koverXmlReportDebug
+./gradlew koverXmlReportMockDebug
 ```
 
 ### Test Categories with Coverage
 ```bash
 # Run specific test categories with coverage
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage
-./gradlew testDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage
 
 # Generate category-specific coverage reports
-./gradlew koverXmlReportDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
+./gradlew koverXmlReportMockDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
 ```
 
 ### Code generation

@@ -41,19 +41,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 
 ### Code Quality
-Run code quality checks and auto corrections after completion of code editing.
+Run code quality checks and auto corrections after code editing.
 ```bash
-# Run detekt static analysis with autocorrection when possible
-./gradlew detekt --auto-correct
-
-# Run ktlint formatting check
-./gradlew ktlintCheck
-
-# Auto-format code with ktlint
-./gradlew ktlintFormat
+# Auto-format code with ktlint and use detekt to static analysis with autocorrection
+./gradlew ktlintFormat detekt --auto-correct
 
 # Run kover test coverage
-./gradlew koverHtmlReport
+./gradlew koverXmlReportDebug
 ```
 
 ### Test Categories with Coverage
@@ -65,6 +59,10 @@ Run code quality checks and auto corrections after completion of code editing.
 # Generate category-specific coverage reports
 ./gradlew koverXmlReportDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
 ```
+
+### Code generation
+- Do not generate comments
+- Run
 
 ### Codecov Components
 Components are configured in `codecov.yml` and automatically organize coverage by code paths:

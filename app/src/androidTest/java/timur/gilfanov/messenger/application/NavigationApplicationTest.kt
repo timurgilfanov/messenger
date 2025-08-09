@@ -30,6 +30,10 @@ import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.ALICE_CHAT_ID
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.ALICE_TEXT_1
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.BOB_CHAT_ID
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.BOB_TEXT_1
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 
@@ -82,46 +86,38 @@ class NavigationApplicationTest {
                 timeoutMillis = 5_000L,
             )
 
-            waitUntilExactlyOneExists(
-                hasTestTag("chat_item_${AndroidTestDataHelper.ALICE_CHAT_ID}"),
-            )
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             onNodeWithText("Alice").assertIsDisplayed()
             onNodeWithText("Bob").assertIsDisplayed()
-            onNodeWithTag("chat_item_${AndroidTestDataHelper.ALICE_CHAT_ID}").performClick()
+            onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
 
-            waitUntilExactlyOneExists(hasTextExactly(AndroidTestDataHelper.ALICE_TEXT_1))
-            onNodeWithText(AndroidTestDataHelper.ALICE_TEXT_1).assertIsDisplayed()
+            waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
+            onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
 
             onNodeWithTag("message_input").assertIsDisplayed()
             onNodeWithTag("send_button").assertIsDisplayed()
         }
     }
 
-    // TODO: Fix multi-chat navigation test failure (NoSuchElementException in ChatViewModel)
-    // @Test
+    @Test
     fun applicationTest_userCanNavigateBetweenMultipleChats() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(
-                hasTestTag("chat_list"),
-                timeoutMillis = 5_000L,
-            )
+            waitUntilExactlyOneExists(hasTestTag("chat_list"), timeoutMillis = 5_000L)
 
-            waitUntilExactlyOneExists(
-                hasTestTag("chat_item_${AndroidTestDataHelper.ALICE_CHAT_ID}"),
-            )
-            waitUntilExactlyOneExists(hasTestTag("chat_item_${AndroidTestDataHelper.BOB_CHAT_ID}"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
 
-            onNodeWithTag("chat_item_${AndroidTestDataHelper.ALICE_CHAT_ID}").performClick()
-            waitUntilExactlyOneExists(hasTextExactly(AndroidTestDataHelper.ALICE_TEXT_1))
-            onNodeWithText(AndroidTestDataHelper.ALICE_TEXT_1).assertIsDisplayed()
+            onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
+            waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
+            onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
 
             InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KEYCODE_BACK)
 
-            waitUntilExactlyOneExists(hasTestTag("chat_item_${AndroidTestDataHelper.BOB_CHAT_ID}"))
-            onNodeWithTag("chat_item_${AndroidTestDataHelper.BOB_CHAT_ID}").performClick()
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
+            onNodeWithTag("chat_item_${BOB_CHAT_ID}").performClick()
 
-            waitUntilExactlyOneExists(hasTextExactly(AndroidTestDataHelper.BOB_TEXT_1))
-            onNodeWithText(AndroidTestDataHelper.BOB_TEXT_1).assertIsDisplayed()
+            waitUntilExactlyOneExists(hasTextExactly(BOB_TEXT_1))
+            onNodeWithText(BOB_TEXT_1).assertIsDisplayed()
         }
     }
 }

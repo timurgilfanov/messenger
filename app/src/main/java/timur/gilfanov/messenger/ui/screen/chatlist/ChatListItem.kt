@@ -163,7 +163,6 @@ private fun ChatAvatar(pictureUrl: String?, name: String, isOnline: Boolean) {
             contentAlignment = Alignment.Center,
         ) {
             if (pictureUrl != null) {
-                // TODO AsyncImage will be added when image loading is implemented
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = stringResource(
@@ -202,14 +201,14 @@ private fun OnlineIndicator() {
         modifier = Modifier
             .size(12.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary), // todo some green color
+            .background(MaterialTheme.colorScheme.primary),
     )
 }
 
 @Composable
 private fun UnreadBadge(count: Int) {
     Badge(
-        containerColor = MaterialTheme.colorScheme.error, // todo some blue color
+        containerColor = MaterialTheme.colorScheme.error,
         contentColor = MaterialTheme.colorScheme.onError,
     ) {
         Text(

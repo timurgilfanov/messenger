@@ -81,7 +81,4 @@ class ChatViewModelTextInputTest {
             job.cancelAndJoin()
         }
     }
-
-    // todo Add test for switching state from Ready to Error, and then back to Ready.
-    //  Check that input text validation is working.
 }

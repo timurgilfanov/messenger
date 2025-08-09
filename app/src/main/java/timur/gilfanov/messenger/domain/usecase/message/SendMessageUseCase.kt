@@ -21,11 +21,6 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.MessageI
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.WaitAfterJoining
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.WaitDebounce
 
-/**
- * TODO Get chat by chat id and current user from repository, not call from call params.
- * TODO Maybe use a separate use case for each type of message: Text, ect. And reuse common logic in
- *  this class. Or make this class an abstract class or interface.
- */
 class SendMessageUseCase(
     val repository: MessageRepository,
     val deliveryStatusValidator: DeliveryStatusValidator,

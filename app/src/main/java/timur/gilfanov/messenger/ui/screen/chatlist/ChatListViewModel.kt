@@ -38,7 +38,7 @@ class ChatListViewModel @AssistedInject constructor(
         ChatListScreenState(
             currentUser = CurrentUserUiModel(
                 id = ParticipantId(currentUserIdUuid),
-                name = "Current User", // todo: replace with actual user name
+                name = "Current User",
                 pictureUrl = null,
             ),
             isLoading = true,

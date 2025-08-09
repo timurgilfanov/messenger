@@ -31,7 +31,7 @@ fun EmptyStateComponent(modifier: Modifier = Modifier, onStartFirstChat: () -> U
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            imageVector = Icons.Default.Add, // TODO replace with a more suitable icon
+            imageVector = Icons.Default.Add,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),

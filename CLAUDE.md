@@ -144,16 +144,14 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 - **Validation Pattern**: Separate validator classes with specific error types
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
 
-### Testing Strategy
+### Testing
 Full strategy in `Testing Strategy.md`.
-- **Fakes over Mocks**: Uses fake implementations (`RepositoryFake`) instead of mocking frameworks
-- **Builder Pattern**: Test builders for domain entities (`ChatBuilder`, `MessageBuilder`)
-- **Integration Tests**: Tests cover use case interactions with repository layer
-- **Turbine**: For testing Kotlin Flow emissions
-- **Test Categories**: Tests are organized by category using JUnit's `@Category` annotation (as defined in Testing Strategy.md):
+- **Fakes over Mocks**: Use test doubles other than mock or spy by default. We test behaviour not implementation.
+- **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
+- **Test Categories**: Tests are organized by category:
+  - `Architecture`: Verify architecture rules
   - `Unit`: Test single method or class with minimal dependencies
   - `Component`: Test multiply classes together  
-  - `Architecture`: Verify architecture rules
   - `Feature`: Test integration between two or more components
   - `Application`: Test deployable binary to verify application functionality
   - `ReleaseCandidate`: Verifies the critical user journeys of a release build and performance
@@ -208,10 +206,6 @@ domain/
   - Hilt 2.56.2: Same issue persists - method names like `chatId-aANd5Fw` are invalid Java identifiers
   - Root cause: Known bug in KSP+Hilt integration where generated method names contain invalid characters
   - Decision: Stay with KAPT until KSP+Hilt compatibility is fully resolved
-
-## Testing
-- Use test doubles other than mock or spy by default. We test behaviour not implementation.
-- Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
 
 ## Technical Debt & Improvement Areas
 

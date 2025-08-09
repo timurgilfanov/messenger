@@ -75,7 +75,7 @@ class ChatListEmptyFeatureTest {
             hasTestTag("search_button"),
             timeoutMillis = 5_000L,
         )
-        composeTestRule.onNodeWithTag("empty_state").assertExists()
+        composeTestRule.waitUntilExactlyOneExists(hasTestTag("empty_state"), timeoutMillis = 5_000L)
         composeTestRule.onNodeWithTag("chat_list").assertDoesNotExist()
     }
 

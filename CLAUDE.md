@@ -212,3 +212,22 @@ domain/
 ## Testing
 - Use test doubles other than mock or spy by default. We test behaviour not implementation.
 - Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
+
+## Technical Debt & Improvement Areas
+
+### Data Layer Optimizations
+- **LocalSyncDataSourceImpl.applyChatUpdatedDelta()** - Consider incremental participant updates instead of full replace operation for better performance with large participant lists
+- **applyChatDeletedDelta()** - Implement proper cascade deletion handling for associated messages and participants when chat is deleted
+- **ParticipantDao foreign key strategy** - Monitor performance impact of OnConflictStrategy.IGNORE vs REPLACE with the new schema
+
+### Database Performance
+- **Room relationship queries** - Verify optimal query performance for ChatWithParticipantsAndMessages with large datasets
+- **Participant cross-reference queries** - Consider indexing strategies for chat-participant junction table queries
+- **Message pagination** - Future consideration for handling large chat histories efficiently
+
+### Testing Coverage
+- **Multi-chat stress testing** - Add performance tests for scenarios with many chats and participants
+- **Edge case testing** - Add tests for participant role changes, permission updates, and concurrent chat operations
+- **Integration test scenarios** - Expand coverage for complex delta synchronization patterns
+
+*Use GitHub issues to track specific items from this list with priorities and milestones.*

@@ -20,7 +20,6 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Before
 import org.junit.Test
@@ -90,7 +89,10 @@ class RemoteChatDataSourceImplTest {
             respond(
                 content = responseBody,
                 status = statusCode,
-                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                headers = headersOf(
+                    HttpHeaders.ContentType,
+                    ContentType.Application.Json.toString(),
+                ),
             )
         }
 

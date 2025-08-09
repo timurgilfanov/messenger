@@ -193,3 +193,84 @@ fun DeleteMessageMode.toRequestDto(): DeleteMessageRequestDto = DeleteMessageReq
         DeleteMessageMode.FOR_EVERYONE -> "FOR_EVERYONE"
     },
 )
+
+// Delta mappers
+fun ChatDeltaDto.toDomain(): timur.gilfanov.messenger.data.source.remote.ChatDelta = when (this) {
+    is ChatCreatedDeltaDto -> timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta(
+        chatId = ChatId(UUID.fromString(chatId)),
+        chatMetadata = chatMetadata.toDomain(),
+        initialMessages = initialMessages.map { it.toDomain() }.toImmutableList(),
+        timestamp = Instant.parse(timestamp),
+    )
+    is ChatUpdatedDeltaDto -> timur.gilfanov.messenger.data.source.remote.ChatUpdatedDelta(
+        chatId = ChatId(UUID.fromString(chatId)),
+        chatMetadata = chatMetadata.toDomain(),
+        messagesToAdd = messagesToAdd.map { it.toDomain() }.toImmutableList(),
+        messagesToDelete = messagesToDelete.map {
+            MessageId(UUID.fromString(it))
+        }.toImmutableList(),
+        timestamp = Instant.parse(timestamp),
+    )
+    is ChatDeletedDeltaDto -> timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta(
+        chatId = ChatId(UUID.fromString(chatId)),
+        timestamp = Instant.parse(timestamp),
+    )
+}
+
+fun timur.gilfanov.messenger.data.source.remote.ChatDelta.toDto(): ChatDeltaDto = when (this) {
+    is timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta -> ChatCreatedDeltaDto(
+        chatId = chatId.id.toString(),
+        chatMetadata = chatMetadata.toDto(),
+        initialMessages = initialMessages.map { it.toDto() },
+        timestamp = timestamp.toString(),
+    )
+    is timur.gilfanov.messenger.data.source.remote.ChatUpdatedDelta -> ChatUpdatedDeltaDto(
+        chatId = chatId.id.toString(),
+        chatMetadata = chatMetadata.toDto(),
+        messagesToAdd = messagesToAdd.map { it.toDto() },
+        messagesToDelete = messagesToDelete.map { it.id.toString() },
+        timestamp = timestamp.toString(),
+    )
+    is timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta -> ChatDeletedDeltaDto(
+        chatId = chatId.id.toString(),
+        timestamp = timestamp.toString(),
+    )
+}
+
+fun ChatMetadataDto.toDomain(): timur.gilfanov.messenger.data.source.remote.ChatMetadata =
+    timur.gilfanov.messenger.data.source.remote.ChatMetadata(
+        name = name,
+        participants = participants.map { it.toDomain() }.toImmutableSet(),
+        pictureUrl = pictureUrl,
+        rules = rules.map { it.toDomain() }.toImmutableSet(),
+        unreadMessagesCount = unreadMessagesCount,
+        lastReadMessageId = lastReadMessageId?.let { MessageId(UUID.fromString(it)) },
+        lastActivityAt = lastActivityAt?.let { Instant.parse(it) },
+    )
+
+fun timur.gilfanov.messenger.data.source.remote.ChatMetadata.toDto(): ChatMetadataDto =
+    ChatMetadataDto(
+        name = name,
+        participants = participants.map { it.toDto() },
+        pictureUrl = pictureUrl,
+        rules = rules.map { it.toDto() },
+        unreadMessagesCount = unreadMessagesCount,
+        lastReadMessageId = lastReadMessageId?.id?.toString(),
+        lastActivityAt = lastActivityAt?.toString(),
+    )
+
+fun ChatListDeltaDto.toDomain(): timur.gilfanov.messenger.data.source.remote.ChatListDelta =
+    timur.gilfanov.messenger.data.source.remote.ChatListDelta(
+        changes = changes.map { it.toDomain() }.toImmutableList(),
+        fromTimestamp = fromTimestamp?.let { Instant.parse(it) },
+        toTimestamp = Instant.parse(toTimestamp),
+        hasMoreChanges = hasMoreChanges,
+    )
+
+fun timur.gilfanov.messenger.data.source.remote.ChatListDelta.toDto(): ChatListDeltaDto =
+    ChatListDeltaDto(
+        changes = changes.map { it.toDto() },
+        fromTimestamp = fromTimestamp?.toString(),
+        toTimestamp = toTimestamp.toString(),
+        hasMoreChanges = hasMoreChanges,
+    )

@@ -86,48 +86,43 @@ fun Participant.toDto(): ParticipantDto = ParticipantDto(
 )
 
 // Message mappers
-fun MessageDto.toDomain(): Message {
-    // Note: We need actual Participant object, not just ID
-    // This is a simplified version - in real implementation, we'd need to fetch the participant
-    val participant = Participant(
-        id = ParticipantId(UUID.fromString(senderId)),
-        name = "Unknown", // Would be populated from API response
-        pictureUrl = null,
-        joinedAt = Instant.parse(createdAt),
-        onlineAt = null,
-    )
-
-    return TextMessage(
-        id = MessageId(UUID.fromString(id)),
-        parentId = null, // Not included in DTO for now
-        sender = participant,
-        recipient = ChatId(UUID.fromString(chatId)),
-        createdAt = Instant.parse(createdAt),
-        editedAt = editedAt?.let { Instant.parse(it) },
-        deliveryStatus = deliveryStatus.toDomain(),
-        text = content,
-    )
-}
+fun MessageDto.toDomain(): Message = TextMessage(
+    id = MessageId(UUID.fromString(id)),
+    parentId = parentId?.let { MessageId(UUID.fromString(it)) },
+    sender = sender.toDomain(),
+    recipient = ChatId(UUID.fromString(recipient)),
+    createdAt = Instant.parse(createdAt),
+    sentAt = sentAt?.let { Instant.parse(it) },
+    deliveredAt = deliveredAt?.let { Instant.parse(it) },
+    editedAt = editedAt?.let { Instant.parse(it) },
+    deliveryStatus = deliveryStatus?.toDomain(),
+    text = content,
+)
 
 fun Message.toDto(): MessageDto = MessageDto(
     id = id.id.toString(),
-    chatId = recipient.id.toString(),
-    senderId = sender.id.id.toString(),
+    parentId = parentId?.id?.toString(),
+    sender = sender.toDto(),
+    recipient = recipient.id.toString(),
     createdAt = createdAt.toString(),
+    sentAt = sentAt?.toString(),
+    deliveredAt = deliveredAt?.toString(),
     editedAt = editedAt?.toString(),
+    deliveryStatus = deliveryStatus?.toDto(),
     content = when (this) {
         is TextMessage -> text
         else -> throw IllegalArgumentException("Unsupported message type: ${this::class}")
     },
-    deliveryStatus = deliveryStatus?.toDto() ?: DeliveryStatusDto.Sent,
+    type = "text",
 )
 
 fun Message.toSendRequest(): SendMessageRequestDto = SendMessageRequestDto(
-    chatId = recipient.id.toString(),
+    recipient = recipient.id.toString(),
     content = when (this) {
         is TextMessage -> text
         else -> throw IllegalArgumentException("Unsupported message type: ${this::class}")
     },
+    parentId = parentId?.id?.toString(),
 )
 
 fun Message.toEditRequest(): EditMessageRequestDto = EditMessageRequestDto(
@@ -194,7 +189,7 @@ fun Rule.toDto(): RuleDto = when (this) {
 // DeleteMessageMode mappers
 fun DeleteMessageMode.toRequestDto(): DeleteMessageRequestDto = DeleteMessageRequestDto(
     mode = when (this) {
-        DeleteMessageMode.FOR_SENDER_ONLY -> "FOR_SENDER"
+        DeleteMessageMode.FOR_SENDER_ONLY -> "FOR_SENDER_ONLY"
         DeleteMessageMode.FOR_EVERYONE -> "FOR_EVERYONE"
     },
 )

@@ -72,7 +72,7 @@ class ChatDaoTest {
                 participantId = participant.id,
                 joinedAt = Instant.fromEpochMilliseconds(1000),
                 isAdmin = false,
-                isModerator = false
+                isModerator = false,
             ),
         )
         chatDao.insertChatParticipantCrossRef(
@@ -81,7 +81,7 @@ class ChatDaoTest {
                 participantId = participant.id,
                 joinedAt = Instant.fromEpochMilliseconds(1000),
                 isAdmin = false,
-                isModerator = false
+                isModerator = false,
             ),
         )
 
@@ -126,7 +126,7 @@ class ChatDaoTest {
             participantId = participantId,
             joinedAt = Instant.fromEpochMilliseconds(1000),
             isAdmin = false,
-            isModerator = false
+            isModerator = false,
         )
 
         // When
@@ -156,7 +156,7 @@ class ChatDaoTest {
             participantId = participantId,
             joinedAt = Instant.fromEpochMilliseconds(1000),
             isAdmin = false,
-            isModerator = false
+            isModerator = false,
         )
 
         // When

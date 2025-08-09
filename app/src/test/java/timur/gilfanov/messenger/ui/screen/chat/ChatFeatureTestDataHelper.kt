@@ -213,7 +213,7 @@ object ChatFeatureTestDataHelper {
                 participantId = USER_ID,
                 joinedAt = FIXED_TIMESTAMP,
                 isAdmin = false,
-                isModerator = false
+                isModerator = false,
             ),
         )
         chatDao.insertChatParticipantCrossRef(
@@ -222,7 +222,7 @@ object ChatFeatureTestDataHelper {
                 participantId = ALICE_USER_ID,
                 joinedAt = ALICE_JOIN_TIME,
                 isAdmin = false,
-                isModerator = false
+                isModerator = false,
             ),
         )
 
@@ -233,7 +233,7 @@ object ChatFeatureTestDataHelper {
                 participantId = USER_ID,
                 joinedAt = FIXED_TIMESTAMP,
                 isAdmin = false,
-                isModerator = false
+                isModerator = false,
             ),
         )
         chatDao.insertChatParticipantCrossRef(
@@ -242,7 +242,7 @@ object ChatFeatureTestDataHelper {
                 participantId = BOB_USER_ID,
                 joinedAt = BOB_JOIN_TIME,
                 isAdmin = false,
-                isModerator = false
+                isModerator = false,
             ),
         )
     }

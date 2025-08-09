@@ -137,7 +137,7 @@ class EntityMappersTest {
         }
         val restored = entity.toMessage(
             listOf(testParticipant.toParticipantEntity()),
-            listOf(crossRef)
+            listOf(crossRef),
         )
 
         // Then
@@ -171,7 +171,7 @@ class EntityMappersTest {
         }
         val restored = entity.toMessage(
             listOf(testParticipant.toParticipantEntity()),
-            listOf(crossRef)
+            listOf(crossRef),
         )
 
         // Then

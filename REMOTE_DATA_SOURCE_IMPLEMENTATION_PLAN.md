@@ -96,27 +96,34 @@ Implement real remote data sources using Ktor client with immediate testing afte
    - Mock engine patterns consistent with Chat/Message data sources
    - Flow behavior verification with proper emission testing
 
-## Phase 5: Integration Testing
-1. **Create Mock Server Helper**:
+## ✅ Phase 5: Integration Testing & Dependency Injection Setup (COMPLETED)
+1. **✅ Create Mock Server Helper**:
    - `MockServerScenarios.kt` with predefined responses
-   - Support different test scenarios
+   - Support for success, error, timeout, and pagination scenarios
    - Configurable delays and failures
 
-2. **Integration Tests with Repository**:
-   - Test data sources with `MessengerRepositoryImpl`
-   - Verify end-to-end flow
+2. **✅ Create `NetworkModule`**:
+   - Ktor HTTP client configuration with retry and timeout
+   - Separate mock client for testing
+   - Environment-specific base URL configuration via BuildConfig
+   - Debug logging support
+
+3. **✅ Update `DataSourceModule`**:
+   - Added @Named qualifiers for fake/real implementations
+   - Runtime switching via BuildConfig.USE_REAL_REMOTE_DATA_SOURCES
+   - RemoteDataSourceProviders for dependency resolution
+   - Support for gradual rollout with feature flags
+
+4. **✅ Integration Tests with Repository**:
+   - `MessengerRepositoryIntegrationTest.kt` with MockEngine
+   - End-to-end flow verification (6 tests passing, 2 ignored)
    - Test error propagation through sealed classes
+   - Fixed deprecated API usage (pathSegments → segments)
 
-## Phase 6: Update Dependency Injection
-1. **Create `NetworkModule`**:
-   - Provide Ktor client configurations
-   - Support mock/real server switch via build config
-   - Configure retry policies and timeouts
-
-2. **Update `DataSourceModule`**:
-   - Add bindings for new implementations
-   - Keep fake for specific test scenarios
-   - Support feature flags for gradual rollout
+5. **✅ Build Variant Configuration**:
+   - Product flavors: mock, dev, staging, production
+   - Environment-specific API URLs and feature flags
+   - BuildConfig fields for runtime configuration
 
 ## Phase 7: Real-Time Communication Strategy
 1. **REST API Completion**:
@@ -163,23 +170,25 @@ Implement real remote data sources using Ktor client with immediate testing afte
 - ✅ **RemoteChatDataSource** (full implementation with tests)
 - ✅ **RemoteMessageDataSource** (full implementation with Flow-based operations, progress simulation removed)
 - ✅ **RemoteSyncDataSource** (delta synchronization with Flow-based polling simulation)
+- ✅ **Integration Testing** (MockServerScenarios, MessengerRepositoryIntegrationTest)
+- ✅ **Dependency Injection** (NetworkModule, DataSourceModule with runtime switching)
+- ✅ **Build Variants** (mock/dev/staging/production environments)
 - ✅ **Type-Safe Error Handling** (sealed class approach with custom serializer)
-- ✅ **Comprehensive Testing** (MockEngine, all CRUD operations, Flow testing, 100% pass rates)
+- ✅ **Comprehensive Testing** (MockEngine, all CRUD operations, Flow testing, integration tests)
 - ✅ **Code Quality** (detekt/ktlint passing, proper exception handling)
 
 ### Current Status
-- **Next Priority**: Integration testing and dependency injection setup (Phase 5)
+- **✅ COMPLETED**: Remote data source implementation with full integration testing and DI setup
 - **Architecture Decision**: Manual implementation over code generation (superior quality)
 - **Real-time Strategy**: REST for CRUD, WebSocket/SSE for live updates (future)
-- **Major Milestone**: All three remote data sources fully implemented (Chat, Message, Sync)
+- **Major Milestone**: Complete remote data source architecture ready for deployment
 
 ### Updated Implementation Order
 1. **✅ Days 1-3**: Foundation + RemoteChatDataSource (COMPLETED)
 2. **✅ Days 4-5**: RemoteMessageDataSource + Flow tests (COMPLETED)
 3. **✅ Days 6-7**: RemoteSyncDataSource simulation + tests (COMPLETED)
-4. **Day 8**: Integration testing + DI updates
-5. **Day 9**: Documentation + OpenAPI specs
-6. **Future**: Real-time WebSocket/SSE integration
+4. **✅ Day 8**: Integration testing + DI updates (COMPLETED)
+5. **Future**: Documentation + OpenAPI specs + Real-time WebSocket/SSE integration
 
 ## Key Testing Considerations (Proven Effective)
 - ✅ **MockEngine approach works excellently** - no real server needed

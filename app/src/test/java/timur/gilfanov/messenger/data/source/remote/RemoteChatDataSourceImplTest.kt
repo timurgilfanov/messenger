@@ -3,12 +3,14 @@ package timur.gilfanov.messenger.data.source.remote
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import java.io.IOException
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -17,6 +19,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Before
@@ -173,6 +176,94 @@ class RemoteChatDataSourceImplTest {
     }
 
     @Test
+    fun `createChat should handle SerializationException`() = runTest {
+        // Given - invalid JSON response that causes parsing failure
+        val mockClient = createMockClient("invalid json response")
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.createChat(testChat)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        // Invalid JSON parsing failures result in UnknownError through the generic exception handler
+        assertTrue(
+            result.error is RemoteDataSourceError.UnknownError ||
+                result.error is RemoteDataSourceError.ServerError,
+        )
+    }
+
+    @Test
+    fun `createChat should handle SocketTimeoutException`() = runTest {
+        // Given - MockEngine that throws SocketTimeoutException
+        val mockEngine = MockEngine { request ->
+            throw SocketTimeoutException("Request timeout", null)
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.createChat(testChat)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ServerUnreachable>(result.error)
+    }
+
+    @Test
+    fun `createChat should handle IOException`() = runTest {
+        // Given - MockEngine that throws IOException
+        val mockEngine = MockEngine { request ->
+            throw IOException("Network connection failed")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.createChat(testChat)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        // IOException is mapped by ErrorMapper.mapException()
+        assertTrue(
+            result.error is RemoteDataSourceError.NetworkNotAvailable ||
+                result.error is RemoteDataSourceError.ServerUnreachable ||
+                result.error is RemoteDataSourceError.UnknownError,
+        )
+    }
+
+    @Test
+    fun `createChat should handle unexpected Exception`() = runTest {
+        // Given - MockEngine that throws unexpected RuntimeException
+        val mockEngine = MockEngine { request ->
+            @Suppress("TooGenericExceptionThrown")
+            throw RuntimeException("Unexpected error")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.createChat(testChat)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        // Generic exceptions are mapped by ErrorMapper.mapException()
+        assertTrue(result.error is RemoteDataSourceError.UnknownError)
+    }
+
+    @Test
     fun `deleteChat should return success when API responds successfully`() = runTest {
         // Given
         val successResponse = ApiResponse<Unit>(success = true)
@@ -300,5 +391,286 @@ class RemoteChatDataSourceImplTest {
         // Then
         assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
         assertIs<RemoteDataSourceError.ChatNotFound>(result.error)
+    }
+
+    @Test
+    fun `deleteChat should handle SerializationException`() = runTest {
+        // Given - invalid JSON response that causes parsing failure
+        val mockClient = createMockClient("invalid json response")
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.deleteChat(testChat.id)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        // Invalid JSON parsing failures result in UnknownError through the generic exception handler
+        assertTrue(
+            result.error is RemoteDataSourceError.UnknownError ||
+                result.error is RemoteDataSourceError.ServerError,
+        )
+    }
+
+    @Test
+    fun `deleteChat should handle SocketTimeoutException`() = runTest {
+        // Given - MockEngine that throws SocketTimeoutException
+        val mockEngine = MockEngine { request ->
+            throw SocketTimeoutException("Request timeout", null)
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.deleteChat(testChat.id)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ServerUnreachable>(result.error)
+    }
+
+    @Test
+    fun `joinChat should handle SerializationException`() = runTest {
+        // Given - invalid JSON response that causes parsing failure
+        val mockClient = createMockClient("invalid json response")
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.joinChat(testChat.id, "invite-link")
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        // Invalid JSON parsing failures result in UnknownError through the generic exception handler
+        assertTrue(
+            result.error is RemoteDataSourceError.UnknownError ||
+                result.error is RemoteDataSourceError.ServerError,
+        )
+    }
+
+    @Test
+    fun `joinChat should handle IOException`() = runTest {
+        // Given - MockEngine that throws IOException
+        val mockEngine = MockEngine { request ->
+            throw IOException("Network connection failed")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.joinChat(testChat.id, "invite-link")
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertTrue(
+            result.error is RemoteDataSourceError.NetworkNotAvailable ||
+                result.error is RemoteDataSourceError.ServerUnreachable ||
+                result.error is RemoteDataSourceError.UnknownError,
+        )
+    }
+
+    @Test
+    fun `leaveChat should handle SocketTimeoutException`() = runTest {
+        // Given - MockEngine that throws SocketTimeoutException
+        val mockEngine = MockEngine { request ->
+            throw SocketTimeoutException("Request timeout", null)
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.leaveChat(testChat.id)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ServerUnreachable>(result.error)
+    }
+
+    @Test
+    fun `leaveChat should handle unexpected Exception`() = runTest {
+        // Given - MockEngine that throws unexpected RuntimeException
+        val mockEngine = MockEngine { request ->
+            @Suppress("TooGenericExceptionThrown")
+            throw RuntimeException("Unexpected error")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.leaveChat(testChat.id)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertTrue(result.error is RemoteDataSourceError.UnknownError)
+    }
+
+    // Direct exception tests to ensure specific catch blocks are hit
+    @Test
+    fun `createChat should handle direct SerializationException`() = runTest {
+        // Given - MockEngine that directly throws SerializationException
+        val mockEngine = MockEngine { request ->
+            throw SerializationException("Serialization failed")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.createChat(testChat)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ServerError>(result.error)
+    }
+
+    @Test
+    fun `deleteChat should handle direct SerializationException`() = runTest {
+        // Given - MockEngine that directly throws SerializationException
+        val mockEngine = MockEngine { request ->
+            throw SerializationException("Serialization failed")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.deleteChat(testChat.id)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ServerError>(result.error)
+    }
+
+    @Test
+    fun `deleteChat should handle direct IOException`() = runTest {
+        // Given - MockEngine that directly throws IOException
+        val mockEngine = MockEngine { request ->
+            throw IOException("Network I/O failed")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.deleteChat(testChat.id)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertTrue(
+            result.error is RemoteDataSourceError.NetworkNotAvailable ||
+                result.error is RemoteDataSourceError.ServerUnreachable ||
+                result.error is RemoteDataSourceError.UnknownError,
+        )
+    }
+
+    @Test
+    fun `joinChat should handle direct SocketTimeoutException`() = runTest {
+        // Given - MockEngine that directly throws SocketTimeoutException
+        val mockEngine = MockEngine { request ->
+            throw SocketTimeoutException("Direct timeout", null)
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.joinChat(testChat.id, "invite-link")
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ServerUnreachable>(result.error)
+    }
+
+    @Test
+    fun `joinChat should handle direct SerializationException`() = runTest {
+        // Given - MockEngine that directly throws SerializationException
+        val mockEngine = MockEngine { request ->
+            throw SerializationException("Serialization failed")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.joinChat(testChat.id, "invite-link")
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ServerError>(result.error)
+    }
+
+    @Test
+    fun `leaveChat should handle direct SerializationException`() = runTest {
+        // Given - MockEngine that directly throws SerializationException
+        val mockEngine = MockEngine { request ->
+            throw SerializationException("Serialization failed")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.leaveChat(testChat.id)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ServerError>(result.error)
+    }
+
+    @Test
+    fun `leaveChat should handle direct IOException`() = runTest {
+        // Given - MockEngine that directly throws IOException
+        val mockEngine = MockEngine { request ->
+            throw IOException("Network I/O failed")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.leaveChat(testChat.id)
+
+        // Then
+        assertIs<ResultWithError.Failure<Any, RemoteDataSourceError>>(result)
+        assertTrue(
+            result.error is RemoteDataSourceError.NetworkNotAvailable ||
+                result.error is RemoteDataSourceError.ServerUnreachable ||
+                result.error is RemoteDataSourceError.UnknownError,
+        )
     }
 }

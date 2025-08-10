@@ -301,8 +301,7 @@ object ChatFeatureTestDataHelper {
     }
 
     fun prepopulateRemoteDataSource(remoteDataSourceFake: RemoteDataSourceFake) {
-        // todo: order of adding chats can crush the tests, why?
-        remoteDataSourceFake.addChatToServer(bobChat)
         remoteDataSourceFake.addChatToServer(aliceChat)
+        remoteDataSourceFake.addChatToServer(bobChat)
     }
 }

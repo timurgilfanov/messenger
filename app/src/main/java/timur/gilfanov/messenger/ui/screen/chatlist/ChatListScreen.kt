@@ -139,7 +139,6 @@ private fun TopBar(
     TopAppBar(
         title = {
             Column {
-                // TODO center horizontally
                 Text(
                     text = screenState.currentUser.name,
                     style = MaterialTheme.typography.titleMedium,

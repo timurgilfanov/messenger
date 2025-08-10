@@ -5,7 +5,7 @@ import timur.gilfanov.messenger.domain.entity.ValidationError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 
-sealed class SendMessageError { // todo make a interface
+sealed class SendMessageError {
     data class WaitAfterJoining(val duration: Duration) : SendMessageError()
     data class WaitDebounce(val duration: Duration) : SendMessageError()
     data class MessageIsNotValid(val reason: ValidationError) : SendMessageError()

@@ -67,8 +67,6 @@ class DeleteMessageUseCase(val repository: MessageRepository) {
         val hasAdminPrivileges = currentUser.isAdmin
         val hasModeratorPrivileges = currentUser.isModerator
 
-        // TODO check for privilege to delete others' messages.
-        //  But still can't delete admin messages. Maybe add a separate rule for that.
         if (hasAdminPrivileges || hasModeratorPrivileges) {
             return checkRulesForAdminOrModerator(deleteRules, message, deleteMode, now)
         }

@@ -7,9 +7,15 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -42,11 +48,13 @@ import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageErro
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 import timur.gilfanov.messenger.util.NoOpLogger
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Category(Unit::class)
 @Suppress("LargeClass") // Comprehensive repository test suite
 class MessengerRepositoryImplTest {
 
     private val logger = TestLogger()
+    private val testScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var localDataSource: LocalDataSourceFake
     private lateinit var remoteDataSource: RemoteDataSourceFake
     private lateinit var repository: MessengerRepositoryImpl
@@ -92,6 +100,11 @@ class MessengerRepositoryImplTest {
         )
 
         testChatPreview = ChatPreview.fromChat(testChat)
+    }
+
+    @After
+    fun tearDown() {
+        testScope.cancel()
     }
 
     // MessageRepository tests
@@ -876,17 +889,19 @@ class MessengerRepositoryImplTest {
         assertIs<ResultWithError.Success<Chat, *>>(localChat)
     }
 
-    private fun repositoryImpl(): MessengerRepositoryImpl = MessengerRepositoryImpl(
-        localDataSources = LocalDataSources(
-            chat = localDataSource,
-            message = localDataSource,
-            sync = localDataSource,
-        ),
-        remoteDataSources = RemoteDataSources(
-            chat = remoteDataSource,
-            message = remoteDataSource,
-            sync = remoteDataSource,
-        ),
-        logger = NoOpLogger(),
-    )
+    private fun repositoryImpl(scope: CoroutineScope = testScope): MessengerRepositoryImpl =
+        MessengerRepositoryImpl(
+            localDataSources = LocalDataSources(
+                chat = localDataSource,
+                message = localDataSource,
+                sync = localDataSource,
+            ),
+            remoteDataSources = RemoteDataSources(
+                chat = remoteDataSource,
+                message = remoteDataSource,
+                sync = remoteDataSource,
+            ),
+            logger = NoOpLogger(),
+            repositoryScope = scope,
+        )
 }

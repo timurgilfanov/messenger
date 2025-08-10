@@ -19,17 +19,18 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import java.util.UUID
-import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -91,6 +92,7 @@ class MessengerRepositoryIntegrationTest {
 
     private lateinit var repository: MessengerRepositoryImpl
     private lateinit var dataStore: DataStore<Preferences>
+    private lateinit var repositoryScope: TestScope
     private val testScope = TestScope(mainDispatcherRule.testDispatcher)
 
     // Test data
@@ -110,6 +112,9 @@ class MessengerRepositoryIntegrationTest {
     fun setup() {
         val context: Context = ApplicationProvider.getApplicationContext()
 
+        // Create a new test scope for each test that we can control
+        repositoryScope = TestScope(mainDispatcherRule.testDispatcher)
+
         // Create test DataStore with unique name for each test
         dataStore = PreferenceDataStoreFactory.create(
             scope = testScope,
@@ -119,6 +124,12 @@ class MessengerRepositoryIntegrationTest {
                 )
             },
         )
+    }
+
+    @After
+    fun tearDown() {
+        // Cancel the repository scope to ensure all coroutines are stopped
+        repositoryScope.cancel()
     }
 
     // Chat List Flow Tests
@@ -138,7 +149,6 @@ class MessengerRepositoryIntegrationTest {
         }
     }
 
-    @Ignore("Need to figure out why this test fails")
     @Test
     fun `flowChatList should emit updates when sync receives new data`() = runTest {
         // Given
@@ -588,12 +598,13 @@ class MessengerRepositoryIntegrationTest {
             sync = remoteSyncDataSource,
         )
 
-        // Create repository with real local data sources
+        // Create repository with real local data sources and test-controlled scope
         // Note: MessengerRepositoryImpl starts background sync process automatically
         repository = MessengerRepositoryImpl(
             localDataSources = localDataSources,
             remoteDataSources = remoteDataSources,
             logger = logger,
+            repositoryScope = repositoryScope,
         )
     }
 }

@@ -67,7 +67,7 @@ class RemoteMessageDataSourceImpl @Inject constructor(
             }
         } catch (e: CancellationException) {
             logger.d(TAG, "Message sending cancelled")
-            throw e // Re-throw cancellation to maintain proper cancellation semantics
+            throw e
         } catch (e: SerializationException) {
             logger.e(TAG, "Failed to serialize/deserialize message data", e)
             emit(ResultWithError.Failure(RemoteDataSourceError.ServerError))
@@ -106,7 +106,7 @@ class RemoteMessageDataSourceImpl @Inject constructor(
             }
         } catch (e: CancellationException) {
             logger.d(TAG, "Message editing cancelled")
-            throw e // Re-throw cancellation to maintain proper cancellation semantics
+            throw e
         } catch (e: SerializationException) {
             logger.e(TAG, "Failed to serialize/deserialize edit message data", e)
             emit(ResultWithError.Failure(RemoteDataSourceError.ServerError))
@@ -145,7 +145,7 @@ class RemoteMessageDataSourceImpl @Inject constructor(
         }
     } catch (e: CancellationException) {
         logger.d(TAG, "Message deletion cancelled")
-        throw e // Re-throw cancellation to maintain proper cancellation semantics
+        throw e
     } catch (e: SerializationException) {
         logger.e(TAG, "Failed to serialize/deserialize delete message data", e)
         ResultWithError.Failure(RemoteDataSourceError.ServerError)

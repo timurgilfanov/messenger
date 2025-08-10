@@ -88,7 +88,7 @@ class RemoteSyncDataSourceImpl @Inject constructor(
             }
         } catch (e: CancellationException) {
             logger.d(TAG, "Delta sync cancelled")
-            throw e // Re-throw cancellation to maintain proper cancellation semantics
+            throw e
         } catch (e: SerializationException) {
             logger.e(TAG, "Failed to serialize/deserialize delta data", e)
             emit(ResultWithError.Failure(RemoteDataSourceError.ServerError))

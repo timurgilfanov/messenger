@@ -1,9 +1,9 @@
-package timur.gilfanov.messenger.test
+package timur.gilfanov.messenger
 
 import timur.gilfanov.messenger.util.Logger
 
 /**
- * Simple logger implementation for Android instrumentation tests.
+ * Simple logger implementation for tests.
  * Logs to system out for test debugging.
  */
 class TestLogger : Logger {

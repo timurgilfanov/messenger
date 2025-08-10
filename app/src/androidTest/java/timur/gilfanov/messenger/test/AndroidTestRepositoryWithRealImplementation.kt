@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
+import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.data.repository.MessengerRepositoryImpl
 import timur.gilfanov.messenger.data.source.local.LocalChatDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalDataSources

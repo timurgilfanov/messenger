@@ -143,7 +143,7 @@ sequenceDiagram
 
 ## 📊 Testing Strategy
 
-Comprehensive testing pyramid with 5 test categories. See [Testing Strategy](https://github.com/timurgilfanov/messenger/blob/main/Testing%20Strategy.md) for details.
+Comprehensive testing pyramid with 5 test categories. See [Testing Strategy](https://github.com/timurgilfanov/messenger/blob/main/docs/Testing%20Strategy.md) for details.
 
 | Category     | Coverage Target   | Execution            |
 |--------------|-------------------|----------------------|

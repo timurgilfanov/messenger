@@ -46,7 +46,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 
 ### Code Quality
-Run code quality checks and auto corrections after code editing.
+- Do not generate comments
+- Run code quality checks and auto corrections after code editing
 ```bash
 # Auto-format code with ktlint and use detekt to static analysis with autocorrection
 ./gradlew ktlintFormat detekt --auto-correct
@@ -64,10 +65,6 @@ Run code quality checks and auto corrections after code editing.
 # Generate category-specific coverage reports
 ./gradlew koverXmlReportMockDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
 ```
-
-### Code generation
-- Do not generate comments
-- Run
 
 ### Codecov Components
 Components are configured in `codecov.yml` and automatically organize coverage by code paths:
@@ -148,7 +145,7 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
 
 ### Testing
-Full strategy in `Testing Strategy.md`.
+Full strategy in `docs/Testing Strategy.md`.
 - **Fakes over Mocks**: Use test doubles other than mock or spy by default. We test behaviour not implementation.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
 - **Test Categories**: Tests are organized by category:

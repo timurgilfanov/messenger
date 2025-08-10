@@ -5,7 +5,11 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -26,6 +30,7 @@ import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWi
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithChatDelta
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithDeltas
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithNetworkError
+import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSuccessfulChat
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSuccessfulMessage
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithTimeout
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSourceImpl
@@ -33,6 +38,8 @@ import timur.gilfanov.messenger.data.source.remote.RemoteDataSources
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.dto.ApiErrorCode
+import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse
+import timur.gilfanov.messenger.data.source.remote.dto.toDto
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -72,6 +79,7 @@ class MessengerRepositoryIntegrationTest {
         ignoreUnknownKeys = true
     }
 
+    // Chat List Flow Tests
     @Test
     fun `flowChatList should emit empty list initially`() = runTest {
         // Given
@@ -86,84 +94,6 @@ class MessengerRepositoryIntegrationTest {
             assertIs<ResultWithError.Success<List<ChatPreview>, *>>(initialResult)
             assertEquals(0, initialResult.data.size)
         }
-    }
-
-    @Test
-    fun `sendMessage should emit progress updates and store message locally`() = runTest {
-        // Given
-        val testMessage = createTestMessage()
-
-        val mockEngine = MockEngine { request ->
-            when {
-                request.url.segments.contains("messages") && request.method == HttpMethod.Post -> {
-                    respondWithSuccessfulMessage()
-                }
-                request.url.segments.contains("deltas") -> {
-                    respondWithChatDelta(hasMoreChanges = false)
-                }
-                else -> respond("Unexpected request")
-            }
-        }
-        setupRepositoryWithMockEngine(mockEngine)
-
-        // When
-        val resultFlow = repository.sendMessage(testMessage)
-        val results = resultFlow.toList()
-
-        // Then
-        assertTrue(results.isNotEmpty())
-        val finalResult = results.last()
-        assertIs<ResultWithError.Success<Message, *>>(finalResult)
-    }
-
-    @Test
-    fun `deleteMessage should handle network errors gracefully`() = runTest {
-        // Given
-        val mockEngine = MockEngine { request ->
-            when {
-                request.url.segments.contains("messages") &&
-                    request.method == HttpMethod.Delete -> {
-                    respondWithNetworkError()
-                }
-                request.url.segments.contains("deltas") -> {
-                    respondWithChatDelta(hasMoreChanges = false)
-                }
-                else -> respond("Unexpected request")
-            }
-        }
-        setupRepositoryWithMockEngine(mockEngine)
-
-        // When
-        val result = repository.deleteMessage(testMessageId, DeleteMessageMode.FOR_SENDER_ONLY)
-
-        // Then
-        assertIs<ResultWithError.Failure<*, RepositoryDeleteMessageError>>(result)
-        assertIs<RepositoryDeleteMessageError.RemoteError>(result.error)
-    }
-
-    @Test
-    fun `joinChat should handle timeout and map error correctly`() = runTest {
-        // Given
-        val mockEngine = MockEngine { request ->
-            when {
-                request.url.segments.contains("chats") &&
-                    request.url.segments.contains("join") -> {
-                    respondWithTimeout()
-                }
-                request.url.segments.contains("deltas") -> {
-                    respondWithChatDelta(hasMoreChanges = false)
-                }
-                else -> respond("Unexpected request")
-            }
-        }
-        setupRepositoryWithMockEngine(mockEngine)
-
-        // When
-        val result = repository.joinChat(testChatId, inviteLink = "test-invite")
-
-        // Then
-        assertIs<ResultWithError.Failure<*, RepositoryJoinChatError>>(result)
-        assertIs<RepositoryJoinChatError.RemoteUnreachable>(result.error)
     }
 
     @Test
@@ -212,6 +142,127 @@ class MessengerRepositoryIntegrationTest {
         )
     }
 
+    // Chat Management - Happy Path Tests
+    @Test
+    fun `createChat should store chat locally when remote call succeeds`() = runTest {
+        // Given
+        val testChat = createTestChat()
+        val mockEngine = MockEngine { request ->
+            when {
+                request.url.segments.contains("chats") && request.method == HttpMethod.Post -> {
+                    respondWithSuccessfulChat()
+                }
+                request.url.segments.contains("deltas") -> {
+                    respondWithChatDelta(hasMoreChanges = false)
+                }
+                else -> respond("Unexpected request")
+            }
+        }
+        setupRepositoryWithMockEngine(mockEngine)
+
+        // When
+        val result = repository.createChat(testChat)
+
+        // Then
+        assertIs<ResultWithError.Success<Chat, *>>(result)
+        assertEquals(testChatId, result.data.id)
+        assertEquals("Test Chat", result.data.name)
+    }
+
+    @Test
+    fun `joinChat should add chat to local storage when join succeeds`() = runTest {
+        // Given
+        val mockEngine = MockEngine { request ->
+            when {
+                request.url.segments.contains("chats") &&
+                    request.url.segments.contains("join") -> {
+                    respondWithSuccessfulChat()
+                }
+                request.url.segments.contains("deltas") -> {
+                    respondWithChatDelta(hasMoreChanges = false)
+                }
+                else -> respond("Unexpected request")
+            }
+        }
+        setupRepositoryWithMockEngine(mockEngine)
+
+        // When
+        val result = repository.joinChat(testChatId, inviteLink = "test-invite")
+
+        // Then
+        assertIs<ResultWithError.Success<Chat, *>>(result)
+        assertEquals(testChatId, result.data.id)
+        assertEquals("Test Chat", result.data.name)
+    }
+
+    @Test
+    fun `deleteChat should remove chat from local storage when remote succeeds`() = runTest {
+        // Given
+        val mockEngine = MockEngine { request ->
+            when {
+                request.url.segments.contains("chats") && request.method == HttpMethod.Delete -> {
+                    // Success response for delete operations
+                    val response = ApiResponse(data = Unit, success = true)
+                    respond(
+                        content = json.encodeToString(response),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.Application.Json.toString(),
+                        ),
+                    )
+                }
+                request.url.segments.contains("deltas") -> {
+                    respondWithChatDelta(hasMoreChanges = false)
+                }
+                else -> respond("Unexpected request")
+            }
+        }
+        setupRepositoryWithMockEngine(mockEngine)
+
+        // When
+        val result = repository.deleteChat(testChatId)
+
+        // Then
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+        assertEquals(Unit, result.data)
+    }
+
+    @Test
+    fun `leaveChat should remove chat from local storage when leave succeeds`() = runTest {
+        // Given
+        val mockEngine = MockEngine { request ->
+            when {
+                request.url.segments.contains("chats") &&
+                    request.url.segments.contains("leave") -> {
+                    // Success response for leave operations
+                    val response = ApiResponse(data = Unit, success = true)
+                    respond(
+                        content = json.encodeToString(response),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.Application.Json.toString(),
+                        ),
+                    )
+                }
+                request.url.segments.contains("deltas") -> {
+                    respondWithChatDelta(hasMoreChanges = false)
+                }
+                else -> respond("Unexpected request")
+            }
+        }
+        setupRepositoryWithMockEngine(mockEngine)
+
+        // When
+        val result = repository.leaveChat(testChatId)
+
+        // Then
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+        assertEquals(Unit, result.data)
+    }
+
+    // Chat Management - Error Handling Tests
     @Test
     fun `createChat should handle API error responses`() = runTest {
         // Given
@@ -237,6 +288,138 @@ class MessengerRepositoryIntegrationTest {
     }
 
     @Test
+    fun `joinChat should handle timeout and map error correctly`() = runTest {
+        // Given
+        val mockEngine = MockEngine { request ->
+            when {
+                request.url.segments.contains("chats") &&
+                    request.url.segments.contains("join") -> {
+                    respondWithTimeout()
+                }
+                request.url.segments.contains("deltas") -> {
+                    respondWithChatDelta(hasMoreChanges = false)
+                }
+                else -> respond("Unexpected request")
+            }
+        }
+        setupRepositoryWithMockEngine(mockEngine)
+
+        // When
+        val result = repository.joinChat(testChatId, inviteLink = "test-invite")
+
+        // Then
+        assertIs<ResultWithError.Failure<*, RepositoryJoinChatError>>(result)
+        assertIs<RepositoryJoinChatError.RemoteUnreachable>(result.error)
+    }
+
+    // Message Management - Happy Path Tests
+    @Test
+    fun `sendMessage should emit progress updates and store message locally`() = runTest {
+        // Given
+        val testMessage = createTestMessage()
+
+        val mockEngine = MockEngine { request ->
+            when {
+                request.url.segments.contains("messages") && request.method == HttpMethod.Post -> {
+                    respondWithSuccessfulMessage()
+                }
+                request.url.segments.contains("deltas") -> {
+                    respondWithChatDelta(hasMoreChanges = false)
+                }
+                else -> respond("Unexpected request")
+            }
+        }
+        setupRepositoryWithMockEngine(mockEngine)
+
+        // When
+        val resultFlow = repository.sendMessage(testMessage)
+        val results = resultFlow.toList()
+
+        // Then
+        assertTrue(results.isNotEmpty())
+        val finalResult = results.last()
+        assertIs<ResultWithError.Success<Message, *>>(finalResult)
+    }
+
+    @Test
+    fun `editMessage should update message locally when remote edit succeeds`() = runTest {
+        // Given
+        val originalMessage = createTestMessage()
+        val editedMessage = originalMessage.copy(text = "Edited message content")
+
+        val mockEngine = MockEngine { request ->
+            when {
+                request.url.segments.contains("messages") && request.method == HttpMethod.Put -> {
+                    // Return the edited message with updated content using existing conversion function
+                    val editedMessageDto = editedMessage.toDto()
+                    val response = ApiResponse(data = editedMessageDto, success = true)
+                    respond(
+                        content = json.encodeToString(response),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.Application.Json.toString(),
+                        ),
+                    )
+                }
+                request.url.segments.contains("deltas") -> {
+                    respondWithChatDelta(hasMoreChanges = false)
+                }
+                else -> respond("Unexpected request")
+            }
+        }
+        setupRepositoryWithMockEngine(mockEngine)
+
+        // When & Then
+        repository.editMessage(editedMessage).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Message, *>>(result)
+            assertEquals(editedMessage.id, result.data.id)
+            // Verify that the message content was actually updated
+            assertIs<TextMessage>(result.data)
+            assertEquals("Edited message content", result.data.text)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `deleteMessage should remove message locally when remote delete succeeds`() = runTest {
+        // Given
+        val mockEngine = MockEngine { request ->
+            when {
+                request.url.segments.contains(
+                    "messages",
+                ) &&
+                    request.method == HttpMethod.Delete -> {
+                    // Success response for delete operations
+                    val response = ApiResponse(data = Unit, success = true)
+                    respond(
+                        content = json.encodeToString(response),
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.Application.Json.toString(),
+                        ),
+                    )
+                }
+                request.url.segments.contains("deltas") -> {
+                    respondWithChatDelta(hasMoreChanges = false)
+                }
+                else -> respond("Unexpected request")
+            }
+        }
+        setupRepositoryWithMockEngine(mockEngine)
+
+        // When
+        val result = repository.deleteMessage(testMessageId, DeleteMessageMode.FOR_SENDER_ONLY)
+
+        // Then
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+        assertEquals(Unit, result.data)
+    }
+
+    // Message Management - Error Handling Tests
+    @Test
     fun `sendMessage should handle server errors and propagate them correctly`() = runTest {
         // Given
         val testMessage = createTestMessage()
@@ -260,6 +443,31 @@ class MessengerRepositoryIntegrationTest {
             assertIs<RepositorySendMessageError.RemoteError>(result.error)
             awaitComplete()
         }
+    }
+
+    @Test
+    fun `deleteMessage should handle network errors gracefully`() = runTest {
+        // Given
+        val mockEngine = MockEngine { request ->
+            when {
+                request.url.segments.contains("messages") &&
+                    request.method == HttpMethod.Delete -> {
+                    respondWithNetworkError()
+                }
+                request.url.segments.contains("deltas") -> {
+                    respondWithChatDelta(hasMoreChanges = false)
+                }
+                else -> respond("Unexpected request")
+            }
+        }
+        setupRepositoryWithMockEngine(mockEngine)
+
+        // When
+        val result = repository.deleteMessage(testMessageId, DeleteMessageMode.FOR_SENDER_ONLY)
+
+        // Then
+        assertIs<ResultWithError.Failure<*, RepositoryDeleteMessageError>>(result)
+        assertIs<RepositoryDeleteMessageError.RemoteError>(result.error)
     }
 
     // Helper functions

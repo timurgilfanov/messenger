@@ -12,6 +12,7 @@ import io.ktor.http.contentType
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerializationException
@@ -64,6 +65,9 @@ class RemoteMessageDataSourceImpl @Inject constructor(
             } else {
                 emit(ResultWithError.Failure(handleApiError(response)))
             }
+        } catch (e: CancellationException) {
+            logger.d(TAG, "Message sending cancelled")
+            throw e // Re-throw cancellation to maintain proper cancellation semantics
         } catch (e: SerializationException) {
             logger.e(TAG, "Failed to serialize/deserialize message data", e)
             emit(ResultWithError.Failure(RemoteDataSourceError.ServerError))
@@ -100,6 +104,9 @@ class RemoteMessageDataSourceImpl @Inject constructor(
             } else {
                 emit(ResultWithError.Failure(handleApiError(response)))
             }
+        } catch (e: CancellationException) {
+            logger.d(TAG, "Message editing cancelled")
+            throw e // Re-throw cancellation to maintain proper cancellation semantics
         } catch (e: SerializationException) {
             logger.e(TAG, "Failed to serialize/deserialize edit message data", e)
             emit(ResultWithError.Failure(RemoteDataSourceError.ServerError))
@@ -136,6 +143,9 @@ class RemoteMessageDataSourceImpl @Inject constructor(
         } else {
             ResultWithError.Failure(handleApiError(response))
         }
+    } catch (e: CancellationException) {
+        logger.d(TAG, "Message deletion cancelled")
+        throw e // Re-throw cancellation to maintain proper cancellation semantics
     } catch (e: SerializationException) {
         logger.e(TAG, "Failed to serialize/deserialize delete message data", e)
         ResultWithError.Failure(RemoteDataSourceError.ServerError)

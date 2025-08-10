@@ -11,6 +11,7 @@ import io.ktor.http.contentType
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse
 import timur.gilfanov.messenger.data.source.remote.dto.ChatDto
@@ -66,6 +67,9 @@ class RemoteChatDataSourceImpl @Inject constructor(
         } catch (e: IOException) {
             logger.e(TAG, "Network error while creating chat", e)
             ResultWithError.Failure(ErrorMapper.mapException(e))
+        } catch (e: CancellationException) {
+            logger.d(TAG, "Chat creation cancelled")
+            throw e // Re-throw cancellation to maintain proper cancellation semantics
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             // Intentional: network resilience
             logger.e(TAG, "Unexpected error while creating chat", e)
@@ -94,6 +98,9 @@ class RemoteChatDataSourceImpl @Inject constructor(
         } catch (e: IOException) {
             logger.e(TAG, "Network error while deleting chat", e)
             ResultWithError.Failure(ErrorMapper.mapException(e))
+        } catch (e: CancellationException) {
+            logger.d(TAG, "Chat deletion cancelled")
+            throw e // Re-throw cancellation to maintain proper cancellation semantics
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             // Intentional: network resilience
             logger.e(TAG, "Unexpected error while deleting chat", e)
@@ -129,6 +136,9 @@ class RemoteChatDataSourceImpl @Inject constructor(
     } catch (e: IOException) {
         logger.e(TAG, "Network error while joining chat", e)
         ResultWithError.Failure(ErrorMapper.mapException(e))
+    } catch (e: CancellationException) {
+        logger.d(TAG, "Chat joining cancelled")
+        throw e // Re-throw cancellation to maintain proper cancellation semantics
     } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
         // Intentional: network resilience
         logger.e(TAG, "Unexpected error while joining chat", e)
@@ -157,6 +167,9 @@ class RemoteChatDataSourceImpl @Inject constructor(
         } catch (e: IOException) {
             logger.e(TAG, "Network error while leaving chat", e)
             ResultWithError.Failure(ErrorMapper.mapException(e))
+        } catch (e: CancellationException) {
+            logger.d(TAG, "Chat leaving cancelled")
+            throw e // Re-throw cancellation to maintain proper cancellation semantics
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             // Intentional: network resilience
             logger.e(TAG, "Unexpected error while leaving chat", e)

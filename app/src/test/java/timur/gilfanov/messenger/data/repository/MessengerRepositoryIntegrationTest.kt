@@ -12,23 +12,20 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
-import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.annotations.Component
+import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithApiError
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithChatDelta
+import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithDeltas
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithNetworkError
-import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithPaginatedDeltas
-import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSuccessfulChat
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSuccessfulMessage
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithTimeout
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSourceImpl
@@ -39,8 +36,10 @@ import timur.gilfanov.messenger.data.source.remote.dto.ApiErrorCode
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
@@ -48,7 +47,6 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
-import timur.gilfanov.messenger.util.NoOpLogger
 
 /**
  * Integration tests for MessengerRepository with real remote data sources.
@@ -58,10 +56,8 @@ import timur.gilfanov.messenger.util.NoOpLogger
 class MessengerRepositoryIntegrationTest {
 
     private lateinit var repository: MessengerRepositoryImpl
-    private lateinit var mockEngine: MockEngine
-    private lateinit var httpClient: HttpClient
-    private lateinit var logger: NoOpLogger
-    private lateinit var localDataSourceFake: LocalDataSourceFake
+
+    private val logger = TestLogger()
 
     // Test data
     private val testParticipantId =
@@ -76,95 +72,31 @@ class MessengerRepositoryIntegrationTest {
         ignoreUnknownKeys = true
     }
 
-    @Before
-    fun setup() {
-        logger = NoOpLogger()
-        localDataSourceFake = LocalDataSourceFake()
-
-        // Create local data sources using fake
-        val localDataSources = LocalDataSources(
-            chat = localDataSourceFake,
-            message = localDataSourceFake,
-            sync = localDataSourceFake,
-        )
-
-        // Initialize mock engine
-        mockEngine = MockEngine { request ->
-            // Default response for unexpected requests
-            respond("Unexpected request: ${request.url}")
-        }
-
-        // Create HTTP client with mock engine
-        httpClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) {
-                json(json)
-            }
-        }
-
-        // Create remote data sources with mock client
-        val remoteChatDataSource = RemoteChatDataSourceImpl(httpClient, logger)
-        val remoteMessageDataSource = RemoteMessageDataSourceImpl(httpClient, logger)
-        val remoteSyncDataSource = RemoteSyncDataSourceImpl(httpClient, logger)
-
-        val remoteDataSources = RemoteDataSources(
-            chat = remoteChatDataSource,
-            message = remoteMessageDataSource,
-            sync = remoteSyncDataSource,
-        )
-
-        // Create repository
-        repository = MessengerRepositoryImpl(
-            localDataSources = localDataSources,
-            remoteDataSources = remoteDataSources,
-            logger = logger,
-        )
-    }
-
     @Test
-    fun `createChat should store chat locally when remote call succeeds`() = runTest {
+    fun `flowChatList should emit empty list initially`() = runTest {
         // Given
-        val testChat = createTestChat()
-        var requestCount = 0
-
-        mockEngine = MockEngine { request ->
-            requestCount++
-            when {
-                request.url.segments.contains("chats") && request.method == HttpMethod.Post -> {
-                    respondWithSuccessfulChat()
-                }
-                request.url.segments.contains("deltas") -> {
-                    respondWithChatDelta(hasMoreChanges = false)
-                }
-                else -> respond("Unexpected request")
-            }
-        }
-        setupRepositoryWithMockEngine()
+        val mockEngine = MockEngine { respond("No requests expected") }
+        setupRepositoryWithMockEngine(mockEngine)
 
         // When
-        val result = repository.createChat(testChat)
+        repository.flowChatList().test {
+            val initialResult = awaitItem()
 
-        // Then
-        assertIs<ResultWithError.Success<Chat, *>>(result)
-        assertEquals(testChat.id, result.data.id)
-
-        // Verify chat is stored locally (in the fake)
-        val localChats = repository.flowChatList().first()
-        assertIs<ResultWithError.Success<*, *>>(localChats)
-        // Local fake may not have the chat immediately in this integration test setup
-        // The test verifies that the remote call succeeded
+            // Then
+            assertIs<ResultWithError.Success<List<ChatPreview>, *>>(initialResult)
+            assertEquals(0, initialResult.data.size)
+        }
     }
 
     @Test
     fun `sendMessage should emit progress updates and store message locally`() = runTest {
         // Given
         val testMessage = createTestMessage()
-        var requestCount = 0
 
-        mockEngine = MockEngine { request ->
-            requestCount++
+        val mockEngine = MockEngine { request ->
             when {
                 request.url.segments.contains("messages") && request.method == HttpMethod.Post -> {
-                    respondWithSuccessfulMessage(delayMs = 100)
+                    respondWithSuccessfulMessage()
                 }
                 request.url.segments.contains("deltas") -> {
                     respondWithChatDelta(hasMoreChanges = false)
@@ -172,7 +104,7 @@ class MessengerRepositoryIntegrationTest {
                 else -> respond("Unexpected request")
             }
         }
-        setupRepositoryWithMockEngine()
+        setupRepositoryWithMockEngine(mockEngine)
 
         // When
         val resultFlow = repository.sendMessage(testMessage)
@@ -181,17 +113,15 @@ class MessengerRepositoryIntegrationTest {
         // Then
         assertTrue(results.isNotEmpty())
         val finalResult = results.last()
-        assertIs<ResultWithError.Success<*, *>>(finalResult)
+        assertIs<ResultWithError.Success<Message, *>>(finalResult)
     }
 
     @Test
     fun `deleteMessage should handle network errors gracefully`() = runTest {
         // Given
-        mockEngine = MockEngine { request ->
+        val mockEngine = MockEngine { request ->
             when {
-                request.url.segments.contains(
-                    "messages",
-                ) &&
+                request.url.segments.contains("messages") &&
                     request.method == HttpMethod.Delete -> {
                     respondWithNetworkError()
                 }
@@ -201,30 +131,24 @@ class MessengerRepositoryIntegrationTest {
                 else -> respond("Unexpected request")
             }
         }
-        setupRepositoryWithMockEngine()
+        setupRepositoryWithMockEngine(mockEngine)
 
         // When
         val result = repository.deleteMessage(testMessageId, DeleteMessageMode.FOR_SENDER_ONLY)
 
         // Then
         assertIs<ResultWithError.Failure<*, RepositoryDeleteMessageError>>(result)
-        // IOException may map to NetworkNotAvailable, RemoteUnreachable, or RemoteError depending on ErrorMapper
-        assertTrue(
-            result.error is RepositoryDeleteMessageError.NetworkNotAvailable ||
-                result.error is RepositoryDeleteMessageError.RemoteUnreachable ||
-                result.error is RepositoryDeleteMessageError.RemoteError,
-            "Expected network-related error, got ${result.error::class.simpleName}",
-        )
+        assertIs<RepositoryDeleteMessageError.RemoteError>(result.error)
     }
 
     @Test
     fun `joinChat should handle timeout and map error correctly`() = runTest {
         // Given
-        mockEngine = MockEngine { request ->
+        val mockEngine = MockEngine { request ->
             when {
                 request.url.segments.contains("chats") &&
                     request.url.segments.contains("join") -> {
-                    respondWithTimeout(delayMs = 50)
+                    respondWithTimeout()
                 }
                 request.url.segments.contains("deltas") -> {
                     respondWithChatDelta(hasMoreChanges = false)
@@ -232,7 +156,7 @@ class MessengerRepositoryIntegrationTest {
                 else -> respond("Unexpected request")
             }
         }
-        setupRepositoryWithMockEngine()
+        setupRepositoryWithMockEngine(mockEngine)
 
         // When
         val result = repository.joinChat(testChatId, inviteLink = "test-invite")
@@ -243,33 +167,55 @@ class MessengerRepositoryIntegrationTest {
     }
 
     @Test
-    @org.junit.Ignore("Timing issue with repository auto-starting sync in background")
-    fun `sync should handle paginated delta updates`() = runTest {
+    fun `flowChatList should emit updates when sync receives new data`() = runTest {
         // Given
+        val totalDeltas = 3
         var requestCount = 0
-        mockEngine = MockEngine { request ->
+        val mockEngine = MockEngine { request ->
             when {
                 request.url.segments.contains("deltas") -> {
                     requestCount++
-                    respondWithPaginatedDeltas(requestCount, totalBatches = 3, delayMs = 10)
+                    respondWithDeltas(requestCount, totalDeltas)
                 }
                 else -> respond("Unexpected request")
             }
         }
-        setupRepositoryWithMockEngine()
+        setupRepositoryWithMockEngine(mockEngine)
 
         // When - Repository starts sync automatically in init
-        // Wait for multiple delta batches with shorter polling intervals
-        kotlinx.coroutines.delay(2000) // Increased delay to allow time for pagination
+        repository.flowChatList().test {
+            var result = awaitItem() // Can be empty initially or not empty after initial sync
+            assertIs<ResultWithError.Success<List<ChatPreview>, *>>(result)
+            if (result.data.isEmpty()) {
+                result = awaitItem()
+                assertIs<ResultWithError.Success<List<ChatPreview>, *>>(result)
+            }
+            // After ChatUpdatedDelta
+            assertEquals(1, result.data.size, "Should have 1 chat after creation")
+            assertEquals("Chat Batch 1", result.data.first().name)
+
+            val afterUpdate = awaitItem() // After ChatUpdatedDelta
+            assertIs<ResultWithError.Success<List<ChatPreview>, *>>(afterUpdate)
+            assertEquals(1, afterUpdate.data.size, "Should still have 1 chat after update")
+            assertEquals("Chat Batch 2", afterUpdate.data.first().name)
+
+            val afterDelete = awaitItem() // After ChatDeletedDelta
+            assertIs<ResultWithError.Success<List<ChatPreview>, *>>(afterDelete)
+            assertEquals(0, afterDelete.data.size, "List should be empty after deletion")
+        }
 
         // Then
-        assertTrue(requestCount >= 2, "Expected at least 2 delta requests, got $requestCount")
+        assertEquals(
+            totalDeltas,
+            requestCount,
+            "Expected $totalDeltas delta requests, got $requestCount",
+        )
     }
 
     @Test
     fun `createChat should handle API error responses`() = runTest {
         // Given
-        mockEngine = MockEngine { request ->
+        val mockEngine = MockEngine { request ->
             when {
                 request.url.segments.contains("chats") && request.method == HttpMethod.Post -> {
                     respondWithApiError(ApiErrorCode.Unauthorized, "Invalid credentials")
@@ -280,7 +226,7 @@ class MessengerRepositoryIntegrationTest {
                 else -> respond("Unexpected request")
             }
         }
-        setupRepositoryWithMockEngine()
+        setupRepositoryWithMockEngine(mockEngine)
 
         // When
         val result = repository.createChat(createTestChat())
@@ -291,49 +237,10 @@ class MessengerRepositoryIntegrationTest {
     }
 
     @Test
-    fun `flowChatList should emit updates when sync receives new data`() = runTest {
-        // Given
-        var deltasRequested = 0
-        mockEngine = MockEngine { request ->
-            when {
-                request.url.segments.contains("deltas") -> {
-                    deltasRequested++
-                    if (deltasRequested == 1) {
-                        // First request: return initial data
-                        respondWithChatDelta(hasMoreChanges = false)
-                    } else {
-                        // Subsequent requests: return empty delta
-                        respondWithChatDelta(hasMoreChanges = false)
-                    }
-                }
-                else -> respond("Unexpected request")
-            }
-        }
-        setupRepositoryWithMockEngine()
-
-        // When
-        repository.flowChatList().test {
-            // Initial emission
-            val firstEmission = awaitItem()
-            assertIs<ResultWithError.Success<*, *>>(firstEmission)
-
-            // Wait a bit for sync to potentially emit more
-            kotlinx.coroutines.delay(500)
-
-            // Cancel collection
-            cancelAndIgnoreRemainingEvents()
-        }
-
-        // Then
-        assertTrue(deltasRequested >= 1, "Expected at least one delta request")
-    }
-
-    @Test
-    @org.junit.Ignore("Flow exception transparency issue with RemoteMessageDataSource")
     fun `sendMessage should handle server errors and propagate them correctly`() = runTest {
         // Given
         val testMessage = createTestMessage()
-        mockEngine = MockEngine { request ->
+        val mockEngine = MockEngine { request ->
             when {
                 request.url.segments.contains("messages") && request.method == HttpMethod.Post -> {
                     respondWithApiError(ApiErrorCode.ServerError, "Internal server error")
@@ -344,19 +251,15 @@ class MessengerRepositoryIntegrationTest {
                 else -> respond("Unexpected request")
             }
         }
-        setupRepositoryWithMockEngine()
+        setupRepositoryWithMockEngine(mockEngine)
 
-        // When
-        val resultFlow = repository.sendMessage(testMessage)
-
-        // Use take(1) to get only the first emission which should be the error
-        val results = resultFlow.take(1).toList()
-
-        // Then
-        assertTrue(results.isNotEmpty(), "Expected at least one emission")
-        val result = results.first()
-        assertIs<ResultWithError.Failure<*, RepositorySendMessageError>>(result)
-        assertIs<RepositorySendMessageError.RemoteError>(result.error)
+        // When & Then
+        repository.sendMessage(testMessage).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<*, RepositorySendMessageError>>(result)
+            assertIs<RepositorySendMessageError.RemoteError>(result.error)
+            awaitComplete()
+        }
     }
 
     // Helper functions
@@ -389,9 +292,17 @@ class MessengerRepositoryIntegrationTest {
         deliveryStatus = null,
     )
 
-    private fun setupRepositoryWithMockEngine() {
+    private fun setupRepositoryWithMockEngine(mockEngine: MockEngine) {
+        // Recreate local data sources using fake
+        val localDataSourceFake = LocalDataSourceFake(logger)
+        val localDataSources = LocalDataSources(
+            chat = localDataSourceFake,
+            message = localDataSourceFake,
+            sync = localDataSourceFake,
+        )
+
         // Recreate HTTP client with new mock engine
-        httpClient = HttpClient(mockEngine) {
+        val httpClient = HttpClient(mockEngine) {
             install(ContentNegotiation) {
                 json(json)
             }
@@ -406,14 +317,6 @@ class MessengerRepositoryIntegrationTest {
             chat = remoteChatDataSource,
             message = remoteMessageDataSource,
             sync = remoteSyncDataSource,
-        )
-
-        // Recreate local data sources using fake
-        localDataSourceFake = LocalDataSourceFake()
-        val localDataSources = LocalDataSources(
-            chat = localDataSourceFake,
-            message = localDataSourceFake,
-            sync = localDataSourceFake,
         )
 
         // Recreate repository with new data sources

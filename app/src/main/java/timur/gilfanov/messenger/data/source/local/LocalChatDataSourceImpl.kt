@@ -135,6 +135,7 @@ class LocalChatDataSourceImpl @Inject constructor(
         chatId: ChatId,
     ): Flow<ResultWithError<Chat, LocalDataSourceError>> =
         chatDao.flowChatWithParticipantsAndMessages(chatId.id.toString())
+            .distinctUntilChanged()
             .map { relation ->
                 if (relation != null) {
                     val chat = with(EntityMappers) {

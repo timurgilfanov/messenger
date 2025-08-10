@@ -57,6 +57,7 @@ class MessengerRepositoryImpl @Inject constructor(
     }
 
     private suspend fun performDeltaSyncLoop() {
+        logger.d(TAG, "Starting delta sync loop")
         val lastSyncTimestamp = when (val result = localDataSources.sync.getLastSyncTimestamp()) {
             is ResultWithError.Success -> result.data
             is ResultWithError.Failure -> {
@@ -64,9 +65,11 @@ class MessengerRepositoryImpl @Inject constructor(
                 null // Start from scratch if no timestamp available
             }
         }
+        logger.d(TAG, "Last sync timestamp: $lastSyncTimestamp")
         remoteDataSources.sync.chatsDeltaUpdates(lastSyncTimestamp)
             .onEach { deltaResult ->
                 if (deltaResult is ResultWithError.Success) {
+                    logger.d(TAG, "Received delta updates: ${deltaResult.data}")
                     isUpdatingFlow.value = true
                     localDataSources.sync.applyChatListDelta(deltaResult.data)
                     isUpdatingFlow.value = false

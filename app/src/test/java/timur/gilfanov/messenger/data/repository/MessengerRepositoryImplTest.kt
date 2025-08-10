@@ -14,6 +14,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.annotations.Unit
+import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
@@ -45,6 +46,7 @@ import timur.gilfanov.messenger.util.NoOpLogger
 @Suppress("LargeClass") // Comprehensive repository test suite
 class MessengerRepositoryImplTest {
 
+    private val logger = TestLogger()
     private lateinit var localDataSource: LocalDataSourceFake
     private lateinit var remoteDataSource: RemoteDataSourceFake
     private lateinit var repository: MessengerRepositoryImpl
@@ -56,7 +58,7 @@ class MessengerRepositoryImplTest {
 
     @Before
     fun setup() {
-        localDataSource = LocalDataSourceFake()
+        localDataSource = LocalDataSourceFake(logger)
         remoteDataSource = RemoteDataSourceFake()
 
         testParticipant = Participant(

@@ -21,8 +21,12 @@ class LocalChatDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
     private val chatDao: ChatDao,
     private val participantDao: ParticipantDao,
-    logger: Logger,
+    private val logger: Logger,
 ) : LocalChatDataSource {
+
+    companion object {
+        private const val TAG = "LocalChatDataSource"
+    }
 
     private val errorHandler = DatabaseErrorHandler(logger)
 
@@ -115,7 +119,10 @@ class LocalChatDataSourceImpl @Inject constructor(
                 List<ChatWithParticipantsAndMessages>,
                 ResultWithError<List<ChatPreview>, LocalDataSourceError>,
                 > { chatsWithRelations ->
+                logger.d(TAG, "flowChatList: ${chatsWithRelations.size} chats loaded")
+
                 val chatPreviews = chatsWithRelations.map { relation ->
+                    logger.d(TAG, "Mapping chat: ${relation.chat.name}")
                     with(EntityMappers) { relation.toChatPreview() }
                 }
                 ResultWithError.Success(chatPreviews)

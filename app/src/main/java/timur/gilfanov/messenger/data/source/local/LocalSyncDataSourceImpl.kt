@@ -32,6 +32,10 @@ class LocalSyncDataSourceImpl @Inject constructor(
     private val logger: Logger,
 ) : LocalSyncDataSource {
 
+    companion object {
+        private const val TAG = "LocalSyncDataSource"
+    }
+
     private val errorHandler = DatabaseErrorHandler(logger)
 
     override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =
@@ -73,8 +77,10 @@ class LocalSyncDataSourceImpl @Inject constructor(
     override suspend fun applyChatListDelta(
         delta: ChatListDelta,
     ): ResultWithError<Unit, LocalDataSourceError> = try {
+        logger.d(TAG, "Applying chat list delta with ${delta.changes.size} changes")
         database.withTransaction {
             delta.changes.forEach { chatDelta ->
+                logger.d(TAG, "Applying chat delta: $chatDelta")
                 when (chatDelta) {
                     is ChatCreatedDelta -> applyChatCreatedDelta(chatDelta)
                     is ChatUpdatedDelta -> applyChatUpdatedDelta(chatDelta)
@@ -84,6 +90,7 @@ class LocalSyncDataSourceImpl @Inject constructor(
         }
 
         dataStore.edit { preferences ->
+            logger.d(TAG, "Updating last sync timestamp to: ${delta.toTimestamp}")
             preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] =
                 delta.toTimestamp.toEpochMilliseconds()
         }

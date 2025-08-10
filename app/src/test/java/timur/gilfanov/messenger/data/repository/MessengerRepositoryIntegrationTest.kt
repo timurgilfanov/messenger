@@ -120,7 +120,7 @@ class MessengerRepositoryIntegrationTest {
             scope = testScope,
             produceFile = {
                 context.preferencesDataStoreFile(
-                    "test_integration_preferences_${System.currentTimeMillis()}_${Thread.currentThread().name}",
+                    "test_integration_preferences_${System.currentTimeMillis()}_${Thread.currentThread().threadId()}",
                 )
             },
         )

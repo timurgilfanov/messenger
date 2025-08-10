@@ -61,7 +61,7 @@ class AndroidTestRepositoryWithRealImplementation(
             scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
             produceFile = {
                 context.preferencesDataStoreFile(
-                    "android_test_preferences_${System.currentTimeMillis()}_${Thread.currentThread().id}",
+                    "android_test_preferences_${System.currentTimeMillis()}_${Thread.currentThread().threadId()}",
                 )
             },
         )

@@ -30,12 +30,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew testMockDebugUnitTest --tests "ClassName.testMethodName"
 
 # Run tests by category (property-based approach)
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
 ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit
 ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
 ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Application
-./gradlew connectedMockDebugAndroidTest -PtestCategory=timur.gilfanov.annotations.Application
+./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.annotations.FeatureTest
+./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.annotations.ApplicationTest
 
 # Pre-commit checks
 ./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)

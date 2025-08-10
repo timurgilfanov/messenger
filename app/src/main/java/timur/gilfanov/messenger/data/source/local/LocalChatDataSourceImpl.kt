@@ -122,7 +122,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                 logger.d(TAG, "flowChatList: ${chatsWithRelations.size} chats loaded")
 
                 val chatPreviews = chatsWithRelations.map { relation ->
-                    logger.d(TAG, "Mapping chat: ${relation.chat.name}")
+                    logger.d(TAG, "Mapping chat '${relation.chat.name}': ${relation.chat}")
                     with(EntityMappers) { relation.toChatPreview() }
                 }
                 ResultWithError.Success(chatPreviews)

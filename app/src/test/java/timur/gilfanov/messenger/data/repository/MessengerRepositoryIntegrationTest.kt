@@ -124,11 +124,6 @@ class MessengerRepositoryIntegrationTest {
 
     @Test
     fun `flowChatList should emit updates when sync receives new data`() = runTest {
-        val tag = "TEST"
-        logger.d(
-            tag,
-            "Starting 'flowChatList should emit updates when sync receives new data' test",
-        )
         // Given
         val totalDeltas = 3
         var requestCount = 0
@@ -150,28 +145,21 @@ class MessengerRepositoryIntegrationTest {
         // When - Repository starts sync automatically in init
         repository.flowChatList().test {
             var result = awaitItem() // Can be empty initially or not empty after initial sync
-            logger.d(tag, "Initial result: $result")
             assertIs<ResultWithError.Success<List<ChatPreview>, *>>(result)
             if (result.data.isEmpty()) {
-                logger.d(tag, "Initial result is empty, waiting for deltas")
                 result = awaitItem()
-                logger.d(tag, "Received first delta result: $result")
                 assertIs<ResultWithError.Success<List<ChatPreview>, *>>(result)
             }
             // After ChatCreatedDelta
             assertEquals(1, result.data.size, "Should have 1 chat after creation")
             assertEquals("Chat Batch 1", result.data.first().name)
 
-            logger.d(tag, "Waiting for second delta")
             val afterUpdate = awaitItem() // After ChatUpdatedDelta
-            logger.d(tag, "Received second delta result: $afterUpdate")
             assertIs<ResultWithError.Success<List<ChatPreview>, *>>(afterUpdate)
             assertEquals(1, afterUpdate.data.size, "Should still have 1 chat after update")
             assertEquals("Chat Batch 2", afterUpdate.data.first().name)
 
-            logger.d(tag, "Waiting for third delta")
             val afterDelete = awaitItem() // After ChatDeletedDelta
-            logger.d(tag, "Received third delta result: $afterDelete")
             assertIs<ResultWithError.Success<List<ChatPreview>, *>>(afterDelete)
             assertEquals(0, afterDelete.data.size, "List should be empty after deletion")
 

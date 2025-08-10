@@ -203,14 +203,14 @@ object MockServerScenarios {
     }
 
     // Complex scenarios for integration testing
-    suspend fun MockRequestHandleScope.respondWithPaginatedDeltas(
+    suspend fun MockRequestHandleScope.respondWithDeltas(
         requestCount: Int,
-        totalBatches: Int = 3,
+        totalDeltas: Int = 3,
         delayMs: Long = 0,
     ): HttpResponseData {
         if (delayMs > 0) delay(delayMs)
 
-        val hasMore = requestCount < totalBatches
+        val hasMore = requestCount < totalDeltas
         val participant = createTestParticipant()
         val metadata = ChatMetadataDto(
             name = "Chat Batch $requestCount",
@@ -222,19 +222,33 @@ object MockServerScenarios {
             lastActivityAt = TEST_TIMESTAMP.toString(),
         )
 
-        val delta = if (requestCount == totalBatches) {
-            ChatDeletedDeltaDto(
-                chatId = TEST_CHAT_ID.toString(),
-                timestamp = TEST_TIMESTAMP.plusMillis(requestCount * 1000L).toString(),
-            )
-        } else {
-            ChatUpdatedDeltaDto(
-                chatId = TEST_CHAT_ID.toString(),
-                chatMetadata = metadata,
-                messagesToAdd = emptyList(),
-                messagesToDelete = emptyList(),
-                timestamp = TEST_TIMESTAMP.plusMillis(requestCount * 1000L).toString(),
-            )
+        val delta = when (requestCount) {
+            1 -> {
+                // First request: create the chat
+                ChatCreatedDeltaDto(
+                    chatId = TEST_CHAT_ID.toString(),
+                    chatMetadata = metadata,
+                    initialMessages = emptyList(),
+                    timestamp = TEST_TIMESTAMP.plusMillis(requestCount * 1000L).toString(),
+                )
+            }
+            totalDeltas -> {
+                // Final request: delete the chat
+                ChatDeletedDeltaDto(
+                    chatId = TEST_CHAT_ID.toString(),
+                    timestamp = TEST_TIMESTAMP.plusMillis(requestCount * 1000L).toString(),
+                )
+            }
+            else -> {
+                // Middle requests: update the chat
+                ChatUpdatedDeltaDto(
+                    chatId = TEST_CHAT_ID.toString(),
+                    chatMetadata = metadata,
+                    messagesToAdd = emptyList(),
+                    messagesToDelete = emptyList(),
+                    timestamp = TEST_TIMESTAMP.plusMillis(requestCount * 1000L).toString(),
+                )
+            }
         }
 
         val deltaList = ChatListDeltaDto(

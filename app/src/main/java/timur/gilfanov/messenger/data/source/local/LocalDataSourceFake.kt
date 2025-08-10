@@ -20,13 +20,18 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
+import timur.gilfanov.messenger.util.Logger
 
 @Singleton
 @Suppress("TooManyFunctions")
-class LocalDataSourceFake @Inject constructor() :
+class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     LocalChatDataSource,
     LocalMessageDataSource,
     LocalSyncDataSource {
+
+    companion object {
+        private const val TAG = "LocalDataSourceFake"
+    }
 
     private val chatsFlow = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
     private val syncTimestamp = MutableStateFlow<Instant?>(null)
@@ -36,6 +41,7 @@ class LocalDataSourceFake @Inject constructor() :
     private var shouldFailFlowChatList = false
 
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
+        logger.d(TAG, "Inserting chat: ${chat.id}")
         chatsFlow.update { currentChats ->
             currentChats + (chat.id to chat)
         }
@@ -43,6 +49,7 @@ class LocalDataSourceFake @Inject constructor() :
     }
 
     override suspend fun updateChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
+        logger.d(TAG, "Updating chat: ${chat.id}")
         val currentChats = chatsFlow.value
         if (chat.id !in currentChats) {
             return ResultWithError.Failure(LocalDataSourceError.ChatNotFound)
@@ -55,6 +62,7 @@ class LocalDataSourceFake @Inject constructor() :
     }
 
     override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Deleting chat: $chatId")
         val currentChats = chatsFlow.value
         if (chatId !in currentChats) {
             return ResultWithError.Failure(LocalDataSourceError.ChatNotFound)
@@ -278,6 +286,7 @@ class LocalDataSourceFake @Inject constructor() :
     override suspend fun applyChatListDelta(
         delta: ChatListDelta,
     ): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Applying chat list delta: $delta")
         delta.changes.sortedBy { it.timestamp }.forEach { chatDelta ->
             val result = applyChatDelta(chatDelta)
             if (result is ResultWithError.Failure) {

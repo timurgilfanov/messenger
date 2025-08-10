@@ -13,6 +13,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.annotations.Unit
+import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -26,6 +27,7 @@ import timur.gilfanov.messenger.domain.entity.message.TextMessage
 @Category(Unit::class)
 class LocalDataSourceFakeTest {
 
+    private val logger = TestLogger()
     private lateinit var localDataSource: LocalDataSourceFake
     private lateinit var testChat: Chat
     private lateinit var testMessage: TextMessage
@@ -33,7 +35,7 @@ class LocalDataSourceFakeTest {
 
     @Before
     fun setup() {
-        localDataSource = LocalDataSourceFake()
+        localDataSource = LocalDataSourceFake(logger)
 
         testParticipant = Participant(
             id = ParticipantId(UUID.randomUUID()),

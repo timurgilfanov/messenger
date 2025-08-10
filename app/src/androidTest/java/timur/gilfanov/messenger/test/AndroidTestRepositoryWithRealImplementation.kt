@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
+import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.data.repository.MessengerRepositoryImpl
 import timur.gilfanov.messenger.data.source.local.LocalChatDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
@@ -59,9 +60,8 @@ class AndroidTestRepositoryWithRealImplementation(
         val dataStore = PreferenceDataStoreFactory.create(
             scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
             produceFile = {
-                context.preferencesDataStoreFile(
-                    "android_test_preferences_${System.currentTimeMillis()}_${Thread.currentThread().id}",
-                )
+                val uniqueId = "${System.currentTimeMillis()}_${Thread.currentThread().hashCode()}"
+                context.preferencesDataStoreFile("android_test_preferences_$uniqueId")
             },
         )
 
@@ -114,6 +114,7 @@ class AndroidTestRepositoryWithRealImplementation(
             localDataSources = localDataSources,
             remoteDataSources = remoteDataSources,
             logger = logger,
+            repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
         )
     }
 

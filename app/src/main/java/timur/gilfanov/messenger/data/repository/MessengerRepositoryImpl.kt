@@ -3,8 +3,6 @@ package timur.gilfanov.messenger.data.repository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
@@ -42,6 +40,7 @@ class MessengerRepositoryImpl @Inject constructor(
     private val localDataSources: LocalDataSources,
     private val remoteDataSources: RemoteDataSources,
     private val logger: Logger,
+    private val repositoryScope: CoroutineScope,
 ) : ChatRepository,
     MessageRepository {
 
@@ -49,7 +48,6 @@ class MessengerRepositoryImpl @Inject constructor(
         private const val TAG = "MessengerRepository"
     }
 
-    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val isUpdatingFlow = MutableStateFlow(false)
 
     init {
@@ -59,6 +57,7 @@ class MessengerRepositoryImpl @Inject constructor(
     }
 
     private suspend fun performDeltaSyncLoop() {
+        logger.d(TAG, "Starting delta sync loop")
         val lastSyncTimestamp = when (val result = localDataSources.sync.getLastSyncTimestamp()) {
             is ResultWithError.Success -> result.data
             is ResultWithError.Failure -> {
@@ -66,9 +65,11 @@ class MessengerRepositoryImpl @Inject constructor(
                 null // Start from scratch if no timestamp available
             }
         }
+        logger.d(TAG, "Last sync timestamp: $lastSyncTimestamp")
         remoteDataSources.sync.chatsDeltaUpdates(lastSyncTimestamp)
             .onEach { deltaResult ->
                 if (deltaResult is ResultWithError.Success) {
+                    logger.d(TAG, "Received delta updates: ${deltaResult.data}")
                     isUpdatingFlow.value = true
                     localDataSources.sync.applyChatListDelta(deltaResult.data)
                     isUpdatingFlow.value = false

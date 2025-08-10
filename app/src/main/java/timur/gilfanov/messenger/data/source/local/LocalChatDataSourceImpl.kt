@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
@@ -115,6 +116,7 @@ class LocalChatDataSourceImpl @Inject constructor(
 
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
         chatDao.flowAllChatsWithParticipantsAndMessages()
+            .distinctUntilChanged()
             .map<
                 List<ChatWithParticipantsAndMessages>,
                 ResultWithError<List<ChatPreview>, LocalDataSourceError>,
@@ -122,7 +124,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                 logger.d(TAG, "flowChatList: ${chatsWithRelations.size} chats loaded")
 
                 val chatPreviews = chatsWithRelations.map { relation ->
-                    logger.d(TAG, "Mapping chat '${relation.chat.name}': ${relation.chat}")
+                    logger.d(TAG, "Mapping chat '${relation.chat.name}': $relation")
                     with(EntityMappers) { relation.toChatPreview() }
                 }
                 ResultWithError.Success(chatPreviews)

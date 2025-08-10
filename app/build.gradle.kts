@@ -297,12 +297,25 @@ tasks.register("generateCategorySpecificReports") {
         val category = project.findProperty("testCategory") as String?
         if (category != null) {
             val categoryName = category.substringAfterLast(".")
-            copy {
-                from("build/reports/kover/reportDebug.xml")
-                into("build/reports/kover/")
-                rename { "${categoryName.lowercase()}-report.xml" }
+
+            // Use flavor-specific report file (mockDebug for mock flavor)
+            val sourceReportFile = file("build/reports/kover/reportMockDebug.xml")
+
+            if (sourceReportFile.exists()) {
+                copy {
+                    from(sourceReportFile)
+                    into("build/reports/kover/")
+                    rename { "${categoryName.lowercase()}-report.xml" }
+                }
+                println(
+                    "Generated category-specific report: ${categoryName.lowercase()}-report.xml",
+                )
+            } else {
+                throw GradleException(
+                    "Coverage report file not found: ${sourceReportFile.absolutePath}. " +
+                        "Run './gradlew koverXmlReportMockDebug' first.",
+                )
             }
-            println("Generated category-specific report: ${categoryName.lowercase()}-report.xml")
         }
     }
 }

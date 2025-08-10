@@ -60,9 +60,8 @@ class AndroidTestRepositoryWithRealImplementation(
         val dataStore = PreferenceDataStoreFactory.create(
             scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
             produceFile = {
-                context.preferencesDataStoreFile(
-                    "android_test_preferences_${System.currentTimeMillis()}_${Thread.currentThread().threadId()}",
-                )
+                val uniqueId = "${System.currentTimeMillis()}_${Thread.currentThread().hashCode()}"
+                context.preferencesDataStoreFile("android_test_preferences_$uniqueId")
             },
         )
 

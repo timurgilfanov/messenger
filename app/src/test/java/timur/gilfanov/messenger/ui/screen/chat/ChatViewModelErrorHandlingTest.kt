@@ -1,9 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.paging.PagingData
 import java.util.UUID
-import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -11,7 +8,6 @@ import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Rule
@@ -34,6 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFakeWithPaging
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -76,7 +73,6 @@ class ChatViewModelErrorHandlingTest {
         }
     }
 
-    @Ignore("Updating messages PagingData for ChatRepositoryFake not implemented yet")
     @Test
     fun `Network errors propagates to UI state`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
@@ -87,7 +83,10 @@ class ChatViewModelErrorHandlingTest {
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(Success(initialChat))
 
-        val repository = ChatRepositoryFake(flowChat = chatFlow)
+        val repository = ChatRepositoryFakeWithPaging(
+            initialChat = initialChat,
+            chatFlow = chatFlow,
+        )
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
@@ -99,22 +98,13 @@ class ChatViewModelErrorHandlingTest {
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
         )
-        val initialState = ChatUiState.Ready(
-            id = chatId,
-            title = "Direct Message",
-            participants = persistentListOf(
-                ParticipantUiModel(id = currentUserId, name = "Current User", pictureUrl = null),
-                ParticipantUiModel(id = otherUserId, name = "Other User", pictureUrl = null),
-            ),
-            isGroupChat = false,
-            messages = flowOf(PagingData.empty()),
-            inputTextField = TextFieldState(""),
-            isSending = false,
-            status = ChatStatus.OneToOne(null),
-            updateError = null,
-        )
-        viewModel.test(this, initialState) {
+
+        viewModel.test(this) {
             val job = runOnCreate()
+
+            // Wait for initial Ready state
+            val initialState = awaitState()
+            assertTrue(initialState is ChatUiState.Ready)
 
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = TextValidationError.Empty)

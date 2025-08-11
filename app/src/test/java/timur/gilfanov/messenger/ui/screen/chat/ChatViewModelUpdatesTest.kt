@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
-import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.Ignore
 import kotlin.test.assertEquals
@@ -31,6 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFakeWithPaging
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -55,7 +55,10 @@ class ChatViewModelUpdatesTest {
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(Success(initialChat))
 
-        val repository = ChatRepositoryFake(flowChat = chatFlow)
+        val repository = ChatRepositoryFakeWithPaging(
+            initialChat = initialChat,
+            chatFlow = chatFlow,
+        )
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
@@ -187,7 +190,10 @@ class ChatViewModelUpdatesTest {
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(Success(initialChat))
 
-        val repository = ChatRepositoryFake(flowChat = chatFlow)
+        val repository = ChatRepositoryFakeWithPaging(
+            initialChat = initialChat,
+            chatFlow = chatFlow,
+        )
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 

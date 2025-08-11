@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.repository
 
+import androidx.paging.PagingData
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -306,6 +307,10 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
         }
 
         return ResultWithError.Success(Unit)
+    }
+
+    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun receiveChatUpdates(

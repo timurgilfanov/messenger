@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.participant.message
 
+import androidx.paging.PagingData
 import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -18,6 +19,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ValidationError
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -55,6 +57,9 @@ class CreateMessageUseCaseTest {
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")
         override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
+
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
             error("Not implemented")
     }
 

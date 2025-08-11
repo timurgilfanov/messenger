@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.local
 
+import androidx.paging.PagingSource
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.collections.immutable.ImmutableList
@@ -195,6 +196,10 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         }
 
         return ResultWithError.Failure(LocalDataSourceError.MessageNotFound)
+    }
+
+    override fun getMessagePagingSource(chatId: ChatId): PagingSource<Long, Message> {
+        TODO("Not yet implemented")
     }
 
     override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =

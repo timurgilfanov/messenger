@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.repository
 
+import androidx.paging.PagingData
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -239,6 +240,10 @@ class MessengerNotEmptyRepositoryFake @Inject constructor() :
         messageId: MessageId,
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RepositoryDeleteMessageError> = ResultWithError.Success(Unit)
+
+    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
+        TODO("Not yet implemented")
+    }
 
     private fun <T> kotlinx.collections.immutable.ImmutableList<T>.add(
         item: T,

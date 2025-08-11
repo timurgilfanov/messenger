@@ -1,10 +1,12 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.paging.PagingData
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -19,6 +21,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
@@ -69,6 +72,7 @@ object ChatViewModelTestFixtures {
         private val chat: Chat? = null,
         private val flowChat: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>? = null,
         private val flowSendMessage: Flow<Message>? = null,
+        private val pagedMessages: List<Message>? = null,
     ) : ChatRepository,
         MessageRepository {
 
@@ -103,10 +107,11 @@ object ChatViewModelTestFixtures {
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")
-        override suspend fun deleteMessage(
-            messageId: timur.gilfanov.messenger.domain.entity.message.MessageId,
-            mode: DeleteMessageMode,
-        ) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
+
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+            pagedMessages?.let { flowOf(PagingData.from(it)) } ?: flowOf(PagingData.empty())
     }
 
     class ChatRepositoryFakeWithStatusFlow(chat: Chat, val statuses: List<DeliveryStatus>) :
@@ -121,13 +126,13 @@ object ChatViewModelTestFixtures {
         ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf(
             *(
                 statuses.map {
-                    ResultWithError.Success<Message, RepositorySendMessageError>(
+                    Success<Message, RepositorySendMessageError>(
                         (message as TextMessage).copy(deliveryStatus = it),
                     )
                 }.toTypedArray()
                 ),
         ).onEach { result ->
-            val msg = (result as Success).data
+            val msg = result.data
             delay(10) // to pass immediate state updates, like text input
             chatFlow.update { currentChat ->
                 val messages = currentChat.messages.toMutableList().apply {
@@ -159,9 +164,66 @@ object ChatViewModelTestFixtures {
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")
-        override suspend fun deleteMessage(
-            messageId: timur.gilfanov.messenger.domain.entity.message.MessageId,
-            mode: DeleteMessageMode,
-        ) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
+
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+            flowOf(PagingData.empty())
+    }
+
+    /**
+     * Test repository that provides synchronized pagination with chat updates.
+     *
+     * When the chat flow emits a new chat state, the paged messages flow
+     * automatically emits the messages from that chat as PagingData.
+     * This ensures pagination stays in sync with chat updates during tests.
+     */
+    class ChatRepositoryFakeWithPaging(
+        private val initialChat: Chat? = null,
+        private val chatFlow: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>? = null,
+    ) : ChatRepository,
+        MessageRepository {
+
+        override suspend fun receiveChatUpdates(
+            chatId: ChatId,
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatFlow ?: flowOf(
+            initialChat?.let { Success(it) } ?: Failure(ChatNotFound),
+        )
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+            chatFlow?.flatMapLatest { result ->
+                when (result) {
+                    is Success -> flowOf(PagingData.from(result.data.messages))
+                    is Failure -> flowOf(PagingData.empty())
+                }
+            } ?: flowOf(
+                initialChat?.let { PagingData.from(it.messages) } ?: PagingData.empty(),
+            )
+
+        override suspend fun sendMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf(
+            Success<Message, RepositorySendMessageError>(
+                when (message) {
+                    is TextMessage -> message.copy(deliveryStatus = Sending(0))
+                    else -> message
+                },
+            ),
+        )
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+
+        // Implement other required MessageRepository methods as not implemented for this test
+        override suspend fun editMessage(message: Message) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
     }
 }

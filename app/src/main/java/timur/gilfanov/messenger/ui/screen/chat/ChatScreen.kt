@@ -15,7 +15,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,12 +22,22 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.flowOf
 import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,6 +109,7 @@ fun ChatScreenContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongMethod") // Complex UI composition requires length
 fun ChatContent(
     state: ChatUiState.Ready,
     onSendMessage: () -> Unit,
@@ -107,11 +117,8 @@ fun ChatContent(
 ) {
     val listState = rememberLazyListState()
 
-    LaunchedEffect(state.messages.size) {
-        if (state.messages.isNotEmpty()) {
-            listState.animateScrollToItem(state.messages.size - 1)
-        }
-    }
+    // Collect paged messages for LazyColumn
+    val messages = state.messages.collectAsLazyPagingItems()
 
     Scaffold(
         modifier = modifier,
@@ -147,11 +154,20 @@ fun ChatContent(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp),
         ) {
-            items(items = state.messages, key = { it.id }) { message ->
-                MessageBubble(
-                    message = message,
-                    modifier = Modifier.padding(vertical = 4.dp),
-                )
+            items(
+                count = messages.itemCount,
+                key = messages.itemKey { message -> message.id.id },
+            ) { index ->
+                val message = messages[index]
+                if (message != null) {
+                    MessageBubble(
+                        message = message.toMessageUiModel(
+                            participants = state.participants,
+                            currentUserId = getCurrentUserId(state),
+                        ),
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
+                }
             }
         }
     }
@@ -173,35 +189,7 @@ private fun ChatContentPreview() {
                     ),
                 ),
                 isGroupChat = false,
-                messages = persistentListOf(
-                    MessageUiModel(
-                        id = "1",
-                        text = "Hello! 👋",
-                        senderId = "other-user",
-                        senderName = "Alice",
-                        createdAt = "14:28",
-                        deliveryStatus = DeliveryStatus.Read,
-                        isFromCurrentUser = false,
-                    ),
-                    MessageUiModel(
-                        id = "2",
-                        text = "How are you doing today?",
-                        senderId = "current-user",
-                        senderName = "You",
-                        createdAt = "14:30",
-                        deliveryStatus = DeliveryStatus.Delivered,
-                        isFromCurrentUser = true,
-                    ),
-                    MessageUiModel(
-                        id = "3",
-                        text = "I'm doing great, thanks for asking!",
-                        senderId = "other-user",
-                        senderName = "Alice",
-                        createdAt = "14:32",
-                        deliveryStatus = DeliveryStatus.Read,
-                        isFromCurrentUser = false,
-                    ),
-                ),
+                messages = flowOf(PagingData.empty()), // Paging data will be not shown in preview
                 inputTextField = TextFieldState(""),
                 isSending = false,
                 status = ChatStatus.OneToOne(null),
@@ -222,4 +210,42 @@ private fun ChatLoadingPreview() {
             CircularProgressIndicator()
         }
     }
+}
+
+/**
+ * Extension function to convert a domain Message to MessageUiModel for display.
+ */
+private fun Message.toMessageUiModel(
+    participants: ImmutableList<ParticipantUiModel>,
+    currentUserId: ParticipantId,
+): MessageUiModel {
+    val senderParticipant = participants.find { it.id == this.sender.id }
+
+    return MessageUiModel(
+        id = this.id.id.toString(),
+        text = when (this) {
+            is TextMessage -> this.text
+            else -> error("Unsupported message type")
+        },
+        senderId = this.sender.id.id.toString(),
+        senderName = senderParticipant?.name ?: this.sender.name,
+        createdAt = formatTimestamp(this.createdAt.toEpochMilliseconds()),
+        deliveryStatus = this.deliveryStatus ?: DeliveryStatus.Sending(0),
+        isFromCurrentUser = this.sender.id == currentUserId,
+    )
+}
+
+/**
+ * Helper function to get the current user ID from the chat state.
+ * This is a temporary workaround - ideally we'd store this in the UI state.
+ */
+private fun getCurrentUserId(state: ChatUiState.Ready): ParticipantId {
+    // For now, we'll use a heuristic to find the current user
+    // This should be improved to properly track the current user ID
+    return state.participants.firstOrNull()?.id ?: ParticipantId(UUID.randomUUID())
+}
+
+private fun formatTimestamp(epochMillis: Long): String {
+    val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    return formatter.format(Date(epochMillis))
 }

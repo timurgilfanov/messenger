@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.repository
 
+import androidx.paging.PagingData
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -80,4 +81,6 @@ class MessengerEmptyRepositoryStub @Inject constructor() :
         messageId: MessageId,
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RepositoryDeleteMessageError> = ResultWithError.Success(Unit)
+
+    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> = flowOf()
 }

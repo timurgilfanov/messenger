@@ -8,9 +8,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.UUID
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +29,6 @@ import timur.gilfanov.messenger.domain.entity.ValidationError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
@@ -42,6 +38,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.Serv
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerUnreachable
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.UnknownError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 
 private const val STATE_UPDATE_DEBOUNCE = 200L
@@ -52,6 +49,7 @@ class ChatViewModel @AssistedInject constructor(
     @Assisted("currentUserId") currentUserIdUuid: UUID,
     private val sendMessageUseCase: SendMessageUseCase,
     private val receiveChatUpdatesUseCase: ReceiveChatUpdatesUseCase,
+    private val getPagedMessagesUseCase: GetPagedMessagesUseCase,
 ) : ViewModel(),
     ContainerHost<ChatUiState, Nothing> {
 
@@ -222,21 +220,6 @@ class ChatViewModel @AssistedInject constructor(
     }
 
     private fun updateUiStateFromChat(state: ChatUiState, chat: Chat): ChatUiState.Ready {
-        val messages = chat.messages.map { message ->
-            MessageUiModel(
-                id = message.id.id.toString(),
-                text = when (message) {
-                    is TextMessage -> message.text
-                    else -> error("Unsupported message type")
-                },
-                senderId = message.sender.id.id.toString(),
-                senderName = message.sender.name,
-                createdAt = formatTimestamp(message.createdAt.toEpochMilliseconds()),
-                deliveryStatus = message.deliveryStatus ?: DeliveryStatus.Sending(0),
-                isFromCurrentUser = message.sender.id == currentUserId,
-            )
-        }.toPersistentList()
-
         val participantUiModels = chat.participants.map { participant ->
             ParticipantUiModel(
                 id = participant.id,
@@ -258,7 +241,7 @@ class ChatViewModel @AssistedInject constructor(
             title = chat.name,
             participants = participantUiModels,
             isGroupChat = !chat.isOneToOne,
-            messages = messages,
+            messages = getPagedMessagesUseCase(chat.id),
             status = chatStatus,
             inputTextField = (state as? ChatUiState.Ready?)?.inputTextField ?: TextFieldState(""),
             inputTextValidationError = inputTextValidationError,
@@ -266,10 +249,5 @@ class ChatViewModel @AssistedInject constructor(
             updateError = (state as? ChatUiState.Ready?)?.updateError,
             dialogError = (state as? ChatUiState.Ready?)?.dialogError,
         )
-    }
-
-    private fun formatTimestamp(epochMillis: Long): String {
-        val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-        return formatter.format(Date(epochMillis))
     }
 }

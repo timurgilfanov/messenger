@@ -68,7 +68,7 @@ object ChatViewModelTestFixtures {
         )
     }
 
-    class ChatRepositoryFake(
+    class MessengerRepositoryFake(
         private val chat: Chat? = null,
         private val flowChat: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>? = null,
         private val flowSendMessage: Flow<Message>? = null,
@@ -114,7 +114,7 @@ object ChatViewModelTestFixtures {
             pagedMessages?.let { flowOf(PagingData.from(it)) } ?: flowOf(PagingData.empty())
     }
 
-    class ChatRepositoryFakeWithStatusFlow(chat: Chat, val statuses: List<DeliveryStatus>) :
+    class MessengerRepositoryFakeWithStatusFlow(chat: Chat, val statuses: List<DeliveryStatus>) :
         ChatRepository,
         MessageRepository {
 

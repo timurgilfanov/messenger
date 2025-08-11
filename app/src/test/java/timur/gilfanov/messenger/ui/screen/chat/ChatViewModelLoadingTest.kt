@@ -27,7 +27,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -81,7 +81,7 @@ class ChatViewModelLoadingTest {
         val message = createTestMessage(currentUserId, "Hello!", joinedAt = now, createdAt = now)
         val chat = createTestChat(chatId, currentUserId, otherUserId, listOf(message))
 
-        val repository = ChatRepositoryFake(chat = chat, flowChat = flowOf(Success(chat)))
+        val repository = MessengerRepositoryFake(chat = chat, flowChat = flowOf(Success(chat)))
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
@@ -124,7 +124,7 @@ class ChatViewModelLoadingTest {
 
         val chat = createTestChat(chatId, currentUserId, otherUserId, isOneToOne = false)
 
-        val repository = ChatRepositoryFake(
+        val repository = MessengerRepositoryFake(
             chat = chat,
             flowChat = flowOf(Success(chat)),
         )
@@ -168,7 +168,7 @@ class ChatViewModelLoadingTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
 
-        val repository = ChatRepositoryFake(
+        val repository = MessengerRepositoryFake(
             flowChat = flowOf(Failure(NetworkNotAvailable)),
         )
 

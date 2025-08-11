@@ -26,10 +26,10 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.GetPagedMessagesUseCaseFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -57,7 +57,7 @@ class ChatViewModelUpdatesTest {
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
-        val getPagedMessagesUseCase = GetPagedMessagesUseCaseFake(repository)
+        val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
@@ -117,7 +117,7 @@ class ChatViewModelUpdatesTest {
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
-        val getPagedMessagesUseCase = GetPagedMessagesUseCaseFake(repository)
+        val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
@@ -187,7 +187,7 @@ class ChatViewModelUpdatesTest {
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
-        val getPagedMessagesUseCase = GetPagedMessagesUseCaseFake(repository)
+        val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,

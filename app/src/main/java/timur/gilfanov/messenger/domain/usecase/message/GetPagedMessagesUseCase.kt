@@ -11,7 +11,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
  * This use case provides efficient pagination for message histories,
  * reducing memory usage and improving performance for chats with large message counts.
  */
-open class GetPagedMessagesUseCase(private val messageRepository: MessageRepository) {
+class GetPagedMessagesUseCase(private val messageRepository: MessageRepository) {
 
     /**
      * Gets paginated messages for the specified chat.
@@ -19,6 +19,6 @@ open class GetPagedMessagesUseCase(private val messageRepository: MessageReposit
      * @param chatId The ID of the chat to load messages for
      * @return Flow of PagingData containing messages in reverse chronological order
      */
-    open operator fun invoke(chatId: ChatId): Flow<PagingData<Message>> =
+    operator fun invoke(chatId: ChatId): Flow<PagingData<Message>> =
         messageRepository.getPagedMessages(chatId)
 }

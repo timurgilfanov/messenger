@@ -15,7 +15,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import java.text.SimpleDateFormat
@@ -31,6 +31,7 @@ import java.util.Locale
 import java.util.UUID
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.flowOf
 import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -116,15 +117,8 @@ fun ChatContent(
 ) {
     val listState = rememberLazyListState()
 
-    // Use paged messages if available, otherwise fall back to regular messages
-    val pagedMessages = state.pagedMessages?.collectAsLazyPagingItems()
-
-    // Scroll to bottom when new messages arrive (only for non-paged approach)
-    LaunchedEffect(state.messages.size) {
-        if (pagedMessages == null && state.messages.isNotEmpty()) {
-            listState.animateScrollToItem(state.messages.size - 1)
-        }
-    }
+    // Collect paged messages for LazyColumn
+    val messages = state.messages.collectAsLazyPagingItems()
 
     Scaffold(
         modifier = modifier,
@@ -160,28 +154,17 @@ fun ChatContent(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp),
         ) {
-            if (pagedMessages != null) {
-                // Use pagination
-                items(
-                    count = pagedMessages.itemCount,
-                    key = pagedMessages.itemKey { message -> message.id.id },
-                ) { index ->
-                    val message = pagedMessages[index]
-                    if (message != null) {
-                        MessageBubble(
-                            message = message.toMessageUiModel(
-                                participants = state.participants,
-                                currentUserId = getCurrentUserId(state),
-                            ),
-                            modifier = Modifier.padding(vertical = 4.dp),
-                        )
-                    }
-                }
-            } else {
-                // Fallback to regular messages
-                items(items = state.messages, key = { it.id }) { message ->
+            items(
+                count = messages.itemCount,
+                key = messages.itemKey { message -> message.id.id },
+            ) { index ->
+                val message = messages[index]
+                if (message != null) {
                     MessageBubble(
-                        message = message,
+                        message = message.toMessageUiModel(
+                            participants = state.participants,
+                            currentUserId = getCurrentUserId(state),
+                        ),
                         modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
@@ -206,35 +189,7 @@ private fun ChatContentPreview() {
                     ),
                 ),
                 isGroupChat = false,
-                messages = persistentListOf(
-                    MessageUiModel(
-                        id = "1",
-                        text = "Hello! 👋",
-                        senderId = "other-user",
-                        senderName = "Alice",
-                        createdAt = "14:28",
-                        deliveryStatus = DeliveryStatus.Read,
-                        isFromCurrentUser = false,
-                    ),
-                    MessageUiModel(
-                        id = "2",
-                        text = "How are you doing today?",
-                        senderId = "current-user",
-                        senderName = "You",
-                        createdAt = "14:30",
-                        deliveryStatus = DeliveryStatus.Delivered,
-                        isFromCurrentUser = true,
-                    ),
-                    MessageUiModel(
-                        id = "3",
-                        text = "I'm doing great, thanks for asking!",
-                        senderId = "other-user",
-                        senderName = "Alice",
-                        createdAt = "14:32",
-                        deliveryStatus = DeliveryStatus.Read,
-                        isFromCurrentUser = false,
-                    ),
-                ),
+                messages = flowOf(PagingData.empty()), // Paging data will be not shown in preview
                 inputTextField = TextFieldState(""),
                 isSending = false,
                 status = ChatStatus.OneToOne(null),

@@ -3,7 +3,6 @@ package timur.gilfanov.messenger.ui.screen.chat
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.paging.PagingData
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -22,8 +21,7 @@ sealed interface ChatUiState {
         val title: String,
         val participants: ImmutableList<ParticipantUiModel>,
         val isGroupChat: Boolean,
-        val messages: ImmutableList<MessageUiModel> = persistentListOf(),
-        val pagedMessages: Flow<PagingData<Message>>? = null,
+        val messages: Flow<PagingData<Message>>,
         val inputTextField: TextFieldState = TextFieldState(""),
         val inputTextValidationError: TextValidationError? = null,
         val isSending: Boolean = false,

@@ -178,7 +178,7 @@ object ChatViewModelTestFixtures {
      * automatically emits the messages from that chat as PagingData.
      * This ensures pagination stays in sync with chat updates during tests.
      */
-    class ChatRepositoryFakeWithPaging(
+    class MessengerRepositoryFakeWithPaging(
         private val initialChat: Chat? = null,
         private val chatFlow: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>? = null,
     ) : ChatRepository,

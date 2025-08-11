@@ -29,7 +29,7 @@ import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 /**
@@ -53,7 +53,7 @@ class ChatPaginationIntegrationTest {
         val otherUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
-        val chatRepository = ChatRepositoryFake(chat = chat)
+        val chatRepository = MessengerRepositoryFake(chat = chat)
         val messageRepository = PaginationTestRepository()
 
         val viewModel = ChatViewModel(
@@ -101,7 +101,7 @@ class ChatPaginationIntegrationTest {
         }
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
-        val chatRepository = ChatRepositoryFake(chat = chat)
+        val chatRepository = MessengerRepositoryFake(chat = chat)
         val messageRepository = PaginationTestRepository(testMessages = testMessages)
 
         val viewModel = ChatViewModel(
@@ -137,7 +137,7 @@ class ChatPaginationIntegrationTest {
         val otherUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
-        val chatRepository = ChatRepositoryFake(chat = chat)
+        val chatRepository = MessengerRepositoryFake(chat = chat)
         val messageRepository = PaginationTestRepository(testMessages = emptyList())
 
         val viewModel = ChatViewModel(
@@ -186,7 +186,7 @@ class ChatPaginationIntegrationTest {
         )
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
-        val chatRepository = ChatRepositoryFake(chat = chat)
+        val chatRepository = MessengerRepositoryFake(chat = chat)
         val messageRepository = PaginationTestRepository(testMessages = paginatedMessages)
 
         val viewModel = ChatViewModel(

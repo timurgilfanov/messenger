@@ -22,7 +22,6 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -64,6 +63,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
@@ -546,33 +546,25 @@ class MessengerRepositoryIntegrationTest {
     }
 
     // Helper functions
-    private fun createTestChat(): Chat = Chat(
+    private fun createTestChat(): Chat = DomainTestFixtures.createTestChat(
         id = testChatId,
-        participants = persistentSetOf(createTestParticipant()),
         name = "Test Chat",
-        pictureUrl = null,
-        rules = persistentSetOf(),
-        unreadMessagesCount = 0,
-        lastReadMessageId = null,
-        messages = kotlinx.collections.immutable.persistentListOf(),
+        participants = setOf(createTestParticipant()),
     )
 
-    private fun createTestParticipant(): Participant = Participant(
+    private fun createTestParticipant(): Participant = DomainTestFixtures.createTestParticipant(
         id = testParticipantId,
         name = "Test User",
-        pictureUrl = null,
         joinedAt = testTimestamp,
         onlineAt = testTimestamp,
     )
 
-    private fun createTestMessage(): TextMessage = TextMessage(
+    private fun createTestMessage(): TextMessage = DomainTestFixtures.createTestTextMessage(
         id = testMessageId,
         text = "Test message",
-        parentId = null,
         sender = createTestParticipant(),
         recipient = testChatId,
         createdAt = testTimestamp,
-        deliveryStatus = null,
     )
 
     private fun setupRepository(scope: CoroutineScope, mockEngine: MockEngine) {

@@ -28,7 +28,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.Chat
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.RepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -46,7 +46,7 @@ class ChatViewModelErrorHandlingTest {
 
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(Failure(ChatNotFound))
-        val repository = RepositoryFake(flowChat = chatFlow)
+        val repository = ChatRepositoryFake(flowChat = chatFlow)
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
@@ -79,7 +79,7 @@ class ChatViewModelErrorHandlingTest {
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(Success(initialChat))
 
-        val repository = RepositoryFake(flowChat = chatFlow)
+        val repository = ChatRepositoryFake(flowChat = chatFlow)
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
@@ -132,7 +132,7 @@ class ChatViewModelErrorHandlingTest {
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(
                 Failure(ReceiveChatUpdatesError.NetworkNotAvailable),
             )
-        val repository = RepositoryFake(flowChat = chatFlow)
+        val repository = ChatRepositoryFake(flowChat = chatFlow)
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
@@ -166,7 +166,7 @@ class ChatViewModelErrorHandlingTest {
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(Success(initialChat))
 
-        val repository = RepositoryFake(flowChat = chatFlow)
+        val repository = ChatRepositoryFake(flowChat = chatFlow)
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 

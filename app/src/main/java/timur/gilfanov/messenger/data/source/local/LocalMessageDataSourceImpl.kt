@@ -1,13 +1,16 @@
 package timur.gilfanov.messenger.data.source.local
 
 import android.database.sqlite.SQLiteException
+import androidx.paging.PagingSource
 import androidx.room.withTransaction
 import javax.inject.Inject
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
+import timur.gilfanov.messenger.data.source.paging.MessagePagingSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
@@ -137,4 +140,11 @@ class LocalMessageDataSourceImpl @Inject constructor(
 
     private fun validateMessageForUpdate(message: Message): LocalDataSourceError? =
         validateMessageForInsert(message)
+
+    override fun getMessagePagingSource(chatId: ChatId): PagingSource<Long, Message> =
+        MessagePagingSource(
+            messageDao = messageDao,
+            chatDao = chatDao,
+            chatId = chatId,
+        )
 }

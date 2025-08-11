@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.ui.screen.chat
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
+import androidx.paging.PagingData
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.CoroutineScope
@@ -156,4 +157,8 @@ class TestRepositoryWithRealImplementation :
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RepositoryDeleteMessageError> =
         realRepository.deleteMessage(messageId, mode)
+
+    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
+        TODO("Not yet implemented")
+    }
 }

@@ -1,20 +1,24 @@
 package timur.gilfanov.messenger.domain.usecase.participant.message
 
+import androidx.paging.PagingData
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.DeleteMessageRule
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
@@ -38,12 +42,10 @@ class DeleteMessageUseCaseTest {
         ): ResultWithError<Unit, RepositoryDeleteMessageError> = deleteMessageResult
 
         // Implement other required MessageRepository methods as not implemented for this test
-        override suspend fun sendMessage(
-            message: timur.gilfanov.messenger.domain.entity.message.Message,
-        ) = error("Not implemented")
-        override suspend fun editMessage(
-            message: timur.gilfanov.messenger.domain.entity.message.Message,
-        ) = error("Not implemented")
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+            error("Not implemented")
+        override suspend fun sendMessage(message: Message) = error("Not implemented")
+        override suspend fun editMessage(message: Message) = error("Not implemented")
     }
 
     @Test

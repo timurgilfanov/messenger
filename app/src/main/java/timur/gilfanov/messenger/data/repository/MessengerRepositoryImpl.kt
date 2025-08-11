@@ -1,5 +1,8 @@
 package timur.gilfanov.messenger.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -11,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
+import timur.gilfanov.messenger.data.source.paging.MessagePagingSource
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSources
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -204,6 +208,17 @@ class MessengerRepositoryImpl @Inject constructor(
                 ResultWithError.Failure(mapRemoteErrorToDeleteMessageError(result.error))
             }
         }
+
+    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> = Pager(
+        config = PagingConfig(
+            pageSize = MessagePagingSource.DEFAULT_PAGE_SIZE,
+            prefetchDistance = MessagePagingSource.PREFETCH_DISTANCE,
+            enablePlaceholders = false,
+        ),
+        pagingSourceFactory = {
+            localDataSources.message.getMessagePagingSource(chatId)
+        },
+    ).flow
 }
 
 // Error mapping functions

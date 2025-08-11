@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.repository
 
+import androidx.paging.PagingData
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.channels.BufferOverflow
@@ -125,6 +126,10 @@ class RepositoryFake :
         messageId: MessageId,
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RepositoryDeleteMessageError> {
+        error("Not implemented")
+    }
+
+    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
         error("Not implemented")
     }
 

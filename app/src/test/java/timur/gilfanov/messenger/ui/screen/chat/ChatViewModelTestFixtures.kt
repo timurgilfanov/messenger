@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.paging.PagingData
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -19,6 +20,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
@@ -103,10 +105,11 @@ object ChatViewModelTestFixtures {
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")
-        override suspend fun deleteMessage(
-            messageId: timur.gilfanov.messenger.domain.entity.message.MessageId,
-            mode: DeleteMessageMode,
-        ) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
+
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+            error("Not implemented")
     }
 
     class ChatRepositoryFakeWithStatusFlow(chat: Chat, val statuses: List<DeliveryStatus>) :
@@ -159,9 +162,10 @@ object ChatViewModelTestFixtures {
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")
-        override suspend fun deleteMessage(
-            messageId: timur.gilfanov.messenger.domain.entity.message.MessageId,
-            mode: DeleteMessageMode,
-        ) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
+
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+            error("Not implemented")
     }
 }

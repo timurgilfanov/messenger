@@ -54,4 +54,17 @@ interface MessageDao {
            AND createdAt > (SELECT createdAt FROM messages WHERE id = :lastReadMessageId)""",
     )
     suspend fun getUnreadMessageCount(chatId: String, lastReadMessageId: String): Int
+
+    @Query(
+        """SELECT * FROM messages 
+           WHERE chatId = :chatId 
+           AND createdAt < :beforeTimestamp
+           ORDER BY createdAt DESC 
+           LIMIT :limit""",
+    )
+    suspend fun getMessagesByChatIdPaged(
+        chatId: String,
+        beforeTimestamp: Long,
+        limit: Int,
+    ): List<MessageEntity>
 }

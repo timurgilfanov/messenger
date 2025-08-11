@@ -47,7 +47,7 @@ class GetPagedMessagesUseCaseTest {
             createTestMessage("Message 2"),
             createTestMessage("Message 3"),
         )
-        fakeRepository.pagedMessages = testMessages
+        fakeRepository.messages = testMessages
 
         // When: Invoking use case
         val pagingFlow = useCase(testChatId)
@@ -63,7 +63,7 @@ class GetPagedMessagesUseCaseTest {
     @Test
     fun `invoke handles empty data gracefully`() = runTest {
         // Given: Repository with no messages
-        fakeRepository.pagedMessages = emptyList()
+        fakeRepository.messages = emptyList()
 
         // When: Invoking use case
         val pagingFlow = useCase(testChatId)
@@ -77,7 +77,7 @@ class GetPagedMessagesUseCaseTest {
     fun `invoke passes correct chat ID to repository`() = runTest {
         // Given: Repository that tracks method calls
         val specificChatId = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
-        fakeRepository.pagedMessages = listOf(createTestMessage("Test"))
+        fakeRepository.messages = listOf(createTestMessage("Test"))
 
         // When: Invoking use case with specific chat ID
         useCase(specificChatId).asSnapshot() // Trigger the flow to call repository
@@ -92,7 +92,7 @@ class GetPagedMessagesUseCaseTest {
         val largeMessageSet = (1..1000).map { index ->
             createTestMessage("Performance message $index")
         }
-        fakeRepository.pagedMessages = largeMessageSet
+        fakeRepository.messages = largeMessageSet
 
         // When: Invoking use case (time measurement in test environment)
         val startTime = System.currentTimeMillis()
@@ -123,13 +123,12 @@ class GetPagedMessagesUseCaseTest {
      * Fake repository for testing GetPagedMessagesUseCase in isolation.
      */
     private class MessageRepositoryFake : MessageRepository {
-        var pagedMessages: List<Message> = emptyList()
+        var messages: List<Message> = emptyList()
         var lastRequestedChatId: ChatId? = null
 
-        override fun getPagedMessages(chatId: ChatId) =
-            flowOf(PagingData.from(pagedMessages)).also {
-                lastRequestedChatId = chatId
-            }
+        override fun getPagedMessages(chatId: ChatId) = flowOf(PagingData.from(messages)).also {
+            lastRequestedChatId = chatId
+        }
 
         // Other MessageRepository methods not needed for these tests
         override suspend fun sendMessage(message: Message) = error("Not implemented")

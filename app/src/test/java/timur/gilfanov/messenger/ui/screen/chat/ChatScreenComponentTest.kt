@@ -12,8 +12,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.paging.PagingData
 import java.util.UUID
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -23,7 +25,6 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
@@ -71,42 +72,14 @@ class ChatScreenComponentTest {
 
     @Test
     fun `chat screen shows ready state with messages`() {
-        val messages = persistentListOf(
-            MessageUiModel(
-                id = "1",
-                text = "Hello! 👋",
-                senderId = "other-user",
-                senderName = "Alice",
-                createdAt = "14:28",
-                deliveryStatus = DeliveryStatus.Read,
-                isFromCurrentUser = false,
-            ),
-            MessageUiModel(
-                id = "2",
-                text = "How are you doing today?",
-                senderId = "current-user",
-                senderName = "You",
-                createdAt = "14:30",
-                deliveryStatus = DeliveryStatus.Delivered,
-                isFromCurrentUser = true,
-            ),
-        )
+        // Create participants and messages using fixtures
+        val (alice, currentUser) = ChatScreenTestFixtures.createAliceAndCurrentUser()
+        val messages = ChatScreenTestFixtures.createSampleMessages(alice, currentUser)
 
-        val readyState = ChatUiState.Ready(
+        val readyState = ChatScreenTestFixtures.createChatUiStateReady(
             id = testChatId,
             title = "Alice",
-            participants = persistentListOf(
-                ParticipantUiModel(
-                    id = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002")),
-                    name = "Alice",
-                    pictureUrl = null,
-                ),
-            ),
-            isGroupChat = false,
             messages = messages,
-            inputTextField = TextFieldState(""),
-            isSending = false,
-            status = ChatStatus.OneToOne(null),
         )
 
         composeTestRule.setContent {
@@ -133,15 +106,11 @@ class ChatScreenComponentTest {
     @Test
     fun `chat screen message input updates text`() {
         val textFieldState = TextFieldState("")
-        val readyState = ChatUiState.Ready(
+        val readyState = ChatScreenTestFixtures.createChatUiStateReady(
             id = testChatId,
             title = "Test Chat",
-            participants = persistentListOf(),
-            isGroupChat = false,
-            messages = persistentListOf(),
+            participants = emptyList(),
             inputTextField = textFieldState,
-            isSending = false,
-            status = ChatStatus.OneToOne(null),
         )
 
         composeTestRule.setContent {
@@ -164,15 +133,11 @@ class ChatScreenComponentTest {
     @Test
     fun `repeat message input text updates`() {
         val textFieldState = TextFieldState("")
-        val readyState = ChatUiState.Ready(
+        val readyState = ChatScreenTestFixtures.createChatUiStateReady(
             id = testChatId,
             title = "Test Chat",
-            participants = persistentListOf(),
-            isGroupChat = false,
-            messages = persistentListOf(),
+            participants = emptyList(),
             inputTextField = textFieldState,
-            isSending = false,
-            status = ChatStatus.OneToOne(null),
         )
 
         composeTestRule.setContent {
@@ -199,7 +164,7 @@ class ChatScreenComponentTest {
             title = "Test Chat",
             participants = persistentListOf(),
             isGroupChat = false,
-            messages = persistentListOf(),
+            messages = flowOf(PagingData.empty()),
             inputTextField = TextFieldState("Test message"),
             isSending = false,
             status = ChatStatus.OneToOne(null),
@@ -227,7 +192,7 @@ class ChatScreenComponentTest {
             title = "Test Chat",
             participants = persistentListOf(),
             isGroupChat = false,
-            messages = persistentListOf(),
+            messages = flowOf(PagingData.empty()),
             inputTextField = TextFieldState("Sending..."),
             isSending = true,
             status = ChatStatus.OneToOne(null),
@@ -265,7 +230,7 @@ class ChatScreenComponentTest {
                 ),
             ),
             isGroupChat = true,
-            messages = persistentListOf(),
+            messages = flowOf(PagingData.empty()),
             inputTextField = TextFieldState(""),
             isSending = false,
             status = ChatStatus.Group(2),
@@ -291,7 +256,7 @@ class ChatScreenComponentTest {
             title = "Test Chat",
             participants = persistentListOf(),
             isGroupChat = false,
-            messages = persistentListOf(),
+            messages = flowOf(PagingData.empty()),
             inputTextField = TextFieldState(""),
             isSending = false,
             status = ChatStatus.OneToOne(null),
@@ -320,6 +285,7 @@ class ChatScreenComponentTest {
                         title = "Test Chat",
                         participants = persistentListOf(),
                         isGroupChat = false,
+                        messages = flowOf(PagingData.empty()),
                         inputTextField = TextFieldState(""),
                         inputTextValidationError = TextValidationError.Empty,
                         status = ChatStatus.OneToOne(null),
@@ -344,6 +310,7 @@ class ChatScreenComponentTest {
                         title = "Test Chat",
                         participants = persistentListOf(),
                         isGroupChat = false,
+                        messages = flowOf(PagingData.empty()),
                         inputTextField = TextFieldState("a"),
                         status = ChatStatus.OneToOne(null),
                     ),

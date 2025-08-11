@@ -3,19 +3,14 @@ package timur.gilfanov.messenger.ui.screen.chat
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.snapshots.Snapshot
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -47,9 +42,6 @@ class ChatViewModelMessageSendingTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    @Ignore(
-        "Test requires updating for pagination support - complex state transitions affected by pagedMessages field",
-    )
     @Suppress("LongMethod")
     fun `sending a message clears input only once`() = runTest {
         listOf(
@@ -93,22 +85,17 @@ class ChatViewModelMessageSendingTest {
                 }
                 viewModel.sendMessage(message.id, now = now)
                 expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
-
-                val messageUi = MessageUiModel(
-                    id = message.id.id.toString(),
-                    text = "Test message",
-                    senderId = currentUserId.id.toString(),
-                    senderName = "Current User",
-                    createdAt = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(1000)),
-                    deliveryStatus = statuses[1],
-                    isFromCurrentUser = true,
-                )
                 expectStateOn<ChatUiState.Ready> { copy(isSending = false) }
                 assertEquals("", inputTextField.text)
                 Snapshot.withMutableSnapshot {
                     inputTextField.setTextAndPlaceCursorAtEnd("Test message 2")
                 }
-                expectStateOn<ChatUiState.Ready> { copy(messages = persistentListOf(messageUi)) }
+                // State should be the same as before sending the message, but we can't check paged
+                // messages and it will be different instance. This test is more about ensuring
+                // that input text field is cleared only once, not checking the messages list.
+                awaitState().let { state ->
+                    assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
+                }
                 assertEquals("Test message 2", inputTextField.text)
                 job.cancelAndJoin()
             }

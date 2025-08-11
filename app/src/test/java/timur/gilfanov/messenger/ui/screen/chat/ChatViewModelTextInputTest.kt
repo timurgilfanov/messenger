@@ -59,7 +59,6 @@ class ChatViewModelTextInputTest {
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertNull(initialState.inputTextValidationError)
-            assertTrue(initialState.messages.isEmpty())
 
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = TextValidationError.Empty)

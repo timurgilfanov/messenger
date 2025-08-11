@@ -20,7 +20,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.NetworkNotAvailable
@@ -66,22 +65,7 @@ class ChatViewModelLoadingTest {
                 ),
             ),
             isGroupChat = params.isGroupChat,
-            messages = if (params.message != null && params.createdAtUi != null) {
-                persistentListOf(
-                    MessageUiModel(
-                        id = params.message.id.id.toString(),
-                        text = params.message.text,
-                        senderId = params.currentUserId.id.toString(),
-                        senderName = "Current User",
-                        createdAt = params.createdAtUi,
-                        deliveryStatus = DeliveryStatus.Sent,
-                        isFromCurrentUser = true,
-                    ),
-                )
-            } else {
-                persistentListOf()
-            },
-            pagedMessages = params.actualState.pagedMessages,
+            messages = params.actualState.messages,
             inputTextField = params.actualState.inputTextField,
             isSending = false,
             status = if (params.isGroupChat) ChatStatus.Group(2) else ChatStatus.OneToOne(null),

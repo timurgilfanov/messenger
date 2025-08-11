@@ -74,7 +74,7 @@ class ChatPaginationIntegrationTest {
             // Then: Ready state includes pagination support
             val state = awaitState()
             assertTrue(state is ChatUiState.Ready, "Expected Ready state")
-            assertNotNull(state.pagedMessages, "pagedMessages should not be null")
+            assertNotNull(state.messages, "messages should not be null")
 
             job.cancelAndJoin()
         }
@@ -123,7 +123,7 @@ class ChatPaginationIntegrationTest {
             assertTrue(state is ChatUiState.Ready)
 
             // Then: Pagination data is accessible and not null
-            assertNotNull(state.pagedMessages, "pagedMessages should not be null")
+            assertNotNull(state.messages, "messages should not be null")
 
             job.cancelAndJoin()
         }
@@ -159,7 +159,7 @@ class ChatPaginationIntegrationTest {
             assertTrue(state is ChatUiState.Ready)
 
             // Then: Pagination handles empty data - flow should not be null
-            assertNotNull(state.pagedMessages, "pagedMessages should not be null")
+            assertNotNull(state.messages, "messages should not be null")
 
             job.cancelAndJoin()
         }
@@ -209,11 +209,10 @@ class ChatPaginationIntegrationTest {
 
             // Then: Both regular chat state and pagination work together
             assertEquals("Direct Message", state.title) // Regular chat functionality
-            assertTrue(state.messages.isEmpty()) // Regular messages (empty in this test)
-            assertNotNull(state.pagedMessages) // Pagination functionality
+            assertNotNull(state.messages) // Pagination functionality
 
             // Then: Pagination flow is available for integration
-            assertNotNull(state.pagedMessages, "pagedMessages should not be null")
+            assertNotNull(state.messages, "messages should not be null")
 
             job.cancelAndJoin()
         }

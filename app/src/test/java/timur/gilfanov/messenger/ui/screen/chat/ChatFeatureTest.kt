@@ -18,7 +18,6 @@ import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -82,9 +81,6 @@ class ChatFeatureTest {
     }
 
     @Test
-    @Ignore(
-        "Test requires updating for pagination support - UI state changes affect Compose test interactions",
-    )
     fun `chat screen by default have disabled send button`() {
         composeTestRule.waitUntilExactlyOneExists(
             hasTestTag("message_input"),

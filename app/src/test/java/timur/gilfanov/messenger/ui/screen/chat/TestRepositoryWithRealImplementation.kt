@@ -158,7 +158,6 @@ class TestRepositoryWithRealImplementation :
     ): ResultWithError<Unit, RepositoryDeleteMessageError> =
         realRepository.deleteMessage(messageId, mode)
 
-    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
-        TODO("Not yet implemented")
-    }
+    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+        realRepository.getPagedMessages(chatId)
 }

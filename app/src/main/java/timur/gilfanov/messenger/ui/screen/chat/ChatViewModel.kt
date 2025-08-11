@@ -42,6 +42,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.Serv
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerUnreachable
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.UnknownError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 
 private const val STATE_UPDATE_DEBOUNCE = 200L
@@ -52,6 +53,7 @@ class ChatViewModel @AssistedInject constructor(
     @Assisted("currentUserId") currentUserIdUuid: UUID,
     private val sendMessageUseCase: SendMessageUseCase,
     private val receiveChatUpdatesUseCase: ReceiveChatUpdatesUseCase,
+    private val getPagedMessagesUseCase: GetPagedMessagesUseCase,
 ) : ViewModel(),
     ContainerHost<ChatUiState, Nothing> {
 
@@ -259,6 +261,7 @@ class ChatViewModel @AssistedInject constructor(
             participants = participantUiModels,
             isGroupChat = !chat.isOneToOne,
             messages = messages,
+            pagedMessages = getPagedMessagesUseCase(chat.id),
             status = chatStatus,
             inputTextField = (state as? ChatUiState.Ready?)?.inputTextField ?: TextFieldState(""),
             inputTextValidationError = inputTextValidationError,

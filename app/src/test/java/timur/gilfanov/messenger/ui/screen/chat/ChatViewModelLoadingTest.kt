@@ -27,6 +27,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.GetPagedMessagesUseCaseFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -36,6 +37,54 @@ class ChatViewModelLoadingTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    private data class ExpectedStateParams(
+        val chatId: ChatId,
+        val currentUserId: ParticipantId,
+        val otherUserId: ParticipantId,
+        val message: TextMessage?,
+        val createdAtUi: String?,
+        val actualState: ChatUiState.Ready,
+        val isGroupChat: Boolean = false,
+    )
+
+    private fun createExpectedReadyState(params: ExpectedStateParams): ChatUiState.Ready =
+        ChatUiState.Ready(
+            id = params.chatId,
+            title = if (params.isGroupChat) "Group Chat" else "Direct Message",
+            participants = persistentListOf(
+                ParticipantUiModel(
+                    id = params.currentUserId,
+                    name = "Current User",
+                    pictureUrl = null,
+                ),
+                ParticipantUiModel(
+                    id = params.otherUserId,
+                    name = "Other User",
+                    pictureUrl = null,
+                ),
+            ),
+            isGroupChat = params.isGroupChat,
+            messages = if (params.message != null && params.createdAtUi != null) {
+                persistentListOf(
+                    MessageUiModel(
+                        id = params.message.id.id.toString(),
+                        text = params.message.text,
+                        senderId = params.currentUserId.id.toString(),
+                        senderName = "Current User",
+                        createdAt = params.createdAtUi,
+                        deliveryStatus = DeliveryStatus.Sent,
+                        isFromCurrentUser = true,
+                    ),
+                )
+            } else {
+                persistentListOf()
+            },
+            pagedMessages = params.actualState.pagedMessages,
+            inputTextField = params.actualState.inputTextField,
+            isSending = false,
+            status = if (params.isGroupChat) ChatStatus.Group(2) else ChatStatus.OneToOne(null),
+        )
 
     @Test
     fun `loads chat successfully`() = runTest {
@@ -51,51 +100,32 @@ class ChatViewModelLoadingTest {
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
+        val getPagedMessagesUseCase = GetPagedMessagesUseCaseFake(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
+            getPagedMessagesUseCase = getPagedMessagesUseCase,
         )
 
         viewModel.test(this) {
             val job = runOnCreate()
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
-            assertEquals(
-                ChatUiState.Ready(
-                    id = chatId,
-                    title = "Direct Message",
-                    participants = persistentListOf(
-                        ParticipantUiModel(
-                            id = currentUserId,
-                            name = "Current User",
-                            pictureUrl = null,
-                        ),
-                        ParticipantUiModel(
-                            id = otherUserId,
-                            name = "Other User",
-                            pictureUrl = null,
-                        ),
-                    ),
+
+            val expectedState = createExpectedReadyState(
+                ExpectedStateParams(
+                    chatId = chatId,
+                    currentUserId = currentUserId,
+                    otherUserId = otherUserId,
+                    message = message,
+                    createdAtUi = createdAtUi,
+                    actualState = state as ChatUiState.Ready,
                     isGroupChat = false,
-                    messages = persistentListOf(
-                        MessageUiModel(
-                            id = message.id.id.toString(),
-                            text = "Hello!",
-                            senderId = currentUserId.id.toString(),
-                            senderName = "Current User",
-                            createdAt = createdAtUi,
-                            deliveryStatus = DeliveryStatus.Sent,
-                            isFromCurrentUser = true,
-                        ),
-                    ),
-                    inputTextField = (state as ChatUiState.Ready).inputTextField,
-                    isSending = false,
-                    status = ChatStatus.OneToOne(null),
                 ),
-                state,
             )
+            assertEquals(expectedState, state)
 
             job.cancelAndJoin()
         }
@@ -117,42 +147,32 @@ class ChatViewModelLoadingTest {
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
+        val getPagedMessagesUseCase = GetPagedMessagesUseCaseFake(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
+            getPagedMessagesUseCase = getPagedMessagesUseCase,
         )
 
         viewModel.test(this) {
             val job = runOnCreate()
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
-            val inputField = (state as ChatUiState.Ready).inputTextField
-            assertEquals(
-                ChatUiState.Ready(
-                    id = chatId,
-                    title = "Group Chat",
-                    participants = persistentListOf(
-                        ParticipantUiModel(
-                            id = currentUserId,
-                            name = "Current User",
-                            pictureUrl = null,
-                        ),
-                        ParticipantUiModel(
-                            id = otherUserId,
-                            name = "Other User",
-                            pictureUrl = null,
-                        ),
-                    ),
+
+            val expectedState = createExpectedReadyState(
+                ExpectedStateParams(
+                    chatId = chatId,
+                    currentUserId = currentUserId,
+                    otherUserId = otherUserId,
+                    message = null,
+                    createdAtUi = null,
+                    actualState = state as ChatUiState.Ready,
                     isGroupChat = true,
-                    messages = persistentListOf(),
-                    inputTextField = inputField,
-                    isSending = false,
-                    status = ChatStatus.Group(2),
                 ),
-                state,
             )
+            assertEquals(expectedState, state)
 
             job.cancelAndJoin()
         }
@@ -170,11 +190,13 @@ class ChatViewModelLoadingTest {
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
+        val getPagedMessagesUseCase = GetPagedMessagesUseCaseFake(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
+            getPagedMessagesUseCase = getPagedMessagesUseCase,
         )
 
         viewModel.test(this) {

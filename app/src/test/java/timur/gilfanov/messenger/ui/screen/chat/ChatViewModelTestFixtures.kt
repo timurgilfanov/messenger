@@ -27,6 +27,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
@@ -167,5 +168,11 @@ object ChatViewModelTestFixtures {
 
         override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
             error("Not implemented")
+    }
+
+    class GetPagedMessagesUseCaseFake(private val repository: MessageRepository) :
+        GetPagedMessagesUseCase(repository) {
+        override operator fun invoke(chatId: ChatId): Flow<PagingData<Message>> =
+            flowOf(PagingData.empty())
     }
 }

@@ -33,8 +33,8 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.RepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.RepositoryFakeWithStatusFlow
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFakeWithStatusFlow
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -54,7 +54,8 @@ class ChatViewModelMessageSendingTest {
         ).forEach { statuses ->
             val chatId = ChatId(UUID.randomUUID())
             val currentUserId = ParticipantId(UUID.randomUUID())
-            val chat = createTestChat(chatId, currentUserId)
+            val otherUserId = ParticipantId(UUID.randomUUID())
+            val chat = createTestChat(chatId, currentUserId, otherUserId)
             val now = Instant.fromEpochMilliseconds(1000)
             val message = buildTextMessage {
                 sender = chat.participants.first { it.id == currentUserId }
@@ -62,7 +63,7 @@ class ChatViewModelMessageSendingTest {
                 this.createdAt = now
                 text = "Test message"
             }
-            val rep = RepositoryFakeWithStatusFlow(chat, statuses)
+            val rep = ChatRepositoryFakeWithStatusFlow(chat, statuses)
             val viewModel = ChatViewModel(
                 chatIdUuid = chatId.id,
                 currentUserIdUuid = currentUserId.id,
@@ -110,9 +111,10 @@ class ChatViewModelMessageSendingTest {
     fun `dismissDialogError clears error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
+        val otherUserId = ParticipantId(UUID.randomUUID())
 
-        val chat = createTestChat(chatId, currentUserId)
-        val repository = RepositoryFake(chat = chat)
+        val chat = createTestChat(chatId, currentUserId, otherUserId)
+        val repository = ChatRepositoryFake(chat = chat)
 
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)

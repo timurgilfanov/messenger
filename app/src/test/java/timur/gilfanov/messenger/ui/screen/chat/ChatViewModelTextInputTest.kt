@@ -21,7 +21,7 @@ import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationE
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.RepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -39,7 +39,7 @@ class ChatViewModelTextInputTest {
 
         val initialChat = createTestChat(chatId, currentUserId, otherUserId)
 
-        val repository = RepositoryFake(chat = initialChat, flowSendMessage = flowOf())
+        val repository = ChatRepositoryFake(chat = initialChat, flowSendMessage = flowOf())
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 

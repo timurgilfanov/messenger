@@ -4,20 +4,18 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.annotations.Unit
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.entity.chat.buildChat
-import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.Message
-import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
+import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(Unit::class)
 class ChatListUiStateUnitTest {
 
     private val testChatId = ChatId(UUID.randomUUID())
@@ -29,22 +27,22 @@ class ChatListUiStateUnitTest {
         id: ParticipantId = testUserId,
         name: String = "Test User",
         onlineAt: Instant? = null,
-    ) = buildParticipant {
-        this.id = id
-        this.name = name
-        this.joinedAt = testTimestamp
-        this.onlineAt = onlineAt
-    }
+    ) = DomainTestFixtures.createTestParticipant(
+        id = id,
+        name = name,
+        joinedAt = testTimestamp,
+        onlineAt = onlineAt,
+    )
 
     private fun createTestTextMessage(
         text: String = "Test message",
         senderId: ParticipantId = testUserId,
         createdAt: Instant = testTimestamp,
-    ) = buildTextMessage {
-        this.sender = createTestParticipant(senderId)
-        this.text = text
-        this.createdAt = createdAt
-    }
+    ) = DomainTestFixtures.createTestTextMessage(
+        text = text,
+        sender = createTestParticipant(senderId),
+        createdAt = createdAt,
+    )
 
     private data class TestChatParams(
         val id: ChatId = ChatId(UUID.randomUUID()),
@@ -56,15 +54,16 @@ class ChatListUiStateUnitTest {
         val unreadMessagesCount: Int = 0,
     )
 
-    private fun createTestChat(params: TestChatParams = TestChatParams()) = buildChat {
-        this.id = params.id
-        this.name = params.name
-        this.pictureUrl = params.pictureUrl
-        this.messages = persistentListOf<Message>().addAll(params.messages)
-        this.participants = persistentSetOf<Participant>().addAll(params.participants)
-        this.isOneToOne = params.isOneToOne
-        this.unreadMessagesCount = params.unreadMessagesCount
-    }
+    private fun createTestChat(params: TestChatParams = TestChatParams()) =
+        DomainTestFixtures.createTestChat(
+            id = params.id,
+            name = params.name,
+            pictureUrl = params.pictureUrl,
+            messages = params.messages,
+            participants = params.participants.toSet(),
+            isOneToOne = params.isOneToOne,
+            unreadMessagesCount = params.unreadMessagesCount,
+        )
 
     @Test
     fun `toChatListItemUiModel maps basic chat properties correctly`() {

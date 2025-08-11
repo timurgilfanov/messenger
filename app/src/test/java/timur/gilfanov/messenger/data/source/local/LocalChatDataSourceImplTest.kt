@@ -7,7 +7,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
@@ -21,8 +20,8 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
-import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 import timur.gilfanov.messenger.util.NoOpLogger
 
@@ -270,33 +269,22 @@ class LocalChatDataSourceImplTest {
     private fun createTestChat(
         id: String = "66666666-6666-6666-6666-666666666666", // Fixed UUID
         name: String = "Test Chat",
-    ) = Chat(
+    ) = DomainTestFixtures.createTestChat(
         id = ChatId(UUID.fromString(id)),
         name = name,
-        participants = persistentSetOf(
-            Participant(
+        participants = setOf(
+            DomainTestFixtures.createTestParticipant(
                 id = ParticipantId(UUID.fromString("44444444-4444-4444-4444-444444444444")),
                 name = "User 1",
-                pictureUrl = null,
                 joinedAt = Instant.fromEpochMilliseconds(1000000),
                 onlineAt = null,
-                isAdmin = false,
-                isModerator = false,
             ),
-            Participant(
+            DomainTestFixtures.createTestParticipant(
                 id = ParticipantId(UUID.fromString("55555555-5555-5555-5555-555555555555")),
                 name = "User 2",
-                pictureUrl = null,
                 joinedAt = Instant.fromEpochMilliseconds(1100000),
                 onlineAt = null,
-                isAdmin = true,
-                isModerator = false,
             ),
         ),
-        pictureUrl = null,
-        messages = persistentListOf(),
-        rules = persistentSetOf(),
-        unreadMessagesCount = 0,
-        lastReadMessageId = null,
     )
 }

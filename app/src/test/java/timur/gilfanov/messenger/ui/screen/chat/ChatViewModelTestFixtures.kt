@@ -1,8 +1,5 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
-import java.util.UUID
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -19,13 +16,11 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.entity.chat.buildChat
-import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
+import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
@@ -36,32 +31,18 @@ import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageErro
 object ChatViewModelTestFixtures {
 
     fun createTestChat(
-        chatId: ChatId = ChatId(UUID.randomUUID()),
-        currentUserId: ParticipantId = ParticipantId(UUID.randomUUID()),
-        otherUserId: ParticipantId = ParticipantId(UUID.randomUUID()),
+        chatId: ChatId,
+        currentUserId: ParticipantId,
+        otherUserId: ParticipantId,
         messages: List<Message> = emptyList(),
         isOneToOne: Boolean = true,
-    ): Chat {
-        val currentUser = buildParticipant {
-            id = currentUserId
-            name = "Current User"
-            joinedAt = Instant.fromEpochMilliseconds(1000)
-        }
-
-        val otherUser = buildParticipant {
-            id = otherUserId
-            name = "Other User"
-            joinedAt = Instant.fromEpochMilliseconds(1000)
-        }
-
-        return buildChat {
-            id = chatId
-            name = if (isOneToOne) "Direct Message" else "Group Chat"
-            participants = persistentSetOf(currentUser, otherUser)
-            this.messages = persistentListOf<Message>().addAll(messages)
-            this.isOneToOne = isOneToOne
-        }
-    }
+    ): Chat = DomainTestFixtures.createTestChatWithParticipants(
+        chatId = chatId,
+        currentUserId = currentUserId,
+        otherUserIds = listOf(otherUserId),
+        messages = messages,
+        isOneToOne = isOneToOne,
+    )
 
     fun createTestMessage(
         senderId: ParticipantId,
@@ -70,21 +51,21 @@ object ChatViewModelTestFixtures {
         joinedAt: Instant,
         createdAt: Instant,
     ): TextMessage {
-        val sender = buildParticipant {
-            id = senderId
-            name = "Current User"
-            this.joinedAt = joinedAt
-        }
+        val sender = DomainTestFixtures.createTestParticipant(
+            id = senderId,
+            name = "Current User",
+            joinedAt = joinedAt,
+        )
 
-        return buildTextMessage {
-            this.sender = sender
-            this.text = text
-            this.deliveryStatus = deliveryStatus
-            this.createdAt = createdAt
-        }
+        return DomainTestFixtures.createTestTextMessage(
+            sender = sender,
+            text = text,
+            deliveryStatus = deliveryStatus,
+            createdAt = createdAt,
+        )
     }
 
-    class RepositoryFake(
+    class ChatRepositoryFake(
         private val chat: Chat? = null,
         private val flowChat: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>? = null,
         private val flowSendMessage: Flow<Message>? = null,
@@ -128,7 +109,7 @@ object ChatViewModelTestFixtures {
         ) = error("Not implemented")
     }
 
-    class RepositoryFakeWithStatusFlow(chat: Chat, val statuses: List<DeliveryStatus>) :
+    class ChatRepositoryFakeWithStatusFlow(chat: Chat, val statuses: List<DeliveryStatus>) :
         ChatRepository,
         MessageRepository {
 

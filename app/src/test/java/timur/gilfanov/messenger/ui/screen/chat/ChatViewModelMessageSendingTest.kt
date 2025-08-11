@@ -30,8 +30,8 @@ import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.ChatRepositoryFakeWithStatusFlow
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithStatusFlow
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -42,7 +42,6 @@ class ChatViewModelMessageSendingTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    @Suppress("LongMethod")
     fun `sending a message clears input only once`() = runTest {
         listOf(
             listOf(Sending(0), Sending(50)),
@@ -61,7 +60,7 @@ class ChatViewModelMessageSendingTest {
                 this.createdAt = now
                 text = "Test message"
             }
-            val rep = ChatRepositoryFakeWithStatusFlow(chat, statuses)
+            val rep = MessengerRepositoryFakeWithStatusFlow(chat, statuses)
             val getPagedMessagesUseCase = GetPagedMessagesUseCase(rep)
             val viewModel = ChatViewModel(
                 chatIdUuid = chatId.id,
@@ -109,7 +108,7 @@ class ChatViewModelMessageSendingTest {
         val otherUserId = ParticipantId(UUID.randomUUID())
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
-        val repository = ChatRepositoryFake(chat = chat)
+        val repository = MessengerRepositoryFake(chat = chat)
 
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)

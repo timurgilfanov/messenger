@@ -24,9 +24,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "timur.gilfanov.messenger.HiltTestRunner"
-        testInstrumentationRunnerArguments += mapOf(
-            "clearPackageData" to "true",
-        )
+        testInstrumentationRunnerArguments += mapOf("clearPackageData" to "true")
 
         // Add annotation filtering for instrumentation tests
         if (project.hasProperty("annotation")) {

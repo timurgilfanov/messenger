@@ -1,7 +1,7 @@
 package timur.gilfanov.messenger.domain.entity.chat
 
+import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableSet
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.message.Message
 
 data class ChatPreview(

@@ -63,6 +63,12 @@ android {
         }
     }
 
+    kotlin {
+        compilerOptions {
+            freeCompilerArgs.add("-opt-in=kotlin.time.ExperimentalTime")
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true

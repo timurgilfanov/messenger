@@ -12,12 +12,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Instant
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -355,7 +355,9 @@ class LocalSyncDataSourceImplTest {
 
         // Verify sync timestamp was updated in DataStore
         val timestampResult = localSyncDataSource.getLastSyncTimestamp()
-        assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(timestampResult)
+        assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(
+            timestampResult,
+        )
         assertEquals(
             chatListDelta.toTimestamp.toEpochMilliseconds(),
             timestampResult.data?.toEpochMilliseconds(),

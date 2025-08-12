@@ -3,9 +3,9 @@ package timur.gilfanov.messenger.ui.screen.chat
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.paging.PagingData
 import java.util.UUID
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId

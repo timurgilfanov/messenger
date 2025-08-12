@@ -19,8 +19,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.datetime.Clock
 import org.junit.Assert.assertEquals as junitAssertEquals
 import org.junit.Rule
 import org.junit.Test

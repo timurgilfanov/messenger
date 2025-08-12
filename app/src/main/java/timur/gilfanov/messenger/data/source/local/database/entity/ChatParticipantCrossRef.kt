@@ -3,7 +3,7 @@ package timur.gilfanov.messenger.data.source.local.database.entity
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 /**
  * Junction table for many-to-many relationship between chats and participants.

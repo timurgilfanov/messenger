@@ -3,9 +3,9 @@ package timur.gilfanov.messenger.ui.screen.chatlist
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.annotations.Unit

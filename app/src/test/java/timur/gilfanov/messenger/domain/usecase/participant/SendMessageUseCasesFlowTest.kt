@@ -4,10 +4,10 @@ import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Instant
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.annotations.Component

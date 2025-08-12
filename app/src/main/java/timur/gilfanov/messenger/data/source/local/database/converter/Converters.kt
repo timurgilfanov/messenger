@@ -1,7 +1,7 @@
 package timur.gilfanov.messenger.data.source.local.database.converter
 
 import androidx.room.TypeConverter
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import timur.gilfanov.messenger.data.source.local.database.entity.MessageType
 
 /**

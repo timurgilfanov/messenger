@@ -3,9 +3,9 @@ package timur.gilfanov.messenger.domain.entity.chat
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.datetime.Clock
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.annotations.Unit

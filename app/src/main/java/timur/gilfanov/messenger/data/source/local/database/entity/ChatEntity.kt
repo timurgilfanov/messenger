@@ -2,7 +2,7 @@ package timur.gilfanov.messenger.data.source.local.database.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 /**
  * Room entity representing a chat in the database.

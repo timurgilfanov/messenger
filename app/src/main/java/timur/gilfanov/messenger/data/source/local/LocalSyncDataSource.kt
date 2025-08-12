@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.data.source.local
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import timur.gilfanov.messenger.data.source.remote.ChatDelta
 import timur.gilfanov.messenger.data.source.remote.ChatListDelta
 import timur.gilfanov.messenger.domain.entity.ResultWithError

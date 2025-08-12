@@ -2,9 +2,9 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.paging.PagingData
+import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus

@@ -2,7 +2,7 @@ package timur.gilfanov.messenger.domain.entity
 
 import java.util.UUID
 import junit.framework.TestCase.assertTrue
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.chat.ChatId

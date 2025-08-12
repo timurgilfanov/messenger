@@ -1,7 +1,7 @@
 package timur.gilfanov.messenger.domain.entity.chat
 
 import java.util.UUID
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 fun buildParticipant(builder: ParticipantBuilder.() -> Unit): Participant =
     ParticipantBuilder().apply(builder).build()

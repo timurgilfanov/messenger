@@ -11,8 +11,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import java.io.IOException
 import java.util.UUID
+import kotlin.time.Instant
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import timur.gilfanov.messenger.data.source.remote.dto.ApiErrorCode
 import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse

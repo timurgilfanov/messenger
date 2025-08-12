@@ -1,8 +1,8 @@
 package timur.gilfanov.messenger.data.source.remote
 
+import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.datetime.Instant
 
 /**
  * Represents a collection of incremental changes to the chat list.

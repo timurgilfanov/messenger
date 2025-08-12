@@ -3,13 +3,13 @@ package timur.gilfanov.messenger.data.source.local
 import androidx.paging.PagingSource
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDelta
@@ -202,7 +202,10 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         TODO("Not yet implemented")
     }
 
-    override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =
+    override suspend fun getLastSyncTimestamp(): ResultWithError<
+        Instant?,
+        LocalDataSourceError,
+        > =
         if (shouldFailGetLastSyncTimestamp) {
             ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
         } else {

@@ -111,7 +111,7 @@ composeCompiler {
 }
 
 ktlint {
-    version.set("1.4.1") // restricted by compose ruleset for ktlint, waiting for 0.4.23 release
+    version.set("1.7.1") // change default version of ktlint in ktlint gradle plugin
 }
 
 detekt {

@@ -18,7 +18,7 @@ room = "2.7.2"
 
 # ========== Third-party Libraries ==========
 # Dependency Injection
-hilt = "2.56.2"
+hilt = "2.57"
 hiltNavigationCompose = "1.2.0"
 
 # Networking
@@ -29,9 +29,8 @@ orbit = "10.0.0"
 
 # Kotlin Extensions
 kotlinxDatetime = "0.5.0"
-kotlinxCollectionsImmutable = "0.3.7"
-kotlinxSerialization = "1.7.3"
-kotlinxCoroutinesTest = "1.8.0"
+kotlinxCollectionsImmutable = "0.4.0"
+kotlinxSerialization = "1.9.0"
 
 # ========== Testing & Dev Tools ==========
 # Testing
@@ -39,6 +38,7 @@ junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 test = "1.6.1"
+kotlinxCoroutinesTest = "1.8.0"
 robolectric = "4.13"
 turbine = "1.1.0"
 konsist = "0.17.3"

@@ -11,6 +11,7 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -25,7 +26,7 @@ import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(Unit::class)
 class RepositoryFakeTest {
 
     @Test

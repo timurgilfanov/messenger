@@ -20,7 +20,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.Not
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteUnreachable
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class LeaveChatUseCaseTest {
 
     private class RepositoryFake(val error: RepositoryLeaveChatError? = null) :

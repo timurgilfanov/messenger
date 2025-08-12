@@ -11,7 +11,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.annotations.Unit
+import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.Message

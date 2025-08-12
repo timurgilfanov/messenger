@@ -23,7 +23,7 @@ import kotlinx.serialization.json.Json
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.annotations.Unit
+import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.remote.dto.ApiErrorCode
 import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse
 import timur.gilfanov.messenger.data.source.remote.dto.DeliveryStatusDto

@@ -12,7 +12,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.annotations.Unit
+import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.createChatParticipantCrossRefs
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toChat

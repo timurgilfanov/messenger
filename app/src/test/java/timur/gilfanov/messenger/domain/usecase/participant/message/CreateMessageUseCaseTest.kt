@@ -39,7 +39,7 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class CreateMessageUseCaseTest {
 
     private class RepositoryFake(

@@ -8,7 +8,7 @@ import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.annotations.Unit
+import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId

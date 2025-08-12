@@ -20,7 +20,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class CreateChatUseCaseTest {
 
     private class RepositoryFake(val error: RepositoryCreateChatError? = null) :

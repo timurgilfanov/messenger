@@ -292,7 +292,6 @@ dependencies {
     testImplementation(libs.konsist)
 
     // Test Utilities
-    testImplementation(project(":test-annotations"))
     testImplementation(libs.hilt.android.testing)
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.ktor.client.mock)
@@ -304,7 +303,6 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.kotlin.test)
-    androidTestImplementation(project(":test-annotations"))
     androidTestImplementation(libs.hilt.android.testing)
     kspAndroidTest(libs.hilt.compiler)
 
@@ -385,7 +383,7 @@ tasks.register("preCommit") {
             val process = ProcessBuilder(
                 "./gradlew",
                 "testMockDebugUnitTest",
-                "-PtestCategory=timur.gilfanov.annotations.$category",
+                "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
                 "-Pcoverage",
             )
                 .directory(project.rootDir)

@@ -8,7 +8,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.annotations.Unit
+import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage

@@ -9,6 +9,7 @@ import kotlin.time.Clock
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -27,7 +28,7 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(Unit::class)
 class InMemoryParticipantRepositoryFakeTest {
 
     @Test

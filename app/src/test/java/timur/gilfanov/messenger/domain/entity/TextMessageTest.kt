@@ -5,13 +5,14 @@ import junit.framework.TestCase.assertTrue
 import kotlin.time.Clock
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(Unit::class)
 class TextMessageTest {
 
     @Test

@@ -30,11 +30,9 @@ import kotlinx.coroutines.withContext
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
-import timur.gilfanov.annotations.Feature
-import timur.gilfanov.annotations.FeatureTest
 import timur.gilfanov.messenger.ChatScreenTestActivity
+import timur.gilfanov.messenger.annotations.FeatureTest
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
@@ -49,7 +47,6 @@ import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
     timur.gilfanov.messenger.di.TestUserModule::class,
     timur.gilfanov.messenger.di.TestChatModule::class,
 )
-@Category(Feature::class)
 @FeatureTest
 @RunWith(AndroidJUnit4::class)
 class ChatFeatureTest {

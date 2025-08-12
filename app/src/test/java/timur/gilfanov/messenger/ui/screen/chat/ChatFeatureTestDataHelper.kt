@@ -86,7 +86,7 @@ object ChatFeatureTestDataHelper {
         participants = persistentSetOf(currentUser, aliceUser),
         name = "Alice",
         pictureUrl = null,
-        rules = persistentSetOf(),
+        rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
         unreadMessagesCount = 0,
         lastReadMessageId = null,
         messages = persistentListOf(
@@ -122,7 +122,7 @@ object ChatFeatureTestDataHelper {
         participants = persistentSetOf(currentUser, bobUser),
         name = "Bob",
         pictureUrl = null,
-        rules = persistentSetOf(),
+        rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
         unreadMessagesCount = 1,
         lastReadMessageId = null,
         messages = persistentListOf(

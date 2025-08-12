@@ -1,8 +1,9 @@
 package timur.gilfanov.messenger.data.source.local.database.mapper
 
 import java.util.UUID
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
@@ -115,12 +116,12 @@ object EntityMappers {
         pictureUrl = chat.pictureUrl,
         messages = messages.map {
             it.toMessage(participants, participantCrossRefs)
-        }.toImmutableList(),
+        }.toPersistentList(),
         participants = participants.mapIndexed { index, participant ->
             val crossRef = participantCrossRefs.find { it.participantId == participant.id }
                 ?: error("No cross-reference found for participant ${participant.id}")
             participant.toParticipant(crossRef)
-        }.toImmutableSet(),
+        }.toPersistentSet(),
         rules = chat.rules.let { rulesJson ->
             json.decodeFromString<List<RuleDto>>(rulesJson).map { it.toDomain() }.toImmutableSet()
         },

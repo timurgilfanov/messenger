@@ -88,7 +88,7 @@ class MessengerRepositoryImplTest {
             participants = persistentSetOf(testParticipant),
             name = "Test Chat",
             pictureUrl = null,
-            rules = persistentSetOf(),
+            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
             unreadMessagesCount = 0,
             lastReadMessageId = null,
             messages = persistentListOf(testMessage),

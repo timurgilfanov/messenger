@@ -113,7 +113,7 @@ class DeleteChatUseCaseTest {
 
         val chat = buildChat {
             participants = persistentSetOf(alice, bob)
-            rules = persistentSetOf()
+            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
         }
 
         val useCase = DeleteChatUseCase(RepositoryFake())

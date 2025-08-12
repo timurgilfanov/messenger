@@ -7,6 +7,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toPersistentSet
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDelta
@@ -38,8 +40,8 @@ fun ChatDto.toDomain(): Chat = Chat(
     id = ChatId(UUID.fromString(id)),
     name = name,
     pictureUrl = pictureUrl,
-    messages = messages.map { it.toDomain() }.toImmutableList(),
-    participants = participants.map { it.toDomain() }.toImmutableSet(),
+    messages = messages.map { it.toDomain() }.toPersistentList(),
+    participants = participants.map { it.toDomain() }.toPersistentSet(),
     rules = rules.map { it.toDomain() }.toImmutableSet(),
     unreadMessagesCount = unreadMessagesCount,
     lastReadMessageId = lastReadMessageId?.let { MessageId(UUID.fromString(it)) },

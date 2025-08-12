@@ -7,7 +7,7 @@ import javax.inject.Singleton
 import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -172,7 +172,7 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
                                 // Otherwise, add new message
                                 add(message)
                             }
-                        }.toImmutableList(),
+                        }.toPersistentList(),
                     )
                     aliceChatFlow.update { updatedChat }
                     chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
@@ -190,7 +190,7 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
                                 // Otherwise, add new message
                                 add(message)
                             }
-                        }.toImmutableList(),
+                        }.toPersistentList(),
                     )
                     bobChatFlow.update { updatedChat }
                     chatListFlow.update { listOf(aliceChatFlow.value, updatedChat) }
@@ -245,7 +245,7 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
                 if (messageIndex >= 0) {
                     val updatedMessages = currentChat.messages.toMutableList().apply {
                         set(messageIndex, message)
-                    }.toImmutableList()
+                    }.toPersistentList()
                     val updatedChat = currentChat.copy(messages = updatedMessages)
                     aliceChatFlow.update { updatedChat }
                     chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
@@ -258,7 +258,7 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
                 if (messageIndex >= 0) {
                     val updatedMessages = currentChat.messages.toMutableList().apply {
                         set(messageIndex, message)
-                    }.toImmutableList()
+                    }.toPersistentList()
                     val updatedChat = currentChat.copy(messages = updatedMessages)
                     bobChatFlow.update { updatedChat }
                     chatListFlow.update { listOf(aliceChatFlow.value, updatedChat) }
@@ -291,7 +291,7 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
             defaultChat.messages.any { it.id == messageId } -> {
                 val updatedMessages = defaultChat.messages.toMutableList().apply {
                     removeAll { it.id == messageId }
-                }.toImmutableList()
+                }.toPersistentList()
                 val updatedChat = defaultChat.copy(messages = updatedMessages)
                 aliceChatFlow.update { updatedChat }
                 chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
@@ -299,7 +299,7 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
             secondChat.messages.any { it.id == messageId } -> {
                 val updatedMessages = secondChat.messages.toMutableList().apply {
                     removeAll { it.id == messageId }
-                }.toImmutableList()
+                }.toPersistentList()
                 val updatedChat = secondChat.copy(messages = updatedMessages)
                 bobChatFlow.update { updatedChat }
                 chatListFlow.update { listOf(aliceChatFlow.value, updatedChat) }

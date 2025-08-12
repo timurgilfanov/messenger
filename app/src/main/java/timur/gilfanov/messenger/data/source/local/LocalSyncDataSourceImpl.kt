@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.room.withTransaction
 import javax.inject.Inject
 import kotlin.time.Instant
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.flow.first
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
@@ -109,9 +111,9 @@ class LocalSyncDataSourceImpl @Inject constructor(
         val chat = Chat(
             id = delta.chatId,
             name = delta.chatMetadata.name,
-            participants = delta.chatMetadata.participants,
+            participants = delta.chatMetadata.participants.toPersistentSet(),
             pictureUrl = delta.chatMetadata.pictureUrl,
-            messages = delta.initialMessages,
+            messages = delta.initialMessages.toPersistentList(),
             rules = delta.chatMetadata.rules,
             unreadMessagesCount = delta.chatMetadata.unreadMessagesCount,
             lastReadMessageId = delta.chatMetadata.lastReadMessageId,
@@ -146,9 +148,9 @@ class LocalSyncDataSourceImpl @Inject constructor(
             val updatedChat = Chat(
                 id = delta.chatId,
                 name = delta.chatMetadata.name,
-                participants = delta.chatMetadata.participants,
+                participants = delta.chatMetadata.participants.toPersistentSet(),
                 pictureUrl = delta.chatMetadata.pictureUrl,
-                messages = delta.messagesToAdd,
+                messages = delta.messagesToAdd.toPersistentList(),
                 rules = delta.chatMetadata.rules,
                 unreadMessagesCount = delta.chatMetadata.unreadMessagesCount,
                 lastReadMessageId = delta.chatMetadata.lastReadMessageId,

@@ -1,8 +1,9 @@
 package timur.gilfanov.messenger.domain.entity.chat
 
 import java.util.UUID
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.PersistentSet
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 
@@ -13,8 +14,8 @@ data class Chat(
     val id: ChatId,
     val name: String,
     val pictureUrl: String?,
-    val messages: ImmutableList<Message>,
-    val participants: ImmutableSet<Participant>,
+    val messages: PersistentList<Message>,
+    val participants: PersistentSet<Participant>,
     val rules: ImmutableSet<Rule>,
     val unreadMessagesCount: Int,
     val lastReadMessageId: MessageId?,

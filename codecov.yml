@@ -53,11 +53,6 @@ component_management:
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/data/**"
     
-    - component_id: dependency_injection
-      name: "Dependency Injection"
-      paths:
-        - "app/src/main/java/timur/gilfanov/messenger/di/**"
-    
     - component_id: validation_logic
       name: "Validation Logic"
       paths:

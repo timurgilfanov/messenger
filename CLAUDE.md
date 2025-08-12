@@ -199,14 +199,6 @@ domain/
     └── message/     # Message management use cases
 ```
 
-### Annotation Processing
-- **KAPT**: Currently using KAPT for Hilt dependency injection (Hilt 2.56.2)
-- **KSP Migration**: Multiple KSP migration attempts failed due to compatibility issues
-  - Hilt 2.51.1: KSP generates invalid factory class names for Hilt modules
-  - Hilt 2.56.2: Same issue persists - method names like `chatId-aANd5Fw` are invalid Java identifiers
-  - Root cause: Known bug in KSP+Hilt integration where generated method names contain invalid characters
-  - Decision: Stay with KAPT until KSP+Hilt compatibility is fully resolved
-
 ## Technical Debt & Improvement Areas
 
 ### Data Layer Optimizations

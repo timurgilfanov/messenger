@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.ksp)
-    id("kotlin-kapt")
     id("jacoco")
 }
 
@@ -251,7 +250,7 @@ dependencies {
     // Dependency Injection
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
 
     // Networking
     implementation(libs.ktor.client.core)
@@ -307,7 +306,7 @@ dependencies {
     androidTestImplementation(libs.kotlin.test)
     androidTestImplementation(project(":test-annotations"))
     androidTestImplementation(libs.hilt.android.testing)
-    kaptAndroidTest(libs.hilt.compiler)
+    kspAndroidTest(libs.hilt.compiler)
 
     // ========== Debug Dependencies ==========
     debugImplementation(libs.androidx.ui.tooling)

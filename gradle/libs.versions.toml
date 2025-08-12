@@ -29,12 +29,13 @@ ksp = "2.0.21-1.0.28"
 datastore = "1.1.1"
 ktor = "3.2.3"
 paging = "3.3.6"
+test = "1.6.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-test-core = { group = "androidx.test", name = "core", version = "1.6.1" }
+androidx-test-core = { group = "androidx.test", name = "core", version.ref = "test" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }

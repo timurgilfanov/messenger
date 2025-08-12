@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.repository
 
 import androidx.paging.PagingData
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -167,10 +166,4 @@ class RepositoryFake :
     override suspend fun leaveChat(
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
-
-    private fun <T> ImmutableList<T>.add(item: T): ImmutableList<T> {
-        val mutableList = this.toMutableList()
-        mutableList.add(item)
-        return persistentListOf<T>().addAll(mutableList)
-    }
 }

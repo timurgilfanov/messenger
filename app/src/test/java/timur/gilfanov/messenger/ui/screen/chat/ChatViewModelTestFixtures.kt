@@ -2,7 +2,7 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.paging.PagingData
 import kotlin.time.Instant
-import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -142,7 +142,7 @@ object ChatViewModelTestFixtures {
                     } else {
                         add(msg)
                     }
-                }.toImmutableList()
+                }.toPersistentList()
                 currentChat.copy(messages = messages)
             }
         }

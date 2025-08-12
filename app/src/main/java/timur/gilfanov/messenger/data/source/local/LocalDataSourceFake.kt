@@ -5,7 +5,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -118,7 +119,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
         val updatedMessages = chat.messages.toMutableList().apply {
             add(message)
-        }.toImmutableList()
+        }.toPersistentList()
 
         val updatedChat = chat.copy(messages = updatedMessages)
         chatsFlow.update { currentChats ->
@@ -145,7 +146,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         } else {
             val updatedMessages = chat.messages.toMutableList().apply {
                 set(messageIndex, message)
-            }.toImmutableList()
+            }.toPersistentList()
 
             val updatedChat = chat.copy(messages = updatedMessages)
             chatsFlow.update { currentChats ->
@@ -172,7 +173,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
         val updatedMessages = chatWithMessage.messages.toMutableList().apply {
             removeAll { it.id == messageId }
-        }.toImmutableList()
+        }.toPersistentList()
 
         val updatedChat = chatWithMessage.copy(messages = updatedMessages)
         chatsFlow.update { currentChats ->
@@ -227,13 +228,13 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
             is ChatCreatedDelta -> {
                 val newChat = Chat(
                     id = delta.chatId,
-                    participants = delta.chatMetadata.participants,
+                    participants = delta.chatMetadata.participants.toPersistentSet(),
                     name = delta.chatMetadata.name,
                     pictureUrl = delta.chatMetadata.pictureUrl,
                     rules = delta.chatMetadata.rules,
                     unreadMessagesCount = delta.chatMetadata.unreadMessagesCount,
                     lastReadMessageId = delta.chatMetadata.lastReadMessageId,
-                    messages = delta.initialMessages,
+                    messages = delta.initialMessages.toPersistentList(),
                 )
 
                 chatsFlow.update { currentChats ->
@@ -245,13 +246,13 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
                 val messages = updateMessages(chat, delta.messagesToAdd, delta.messagesToDelete)
 
                 val updatedChat = chat.copy(
-                    participants = delta.chatMetadata.participants,
+                    participants = delta.chatMetadata.participants.toPersistentSet(),
                     name = delta.chatMetadata.name,
                     pictureUrl = delta.chatMetadata.pictureUrl,
                     rules = delta.chatMetadata.rules,
                     unreadMessagesCount = delta.chatMetadata.unreadMessagesCount,
                     lastReadMessageId = delta.chatMetadata.lastReadMessageId,
-                    messages = messages,
+                    messages = messages.toPersistentList(),
                 )
 
                 chatsFlow.update { currentChats ->
@@ -288,7 +289,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
                 }
             }
         }
-        return existingMessages.toImmutableList()
+        return existingMessages.toPersistentList()
     }
 
     override suspend fun applyChatListDelta(

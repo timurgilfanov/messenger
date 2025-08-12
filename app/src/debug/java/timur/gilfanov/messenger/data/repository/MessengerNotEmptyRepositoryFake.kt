@@ -244,12 +244,4 @@ class MessengerNotEmptyRepositoryFake @Inject constructor() :
     override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
         TODO("Not yet implemented")
     }
-
-    private fun <T> kotlinx.collections.immutable.ImmutableList<T>.add(
-        item: T,
-    ): kotlinx.collections.immutable.ImmutableList<T> {
-        val mutableList = this.toMutableList()
-        mutableList.add(item)
-        return persistentListOf<T>().addAll(mutableList)
-    }
 }

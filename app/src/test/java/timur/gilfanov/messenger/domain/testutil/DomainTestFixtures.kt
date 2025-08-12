@@ -42,7 +42,7 @@ object DomainTestFixtures {
         this.pictureUrl = params.pictureUrl
         this.unreadMessagesCount = params.unreadMessagesCount
         this.lastReadMessageId = params.lastReadMessageId
-        this.rules = persistentSetOf()
+        this.rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
     }
 
     fun createTestParticipant(

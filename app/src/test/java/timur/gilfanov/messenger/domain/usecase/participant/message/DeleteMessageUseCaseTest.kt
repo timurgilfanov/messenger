@@ -555,7 +555,7 @@ class DeleteMessageUseCaseTest {
         val chat = buildChat {
             participants = persistentSetOf(messageSender, otherUser)
             messages = persistentListOf(message)
-            rules = persistentSetOf()
+            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
         }
 
         val repository = RepositoryFake()

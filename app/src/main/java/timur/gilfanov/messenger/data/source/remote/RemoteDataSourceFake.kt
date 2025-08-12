@@ -5,7 +5,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
-import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -160,7 +160,7 @@ class RemoteDataSourceFake @Inject constructor() :
                 if (recentOperations.isEmpty()) {
                     ResultWithError.Success(
                         ChatListDelta(
-                            changes = emptyList<ChatDelta>().toImmutableList(),
+                            changes = emptyList<ChatDelta>().toPersistentList(),
                             fromTimestamp = since,
                             toTimestamp = since, // Keep original timestamp when no changes
                             hasMoreChanges = false,
@@ -174,7 +174,7 @@ class RemoteDataSourceFake @Inject constructor() :
                     val latestTimestamp = recentOperations.maxOfOrNull { it.second } ?: since
                     ResultWithError.Success(
                         ChatListDelta(
-                            changes = deltas.toImmutableList(),
+                            changes = deltas.toPersistentList(),
                             fromTimestamp = since,
                             toTimestamp = latestTimestamp,
                             hasMoreChanges = false,
@@ -197,7 +197,7 @@ class RemoteDataSourceFake @Inject constructor() :
             ChatCreatedDelta(
                 chatId = chat.id,
                 chatMetadata = ChatMetadata.fromChat(chat),
-                initialMessages = chat.messages.toImmutableList(),
+                initialMessages = chat.messages.toPersistentList(),
                 timestamp = timestamp,
             )
         }
@@ -223,13 +223,13 @@ class RemoteDataSourceFake @Inject constructor() :
                 chat.messages.filter { it.createdAt > since }
             } else {
                 chat.messages
-            }.toImmutableList()
+            }.toPersistentList()
 
             ChatUpdatedDelta(
                 chatId = chat.id,
                 chatMetadata = ChatMetadata.fromChat(chat),
                 messagesToAdd = incrementalMessages,
-                messagesToDelete = emptyList<MessageId>().toImmutableList(),
+                messagesToDelete = emptyList<MessageId>().toPersistentList(),
                 timestamp = timestamp,
             )
         }
@@ -246,8 +246,8 @@ class RemoteDataSourceFake @Inject constructor() :
             ChatUpdatedDelta(
                 chatId = chat.id,
                 chatMetadata = ChatMetadata.fromChat(chat),
-                messagesToAdd = emptyList<Message>().toImmutableList(),
-                messagesToDelete = listOf(messageId).toImmutableList(),
+                messagesToAdd = emptyList<Message>().toPersistentList(),
+                messagesToDelete = listOf(messageId).toPersistentList(),
                 timestamp = timestamp,
             )
         }
@@ -263,7 +263,7 @@ class RemoteDataSourceFake @Inject constructor() :
             ChatCreatedDelta(
                 chatId = chat.id,
                 chatMetadata = ChatMetadata.fromChat(chat),
-                initialMessages = chat.messages.toImmutableList(),
+                initialMessages = chat.messages.toPersistentList(),
                 timestamp = timestamp,
             )
         }
@@ -337,11 +337,11 @@ class RemoteDataSourceFake @Inject constructor() :
         val updatedMessages = if (messageIndex >= 0) {
             chat.messages.toMutableList().apply {
                 set(messageIndex, message)
-            }.toImmutableList()
+            }.toPersistentList()
         } else {
             chat.messages.toMutableList().apply {
                 add(message)
-            }.toImmutableList()
+            }.toPersistentList()
         }
 
         val updatedChat = chat.copy(messages = updatedMessages)
@@ -377,7 +377,7 @@ class RemoteDataSourceFake @Inject constructor() :
 
         val updatedMessages = chat.messages.toMutableList().apply {
             set(messageIndex, message)
-        }.toImmutableList()
+        }.toPersistentList()
 
         val updatedChat = chat.copy(messages = updatedMessages)
         serverChatsFlow.update { currentChats ->
@@ -405,7 +405,7 @@ class RemoteDataSourceFake @Inject constructor() :
         return if (chatWithMessage != null) {
             val updatedMessages = chatWithMessage.messages.toMutableList().apply {
                 removeAll { it.id == messageId }
-            }.toImmutableList()
+            }.toPersistentList()
 
             val updatedChat = chatWithMessage.copy(messages = updatedMessages)
             serverChatsFlow.update { currentChats ->
@@ -440,7 +440,7 @@ class RemoteDataSourceFake @Inject constructor() :
                 val updatedChat = existingChat.copy(
                     messages = existingChat.messages.toMutableList().apply {
                         add(message)
-                    }.toImmutableList(),
+                    }.toPersistentList(),
                     unreadMessagesCount = existingChat.unreadMessagesCount + 1,
                 )
                 currentChats + (chatId to updatedChat)
@@ -463,7 +463,7 @@ class RemoteDataSourceFake @Inject constructor() :
 
                 val updatedMessages = chatWithMessage.messages.toMutableList().apply {
                     removeAll { it.id == messageId }
-                }.toImmutableList()
+                }.toPersistentList()
                 val updatedChat = chatWithMessage.copy(
                     messages = updatedMessages,
                     unreadMessagesCount = maxOf(0, chatWithMessage.unreadMessagesCount - 1),

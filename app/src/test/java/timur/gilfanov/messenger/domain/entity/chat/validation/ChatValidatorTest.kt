@@ -235,7 +235,7 @@ class ChatValidatorTest {
             pictureUrl = null,
             messages = persistentListOf(),
             participants = persistentSetOf(participant),
-            rules = persistentSetOf(),
+            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
             unreadMessagesCount = 0,
             lastReadMessageId = null,
         )

@@ -4,9 +4,9 @@ package timur.gilfanov.messenger.data.source.remote.dto
 
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDelta

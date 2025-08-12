@@ -2,9 +2,9 @@ package timur.gilfanov.messenger.test
 
 import androidx.room.withTransaction
 import java.util.UUID
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity

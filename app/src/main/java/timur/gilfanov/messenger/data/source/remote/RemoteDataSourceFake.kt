@@ -4,6 +4,7 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -11,7 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId

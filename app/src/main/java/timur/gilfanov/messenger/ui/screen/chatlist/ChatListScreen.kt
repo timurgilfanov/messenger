@@ -27,8 +27,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.util.UUID
+import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.datetime.Clock
 import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId

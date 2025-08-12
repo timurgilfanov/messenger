@@ -22,11 +22,11 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import org.junit.Rule
 import org.junit.Test

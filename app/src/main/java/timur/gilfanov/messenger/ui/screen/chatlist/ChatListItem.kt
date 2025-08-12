@@ -39,10 +39,10 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.ui.theme.MessengerTheme

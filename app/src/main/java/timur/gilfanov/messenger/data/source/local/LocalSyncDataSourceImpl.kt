@@ -6,8 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.room.withTransaction
 import javax.inject.Inject
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
@@ -38,7 +38,10 @@ class LocalSyncDataSourceImpl @Inject constructor(
 
     private val errorHandler = DatabaseErrorHandler(logger)
 
-    override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =
+    override suspend fun getLastSyncTimestamp(): ResultWithError<
+        Instant?,
+        LocalDataSourceError,
+        > =
         try {
             val preferences = dataStore.data.first()
             val timestamp = preferences[SyncPreferences.LAST_SYNC_TIMESTAMP]

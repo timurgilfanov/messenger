@@ -1,7 +1,7 @@
 package timur.gilfanov.messenger.data.source.remote
 
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 
 /**

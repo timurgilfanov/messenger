@@ -6,9 +6,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category

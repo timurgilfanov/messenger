@@ -1,8 +1,8 @@
 package timur.gilfanov.messenger.domain.usecase.message
 
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.flow
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success

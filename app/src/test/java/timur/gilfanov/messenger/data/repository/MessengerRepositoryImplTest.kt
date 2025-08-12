@@ -5,13 +5,13 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -817,7 +817,9 @@ class MessengerRepositoryImplTest {
             remoteDataSource.addChatToServer(testChat)
 
             val timestampResult = localDataSource.getLastSyncTimestamp()
-            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(timestampResult)
+            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(
+                timestampResult,
+            )
             assertNull(timestampResult.data)
             localDataSource.getChat(testChat.id).let {
                 assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(it)

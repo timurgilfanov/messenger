@@ -8,9 +8,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category

@@ -5,8 +5,8 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Clock
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError

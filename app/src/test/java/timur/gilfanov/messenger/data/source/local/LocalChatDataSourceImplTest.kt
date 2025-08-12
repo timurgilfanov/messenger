@@ -7,9 +7,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category

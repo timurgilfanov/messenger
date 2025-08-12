@@ -1,9 +1,9 @@
 package timur.gilfanov.messenger.data.source.remote
 
+import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant

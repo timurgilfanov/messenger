@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.paging.PagingData
+import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -11,7 +12,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
-import kotlinx.datetime.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success

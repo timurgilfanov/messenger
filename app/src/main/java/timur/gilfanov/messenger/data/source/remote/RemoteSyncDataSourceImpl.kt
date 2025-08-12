@@ -10,11 +10,11 @@ import io.ktor.http.contentType
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.datetime.Instant
 import kotlinx.serialization.SerializationException
 import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse
 import timur.gilfanov.messenger.data.source.remote.dto.ChatListDeltaDto

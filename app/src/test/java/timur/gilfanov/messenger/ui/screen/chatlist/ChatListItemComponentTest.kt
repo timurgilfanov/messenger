@@ -10,7 +10,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category

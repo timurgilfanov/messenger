@@ -1,43 +1,57 @@
 [versions]
-agp = "8.9.2"
-konsist = "0.17.3"
-kotlin = "2.0.21"
-coreKtx = "1.15.0"
-junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
-kotlinxCoroutinesTest = "1.8.0"
-lifecycleRuntimeKtx = "2.8.7"
+# ========== Build Tools ==========
+agp = "8.12.0"
+kotlin = "2.2.0"
+ksp = "2.2.0-2.0.2"
+jetbrainsKotlinJvm = "2.2.0"
+
+# ========== Core AndroidX ==========
+composeBom = "2025.07.00"
+coreKtx = "1.16.0"
+lifecycleRuntimeKtx = "2.9.2"
 activityCompose = "1.10.1"
-composeBom = "2024.09.00"
-detekt = "1.23.8"
-ktlint = "12.2.0"
-composeRules = "0.4.22"
-kover = "0.9.1"
-kotlinxDatetime = "0.5.0"
-kotlinxCollectionsImmutable = "0.3.7"
-orbit = "10.0.0"
-robolectric = "4.13"
-turbine = "1.1.0"
-hilt = "2.56.2"
-hiltNavigationCompose = "1.2.0"
-jetbrainsKotlinJvm = "2.0.21"
-navigation3 = "1.0.0-alpha01"
-kotlinxSerialization = "1.7.3"
-room = "2.7.2"
-ksp = "2.0.21-1.0.28"
-datastore = "1.1.1"
-ktor = "3.2.3"
+navigation3 = "1.0.0-alpha06"
+navigation3-viewmodel = "1.0.0-alpha04"
 paging = "3.3.6"
+datastore = "1.1.7"
+room = "2.7.2"
+
+# ========== Third-party Libraries ==========
+# Dependency Injection
+hilt = "2.57"
+hiltNavigationCompose = "1.2.0"
+
+# Networking
+ktor = "3.2.3"
+
+# Architecture
+orbit = "10.0.0"
+
+# Kotlin Extensions
+kotlinxDatetime = "0.7.1"
+kotlinxCollectionsImmutable = "0.4.0"
+kotlinxSerialization = "1.9.0"
+
+# ========== Testing & Dev Tools ==========
+# Testing
+junit = "4.13.2"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+test = "1.7.0"
+kotlinxCoroutinesTest = "1.10.2"
+robolectric = "4.15.1"
+turbine = "1.2.1"
+konsist = "0.17.3"
+
+# Code Quality
+detekt = "1.23.8"
+ktlint = "13.0.0"
+composeRules = "0.4.27"
+kover = "0.9.1"
 
 [libraries]
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-test-core = { group = "androidx.test", name = "core", version = "1.6.1" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
-androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+# ========== Core AndroidX ==========
+# Compose
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
@@ -46,54 +60,91 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
-detekt-compose = { module = "io.nlopez.compose.rules:detekt", version.ref = "composeRules" }
-konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
-kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
-ktlint-compose = { module = "io.nlopez.compose.rules:ktlint", version.ref = "composeRules" }
-kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
-kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
-kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
-orbit-compose = { module = "org.orbit-mvi:orbit-compose", version.ref = "orbit" }
-orbit-core = { module = "org.orbit-mvi:orbit-core", version.ref = "orbit" }
-orbit-test = { module = "org.orbit-mvi:orbit-test", version.ref = "orbit" }
-orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orbit" }
-robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
-turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
-hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
+# Core
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+
+# Navigation
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
-androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "navigation3" }
-kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinxSerialization" }
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "navigation3-viewmodel" }
+
+# Paging
+androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
+androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
+androidx-paging-testing = { group = "androidx.paging", name = "paging-testing", version.ref = "paging" }
+
+# Data Storage
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
-androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+
+# ========== Third-party Runtime Libraries ==========
+# Dependency Injection
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
+# Networking
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
 ktor-client-mock = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
-androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
-androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
-androidx-paging-testing = { group = "androidx.paging", name = "paging-testing", version.ref = "paging" }
-androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+
+# Architecture
+orbit-compose = { module = "org.orbit-mvi:orbit-compose", version.ref = "orbit" }
+orbit-core = { module = "org.orbit-mvi:orbit-core", version.ref = "orbit" }
+orbit-test = { module = "org.orbit-mvi:orbit-test", version.ref = "orbit" }
+orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orbit" }
+
+# Kotlin Extensions
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
+kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinxSerialization" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+
+# ========== Testing Libraries ==========
+# Unit Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+
+# Android Testing
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-test-core = { group = "androidx.test", name = "core", version.ref = "test" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+
+# Architecture Testing
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
+
+# ========== Dev Tools ==========
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+detekt-compose = { module = "io.nlopez.compose.rules:detekt", version.ref = "composeRules" }
+ktlint-compose = { module = "io.nlopez.compose.rules:ktlint", version.ref = "composeRules" }
 
 [plugins]
+# ========== Build Tools ==========
 android-application = { id = "com.android.application", version.ref = "agp" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
+jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
+# ========== Third-party ==========
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+
+# ========== Dev Tools ==========
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
-jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-

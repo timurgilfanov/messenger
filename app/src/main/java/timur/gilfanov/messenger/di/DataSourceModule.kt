@@ -17,7 +17,6 @@ import timur.gilfanov.messenger.data.source.local.LocalSyncDataSource
 import timur.gilfanov.messenger.data.source.local.LocalSyncDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSourceImpl
-import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
@@ -60,28 +59,7 @@ abstract class DataSourceModule {
         localSyncDataSourceImpl: LocalSyncDataSourceImpl,
     ): LocalSyncDataSource
 
-    // Remote data source bindings with Named qualifiers for testing
-    @Binds
-    @Singleton
-    @Named("fake")
-    abstract fun bindFakeRemoteChatDataSource(
-        remoteDataSourceFake: RemoteDataSourceFake,
-    ): RemoteChatDataSource
-
-    @Binds
-    @Singleton
-    @Named("fake")
-    abstract fun bindFakeRemoteMessageDataSource(
-        remoteDataSourceFake: RemoteDataSourceFake,
-    ): RemoteMessageDataSource
-
-    @Binds
-    @Singleton
-    @Named("fake")
-    abstract fun bindFakeRemoteSyncDataSource(
-        remoteDataSourceFake: RemoteDataSourceFake,
-    ): RemoteSyncDataSource
-
+    // Real remote data source bindings
     @Binds
     @Singleton
     @Named("real")
@@ -102,36 +80,4 @@ abstract class DataSourceModule {
     abstract fun bindRealRemoteSyncDataSource(
         remoteSyncDataSourceImpl: RemoteSyncDataSourceImpl,
     ): RemoteSyncDataSource
-}
-
-/**
- * Provides the actual RemoteDataSource implementations based on feature flag.
- * This allows runtime switching between fake and real implementations.
- */
-@Module
-@InstallIn(SingletonComponent::class)
-object RemoteDataSourceProviders {
-    @Provides
-    @Singleton
-    fun provideRemoteChatDataSource(
-        @Named("fake") fakeDataSource: RemoteChatDataSource,
-        @Named("real") realDataSource: RemoteChatDataSource,
-        @Named("useRealRemoteDataSources") useReal: Boolean,
-    ): RemoteChatDataSource = if (useReal) realDataSource else fakeDataSource
-
-    @Provides
-    @Singleton
-    fun provideRemoteMessageDataSource(
-        @Named("fake") fakeDataSource: RemoteMessageDataSource,
-        @Named("real") realDataSource: RemoteMessageDataSource,
-        @Named("useRealRemoteDataSources") useReal: Boolean,
-    ): RemoteMessageDataSource = if (useReal) realDataSource else fakeDataSource
-
-    @Provides
-    @Singleton
-    fun provideRemoteSyncDataSource(
-        @Named("fake") fakeDataSource: RemoteSyncDataSource,
-        @Named("real") realDataSource: RemoteSyncDataSource,
-        @Named("useRealRemoteDataSources") useReal: Boolean,
-    ): RemoteSyncDataSource = if (useReal) realDataSource else fakeDataSource
 }

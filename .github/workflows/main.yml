@@ -77,7 +77,7 @@ jobs:
           exit 1
 
       - name: Run Architecture Tests
-        run: ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
+        run: ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
 
       - name: Upload Architecture Test Report
         uses: actions/upload-artifact@v4
@@ -178,7 +178,7 @@ jobs:
           exit 1
 
       - name: Run Architecture Tests
-        run: ./gradlew testProductionReleaseUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
+        run: ./gradlew testProductionReleaseUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
 
       - name: Upload Architecture Test Report
         uses: actions/upload-artifact@v4
@@ -249,7 +249,7 @@ jobs:
         id: run_unit_tests
         continue-on-error: true
         run: |
-          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage | tee unit-test.log
+          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Unit -Pcoverage | tee unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
@@ -270,7 +270,7 @@ jobs:
         id: run_component_tests
         continue-on-error: true
         run: |
-          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage | tee component-test.log
+          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Component -Pcoverage | tee component-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
@@ -296,7 +296,7 @@ jobs:
       - name: Generate Unit Coverage Report
         run: |
           ./gradlew koverXmlReportMockDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit
 
       - name: Upload Unit Coverage to Codecov (Unit)
         uses: codecov/codecov-action@v4
@@ -317,7 +317,7 @@ jobs:
       - name: Generate Component Coverage Report
         run: |
           ./gradlew koverXmlReportMockDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Component
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component
 
       - name: Upload Component Coverage to Codecov (Component)
         uses: codecov/codecov-action@v4
@@ -372,7 +372,7 @@ jobs:
         id: run_feature_tests
         continue-on-error: true
         run: |
-          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature -Pcoverage | tee feature-test.log
+          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Feature -Pcoverage | tee feature-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat feature-test.log
           exit $EXIT
@@ -398,7 +398,7 @@ jobs:
       - name: Generate Feature Coverage Report
         run: |
           ./gradlew koverXmlReportMockDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Feature
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature
 
       - name: Upload Feature Coverage to Codecov (Feature)
         uses: codecov/codecov-action@v4
@@ -446,7 +446,7 @@ jobs:
             --test app/build/outputs/apk/androidTest/mock/debug/app-mock-debug-androidTest.apk \
             --device model=Pixel2.arm,version=30 \
             --timeout 5m \
-            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.FeatureTest \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.messenger.annotations.FeatureTest \
             --directories-to-pull /sdcard/Download \
             --results-dir="" 2>&1 | tee emulator-run.log
 
@@ -608,7 +608,7 @@ jobs:
             --test app/build/outputs/apk/androidTest/mock/debug/app-mock-debug-androidTest.apk \
             --device model=Pixel2.arm,version=30 \
             --timeout 5m \
-            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.ApplicationTest \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.messenger.annotations.ApplicationTest \
             --directories-to-pull /sdcard/Download \
             --results-dir="" 2>&1 | tee emulator-run.log
 
@@ -772,7 +772,7 @@ jobs:
             --device model=MediumPhone.arm,version=33 \
             --device model=felix,version=33 \
             --timeout 5m \
-            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.ApplicationTest \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.messenger.annotations.ApplicationTest \
             --directories-to-pull /sdcard/Download \
             --results-dir="" 2>&1 | tee run.log
 
@@ -980,7 +980,7 @@ jobs:
             --device model=felix,version=33 \
             --device model=MediumTablet.arm,version=30 \
             --timeout 10m \
-            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.annotations.ReleaseCandidateTest \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.messenger.annotations.ReleaseCandidateTest \
             --directories-to-pull /sdcard/Download \
             --results-dir="" 2>&1 | tee release-run.log
 

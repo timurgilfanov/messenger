@@ -1,7 +1,7 @@
 # Messenger
 [![codecov](https://codecov.io/gh/timurgilfanov/messenger/graph/badge.svg?token=MF0478WVBI)](https://codecov.io/gh/timurgilfanov/messenger)
-![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-purple.svg)
-![Compose BOM](https://img.shields.io/badge/Compose_BOM-2024.09.00-blue.svg)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-purple.svg)
+![Compose BOM](https://img.shields.io/badge/Compose_BOM-2025.07.00-blue.svg)
 ![Min SDK](https://img.shields.io/badge/MinSDK-24-green.svg)
 ![Target SDK](https://img.shields.io/badge/TargetSDK-35-green.svg)
 
@@ -132,10 +132,10 @@ sequenceDiagram
 
 ## 🛠️ Tech Stack
 
-- **Language**: Kotlin 2.0.21
-- **UI**: Jetpack Compose (BOM 2024.09.00)
+- **Language**: Kotlin 2.2.0
+- **UI**: Jetpack Compose (BOM 2025.07.00)
 - **Architecture**: Clean Architecture + Orbit MVI
-- **DI**: Hilt 2.56.2
+- **DI**: Hilt 2.57
 - **Database**: Room 2.7.2
 - **Networking**: Ktor 3.2.3
 - **Testing**: JUnit4, Turbine, Robolectric

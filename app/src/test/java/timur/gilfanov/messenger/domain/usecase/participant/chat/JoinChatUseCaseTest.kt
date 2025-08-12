@@ -7,6 +7,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -32,7 +33,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.Remo
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserBlocked
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserNotFound
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(Unit::class)
 class JoinChatUseCaseTest {
 
     private class RepositoryFake(private val error: RepositoryJoinChatError? = null) :

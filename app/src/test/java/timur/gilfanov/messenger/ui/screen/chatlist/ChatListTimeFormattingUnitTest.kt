@@ -5,8 +5,9 @@ import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.hours
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.annotations.Unit
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(Unit::class)
 class ChatListTimeFormattingUnitTest {
 
     @Test

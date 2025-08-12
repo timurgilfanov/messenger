@@ -23,8 +23,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import timur.gilfanov.annotations.ApplicationTest
 import timur.gilfanov.messenger.MainActivity
+import timur.gilfanov.messenger.annotations.ApplicationTest
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository

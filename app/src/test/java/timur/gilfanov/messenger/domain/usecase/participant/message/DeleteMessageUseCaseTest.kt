@@ -29,7 +29,7 @@ import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageEr
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError.MessageNotFound
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError.RemoteError
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class DeleteMessageUseCaseTest {
 
     private class RepositoryFake(

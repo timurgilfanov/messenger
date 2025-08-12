@@ -24,8 +24,8 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import timur.gilfanov.annotations.Feature
 import timur.gilfanov.messenger.ChatScreenTestActivity
+import timur.gilfanov.messenger.annotations.Feature
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository

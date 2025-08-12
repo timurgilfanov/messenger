@@ -117,8 +117,8 @@ sequenceDiagram
 ./gradlew preCommit
 
 # Run specific test categories
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit
-./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.annotations.FeatureTest 
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Unit
+./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.messenger.annotations.FeatureTest 
 
 # Generate coverage report
 ./gradlew koverXmlReportMockDebug

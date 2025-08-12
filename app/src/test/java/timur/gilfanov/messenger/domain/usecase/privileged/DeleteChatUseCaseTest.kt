@@ -17,7 +17,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class DeleteChatUseCaseTest {
 
     private class RepositoryFake(

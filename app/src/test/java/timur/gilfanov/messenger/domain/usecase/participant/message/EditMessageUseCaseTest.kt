@@ -35,7 +35,7 @@ import timur.gilfanov.messenger.domain.usecase.message.EditMessageUseCase
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 
-@Category(timur.gilfanov.annotations.Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class EditMessageUseCaseTest {
 
     private class RepositoryFake : MessageRepository {

@@ -30,19 +30,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew testMockDebugUnitTest --tests "ClassName.testMethodName"
 
 # Run tests by category (property-based approach)
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Architecture
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Feature
-./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.annotations.FeatureTest
-./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.annotations.ApplicationTest
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Unit
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Component
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Feature
+./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.messenger.annotations.FeatureTest
+./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.messenger.annotations.ApplicationTest
 
 # Pre-commit checks
 ./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)
                                       # IMPORTANT: Run this before committing when changes are ready for compilation and testing
 
 # Exclude specific categories
-./gradlew testMockDebugUnitTest -PexcludeCategory=timur.gilfanov.annotations.Architecture
+./gradlew testMockDebugUnitTest -PexcludeCategory=timur.gilfanov.messenger.annotations.Architecture
 ```
 
 ### Code Quality
@@ -59,11 +59,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Test Categories with Coverage
 ```bash
 # Run specific test categories with coverage
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Unit -Pcoverage
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.annotations.Component -Pcoverage
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Unit -Pcoverage
+./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Component -Pcoverage
 
 # Generate category-specific coverage reports
-./gradlew koverXmlReportMockDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.annotations.Unit
+./gradlew koverXmlReportMockDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit
 ```
 
 ### Codecov Components

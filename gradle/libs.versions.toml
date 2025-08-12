@@ -7,12 +7,13 @@ jetbrainsKotlinJvm = "2.2.0"
 
 # ========== Core AndroidX ==========
 composeBom = "2025.07.00"
-coreKtx = "1.15.0"
-lifecycleRuntimeKtx = "2.8.7"
+coreKtx = "1.16.0"
+lifecycleRuntimeKtx = "2.9.2"
 activityCompose = "1.10.1"
-navigation3 = "1.0.0-alpha01"
+navigation3 = "1.0.0-alpha06"
+navigation3-viewmodel = "1.0.0-alpha04"
 paging = "3.3.6"
-datastore = "1.1.1"
+datastore = "1.1.7"
 room = "2.7.2"
 
 # ========== Third-party Libraries ==========
@@ -68,7 +69,7 @@ androidx-activity-compose = { group = "androidx.activity", name = "activity-comp
 # Navigation
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
-androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "navigation3" }
+androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "navigation3-viewmodel" }
 
 # Paging
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }

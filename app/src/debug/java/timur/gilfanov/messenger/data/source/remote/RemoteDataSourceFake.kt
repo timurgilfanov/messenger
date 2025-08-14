@@ -492,4 +492,34 @@ class RemoteDataSourceFake @Inject constructor() :
         serverOperationTimestamps.clear()
         currentServerTimestamp = Instant.fromEpochMilliseconds(0)
     }
+
+    override suspend fun markMessagesAsRead(
+        chatId: ChatId,
+        upToMessageId: MessageId,
+    ): ResultWithError<Unit, RemoteDataSourceError> {
+        delay(NETWORK_DELAY_MS)
+
+        serverChatsFlow.update { currentChats ->
+            val existingChat = currentChats[chatId]
+            if (existingChat != null) {
+                // Count messages after the upToMessageId
+                val upToIndex = existingChat.messages.indexOfFirst { it.id == upToMessageId }
+                val unreadCount = if (upToIndex >= 0) {
+                    existingChat.messages.size - upToIndex - 1
+                } else {
+                    existingChat.unreadMessagesCount
+                }
+                currentChats + (
+                    chatId to existingChat.copy(
+                        unreadMessagesCount = unreadCount,
+                        lastReadMessageId = upToMessageId,
+                    )
+                    )
+            } else {
+                currentChats
+            }
+        }
+
+        return ResultWithError.Success(Unit)
+    }
 }

@@ -46,6 +46,7 @@ class ChatScreenComponentTest {
                 ChatScreenContent(
                     uiState = ChatUiState.Loading(),
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -63,6 +64,7 @@ class ChatScreenComponentTest {
                 ChatScreenContent(
                     uiState = errorState,
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -87,6 +89,7 @@ class ChatScreenComponentTest {
                 ChatScreenContent(
                     uiState = readyState,
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -118,6 +121,7 @@ class ChatScreenComponentTest {
                 ChatScreenContent(
                     uiState = readyState,
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -145,6 +149,7 @@ class ChatScreenComponentTest {
                 ChatScreenContent(
                     uiState = readyState,
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -177,6 +182,7 @@ class ChatScreenComponentTest {
                 ChatScreenContent(
                     uiState = readyState,
                     onSendMessage = { sendClicked = true },
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -203,6 +209,7 @@ class ChatScreenComponentTest {
                 ChatScreenContent(
                     uiState = readyState,
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -241,6 +248,7 @@ class ChatScreenComponentTest {
                 ChatScreenContent(
                     uiState = readyState,
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -268,6 +276,7 @@ class ChatScreenComponentTest {
                 ChatScreenContent(
                     uiState = readyState,
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -291,6 +300,7 @@ class ChatScreenComponentTest {
                         status = ChatStatus.OneToOne(null),
                     ),
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
@@ -315,6 +325,7 @@ class ChatScreenComponentTest {
                         status = ChatStatus.OneToOne(null),
                     ),
                     onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
                 )
             }
         }

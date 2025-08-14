@@ -9,6 +9,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatUseCase
@@ -19,6 +20,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.Net
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.NotParticipant
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class LeaveChatUseCaseTest {
@@ -40,6 +42,10 @@ class LeaveChatUseCaseTest {
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
             error("Not implemented")
         override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
+        override suspend fun markMessagesAsRead(
+            chatId: ChatId,
+            upToMessageId: MessageId,
+        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = error("Not implemented")
     }
 
     @Test

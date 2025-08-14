@@ -4,7 +4,9 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.request.delete
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -23,6 +25,7 @@ import timur.gilfanov.messenger.data.source.remote.network.ErrorMapper
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.util.Logger
 
 @Singleton
@@ -175,4 +178,39 @@ class RemoteChatDataSourceImpl @Inject constructor(
             logger.e(TAG, "Unexpected error while leaving chat", e)
             ResultWithError.Failure(ErrorMapper.mapException(e))
         }
+
+    override suspend fun markMessagesAsRead(
+        chatId: ChatId,
+        upToMessageId: MessageId,
+    ): ResultWithError<Unit, RemoteDataSourceError> = try {
+        logger.d(TAG, "Marking messages as read for chat: ${chatId.id}")
+        val response: ApiResponse<Unit> = httpClient.put(
+            ApiRoutes.markMessagesAsReadUrl(chatId.id.toString()),
+        ) {
+            parameter("up_to_message_id", upToMessageId.id.toString())
+        }.body()
+
+        if (response.success) {
+            logger.d(TAG, "Marked messages as read successfully: ${chatId.id}")
+            ResultWithError.Success(Unit)
+        } else {
+            ResultWithError.Failure(handleApiError(response))
+        }
+    } catch (e: SerializationException) {
+        logger.e(TAG, "Failed to parse mark messages as read response", e)
+        ResultWithError.Failure(RemoteDataSourceError.ServerError)
+    } catch (e: SocketTimeoutException) {
+        logger.e(TAG, "Request timed out while marking messages as read", e)
+        ResultWithError.Failure(RemoteDataSourceError.ServerUnreachable)
+    } catch (e: IOException) {
+        logger.e(TAG, "Network error while marking messages as read", e)
+        ResultWithError.Failure(ErrorMapper.mapException(e))
+    } catch (e: CancellationException) {
+        logger.d(TAG, "Mark messages as read cancelled")
+        throw e // Re-throw cancellation to maintain proper cancellation semantics
+    } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+        // Intentional: network resilience
+        logger.e(TAG, "Unexpected error while marking messages as read", e)
+        ResultWithError.Failure(ErrorMapper.mapException(e))
+    }
 }

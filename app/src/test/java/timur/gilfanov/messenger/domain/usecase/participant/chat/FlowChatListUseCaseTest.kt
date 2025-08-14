@@ -15,9 +15,11 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 
 @Category(Unit::class)
 class FlowChatListUseCaseTest {
@@ -38,6 +40,11 @@ class FlowChatListUseCaseTest {
             error("Not implemented")
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
+        override suspend fun markMessagesAsRead(
+            chatId: ChatId,
+            upToMessageId: MessageId,
+        ): ResultWithError<kotlin.Unit, RepositoryMarkMessagesAsReadError> =
+            ResultWithError.Success(kotlin.Unit)
     }
 
     @Test

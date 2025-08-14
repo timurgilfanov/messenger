@@ -9,6 +9,7 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
@@ -43,4 +44,9 @@ object ChatModule {
     @ViewModelScoped
     fun provideGetPagedMessagesUseCase(repository: MessageRepository): GetPagedMessagesUseCase =
         GetPagedMessagesUseCase(repository)
+
+    @Provides
+    @ViewModelScoped
+    fun provideMarkMessagesAsReadUseCase(repository: ChatRepository): MarkMessagesAsReadUseCase =
+        MarkMessagesAsReadUseCase(repository)
 }

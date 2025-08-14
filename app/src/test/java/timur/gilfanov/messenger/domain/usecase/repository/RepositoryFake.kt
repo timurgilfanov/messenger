@@ -25,6 +25,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
@@ -166,4 +167,25 @@ class RepositoryFake :
     override suspend fun leaveChat(
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
+
+    override suspend fun markMessagesAsRead(
+        chatId: ChatId,
+        upToMessageId: MessageId,
+    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> {
+        val chat = chats[chatId] ?: return ResultWithError.Success(Unit)
+        val upToIndex = chat.messages.indexOfFirst { it.id == upToMessageId }
+        val unreadCount = if (upToIndex >= 0) {
+            chat.messages.size - upToIndex - 1
+        } else {
+            chat.unreadMessagesCount
+        }
+        val updatedChat = chat.copy(
+            unreadMessagesCount = unreadCount,
+            lastReadMessageId = upToMessageId,
+        )
+        chats[chatId] = updatedChat
+        chatUpdates.emit(updatedChat)
+        emitChatList()
+        return ResultWithError.Success(Unit)
+    }
 }

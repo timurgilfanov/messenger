@@ -25,6 +25,7 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
@@ -62,12 +63,14 @@ class ChatViewModelMessageSendingTest {
             }
             val rep = MessengerRepositoryFakeWithStatusFlow(chat, statuses)
             val getPagedMessagesUseCase = GetPagedMessagesUseCase(rep)
+            val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(rep)
             val viewModel = ChatViewModel(
                 chatIdUuid = chatId.id,
                 currentUserIdUuid = currentUserId.id,
                 sendMessageUseCase = SendMessageUseCase(rep, DeliveryStatusValidatorImpl()),
                 receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
                 getPagedMessagesUseCase = getPagedMessagesUseCase,
+                markMessagesAsReadUseCase = markMessagesAsReadUseCase,
             )
             viewModel.test(this) {
                 val job = runOnCreate()
@@ -114,12 +117,14 @@ class ChatViewModelMessageSendingTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
+        val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
+            markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
         viewModel.test(this) {

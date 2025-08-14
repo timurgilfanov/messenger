@@ -18,6 +18,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
@@ -67,6 +68,11 @@ class MessengerEmptyRepositoryStub @Inject constructor() :
     override suspend fun leaveChat(
         chatId: ChatId,
     ): ResultWithError<Unit, RepositoryLeaveChatError> = ResultWithError.Success(Unit)
+
+    override suspend fun markMessagesAsRead(
+        chatId: ChatId,
+        upToMessageId: MessageId,
+    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = ResultWithError.Success(Unit)
 
     // MessageRepository implementation
     override suspend fun sendMessage(

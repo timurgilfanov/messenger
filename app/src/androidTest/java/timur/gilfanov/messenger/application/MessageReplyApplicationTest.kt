@@ -20,19 +20,27 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.minutes
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import timur.gilfanov.annotations.ApplicationTest
 import timur.gilfanov.messenger.MainActivity
-import timur.gilfanov.messenger.data.repository.InMemoryParticipantRepositoryFake
+import timur.gilfanov.messenger.annotations.ApplicationTest
+import timur.gilfanov.messenger.application.MessageReplyApplicationTest.NavigationTestRepositoryModule.repository
 import timur.gilfanov.messenger.di.RepositoryModule
-import timur.gilfanov.messenger.domain.usecase.participant.ParticipantRepository
+import timur.gilfanov.messenger.di.TestUserModule
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.test.AndroidTestDataHelper
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.BOB_CHAT_ID
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.MESSAGE_3_TIME
+import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-@UninstallModules(RepositoryModule::class)
+@UninstallModules(RepositoryModule::class, TestUserModule::class)
 @ApplicationTest
 @RunWith(AndroidJUnit4::class)
 class MessageReplyApplicationTest {
@@ -43,16 +51,27 @@ class MessageReplyApplicationTest {
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
-    companion object {
-        val testRepository = InMemoryParticipantRepositoryFake()
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object NavigationTestRepositoryModule {
+        val repository = AndroidTestRepositoryWithRealImplementation(NON_EMPTY)
+
+        @Provides
+        @Singleton
+        fun provideChatRepository(): ChatRepository = repository
+
+        @Provides
+        @Singleton
+        fun provideMessageRepository(): MessageRepository = repository
     }
 
     @Module
     @InstallIn(SingletonComponent::class)
-    object MessageReplyTestRepositoryModule {
+    object TestUserNavigationTestModule {
         @Provides
         @Singleton
-        fun provideParticipantRepository(): ParticipantRepository = testRepository
+        @timur.gilfanov.messenger.di.TestUserId
+        fun provideTestUserId(): String = AndroidTestDataHelper.USER_ID
     }
 
     @Before
@@ -66,26 +85,28 @@ class MessageReplyApplicationTest {
             // Step 1: Wait for chat list to load and verify initial state (no unread messages)
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
 
-            // Get reference to the repository so we can simulate incoming messages
-            val repository = testRepository
-            val bobChatId = repository.bobChatId.id.toString()
+            val chatId = BOB_CHAT_ID
 
             // Step 2: Verify Bob chat exists with no unread messages initially
-            waitUntilExactlyOneExists(hasTestTag("chat_item_$bobChatId"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_$chatId"))
             onNodeWithText("Bob").assertIsDisplayed()
-            onNodeWithText("1").assertDoesNotExist()
+            onNodeWithText("1").assertIsDisplayed()
+            onNodeWithText("2").assertDoesNotExist()
 
             // Step 3: Simulate Bob sending a new message
             val incomingMessageText = "Hey! Are you available for a quick call? " +
                 "I have something important to discuss."
-            repository.simulateBobSendingMessage(incomingMessageText)
+            repository.simulateBobSendingMessage(
+                incomingMessageText,
+                createdAt = MESSAGE_3_TIME.plus(1.minutes),
+            )
 
             // Step 4: Wait for UI to update and verify unread badge appears with partial message text
             waitUntilExactlyOneExists(hasText(incomingMessageText, substring = true))
-            onNodeWithText("1").assertIsDisplayed()
+            onNodeWithText("2").assertIsDisplayed()
 
             // Step 5: Tap on chat to read the message
-            onNodeWithTag("chat_item_$bobChatId").performClick()
+            onNodeWithTag("chat_item_$chatId").performClick()
 
             // Step 6: Verify we're in the chat screen and can see the full message
             waitUntilExactlyOneExists(hasTextExactly(incomingMessageText))
@@ -108,10 +129,11 @@ class MessageReplyApplicationTest {
 
             // Step 9: Verify chat list shows reply and no unread badge
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
-            waitUntilExactlyOneExists(hasTestTag("chat_item_$bobChatId"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_$chatId"))
             onNodeWithText("Bob").assertIsDisplayed()
             onNodeWithText(replyText, substring = true).assertIsDisplayed()
-            onNodeWithText("1").assertDoesNotExist()
+            waitUntilDoesNotExist(hasText("2"))
+            waitUntilDoesNotExist(hasText("1"))
         }
     }
 }

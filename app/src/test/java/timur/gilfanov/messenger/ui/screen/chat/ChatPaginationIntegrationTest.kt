@@ -22,6 +22,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
@@ -65,6 +66,7 @@ class ChatPaginationIntegrationTest {
             ),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(chatRepository),
             getPagedMessagesUseCase = GetPagedMessagesUseCase(messageRepository),
+            markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(chatRepository),
         )
 
         // When: ViewModel initializes
@@ -113,6 +115,7 @@ class ChatPaginationIntegrationTest {
             ),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(chatRepository),
             getPagedMessagesUseCase = GetPagedMessagesUseCase(messageRepository),
+            markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(chatRepository),
         )
 
         // When: ViewModel loads with paginated data
@@ -149,6 +152,7 @@ class ChatPaginationIntegrationTest {
             ),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(chatRepository),
             getPagedMessagesUseCase = GetPagedMessagesUseCase(messageRepository),
+            markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(chatRepository),
         )
 
         // When: ViewModel loads with empty data
@@ -198,6 +202,7 @@ class ChatPaginationIntegrationTest {
             ),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(chatRepository),
             getPagedMessagesUseCase = GetPagedMessagesUseCase(messageRepository),
+            markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(chatRepository),
         )
 
         // When: ViewModel loads with both regular and paginated data

@@ -14,6 +14,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatUseCase
@@ -32,6 +33,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.Remo
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.RemoteUnreachable
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserBlocked
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 
 @Category(Unit::class)
 class JoinChatUseCaseTest {
@@ -54,6 +56,11 @@ class JoinChatUseCaseTest {
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
+        override suspend fun markMessagesAsRead(
+            chatId: ChatId,
+            upToMessageId: MessageId,
+        ): ResultWithError<kotlin.Unit, RepositoryMarkMessagesAsReadError> =
+            ResultWithError.Success(kotlin.Unit)
     }
 
     @Test

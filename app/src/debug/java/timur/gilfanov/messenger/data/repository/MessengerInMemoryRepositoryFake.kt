@@ -31,12 +31,14 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 
+@Suppress("TooManyFunctions") // It's a fake repository for testing purposes
 @Singleton
 class MessengerInMemoryRepositoryFake @Inject constructor() :
     ChatRepository,
@@ -382,5 +384,46 @@ class MessengerInMemoryRepositoryFake @Inject constructor() :
                 chatListFlow.update { listOf(aliceChatFlow.value, updatedChat) }
             }
         }
+    }
+
+    override suspend fun markMessagesAsRead(
+        chatId: ChatId,
+        upToMessageId: MessageId,
+    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> {
+        when (chatId) {
+            aliceChatId -> {
+                val currentChat = aliceChatFlow.value
+                val upToIndex = currentChat.messages.indexOfFirst { it.id == upToMessageId }
+                val unreadCount = if (upToIndex >= 0) {
+                    // Count messages after the upToMessageId
+                    currentChat.messages.size - upToIndex - 1
+                } else {
+                    currentChat.unreadMessagesCount
+                }
+                val updatedChat = currentChat.copy(
+                    unreadMessagesCount = unreadCount,
+                    lastReadMessageId = upToMessageId,
+                )
+                aliceChatFlow.update { updatedChat }
+                chatListFlow.update { listOf(updatedChat, bobChatFlow.value) }
+            }
+            bobChatId -> {
+                val currentChat = bobChatFlow.value
+                val upToIndex = currentChat.messages.indexOfFirst { it.id == upToMessageId }
+                val unreadCount = if (upToIndex >= 0) {
+                    // Count messages after the upToMessageId
+                    currentChat.messages.size - upToIndex - 1
+                } else {
+                    currentChat.unreadMessagesCount
+                }
+                val updatedChat = currentChat.copy(
+                    unreadMessagesCount = unreadCount,
+                    lastReadMessageId = upToMessageId,
+                )
+                bobChatFlow.update { updatedChat }
+                chatListFlow.update { listOf(aliceChatFlow.value, updatedChat) }
+            }
+        }
+        return ResultWithError.Success(Unit)
     }
 }

@@ -284,7 +284,7 @@ class CreateMessageUseCaseTest {
 
         val chat = buildChat {
             participants = persistentSetOf(participant)
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
+            rules = persistentSetOf()
         }
 
         val repository =
@@ -349,7 +349,7 @@ class CreateMessageUseCaseTest {
 
         val chat = buildChat {
             participants = persistentSetOf(participant)
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
+            rules = persistentSetOf()
         }
 
         val validationError = DeliveryStatusValidationError.CannotChangeFromSentToSending
@@ -428,7 +428,7 @@ class CreateMessageUseCaseTest {
 
         val chat = buildChat {
             participants = persistentSetOf(participant)
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
+            rules = persistentSetOf()
         }
 
         val validationError = DeliveryStatusValidationError.CannotChangeFromRead
@@ -480,7 +480,7 @@ class CreateMessageUseCaseTest {
 
         val chat = buildChat {
             participants = persistentSetOf(participant)
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
+            rules = persistentSetOf()
         }
 
         val repository = RepositoryFake()
@@ -522,7 +522,7 @@ class CreateMessageUseCaseTest {
 
         val chat = buildChat {
             participants = persistentSetOf(participant)
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
+            rules = persistentSetOf()
         }
 
         val repository = RepositoryFake()
@@ -563,7 +563,7 @@ class CreateMessageUseCaseTest {
 
         val chat = buildChat {
             participants = persistentSetOf(participant)
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
+            rules = persistentSetOf()
         }
 
         val repository = RepositoryFake(exception = exception)

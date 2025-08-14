@@ -32,6 +32,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
@@ -160,4 +161,10 @@ class TestRepositoryWithRealImplementation :
 
     override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
         realRepository.getPagedMessages(chatId)
+
+    override suspend fun markMessagesAsRead(
+        chatId: ChatId,
+        upToMessageId: MessageId,
+    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> =
+        realRepository.markMessagesAsRead(chatId, upToMessageId)
 }

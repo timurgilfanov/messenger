@@ -15,7 +15,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -37,6 +41,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
@@ -61,6 +66,7 @@ fun ChatScreen(
     ChatScreenContent(
         uiState = uiState,
         onSendMessage = viewModel::sendMessage,
+        onMarkMessagesAsReadUpTo = viewModel::markMessagesAsReadUpTo,
         modifier = modifier,
     )
 }
@@ -70,6 +76,7 @@ fun ChatScreen(
 fun ChatScreenContent(
     uiState: ChatUiState,
     onSendMessage: () -> Unit,
+    onMarkMessagesAsReadUpTo: (MessageId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
@@ -101,6 +108,7 @@ fun ChatScreenContent(
             ChatContent(
                 state = uiState,
                 onSendMessage = onSendMessage,
+                onMarkMessagesAsReadUpTo = onMarkMessagesAsReadUpTo,
                 modifier = modifier,
             )
         }
@@ -113,12 +121,39 @@ fun ChatScreenContent(
 fun ChatContent(
     state: ChatUiState.Ready,
     onSendMessage: () -> Unit,
+    onMarkMessagesAsReadUpTo: (MessageId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
 
     // Collect paged messages for LazyColumn
     val messages = state.messages.collectAsLazyPagingItems()
+
+    // Track visible messages and mark as read
+    val visibleItemsInfo = remember {
+        derivedStateOf {
+            listState.layoutInfo.visibleItemsInfo
+        }
+    }
+
+    val currentOnMarkMessagesAsReadUpTo = rememberUpdatedState(onMarkMessagesAsReadUpTo)
+
+    LaunchedEffect(visibleItemsInfo.value, messages.itemCount) {
+        val visibleItems = visibleItemsInfo.value
+        if (visibleItems.isNotEmpty() && messages.itemCount > 0) {
+            // Get the last visible message index (bottom of the screen)
+            val lastVisibleIndex = visibleItems.maxByOrNull { it.index }?.index
+            if (lastVisibleIndex != null &&
+                lastVisibleIndex >= 0 &&
+                lastVisibleIndex < messages.itemCount
+            ) {
+                val lastVisibleMessage = messages[lastVisibleIndex]
+                if (lastVisibleMessage != null) {
+                    currentOnMarkMessagesAsReadUpTo.value(lastVisibleMessage.id)
+                }
+            }
+        }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -195,6 +230,7 @@ private fun ChatContentPreview() {
                 status = ChatStatus.OneToOne(null),
             ),
             onSendMessage = {},
+            onMarkMessagesAsReadUpTo = {},
         )
     }
 }

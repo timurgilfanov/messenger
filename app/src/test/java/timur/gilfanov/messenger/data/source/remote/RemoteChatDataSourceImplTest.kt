@@ -24,7 +24,6 @@ import kotlinx.serialization.json.Json
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.remote.dto.ApiErrorCode
 import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse
 import timur.gilfanov.messenger.data.source.remote.dto.ChatDto
@@ -35,9 +34,10 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.util.NoOpLogger
 
-@Category(Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class RemoteChatDataSourceImplTest {
 
     private lateinit var remoteChatDataSource: RemoteChatDataSourceImpl
@@ -53,6 +53,7 @@ class RemoteChatDataSourceImplTest {
     companion object {
         private val TEST_PARTICIPANT_ID = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
         private val TEST_CHAT_ID = UUID.fromString("123e4567-e89b-12d3-a456-426614174001")
+        private val TEST_MESSAGE_ID = UUID.fromString("123e4567-e89b-12d3-a456-426614174002")
         private val TEST_JOINED_AT = Instant.parse("2024-01-15T10:30:00Z")
         private val TEST_ONLINE_AT = Instant.parse("2024-01-15T11:00:00Z")
     }
@@ -75,7 +76,7 @@ class RemoteChatDataSourceImplTest {
             pictureUrl = null,
             messages = persistentListOf(),
             participants = persistentSetOf(testParticipant),
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
+            rules = persistentSetOf(),
             unreadMessagesCount = 0,
             lastReadMessageId = null,
         )
@@ -672,6 +673,119 @@ class RemoteChatDataSourceImplTest {
         assertTrue(
             result.error is RemoteDataSourceError.NetworkNotAvailable ||
                 result.error is RemoteDataSourceError.ServerUnreachable ||
+                result.error is RemoteDataSourceError.UnknownError,
+        )
+    }
+
+    @Test
+    fun `markMessagesAsRead should return success when API responds successfully`() = runTest {
+        // Given
+        val chatId = ChatId(TEST_CHAT_ID)
+        val messageId = MessageId(TEST_MESSAGE_ID)
+        val successResponse = ApiResponse(data = Unit, success = true)
+        val responseJson = json.encodeToString(successResponse)
+
+        val mockClient = createMockClient(responseJson)
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.markMessagesAsRead(chatId, messageId)
+
+        // Then
+        assertIs<ResultWithError.Success<Unit, RemoteDataSourceError>>(result)
+    }
+
+    @Test
+    fun `markMessagesAsRead should return error when API responds with error`() = runTest {
+        // Given
+        val chatId = ChatId(TEST_CHAT_ID)
+        val messageId = MessageId(TEST_MESSAGE_ID)
+        val errorResponse = ApiResponse<Unit>(
+            data = null,
+            error = ErrorResponseDto(code = ApiErrorCode.ChatNotFound, message = "Chat not found"),
+            success = false,
+        )
+        val responseJson = json.encodeToString(errorResponse)
+
+        val mockClient = createMockClient(responseJson)
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.markMessagesAsRead(chatId, messageId)
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ChatNotFound>(result.error)
+    }
+
+    @Test
+    fun `markMessagesAsRead should handle SerializationException`() = runTest {
+        // Given
+        val chatId = ChatId(TEST_CHAT_ID)
+        val messageId = MessageId(TEST_MESSAGE_ID)
+        val mockClient = createMockClient("invalid json response")
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.markMessagesAsRead(chatId, messageId)
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, RemoteDataSourceError>>(result)
+        // Invalid JSON parsing failures result in UnknownError through the generic exception handler
+        assertTrue(
+            result.error is RemoteDataSourceError.UnknownError ||
+                result.error is RemoteDataSourceError.ServerError,
+        )
+    }
+
+    @Test
+    fun `markMessagesAsRead should handle SocketTimeoutException`() = runTest {
+        // Given
+        val chatId = ChatId(TEST_CHAT_ID)
+        val messageId = MessageId(TEST_MESSAGE_ID)
+
+        val mockEngine = MockEngine { request ->
+            throw SocketTimeoutException("Request timeout")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.markMessagesAsRead(chatId, messageId)
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, RemoteDataSourceError>>(result)
+        assertIs<RemoteDataSourceError.ServerUnreachable>(result.error)
+    }
+
+    @Test
+    fun `markMessagesAsRead should handle IOException`() = runTest {
+        // Given
+        val chatId = ChatId(TEST_CHAT_ID)
+        val messageId = MessageId(TEST_MESSAGE_ID)
+
+        val mockEngine = MockEngine { request ->
+            throw IOException("Network error")
+        }
+        val mockClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(json)
+            }
+        }
+        remoteChatDataSource = createDataSource(mockClient)
+
+        // When
+        val result = remoteChatDataSource.markMessagesAsRead(chatId, messageId)
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, RemoteDataSourceError>>(result)
+        // IOException gets mapped through ErrorMapper
+        assertTrue(
+            result.error is RemoteDataSourceError.NetworkNotAvailable ||
                 result.error is RemoteDataSourceError.UnknownError,
         )
     }

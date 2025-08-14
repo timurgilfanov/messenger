@@ -185,6 +185,7 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     private fun generateChatDelta(
         operationKey: String,
         chats: Map<ChatId, Chat>,
@@ -235,9 +236,9 @@ class RemoteDataSourceFake @Inject constructor() :
         }
 
         operationKey.startsWith("delete_message_") && operationKey.contains("_from_") -> {
-            val messageIdString = operationKey.substringAfter(
-                "delete_message_",
-            ).substringBefore("_from_")
+            val messageIdString = operationKey
+                .substringAfter("delete_message_")
+                .substringBefore("_from_")
             val chatIdString = operationKey.substringAfterLast("_from_")
             val messageId = MessageId(UUID.fromString(messageIdString))
             val chatId = ChatId(UUID.fromString(chatIdString))
@@ -248,6 +249,24 @@ class RemoteDataSourceFake @Inject constructor() :
                 chatMetadata = ChatMetadata.fromChat(chat),
                 messagesToAdd = emptyList<Message>().toPersistentList(),
                 messagesToDelete = listOf(messageId).toPersistentList(),
+                timestamp = timestamp,
+            )
+        }
+
+        operationKey.startsWith("mark_as_read_") && operationKey.contains("_up_to_") -> {
+            val chatIdString = operationKey
+                .substringAfter("mark_as_read_")
+                .substringBefore("_up_to_")
+            val chatId = ChatId(UUID.fromString(chatIdString))
+            val chat = chats[chatId] ?: run {
+                return null
+            }
+
+            ChatUpdatedDelta(
+                chatId = chat.id,
+                chatMetadata = ChatMetadata.fromChat(chat),
+                messagesToAdd = emptyList<Message>().toPersistentList(),
+                messagesToDelete = emptyList<MessageId>().toPersistentList(),
                 timestamp = timestamp,
             )
         }
@@ -499,27 +518,38 @@ class RemoteDataSourceFake @Inject constructor() :
     ): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        serverChatsFlow.update { currentChats ->
-            val existingChat = currentChats[chatId]
-            if (existingChat != null) {
-                // Count messages after the upToMessageId
+        val currentChats = serverChatsFlow.value
+        val existingChat = currentChats[chatId]
+
+        return if (existingChat != null) {
+            existingChat.unreadMessagesCount
+            serverChatsFlow.update { chats ->
+                // Find the message index to mark as read up to
                 val upToIndex = existingChat.messages.indexOfFirst { it.id == upToMessageId }
                 val unreadCount = if (upToIndex >= 0) {
-                    existingChat.messages.size - upToIndex - 1
+                    // Messages are stored chronologically (oldest first)
+                    // When marking "up to" a message, we mark that message and all previous messages as read
+                    // The unread count should be the number of messages AFTER the upToIndex
+                    val remainingUnread = maxOf(0, existingChat.messages.size - upToIndex - 1)
+                    remainingUnread
                 } else {
+                    // Message not found, keep existing unread count
                     existingChat.unreadMessagesCount
                 }
-                currentChats + (
+
+                chats + (
                     chatId to existingChat.copy(
                         unreadMessagesCount = unreadCount,
                         lastReadMessageId = upToMessageId,
                     )
                     )
-            } else {
-                currentChats
             }
-        }
 
-        return ResultWithError.Success(Unit)
+            // Record server operation for delta sync AFTER updating the state
+            recordServerOperation("mark_as_read_${chatId.id}_up_to_${upToMessageId.id}")
+            ResultWithError.Success(Unit)
+        } else {
+            ResultWithError.Failure(RemoteDataSourceError.ChatNotFound)
+        }
     }
 }

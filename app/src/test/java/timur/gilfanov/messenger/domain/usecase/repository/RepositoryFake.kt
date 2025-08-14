@@ -175,7 +175,10 @@ class RepositoryFake :
         val chat = chats[chatId] ?: return ResultWithError.Success(Unit)
         val upToIndex = chat.messages.indexOfFirst { it.id == upToMessageId }
         val unreadCount = if (upToIndex >= 0) {
-            chat.messages.size - upToIndex - 1
+            // Messages are stored chronologically (oldest first)
+            // When marking "up to" a message, we mark that message and all previous messages as read
+            // The unread count should be the number of messages AFTER the upToIndex
+            maxOf(0, chat.messages.size - upToIndex - 1)
         } else {
             chat.unreadMessagesCount
         }

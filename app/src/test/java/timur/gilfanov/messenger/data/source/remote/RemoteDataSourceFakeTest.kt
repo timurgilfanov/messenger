@@ -5,9 +5,10 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -32,31 +33,55 @@ class RemoteDataSourceFakeTest {
     private lateinit var testMessage: TextMessage
     private lateinit var testParticipant: Participant
 
+    companion object {
+        private val TEST_PARTICIPANT_ID = ParticipantId(
+            UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
+        )
+        private val TEST_CHAT_ID = ChatId(
+            UUID.fromString("550e8400-e29b-41d4-a716-446655440001"),
+        )
+        private val TEST_MESSAGE_ID = MessageId(
+            UUID.fromString("550e8400-e29b-41d4-a716-446655440002"),
+        )
+        private val TEST_MESSAGE_ID_2 = MessageId(
+            UUID.fromString("550e8400-e29b-41d4-a716-446655440003"),
+        )
+        private val TEST_MESSAGE_ID_3 = MessageId(
+            UUID.fromString("550e8400-e29b-41d4-a716-446655440004"),
+        )
+        private val TEST_CHAT_ID_NON_EXISTENT = ChatId(
+            UUID.fromString("550e8400-e29b-41d4-a716-446655440005"),
+        )
+        private val TEST_MESSAGE_ID_NON_EXISTENT = MessageId(
+            UUID.fromString("550e8400-e29b-41d4-a716-446655440006"),
+        )
+        private val TEST_TIMESTAMP = Instant.fromEpochMilliseconds(1640995200000)
+    }
+
     @Before
     fun setup() {
         remoteDataSource = RemoteDataSourceFake()
 
         testParticipant = Participant(
-            id = ParticipantId(UUID.randomUUID()),
+            id = TEST_PARTICIPANT_ID,
             name = "Test User",
             pictureUrl = null,
-            joinedAt = Clock.System.now(),
-            onlineAt = Clock.System.now(),
+            joinedAt = TEST_TIMESTAMP,
+            onlineAt = TEST_TIMESTAMP,
         )
 
-        val chatId = ChatId(UUID.randomUUID())
         testMessage = TextMessage(
-            id = MessageId(UUID.randomUUID()),
+            id = TEST_MESSAGE_ID,
             text = "Test message",
             parentId = null,
             sender = testParticipant,
-            recipient = chatId,
-            createdAt = Clock.System.now(),
+            recipient = TEST_CHAT_ID,
+            createdAt = TEST_TIMESTAMP,
             deliveryStatus = DeliveryStatus.Sending(0),
         )
 
         testChat = Chat(
-            id = chatId,
+            id = TEST_CHAT_ID,
             participants = persistentSetOf(testParticipant),
             name = "Test Chat",
             pictureUrl = null,
@@ -337,6 +362,151 @@ class RemoteDataSourceFakeTest {
             val result = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(result)
             assertTrue(result.data.isEmpty())
+        }
+    }
+
+    @Test
+    fun `markMessagesAsRead should mark messages as read and update unread count`() = runTest {
+        // Given
+        val chatWithMessages = testChat.copy(
+            messages = persistentListOf(testMessage),
+            unreadMessagesCount = 1,
+            lastReadMessageId = null,
+        )
+        remoteDataSource.addChatToServer(chatWithMessages)
+
+        // When
+        val result = remoteDataSource.markMessagesAsRead(chatWithMessages.id, testMessage.id)
+
+        // Then
+        assertIs<ResultWithError.Success<Unit, RemoteDataSourceError>>(result)
+
+        // Verify the chat was updated
+        remoteDataSource.subscribeToChats().test {
+            val chatsResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(chatsResult)
+            val chatPreview = chatsResult.data.first { it.id == chatWithMessages.id }
+            assertEquals(0, chatPreview.unreadMessagesCount)
+            assertEquals(testMessage.id, chatPreview.lastReadMessageId)
+        }
+    }
+
+    @Test
+    fun `markMessagesAsRead should generate delta for synchronization`() = runTest {
+        // Given
+        val chatWithMessages = testChat.copy(
+            messages = persistentListOf(testMessage),
+            unreadMessagesCount = 1,
+            lastReadMessageId = null,
+        )
+        remoteDataSource.addChatToServer(chatWithMessages)
+
+        // Get initial sync point
+        val initialResult = remoteDataSource.chatsDeltaUpdates(null).first()
+        assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(initialResult)
+        val syncPoint = initialResult.data.toTimestamp
+
+        // When
+        remoteDataSource.markMessagesAsRead(chatWithMessages.id, testMessage.id)
+
+        // Then - should generate a delta after the sync point
+        val incrementalResult = remoteDataSource.chatsDeltaUpdates(syncPoint).first()
+        assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(incrementalResult)
+        val incrementalDelta = incrementalResult.data
+        assertTrue(incrementalDelta.changes.isNotEmpty())
+        val chatDelta = incrementalDelta.changes.first()
+        assertIs<ChatUpdatedDelta>(chatDelta)
+        assertEquals(chatWithMessages.id, chatDelta.chatId)
+        assertEquals(0, chatDelta.chatMetadata.unreadMessagesCount)
+        assertEquals(testMessage.id, chatDelta.chatMetadata.lastReadMessageId)
+    }
+
+    @Test
+    fun `markMessagesAsRead with multiple messages should calculate correct unread count`() =
+        runTest {
+            // Given
+            val message1 = testMessage
+            val message2 = testMessage.copy(id = TEST_MESSAGE_ID_2)
+            val message3 = testMessage.copy(id = TEST_MESSAGE_ID_3)
+
+            val chatWithMessages = testChat.copy(
+                messages = persistentListOf(message1, message2, message3),
+                unreadMessagesCount = 3,
+                lastReadMessageId = null,
+            )
+            remoteDataSource.addChatToServer(chatWithMessages)
+
+            // When - mark up to the second message
+            val result = remoteDataSource.markMessagesAsRead(chatWithMessages.id, message2.id)
+
+            // Then
+            assertIs<ResultWithError.Success<Unit, RemoteDataSourceError>>(result)
+
+            // Should have 1 unread message remaining (message3)
+            remoteDataSource.subscribeToChats().test {
+                val chatsResult = awaitItem()
+                assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(
+                    chatsResult,
+                )
+                val chatPreview = chatsResult.data.first { it.id == chatWithMessages.id }
+                assertEquals(1, chatPreview.unreadMessagesCount)
+                assertEquals(message2.id, chatPreview.lastReadMessageId)
+            }
+        }
+
+    @Test
+    fun `markMessagesAsRead with non-existent message should keep original unread count`() =
+        runTest {
+            // Given
+            val chatWithMessages = testChat.copy(
+                messages = persistentListOf(testMessage),
+                unreadMessagesCount = 1,
+                lastReadMessageId = null,
+            )
+            remoteDataSource.addChatToServer(chatWithMessages)
+            val nonExistentMessageId = TEST_MESSAGE_ID_NON_EXISTENT
+
+            // When
+            val result = remoteDataSource.markMessagesAsRead(
+                chatWithMessages.id,
+                nonExistentMessageId,
+            )
+
+            // Then
+            assertIs<ResultWithError.Success<Unit, RemoteDataSourceError>>(result)
+
+            // Should keep original unread count since message doesn't exist
+            remoteDataSource.subscribeToChats().test {
+                val chatsResult = awaitItem()
+                assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(
+                    chatsResult,
+                )
+                val chatPreview = chatsResult.data.first { it.id == chatWithMessages.id }
+                assertEquals(1, chatPreview.unreadMessagesCount)
+                assertEquals(nonExistentMessageId, chatPreview.lastReadMessageId)
+            }
+        }
+
+    @Test
+    fun `markMessagesAsRead on non-existent chat should return ChatNotFound`() = runTest {
+        // Given
+        val nonExistentChatId = TEST_CHAT_ID_NON_EXISTENT
+        val messageId = TEST_MESSAGE_ID_NON_EXISTENT
+
+        // When
+        val result = remoteDataSource.markMessagesAsRead(nonExistentChatId, messageId)
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, RemoteDataSourceError>>(result)
+        assertEquals(RemoteDataSourceError.ChatNotFound, result.error)
+
+        // No chats should exist
+        remoteDataSource.subscribeToChats().test {
+            val chatsResult = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(
+                chatsResult,
+            )
+            assertTrue(chatsResult.data.isEmpty())
         }
     }
 }

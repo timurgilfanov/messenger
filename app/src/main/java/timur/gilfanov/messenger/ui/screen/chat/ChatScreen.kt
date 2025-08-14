@@ -35,6 +35,7 @@ import java.util.Locale
 import java.util.UUID
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -115,6 +116,8 @@ fun ChatScreenContent(
     }
 }
 
+private const val MARK_AS_VISIBLE_DEBOUNCE = 300L
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Suppress("LongMethod") // Complex UI composition requires length
@@ -139,10 +142,11 @@ fun ChatContent(
     val currentOnMarkMessagesAsReadUpTo = rememberUpdatedState(onMarkMessagesAsReadUpTo)
 
     LaunchedEffect(visibleItemsInfo.value, messages.itemCount) {
+        delay(MARK_AS_VISIBLE_DEBOUNCE)
         val visibleItems = visibleItemsInfo.value
         if (visibleItems.isNotEmpty() && messages.itemCount > 0) {
             // Get the last visible message index (bottom of the screen)
-            val lastVisibleIndex = visibleItems.maxByOrNull { it.index }?.index
+            val lastVisibleIndex = visibleItems.minByOrNull { it.index }?.index
             if (lastVisibleIndex != null &&
                 lastVisibleIndex >= 0 &&
                 lastVisibleIndex < messages.itemCount

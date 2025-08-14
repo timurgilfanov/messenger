@@ -131,7 +131,7 @@ class MessageReplyApplicationTest {
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
             waitUntilExactlyOneExists(hasTestTag("chat_item_$chatId"))
             onNodeWithText("Bob").assertIsDisplayed()
-            onNodeWithText(replyText, substring = true).assertIsDisplayed()
+            waitUntilExactlyOneExists(hasText(replyText, substring = true))
             waitUntilDoesNotExist(hasText("2"))
             waitUntilDoesNotExist(hasText("1"))
         }

@@ -517,6 +517,9 @@ class RemoteDataSourceFake @Inject constructor() :
         upToMessageId: MessageId,
     ): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
+        if (!connectionStateFlow.value) {
+            return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
+        }
 
         val currentChats = serverChatsFlow.value
         val existingChat = currentChats[chatId]

@@ -5,6 +5,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 
 /**
  * Repository interface for all chat-related operations.
@@ -36,4 +37,10 @@ interface ChatRepository {
     suspend fun receiveChatUpdates(
         chatId: ChatId,
     ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>
+
+    // Message Read Status Operations
+    suspend fun markMessagesAsRead(
+        chatId: ChatId,
+        upToMessageId: MessageId,
+    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError>
 }

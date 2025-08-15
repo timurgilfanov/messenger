@@ -25,12 +25,14 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
@@ -158,6 +160,20 @@ class MessengerRepositoryImpl @Inject constructor(
             when (localResult) {
                 is ResultWithError.Success -> ResultWithError.Success(localResult.data)
                 is ResultWithError.Failure -> ResultWithError.Failure(ChatNotFound)
+            }
+        }
+
+    override suspend fun markMessagesAsRead(
+        chatId: ChatId,
+        upToMessageId: MessageId,
+    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> =
+        when (val result = remoteDataSources.chat.markMessagesAsRead(chatId, upToMessageId)) {
+            is ResultWithError.Success -> {
+                // The delta sync loop will pick up the chat updates automatically
+                ResultWithError.Success(Unit)
+            }
+            is ResultWithError.Failure -> {
+                ResultWithError.Failure(mapRemoteErrorToMarkMessagesAsReadError(result.error))
             }
         }
 
@@ -297,4 +313,15 @@ private fun mapRemoteErrorToDeleteMessageError(
     RemoteDataSourceError.ServerUnreachable -> RepositoryDeleteMessageError.RemoteUnreachable
     RemoteDataSourceError.MessageNotFound -> RepositoryDeleteMessageError.MessageNotFound
     else -> RepositoryDeleteMessageError.RemoteError
+}
+
+private fun mapRemoteErrorToMarkMessagesAsReadError(
+    error: RemoteDataSourceError,
+): RepositoryMarkMessagesAsReadError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable -> MarkMessagesAsReadError.NetworkNotAvailable
+    RemoteDataSourceError.ServerUnreachable -> MarkMessagesAsReadError.ServerUnreachable
+    RemoteDataSourceError.ServerError -> MarkMessagesAsReadError.ServerError
+    RemoteDataSourceError.ChatNotFound -> MarkMessagesAsReadError.ChatNotFound
+    is RemoteDataSourceError.UnknownError -> MarkMessagesAsReadError.UnknownError(error.cause)
+    else -> MarkMessagesAsReadError.UnknownError(RuntimeException("Unknown remote error: $error"))
 }

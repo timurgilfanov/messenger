@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.domain.testutil
 
 import java.util.UUID
 import kotlin.time.Instant
+import kotlin.time.Instant.Companion.fromEpochMilliseconds
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -16,6 +17,7 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 
+@Suppress("MagicNumber")
 object DomainTestFixtures {
 
     data class TestChatParams(
@@ -42,15 +44,15 @@ object DomainTestFixtures {
         this.pictureUrl = params.pictureUrl
         this.unreadMessagesCount = params.unreadMessagesCount
         this.lastReadMessageId = params.lastReadMessageId
-        this.rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
+        this.rules = persistentSetOf()
     }
 
     fun createTestParticipant(
         id: ParticipantId = ParticipantId(UUID.randomUUID()),
         name: String = "Test User",
         pictureUrl: String? = null,
-        joinedAt: Instant = Instant.fromEpochMilliseconds(1000),
-        onlineAt: Instant? = Instant.fromEpochMilliseconds(1000),
+        joinedAt: Instant = fromEpochMilliseconds(1000),
+        onlineAt: Instant? = fromEpochMilliseconds(1000),
     ): Participant = buildParticipant {
         this.id = id
         this.name = name
@@ -65,7 +67,7 @@ object DomainTestFixtures {
         val sender: Participant = createTestParticipant(),
         val recipient: ChatId = ChatId(UUID.randomUUID()),
         val deliveryStatus: DeliveryStatus = DeliveryStatus.Sent,
-        val createdAt: Instant = Instant.fromEpochMilliseconds(2000),
+        val createdAt: Instant = fromEpochMilliseconds(2000),
         val parentId: MessageId? = null,
     )
 
@@ -146,7 +148,7 @@ object DomainTestFixtures {
         sender: Participant = createTestParticipant(),
         recipient: ChatId = ChatId(UUID.randomUUID()),
         deliveryStatus: DeliveryStatus = DeliveryStatus.Sent,
-        createdAt: Instant = Instant.fromEpochMilliseconds(2000),
+        createdAt: Instant = fromEpochMilliseconds(2000),
         parentId: MessageId? = null,
     ): TextMessage = createTestTextMessage(
         TestMessageParams(id, text, sender, recipient, deliveryStatus, createdAt, parentId),

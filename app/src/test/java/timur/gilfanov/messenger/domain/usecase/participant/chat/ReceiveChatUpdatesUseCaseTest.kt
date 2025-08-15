@@ -14,9 +14,11 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 
 @Category(Unit::class)
 class ReceiveChatUpdatesUseCaseTest {
@@ -36,6 +38,11 @@ class ReceiveChatUpdatesUseCaseTest {
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
             error("Not implemented")
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun markMessagesAsRead(
+            chatId: ChatId,
+            upToMessageId: MessageId,
+        ): ResultWithError<kotlin.Unit, RepositoryMarkMessagesAsReadError> =
+            ResultWithError.Success(kotlin.Unit)
     }
 
     @Test

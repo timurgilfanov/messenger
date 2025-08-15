@@ -6,6 +6,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.paging.PagingData
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,8 +25,10 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
+import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
@@ -33,11 +36,13 @@ import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.test.AndroidTestDataHelper.bobChat
 import timur.gilfanov.messenger.util.Logger
 
 class AndroidTestRepositoryWithRealImplementation(
@@ -46,14 +51,13 @@ class AndroidTestRepositoryWithRealImplementation(
 ) : ChatRepository,
     MessageRepository {
 
+    val remoteDataSourceFake = RemoteDataSourceFake()
+
     private val realRepository: MessengerRepositoryImpl = run {
         val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
 
         // Create in-memory database
-        val database = Room.inMemoryDatabaseBuilder(
-            context,
-            MessengerDatabase::class.java,
-        )
+        val database = Room.inMemoryDatabaseBuilder(context, MessengerDatabase::class.java)
             .allowMainThreadQueries()
             .build()
 
@@ -65,9 +69,6 @@ class AndroidTestRepositoryWithRealImplementation(
                 context.preferencesDataStoreFile("android_test_preferences_$uniqueId")
             },
         )
-
-        // Create and configure remote data source fake
-        val remoteDataSourceFake = RemoteDataSourceFake()
 
         // Prepopulate database with test data based on scenario
         runBlocking {
@@ -167,4 +168,32 @@ class AndroidTestRepositoryWithRealImplementation(
 
     override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
         realRepository.getPagedMessages(chatId)
+
+    override suspend fun markMessagesAsRead(
+        chatId: ChatId,
+        upToMessageId: MessageId,
+    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> =
+        realRepository.markMessagesAsRead(chatId, upToMessageId)
+
+    fun simulateBobSendingMessage(messageText: String, createdAt: Instant) {
+        // Simulate Bob sending a new message
+        val bobUser = AndroidTestDataHelper.bobUser
+
+        val sender = DomainTestFixtures.createTestParticipant(
+            id = bobUser.id,
+            name = "Current User",
+            joinedAt = bobUser.joinedAt,
+        )
+
+        val message = DomainTestFixtures.createTestTextMessage(
+            sender = sender,
+            recipient = bobChat.id,
+            text = messageText,
+            deliveryStatus = DeliveryStatus.Delivered,
+            createdAt = createdAt,
+        )
+
+        // Add the message to Bob's chat
+        remoteDataSourceFake.addMessageToServerChat(message)
+    }
 }

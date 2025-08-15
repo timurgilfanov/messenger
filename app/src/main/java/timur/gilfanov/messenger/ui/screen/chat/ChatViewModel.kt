@@ -32,6 +32,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.NetworkNotAvailable
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerError
@@ -50,6 +51,7 @@ class ChatViewModel @AssistedInject constructor(
     private val sendMessageUseCase: SendMessageUseCase,
     private val receiveChatUpdatesUseCase: ReceiveChatUpdatesUseCase,
     private val getPagedMessagesUseCase: GetPagedMessagesUseCase,
+    private val markMessagesAsReadUseCase: MarkMessagesAsReadUseCase,
 ) : ViewModel(),
     ContainerHost<ChatUiState, Nothing> {
 
@@ -171,6 +173,16 @@ class ChatViewModel @AssistedInject constructor(
         runOn<ChatUiState.Ready> {
             reduce {
                 state.copy(dialogError = null)
+            }
+        }
+    }
+
+    @OptIn(OrbitExperimental::class)
+    fun markMessagesAsReadUpTo(messageId: MessageId) = intent {
+        runOn<ChatUiState.Ready> {
+            val unreadMessages = currentChat?.unreadMessagesCount ?: 0
+            if (unreadMessages > 0) {
+                markMessagesAsReadUseCase(chatId, messageId)
             }
         }
     }

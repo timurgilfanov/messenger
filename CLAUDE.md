@@ -25,6 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Run a single test class
 ./gradlew testMockDebugUnitTest --tests "ClassName"
+./gradlew connectedMockDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=ClassName
 
 # Run a single test method
 ./gradlew testMockDebugUnitTest --tests "ClassName.testMethodName"

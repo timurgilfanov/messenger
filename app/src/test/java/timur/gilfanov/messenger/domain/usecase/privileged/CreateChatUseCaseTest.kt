@@ -14,11 +14,13 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatIsNotValid
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class CreateChatUseCaseTest {
@@ -49,6 +51,10 @@ class CreateChatUseCaseTest {
             error("Not implemented")
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
+        override suspend fun markMessagesAsRead(
+            chatId: ChatId,
+            upToMessageId: MessageId,
+        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = error("Not implemented")
     }
 
     private class ChatValidatorFake(val error: ChatValidationError? = null) : ChatValidator {

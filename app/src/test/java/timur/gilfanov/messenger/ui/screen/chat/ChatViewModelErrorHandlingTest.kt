@@ -23,6 +23,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
@@ -53,12 +54,14 @@ class ChatViewModelErrorHandlingTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
+        val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
+            markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
         viewModel.test(this) {
@@ -91,12 +94,14 @@ class ChatViewModelErrorHandlingTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
+        val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
+            markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
         viewModel.test(this) {
@@ -137,12 +142,14 @@ class ChatViewModelErrorHandlingTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
+        val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
+            markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
         viewModel.test(this) {
@@ -173,12 +180,14 @@ class ChatViewModelErrorHandlingTest {
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
+        val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
+            markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
         viewModel.test(this) {

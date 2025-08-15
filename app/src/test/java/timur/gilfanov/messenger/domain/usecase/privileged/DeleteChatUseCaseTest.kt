@@ -12,10 +12,12 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDelete
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class DeleteChatUseCaseTest {
@@ -37,6 +39,10 @@ class DeleteChatUseCaseTest {
             error("Not implemented")
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun receiveChatUpdates(chatId: ChatId) = error("Not implemented")
+        override suspend fun markMessagesAsRead(
+            chatId: ChatId,
+            upToMessageId: MessageId,
+        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = error("Not implemented")
     }
 
     @Test
@@ -113,7 +119,7 @@ class DeleteChatUseCaseTest {
 
         val chat = buildChat {
             participants = persistentSetOf(alice, bob)
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>()
+            rules = persistentSetOf()
         }
 
         val useCase = DeleteChatUseCase(RepositoryFake())

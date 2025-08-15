@@ -33,11 +33,13 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode.FOR_SENDER_ONLY
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
@@ -879,6 +881,101 @@ class MessengerRepositoryImplTest {
         // Verify chat still exists locally (remote-first approach failed)
         val localChat = localDataSource.getChat(testChat.id)
         assertIs<ResultWithError.Success<Chat, *>>(localChat)
+    }
+
+    @Test
+    fun `markMessagesAsRead should succeed when remote call succeeds`() = runTest {
+        // Given: Chat with unread messages
+        val chatWithUnreadMessages = testChat.copy(
+            messages = persistentListOf(testMessage),
+            unreadMessagesCount = 1,
+            lastReadMessageId = null,
+        )
+        localDataSource.insertChat(chatWithUnreadMessages)
+        remoteDataSource.addChatToServer(chatWithUnreadMessages)
+        repository = repositoryImpl(backgroundScope)
+
+        // When: Mark messages as read
+        val result = repository.markMessagesAsRead(testChat.id, testMessage.id)
+
+        // Then: Should succeed
+        assertIs<ResultWithError.Success<Unit, RepositoryMarkMessagesAsReadError>>(result)
+    }
+
+    @Test
+    fun `markMessagesAsRead should return NetworkNotAvailable error when network unavailable`() =
+        runTest {
+            // Given: Chat exists but network is disconnected
+            localDataSource.insertChat(testChat)
+            remoteDataSource.addChatToServer(testChat)
+            remoteDataSource.setConnectionState(false)
+            repository = repositoryImpl(backgroundScope)
+
+            // When: Try to mark messages as read
+            val result = repository.markMessagesAsRead(testChat.id, testMessage.id)
+
+            // Then: Should return network error
+            assertIs<ResultWithError.Failure<Unit, RepositoryMarkMessagesAsReadError>>(result)
+            assertEquals(MarkMessagesAsReadError.NetworkNotAvailable, result.error)
+        }
+
+    @Test
+    fun `markMessagesAsRead should return ChatNotFound error when chat doesn't exist`() = runTest {
+        // Given: Chat doesn't exist
+        val nonExistentChatId = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440222"))
+        repository = repositoryImpl(backgroundScope)
+
+        // When: Try to mark messages as read for non-existent chat
+        val result = repository.markMessagesAsRead(nonExistentChatId, testMessage.id)
+
+        // Then: Should return error
+        assertIs<ResultWithError.Failure<Unit, RepositoryMarkMessagesAsReadError>>(result)
+        assertEquals(MarkMessagesAsReadError.ChatNotFound, result.error)
+    }
+
+    @Test
+    fun `markMessagesAsRead should propagate changes via delta sync loop`() = runTest {
+        // Given: Chat with multiple unread messages
+        val message1 = testMessage.copy(
+            id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440010")),
+            createdAt = Instant.fromEpochMilliseconds(1000),
+        )
+        val message2 = testMessage.copy(
+            id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440011")),
+            createdAt = Instant.fromEpochMilliseconds(2000),
+        )
+        val chatWithUnreadMessages = testChat.copy(
+            messages = persistentListOf(message1, message2),
+            unreadMessagesCount = 2,
+            lastReadMessageId = null,
+        )
+
+        localDataSource.insertChat(chatWithUnreadMessages)
+        val syncTimestamp = Instant.fromEpochMilliseconds(500)
+        localDataSource.updateLastSyncTimestamp(syncTimestamp)
+        remoteDataSource.addChatToServer(chatWithUnreadMessages)
+
+        repository = repositoryImpl(backgroundScope)
+
+        // When & Then: Verify changes propagate through delta sync
+        repository.receiveChatUpdates(testChat.id).test {
+            val initialResult = awaitItem()
+            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(initialResult)
+            assertEquals(2, initialResult.data.unreadMessagesCount)
+            assertEquals(null, initialResult.data.lastReadMessageId)
+
+            // Mark first message as read
+            val markAsReadResult = repository.markMessagesAsRead(testChat.id, message1.id)
+            assertIs<ResultWithError.Success<Unit, RepositoryMarkMessagesAsReadError>>(
+                markAsReadResult,
+            )
+
+            // Should receive updated chat with reduced unread count
+            val updatedResult = awaitItem()
+            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(updatedResult)
+            assertEquals(1, updatedResult.data.unreadMessagesCount) // Only message2 left unread
+            assertEquals(message1.id, updatedResult.data.lastReadMessageId)
+        }
     }
 
     private fun repositoryImpl(scope: CoroutineScope): MessengerRepositoryImpl =

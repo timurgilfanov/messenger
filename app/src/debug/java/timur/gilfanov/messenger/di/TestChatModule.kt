@@ -5,14 +5,14 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import timur.gilfanov.messenger.data.repository.ALICE_CHAT_ID
 
 @Module
 @InstallIn(SingletonComponent::class)
 object TestChatModule {
 
+    @Suppress("FunctionOnlyReturningConstant") // value provided only for compilation
     @Provides
     @Singleton
     @TestChatId
-    fun provideTestChatId(): String = ALICE_CHAT_ID
+    fun provideTestChatId(): String = "00000000-0000-0000-0000-000000000000"
 }

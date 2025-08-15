@@ -164,6 +164,13 @@ tasks.register<JacocoReport>("jacocoExternalCoverageReport") {
     group = "verification"
     description = "Generate JaCoCo coverage report from external .ec files passed via parameters"
 
+    // Get build variant parameters (required)
+    val buildFlavor = project.findProperty("buildFlavor") as String?
+        ?: throw GradleException("buildFlavor parameter is required")
+    val buildType = project.findProperty("buildType") as String?
+        ?: throw GradleException("buildType parameter is required")
+    val buildVariant = "${buildFlavor}${buildType.replaceFirstChar { it.uppercase() }}"
+
     reports {
         xml.required.set(true)
         html.required.set(true)
@@ -193,9 +200,9 @@ tasks.register<JacocoReport>("jacocoExternalCoverageReport") {
         "**/*PreviewKt*",
     )
     classDirectories.setFrom(
-        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/$buildVariant")) {
             exclude(excludePatterns)
-        } + fileTree(layout.buildDirectory.dir("intermediates/javac/debug/classes")) {
+        } + fileTree(layout.buildDirectory.dir("intermediates/javac/$buildVariant/classes")) {
             exclude(excludePatterns)
         },
     )
@@ -338,8 +345,17 @@ tasks.register("generateCategorySpecificReports") {
         if (category != null) {
             val categoryName = category.substringAfterLast(".")
 
-            // Use flavor-specific report file (mockDebug for mock flavor)
-            val sourceReportFile = file("build/reports/kover/reportMockDebug.xml")
+            // Use flavor-specific report file (dynamic based on build variant)
+            val buildFlavor = project.findProperty("buildFlavor") as String?
+                ?: throw GradleException("buildFlavor parameter is required")
+            val buildType = project.findProperty("buildType") as String?
+                ?: throw GradleException("buildType parameter is required")
+            val buildVariant = "${buildFlavor}${buildType.replaceFirstChar { it.uppercase() }}"
+            val sourceReportFile = file(
+                "build/reports/kover/report${
+                    buildVariant.replaceFirstChar { it.uppercase() }
+                }.xml",
+            )
 
             if (sourceReportFile.exists()) {
                 copy {

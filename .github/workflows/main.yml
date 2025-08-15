@@ -296,7 +296,7 @@ jobs:
       - name: Generate Unit Coverage Report
         run: |
           ./gradlew koverXmlReportMockDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildFlavor=mock -PbuildType=debug
 
       - name: Upload Unit Coverage to Codecov (Unit)
         uses: codecov/codecov-action@v4
@@ -317,7 +317,7 @@ jobs:
       - name: Generate Component Coverage Report
         run: |
           ./gradlew koverXmlReportMockDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildFlavor=mock -PbuildType=debug
 
       - name: Upload Component Coverage to Codecov (Component)
         uses: codecov/codecov-action@v4
@@ -398,7 +398,7 @@ jobs:
       - name: Generate Feature Coverage Report
         run: |
           ./gradlew koverXmlReportMockDebug
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature
+          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildFlavor=mock -PbuildType=debug
 
       - name: Upload Feature Coverage to Codecov (Feature)
         uses: codecov/codecov-action@v4
@@ -520,7 +520,7 @@ jobs:
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating emulator coverage report using Gradle task..."
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
-            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=mock -PbuildType=debug
 
             # Copy generated report to expected location
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml coverage-reports/feature-emulator-phone-report.xml
@@ -682,7 +682,7 @@ jobs:
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating emulator coverage report using Gradle task..."
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
-            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=mock -PbuildType=debug
             
             # Copy generated report to expected location
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml coverage-reports/application-emulator-phone-report.xml
@@ -846,7 +846,7 @@ jobs:
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating phone coverage report using Gradle task..."
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
-            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=mock -PbuildType=debug
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/application-device-phone-report.xml
             rm -rf app/build/reports/jacoco/firebaseTestLab
           fi
@@ -859,7 +859,7 @@ jobs:
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
             echo "Generating foldable coverage report using Gradle task..."
             COVERAGE_FILES_COMMA=$(echo "$FOLDABLE_COVERAGE_FILES" | tr ' ' ',')
-            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=mock -PbuildType=debug
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/application-device-foldable-report.xml
             rm -rf app/build/reports/jacoco/firebaseTestLab
           fi
@@ -1054,7 +1054,7 @@ jobs:
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating release candidate phone coverage report using Gradle task..."
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
-            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=production -PbuildType=release
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/release-candidate-device-phone-report.xml
             rm -rf app/build/reports/jacoco/firebaseTestLab
           fi
@@ -1067,7 +1067,7 @@ jobs:
           if [ -n "$TABLET_COVERAGE_FILES" ]; then
             echo "Generating release candidate tablet coverage report using Gradle task..."
             COVERAGE_FILES_COMMA=$(echo "$TABLET_COVERAGE_FILES" | tr ' ' ',')
-            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=production -PbuildType=release
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/release-candidate-device-tablet-report.xml
             rm -rf app/build/reports/jacoco/firebaseTestLab
           fi
@@ -1080,7 +1080,7 @@ jobs:
           if [ -n "$FOLDABLE_COVERAGE_FILES" ]; then
             echo "Generating release candidate foldable coverage report using Gradle task..."
             COVERAGE_FILES_COMMA=$(echo "$FOLDABLE_COVERAGE_FILES" | tr ' ' ',')
-            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA"
+            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=production -PbuildType=release
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml device-coverage-reports/release-candidate-device-foldable-report.xml
             rm -rf app/build/reports/jacoco/firebaseTestLab
           fi

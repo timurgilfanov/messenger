@@ -1,7 +1,9 @@
-package timur.gilfanov.messenger.util
+package timur.gilfanov.messenger
+
+import timur.gilfanov.messenger.util.Logger
 
 /**
- * No-operation implementation of [Logger] for tests.
+ * No-operation implementation of [timur.gilfanov.messenger.util.Logger] for tests.
  * Discards all log messages to keep tests fast and focused on behavior.
  */
 class NoOpLogger : Logger {

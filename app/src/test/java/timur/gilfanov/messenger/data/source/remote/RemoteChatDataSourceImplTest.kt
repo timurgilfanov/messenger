@@ -24,6 +24,7 @@ import kotlinx.serialization.json.Json
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.data.source.remote.dto.ApiErrorCode
 import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse
 import timur.gilfanov.messenger.data.source.remote.dto.ChatDto
@@ -35,7 +36,6 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
-import timur.gilfanov.messenger.util.NoOpLogger
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class RemoteChatDataSourceImplTest {

@@ -24,6 +24,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta
@@ -39,7 +40,6 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.util.NoOpLogger
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)

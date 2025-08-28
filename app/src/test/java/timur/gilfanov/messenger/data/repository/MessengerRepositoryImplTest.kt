@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
@@ -44,7 +45,6 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode.FOR_SEN
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
-import timur.gilfanov.messenger.util.NoOpLogger
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(Unit::class)

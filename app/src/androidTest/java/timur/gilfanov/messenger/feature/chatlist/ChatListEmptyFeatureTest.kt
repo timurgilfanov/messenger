@@ -13,6 +13,7 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Inject
 import javax.inject.Singleton
 import org.junit.Before
 import org.junit.Rule
@@ -27,6 +28,7 @@ import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
+import timur.gilfanov.messenger.test.RepositoryCleanupRule
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -41,10 +43,16 @@ class ChatListEmptyFeatureTest {
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<ChatListScreenTestActivity>()
 
+    @Inject
+    lateinit var chatRepository: ChatRepository
+
+    @get:Rule(order = 2)
+    val repositoryCleanupRule = RepositoryCleanupRule(repositoryProvider = { chatRepository })
+
     @Module
     @InstallIn(SingletonComponent::class)
     object EmptyRepositoryTestModule {
-        val repository = AndroidTestRepositoryWithRealImplementation(EMPTY)
+        private val repository = AndroidTestRepositoryWithRealImplementation(EMPTY)
 
         @Provides
         @Singleton

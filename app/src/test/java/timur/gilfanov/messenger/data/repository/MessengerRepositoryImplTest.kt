@@ -991,6 +991,6 @@ class MessengerRepositoryImplTest {
                 sync = remoteDataSource,
             ),
             logger = NoOpLogger(),
-            repositoryScope = scope,
+            backgroundScope = scope,
         )
 }

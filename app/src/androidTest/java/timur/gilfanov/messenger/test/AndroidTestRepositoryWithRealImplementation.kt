@@ -116,7 +116,7 @@ class AndroidTestRepositoryWithRealImplementation(
             localDataSources = localDataSources,
             remoteDataSources = remoteDataSources,
             logger = logger,
-            repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+            backgroundScope = CoroutineScope(SupervisorJob()),
         )
     }
 

@@ -6,11 +6,14 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.paging.PagingData
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import java.io.Closeable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.data.repository.MessengerRepositoryImpl
 import timur.gilfanov.messenger.data.source.local.LocalChatDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
@@ -38,79 +41,115 @@ import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
-import timur.gilfanov.messenger.util.NoOpLogger
 
 class TestRepositoryWithRealImplementation :
     ChatRepository,
-    MessageRepository {
+    MessageRepository,
+    Closeable {
 
-    private val realRepository: MessengerRepositoryImpl by lazy {
-        val context: Context = ApplicationProvider.getApplicationContext()
+    private val instanceId = Integer.toHexString(System.identityHashCode(this))
+    private val logger = NoOpLogger()
+    private val dataStoreScope: CoroutineScope
+    private val repositoryScope: CoroutineScope
+    private val realRepository: MessengerRepositoryImpl
 
-        // Create in-memory database
-        val database = Room.inMemoryDatabaseBuilder(
-            context,
-            MessengerDatabase::class.java,
-        )
-            .allowMainThreadQueries()
-            .build()
+    companion object {
+        private const val TAG = "TestRepo"
+    }
 
-        // Create test DataStore
-        val dataStore = PreferenceDataStoreFactory.create(
-            scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-            produceFile = {
-                context.preferencesDataStoreFile(
-                    "test_chat_feature_preferences_${System.currentTimeMillis()}",
-                )
-            },
-        )
+    init {
+        logger.d(TAG, "Creating repository instance: $instanceId")
 
-        // Create and configure remote data source fake
-        val remoteDataSourceFake = RemoteDataSourceFake()
+        val (dataScope, repoScope, repo) = run {
+            val context: Context = ApplicationProvider.getApplicationContext()
 
-        // Prepopulate database with test data
-        runBlocking {
-            ChatFeatureTestDataHelper.prepopulateDatabase(database)
-            ChatFeatureTestDataHelper.prepopulateRemoteDataSource(remoteDataSourceFake)
+            // Create in-memory database
+            val database = Room.inMemoryDatabaseBuilder(
+                context,
+                MessengerDatabase::class.java,
+            )
+                .allowMainThreadQueries()
+                .build()
+
+            // Create test DataStore
+            val dataScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+            val dataStore = PreferenceDataStoreFactory.create(
+                scope = dataScope,
+                produceFile = {
+                    context.preferencesDataStoreFile(
+                        "test_chat_feature_preferences_${System.currentTimeMillis()}",
+                    )
+                },
+            )
+
+            // Create and configure remote data source fake
+            val remoteDataSourceFake = RemoteDataSourceFake()
+
+            // Prepopulate database with test data
+            runBlocking {
+                ChatFeatureTestDataHelper.prepopulateDatabase(database)
+                ChatFeatureTestDataHelper.prepopulateRemoteDataSource(remoteDataSourceFake)
+            }
+
+            val logger = NoOpLogger()
+
+            val localDataSources = LocalDataSources(
+                chat = LocalChatDataSourceImpl(
+                    database = database,
+                    chatDao = database.chatDao(),
+                    participantDao = database.participantDao(),
+                    logger = logger,
+                ),
+                message = LocalMessageDataSourceImpl(
+                    database = database,
+                    messageDao = database.messageDao(),
+                    chatDao = database.chatDao(),
+                    logger = logger,
+                ),
+                sync = LocalSyncDataSourceImpl(
+                    dataStore = dataStore,
+                    database = database,
+                    chatDao = database.chatDao(),
+                    messageDao = database.messageDao(),
+                    participantDao = database.participantDao(),
+                    logger = logger,
+                ),
+            )
+
+            val remoteDataSources = RemoteDataSources(
+                chat = remoteDataSourceFake,
+                message = remoteDataSourceFake,
+                sync = remoteDataSourceFake,
+            )
+
+            val repoScope = CoroutineScope(SupervisorJob())
+            val repo = MessengerRepositoryImpl(
+                localDataSources = localDataSources,
+                remoteDataSources = remoteDataSources,
+                logger = logger,
+                backgroundScope = repoScope,
+            )
+
+            Triple(dataScope, repoScope, repo)
         }
 
-        val logger = NoOpLogger()
+        dataStoreScope = dataScope
+        repositoryScope = repoScope
+        realRepository = repo
 
-        val localDataSources = LocalDataSources(
-            chat = LocalChatDataSourceImpl(
-                database = database,
-                chatDao = database.chatDao(),
-                participantDao = database.participantDao(),
-                logger = logger,
-            ),
-            message = LocalMessageDataSourceImpl(
-                database = database,
-                messageDao = database.messageDao(),
-                chatDao = database.chatDao(),
-                logger = logger,
-            ),
-            sync = LocalSyncDataSourceImpl(
-                dataStore = dataStore,
-                database = database,
-                chatDao = database.chatDao(),
-                messageDao = database.messageDao(),
-                participantDao = database.participantDao(),
-                logger = logger,
-            ),
-        )
+        logger.d(TAG, "Repository instance $instanceId created successfully")
+    }
 
-        val remoteDataSources = RemoteDataSources(
-            chat = remoteDataSourceFake,
-            message = remoteDataSourceFake,
-            sync = remoteDataSourceFake,
-        )
+    override fun close() {
+        logger.d(TAG, "Closing repository instance: $instanceId")
+        dataStoreScope.cancel()
+        repositoryScope.cancel()
+        logger.d(TAG, "Repository instance $instanceId closed")
+    }
 
-        MessengerRepositoryImpl(
-            localDataSources = localDataSources,
-            remoteDataSources = remoteDataSources,
-            logger = logger,
-            repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-        )
+    @Suppress("deprecation")
+    protected fun finalize() {
+        logger.w(TAG, "Repository instance $instanceId is being garbage collected")
     }
 
     // ChatRepository implementation - delegate to real repository

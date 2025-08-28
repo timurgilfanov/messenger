@@ -627,7 +627,7 @@ class MessengerRepositoryIntegrationTest {
             localDataSources = localDataSources,
             remoteDataSources = remoteDataSources,
             logger = logger,
-            repositoryScope = scope, // Use the test-controlled scope
+            backgroundScope = scope, // Use the test-controlled scope
         )
     }
 }

@@ -19,6 +19,7 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.minutes
 import org.junit.Before
@@ -27,7 +28,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.messenger.MainActivity
 import timur.gilfanov.messenger.annotations.ApplicationTest
-import timur.gilfanov.messenger.application.MessageReplyApplicationTest.NavigationTestRepositoryModule.repository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
@@ -37,6 +37,7 @@ import timur.gilfanov.messenger.test.AndroidTestDataHelper.BOB_CHAT_ID
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.MESSAGE_3_TIME
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
+import timur.gilfanov.messenger.test.RepositoryCleanupRule
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -51,10 +52,16 @@ class MessageReplyApplicationTest {
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
+    @Inject
+    lateinit var chatRepository: ChatRepository
+
+    @get:Rule(order = 2)
+    val repositoryCleanupRule = RepositoryCleanupRule(repositoryProvider = { chatRepository })
+
     @Module
     @InstallIn(SingletonComponent::class)
     object NavigationTestRepositoryModule {
-        val repository = AndroidTestRepositoryWithRealImplementation(NON_EMPTY)
+        private val repository = AndroidTestRepositoryWithRealImplementation(NON_EMPTY)
 
         @Provides
         @Singleton
@@ -96,10 +103,11 @@ class MessageReplyApplicationTest {
             // Step 3: Simulate Bob sending a new message
             val incomingMessageText = "Hey! Are you available for a quick call? " +
                 "I have something important to discuss."
-            repository.simulateBobSendingMessage(
-                incomingMessageText,
-                createdAt = MESSAGE_3_TIME.plus(1.minutes),
-            )
+            (chatRepository as AndroidTestRepositoryWithRealImplementation)
+                .simulateBobSendingMessage(
+                    incomingMessageText,
+                    createdAt = MESSAGE_3_TIME.plus(1.minutes),
+                )
 
             // Step 4: Wait for UI to update and verify unread badge appears with partial message text
             waitUntilExactlyOneExists(hasText(incomingMessageText, substring = true))

@@ -16,6 +16,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Inject
 import javax.inject.Singleton
 import org.junit.Before
 import org.junit.Rule
@@ -29,6 +30,7 @@ import timur.gilfanov.messenger.annotations.Feature
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.testutil.RepositoryCleanupRule
 
 @RunWith(RobolectricTestRunner::class)
 @HiltAndroidTest
@@ -47,18 +49,24 @@ class ChatFeatureTest {
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<ChatScreenTestActivity>()
 
+    @Inject
+    lateinit var chatRepository: ChatRepository
+
+    @get:Rule(order = 2)
+    val repositoryCleanupRule = RepositoryCleanupRule(repositoryProvider = { chatRepository })
+
     @Module
     @InstallIn(SingletonComponent::class)
     object ChatScreenDisplayTestRepositoryModule {
-        private val repositoryInstance = TestRepositoryWithRealImplementation()
+        private val repository = TestRepositoryWithRealImplementation()
 
         @Provides
         @Singleton
-        fun provideChatRepository(): ChatRepository = repositoryInstance
+        fun provideChatRepository(): ChatRepository = repository
 
         @Provides
         @Singleton
-        fun provideMessageRepository(): MessageRepository = repositoryInstance
+        fun provideMessageRepository(): MessageRepository = repository
     }
 
     @Module

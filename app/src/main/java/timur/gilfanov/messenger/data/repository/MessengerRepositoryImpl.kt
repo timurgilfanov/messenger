@@ -6,10 +6,11 @@ import androidx.paging.PagingData
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -46,7 +47,7 @@ class MessengerRepositoryImpl @Inject constructor(
     private val localDataSources: LocalDataSources,
     private val remoteDataSources: RemoteDataSources,
     private val logger: Logger,
-    private val repositoryScope: CoroutineScope,
+    backgroundScope: CoroutineScope,
 ) : ChatRepository,
     MessageRepository {
 
@@ -57,36 +58,37 @@ class MessengerRepositoryImpl @Inject constructor(
     private val isUpdatingFlow = MutableStateFlow(false)
 
     init {
-        repositoryScope.launch {
-            performDeltaSyncLoop()
-        }
+        performDeltaSyncLoop(backgroundScope)
     }
 
-    private suspend fun performDeltaSyncLoop() {
-        logger.d(TAG, "Starting delta sync loop")
-        val lastSyncTimestamp = when (val result = localDataSources.sync.getLastSyncTimestamp()) {
-            is ResultWithError.Success -> result.data
-            is ResultWithError.Failure -> {
-                logger.w(TAG, "Failed to get last sync timestamp: ${result.error}")
-                null // Start from scratch if no timestamp available
-            }
-        }
-        logger.d(TAG, "Last sync timestamp: $lastSyncTimestamp")
-        remoteDataSources.sync.chatsDeltaUpdates(lastSyncTimestamp)
-            .onEach { deltaResult ->
-                if (deltaResult is ResultWithError.Success) {
-                    logger.d(TAG, "Received delta updates: ${deltaResult.data}")
-                    isUpdatingFlow.value = true
-                    localDataSources.sync.applyChatListDelta(deltaResult.data)
-                    isUpdatingFlow.value = false
-                } else {
-                    logger.w(TAG, "Delta result was failure: $deltaResult")
+    private fun performDeltaSyncLoop(scope: CoroutineScope) {
+        scope.launch(Dispatchers.IO) {
+            logger.d(TAG, "Starting delta sync loop")
+            val lastSyncTimestamp =
+                when (val result = localDataSources.sync.getLastSyncTimestamp()) {
+                    is ResultWithError.Success -> result.data
+                    is ResultWithError.Failure -> {
+                        logger.w(TAG, "Failed to get last sync timestamp: ${result.error}")
+                        null // Start from scratch if no timestamp available
+                    }
                 }
-            }
-            .catch { e ->
-                logger.e(TAG, "Error collecting chatsDeltaUpdates", e)
-            }
-            .launchIn(repositoryScope)
+            logger.d(TAG, "Last sync timestamp: $lastSyncTimestamp")
+            remoteDataSources.sync.chatsDeltaUpdates(lastSyncTimestamp)
+                .onEach { deltaResult ->
+                    if (deltaResult is ResultWithError.Success) {
+                        logger.d(TAG, "Received delta updates: ${deltaResult.data}")
+                        isUpdatingFlow.value = true
+                        localDataSources.sync.applyChatListDelta(deltaResult.data)
+                        isUpdatingFlow.value = false
+                    } else {
+                        logger.w(TAG, "Delta result was failure: $deltaResult")
+                    }
+                }
+                .catch { e ->
+                    logger.e(TAG, "Error collecting chatsDeltaUpdates", e)
+                }
+                .collect()
+        }
     }
 
     // ChatRepository implementation

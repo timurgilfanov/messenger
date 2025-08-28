@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -86,7 +86,7 @@ class MessengerRepositoryImpl @Inject constructor(
             .catch { e ->
                 logger.e(TAG, "Error collecting chatsDeltaUpdates", e)
             }
-            .launchIn(repositoryScope)
+            .collect()
     }
 
     // ChatRepository implementation

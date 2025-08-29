@@ -35,6 +35,10 @@ android {
         // Build config fields for API configuration
         buildConfigField("String", "API_BASE_URL", "\"https://api.messenger.example.com/v1\"")
         buildConfigField("boolean", "USE_REAL_REMOTE_DATA_SOURCES", "false")
+
+        // Default debug data scenario - can be overridden at build time
+        val dataScenario = project.findProperty("dataScenario") as String? ?: "STANDARD"
+        buildConfigField("String", "DEFAULT_DATA_SCENARIO", "\"$dataScenario\"")
     }
 
     testOptions {
@@ -83,6 +87,12 @@ android {
                 "\"https://mock.api.messenger.example.com/v1\"",
             )
             buildConfigField("boolean", "USE_REAL_REMOTE_DATA_SOURCES", "false")
+
+            // Override scenario per flavor if needed via gradle property
+            val mockScenario = project.findProperty("mockDataScenario") as String?
+                ?: project.findProperty("dataScenario") as String?
+                ?: "STANDARD"
+            buildConfigField("String", "DEFAULT_DATA_SCENARIO", "\"$mockScenario\"")
         }
         create("dev") {
             dimension = "environment"
@@ -122,6 +132,14 @@ ktlint {
 detekt {
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
     buildUponDefaultConfig = true
+    source.setFrom(
+        files(
+            "src/androidTest/java",
+            "src/debug/java",
+            "src/main/java",
+            "src/test/java",
+        ),
+    )
 }
 
 hilt {
@@ -424,4 +442,122 @@ tasks.register("preCommit") {
         println("✅ All pre-commit checks passed! Coverage reports generated.")
         println("📊 Coverage reports available in app/build/reports/kover/")
     }
+}
+
+// Debug data scenario tasks for local development
+tasks.register<Exec>("runWithMinimalData") {
+    group = "debug"
+    description = "Run app with minimal test data"
+    dependsOn("installMockDebugWithPermissions")
+
+    commandLine(
+        "adb", "shell", "am", "start",
+        "-n", "timur.gilfanov.messenger/.MainActivity",
+        "-a", "android.intent.action.MAIN",
+        "-c", "android.intent.category.LAUNCHER",
+        "--es", "debug_data_scenario", "MINIMAL",
+    )
+}
+
+tasks.register<Exec>("runWithStandardData") {
+    group = "debug"
+    description = "Run app with standard test data"
+    dependsOn("installMockDebugWithPermissions")
+
+    commandLine(
+        "adb", "shell", "am", "start",
+        "-n", "timur.gilfanov.messenger/.MainActivity",
+        "-a", "android.intent.action.MAIN",
+        "-c", "android.intent.category.LAUNCHER",
+        "--es", "debug_data_scenario", "STANDARD",
+    )
+}
+
+tasks.register<Exec>("runWithHeavyData") {
+    group = "debug"
+    description = "Run app with heavy test data for performance testing"
+    dependsOn("installMockDebugWithPermissions")
+
+    commandLine(
+        "adb", "shell", "am", "start",
+        "-n", "timur.gilfanov.messenger/.MainActivity",
+        "-a", "android.intent.action.MAIN",
+        "-c", "android.intent.category.LAUNCHER",
+        "--es", "debug_data_scenario", "HEAVY",
+    )
+}
+
+tasks.register<Exec>("runWithDemoData") {
+    group = "debug"
+    description = "Run app with polished demo data"
+    dependsOn("installMockDebugWithPermissions")
+
+    commandLine(
+        "adb", "shell", "am", "start",
+        "-n", "timur.gilfanov.messenger/.MainActivity",
+        "-a", "android.intent.action.MAIN",
+        "-c", "android.intent.category.LAUNCHER",
+        "--es", "debug_data_scenario", "DEMO",
+    )
+}
+
+tasks.register<Exec>("runWithEmptyData") {
+    group = "debug"
+    description = "Run app with no data for empty state testing"
+    dependsOn("installMockDebugWithPermissions")
+
+    commandLine(
+        "adb", "shell", "am", "start",
+        "-n", "timur.gilfanov.messenger/.MainActivity",
+        "-a", "android.intent.action.MAIN",
+        "-c", "android.intent.category.LAUNCHER",
+        "--es", "debug_data_scenario", "EMPTY",
+    )
+}
+
+tasks.register<Exec>("runWithEdgeCases") {
+    group = "debug"
+    description = "Run app with edge case data (Unicode, long messages, etc.)"
+    dependsOn("installMockDebugWithPermissions")
+
+    commandLine(
+        "adb", "shell", "am", "start",
+        "-n", "timur.gilfanov.messenger/.MainActivity",
+        "-a", "android.intent.action.MAIN",
+        "-c", "android.intent.category.LAUNCHER",
+        "--es", "debug_data_scenario", "EDGE_CASES",
+    )
+}
+
+tasks.register<Exec>("installMockDebugApk") {
+    group = "debug"
+    description = "Install mock debug APK"
+    dependsOn("assembleMockDebug")
+
+    commandLine("adb", "install", "-r", "build/outputs/apk/mock/debug/app-mock-debug.apk")
+}
+
+tasks.register<Exec>("grantMockDebugPermissions") {
+    group = "debug"
+    description = "Grant notification permission to mock debug build"
+    dependsOn("installMockDebugApk")
+
+    commandLine(
+        "adb",
+        "shell",
+        "pm",
+        "grant",
+        "timur.gilfanov.messenger",
+        "android.permission.POST_NOTIFICATIONS",
+    )
+
+    doLast {
+        println("✅ Mock debug APK installed with notification permissions granted")
+    }
+}
+
+tasks.register("installMockDebugWithPermissions") {
+    group = "debug"
+    description = "Install mock debug APK and automatically grant notification permission"
+    dependsOn("grantMockDebugPermissions")
 }

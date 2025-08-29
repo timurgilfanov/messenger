@@ -1,0 +1,47 @@
+package timur.gilfanov.messenger.data.source.remote
+
+import kotlin.time.Instant
+import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.message.Message
+
+/**
+ * Debug-only remote data source interface for operations that clear or reset server data.
+ * These operations are used for debug data generation scenarios.
+ * This interface is only available in debug builds.
+ */
+interface RemoteDebugDataSource {
+
+    /**
+     * Clears all server data including chats, messages, and participants.
+     * Used when regenerating debug data to start with a clean server state.
+     * This is a synchronous operation as it only affects in-memory fake data.
+     */
+    fun clearServerData()
+
+    /**
+     * Adds a chat directly to the server (fake implementation).
+     * Used for populating the server with debug data.
+     * This bypasses normal creation flows and directly updates server state.
+     */
+    fun addChatToServer(chat: Chat)
+
+    /**
+     * Adds a message directly to an existing chat on the server (fake implementation).
+     * Used for populating chats with debug messages.
+     * This bypasses normal message sending flows and directly updates server state.
+     */
+    fun addMessageToServerChat(message: Message)
+
+    /**
+     * Gets the current list of chats from the server (fake implementation).
+     * Used for debug operations like auto-activity simulation.
+     */
+    fun getCurrentChats(): List<Chat>
+
+    /**
+     * Sets the initial timestamp for server operations.
+     * Used to initialize server state with timestamps newer than existing sync points,
+     * ensuring generated data is considered "new" by sync operations.
+     */
+    fun setInitialTimestamp(timestamp: Instant)
+}

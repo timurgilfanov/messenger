@@ -57,12 +57,12 @@ class ChatViewModelLoadingTest {
                 ParticipantUiModel(
                     id = params.currentUserId,
                     name = "Current User",
-                    pictureUrl = null,
+                    pictureUrl = "https://ui-avatars.com/api/?name=Current+User&background=random",
                 ),
                 ParticipantUiModel(
                     id = params.otherUserId,
                     name = "Other User",
-                    pictureUrl = null,
+                    pictureUrl = "https://ui-avatars.com/api/?name=Other+User&background=random",
                 ),
             ),
             isGroupChat = params.isGroupChat,

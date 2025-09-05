@@ -200,6 +200,9 @@ domain/
     └── message/     # Message management use cases
 ```
 
+### Other rules
+Don't commit to repository unverified until you asked to do so explicitly.
+
 ## Technical Debt & Improvement Areas
 
 ### Data Layer Optimizations

@@ -16,6 +16,7 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
+import timur.gilfanov.messenger.util.generateProfileImageUrl
 
 @Category(Component::class)
 @RunWith(RobolectricTestRunner::class)
@@ -32,6 +33,7 @@ class MessageBubbleComponentTest {
             text = "Hello! This is a message from the current user.",
             senderId = "current-user",
             senderName = "You",
+            senderPictureUrl = null,
             createdAt = "14:30",
             deliveryStatus = DeliveryStatus.Delivered,
             isFromCurrentUser = true,
@@ -52,19 +54,20 @@ class MessageBubbleComponentTest {
 
     @Test
     fun `other user message displays correctly`() {
-        val message = MessageUiModel(
-            id = "2",
-            text = "Hi there! This is a message from another user.",
-            senderId = "other-user",
-            senderName = "Alice",
-            createdAt = "14:28",
-            deliveryStatus = DeliveryStatus.Delivered,
-            isFromCurrentUser = false,
-        )
-
         composeTestRule.setContent {
             MessengerTheme {
-                MessageBubble(message = message)
+                MessageBubble(
+                    message = MessageUiModel(
+                        id = "2",
+                        text = "Hi there! This is a message from another user.",
+                        senderId = "other-user",
+                        senderName = "Alice",
+                        senderPictureUrl = generateProfileImageUrl("Alice"),
+                        createdAt = "14:28",
+                        deliveryStatus = DeliveryStatus.Delivered,
+                        isFromCurrentUser = false,
+                    ),
+                )
             }
         }
 
@@ -82,6 +85,7 @@ class MessageBubbleComponentTest {
             text = "This message is currently being sent...",
             senderId = "current-user",
             senderName = "You",
+            senderPictureUrl = null,
             createdAt = "14:32",
             deliveryStatus = DeliveryStatus.Sending(progress = 75),
             isFromCurrentUser = true,
@@ -106,6 +110,7 @@ class MessageBubbleComponentTest {
             text = "This message has been delivered.",
             senderId = "current-user",
             senderName = "You",
+            senderPictureUrl = null,
             createdAt = "14:35",
             deliveryStatus = DeliveryStatus.Delivered,
             isFromCurrentUser = true,
@@ -128,6 +133,7 @@ class MessageBubbleComponentTest {
             text = "This message has been read.",
             senderId = "current-user",
             senderName = "You",
+            senderPictureUrl = null,
             createdAt = "14:38",
             deliveryStatus = DeliveryStatus.Read,
             isFromCurrentUser = true,
@@ -155,6 +161,7 @@ class MessageBubbleComponentTest {
             text = "This message failed to send.",
             senderId = "current-user",
             senderName = "You",
+            senderPictureUrl = null,
             createdAt = "14:40",
             deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
             isFromCurrentUser = true,
@@ -184,6 +191,7 @@ class MessageBubbleComponentTest {
             text = longText,
             senderId = "current-user",
             senderName = "You",
+            senderPictureUrl = null,
             createdAt = "14:45",
             deliveryStatus = DeliveryStatus.Delivered,
             isFromCurrentUser = true,
@@ -205,6 +213,7 @@ class MessageBubbleComponentTest {
             text = "",
             senderId = "current-user",
             senderName = "You",
+            senderPictureUrl = null,
             createdAt = "14:50",
             deliveryStatus = DeliveryStatus.Delivered,
             isFromCurrentUser = true,

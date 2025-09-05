@@ -269,6 +269,7 @@ private fun Message.toMessageUiModel(
         },
         senderId = this.sender.id.id.toString(),
         senderName = senderParticipant?.name ?: this.sender.name,
+        senderPictureUrl = senderParticipant?.pictureUrl,
         createdAt = formatTimestamp(this.createdAt.toEpochMilliseconds()),
         deliveryStatus = this.deliveryStatus ?: DeliveryStatus.Sending(0),
         isFromCurrentUser = this.sender.id == currentUserId,

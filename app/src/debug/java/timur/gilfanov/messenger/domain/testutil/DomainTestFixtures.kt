@@ -50,7 +50,7 @@ object DomainTestFixtures {
     fun createTestParticipant(
         id: ParticipantId = ParticipantId(UUID.randomUUID()),
         name: String = "Test User",
-        pictureUrl: String? = null,
+        pictureUrl: String? = generateProfileImageUrl(name),
         joinedAt: Instant = fromEpochMilliseconds(1000),
         onlineAt: Instant? = fromEpochMilliseconds(1000),
     ): Participant = buildParticipant {
@@ -60,6 +60,9 @@ object DomainTestFixtures {
         this.joinedAt = joinedAt
         this.onlineAt = onlineAt
     }
+
+    private fun generateProfileImageUrl(name: String): String =
+        "https://ui-avatars.com/api/?name=${name.replace(" ", "+")}&background=random"
 
     data class TestMessageParams(
         val id: MessageId = MessageId(UUID.randomUUID()),

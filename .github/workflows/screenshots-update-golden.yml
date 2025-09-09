@@ -45,7 +45,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Record Roborazzi screenshots (mockDebug)
-        run: ./gradlew recordRoborazziMockDebug
+        run: ./gradlew recordRoborazziMockDebug -PtestCategory=timur.gilfanov.messenger.annotations.Screenshot
 
       - name: Commit and push updated screenshots
         id: commit_push
@@ -101,4 +101,3 @@ jobs:
                 core.warning(`Failed to remove label: ${e.status} ${e.message}`);
               }
             }
-

@@ -343,6 +343,7 @@ jobs:
 
   screenshot-tests:
     if: github.event_name == 'pull_request'
+    needs: build-mock
     uses: ./.github/workflows/screenshots-verify.yml
     secrets: inherit
 

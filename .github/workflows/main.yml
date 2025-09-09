@@ -341,6 +341,12 @@ jobs:
           name: unit-component-report
           path: app/build/reports/kover/reportMockDebug.xml
 
+  screenshot-tests:
+    if: github.event_name == 'pull_request'
+    needs: build-mock
+    uses: ./.github/workflows/screenshots-verify.yml
+    secrets: inherit
+
   feature-tests:
     if: github.event_name == 'pull_request'
     needs: build-mock

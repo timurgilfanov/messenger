@@ -1,9 +1,11 @@
 package timur.gilfanov.messenger.annotations
 
-interface Unit
+interface Architecture
 
 interface Component
 
-interface Architecture
+interface Screenshot
 
 interface Feature
+
+interface Unit

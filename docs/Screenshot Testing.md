@@ -8,7 +8,7 @@ Local commands
 - Record/update baselines: `./gradlew recordRoborazziMockDebug`
 
 CI workflows
-- PR verification: job `screenshot-tests` calls reusable workflow `.github/workflows/screenshots.yml` (verify only) and uploads artifacts named `roborazzi-screenshots` on diffs.
+- PR verification: job `screenshot-tests` calls reusable workflow `.github/workflows/screenshots-verify.yml` (verify only) and uploads artifacts named `roborazzi-screenshots` on diffs.
 - Update baselines: apply the `update-screenshots` label to your PR to auto-record and commit goldens to the PR branch (same-repo PRs only).
 
 Stability

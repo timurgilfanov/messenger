@@ -1,0 +1,142 @@
+name: Screenshots
+
+on:
+  workflow_call:
+  pull_request_target:
+    types: [labeled]
+
+jobs:
+  verify:
+    name: Screenshot Verification
+    if: github.event_name == 'workflow_call'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/configuration-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Verify screenshots (mockDebug)
+        run: ./gradlew verifyRoborazziMockDebug
+
+      - name: Upload screenshot outputs (diffs and reports)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: roborazzi-screenshots
+          path: |
+            app/build/roborazzi/**
+            app/build/outputs/roborazzi/**
+            app/build/reports/tests/testMockDebugUnitTest/**
+            app/build/test-results/testMockDebugUnitTest/**
+
+  update-goldens:
+    name: Record and commit goldens
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.label.name == 'update-screenshots' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout PR head branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/configuration-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Record Roborazzi screenshots (mockDebug)
+        run: ./gradlew recordRoborazziMockDebug
+
+      - name: Commit and push updated screenshots
+        id: commit_push
+        run: |
+          if git status --porcelain app/src/test/snapshots | grep .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add app/src/test/snapshots
+            git commit -m "Update screenshot baselines"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No screenshot changes detected."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment with result
+        if: steps.commit_push.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '✅ Updated screenshot baselines committed to this PR branch.',
+              '',
+              `Run details: ${runUrl}`
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body,
+            });
+
+      - name: Remove label after success
+        if: steps.commit_push.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                name: 'update-screenshots',
+              });
+            } catch (e) {
+              core.info(`Label removal skipped: ${e.message}`);
+            }

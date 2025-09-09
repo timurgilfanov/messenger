@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kover)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.roborazzi)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.ksp)
     id("jacoco")
@@ -284,6 +285,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.orbit.test)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
 
     // Android Testing
     testImplementation(libs.robolectric)

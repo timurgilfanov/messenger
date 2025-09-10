@@ -29,7 +29,8 @@ import timur.gilfanov.messenger.util.Logger
 class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     LocalChatDataSource,
     LocalMessageDataSource,
-    LocalSyncDataSource {
+    LocalSyncDataSource,
+    LocalDebugDataSource {
 
     companion object {
         private const val TAG = "LocalDataSourceFake"
@@ -313,5 +314,30 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     fun simulateFlowChatListFailure(shouldFail: Boolean) {
         shouldFailFlowChatList = shouldFail
+    }
+
+    override suspend fun deleteAllChats(): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Deleting all chats")
+        chatsFlow.update { emptyMap() }
+        return ResultWithError.Success(Unit)
+    }
+
+    override suspend fun deleteAllMessages(): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Deleting all messages")
+
+        // Clear all messages from all chats while keeping the chats themselves
+        chatsFlow.update { currentChats ->
+            currentChats.mapValues { (_, chat) ->
+                chat.copy(messages = emptyList<Message>().toPersistentList())
+            }
+        }
+
+        return ResultWithError.Success(Unit)
+    }
+
+    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Clearing sync timestamp")
+        syncTimestamp.update { null }
+        return ResultWithError.Success(Unit)
     }
 }

@@ -345,7 +345,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: build-mock
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     uses: ./.github/workflows/screenshots-verify.yml
     with:

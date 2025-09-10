@@ -170,9 +170,6 @@ jobs:
             ## ✅ Screenshot Tests Passed
             
             All UI components match their golden baselines. No visual regressions detected.
-            
-            ---
-            *Workflow run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*
           edit-mode: replace
 
       - name: Upload screenshot outputs (diffs and reports)

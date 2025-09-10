@@ -133,18 +133,10 @@ jobs:
           
           cat >> comment_body.md << 'EOF'
           
-          ### 🔧 How to Update Screenshots
-          
           If these visual changes are expected:
           1. Apply the `update-screenshots` label to this PR
-          2. The workflow will automatically update the golden baselines
-          3. Remove the label after baselines are updated
-          
-          ### 📋 Workflow Details
-          
-          - **Workflow run:** [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          - **Companion branch:** Contains the comparison images for inline viewing
-          - **Branch cleanup:** Companion branches are automatically cleaned up when PR is closed
+          2. The workflow will automatically update the golden baselines and remove the label
+          3. Push empty commit to trigger verification that not started after commit from GitHub Actions bot: `git commit --allow-empty -m "Retrigger checks"; git push`
           
           ---
           *This comment will be updated automatically when new commits are pushed to the PR.*

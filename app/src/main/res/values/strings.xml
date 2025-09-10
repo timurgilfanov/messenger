@@ -32,7 +32,7 @@
     <string name="yesterday">Yesterday</string>
     
     <!-- Delivery Error Messages -->
-    <string name="delivery_error_network_unavailable">No internet connection!</string>
+    <string name="delivery_error_network_unavailable">No internet connection</string>
     <string name="delivery_error_server_unreachable">Server unreachable</string>
     <string name="delivery_error_message_too_large">Message too large</string>
     <string name="delivery_error_recipient_blocked">Recipient blocked you</string>

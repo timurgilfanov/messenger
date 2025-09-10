@@ -35,7 +35,9 @@ jobs:
         run: chmod +x gradlew
 
       - name: Verify screenshots
+        id: verify-screenshots
         run: ./gradlew verifyRoborazziMockDebug -PtestCategory=timur.gilfanov.messenger.annotations.Screenshot
+        continue-on-error: true
 
       - name: Find screenshot comparison images
         if: inputs.pr_number != ''
@@ -152,3 +154,9 @@ jobs:
             app/build/outputs/roborazzi/**
             app/build/reports/tests/testMockDebugUnitTest/**
             app/build/test-results/testMockDebugUnitTest/**
+
+      - name: Fail workflow if verification failed
+        if: steps.verify-screenshots.outcome == 'failure'
+        run: |
+          echo "❌ Screenshot verification failed"
+          exit 1

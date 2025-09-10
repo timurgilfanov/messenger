@@ -344,7 +344,12 @@ jobs:
   screenshot-tests:
     if: github.event_name == 'pull_request'
     needs: build-mock
+    permissions:
+      contents: write
+      pull-requests: write
     uses: ./.github/workflows/screenshots-verify.yml
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
     secrets: inherit
 
   feature-tests:

@@ -138,17 +138,40 @@ sequenceDiagram
 - **DI**: Hilt 2.57
 - **Database**: Room 2.7.2
 - **Networking**: Ktor 3.2.3
-- **Testing**: JUnit4, Turbine, Robolectric
+- **Testing**: JUnit4, Turbine, Robolectric, Roborazzi
 - **Code Quality**: Detekt, Ktlint, Konsist
 
 ## 📊 Testing Strategy
 
-Comprehensive testing pyramid with 5 test categories. See [Testing Strategy](https://github.com/timurgilfanov/messenger/blob/main/docs/Testing%20Strategy.md) for details.
+Comprehensive testing pyramid with 6 test categories. See [Testing Strategy](https://github.com/timurgilfanov/messenger/blob/main/docs/Testing%20Strategy.md) for details.
 
 | Category     | Coverage Target   | Execution            |
 |--------------|-------------------|----------------------|
 | Architecture | Rules enforcement | Every commit         |
 | Unit         | 80%+              | Every commit         |
 | Component    | 70%+              | Every commit         |
+| Screenshot   | All UI components | Pre-merge            |
 | Feature      | 50%+              | Pre-merge            |
 | Application  | 40%+              | Pre-merge/Post-merge |
+
+### 📸 Screenshot Testing
+
+Visual regression testing for UI components using **Roborazzi + Robolectric**:
+
+```bash
+# Verify screenshots match baselines
+./gradlew verifyRoborazziMockDebug
+
+# Update screenshot baselines  
+./gradlew recordRoborazziMockDebug
+
+# Check screenshot directory size (50MB limit)
+./gradlew checkScreenshotSize
+```
+
+**CI Integration:**
+- PRs automatically verify screenshots and upload diffs as artifacts
+- Apply `update-screenshots` label to auto-update baselines in PR branch
+- Size limit enforced via `./gradlew preCommit`
+
+See [Screenshot Testing docs](docs/Screenshot%20Testing.md) for details.

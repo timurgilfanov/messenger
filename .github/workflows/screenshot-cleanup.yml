@@ -1,0 +1,87 @@
+name: Screenshot Companion Branch Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    # Clean up stale branches weekly at midnight UTC on Sundays
+    - cron: '0 0 * * 0'
+
+jobs:
+  cleanup-companion-branches:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clean up companion branch for closed PR
+        if: github.event_name == 'pull_request' && github.event.action == 'closed'
+        run: |
+          COMPANION_BRANCH="screenshots-pr-${{ github.event.pull_request.number }}"
+          
+          # Check if companion branch exists
+          if git ls-remote --heads origin "$COMPANION_BRANCH" | grep -q "$COMPANION_BRANCH"; then
+            echo "Deleting companion branch: $COMPANION_BRANCH"
+            git push origin --delete "$COMPANION_BRANCH" || echo "Branch may have already been deleted"
+          else
+            echo "No companion branch found for PR #${{ github.event.pull_request.number }}"
+          fi
+
+      - name: Clean up stale companion branches
+        if: github.event_name == 'schedule'
+        run: |
+          echo "Checking for stale companion branches..."
+          
+          # Get all screenshot companion branches
+          COMPANION_BRANCHES=$(git ls-remote --heads origin | grep "screenshots-pr-" | awk '{print $2}' | sed 's|refs/heads/||' || echo "")
+          
+          if [ -z "$COMPANION_BRANCHES" ]; then
+            echo "No companion branches found"
+            exit 0
+          fi
+          
+          echo "Found companion branches:"
+          echo "$COMPANION_BRANCHES"
+          
+          # Check each companion branch
+          for branch in $COMPANION_BRANCHES; do
+            # Extract PR number from branch name
+            pr_number=$(echo "$branch" | sed 's/screenshots-pr-//')
+            
+            # Check if PR is still open using GitHub CLI
+            if gh pr view "$pr_number" --json state --jq '.state' 2>/dev/null | grep -q "OPEN"; then
+              echo "PR #$pr_number is still open, keeping branch $branch"
+            else
+              echo "PR #$pr_number is closed/merged, deleting branch $branch"
+              git push origin --delete "$branch" || echo "Failed to delete $branch"
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Clean up very old companion branches
+        if: github.event_name == 'schedule'
+        run: |
+          echo "Checking for companion branches older than 30 days..."
+          
+          # Get all screenshot companion branches with their last commit dates
+          git for-each-ref --format='%(refname:short) %(committerdate)' refs/remotes/origin/screenshots-pr-* 2>/dev/null | while read branch commit_date; do
+            # Remove 'origin/' prefix
+            branch_name=$(echo "$branch" | sed 's|origin/||')
+            
+            # Calculate days since last commit
+            commit_timestamp=$(date -d "$commit_date" +%s 2>/dev/null || echo "0")
+            current_timestamp=$(date +%s)
+            days_old=$(( (current_timestamp - commit_timestamp) / 86400 ))
+            
+            if [ "$days_old" -gt 30 ]; then
+              echo "Branch $branch_name is $days_old days old, deleting..."
+              git push origin --delete "$branch_name" || echo "Failed to delete $branch_name"
+            else
+              echo "Branch $branch_name is $days_old days old, keeping it"
+            fi
+          done || echo "No old companion branches found"

@@ -19,6 +19,7 @@ import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import timur.gilfanov.messenger.annotations.Screenshot
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
@@ -27,6 +28,7 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33], qualifiers = "en-rUS-w360dp-h640dp-xxhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Category(Screenshot::class)
 class MessageBubbleScreenshotTest {
 

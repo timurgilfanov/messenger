@@ -12,6 +12,10 @@ plugins {
     id("jacoco")
 }
 
+roborazzi {
+    outputDir.set(layout.projectDirectory.dir("src/test/screenshots"))
+}
+
 android {
     namespace = "timur.gilfanov.messenger"
     compileSdk = 36
@@ -379,11 +383,45 @@ tasks.register("generateCategorySpecificReports") {
     }
 }
 
+tasks.register("checkScreenshotSize") {
+    group = "verification"
+    description = "Check that screenshots directory doesn't exceed size limit"
+
+    doLast {
+        val screenshotsDir = file("src/test/screenshots")
+        if (screenshotsDir.exists()) {
+            val maxSizeMB = 50
+            val currentSizeMB = screenshotsDir.walkTopDown()
+                .filter { it.isFile }
+                .map { it.length() }
+                .sum() / (1024 * 1024)
+
+            if (currentSizeMB > maxSizeMB) {
+                val errorMessage = buildString {
+                    appendLine("❌ Screenshots directory size limit exceeded!")
+                    appendLine("   Current size: ${currentSizeMB}MB")
+                    appendLine("   Maximum allowed: ${maxSizeMB}MB")
+                    appendLine("")
+                    appendLine("   Please consider:")
+                    appendLine("   • Removing old/unused screenshots")
+                    appendLine("   • Optimizing image compression")
+                    appendLine("   • Moving to Git LFS if needed")
+                }
+                throw GradleException(errorMessage)
+            } else {
+                println("📸 Screenshots directory size: ${currentSizeMB}MB (limit: ${maxSizeMB}MB)")
+            }
+        } else {
+            println("📸 Screenshots directory not found, skipping size check")
+        }
+    }
+}
+
 tasks.register("preCommit") {
     group = "verification"
     description = "Run all pre-commit checks locally"
 
-    dependsOn("ktlintFormat", "lintMockDebug", "detekt")
+    dependsOn("ktlintFormat", "lintMockDebug", "detekt", "checkScreenshotSize")
 
     doLast {
         println("✅ Pre-commit formatting, lint, and static analysis complete!")

@@ -22,12 +22,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.ui.screen.chat.utils.toLocalizedString
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 private const val TIMESTAMP_ALPHA = 0.7f
@@ -35,13 +37,15 @@ private const val CHECK_OVERLAP_SPACING_DP = -2
 
 @Composable
 fun MessageBubble(message: MessageUiModel, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+
     Column(modifier = modifier) {
         MessageBubbleContent(message = message)
 
         when (val status = message.deliveryStatus) {
             is DeliveryStatus.Failed -> {
                 MessageError(
-                    error = status.reason.toString(),
+                    error = status.reason.toLocalizedString(context),
                     isFromCurrentUser = message.isFromCurrentUser,
                     modifier = Modifier.padding(top = 4.dp),
                 )

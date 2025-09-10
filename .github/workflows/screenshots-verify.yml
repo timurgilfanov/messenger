@@ -58,9 +58,14 @@ jobs:
       - name: Commit comparison images to companion branch
         if: inputs.pr_number != '' && steps.find-diffs.outputs.has_diffs == 'true'
         run: |
-          # Set up companion branch name
+          # Set up companion branch name and save original branch
           COMPANION_BRANCH="screenshots-pr-${{ inputs.pr_number }}"
+          ORIGINAL_BRANCH="${{ github.head_ref || github.ref_name }}"
           echo "COMPANION_BRANCH=$COMPANION_BRANCH" >> "$GITHUB_ENV"
+          echo "ORIGINAL_BRANCH=$ORIGINAL_BRANCH" >> "$GITHUB_ENV"
+          
+          echo "Creating companion branch: $COMPANION_BRANCH"
+          echo "Original branch: $ORIGINAL_BRANCH"
           
           # Configure git for Screenshot Bot with token authentication
           git config user.name "github-actions[bot]"
@@ -85,10 +90,17 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "Update screenshot comparisons for PR #${{ inputs.pr_number }}"
             git push origin "$COMPANION_BRANCH"
+            echo "Successfully pushed companion branch with screenshot comparisons"
+          else
+            echo "No changes to commit"
           fi
           
-          # Return to original branch
-          git checkout "${{ github.ref_name }}"
+          # Return to original branch with error handling
+          echo "Returning to original branch: $ORIGINAL_BRANCH"
+          git checkout "$ORIGINAL_BRANCH" || {
+            echo "Failed to checkout original branch, trying alternatives..."
+            git checkout "${{ github.sha }}" || echo "Could not return to original state, but companion branch was created successfully"
+          }
 
       - name: Create comparison comment body
         if: inputs.pr_number != '' && steps.find-diffs.outputs.has_diffs == 'true'

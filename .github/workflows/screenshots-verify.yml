@@ -2,10 +2,17 @@ name: Screenshots Verify
 
 on:
   workflow_call:
+    inputs:
+      pr_number:
+        required: false
+        type: string
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -30,8 +37,113 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Verify screenshots (mockDebug)
+      - name: Verify screenshots
         run: ./gradlew verifyRoborazziMockDebug -PtestCategory=timur.gilfanov.messenger.annotations.Screenshot
+
+      - name: Find screenshot comparison images
+        if: inputs.pr_number != ''
+        id: find-diffs
+        run: |
+          # Find comparison images (ending with _compare.png) in Roborazzi output directories
+          COMPARE_IMAGES=$(find app/build/outputs/roborazzi -name "*_compare.png" 2>/dev/null || true)
+          
+          if [ -z "$COMPARE_IMAGES" ]; then
+            echo "has_diffs=false" >> "$GITHUB_OUTPUT"
+            echo "No screenshot differences found"
+          else
+            echo "has_diffs=true" >> "$GITHUB_OUTPUT"
+            echo "Found screenshot differences:"
+            echo "$COMPARE_IMAGES"
+          fi
+
+      - name: Create comparison comment body
+        if: inputs.pr_number != '' && steps.find-diffs.outputs.has_diffs == 'true'
+        run: |
+          # Create markdown for differences
+          cat > comment_body.md << 'EOF'
+          ## 📸 Screenshot Differences Detected
+          
+          The following UI components have visual changes:
+          
+          EOF
+          
+          # Add each comparison image with details
+          find app/build/outputs/roborazzi -name "*_compare.png" 2>/dev/null | while read -r img; do
+            if [ -f "$img" ]; then
+              # Extract test name from path - handle Roborazzi naming convention
+              test_name=$(basename "$img" _compare.png)
+              # Remove any package prefixes and get just the test method name
+              test_name=$(echo "$test_name" | sed 's/.*\.//')
+              relative_path=${img#app/build/outputs/roborazzi/}
+              
+              echo "### 🔍 \`$test_name\`" >> comment_body.md
+              echo "" >> comment_body.md
+              echo "<details>" >> comment_body.md
+              echo "<summary>Click to view comparison</summary>" >> comment_body.md
+              echo "" >> comment_body.md
+              echo "**Visual Diff:**" >> comment_body.md
+              echo "\`\`\`" >> comment_body.md
+              echo "Artifact path: $relative_path" >> comment_body.md
+              echo "\`\`\`" >> comment_body.md
+              echo "" >> comment_body.md
+              echo "💡 Download the \`roborazzi-screenshots\` artifact from this workflow run to view the comparison image." >> comment_body.md
+              echo "" >> comment_body.md
+              echo "</details>" >> comment_body.md
+              echo "" >> comment_body.md
+            fi
+          done
+          
+          cat >> comment_body.md << 'EOF'
+          
+          ### 🔧 How to Update Screenshots
+          
+          If these visual changes are expected:
+          1. Apply the `update-screenshots` label to this PR
+          2. The workflow will automatically update the golden baselines
+          3. Remove the label after baselines are updated
+          
+          ### 📋 Workflow Details
+          
+          - **Workflow run:** [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - **Artifacts:** Contains comparison images and test reports
+          - **View diffs:** Download `roborazzi-screenshots` artifact and check `*_compare.png` files
+          
+          ---
+          *This comment will be updated automatically when new commits are pushed to the PR.*
+          EOF
+
+      - name: Find existing comment
+        if: inputs.pr_number != ''
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ inputs.pr_number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '📸 Screenshot'
+
+      - name: Comment PR with screenshot differences
+        if: inputs.pr_number != '' && steps.find-diffs.outputs.has_diffs == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ inputs.pr_number }}
+          body-path: comment_body.md
+          edit-mode: replace
+
+      - name: Comment when no differences
+        if: inputs.pr_number != '' && steps.find-diffs.outputs.has_diffs == 'false'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ inputs.pr_number }}
+          body: |
+            ## ✅ Screenshot Tests Passed
+            
+            All UI components match their golden baselines. No visual regressions detected.
+            
+            ---
+            *Workflow run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*
+          edit-mode: replace
 
       - name: Upload screenshot outputs (diffs and reports)
         if: always()

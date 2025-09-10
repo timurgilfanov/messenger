@@ -9,8 +9,8 @@ Local commands
 - Check directory size: `./gradlew checkScreenshotSize`
 
 CI workflows
-- PR verification: job `screenshot-tests` calls reusable workflow `.github/workflows/screenshots-verify.yml` (verify only) and uploads artifacts named `roborazzi-screenshots` on diffs.
-- Update baselines: apply the `update-screenshots` label to your PR to auto-record and commit goldens to the PR branch (same-repo PRs only).
+- **PR verification**: job `screenshot-tests` calls reusable workflow `.github/workflows/screenshots-verify.yml` which verifies screenshots and automatically posts PR comments with visual diff details when changes are detected.
+- **Update baselines**: apply the `update-screenshots` label to your PR to auto-record and commit goldens to the PR branch (same-repo PRs only).
 
 Size Management
 - Screenshots directory has a 50MB limit enforced by `./gradlew preCommit`

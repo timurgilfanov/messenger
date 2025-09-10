@@ -6,6 +6,7 @@
 Local commands
 - Verify screenshots: `./gradlew verifyRoborazziMockDebug`
 - Record/update baselines: `./gradlew recordRoborazziMockDebug`
+- Check directory size: `./gradlew checkScreenshotSize`
 
 CI workflows
 - PR verification: job `screenshot-tests` calls reusable workflow `.github/workflows/screenshots-verify.yml` (verify only) and uploads artifacts named `roborazzi-screenshots` on diffs.

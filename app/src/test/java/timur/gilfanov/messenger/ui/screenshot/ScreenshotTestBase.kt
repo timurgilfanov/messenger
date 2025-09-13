@@ -56,6 +56,7 @@ abstract class ScreenshotTestBase {
 
     protected fun captureScreenshot(
         configuration: TestConfiguration = TestConfiguration(),
+        action: () -> Unit = {},
         content: @Composable () -> Unit,
     ) {
         compose.setContent {
@@ -72,6 +73,7 @@ abstract class ScreenshotTestBase {
             }
         }
 
+        action()
         compose.onRoot().captureRoboImage()
     }
 }

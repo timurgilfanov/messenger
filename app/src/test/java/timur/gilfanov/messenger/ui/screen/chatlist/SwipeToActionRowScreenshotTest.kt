@@ -17,6 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.unit.dp
 import org.junit.Test
 import timur.gilfanov.messenger.R
@@ -46,17 +50,17 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
     fun singleAction_end_light() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.LIGHT),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeLeft()
+                }
+            },
         ) {
             SwipeToActionRow(
                 endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
+                    deleteSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("Single delete action")
             }
@@ -67,17 +71,17 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
     fun singleAction_end_dark() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.DARK),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeLeft()
+                }
+            },
         ) {
             SwipeToActionRow(
                 endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
+                    deleteSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("Single delete action")
             }
@@ -88,17 +92,17 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
     fun singleAction_start_light() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.LIGHT),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeRight()
+                }
+            },
         ) {
             SwipeToActionRow(
                 startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Home,
-                        labelRes = R.string.chat_list_swipe_archive_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {},
-                    ),
+                    homeSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("Single archive action")
             }
@@ -109,17 +113,17 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
     fun singleAction_start_dark() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.DARK),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeRight()
+                }
+            },
         ) {
             SwipeToActionRow(
                 startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Home,
-                        labelRes = R.string.chat_list_swipe_archive_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {},
-                    ),
+                    homeSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("Single archive action")
             }
@@ -130,33 +134,21 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
     fun twoActions_bothSides_light() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.LIGHT),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeRight()
+                }
+            },
         ) {
             SwipeToActionRow(
                 startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Home,
-                        labelRes = R.string.chat_list_swipe_archive_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Star,
-                        labelRes = R.string.chat_list_swipe_pin_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        onClick = {},
-                    ),
+                    homeSwipeAction(),
+                    favoriteSwipeAction(),
                 ),
                 endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
+                    deleteSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("Archive & Pin | Delete")
             }
@@ -167,33 +159,21 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
     fun twoActions_bothSides_dark() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.DARK),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeLeft()
+                }
+            },
         ) {
             SwipeToActionRow(
                 startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Home,
-                        labelRes = R.string.chat_list_swipe_archive_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Star,
-                        labelRes = R.string.chat_list_swipe_pin_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        onClick = {},
-                    ),
+                    homeSwipeAction(),
+                    favoriteSwipeAction(),
                 ),
                 endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
+                    deleteSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("Archive & Pin | Delete")
             }
@@ -204,54 +184,24 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
     fun threeActions_compact_light() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.LIGHT),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeLeft()
+                }
+            },
         ) {
             SwipeToActionRow(
                 startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Star,
-                        labelRes = R.string.chat_list_swipe_pin_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Settings,
-                        labelRes = R.string.chat_list_swipe_mute_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Home,
-                        labelRes = R.string.chat_list_swipe_archive_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {},
-                    ),
+                    favoriteSwipeAction(),
+                    muteSwipeAction(),
+                    homeSwipeAction(),
                 ),
                 endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.MoreVert,
-                        labelRes = R.string.chat_list_swipe_more_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                        iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Notifications,
-                        labelRes = R.string.chat_list_swipe_notifications_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
+                    moreSwipeAction(),
+                    notificationsSwipeAction(),
+                    deleteSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("3 actions each side (compact)")
             }
@@ -262,54 +212,24 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
     fun threeActions_compact_dark() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.DARK),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeRight()
+                }
+            },
         ) {
             SwipeToActionRow(
                 startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Star,
-                        labelRes = R.string.chat_list_swipe_pin_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Settings,
-                        labelRes = R.string.chat_list_swipe_mute_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Home,
-                        labelRes = R.string.chat_list_swipe_archive_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {},
-                    ),
+                    favoriteSwipeAction(),
+                    muteSwipeAction(),
+                    homeSwipeAction(),
                 ),
                 endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.MoreVert,
-                        labelRes = R.string.chat_list_swipe_more_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                        iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Notifications,
-                        labelRes = R.string.chat_list_swipe_notifications_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
+                    moreSwipeAction(),
+                    notificationsSwipeAction(),
+                    deleteSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("3 actions each side (compact)")
             }
@@ -321,7 +241,7 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.LIGHT),
         ) {
-            SwipeToActionRow {
+            SwipeToActionRow(modifier = Modifier.height(72.dp)) {
                 TestContent("No swipe actions")
             }
         }
@@ -332,7 +252,7 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
         captureScreenshot(
             configuration = TestConfiguration(theme = Theme.DARK),
         ) {
-            SwipeToActionRow {
+            SwipeToActionRow(modifier = Modifier.height(72.dp)) {
                 TestContent("No swipe actions")
             }
         }
@@ -345,33 +265,21 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
                 screenSize = ScreenSize.SMALL,
                 theme = Theme.LIGHT,
             ),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeLeft()
+                }
+            },
         ) {
             SwipeToActionRow(
                 startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Star,
-                        labelRes = R.string.chat_list_swipe_pin_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        onClick = {},
-                    ),
+                    favoriteSwipeAction(),
                 ),
                 endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Settings,
-                        labelRes = R.string.chat_list_swipe_settings_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
+                    settingsSwipeAction(),
+                    deleteSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("Small screen actions")
             }
@@ -385,40 +293,22 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
                 screenSize = ScreenSize.LARGE,
                 theme = Theme.DARK,
             ),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeRight()
+                }
+            },
         ) {
             SwipeToActionRow(
                 startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Star,
-                        labelRes = R.string.chat_list_swipe_pin_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Home,
-                        labelRes = R.string.chat_list_swipe_archive_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {},
-                    ),
+                    favoriteSwipeAction(),
+                    homeSwipeAction(),
                 ),
                 endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Notifications,
-                        labelRes = R.string.chat_list_swipe_notifications_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        onClick = {},
-                    ),
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
+                    notificationsSwipeAction(),
+                    deleteSwipeAction(),
                 ),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("Large screen with multiple actions")
             }
@@ -432,26 +322,16 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
                 theme = Theme.LIGHT,
                 layoutDirection = androidx.compose.ui.unit.LayoutDirection.Rtl,
             ),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeLeft()
+                }
+            },
         ) {
             SwipeToActionRow(
-                startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Star,
-                        labelRes = R.string.chat_list_swipe_pin_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        onClick = {},
-                    ),
-                ),
-                endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
-                ),
+                startActions = listOf(favoriteSwipeAction()),
+                endActions = listOf(deleteSwipeAction()),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("RTL layout actions")
             }
@@ -465,29 +345,82 @@ class SwipeToActionRowScreenshotTest : ScreenshotTestBase() {
                 theme = Theme.DARK,
                 layoutDirection = androidx.compose.ui.unit.LayoutDirection.Rtl,
             ),
+            action = {
+                compose.onRoot().performTouchInput {
+                    swipeRight()
+                }
+            },
         ) {
             SwipeToActionRow(
-                startActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Star,
-                        labelRes = R.string.chat_list_swipe_pin_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        onClick = {},
-                    ),
-                ),
-                endActions = listOf(
-                    SwipeAction(
-                        icon = Icons.Default.Delete,
-                        labelRes = R.string.chat_list_swipe_delete_content_description,
-                        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-                        iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                        onClick = {},
-                    ),
-                ),
+                startActions = listOf(favoriteSwipeAction()),
+                endActions = listOf(deleteSwipeAction()),
+                modifier = Modifier.height(72.dp),
             ) {
                 TestContent("RTL layout actions")
             }
         }
     }
 }
+
+@Composable
+private fun homeSwipeAction(): SwipeAction = SwipeAction(
+    icon = Icons.Default.Home,
+    labelRes = R.string.chat_list_swipe_archive_content_description,
+    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+    iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+    onClick = {},
+)
+
+@Composable
+private fun deleteSwipeAction(): SwipeAction = SwipeAction(
+    icon = Icons.Default.Delete,
+    labelRes = R.string.chat_list_swipe_delete_content_description,
+    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+    iconTint = MaterialTheme.colorScheme.onErrorContainer,
+    onClick = {},
+)
+
+@Composable
+private fun favoriteSwipeAction() = SwipeAction(
+    icon = Icons.Default.Star,
+    labelRes = R.string.chat_list_swipe_pin_content_description,
+    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+    onClick = {},
+)
+
+@Composable
+private fun muteSwipeAction() = SwipeAction(
+    icon = Icons.Default.Settings,
+    labelRes = R.string.chat_list_swipe_mute_content_description,
+    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+    iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+    onClick = {},
+)
+
+@Composable
+private fun settingsSwipeAction() = SwipeAction(
+    icon = Icons.Default.Settings,
+    labelRes = R.string.chat_list_swipe_settings_content_description,
+    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+    iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+    onClick = {},
+)
+
+@Composable
+private fun moreSwipeAction() = SwipeAction(
+    icon = Icons.Default.MoreVert,
+    labelRes = R.string.chat_list_swipe_more_content_description,
+    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+    onClick = {},
+)
+
+@Composable
+private fun notificationsSwipeAction() = SwipeAction(
+    icon = Icons.Default.Notifications,
+    labelRes = R.string.chat_list_swipe_notifications_content_description,
+    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+    iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+    onClick = {},
+)

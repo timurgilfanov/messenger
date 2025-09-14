@@ -26,7 +26,7 @@ fun EmptyStateComponent(modifier: Modifier = Modifier, onStartFirstChat: () -> U
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(40.dp),
+            .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

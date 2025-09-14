@@ -217,7 +217,7 @@ private fun UnreadBadge(count: Int) {
         Text(
             text = if (count > 99) "99+" else count.toString(),
             style = MaterialTheme.typography.labelSmall,
-            fontSize = 12.sp,
+            fontSize = 10.sp,
         )
     }
 }

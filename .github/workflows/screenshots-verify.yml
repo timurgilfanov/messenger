@@ -122,10 +122,16 @@ jobs:
               # Extract test name from path - handle Roborazzi naming convention
               test_name=$(basename "$img" _compare.png)
 
-              # Extract component name (class name) and method name
-              # Format: package.path.ComponentScreenshotTest.methodName
-              component_name=$(echo "$test_name" | awk -F'.' '{print $(NF-1)}')
-              method_name=$(echo "$test_name" | awk -F'.' '{print $NF}')
+              # Extract component (class) and method; guard when dot not present
+              # Expected: package.path.ComponentScreenshotTest.methodName
+              if [[ "$test_name" == *.* ]]; then
+                component_name=$(awk -F'.' '{print $(NF-1)}' <<< "$test_name")
+                method_name=$(awk -F'.' '{print $NF}' <<< "$test_name")
+              else
+                component_name="UnknownComponent"
+                method_name="$test_name"
+              fi
+              component_name="${component_name%ScreenshotTest}"
 
               # Get just the filename for the companion branch
               filename=$(basename "$img")

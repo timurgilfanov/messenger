@@ -108,36 +108,70 @@ jobs:
           # Create markdown for differences
           cat > comment_body.md << 'EOF'
           ## 📸 Screenshot Differences Detected
-          
+
           The following UI components have visual changes:
-          
-          | Test | Visual Diff |
-          |------|-------------|
+
           EOF
-          
-          # Add each comparison image with inline display
+
+          # Create temporary file to collect component data
+          temp_file=$(mktemp)
+
+          # Process each comparison image and extract component + test name
           find app/build/outputs/roborazzi -name "*_compare.png" 2>/dev/null | while read -r img; do
             if [ -f "$img" ]; then
               # Extract test name from path - handle Roborazzi naming convention
               test_name=$(basename "$img" _compare.png)
-              # Remove any package prefixes and get just the test method name
-              clean_test_name=$(echo "$test_name" | sed 's/.*\.//')
-              
+
+              # Extract component (class) and method; guard when dot not present
+              # Expected: package.path.ComponentScreenshotTest.methodName
+              if [[ "$test_name" == *.* ]]; then
+                component_name=$(awk -F'.' '{print $(NF-1)}' <<< "$test_name")
+                method_name=$(awk -F'.' '{print $NF}' <<< "$test_name")
+              else
+                component_name="UnknownComponent"
+                method_name="$test_name"
+              fi
+              component_name="${component_name%ScreenshotTest}"
+
               # Get just the filename for the companion branch
               filename=$(basename "$img")
-              
-              # Create table row with inline image
-              echo "| \`$clean_test_name\` | ![](${{ github.server_url }}/${{ github.repository }}/blob/$COMPANION_BRANCH/roborazzi/$filename?raw=true) |" >> comment_body.md
+
+              # Write to temp file: component|method|filename
+              echo "$component_name|$method_name|$filename" >> "$temp_file"
             fi
           done
-          
+
+          # Sort by component name and group the output
+          sort "$temp_file" | awk -F'|' -v companion_branch="$COMPANION_BRANCH" '
+          BEGIN { current_component = "" }
+          {
+            component = $1
+            method = $2
+            filename = $3
+
+            # If we have a new component, print the header
+            if (component != current_component) {
+              if (current_component != "") print ""  # Add blank line between components
+              print "### " component
+              current_component = component
+            }
+
+            # Print the image and method name
+            print "![](${{ github.server_url }}/${{ github.repository }}/blob/" companion_branch "/roborazzi/" filename "?raw=true)"
+            print "*" method "*"
+            print ""
+          }' >> comment_body.md
+
+          # Clean up temp file
+          rm -f "$temp_file"
+
           cat >> comment_body.md << 'EOF'
-          
+
           If these visual changes are expected:
           1. Apply the `update-screenshots` label to this PR
           2. The workflow will automatically update the golden baselines and remove the label
           3. Push empty commit to trigger verification that not started after commit from GitHub Actions bot: `git commit --allow-empty -m "Retrigger checks"; git push`
-          
+
           ---
           *This comment will be updated automatically when new commits are pushed to the PR.*
           EOF

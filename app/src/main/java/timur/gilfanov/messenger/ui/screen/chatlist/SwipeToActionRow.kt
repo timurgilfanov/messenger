@@ -194,7 +194,7 @@ private fun SwipeActionButton(action: SwipeAction, width: Dp, hapticFeedback: Ha
             imageVector = action.icon,
             contentDescription = action.labelRes?.let { stringResource(it) },
             tint = action.iconTint,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(28.dp),
         )
     }
 }

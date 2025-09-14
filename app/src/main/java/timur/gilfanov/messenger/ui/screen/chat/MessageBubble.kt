@@ -32,7 +32,7 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.ui.screen.chat.utils.toLocalizedString
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
-private const val TIMESTAMP_ALPHA = 0.7f
+private const val TIMESTAMP_ALPHA = 0.9f
 private const val CHECK_OVERLAP_SPACING_DP = -2
 
 @Composable

@@ -152,7 +152,7 @@ jobs:
 
             # Print the image and method name
             print "![](${{ github.server_url }}/${{ github.repository }}/blob/" companion_branch "/roborazzi/" filename "?raw=true)"
-            print "*`" method "`*"
+            print "*" method "*"
             print ""
           }' >> comment_body.md
 

@@ -136,7 +136,7 @@ jobs:
           done
 
           # Sort by component name and group the output
-          sort "$temp_file" | awk -F'|' '
+          sort "$temp_file" | awk -F'|' -v companion_branch="$COMPANION_BRANCH" '
           BEGIN { current_component = "" }
           {
             component = $1
@@ -151,7 +151,7 @@ jobs:
             }
 
             # Print the image and method name
-            print "![](${{ github.server_url }}/${{ github.repository }}/blob/$COMPANION_BRANCH/roborazzi/" filename "?raw=true)"
+            print "![](${{ github.server_url }}/${{ github.repository }}/blob/" companion_branch "/roborazzi/" filename "?raw=true)"
             print "*`" method "`*"
             print ""
           }' >> comment_body.md

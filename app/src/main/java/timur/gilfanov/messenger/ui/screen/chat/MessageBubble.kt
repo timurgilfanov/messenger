@@ -29,8 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.ui.component.ProfileImage
 import timur.gilfanov.messenger.ui.screen.chat.utils.toLocalizedString
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
+import timur.gilfanov.messenger.util.generateProfileImageUrl
 
 private const val TIMESTAMP_ALPHA = 0.7f
 private const val CHECK_OVERLAP_SPACING_DP = -2
@@ -64,7 +66,17 @@ private fun MessageBubbleContent(message: MessageUiModel) {
         } else {
             Arrangement.Start
         },
+        verticalAlignment = Alignment.Bottom,
     ) {
+        if (!message.isFromCurrentUser) {
+            ProfileImage(
+                pictureUrl = message.senderPictureUrl,
+                name = message.senderName,
+                size = 32.dp,
+                modifier = Modifier.padding(end = 8.dp),
+            )
+        }
+
         MessageBubbleBox(message = message)
     }
 }
@@ -264,6 +276,7 @@ private fun MessageBubbleCurrentUserPreview() {
                 text = "Hello! This is a message from the current user.",
                 senderId = "current-user",
                 senderName = "You",
+                senderPictureUrl = null,
                 createdAt = "14:30",
                 deliveryStatus = DeliveryStatus.Read,
                 isFromCurrentUser = true,
@@ -275,6 +288,7 @@ private fun MessageBubbleCurrentUserPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun MessageBubbleOtherUserPreview() {
+    val profileImageUrl = generateProfileImageUrl("Alice")
     MessengerTheme {
         MessageBubble(
             message = MessageUiModel(
@@ -282,6 +296,7 @@ private fun MessageBubbleOtherUserPreview() {
                 text = "Hi there! This is a message from another user.",
                 senderId = "other-user",
                 senderName = "Alice",
+                senderPictureUrl = profileImageUrl,
                 createdAt = "14:28",
                 deliveryStatus = DeliveryStatus.Delivered,
                 isFromCurrentUser = false,
@@ -300,6 +315,7 @@ private fun MessageBubbleSendingPreview() {
                 text = "This message is currently being sent...",
                 senderId = "current-user",
                 senderName = "You",
+                senderPictureUrl = null,
                 createdAt = "14:32",
                 deliveryStatus = DeliveryStatus.Sending(progress = 75),
                 isFromCurrentUser = true,
@@ -319,6 +335,7 @@ private fun MessageBubbleFailedPreview() {
                     text = "This message failed to send.",
                     senderId = "current-user",
                     senderName = "You",
+                    senderPictureUrl = null,
                     createdAt = "14:35",
                     deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
                     isFromCurrentUser = true,

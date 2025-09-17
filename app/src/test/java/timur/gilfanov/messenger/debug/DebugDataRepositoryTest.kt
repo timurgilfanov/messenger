@@ -389,7 +389,7 @@ class DebugDataRepositoryTest {
             // No-op for test
         }
 
-        override fun subscribeToChats(): Flow<
+        override fun chatPreviews(): Flow<
             ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
             > {
             error("Not needed for this test")
@@ -426,7 +426,7 @@ class DebugDataRepositoryTest {
                 // No-op for test
             }
 
-            override fun subscribeToChats(): Flow<
+            override fun chatPreviews(): Flow<
                 ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
                 > {
                 error("Not needed for this test")

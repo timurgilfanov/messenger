@@ -364,13 +364,9 @@ class RemoteDataSourceFake @Inject constructor() :
 
             val messageIndex = chat.messages.indexOfFirst { it.id == message.id }
             val updatedMessages = if (messageIndex >= 0) {
-                chat.messages.toMutableList().apply {
-                    set(messageIndex, message)
-                }.toPersistentList()
+                chat.messages.set(messageIndex, message)
             } else {
-                chat.messages.toMutableList().apply {
-                    add(message)
-                }.toPersistentList()
+                chat.messages.add(message)
             }
 
             val updatedChat = chat.copy(messages = updatedMessages)
@@ -405,9 +401,7 @@ class RemoteDataSourceFake @Inject constructor() :
             return@flow
         }
 
-        val updatedMessages = chat.messages.toMutableList().apply {
-            set(messageIndex, message)
-        }.toPersistentList()
+        val updatedMessages = chat.messages.set(messageIndex, message)
 
         val updatedChat = chat.copy(messages = updatedMessages)
         serverState.update { state ->

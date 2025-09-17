@@ -405,7 +405,9 @@ class RemoteDataSourceFake @Inject constructor() :
 
         val updatedChat = chat.copy(messages = updatedMessages)
         serverState.update { state ->
-            state.copy(chats = state.chats + (chatId to updatedChat))
+            state
+                .recordOperation("update_message_${message.id.id}_in_${chatId.id}")
+                .copy(chats = state.chats + (chatId to updatedChat))
         }
 
         emit(ResultWithError.Success(message))
@@ -433,7 +435,9 @@ class RemoteDataSourceFake @Inject constructor() :
 
             val updatedChat = chatWithMessage.copy(messages = updatedMessages)
             serverState.update { state ->
-                state.copy(chats = state.chats + (chatWithMessage.id to updatedChat))
+                state
+                    .recordOperation("delete_message_${messageId.id}_from_${chatWithMessage.id.id}")
+                    .copy(chats = state.chats + (chatWithMessage.id to updatedChat))
             }
 
             ResultWithError.Success(Unit)

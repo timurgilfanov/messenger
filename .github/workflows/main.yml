@@ -239,12 +239,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Download Debug APK
-        uses: actions/download-artifact@v4
-        with:
-          name: debug-apk
-          path: app/build/outputs/apk/mock/debug
-
       - name: Run Unit Tests
         id: run_unit_tests
         continue-on-error: true
@@ -340,6 +334,17 @@ jobs:
         with:
           name: unit-component-report
           path: app/build/reports/kover/reportMockDebug.xml
+
+  screenshot-tests:
+    if: github.event_name == 'pull_request'
+    needs: build-mock
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/screenshots-verify.yml
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
+    secrets: inherit
 
   feature-tests:
     if: github.event_name == 'pull_request'

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,7 +60,7 @@ fun ChatListItem(
     onDelete: (ChatId) -> Unit = {},
 ) {
     SwipeToActionRow(
-        modifier = modifier,
+        modifier = modifier.height(72.dp),
         endActions = listOf(
             SwipeAction(
                 icon = Icons.Default.Delete,
@@ -77,11 +79,12 @@ fun ChatListItem(
                 containerColor = MaterialTheme.colorScheme.surface,
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            shape = RectangleShape,
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(vertical = 8.dp, horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -157,7 +160,7 @@ private fun ChatAvatar(pictureUrl: String?, name: String, isOnline: Boolean) {
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(56.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
@@ -389,6 +392,7 @@ private fun ChatListItemNoMessagePreview() {
 @Composable
 private fun ChatListItemGermanYesterdayPreview() {
     MessengerTheme {
+        @Suppress("SpellCheckingInspection")
         ChatListItem(
             chatItem = ChatListItemUiModel(
                 id = ChatId(UUID.randomUUID()),
@@ -408,6 +412,7 @@ private fun ChatListItemGermanYesterdayPreview() {
 @Composable
 private fun ChatListItemGermanThisWeekPreview() {
     MessengerTheme {
+        @Suppress("SpellCheckingInspection")
         ChatListItem(
             chatItem = ChatListItemUiModel(
                 id = ChatId(UUID.randomUUID()),
@@ -427,6 +432,7 @@ private fun ChatListItemGermanThisWeekPreview() {
 @Composable
 private fun ChatListItemGermanOldDatePreview() {
     MessengerTheme {
+        @Suppress("SpellCheckingInspection")
         ChatListItem(
             chatItem = ChatListItemUiModel(
                 id = ChatId(UUID.randomUUID()),

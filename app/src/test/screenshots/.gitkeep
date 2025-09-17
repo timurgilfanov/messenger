@@ -1,0 +1,2 @@
+# This directory stores golden screenshot baselines for UI testing
+# Maximum size: 50MB (enforced by ./gradlew preCommit)

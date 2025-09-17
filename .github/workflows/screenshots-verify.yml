@@ -1,0 +1,224 @@
+name: Screenshots Verify
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        required: false
+        type: string
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/configuration-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Verify screenshots
+        id: verify-screenshots
+        run: ./gradlew verifyRoborazziMockDebug -PtestCategory=timur.gilfanov.messenger.annotations.Screenshot
+        continue-on-error: true
+
+      - name: Find screenshot comparison images
+        if: inputs.pr_number != ''
+        id: find-diffs
+        run: |
+          # Find comparison images (ending with _compare.png) in Roborazzi output directories
+          COMPARE_IMAGES=$(find app/build/outputs/roborazzi -name "*_compare.png" 2>/dev/null || true)
+          
+          if [ -z "$COMPARE_IMAGES" ]; then
+            echo "has_diffs=false" >> "$GITHUB_OUTPUT"
+            echo "No screenshot differences found"
+          else
+            echo "has_diffs=true" >> "$GITHUB_OUTPUT"
+            echo "Found screenshot differences:"
+            echo "$COMPARE_IMAGES"
+          fi
+
+      - name: Commit comparison images to companion branch
+        if: inputs.pr_number != '' && steps.find-diffs.outputs.has_diffs == 'true'
+        run: |
+          # Set up companion branch name and save original branch
+          COMPANION_BRANCH="screenshots-pr-${{ inputs.pr_number }}"
+          ORIGINAL_BRANCH="${{ github.head_ref || github.ref_name }}"
+          echo "COMPANION_BRANCH=$COMPANION_BRANCH" >> "$GITHUB_ENV"
+          echo "ORIGINAL_BRANCH=$ORIGINAL_BRANCH" >> "$GITHUB_ENV"
+          
+          echo "Creating companion branch: $COMPANION_BRANCH"
+          echo "Original branch: $ORIGINAL_BRANCH"
+          
+          # Configure git for Screenshot Bot with token authentication
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config url."https://x-access-token:${{ github.token }}@github.com/".insteadOf "https://github.com/"
+          
+          # Create or checkout companion branch
+          git fetch origin || true
+          if git ls-remote --heads origin "$COMPANION_BRANCH" | grep -q "$COMPANION_BRANCH"; then
+            git checkout -b "$COMPANION_BRANCH" "origin/$COMPANION_BRANCH"
+          else
+            git checkout --orphan "$COMPANION_BRANCH"
+            git rm -rf . 2>/dev/null || true
+          fi
+          
+          # Copy comparison images to companion branch
+          mkdir -p roborazzi
+          find app/build/outputs/roborazzi -name "*_compare.png" -exec cp {} roborazzi/ \;
+          
+          # Commit images if any changes
+          git add roborazzi/
+          if ! git diff --cached --quiet; then
+            git commit -m "Update screenshot comparisons for PR #${{ inputs.pr_number }}"
+            git push origin "$COMPANION_BRANCH"
+            echo "Successfully pushed companion branch with screenshot comparisons"
+          else
+            echo "No changes to commit"
+          fi
+          
+          # Return to original branch with error handling
+          echo "Returning to original branch: $ORIGINAL_BRANCH"
+          git checkout "$ORIGINAL_BRANCH" || {
+            echo "Failed to checkout original branch, trying alternatives..."
+            git checkout "${{ github.sha }}" || echo "Could not return to original state, but companion branch was created successfully"
+          }
+
+      - name: Create comparison comment body
+        if: inputs.pr_number != '' && steps.find-diffs.outputs.has_diffs == 'true'
+        run: |
+          # Create markdown for differences
+          cat > comment_body.md << 'EOF'
+          ## 📸 Screenshot Differences Detected
+
+          The following UI components have visual changes:
+
+          EOF
+
+          # Create temporary file to collect component data
+          temp_file=$(mktemp)
+
+          # Process each comparison image and extract component + test name
+          find app/build/outputs/roborazzi -name "*_compare.png" 2>/dev/null | while read -r img; do
+            if [ -f "$img" ]; then
+              # Extract test name from path - handle Roborazzi naming convention
+              test_name=$(basename "$img" _compare.png)
+
+              # Extract component (class) and method; guard when dot not present
+              # Expected: package.path.ComponentScreenshotTest.methodName
+              if [[ "$test_name" == *.* ]]; then
+                component_name=$(awk -F'.' '{print $(NF-1)}' <<< "$test_name")
+                method_name=$(awk -F'.' '{print $NF}' <<< "$test_name")
+              else
+                component_name="UnknownComponent"
+                method_name="$test_name"
+              fi
+              component_name="${component_name%ScreenshotTest}"
+
+              # Get just the filename for the companion branch
+              filename=$(basename "$img")
+
+              # Write to temp file: component|method|filename
+              echo "$component_name|$method_name|$filename" >> "$temp_file"
+            fi
+          done
+
+          # Sort by component name and group the output
+          sort "$temp_file" | awk -F'|' -v companion_branch="$COMPANION_BRANCH" '
+          BEGIN { current_component = "" }
+          {
+            component = $1
+            method = $2
+            filename = $3
+
+            # If we have a new component, print the header
+            if (component != current_component) {
+              if (current_component != "") print ""  # Add blank line between components
+              print "### " component
+              current_component = component
+            }
+
+            # Print the image and method name
+            print "![](${{ github.server_url }}/${{ github.repository }}/blob/" companion_branch "/roborazzi/" filename "?raw=true)"
+            print "*" method "*"
+            print ""
+          }' >> comment_body.md
+
+          # Clean up temp file
+          rm -f "$temp_file"
+
+          cat >> comment_body.md << 'EOF'
+
+          If these visual changes are expected:
+          1. Apply the `update-screenshots` label to this PR
+          2. The workflow will automatically update the golden baselines and remove the label
+          3. Push empty commit to trigger verification that not started after commit from GitHub Actions bot: `git commit --allow-empty -m "Retrigger checks"; git push`
+
+          ---
+          *This comment will be updated automatically when new commits are pushed to the PR.*
+          EOF
+
+      - name: Find existing comment
+        if: inputs.pr_number != ''
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ inputs.pr_number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '📸 Screenshot'
+
+      - name: Comment PR with screenshot differences
+        if: inputs.pr_number != '' && steps.find-diffs.outputs.has_diffs == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ inputs.pr_number }}
+          body-path: comment_body.md
+          edit-mode: replace
+
+      - name: Comment when no differences
+        if: inputs.pr_number != '' && steps.find-diffs.outputs.has_diffs == 'false'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ inputs.pr_number }}
+          body: |
+            ## ✅ Screenshot Tests Passed
+            
+            All UI components match their golden baselines. No visual regressions detected.
+          edit-mode: replace
+
+      - name: Upload screenshot outputs (diffs and reports)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: roborazzi-screenshots
+          path: |
+            app/build/roborazzi/**
+            app/build/outputs/roborazzi/**
+            app/build/reports/tests/testMockDebugUnitTest/**
+            app/build/test-results/testMockDebugUnitTest/**
+
+      - name: Fail workflow if verification failed
+        if: steps.verify-screenshots.outcome == 'failure'
+        run: |
+          echo "❌ Screenshot verification failed"
+          exit 1

@@ -50,9 +50,7 @@ class RemoteDataSourceFake @Inject constructor() :
         val currentTimestamp: Instant = Instant.fromEpochMilliseconds(0),
         val lastSyncTimestamp: Instant = Instant.fromEpochMilliseconds(0),
     ) {
-        fun nextTimestamp(): Instant = currentTimestamp.plus(1.seconds)
-
-        fun withNextTimestamp(): ServerState = copy(currentTimestamp = nextTimestamp())
+        private fun nextTimestamp(): Instant = currentTimestamp.plus(1.seconds)
 
         fun recordOperation(operationKey: String): ServerState {
             val newTimestamp = nextTimestamp()
@@ -63,9 +61,6 @@ class RemoteDataSourceFake @Inject constructor() :
                 lastSyncTimestamp = maxOf(lastSyncTimestamp, newTimestamp),
             )
         }
-
-        fun updateSyncTimestamp(syncTimestamp: Instant): ServerState =
-            copy(lastSyncTimestamp = maxOf(lastSyncTimestamp, syncTimestamp))
 
         fun setInitialTimestamp(timestamp: Instant): ServerState = copy(
             currentTimestamp = timestamp,

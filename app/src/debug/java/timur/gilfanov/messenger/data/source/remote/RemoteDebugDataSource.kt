@@ -1,7 +1,10 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import kotlin.time.Instant
+import kotlinx.coroutines.flow.Flow
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 
 /**
@@ -44,4 +47,5 @@ interface RemoteDebugDataSource {
      * ensuring generated data is considered "new" by sync operations.
      */
     fun setInitialTimestamp(timestamp: Instant)
+    fun subscribeToChats(): Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>>
 }

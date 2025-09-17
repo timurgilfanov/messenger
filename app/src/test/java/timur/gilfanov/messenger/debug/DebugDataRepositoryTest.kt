@@ -26,6 +26,7 @@ import timur.gilfanov.messenger.data.source.local.LocalDataSources
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
 import timur.gilfanov.messenger.data.source.local.LocalMessageDataSource
 import timur.gilfanov.messenger.data.source.local.LocalSyncDataSource
+import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -388,6 +389,12 @@ class DebugDataRepositoryTest {
             // No-op for test
         }
 
+        override fun subscribeToChats(): Flow<
+            ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
+            > {
+            error("Not needed for this test")
+        }
+
         fun setCurrentChats(chats: List<Chat>) {
             currentChats = chats
         }
@@ -417,6 +424,12 @@ class DebugDataRepositoryTest {
 
             override fun setInitialTimestamp(timestamp: Instant) {
                 // No-op for test
+            }
+
+            override fun subscribeToChats(): Flow<
+                ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
+                > {
+                error("Not needed for this test")
             }
         }
 

@@ -8,12 +8,16 @@ import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Unit
+import timur.gilfanov.messenger.debug.DebugTestData
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -55,13 +59,6 @@ class RemoteDataSourceFakeTest {
         private val TEST_MESSAGE_ID_NON_EXISTENT = MessageId(
             UUID.fromString("550e8400-e29b-41d4-a716-446655440006"),
         )
-
-        private fun testChatIdWithSuffix(suffix: Int): ChatId {
-            require(suffix in 0..1000) { "Suffix must be between 0 and 1000" }
-            val base = "550e8400-e29b-41d4-a716-44665544"
-            val hex = suffix.toString(16).padStart(4, '0')
-            return ChatId(UUID.fromString("$base$hex"))
-        }
 
         private val TEST_TIMESTAMP = Instant.fromEpochMilliseconds(1640995200000)
     }
@@ -518,80 +515,8 @@ class RemoteDataSourceFakeTest {
         }
     }
 
-    // Regression tests for sync race condition fixes
     @Test
-    fun `clearServerData should use deterministic timestamps that advance forward`() = runTest {
-        // Given - Add a chat to establish server timestamp
-        val testChatBefore = testChat.copy(
-            id = TEST_CHAT_ID_NON_EXISTENT, // Use different ID to avoid conflicts
-        )
-        remoteDataSource.addChatToServer(testChatBefore)
-
-        // Get the timestamp before clearing
-        val deltaBeforeClear = remoteDataSource.chatsDeltaUpdates(null).first()
-        assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaBeforeClear)
-        val timestampBeforeClear = deltaBeforeClear.data.toTimestamp
-
-        // When - Clear server data
-        (remoteDataSource as RemoteDebugDataSource).clearServerData()
-
-        // Add a new chat after clearing
-        val testChatAfter = testChat
-        remoteDataSource.addChatToServer(testChatAfter)
-
-        // Then - Verify new operations have timestamps newer than the previous sync point
-        val deltaResult = remoteDataSource.chatsDeltaUpdates(null).first()
-        assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult)
-
-        val delta = deltaResult.data
-        assertTrue(delta.changes.isNotEmpty())
-
-        val chatDelta = delta.changes.first()
-        assertIs<ChatCreatedDelta>(chatDelta)
-
-        // The timestamp should advance forward from the previous timestamp (deterministic but forward-progressing)
-        assertTrue(
-            chatDelta.timestamp > timestampBeforeClear,
-            "New chat timestamp ${chatDelta.timestamp} should be newer than timestamp " +
-                "before clear $timestampBeforeClear",
-        )
-    }
-
-    @Test
-    fun `chatsDeltaUpdates handles concurrent modifications safely`() = runTest {
-        // Given - Start collecting delta updates (simulates sync loop)
-        val deltaFlow = remoteDataSource.chatsDeltaUpdates(null)
-
-        // When - Concurrently add chats while delta flow is active
-        deltaFlow.test {
-            // First emission should be empty
-            val initialResult = awaitItem()
-            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(initialResult)
-            assertEquals(0, initialResult.data.changes.size)
-
-            // Add multiple chats rapidly (simulates debug data generation)
-            // This used to cause ConcurrentModificationException
-            val numberOfChats = 100
-            for (i in 0..numberOfChats) {
-                remoteDataSource.addChatToServer(
-                    testChat.copy(id = testChatIdWithSuffix(i)),
-                )
-            }
-
-            // Should receive delta updates without errors
-            for (i in 0..numberOfChats) {
-                val deltaResult = awaitItem()
-                assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult)
-                val changes = deltaResult.data.changes
-                assertEquals(i + 1, changes.size)
-                assertIs<ChatCreatedDelta>(changes[i])
-                assertEquals(testChatIdWithSuffix(i), changes[i].chatId)
-            }
-        }
-    }
-
-    @Test
-    fun `chatsDeltaUpdates handles sync without new changes`() = runTest {
+    fun `chatsDeltaUpdates provide no changes for later timestamp`() = runTest {
         remoteDataSource.addChatToServer(testChat)
 
         remoteDataSource.chatsDeltaUpdates(Instant.fromEpochSeconds(1)).test {
@@ -603,7 +528,7 @@ class RemoteDataSourceFakeTest {
     }
 
     @Test
-    fun `chatsDeltaUpdates handles sync with new changes`() = runTest {
+    fun `chatsDeltaUpdates provide changes for equal timestamp`() = runTest {
         remoteDataSource.addChatToServer(testChat)
 
         remoteDataSource.chatsDeltaUpdates(Instant.fromEpochSeconds(0)).test {
@@ -612,6 +537,127 @@ class RemoteDataSourceFakeTest {
 
             assertEquals(1, deltaResult.data.changes.size)
             assertIs<ChatCreatedDelta>(deltaResult.data.changes[0])
+        }
+    }
+
+    @Test
+    fun `chatsDeltaUpdates provide changes without timestamp`() = runTest {
+        remoteDataSource.addChatToServer(testChat)
+
+        remoteDataSource.chatsDeltaUpdates(since = null).test {
+            val deltaResult = awaitItem()
+            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult)
+
+            assertEquals(1, deltaResult.data.changes.size)
+            assertIs<ChatCreatedDelta>(deltaResult.data.changes[0])
+        }
+    }
+
+    @Test
+    fun `sync timestamp clearing and data generation race condition`() = runTest {
+        // This test reproduces the exact scenario that caused the original issue:
+        // 1. Sync starts with old timestamp
+        // 2. clearServerData() resets server timestamps to epoch
+        // 3. New chats added with epoch+1, epoch+2 timestamps
+        // 4. Sync misses the changes because it's using timestamp newer than epoch+X
+
+        // Given - Add some data to establish server timestamps
+        val establishingChat = DebugTestData.createTestChat(name = "Establishing Chat")
+        remoteDataSource.addChatToServer(establishingChat)
+
+        // Get the current sync point (this simulates the race condition timing)
+        val syncTimestamp = remoteDataSource.chatsDeltaUpdates(since = null).first().let { result ->
+            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(result)
+            result.data.toTimestamp
+        }
+
+        // When - Clear server data (resets timestamps) and add new data
+        remoteDataSource.clearServerData()
+
+        val newChat1 = DebugTestData.createTestChat(name = "Post-Clear Chat 1")
+        val newChat2 = DebugTestData.createTestChat(name = "Post-Clear Chat 2")
+
+        remoteDataSource.addChatToServer(newChat1)
+        remoteDataSource.addChatToServer(newChat2)
+
+        // Then - Sync from the old timestamp should still see the new chats
+        // (This was the bug: sync would see empty delta because new timestamps were older)
+        val deltaFromOldTimestamp = remoteDataSource.chatsDeltaUpdates(syncTimestamp)
+        deltaFromOldTimestamp.test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(result)
+
+            // Should NOT be empty (this was the original bug)
+            assertTrue(
+                result.data.changes.isNotEmpty(),
+                "Sync should see new chats even after clearServerData reset timestamps",
+            )
+
+            val chatNames = result.data.changes
+                .filterIsInstance<ChatCreatedDelta>()
+                .map { it.chatMetadata.name }
+                .toSet()
+
+            assertTrue(chatNames.contains("Post-Clear Chat 1"))
+            assertTrue(chatNames.contains("Post-Clear Chat 2"))
+        }
+
+        // Also verify a fresh sync sees all the data
+        val freshSync = remoteDataSource.chatsDeltaUpdates(null)
+        freshSync.test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(result)
+            assertEquals(2, result.data.changes.size, "Fresh sync should see both new chats")
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `rapid chat additions during active sync flow`() = runTest {
+        // Given - Start sync flow to simulate active sync during app startup
+        val syncFlow = remoteDataSource.chatsDeltaUpdates(null)
+
+        syncFlow.test {
+            // Initial empty state
+            val initialResult = awaitItem()
+            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(initialResult)
+            assertEquals(0, initialResult.data.changes.size)
+
+            // When - Rapidly add multiple chats (simulates debug data generation)
+            val chatsToAdd = List(100) { index ->
+                DebugTestData.createTestChat(name = "Rapid Chat $index")
+            }
+
+            // Add chats concurrently to stress test the race condition fixes
+            val addOperations = chatsToAdd.mapIndexed { index, chat ->
+                async {
+                    delay(index * 10L) // Small delay to create timing variations
+                    remoteDataSource.addChatToServer(chat)
+                }
+            }
+            addOperations.awaitAll()
+
+            // Then - All chats should appear in sync deltas without errors
+            val receivedChats = mutableSetOf<String>()
+            val expectedNames = chatsToAdd.map { it.name }.toSet()
+            val maxAttempts = chatsToAdd.size + 2 // Allow a few extra emissions for safety
+
+            // Collect delta updates until we get all chats (or max attempts)
+            var attempts = 0
+            while (attempts < maxAttempts && !receivedChats.containsAll(expectedNames)) {
+                val deltaResult = awaitItem()
+                assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult)
+
+                val newChatNames = deltaResult.data.changes
+                    .filterIsInstance<ChatCreatedDelta>()
+                    .map { it.chatMetadata.name }
+
+                receivedChats.addAll(newChatNames)
+                attempts++
+            }
+
+            // Verify all chats were received
+            assertEquals(expectedNames, receivedChats, "Should receive all added chats")
         }
     }
 }

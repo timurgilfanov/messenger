@@ -55,6 +55,14 @@ class RemoteDataSourceFakeTest {
         private val TEST_MESSAGE_ID_NON_EXISTENT = MessageId(
             UUID.fromString("550e8400-e29b-41d4-a716-446655440006"),
         )
+
+        private fun testChatIdWithSuffix(suffix: Int): ChatId {
+            require(suffix in 0..1000) { "Suffix must be between 0 and 1000" }
+            val base = "550e8400-e29b-41d4-a716-44665544"
+            val hex = suffix.toString(16).padStart(4, '0')
+            return ChatId(UUID.fromString("$base$hex"))
+        }
+
         private val TEST_TIMESTAMP = Instant.fromEpochMilliseconds(1640995200000)
     }
 
@@ -562,44 +570,48 @@ class RemoteDataSourceFakeTest {
             assertEquals(0, initialResult.data.changes.size)
 
             // Add multiple chats rapidly (simulates debug data generation)
-            val chat1 = testChat.copy(id = TEST_CHAT_ID)
-            val chat2 = testChat.copy(id = TEST_CHAT_ID_NON_EXISTENT)
-
-            // Add chats concurrently - this used to cause ConcurrentModificationException
-            remoteDataSource.addChatToServer(chat1)
-            remoteDataSource.addChatToServer(chat2)
+            // This used to cause ConcurrentModificationException
+            val numberOfChats = 100
+            for (i in 0..numberOfChats) {
+                remoteDataSource.addChatToServer(
+                    testChat.copy(id = testChatIdWithSuffix(i)),
+                )
+            }
 
             // Should receive delta updates without errors
-            val deltaResult1 = awaitItem()
-            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult1)
-
-            val deltaResult2 = awaitItem()
-            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult2)
-
-            // All chats should eventually appear in deltas
-            val allChanges = deltaResult1.data.changes + deltaResult2.data.changes
-            assertTrue(allChanges.size >= 2, "Should have at least 2 chat creations")
-
-            cancelAndIgnoreRemainingEvents()
+            for (i in 0..numberOfChats) {
+                val deltaResult = awaitItem()
+                assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult)
+                val changes = deltaResult.data.changes
+                assertEquals(i + 1, changes.size)
+                assertIs<ChatCreatedDelta>(changes[i])
+                assertEquals(testChatIdWithSuffix(i), changes[i].chatId)
+            }
         }
     }
 
     @Test
-    fun `chatsDeltaUpdates handles null chat gracefully in race condition`() = runTest {
-        // Given - Get initial sync point
-        val syncPoint = Instant.fromEpochMilliseconds(System.currentTimeMillis())
-
-        // When - Simulate race condition by directly manipulating server state
-        // This simulates the timing issue where operation is recorded but chat isn't in map yet
-
-        // Add chat normally first
+    fun `chatsDeltaUpdates handles sync without new changes`() = runTest {
         remoteDataSource.addChatToServer(testChat)
 
-        // Then get delta updates - should handle any null cases gracefully
-        val deltaResult = remoteDataSource.chatsDeltaUpdates(syncPoint).first()
-        assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult)
+        remoteDataSource.chatsDeltaUpdates(Instant.fromEpochSeconds(1)).test {
+            val deltaResult = awaitItem()
+            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult)
 
-        // Should not crash and should return valid delta (even if empty due to timing)
-        assertTrue(deltaResult.data.changes.size >= 0, "Should not crash with NPE")
+            assertEquals(0, deltaResult.data.changes.size)
+        }
+    }
+
+    @Test
+    fun `chatsDeltaUpdates handles sync with new changes`() = runTest {
+        remoteDataSource.addChatToServer(testChat)
+
+        remoteDataSource.chatsDeltaUpdates(Instant.fromEpochSeconds(0)).test {
+            val deltaResult = awaitItem()
+            assertIs<ResultWithError.Success<ChatListDelta, RemoteDataSourceError>>(deltaResult)
+
+            assertEquals(1, deltaResult.data.changes.size)
+            assertIs<ChatCreatedDelta>(deltaResult.data.changes[0])
+        }
     }
 }

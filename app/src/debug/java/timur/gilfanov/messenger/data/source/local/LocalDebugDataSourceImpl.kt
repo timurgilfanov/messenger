@@ -1,8 +1,10 @@
 package timur.gilfanov.messenger.data.source.local
 
+import android.database.sqlite.SQLiteException
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.room.withTransaction
 import javax.inject.Inject
 import javax.inject.Singleton
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
@@ -23,20 +25,23 @@ class LocalDebugDataSourceImpl @Inject constructor(
     private val logger: Logger,
 ) : LocalDebugDataSource {
 
+    private val errorHandler = DatabaseErrorHandler(logger)
+
     companion object {
         private const val TAG = "LocalDebugDataSource"
     }
 
     override suspend fun deleteAllChats(): ResultWithError<Unit, LocalDataSourceError> = try {
         logger.d(TAG, "Deleting all chats and chat participants")
-        // Use raw SQL queries through database
-        database.openHelper.writableDatabase.execSQL("DELETE FROM chat_participants")
-        database.openHelper.writableDatabase.execSQL("DELETE FROM chats")
+        database.withTransaction {
+            val db = database.openHelper.writableDatabase
+            db.execSQL("DELETE FROM chat_participants")
+            db.execSQL("DELETE FROM chats")
+        }
         logger.d(TAG, "Successfully deleted all chats")
         ResultWithError.Success(Unit)
-    } catch (e: Exception) {
-        logger.w(TAG, "Failed to delete all chats", e)
-        ResultWithError.Failure(LocalDataSourceError.UnknownError(e))
+    } catch (e: SQLiteException) {
+        ResultWithError.Failure(errorHandler.mapException(e))
     }
 
     override suspend fun deleteAllMessages(): ResultWithError<Unit, LocalDataSourceError> = try {
@@ -44,9 +49,8 @@ class LocalDebugDataSourceImpl @Inject constructor(
         database.openHelper.writableDatabase.execSQL("DELETE FROM messages")
         logger.d(TAG, "Successfully deleted all messages")
         ResultWithError.Success(Unit)
-    } catch (e: Exception) {
-        logger.w(TAG, "Failed to delete all messages", e)
-        ResultWithError.Failure(LocalDataSourceError.UnknownError(e))
+    } catch (e: SQLiteException) {
+        ResultWithError.Failure(errorHandler.mapException(e))
     }
 
     override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalDataSourceError> = try {
@@ -56,8 +60,7 @@ class LocalDebugDataSourceImpl @Inject constructor(
         }
         logger.d(TAG, "Successfully cleared sync timestamp")
         ResultWithError.Success(Unit)
-    } catch (e: Exception) {
-        logger.w(TAG, "Failed to clear sync timestamp", e)
-        ResultWithError.Failure(LocalDataSourceError.UnknownError(e))
+    } catch (e: SQLiteException) {
+        ResultWithError.Failure(errorHandler.mapException(e))
     }
 }

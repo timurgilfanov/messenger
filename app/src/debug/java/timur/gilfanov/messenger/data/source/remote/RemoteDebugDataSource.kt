@@ -19,21 +19,21 @@ interface RemoteDebugDataSource {
      * Used when regenerating debug data to start with a clean server state.
      * This is a synchronous operation as it only affects in-memory fake data.
      */
-    fun clearServerData()
+    fun clearData()
 
     /**
      * Adds a chat directly to the server (fake implementation).
      * Used for populating the server with debug data.
      * This bypasses normal creation flows and directly updates server state.
      */
-    fun addChatToServer(chat: Chat)
+    fun addChat(chat: Chat)
 
     /**
      * Adds a message directly to an existing chat on the server (fake implementation).
      * Used for populating chats with debug messages.
      * This bypasses normal message sending flows and directly updates server state.
      */
-    fun addMessageToServerChat(message: Message)
+    fun addMessage(message: Message)
 
     /**
      * Gets the current list of chats from the server (fake implementation).

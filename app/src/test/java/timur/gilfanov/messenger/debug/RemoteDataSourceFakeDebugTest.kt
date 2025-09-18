@@ -27,13 +27,13 @@ class RemoteDataSourceFakeDebugTest {
     }
 
     @Test
-    fun `clearServerData should remove all server chats`() = runTest {
+    fun `clearData should remove all server chats`() = runTest {
         // Given - Add some test chats to server
         val testChat1 = DebugTestData.createTestChat(name = "Server Chat 1")
         val testChat2 = DebugTestData.createTestChat(name = "Server Chat 2")
 
-        remoteDebugDataSource.addChatToServer(testChat1)
-        remoteDebugDataSource.addChatToServer(testChat2)
+        remoteDebugDataSource.addChat(testChat1)
+        remoteDebugDataSource.addChat(testChat2)
 
         // Verify chats exist by checking delta updates
         val initialDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -45,7 +45,7 @@ class RemoteDataSourceFakeDebugTest {
         }
 
         // When
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
 
         // Then - Verify all data is cleared
         val afterClearDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -60,10 +60,10 @@ class RemoteDataSourceFakeDebugTest {
     }
 
     @Test
-    fun `clearServerData should advance server timestamp to prevent sync issues`() = runTest {
+    fun `clearData should advance server timestamp to prevent sync issues`() = runTest {
         // Given - Add a chat to advance server timestamp
         val testChat = DebugTestData.createTestChat()
-        remoteDebugDataSource.addChatToServer(testChat)
+        remoteDebugDataSource.addChat(testChat)
 
         // Get initial timestamp (should be > 0)
         val initialDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -77,11 +77,11 @@ class RemoteDataSourceFakeDebugTest {
         }
 
         // When
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
 
         // Then - Add a new chat and verify timestamp advances to prevent sync race conditions
         val newTestChat = DebugTestData.createTestChat(name = "New Chat")
-        remoteDebugDataSource.addChatToServer(newTestChat)
+        remoteDebugDataSource.addChat(newTestChat)
 
         val afterClearDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
         afterClearDelta.test {
@@ -95,18 +95,18 @@ class RemoteDataSourceFakeDebugTest {
     }
 
     @Test
-    fun `clearServerData should allow fresh data population`() = runTest {
+    fun `clearData should allow fresh data population`() = runTest {
         // Given - Populate server with data, then clear
         val originalChat = DebugTestData.createTestChat(name = "Original Chat")
-        remoteDebugDataSource.addChatToServer(originalChat)
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.addChat(originalChat)
+        remoteDebugDataSource.clearData()
 
         // When - Add new data after clearing
         val newChat1 = DebugTestData.createTestChat(name = "New Chat 1")
         val newChat2 = DebugTestData.createTestChat(name = "New Chat 2")
 
-        remoteDebugDataSource.addChatToServer(newChat1)
-        remoteDebugDataSource.addChatToServer(newChat2)
+        remoteDebugDataSource.addChat(newChat1)
+        remoteDebugDataSource.addChat(newChat2)
 
         // Then - Only new data should exist
         val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -126,11 +126,11 @@ class RemoteDataSourceFakeDebugTest {
     }
 
     @Test
-    fun `clearServerData should handle empty server gracefully`() = runTest {
+    fun `clearData should handle empty server gracefully`() = runTest {
         // Given - Empty server (no chats added)
 
         // When
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
 
         // Then - Should not cause any errors
         val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -145,12 +145,12 @@ class RemoteDataSourceFakeDebugTest {
     }
 
     @Test
-    fun `clearServerData should clear operation timestamps but advance timestamp`() = runTest {
+    fun `clearData should clear operation timestamps but advance timestamp`() = runTest {
         // Given - Perform some operations to create timestamp history
         val testChat1 = DebugTestData.createTestChat(name = "Chat 1")
         val testChat2 = DebugTestData.createTestChat(name = "Chat 2")
-        remoteDebugDataSource.addChatToServer(testChat1)
-        remoteDebugDataSource.addChatToServer(testChat2)
+        remoteDebugDataSource.addChat(testChat1)
+        remoteDebugDataSource.addChat(testChat2)
 
         // Get timestamp before clearing to compare
         val beforeClearDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -164,11 +164,11 @@ class RemoteDataSourceFakeDebugTest {
         }
 
         // When
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
 
         // Then - Operations should be cleared but timestamp should advance
         val newTestChat = DebugTestData.createTestChat(name = "Post-Clear Chat")
-        remoteDebugDataSource.addChatToServer(newTestChat)
+        remoteDebugDataSource.addChat(newTestChat)
 
         val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
         delta.test {
@@ -182,14 +182,14 @@ class RemoteDataSourceFakeDebugTest {
     }
 
     @Test
-    fun `clearServerData should be idempotent`() = runTest {
+    fun `clearData should be idempotent`() = runTest {
         // Given - Add data and clear once
         val testChat = DebugTestData.createTestChat()
-        remoteDebugDataSource.addChatToServer(testChat)
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.addChat(testChat)
+        remoteDebugDataSource.clearData()
 
         // When - Clear again
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
 
         // Then - Should not cause errors
         val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -202,15 +202,15 @@ class RemoteDataSourceFakeDebugTest {
     }
 
     @Test
-    fun `clearServerData should clear server state for consistent testing`() = runTest {
+    fun `clearData should clear server state for consistent testing`() = runTest {
         // Given - Multiple test scenarios with different data
         for (i in 1..5) {
             val chat = DebugTestData.createTestChat(name = "Scenario $i Chat")
-            remoteDebugDataSource.addChatToServer(chat)
+            remoteDebugDataSource.addChat(chat)
         }
 
         // When - Clear between scenarios
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
 
         // Then - Server should be in consistent empty state
         val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -226,7 +226,7 @@ class RemoteDataSourceFakeDebugTest {
 
         // Verify we can populate fresh data consistently
         val newChat = DebugTestData.createTestChat(name = "Fresh Start")
-        remoteDebugDataSource.addChatToServer(newChat)
+        remoteDebugDataSource.addChat(newChat)
 
         val freshDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
         freshDelta.test {
@@ -252,12 +252,12 @@ class RemoteDataSourceFakeDebugTest {
         }
 
         // When - Generate debug data (simulates DebugDataRepository.regenerateData)
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
         val debugChat1 = DebugTestData.createTestChat(name = "Debug Chat 1")
         val debugChat2 = DebugTestData.createTestChat(name = "Debug Chat 2")
 
-        remoteDebugDataSource.addChatToServer(debugChat1)
-        remoteDebugDataSource.addChatToServer(debugChat2)
+        remoteDebugDataSource.addChat(debugChat1)
+        remoteDebugDataSource.addChat(debugChat2)
 
         // Then - Sync should receive the new chats without errors
         val afterGenerationDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -281,10 +281,10 @@ class RemoteDataSourceFakeDebugTest {
     }
 
     @Test
-    fun `clearServerData followed by addChatToServer creates valid delta`() = runTest {
+    fun `clearData followed by addChat creates valid delta`() = runTest {
         // Given - Add some initial data to establish a baseline timestamp
         val initialChat = DebugTestData.createTestChat(name = "Initial Chat")
-        remoteDebugDataSource.addChatToServer(initialChat)
+        remoteDebugDataSource.addChat(initialChat)
 
         // Get the timestamp before clearing for comparison
         val beforeClearDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
@@ -297,9 +297,9 @@ class RemoteDataSourceFakeDebugTest {
         }
 
         // When - Clear server data and immediately add new chat (debug data pattern)
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
         val newChat = DebugTestData.createTestChat(name = "Post-Clear Chat")
-        remoteDebugDataSource.addChatToServer(newChat)
+        remoteDebugDataSource.addChat(newChat)
 
         // Then - Delta should have valid timestamp newer than before clear
         remoteDataSourceFake.chatsDeltaUpdates(null).test {

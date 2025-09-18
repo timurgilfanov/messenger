@@ -135,7 +135,7 @@ class RemoteDataSourceFakeTest {
     fun `deleteChat should remove chat when connected`() = runTest {
         // Given
         remoteDataSource.setConnectionState(true)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // When
         val result = remoteDataSource.deleteChat(testChat.id)
@@ -168,7 +168,7 @@ class RemoteDataSourceFakeTest {
     fun `joinChat should return chat when exists`() = runTest {
         // Given
         remoteDataSource.setConnectionState(true)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // When
         val result = remoteDataSource.joinChat(testChat.id, null)
@@ -195,7 +195,7 @@ class RemoteDataSourceFakeTest {
     fun `leaveChat should succeed for existing chat`() = runTest {
         // Given
         remoteDataSource.setConnectionState(true)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // When
         val result = remoteDataSource.leaveChat(testChat.id)
@@ -221,7 +221,7 @@ class RemoteDataSourceFakeTest {
     fun `subscribeToChats should emit chat previews when connected`() = runTest {
         // Given
         remoteDataSource.setConnectionState(true)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // When & Then
         remoteDataSource.chatPreviews().test {
@@ -248,7 +248,7 @@ class RemoteDataSourceFakeTest {
     @Test
     fun `sendMessage should emit delivery status progression when connected`() = runTest {
         remoteDataSource.setConnectionState(true)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         remoteDataSource.sendMessage(testMessage).test {
             val sendingStart = awaitItem()
@@ -295,7 +295,7 @@ class RemoteDataSourceFakeTest {
     fun `editMessage should update message when connected`() = runTest {
         remoteDataSource.setConnectionState(true)
         val chatWithMessage = testChat.copy(messages = persistentListOf(testMessage))
-        remoteDataSource.addChatToServer(chatWithMessage)
+        remoteDataSource.addChat(chatWithMessage)
         val editedMessage = testMessage.copy(text = "Edited message")
 
         remoteDataSource.editMessage(editedMessage).test {
@@ -310,7 +310,7 @@ class RemoteDataSourceFakeTest {
     @Test
     fun `editMessage should return message not found for non-existent message`() = runTest {
         remoteDataSource.setConnectionState(true)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         remoteDataSource.editMessage(testMessage).test {
             val result = awaitItem()
@@ -325,7 +325,7 @@ class RemoteDataSourceFakeTest {
         // Given
         remoteDataSource.setConnectionState(true)
         val chatWithMessage = testChat.copy(messages = persistentListOf(testMessage))
-        remoteDataSource.addChatToServer(chatWithMessage)
+        remoteDataSource.addChat(chatWithMessage)
 
         // When
         val result = remoteDataSource.deleteMessage(
@@ -341,7 +341,7 @@ class RemoteDataSourceFakeTest {
     fun `deleteMessage should return message not found for non-existent message`() = runTest {
         // Given
         remoteDataSource.setConnectionState(true)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // When
         val result = remoteDataSource.deleteMessage(
@@ -355,12 +355,12 @@ class RemoteDataSourceFakeTest {
     }
 
     @Test
-    fun `clearServerData should remove all chats`() = runTest {
+    fun `clearData should remove all chats`() = runTest {
         // Given
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // When
-        remoteDataSource.clearServerData()
+        remoteDataSource.clearData()
 
         // Then
         remoteDataSource.chatPreviews().test {
@@ -378,7 +378,7 @@ class RemoteDataSourceFakeTest {
             unreadMessagesCount = 1,
             lastReadMessageId = null,
         )
-        remoteDataSource.addChatToServer(chatWithMessages)
+        remoteDataSource.addChat(chatWithMessages)
 
         // When
         val result = remoteDataSource.markMessagesAsRead(chatWithMessages.id, testMessage.id)
@@ -404,7 +404,7 @@ class RemoteDataSourceFakeTest {
             unreadMessagesCount = 1,
             lastReadMessageId = null,
         )
-        remoteDataSource.addChatToServer(chatWithMessages)
+        remoteDataSource.addChat(chatWithMessages)
 
         // Get initial sync point
         val initialResult = remoteDataSource.chatsDeltaUpdates(null).first()
@@ -439,7 +439,7 @@ class RemoteDataSourceFakeTest {
                 unreadMessagesCount = 3,
                 lastReadMessageId = null,
             )
-            remoteDataSource.addChatToServer(chatWithMessages)
+            remoteDataSource.addChat(chatWithMessages)
 
             // When - mark up to the second message
             val result = remoteDataSource.markMessagesAsRead(chatWithMessages.id, message2.id)
@@ -468,7 +468,7 @@ class RemoteDataSourceFakeTest {
                 unreadMessagesCount = 1,
                 lastReadMessageId = null,
             )
-            remoteDataSource.addChatToServer(chatWithMessages)
+            remoteDataSource.addChat(chatWithMessages)
             val nonExistentMessageId = TEST_MESSAGE_ID_NON_EXISTENT
 
             // When
@@ -517,7 +517,7 @@ class RemoteDataSourceFakeTest {
 
     @Test
     fun `chatsDeltaUpdates provide no changes for later timestamp`() = runTest {
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         remoteDataSource.chatsDeltaUpdates(Instant.fromEpochSeconds(1)).test {
             val deltaResult = awaitItem()
@@ -529,7 +529,7 @@ class RemoteDataSourceFakeTest {
 
     @Test
     fun `chatsDeltaUpdates provide changes for equal timestamp`() = runTest {
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         remoteDataSource.chatsDeltaUpdates(Instant.fromEpochSeconds(0)).test {
             val deltaResult = awaitItem()
@@ -542,7 +542,7 @@ class RemoteDataSourceFakeTest {
 
     @Test
     fun `chatsDeltaUpdates provide changes without timestamp`() = runTest {
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         remoteDataSource.chatsDeltaUpdates(since = null).test {
             val deltaResult = awaitItem()
@@ -563,7 +563,7 @@ class RemoteDataSourceFakeTest {
 
         // Given - Add some data to establish server timestamps
         val establishingChat = DebugTestData.createTestChat(name = "Establishing Chat")
-        remoteDataSource.addChatToServer(establishingChat)
+        remoteDataSource.addChat(establishingChat)
 
         // Get the current sync point (this simulates the race condition timing)
         val syncTimestamp = remoteDataSource.chatsDeltaUpdates(since = null).first().let { result ->
@@ -572,13 +572,13 @@ class RemoteDataSourceFakeTest {
         }
 
         // When - Clear server data (resets timestamps) and add new data
-        remoteDataSource.clearServerData()
+        remoteDataSource.clearData()
 
         val newChat1 = DebugTestData.createTestChat(name = "Post-Clear Chat 1")
         val newChat2 = DebugTestData.createTestChat(name = "Post-Clear Chat 2")
 
-        remoteDataSource.addChatToServer(newChat1)
-        remoteDataSource.addChatToServer(newChat2)
+        remoteDataSource.addChat(newChat1)
+        remoteDataSource.addChat(newChat2)
 
         // Then - Sync from the old timestamp should still see the new chats
         // (This was the bug: sync would see empty delta because new timestamps were older)
@@ -632,7 +632,7 @@ class RemoteDataSourceFakeTest {
             val addOperations = chatsToAdd.mapIndexed { index, chat ->
                 async {
                     delay(index * 10L) // Small delay to create timing variations
-                    remoteDataSource.addChatToServer(chat)
+                    remoteDataSource.addChat(chat)
                 }
             }
             addOperations.awaitAll()

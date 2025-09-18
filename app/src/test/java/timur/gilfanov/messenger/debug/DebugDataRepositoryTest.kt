@@ -368,18 +368,18 @@ class DebugDataRepositoryTest {
         val addedMessages = mutableListOf<Message>()
         private var currentChats = emptyList<Chat>()
 
-        override fun clearServerData() {
+        override fun clearData() {
             wasClearServerDataCalled = true
             addedChats.clear()
             addedMessages.clear()
             currentChats = emptyList()
         }
 
-        override fun addChatToServer(chat: Chat) {
+        override fun addChat(chat: Chat) {
             addedChats.add(chat)
         }
 
-        override fun addMessageToServerChat(message: Message) {
+        override fun addMessage(message: Message) {
             addedMessages.add(message)
         }
 
@@ -408,15 +408,15 @@ class DebugDataRepositoryTest {
 
         // Spy on the sync behavior by capturing what's added to remote
         val spyRemoteDebugDataSource = object : RemoteDebugDataSource {
-            override fun clearServerData() {
+            override fun clearData() {
                 // No-op for test
             }
 
-            override fun addChatToServer(chat: Chat) {
+            override fun addChat(chat: Chat) {
                 generatedChats.add(chat)
             }
 
-            override fun addMessageToServerChat(message: Message) {
+            override fun addMessage(message: Message) {
                 // No-op for test
             }
 

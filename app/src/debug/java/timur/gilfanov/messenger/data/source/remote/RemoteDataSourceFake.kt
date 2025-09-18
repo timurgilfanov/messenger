@@ -450,7 +450,7 @@ class RemoteDataSourceFake @Inject constructor() :
         connectionStateFlow.update { connected }
     }
 
-    override fun addChatToServer(chat: Chat) {
+    override fun addChat(chat: Chat) {
         serverState.update { state ->
             state
                 .recordOperation("create_chat_${chat.id.id}")
@@ -458,7 +458,7 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
-    override fun addMessageToServerChat(message: Message) {
+    override fun addMessage(message: Message) {
         val chatId = message.recipient
 
         serverState.update { state ->
@@ -513,7 +513,7 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
-    override fun clearServerData() {
+    override fun clearData() {
         serverState.update { state ->
             // Start from just after the last sync point to ensure new operations are newer than any sync
             // This provides deterministic behavior while preventing sync race conditions

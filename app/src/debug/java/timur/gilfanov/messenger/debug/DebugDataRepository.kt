@@ -124,7 +124,7 @@ class DebugDataRepository @Inject constructor(
         }
 
         logger.d(TAG, "Clearing remote server data")
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
 
         // Generate new data
         val config = scenario.toConfig()
@@ -136,7 +136,7 @@ class DebugDataRepository @Inject constructor(
         chats.forEach { chat ->
             // Fix the recipient field in messages to match the chat ID
             val fixedChat = fixMessageRecipients(chat)
-            remoteDebugDataSource.addChatToServer(fixedChat)
+            remoteDebugDataSource.addChat(fixedChat)
         }
 
         // Update generation timestamp
@@ -166,7 +166,7 @@ class DebugDataRepository @Inject constructor(
         }
 
         // Clear remote server data
-        remoteDebugDataSource.clearServerData()
+        remoteDebugDataSource.clearData()
 
         dataStore.edit { preferences ->
             preferences[DebugPreferences.LAST_DATA_GENERATION] = System.currentTimeMillis()
@@ -251,7 +251,7 @@ class DebugDataRepository @Inject constructor(
                 val newMessage = sampleDataProvider.generateSingleMessage(randomChat)
 
                 logger.d(TAG, "Simulating new message in chat: ${randomChat.name}")
-                remoteDebugDataSource.addMessageToServerChat(newMessage)
+                remoteDebugDataSource.addMessage(newMessage)
             }
         } catch (e: CancellationException) {
             throw e // Re-throw cancellation

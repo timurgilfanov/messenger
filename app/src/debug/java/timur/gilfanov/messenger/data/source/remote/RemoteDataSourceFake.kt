@@ -5,6 +5,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +29,8 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 class RemoteDataSourceFake @Inject constructor() :
     RemoteChatDataSource,
     RemoteMessageDataSource,
-    RemoteSyncDataSource {
+    RemoteSyncDataSource,
+    RemoteDebugDataSource {
 
     companion object {
         private const val NETWORK_DELAY_MS = 300L
@@ -39,36 +42,20 @@ class RemoteDataSourceFake @Inject constructor() :
         private const val SENDING_PROGRESS_COMPLETE = 100
     }
 
-    private val serverChatsFlow = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
-    private val connectionStateFlow = MutableStateFlow(true)
-
-    // Server-side timestamp tracking
-    private var currentServerTimestamp = Instant.fromEpochMilliseconds(0)
-    private val serverOperationTimestamps = mutableMapOf<String, Instant>()
-
-    private fun getNextServerTimestamp(): Instant {
-        currentServerTimestamp = currentServerTimestamp.plus(1.seconds)
-        return currentServerTimestamp
-    }
-
-    private fun recordServerOperation(operationKey: String): Instant {
-        val timestamp = getNextServerTimestamp()
-        serverOperationTimestamps[operationKey] = timestamp
-        return timestamp
-    }
+    private val serverState = MutableStateFlow(ServerState())
+    private val connectionState = MutableStateFlow(true)
 
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
-        // Record server timestamp for this operation
-        recordServerOperation("create_chat_${chat.id.id}")
-
-        serverChatsFlow.update { currentChats ->
-            currentChats + (chat.id to chat)
+        serverState.update { state ->
+            state
+                .recordOperation("create_chat_${chat.id.id}")
+                .copy(chats = state.chats + (chat.id to chat))
         }
 
         return ResultWithError.Success(chat)
@@ -77,16 +64,16 @@ class RemoteDataSourceFake @Inject constructor() :
     override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
-        val currentChats = serverChatsFlow.value
-        return if (chatId in currentChats) {
-            recordServerOperation("delete_chat_${chatId.id}")
-
-            serverChatsFlow.update { currentChats ->
-                currentChats - chatId
+        val currentState = serverState.value
+        return if (chatId in currentState.chats) {
+            serverState.update { state ->
+                state
+                    .recordOperation("delete_chat_${chatId.id}")
+                    .copy(chats = state.chats - chatId)
             }
 
             ResultWithError.Success(Unit)
@@ -101,11 +88,11 @@ class RemoteDataSourceFake @Inject constructor() :
     ): ResultWithError<Chat, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
-        val chat = serverChatsFlow.value[chatId]
+        val chat = serverState.value.chats[chatId]
         return if (chat != null) {
             ResultWithError.Success(chat)
         } else {
@@ -116,16 +103,16 @@ class RemoteDataSourceFake @Inject constructor() :
     override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
-        val currentChats = serverChatsFlow.value
-        return if (chatId in currentChats) {
-            recordServerOperation("leave_chat_${chatId.id}")
-
-            serverChatsFlow.update { currentChats ->
-                currentChats - chatId
+        val currentState = serverState.value
+        return if (chatId in currentState.chats) {
+            serverState.update { state ->
+                state
+                    .recordOperation("leave_chat_${chatId.id}")
+                    .copy(chats = state.chats - chatId)
             }
 
             ResultWithError.Success(Unit)
@@ -134,26 +121,26 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
-    fun subscribeToChats(): Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
-        serverChatsFlow.map { chats ->
-            if (connectionStateFlow.value) {
-                val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
+    override val chatPreviews: Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
+        serverState.map { state ->
+            if (connectionState.value) {
+                val chatPreviews = state.chats.values.map { chat -> ChatPreview.fromChat(chat) }
                 ResultWithError.Success(chatPreviews)
             } else {
                 ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
             }
         }
 
-    override fun chatsDeltaUpdates(
+    override fun observeChatListUpdates(
         since: Instant?,
-    ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>> = serverChatsFlow.map { chats ->
-        if (!connectionStateFlow.value) {
+    ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>> = serverState.map { state ->
+        if (!connectionState.value) {
             ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         } else {
             if (since == null) {
-                generateFullDelta(chats)
+                generateFullDelta(state.chats)
             } else {
-                val recentOperations = serverOperationTimestamps.filter { (_, timestamp) ->
+                val recentOperations = state.operationTimestamps.filter { (_, timestamp) ->
                     timestamp > since
                 }.toList().sortedBy { it.second }
 
@@ -168,7 +155,7 @@ class RemoteDataSourceFake @Inject constructor() :
                     )
                 } else {
                     val deltas = recentOperations.mapNotNull { (operationKey, timestamp) ->
-                        generateChatDelta(operationKey, chats, timestamp, since)
+                        generateChatDelta(operationKey, state.chats, timestamp, since)
                     }
 
                     val latestTimestamp = recentOperations.maxOfOrNull { it.second } ?: since
@@ -258,9 +245,7 @@ class RemoteDataSourceFake @Inject constructor() :
                 .substringAfter("mark_as_read_")
                 .substringBefore("_up_to_")
             val chatId = ChatId(UUID.fromString(chatIdString))
-            val chat = chats[chatId] ?: run {
-                return null
-            }
+            val chat = chats[chatId]!!
 
             ChatUpdatedDelta(
                 chatId = chat.id,
@@ -277,7 +262,7 @@ class RemoteDataSourceFake @Inject constructor() :
     private fun generateFullDelta(
         chats: Map<ChatId, Chat>,
     ): ResultWithError.Success<ChatListDelta, RemoteDataSourceError> {
-        val timestamp = getNextServerTimestamp()
+        val timestamp = serverState.value.currentTimestamp
         val createDeltas = chats.values.map { chat ->
             ChatCreatedDelta(
                 chatId = chat.id,
@@ -294,7 +279,7 @@ class RemoteDataSourceFake @Inject constructor() :
     override suspend fun sendMessage(
         message: Message,
     ): Flow<ResultWithError<Message, RemoteDataSourceError>> = flow {
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             emit(
                 ResultWithError.Failure<Message, RemoteDataSourceError>(
                     RemoteDataSourceError.NetworkNotAvailable,
@@ -332,7 +317,6 @@ class RemoteDataSourceFake @Inject constructor() :
         textMessage.copy(
             deliveryStatus = DeliveryStatus.Delivered,
         ).let { updatedMessage ->
-            recordServerOperation("update_message_${message.id.id}_in_${message.recipient.id}")
             updateMessageInChat(updatedMessage)
             emit(ResultWithError.Success(updatedMessage))
         }
@@ -341,7 +325,6 @@ class RemoteDataSourceFake @Inject constructor() :
         textMessage.copy(
             deliveryStatus = DeliveryStatus.Read,
         ).let { updatedMessage ->
-            recordServerOperation("update_message_${message.id.id}_in_${message.recipient.id}")
             updateMessageInChat(updatedMessage)
             emit(ResultWithError.Success(updatedMessage))
         }
@@ -349,23 +332,21 @@ class RemoteDataSourceFake @Inject constructor() :
 
     private fun updateMessageInChat(message: Message) {
         val chatId = message.recipient
-        val currentChats = serverChatsFlow.value
-        val chat = currentChats[chatId] ?: return
 
-        val messageIndex = chat.messages.indexOfFirst { it.id == message.id }
-        val updatedMessages = if (messageIndex >= 0) {
-            chat.messages.toMutableList().apply {
-                set(messageIndex, message)
-            }.toPersistentList()
-        } else {
-            chat.messages.toMutableList().apply {
-                add(message)
-            }.toPersistentList()
-        }
+        serverState.update { state ->
+            val chat = state.chats[chatId] ?: return@update state
 
-        val updatedChat = chat.copy(messages = updatedMessages)
-        serverChatsFlow.update { currentChats ->
-            currentChats + (chatId to updatedChat)
+            val messageIndex = chat.messages.indexOfFirst { it.id == message.id }
+            val updatedMessages = if (messageIndex >= 0) {
+                chat.messages.set(messageIndex, message)
+            } else {
+                chat.messages.add(message)
+            }
+
+            val updatedChat = chat.copy(messages = updatedMessages)
+            state
+                .recordOperation("update_message_${message.id.id}_in_${chatId.id}")
+                .copy(chats = state.chats + (chatId to updatedChat))
         }
     }
 
@@ -374,14 +355,14 @@ class RemoteDataSourceFake @Inject constructor() :
     ): Flow<ResultWithError<Message, RemoteDataSourceError>> = flow {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             emit(ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable))
             return@flow
         }
 
         val chatId = message.recipient
-        val currentChats = serverChatsFlow.value
-        val chat = currentChats[chatId]
+        val currentState = serverState.value
+        val chat = currentState.chats[chatId]
 
         if (chat == null) {
             emit(ResultWithError.Failure(RemoteDataSourceError.ChatNotFound))
@@ -394,13 +375,13 @@ class RemoteDataSourceFake @Inject constructor() :
             return@flow
         }
 
-        val updatedMessages = chat.messages.toMutableList().apply {
-            set(messageIndex, message)
-        }.toPersistentList()
+        val updatedMessages = chat.messages.set(messageIndex, message)
 
         val updatedChat = chat.copy(messages = updatedMessages)
-        serverChatsFlow.update { currentChats ->
-            currentChats + (chatId to updatedChat)
+        serverState.update { state ->
+            state
+                .recordOperation("update_message_${message.id.id}_in_${chatId.id}")
+                .copy(chats = state.chats + (chatId to updatedChat))
         }
 
         emit(ResultWithError.Success(message))
@@ -412,12 +393,12 @@ class RemoteDataSourceFake @Inject constructor() :
     ): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
-        val currentChats = serverChatsFlow.value
-        val chatWithMessage = currentChats.values.find { chat ->
+        val currentState = serverState.value
+        val chatWithMessage = currentState.chats.values.find { chat ->
             chat.messages.any { it.id == messageId }
         }
 
@@ -427,8 +408,10 @@ class RemoteDataSourceFake @Inject constructor() :
             }.toPersistentList()
 
             val updatedChat = chatWithMessage.copy(messages = updatedMessages)
-            serverChatsFlow.update { currentChats ->
-                currentChats + (chatWithMessage.id to updatedChat)
+            serverState.update { state ->
+                state
+                    .recordOperation("delete_message_${messageId.id}_from_${chatWithMessage.id.id}")
+                    .copy(chats = state.chats + (chatWithMessage.id to updatedChat))
             }
 
             ResultWithError.Success(Unit)
@@ -438,31 +421,30 @@ class RemoteDataSourceFake @Inject constructor() :
     }
 
     fun setConnectionState(connected: Boolean) {
-        connectionStateFlow.update { connected }
+        connectionState.update { connected }
     }
 
-    fun addChatToServer(chat: Chat) {
-        recordServerOperation("create_chat_${chat.id.id}")
-
-        serverChatsFlow.update { currentChats ->
-            currentChats + (chat.id to chat)
+    override fun addChat(chat: Chat) {
+        serverState.update { state ->
+            state
+                .recordOperation("create_chat_${chat.id.id}")
+                .copy(chats = state.chats + (chat.id to chat))
         }
     }
 
-    fun addMessageToServerChat(message: Message) {
+    override fun addMessage(message: Message) {
         val chatId = message.recipient
-        recordServerOperation("add_message_${message.id.id}_in_${chatId.id}")
 
-        serverChatsFlow.update { currentChats ->
-            val existingChat = currentChats[chatId]
+        serverState.update { state ->
+            val existingChat = state.chats[chatId]
             if (existingChat != null) {
                 val updatedChat = existingChat.copy(
-                    messages = existingChat.messages.toMutableList().apply {
-                        add(message)
-                    }.toPersistentList(),
+                    messages = existingChat.messages.add(message),
                     unreadMessagesCount = existingChat.unreadMessagesCount + 1,
                 )
-                currentChats + (chatId to updatedChat)
+                state
+                    .recordOperation("add_message_${message.id.id}_in_${chatId.id}")
+                    .copy(chats = state.chats + (chatId to updatedChat))
             } else {
                 error("Trying to add message to non-existing chat: $chatId")
             }
@@ -470,16 +452,12 @@ class RemoteDataSourceFake @Inject constructor() :
     }
 
     fun deleteMessageFromServerChat(messageId: MessageId) {
-        serverChatsFlow.update { currentChats ->
-            val chatWithMessage = currentChats.values.find { chat ->
+        serverState.update { state ->
+            val chatWithMessage = state.chats.values.find { chat ->
                 chat.messages.any { it.id == messageId }
             }
 
             if (chatWithMessage != null) {
-                recordServerOperation(
-                    "delete_message_${messageId.id}_from_${chatWithMessage.id.id}",
-                )
-
                 val updatedMessages = chatWithMessage.messages.toMutableList().apply {
                     removeAll { it.id == messageId }
                 }.toPersistentList()
@@ -487,7 +465,10 @@ class RemoteDataSourceFake @Inject constructor() :
                     messages = updatedMessages,
                     unreadMessagesCount = maxOf(0, chatWithMessage.unreadMessagesCount - 1),
                 )
-                currentChats + (chatWithMessage.id to updatedChat)
+
+                state
+                    .recordOperation("delete_message_${messageId.id}_from_${chatWithMessage.id.id}")
+                    .copy(chats = state.chats + (chatWithMessage.id to updatedChat))
             } else {
                 error("Trying to delete message from non-existing chat: $messageId")
             }
@@ -495,21 +476,30 @@ class RemoteDataSourceFake @Inject constructor() :
     }
 
     fun deleteChatFromServer(chatId: ChatId) {
-        recordServerOperation("delete_chat_${chatId.id}")
-
-        serverChatsFlow.update { currentChats ->
-            if (chatId in currentChats) {
-                currentChats - chatId
+        serverState.update { state ->
+            if (chatId in state.chats) {
+                state
+                    .recordOperation("delete_chat_${chatId.id}")
+                    .copy(chats = state.chats - chatId)
             } else {
                 error("Trying to delete non-existing chat from server: $chatId")
             }
         }
     }
 
-    fun clearServerData() {
-        serverChatsFlow.update { emptyMap() }
-        serverOperationTimestamps.clear()
-        currentServerTimestamp = Instant.fromEpochMilliseconds(0)
+    override fun clearData() {
+        serverState.update { state ->
+            // Start from just after the last sync point to ensure new operations are newer than any sync
+            // This provides deterministic behavior while preventing sync race conditions
+            val resetTimestamp = state.lastSyncTimestamp.plus(1.seconds)
+            ServerState(
+                chats = emptyMap(),
+                operationTimestamps = emptyMap(),
+                currentTimestamp = resetTimestamp,
+                // Preserve sync history to maintain continuity
+                lastSyncTimestamp = state.lastSyncTimestamp,
+            )
+        }
     }
 
     override suspend fun markMessagesAsRead(
@@ -517,16 +507,15 @@ class RemoteDataSourceFake @Inject constructor() :
         upToMessageId: MessageId,
     ): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
-        val currentChats = serverChatsFlow.value
-        val existingChat = currentChats[chatId]
+        val currentState = serverState.value
+        val existingChat = currentState.chats[chatId]
 
         return if (existingChat != null) {
-            existingChat.unreadMessagesCount
-            serverChatsFlow.update { chats ->
+            serverState.update { state ->
                 // Find the message index to mark as read up to
                 val upToIndex = existingChat.messages.indexOfFirst { it.id == upToMessageId }
                 val unreadCount = if (upToIndex >= 0) {
@@ -540,19 +529,45 @@ class RemoteDataSourceFake @Inject constructor() :
                     existingChat.unreadMessagesCount
                 }
 
-                chats + (
-                    chatId to existingChat.copy(
-                        unreadMessagesCount = unreadCount,
-                        lastReadMessageId = upToMessageId,
-                    )
-                    )
+                val updatedChat = existingChat.copy(
+                    unreadMessagesCount = unreadCount,
+                    lastReadMessageId = upToMessageId,
+                )
+
+                state
+                    .recordOperation("mark_as_read_${chatId.id}_up_to_${upToMessageId.id}")
+                    .copy(chats = state.chats + (chatId to updatedChat))
             }
 
-            // Record server operation for delta sync AFTER updating the state
-            recordServerOperation("mark_as_read_${chatId.id}_up_to_${upToMessageId.id}")
             ResultWithError.Success(Unit)
         } else {
             ResultWithError.Failure(RemoteDataSourceError.ChatNotFound)
         }
+    }
+
+    override fun getChats(): ImmutableList<Chat> = serverState.value.chats.values.toImmutableList()
+
+    override fun getMessagesSize(): Int = serverState.value.chats.values.sumOf { it.messages.size }
+}
+
+/**
+ * Unified server state to prevent race conditions between chats and operations.
+ * Tracks lastSyncTimestamp to ensure deterministic behavior while preventing sync race conditions.
+ */
+private data class ServerState(
+    val chats: Map<ChatId, Chat> = emptyMap(),
+    val operationTimestamps: Map<String, Instant> = emptyMap(),
+    val currentTimestamp: Instant = Instant.fromEpochMilliseconds(0),
+    val lastSyncTimestamp: Instant = Instant.fromEpochMilliseconds(0),
+) {
+
+    fun recordOperation(operationKey: String): ServerState {
+        val newTimestamp = currentTimestamp.plus(1.seconds)
+        return copy(
+            operationTimestamps = operationTimestamps + (operationKey to newTimestamp),
+            currentTimestamp = newTimestamp,
+            // Track the highest timestamp for sync continuity
+            lastSyncTimestamp = maxOf(lastSyncTimestamp, newTimestamp),
+        )
     }
 }

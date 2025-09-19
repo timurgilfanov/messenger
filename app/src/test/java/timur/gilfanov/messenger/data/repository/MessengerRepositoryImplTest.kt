@@ -106,7 +106,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(1_000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // Create repository after data source setup
         repository = repositoryImpl(backgroundScope)
@@ -212,7 +212,7 @@ class MessengerRepositoryImplTest {
     fun `deleteChat should remove from local and remote`() = runTest {
         // Given: Set up repository with chat
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         localDataSource.flowChatList().test {
@@ -232,7 +232,7 @@ class MessengerRepositoryImplTest {
 
     @Test
     fun `joinChat should return chat and store locally`() = runTest {
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         val result = repository.joinChat(testChat.id, null)
@@ -248,7 +248,7 @@ class MessengerRepositoryImplTest {
     @Test
     fun `leaveChat should remove from local storage`() = runTest {
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         repository.flowChatList().test {
@@ -289,7 +289,7 @@ class MessengerRepositoryImplTest {
     fun `editMessage should update message`() = runTest {
         // Given: Set up repository with chat and message
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         val editedMessage = testMessage.copy(
@@ -313,7 +313,7 @@ class MessengerRepositoryImplTest {
     fun `deleteMessage should remove message`() = runTest {
         // Given: Set up repository with chat and message
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         // When: Delete message
@@ -328,7 +328,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(1000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         repository = repositoryImpl(backgroundScope)
 
@@ -350,7 +350,7 @@ class MessengerRepositoryImplTest {
                 deliveryStatus = DeliveryStatus.Sent,
             )
             // Add message to existing remote chat instead of replacing entire chat
-            remoteDataSource.addMessageToServerChat(newMessage)
+            remoteDataSource.addMessage(newMessage)
 
             val secondResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(secondResult)
@@ -368,7 +368,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(100_000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         val newMessage = TextMessage(
             id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
             text = "Test message",
@@ -379,7 +379,7 @@ class MessengerRepositoryImplTest {
             deliveryStatus = DeliveryStatus.Sending(0),
         )
         // Add message to existing remote chat instead of replacing entire chat
-        remoteDataSource.addMessageToServerChat(newMessage)
+        remoteDataSource.addMessage(newMessage)
         remoteDataSource.setConnectionState(false)
 
         // Create repository after data source setup
@@ -430,7 +430,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(100_000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         remoteDataSource.setConnectionState(false)
 
         // Create repository after data source setup
@@ -462,7 +462,7 @@ class MessengerRepositoryImplTest {
                 assertEquals(false, awaitItem())
 
                 // Add chat to remote to trigger delta sync
-                remoteDataSource.addChatToServer(testChat)
+                remoteDataSource.addChat(testChat)
 
                 // Should emit true when delta sync starts processing
                 assertEquals(true, awaitItem())
@@ -506,7 +506,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(1000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // Create repository after data source setup
         repository = repositoryImpl(backgroundScope)
@@ -550,7 +550,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(1000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // Create repository after data source setup
         repository = repositoryImpl(backgroundScope)
@@ -591,7 +591,7 @@ class MessengerRepositoryImplTest {
             localDataSource.insertChat(testChat)
             val syncTimestamp = Instant.fromEpochMilliseconds(800)
             localDataSource.updateLastSyncTimestamp(syncTimestamp)
-            remoteDataSource.addChatToServer(testChat)
+            remoteDataSource.addChat(testChat)
 
             // Create repository after data source setup
             repository = repositoryImpl(backgroundScope)
@@ -614,7 +614,7 @@ class MessengerRepositoryImplTest {
                     deliveryStatus = DeliveryStatus.Sent,
                 )
                 // Add message to existing remote chat to simulate remote change
-                remoteDataSource.addMessageToServerChat(newMessage)
+                remoteDataSource.addMessage(newMessage)
 
                 val secondResult = awaitItem()
                 assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(secondResult)
@@ -764,7 +764,7 @@ class MessengerRepositoryImplTest {
 
     @Test
     fun `joinChat should handle network failures`() = runTest {
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         remoteDataSource.setConnectionState(false)
 
         repository = repositoryImpl(backgroundScope)
@@ -778,7 +778,7 @@ class MessengerRepositoryImplTest {
     @Test
     fun `leaveChat should handle network failures`() = runTest {
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         remoteDataSource.setConnectionState(false)
 
         repository = repositoryImpl(backgroundScope)
@@ -816,7 +816,7 @@ class MessengerRepositoryImplTest {
             assertEquals(0, initialResult.data.size)
 
             remoteDataSource.setConnectionState(false)
-            remoteDataSource.addChatToServer(testChat)
+            remoteDataSource.addChat(testChat)
 
             val timestampResult = localDataSource.getLastSyncTimestamp()
             assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(
@@ -892,7 +892,7 @@ class MessengerRepositoryImplTest {
             lastReadMessageId = null,
         )
         localDataSource.insertChat(chatWithUnreadMessages)
-        remoteDataSource.addChatToServer(chatWithUnreadMessages)
+        remoteDataSource.addChat(chatWithUnreadMessages)
         repository = repositoryImpl(backgroundScope)
 
         // When: Mark messages as read
@@ -907,7 +907,7 @@ class MessengerRepositoryImplTest {
         runTest {
             // Given: Chat exists but network is disconnected
             localDataSource.insertChat(testChat)
-            remoteDataSource.addChatToServer(testChat)
+            remoteDataSource.addChat(testChat)
             remoteDataSource.setConnectionState(false)
             repository = repositoryImpl(backgroundScope)
 
@@ -953,7 +953,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(chatWithUnreadMessages)
         val syncTimestamp = Instant.fromEpochMilliseconds(500)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(chatWithUnreadMessages)
+        remoteDataSource.addChat(chatWithUnreadMessages)
 
         repository = repositoryImpl(backgroundScope)
 

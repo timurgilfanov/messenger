@@ -245,7 +245,7 @@ class DebugDataRepository @Inject constructor(
     private fun simulateNewMessage() {
         try {
             // Get a random existing chat and add a message to it
-            val currentChats = remoteDebugDataSource.getCurrentChats()
+            val currentChats = remoteDebugDataSource.getChats()
             if (currentChats.isNotEmpty()) {
                 val randomChat = currentChats.random()
                 val newMessage = sampleDataProvider.generateSingleMessage(randomChat)

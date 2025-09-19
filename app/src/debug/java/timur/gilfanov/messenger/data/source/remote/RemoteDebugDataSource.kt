@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import kotlin.time.Instant
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -39,7 +40,9 @@ interface RemoteDebugDataSource {
      * Gets the current list of chats from the server (fake implementation).
      * Used for debug operations like auto-activity simulation.
      */
-    fun getCurrentChats(): List<Chat>
+    fun getChats(): ImmutableList<Chat>
+
+    fun getMessagesSize(): Int
 
     /**
      * Sets the initial timestamp for server operations.

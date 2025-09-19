@@ -5,6 +5,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -571,7 +573,9 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
-    override fun getCurrentChats(): List<Chat> = serverState.value.chats.values.toList()
+    override fun getChats(): ImmutableList<Chat> = serverState.value.chats.values.toImmutableList()
+
+    override fun getMessagesSize(): Int = serverState.value.chats.values.sumOf { it.messages.size }
 
     override fun setInitialTimestamp(timestamp: Instant) {
         serverState.update { state ->

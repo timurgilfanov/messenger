@@ -110,7 +110,7 @@ class RemoteDataSourceFakeTest {
         assertEquals(testChat, result.data)
 
         // Verify chat is added to server
-        remoteDataSource.observeChatPreviews().test {
+        remoteDataSource.chatPreviews.test {
             val flowResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(flowResult)
             assertEquals(1, flowResult.data.size)
@@ -144,7 +144,7 @@ class RemoteDataSourceFakeTest {
         assertIs<ResultWithError.Success<Unit, RemoteDataSourceError>>(result)
 
         // Verify chat is removed from server
-        remoteDataSource.observeChatPreviews().test {
+        remoteDataSource.chatPreviews.test {
             val flowResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(flowResult)
             assertTrue(flowResult.data.isEmpty())
@@ -224,7 +224,7 @@ class RemoteDataSourceFakeTest {
         remoteDataSource.addChat(testChat)
 
         // When & Then
-        remoteDataSource.observeChatPreviews().test {
+        remoteDataSource.chatPreviews.test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(result)
             assertEquals(1, result.data.size)
@@ -238,7 +238,7 @@ class RemoteDataSourceFakeTest {
         remoteDataSource.setConnectionState(false)
 
         // When & Then
-        remoteDataSource.observeChatPreviews().test {
+        remoteDataSource.chatPreviews.test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<List<ChatPreview>, RemoteDataSourceError>>(result)
             assertEquals(RemoteDataSourceError.NetworkNotAvailable, result.error)
@@ -363,7 +363,7 @@ class RemoteDataSourceFakeTest {
         remoteDataSource.clearData()
 
         // Then
-        remoteDataSource.observeChatPreviews().test {
+        remoteDataSource.chatPreviews.test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(result)
             assertTrue(result.data.isEmpty())
@@ -387,7 +387,7 @@ class RemoteDataSourceFakeTest {
         assertIs<ResultWithError.Success<Unit, RemoteDataSourceError>>(result)
 
         // Verify the chat was updated
-        remoteDataSource.observeChatPreviews().test {
+        remoteDataSource.chatPreviews.test {
             val chatsResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(chatsResult)
             val chatPreview = chatsResult.data.first { it.id == chatWithMessages.id }
@@ -448,7 +448,7 @@ class RemoteDataSourceFakeTest {
             assertIs<ResultWithError.Success<Unit, RemoteDataSourceError>>(result)
 
             // Should have 1 unread message remaining (message3)
-            remoteDataSource.observeChatPreviews().test {
+            remoteDataSource.chatPreviews.test {
                 val chatsResult = awaitItem()
                 assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(
                     chatsResult,
@@ -481,7 +481,7 @@ class RemoteDataSourceFakeTest {
             assertIs<ResultWithError.Success<Unit, RemoteDataSourceError>>(result)
 
             // Should keep original unread count since message doesn't exist
-            remoteDataSource.observeChatPreviews().test {
+            remoteDataSource.chatPreviews.test {
                 val chatsResult = awaitItem()
                 assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(
                     chatsResult,
@@ -506,7 +506,7 @@ class RemoteDataSourceFakeTest {
         assertEquals(RemoteDataSourceError.ChatNotFound, result.error)
 
         // No chats should exist
-        remoteDataSource.observeChatPreviews().test {
+        remoteDataSource.chatPreviews.test {
             val chatsResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, RemoteDataSourceError>>(
                 chatsResult,

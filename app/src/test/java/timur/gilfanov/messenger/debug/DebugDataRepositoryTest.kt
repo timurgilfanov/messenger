@@ -12,6 +12,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -389,11 +390,8 @@ class DebugDataRepositoryTest {
         override fun getChats(): ImmutableList<Chat> = chats.toImmutableList()
         override fun getMessagesSize(): Int = messages.size
 
-        override fun observeChatPreviews(): Flow<
-            ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
-            > {
-            error("Not needed for this test")
-        }
+        override val chatPreviews: Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
+            emptyFlow()
     }
 
     // Regression test for sync integration
@@ -424,11 +422,8 @@ class DebugDataRepositoryTest {
                 error("Not needed for this test")
             }
 
-            override fun observeChatPreviews(): Flow<
-                ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
-                > {
-                error("Not needed for this test")
-            }
+            override val chatPreviews:
+                Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> = emptyFlow()
         }
 
         // Recreate repository with the spy

@@ -316,7 +316,7 @@ class DebugDataRepositoryTest {
         debugDataRepository.debugSettings.test {
             val settings = awaitItem()
             assertEquals(scenario, settings.scenario)
-            assertEquals(scenario.chatCount, settings.effectiveChatCount)
+            assertEquals(scenario.chatCount, settings.scenario.chatCount)
             assertTrue(settings.lastGeneration > 0)
             cancelAndIgnoreRemainingEvents()
         }

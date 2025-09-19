@@ -99,8 +99,8 @@ internal fun CurrentScenarioCard(settings: DebugSettings) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("Chats: ${settings.effectiveChatCount}")
-                Text("Messages: ${settings.effectiveMessageRange}")
+                Text("Chats: ${settings.scenario.chatCount}")
+                Text("Messages: ${settings.scenario.messagesPerChat}")
             }
         }
     }

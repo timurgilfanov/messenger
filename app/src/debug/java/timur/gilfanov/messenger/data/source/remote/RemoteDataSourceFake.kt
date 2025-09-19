@@ -63,11 +63,6 @@ class RemoteDataSourceFake @Inject constructor() :
                 lastSyncTimestamp = maxOf(lastSyncTimestamp, newTimestamp),
             )
         }
-
-        fun setInitialTimestamp(timestamp: Instant): ServerState = copy(
-            currentTimestamp = timestamp,
-            lastSyncTimestamp = maxOf(lastSyncTimestamp, timestamp),
-        )
     }
 
     private val serverState = MutableStateFlow(ServerState())
@@ -576,10 +571,4 @@ class RemoteDataSourceFake @Inject constructor() :
     override fun getChats(): ImmutableList<Chat> = serverState.value.chats.values.toImmutableList()
 
     override fun getMessagesSize(): Int = serverState.value.chats.values.sumOf { it.messages.size }
-
-    override fun setInitialTimestamp(timestamp: Instant) {
-        serverState.update { state ->
-            state.setInitialTimestamp(timestamp)
-        }
-    }
 }

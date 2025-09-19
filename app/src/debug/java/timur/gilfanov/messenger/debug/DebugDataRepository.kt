@@ -116,13 +116,6 @@ class DebugDataRepository @Inject constructor(
             // Continue anyway - the sync will overwrite with new data
         }
 
-        // Initialize remote server with timestamp newer than last sync before clearing
-        // This ensures generated data appears as "new" to sync operations
-        lastSyncTimestamp?.let { timestamp ->
-            logger.d(TAG, "Setting initial timestamp to $timestamp for hybrid approach")
-            remoteDebugDataSource.setInitialTimestamp(timestamp)
-        }
-
         logger.d(TAG, "Clearing remote server data")
         remoteDebugDataSource.clearData()
 

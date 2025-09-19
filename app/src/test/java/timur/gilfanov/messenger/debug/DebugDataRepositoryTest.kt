@@ -386,10 +386,6 @@ class DebugDataRepositoryTest {
         override fun getChats(): ImmutableList<Chat> = chats.toImmutableList()
         override fun getMessagesSize(): Int = messages.size
 
-        override fun setInitialTimestamp(timestamp: Instant) {
-            // No-op for test
-        }
-
         override fun chatPreviews(): Flow<
             ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
             > {
@@ -423,10 +419,6 @@ class DebugDataRepositoryTest {
 
             override fun getMessagesSize(): Int {
                 error("Not needed for this test")
-            }
-
-            override fun setInitialTimestamp(timestamp: Instant) {
-                // No-op for test
             }
 
             override fun chatPreviews(): Flow<

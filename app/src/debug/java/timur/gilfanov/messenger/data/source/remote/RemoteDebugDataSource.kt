@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.data.source.remote
 
-import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -43,13 +42,6 @@ interface RemoteDebugDataSource {
     fun getChats(): ImmutableList<Chat>
 
     fun getMessagesSize(): Int
-
-    /**
-     * Sets the initial timestamp for server operations.
-     * Used to initialize server state with timestamps newer than existing sync points,
-     * ensuring generated data is considered "new" by sync operations.
-     */
-    fun setInitialTimestamp(timestamp: Instant)
 
     /**
      * Observes chat previews from the server (fake implementation).

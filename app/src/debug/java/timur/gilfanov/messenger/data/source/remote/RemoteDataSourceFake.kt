@@ -144,7 +144,9 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
-    override fun chatPreviews(): Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
+    override fun observeChatPreviews(): Flow<
+        ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
+        > =
         serverState.map { state ->
             if (connectionStateFlow.value) {
                 val chatPreviews = state.chats.values.map { chat -> ChatPreview.fromChat(chat) }
@@ -154,7 +156,7 @@ class RemoteDataSourceFake @Inject constructor() :
             }
         }
 
-    override fun chatsDeltaUpdates(
+    override fun observeChatListUpdates(
         since: Instant?,
     ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>> = serverState.map { state ->
         if (!connectionStateFlow.value) {

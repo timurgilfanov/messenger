@@ -15,7 +15,7 @@ interface RemoteSyncDataSource {
      * @param since Timestamp from which to fetch updates. If null, fetches all data.
      * @return Flow that emits delta updates for efficient synchronization.
      */
-    fun chatsDeltaUpdates(
+    fun observeChatListUpdates(
         since: Instant?,
     ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>>
 }

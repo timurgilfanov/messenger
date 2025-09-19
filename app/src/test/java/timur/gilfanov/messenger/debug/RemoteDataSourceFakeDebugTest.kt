@@ -36,7 +36,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.addChat(testChat2)
 
         // Verify chats exist by checking delta updates
-        val initialDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val initialDelta = remoteDataSourceFake.observeChatListUpdates(null)
         initialDelta.test {
             val deltaResult = awaitItem()
             assertTrue(deltaResult is ResultWithError.Success)
@@ -48,7 +48,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.clearData()
 
         // Then - Verify all data is cleared
-        val afterClearDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val afterClearDelta = remoteDataSourceFake.observeChatListUpdates(null)
         afterClearDelta.test {
             val deltaResult = awaitItem()
             assertTrue(deltaResult is ResultWithError.Success)
@@ -66,7 +66,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.addChat(testChat)
 
         // Get initial timestamp (should be > 0)
-        val initialDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val initialDelta = remoteDataSourceFake.observeChatListUpdates(null)
         var initialTimestamp: Instant? = null
         initialDelta.test {
             val deltaResult = awaitItem()
@@ -83,7 +83,7 @@ class RemoteDataSourceFakeDebugTest {
         val newTestChat = DebugTestData.createTestChat(name = "New Chat")
         remoteDebugDataSource.addChat(newTestChat)
 
-        val afterClearDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val afterClearDelta = remoteDataSourceFake.observeChatListUpdates(null)
         afterClearDelta.test {
             val deltaResult = awaitItem()
             assertTrue(deltaResult is ResultWithError.Success)
@@ -109,7 +109,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.addChat(newChat2)
 
         // Then - Only new data should exist
-        val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val delta = remoteDataSourceFake.observeChatListUpdates(null)
         delta.test {
             val deltaResult = awaitItem()
             assertTrue(deltaResult is ResultWithError.Success)
@@ -133,7 +133,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.clearData()
 
         // Then - Should not cause any errors
-        val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val delta = remoteDataSourceFake.observeChatListUpdates(null)
         delta.test {
             val deltaResult = awaitItem()
             assertTrue(deltaResult is ResultWithError.Success)
@@ -153,7 +153,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.addChat(testChat2)
 
         // Get timestamp before clearing to compare
-        val beforeClearDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val beforeClearDelta = remoteDataSourceFake.observeChatListUpdates(null)
         var beforeClearTimestamp: Instant? = null
         beforeClearDelta.test {
             val deltaResult = awaitItem()
@@ -170,7 +170,7 @@ class RemoteDataSourceFakeDebugTest {
         val newTestChat = DebugTestData.createTestChat(name = "Post-Clear Chat")
         remoteDebugDataSource.addChat(newTestChat)
 
-        val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val delta = remoteDataSourceFake.observeChatListUpdates(null)
         delta.test {
             val deltaResult = awaitItem()
             assertTrue(deltaResult is ResultWithError.Success)
@@ -192,7 +192,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.clearData()
 
         // Then - Should not cause errors
-        val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val delta = remoteDataSourceFake.observeChatListUpdates(null)
         delta.test {
             val deltaResult = awaitItem()
             assertTrue(deltaResult is ResultWithError.Success)
@@ -213,7 +213,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.clearData()
 
         // Then - Server should be in consistent empty state
-        val delta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val delta = remoteDataSourceFake.observeChatListUpdates(null)
         delta.test {
             val deltaResult = awaitItem()
             assertTrue(deltaResult is ResultWithError.Success)
@@ -228,7 +228,7 @@ class RemoteDataSourceFakeDebugTest {
         val newChat = DebugTestData.createTestChat(name = "Fresh Start")
         remoteDebugDataSource.addChat(newChat)
 
-        val freshDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val freshDelta = remoteDataSourceFake.observeChatListUpdates(null)
         freshDelta.test {
             val deltaResult = awaitItem()
             assertTrue(deltaResult is ResultWithError.Success)
@@ -243,7 +243,7 @@ class RemoteDataSourceFakeDebugTest {
     @Test
     fun `debug data generation with sync running concurrently`() = runTest {
         // Given - Start with empty state
-        val initialDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val initialDelta = remoteDataSourceFake.observeChatListUpdates(null)
         initialDelta.test {
             val initialResult = awaitItem()
             assertTrue(initialResult is ResultWithError.Success)
@@ -260,7 +260,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.addChat(debugChat2)
 
         // Then - Sync should receive the new chats without errors
-        val afterGenerationDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val afterGenerationDelta = remoteDataSourceFake.observeChatListUpdates(null)
         afterGenerationDelta.test {
             val result = awaitItem()
             assertTrue(result is ResultWithError.Success)
@@ -287,7 +287,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.addChat(initialChat)
 
         // Get the timestamp before clearing for comparison
-        val beforeClearDelta = remoteDataSourceFake.chatsDeltaUpdates(null)
+        val beforeClearDelta = remoteDataSourceFake.observeChatListUpdates(null)
         var beforeClearTimestamp: Instant? = null
         beforeClearDelta.test {
             val result = awaitItem()
@@ -302,7 +302,7 @@ class RemoteDataSourceFakeDebugTest {
         remoteDebugDataSource.addChat(newChat)
 
         // Then - Delta should have valid timestamp newer than before clear
-        remoteDataSourceFake.chatsDeltaUpdates(null).test {
+        remoteDataSourceFake.observeChatListUpdates(null).test {
             val result = awaitItem()
             assertTrue(result is ResultWithError.Success)
 

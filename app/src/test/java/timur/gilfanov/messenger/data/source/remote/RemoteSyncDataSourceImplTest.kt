@@ -142,7 +142,7 @@ class RemoteSyncDataSourceImplTest {
     }
 
     @Test
-    fun `chatsDeltaUpdates should return success for full sync`() = runTest {
+    fun `observeChatListUpdates should return success for full sync`() = runTest {
         // Given
         val deltaDto = createTestDelta(hasMore = false)
         val successResponse = ApiResponse(data = deltaDto, success = true)
@@ -152,7 +152,7 @@ class RemoteSyncDataSourceImplTest {
         remoteSyncDataSource = createDataSource(mockClient)
 
         // When - Take only the first emission before the infinite polling phase
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = null)
+        val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = null)
         val result = resultFlow.first()
 
         // Then
@@ -164,7 +164,7 @@ class RemoteSyncDataSourceImplTest {
     }
 
     @Test
-    fun `chatsDeltaUpdates should handle incremental sync with timestamp`() = runTest {
+    fun `observeChatListUpdates should handle incremental sync with timestamp`() = runTest {
         // Given
         val deltaDto = createTestDelta(hasMore = false)
         val modifiedDelta = deltaDto.copy(fromTimestamp = TEST_TIMESTAMP_2.toString())
@@ -175,7 +175,7 @@ class RemoteSyncDataSourceImplTest {
         remoteSyncDataSource = createDataSource(mockClient)
 
         // When - Take only the first emission before the infinite polling phase
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = TEST_TIMESTAMP_2)
+        val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = TEST_TIMESTAMP_2)
         val result = resultFlow.first()
 
         // Then
@@ -185,61 +185,62 @@ class RemoteSyncDataSourceImplTest {
     }
 
     @Test
-    fun `chatsDeltaUpdates should handle multiple batches when hasMoreChanges is true`() = runTest {
-        // Given - Mock multiple responses for pagination
-        var callCount = 0
-        val mockEngine = MockEngine { request ->
-            callCount++
-            val deltaDto = when (callCount) {
-                1 -> createTestDelta(hasMore = true)
-                2 -> createTestDelta(hasMore = false).copy(
-                    toTimestamp = TEST_TIMESTAMP_2.toString(),
+    fun `observeChatListUpdates should handle multiple batches when hasMoreChanges is true`() =
+        runTest {
+            // Given - Mock multiple responses for pagination
+            var callCount = 0
+            val mockEngine = MockEngine { request ->
+                callCount++
+                val deltaDto = when (callCount) {
+                    1 -> createTestDelta(hasMore = true)
+                    2 -> createTestDelta(hasMore = false).copy(
+                        toTimestamp = TEST_TIMESTAMP_2.toString(),
+                    )
+                    else -> createTestDelta(hasMore = false).copy(changes = emptyList())
+                }
+                val successResponse = ApiResponse(data = deltaDto, success = true)
+                val responseJson = json.encodeToString(successResponse)
+
+                respond(
+                    content = responseJson,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(
+                        HttpHeaders.ContentType,
+                        ContentType.Application.Json.toString(),
+                    ),
                 )
-                else -> createTestDelta(hasMore = false).copy(changes = emptyList())
             }
-            val successResponse = ApiResponse(data = deltaDto, success = true)
-            val responseJson = json.encodeToString(successResponse)
 
-            respond(
-                content = responseJson,
-                status = HttpStatusCode.OK,
-                headers = headersOf(
-                    HttpHeaders.ContentType,
-                    ContentType.Application.Json.toString(),
-                ),
-            )
-        }
-
-        val mockClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) {
-                json(json)
+            val mockClient = HttpClient(mockEngine) {
+                install(ContentNegotiation) {
+                    json(json)
+                }
             }
+            remoteSyncDataSource = createDataSource(mockClient)
+
+            // When - Take first 2 emissions (pagination phase) before infinite polling starts
+            val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = null)
+            val results = resultFlow.take(2).toList()
+
+            // Then
+            assertEquals(2, results.size) // Two pagination batches
+            results.forEach { result ->
+                assertIs<ResultWithError.Success<*, *>>(result)
+            }
+
+            // Verify the first batch has hasMoreChanges = true
+            val firstDelta = (results[0] as ResultWithError.Success<*, *>).data as ChatListDelta
+            assertTrue(firstDelta.hasMoreChanges)
+
+            // Verify the second batch has hasMoreChanges = false (pagination complete)
+            val secondDelta = (results[1] as ResultWithError.Success<*, *>).data as ChatListDelta
+            assertTrue(!secondDelta.hasMoreChanges)
+
+            assertEquals(2, callCount) // Verify pagination calls made
         }
-        remoteSyncDataSource = createDataSource(mockClient)
-
-        // When - Take first 2 emissions (pagination phase) before infinite polling starts
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = null)
-        val results = resultFlow.take(2).toList()
-
-        // Then
-        assertEquals(2, results.size) // Two pagination batches
-        results.forEach { result ->
-            assertIs<ResultWithError.Success<*, *>>(result)
-        }
-
-        // Verify the first batch has hasMoreChanges = true
-        val firstDelta = (results[0] as ResultWithError.Success<*, *>).data as ChatListDelta
-        assertTrue(firstDelta.hasMoreChanges)
-
-        // Verify the second batch has hasMoreChanges = false (pagination complete)
-        val secondDelta = (results[1] as ResultWithError.Success<*, *>).data as ChatListDelta
-        assertTrue(!secondDelta.hasMoreChanges)
-
-        assertEquals(2, callCount) // Verify pagination calls made
-    }
 
     @Test
-    fun `chatsDeltaUpdates should handle API error response`() = runTest {
+    fun `observeChatListUpdates should handle API error response`() = runTest {
         // Given
         val errorResponse = ApiResponse<ChatListDeltaDto>(
             data = null,
@@ -255,7 +256,7 @@ class RemoteSyncDataSourceImplTest {
         remoteSyncDataSource = createDataSource(mockClient)
 
         // When - Take only the first emission (error response terminates the flow)
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = null)
+        val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = null)
         val result = resultFlow.first()
 
         // Then
@@ -264,13 +265,13 @@ class RemoteSyncDataSourceImplTest {
     }
 
     @Test
-    fun `chatsDeltaUpdates should handle SerializationException`() = runTest {
+    fun `observeChatListUpdates should handle SerializationException`() = runTest {
         // Given
         val mockClient = createMockClient("invalid json response")
         remoteSyncDataSource = createDataSource(mockClient)
 
         // When - Take only the first emission (error response terminates the flow)
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = null)
+        val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = null)
         val result = resultFlow.first()
 
         // Then
@@ -282,7 +283,7 @@ class RemoteSyncDataSourceImplTest {
     }
 
     @Test
-    fun `chatsDeltaUpdates should handle SocketTimeoutException`() = runTest {
+    fun `observeChatListUpdates should handle SocketTimeoutException`() = runTest {
         // Given
         val mockEngine = MockEngine { request ->
             throw SocketTimeoutException("Request timeout", null)
@@ -295,7 +296,7 @@ class RemoteSyncDataSourceImplTest {
         remoteSyncDataSource = createDataSource(mockClient)
 
         // When - Take only the first emission (error response terminates the flow)
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = null)
+        val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = null)
         val result = resultFlow.first()
 
         // Then
@@ -304,7 +305,7 @@ class RemoteSyncDataSourceImplTest {
     }
 
     @Test
-    fun `chatsDeltaUpdates should handle IOException`() = runTest {
+    fun `observeChatListUpdates should handle IOException`() = runTest {
         // Given
         val mockEngine = MockEngine { request ->
             throw IOException("Network connection failed")
@@ -317,7 +318,7 @@ class RemoteSyncDataSourceImplTest {
         remoteSyncDataSource = createDataSource(mockClient)
 
         // When - Take only the first emission (error response terminates the flow)
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = null)
+        val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = null)
         val result = resultFlow.first()
 
         // Then
@@ -330,7 +331,7 @@ class RemoteSyncDataSourceImplTest {
     }
 
     @Test
-    fun `chatsDeltaUpdates should handle unexpected Exception`() = runTest {
+    fun `observeChatListUpdates should handle unexpected Exception`() = runTest {
         // Given
         val mockEngine = MockEngine { request ->
             @Suppress("TooGenericExceptionThrown")
@@ -344,7 +345,7 @@ class RemoteSyncDataSourceImplTest {
         remoteSyncDataSource = createDataSource(mockClient)
 
         // When - Take only the first emission (error response terminates the flow)
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = null)
+        val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = null)
         val result = resultFlow.first()
 
         // Then
@@ -353,58 +354,63 @@ class RemoteSyncDataSourceImplTest {
     }
 
     @Test
-    fun `chatsDeltaUpdates should continue polling after initial backlog complete`() = runTest {
-        // Given - Mock engine that returns initial data then later data
-        var callCount = 0
-        val mockEngine = MockEngine { request ->
-            callCount++
-            val deltaDto = when (callCount) {
-                1 -> createTestDelta(hasMore = false) // Backlog complete
-                else -> createTestDelta(hasMore = false).copy(
-                    toTimestamp = TEST_TIMESTAMP_2.toString(),
-                ) // Subsequent polls with new data
-            }
-            val successResponse = ApiResponse(data = deltaDto, success = true)
-            val responseJson = json.encodeToString(successResponse)
+    fun `observeChatListUpdates should continue polling after initial backlog complete`() =
+        runTest {
+            // Given - Mock engine that returns initial data then later data
+            var callCount = 0
+            val mockEngine = MockEngine { request ->
+                callCount++
+                val deltaDto = when (callCount) {
+                    1 -> createTestDelta(hasMore = false) // Backlog complete
+                    else -> createTestDelta(hasMore = false).copy(
+                        toTimestamp = TEST_TIMESTAMP_2.toString(),
+                    ) // Subsequent polls with new data
+                }
+                val successResponse = ApiResponse(data = deltaDto, success = true)
+                val responseJson = json.encodeToString(successResponse)
 
-            respond(
-                content = responseJson,
-                status = HttpStatusCode.OK,
-                headers = headersOf(
-                    HttpHeaders.ContentType,
-                    ContentType.Application.Json.toString(),
-                ),
+                respond(
+                    content = responseJson,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(
+                        HttpHeaders.ContentType,
+                        ContentType.Application.Json.toString(),
+                    ),
+                )
+            }
+
+            val mockClient = HttpClient(mockEngine) {
+                install(ContentNegotiation) {
+                    json(json)
+                }
+            }
+            remoteSyncDataSource = createDataSource(mockClient)
+
+            // When - Take multiple emissions to verify polling behavior
+            val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = null)
+            // Take first 3 emissions: backlog + 2 polling results
+            val results = resultFlow.take(3).toList()
+
+            // Then - Should have continuous polling behavior
+            assertEquals(
+                3,
+                results.size,
+                "Expected exactly 3 results from backlog + 2 polling cycles",
             )
-        }
+            assertTrue(callCount >= 3, "Expected at least 3 API calls but got $callCount")
 
-        val mockClient = HttpClient(mockEngine) {
-            install(ContentNegotiation) {
-                json(json)
+            results.forEach { result ->
+                assertIs<ResultWithError.Success<*, *>>(result)
             }
+
+            // Verify first emission is the backlog (has data)
+            val firstDelta = (results[0] as ResultWithError.Success<*, *>).data as ChatListDelta
+            assertTrue(firstDelta.changes.isNotEmpty())
+            assertFalse(firstDelta.hasMoreChanges) // Backlog complete
         }
-        remoteSyncDataSource = createDataSource(mockClient)
-
-        // When - Take multiple emissions to verify polling behavior
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = null)
-        // Take first 3 emissions: backlog + 2 polling results
-        val results = resultFlow.take(3).toList()
-
-        // Then - Should have continuous polling behavior
-        assertEquals(3, results.size, "Expected exactly 3 results from backlog + 2 polling cycles")
-        assertTrue(callCount >= 3, "Expected at least 3 API calls but got $callCount")
-
-        results.forEach { result ->
-            assertIs<ResultWithError.Success<*, *>>(result)
-        }
-
-        // Verify first emission is the backlog (has data)
-        val firstDelta = (results[0] as ResultWithError.Success<*, *>).data as ChatListDelta
-        assertTrue(firstDelta.changes.isNotEmpty())
-        assertFalse(firstDelta.hasMoreChanges) // Backlog complete
-    }
 
     @Test
-    fun `chatsDeltaUpdates should handle various delta types`() = runTest {
+    fun `observeChatListUpdates should handle various delta types`() = runTest {
         // Given - Mix of Created, Updated, and Deleted deltas
         val participantDto = ParticipantDto(
             id = TEST_PARTICIPANT_ID.toString(),
@@ -460,7 +466,7 @@ class RemoteSyncDataSourceImplTest {
         remoteSyncDataSource = createDataSource(mockClient)
 
         // When - Take only the first emission before the infinite polling phase
-        val resultFlow = remoteSyncDataSource.chatsDeltaUpdates(since = null)
+        val resultFlow = remoteSyncDataSource.observeChatListUpdates(since = null)
         val result = resultFlow.first()
 
         // Then

@@ -386,7 +386,7 @@ class DebugDataRepositoryTest {
         override fun getChats(): ImmutableList<Chat> = chats.toImmutableList()
         override fun getMessagesSize(): Int = messages.size
 
-        override fun chatPreviews(): Flow<
+        override fun observeChatPreviews(): Flow<
             ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
             > {
             error("Not needed for this test")
@@ -421,7 +421,7 @@ class DebugDataRepositoryTest {
                 error("Not needed for this test")
             }
 
-            override fun chatPreviews(): Flow<
+            override fun observeChatPreviews(): Flow<
                 ResultWithError<List<ChatPreview>, RemoteDataSourceError>,
                 > {
                 error("Not needed for this test")

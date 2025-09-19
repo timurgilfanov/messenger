@@ -73,7 +73,7 @@ class MessengerRepositoryImpl @Inject constructor(
                     }
                 }
             logger.d(TAG, "Last sync timestamp: $lastSyncTimestamp")
-            remoteDataSources.sync.chatsDeltaUpdates(lastSyncTimestamp)
+            remoteDataSources.sync.observeChatListUpdates(lastSyncTimestamp)
                 .onEach { deltaResult ->
                     if (deltaResult is ResultWithError.Success) {
                         logger.d(TAG, "Received delta updates: ${deltaResult.data}")
@@ -85,7 +85,7 @@ class MessengerRepositoryImpl @Inject constructor(
                     }
                 }
                 .catch { e ->
-                    logger.e(TAG, "Error collecting chatsDeltaUpdates", e)
+                    logger.e(TAG, "Error collecting chat list updates", e)
                 }
                 .collect()
         }

@@ -47,5 +47,5 @@ interface RemoteDebugDataSource {
      * Observes chat previews from the server (fake implementation).
      * Used to verify that debug data generation is reflected in the observable streams.
      */
-    fun chatPreviews(): Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>>
+    fun observeChatPreviews(): Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>>
 }

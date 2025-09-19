@@ -1,6 +1,8 @@
 package timur.gilfanov.messenger.debug
 
 import androidx.datastore.preferences.core.Preferences
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 import timur.gilfanov.messenger.debug.datastore.DebugPreferences
 
@@ -13,7 +15,7 @@ data class DebugSettings(
     val scenario: DataScenario = DataScenario.STANDARD,
     val autoActivity: Boolean = false,
     val showNotification: Boolean = true,
-    val lastGeneration: Long = 0L,
+    val lastGenerationTimestamp: Instant? = null,
 ) {
     companion object {
         /**
@@ -23,13 +25,16 @@ data class DebugSettings(
             val scenarioName =
                 preferences[DebugPreferences.DATA_SCENARIO] ?: DataScenario.STANDARD.name
             val scenario = DataScenario.fromString(scenarioName) ?: DataScenario.STANDARD
+            val timestampMillis = preferences[DebugPreferences.LAST_DATA_GENERATION]
 
             return DebugSettings(
                 useSampleData = preferences[DebugPreferences.USE_SAMPLE_DATA] ?: true,
                 scenario = scenario,
                 autoActivity = preferences[DebugPreferences.AUTO_ACTIVITY_ENABLED] ?: false,
                 showNotification = preferences[DebugPreferences.SHOW_DEBUG_NOTIFICATION] ?: true,
-                lastGeneration = preferences[DebugPreferences.LAST_DATA_GENERATION] ?: 0L,
+                lastGenerationTimestamp = timestampMillis?.let {
+                    Instant.fromEpochMilliseconds(it)
+                },
             )
         }
     }
@@ -42,23 +47,22 @@ data class DebugSettings(
         preferences[DebugPreferences.DATA_SCENARIO] = scenario.name
         preferences[DebugPreferences.AUTO_ACTIVITY_ENABLED] = autoActivity
         preferences[DebugPreferences.SHOW_DEBUG_NOTIFICATION] = showNotification
-        preferences[DebugPreferences.LAST_DATA_GENERATION] = lastGeneration
+        lastGenerationTimestamp?.let {
+            preferences[DebugPreferences.LAST_DATA_GENERATION] = it.toEpochMilliseconds()
+        }
     }
 
     /**
      * Whether data was generated recently (within last hour)
      */
     val wasGeneratedRecently: Boolean
-        get() = System.currentTimeMillis() - lastGeneration < 3600_000L // 1 hour
+        get() = lastGenerationTimestamp?.let {
+            Clock.System.now() - it < 1.hours
+        } ?: false
 
     /**
      * Get formatted last generation time for display
      */
     val lastGenerationFormatted: String
-        get() = if (lastGeneration == 0L) {
-            "Never"
-        } else {
-            val instant = Instant.fromEpochMilliseconds(lastGeneration)
-            instant.toString() // You might want to format this better
-        }
+        get() = lastGenerationTimestamp?.toString() ?: "Never"
 }

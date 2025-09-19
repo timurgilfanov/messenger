@@ -7,6 +7,7 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 import kotlin.random.Random
+import kotlin.time.Clock
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -134,7 +135,8 @@ class DebugDataRepository @Inject constructor(
 
         // Update generation timestamp
         dataStore.edit { preferences ->
-            preferences[DebugPreferences.LAST_DATA_GENERATION] = System.currentTimeMillis()
+            preferences[DebugPreferences.LAST_DATA_GENERATION] =
+                Clock.System.now().toEpochMilliseconds()
             preferences[DebugPreferences.LAST_USED_SCENARIO] = scenario.name
         }
 
@@ -162,7 +164,8 @@ class DebugDataRepository @Inject constructor(
         remoteDebugDataSource.clearData()
 
         dataStore.edit { preferences ->
-            preferences[DebugPreferences.LAST_DATA_GENERATION] = System.currentTimeMillis()
+            preferences[DebugPreferences.LAST_DATA_GENERATION] =
+                Clock.System.now().toEpochMilliseconds()
         }
     }
 

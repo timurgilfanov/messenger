@@ -47,13 +47,9 @@ object DebugTestData {
     /**
      * Creates a test DataStore with predefined preferences
      */
-    fun createTestDataStore(
-        scenario: DataScenario = DataScenario.STANDARD,
-        lastGeneration: Long = System.currentTimeMillis(),
-    ): FakeDataStore {
+    fun createTestDataStore(scenario: DataScenario = DataScenario.STANDARD): FakeDataStore {
         val preferences = preferencesOf(
             DebugPreferences.DATA_SCENARIO to scenario.name,
-            DebugPreferences.LAST_DATA_GENERATION to lastGeneration,
             DebugPreferences.LAST_USED_SCENARIO to scenario.name,
             DebugPreferences.AUTO_ACTIVITY_ENABLED to false,
         )

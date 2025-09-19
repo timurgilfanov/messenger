@@ -4,6 +4,8 @@ import androidx.paging.PagingSource
 import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
@@ -53,7 +55,7 @@ class DebugDataRepositoryTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
-        dataStore = DebugTestData.createTestDataStore(lastGeneration = 0L)
+        dataStore = DebugTestData.createTestDataStore()
         localDebugDataSource = FakeLocalDebugDataSource()
         localDataSources = LocalDataSources(
             chat = FakeLocalChatDataSource(),
@@ -86,7 +88,7 @@ class DebugDataRepositoryTest {
             assertEquals(DataScenario.STANDARD, settings.scenario)
             assertFalse(settings.autoActivity)
             assertTrue(settings.showNotification)
-            assertEquals(0L, settings.lastGeneration)
+            assertNull(settings.lastGenerationTimestamp)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -113,7 +115,7 @@ class DebugDataRepositoryTest {
         debugDataRepository.debugSettings.test {
             val settings = awaitItem()
             assertEquals(scenario, settings.scenario)
-            assertTrue(settings.lastGeneration > 0L)
+            assertNotNull(settings.lastGenerationTimestamp)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -278,7 +280,8 @@ class DebugDataRepositoryTest {
     @Test
     fun `regenerateData updates last generation timestamp`() = testScope.runTest {
         // Given - Get initial timestamp
-        val initialLastGeneration = debugDataRepository.debugSettings.first().lastGeneration
+        val initialLastGeneration =
+            debugDataRepository.debugSettings.first().lastGenerationTimestamp
 
         // When
         debugDataRepository.regenerateData()
@@ -287,7 +290,7 @@ class DebugDataRepositoryTest {
         debugDataRepository.debugSettings.test {
             val settings = awaitItem()
             assertTrue(
-                settings.lastGeneration > initialLastGeneration,
+                settings.lastGenerationTimestamp != initialLastGeneration,
                 "Last generation should be updated after regenerating data",
             )
             cancelAndIgnoreRemainingEvents()
@@ -317,7 +320,7 @@ class DebugDataRepositoryTest {
             val settings = awaitItem()
             assertEquals(scenario, settings.scenario)
             assertEquals(scenario.chatCount, settings.scenario.chatCount)
-            assertTrue(settings.lastGeneration > 0)
+            assertNotNull(settings.lastGenerationTimestamp)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -472,7 +475,7 @@ class DebugDataRepositoryTest {
         debugDataRepository.debugSettings.test {
             val settings = awaitItem()
             assertEquals(scenario, settings.scenario)
-            assertTrue(settings.lastGeneration > 0L, "Should record generation timestamp")
+            assertNotNull(settings.lastGenerationTimestamp) { "Should record generation timestamp" }
             cancelAndIgnoreRemainingEvents()
         }
     }

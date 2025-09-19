@@ -42,36 +42,13 @@ class RemoteDataSourceFake @Inject constructor() :
         private const val SENDING_PROGRESS_COMPLETE = 100
     }
 
-    /**
-     * Unified server state to prevent race conditions between chats and operations.
-     * Tracks lastSyncTimestamp to ensure deterministic behavior while preventing sync race conditions.
-     */
-    private data class ServerState(
-        val chats: Map<ChatId, Chat> = emptyMap(),
-        val operationTimestamps: Map<String, Instant> = emptyMap(),
-        val currentTimestamp: Instant = Instant.fromEpochMilliseconds(0),
-        val lastSyncTimestamp: Instant = Instant.fromEpochMilliseconds(0),
-    ) {
-        private fun nextTimestamp(): Instant = currentTimestamp.plus(1.seconds)
-
-        fun recordOperation(operationKey: String): ServerState {
-            val newTimestamp = nextTimestamp()
-            return copy(
-                operationTimestamps = operationTimestamps + (operationKey to newTimestamp),
-                currentTimestamp = newTimestamp,
-                // Track the highest timestamp for sync continuity
-                lastSyncTimestamp = maxOf(lastSyncTimestamp, newTimestamp),
-            )
-        }
-    }
-
     private val serverState = MutableStateFlow(ServerState())
-    private val connectionStateFlow = MutableStateFlow(true)
+    private val connectionState = MutableStateFlow(true)
 
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
@@ -87,7 +64,7 @@ class RemoteDataSourceFake @Inject constructor() :
     override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
@@ -111,7 +88,7 @@ class RemoteDataSourceFake @Inject constructor() :
     ): ResultWithError<Chat, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
@@ -126,7 +103,7 @@ class RemoteDataSourceFake @Inject constructor() :
     override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
@@ -146,7 +123,7 @@ class RemoteDataSourceFake @Inject constructor() :
 
     override val chatPreviews: Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
         serverState.map { state ->
-            if (connectionStateFlow.value) {
+            if (connectionState.value) {
                 val chatPreviews = state.chats.values.map { chat -> ChatPreview.fromChat(chat) }
                 ResultWithError.Success(chatPreviews)
             } else {
@@ -157,7 +134,7 @@ class RemoteDataSourceFake @Inject constructor() :
     override fun observeChatListUpdates(
         since: Instant?,
     ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>> = serverState.map { state ->
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         } else {
             if (since == null) {
@@ -302,7 +279,7 @@ class RemoteDataSourceFake @Inject constructor() :
     override suspend fun sendMessage(
         message: Message,
     ): Flow<ResultWithError<Message, RemoteDataSourceError>> = flow {
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             emit(
                 ResultWithError.Failure<Message, RemoteDataSourceError>(
                     RemoteDataSourceError.NetworkNotAvailable,
@@ -378,7 +355,7 @@ class RemoteDataSourceFake @Inject constructor() :
     ): Flow<ResultWithError<Message, RemoteDataSourceError>> = flow {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             emit(ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable))
             return@flow
         }
@@ -416,7 +393,7 @@ class RemoteDataSourceFake @Inject constructor() :
     ): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
 
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
@@ -444,7 +421,7 @@ class RemoteDataSourceFake @Inject constructor() :
     }
 
     fun setConnectionState(connected: Boolean) {
-        connectionStateFlow.update { connected }
+        connectionState.update { connected }
     }
 
     override fun addChat(chat: Chat) {
@@ -530,7 +507,7 @@ class RemoteDataSourceFake @Inject constructor() :
         upToMessageId: MessageId,
     ): ResultWithError<Unit, RemoteDataSourceError> {
         delay(NETWORK_DELAY_MS)
-        if (!connectionStateFlow.value) {
+        if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         }
 
@@ -571,4 +548,26 @@ class RemoteDataSourceFake @Inject constructor() :
     override fun getChats(): ImmutableList<Chat> = serverState.value.chats.values.toImmutableList()
 
     override fun getMessagesSize(): Int = serverState.value.chats.values.sumOf { it.messages.size }
+}
+
+/**
+ * Unified server state to prevent race conditions between chats and operations.
+ * Tracks lastSyncTimestamp to ensure deterministic behavior while preventing sync race conditions.
+ */
+private data class ServerState(
+    val chats: Map<ChatId, Chat> = emptyMap(),
+    val operationTimestamps: Map<String, Instant> = emptyMap(),
+    val currentTimestamp: Instant = Instant.fromEpochMilliseconds(0),
+    val lastSyncTimestamp: Instant = Instant.fromEpochMilliseconds(0),
+) {
+
+    fun recordOperation(operationKey: String): ServerState {
+        val newTimestamp = currentTimestamp.plus(1.seconds)
+        return copy(
+            operationTimestamps = operationTimestamps + (operationKey to newTimestamp),
+            currentTimestamp = newTimestamp,
+            // Track the highest timestamp for sync continuity
+            lastSyncTimestamp = maxOf(lastSyncTimestamp, newTimestamp),
+        )
+    }
 }

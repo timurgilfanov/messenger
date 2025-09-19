@@ -36,7 +36,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         private const val TAG = "LocalDataSourceFake"
     }
 
-    private val chatsFlow = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
+    private val chats = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
     private val syncTimestamp = MutableStateFlow<Instant?>(null)
 
     // Test control flags for simulating failures
@@ -45,7 +45,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         logger.d(TAG, "Inserting chat: ${chat.id}")
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats + (chat.id to chat)
         }
         return ResultWithError.Success(chat)
@@ -53,12 +53,12 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override suspend fun updateChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         logger.d(TAG, "Updating chat: ${chat.id}")
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
         if (chat.id !in currentChats) {
             return ResultWithError.Failure(LocalDataSourceError.ChatNotFound)
         }
 
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats + (chat.id to chat)
         }
         return ResultWithError.Success(chat)
@@ -66,19 +66,19 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, LocalDataSourceError> {
         logger.d(TAG, "Deleting chat: $chatId")
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
         if (chatId !in currentChats) {
             return ResultWithError.Failure(LocalDataSourceError.ChatNotFound)
         }
 
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats - chatId
         }
         return ResultWithError.Success(Unit)
     }
 
     fun getChat(chatId: ChatId): ResultWithError<Chat, LocalDataSourceError> {
-        val chat = chatsFlow.value[chatId]
+        val chat = chats.value[chatId]
         return if (chat != null) {
             ResultWithError.Success(chat)
         } else {
@@ -87,7 +87,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     }
 
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
-        chatsFlow.map { chats ->
+        chats.map { chats ->
             if (shouldFailFlowChatList) {
                 ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
             } else {
@@ -98,7 +98,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override fun flowChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, LocalDataSourceError>> = chatsFlow.map { chats ->
+    ): Flow<ResultWithError<Chat, LocalDataSourceError>> = chats.map { chats ->
         val chat = chats[chatId]
         if (chat != null) {
             ResultWithError.Success(chat)
@@ -111,7 +111,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         message: Message,
     ): ResultWithError<Message, LocalDataSourceError> {
         val chatId = message.recipient
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
         val chat = currentChats[chatId]
 
         if (chat == null) {
@@ -123,7 +123,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         }.toPersistentList()
 
         val updatedChat = chat.copy(messages = updatedMessages)
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats + (chatId to updatedChat)
         }
 
@@ -134,7 +134,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         message: Message,
     ): ResultWithError<Message, LocalDataSourceError> {
         val chatId = message.recipient
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
         val chat = currentChats[chatId]
 
         if (chat == null) {
@@ -150,7 +150,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
             }.toPersistentList()
 
             val updatedChat = chat.copy(messages = updatedMessages)
-            chatsFlow.update { currentChats ->
+            chats.update { currentChats ->
                 currentChats + (chatId to updatedChat)
             }
 
@@ -161,7 +161,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     override suspend fun deleteMessage(
         messageId: MessageId,
     ): ResultWithError<Unit, LocalDataSourceError> {
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
 
         // Find the chat containing the message
         val chatWithMessage = currentChats.values.find { chat ->
@@ -177,7 +177,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         }.toPersistentList()
 
         val updatedChat = chatWithMessage.copy(messages = updatedMessages)
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats + (chatWithMessage.id to updatedChat)
         }
 
@@ -187,7 +187,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     override suspend fun getMessage(
         messageId: MessageId,
     ): ResultWithError<Message, LocalDataSourceError> {
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
 
         // Search through all chats for the message
         for (chat in currentChats.values) {
@@ -238,12 +238,12 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
                     messages = delta.initialMessages.toPersistentList(),
                 )
 
-                chatsFlow.update { currentChats ->
+                chats.update { currentChats ->
                     currentChats + (delta.chatId to newChat)
                 }
             }
             is ChatUpdatedDelta -> {
-                val chat = chatsFlow.value[delta.chatId]!!
+                val chat = chats.value[delta.chatId]!!
                 val messages = updateMessages(chat, delta.messagesToAdd, delta.messagesToDelete)
 
                 val updatedChat = chat.copy(
@@ -256,12 +256,12 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
                     messages = messages.toPersistentList(),
                 )
 
-                chatsFlow.update { currentChats ->
+                chats.update { currentChats ->
                     currentChats + (delta.chatId to updatedChat)
                 }
             }
             is ChatDeletedDelta -> {
-                chatsFlow.update { currentChats ->
+                chats.update { currentChats ->
                     currentChats - delta.chatId
                 }
             }
@@ -318,7 +318,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override suspend fun deleteAllChats(): ResultWithError<Unit, LocalDataSourceError> {
         logger.d(TAG, "Deleting all chats")
-        chatsFlow.update { emptyMap() }
+        chats.update { emptyMap() }
         return ResultWithError.Success(Unit)
     }
 
@@ -326,7 +326,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         logger.d(TAG, "Deleting all messages")
 
         // Clear all messages from all chats while keeping the chats themselves
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats.mapValues { (_, chat) ->
                 chat.copy(messages = emptyList<Message>().toPersistentList())
             }

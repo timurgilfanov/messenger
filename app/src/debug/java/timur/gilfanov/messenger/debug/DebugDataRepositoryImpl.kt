@@ -51,13 +51,13 @@ class DebugDataRepositoryImpl @Inject constructor(
     /**
      * Flow of current debug settings
      */
-    override val debugSettings: Flow<DebugSettings> = dataStore.data.map { preferences ->
+    override val settings: Flow<DebugSettings> = dataStore.data.map { preferences ->
         DebugSettings.fromPreferences(preferences)
     }
 
     init {
         // Monitor auto-activity setting and start/stop simulation accordingly
-        debugSettings
+        settings
             .map { it.autoActivity }
             .distinctUntilChanged()
             .onEach { enabled ->
@@ -85,7 +85,7 @@ class DebugDataRepositoryImpl @Inject constructor(
      * Regenerate data using current scenario
      */
     override suspend fun regenerateData() {
-        val currentSettings = debugSettings.first()
+        val currentSettings = settings.first()
         regenerateData(currentSettings.scenario)
     }
 
@@ -146,7 +146,7 @@ class DebugDataRepositoryImpl @Inject constructor(
     /**
      * Clear all data
      */
-    override suspend fun clearAllData() {
+    override suspend fun clearData() {
         logger.d(TAG, "Clearing all debug data")
 
         // Clear local database cache
@@ -183,7 +183,7 @@ class DebugDataRepositoryImpl @Inject constructor(
     /**
      * Get saved scenario from preferences, if any
      */
-    override suspend fun getSavedScenario(): DataScenario? =
+    override suspend fun getScenario(): DataScenario? =
         dataStore.data.first()[DebugPreferences.DATA_SCENARIO]?.let { scenarioName ->
             try {
                 DataScenario.valueOf(scenarioName)
@@ -196,7 +196,7 @@ class DebugDataRepositoryImpl @Inject constructor(
     /**
      * Toggle auto-activity feature
      */
-    override suspend fun toggleAutoActivity(enabled: Boolean) {
+    override suspend fun setAutoActivity(enabled: Boolean) {
         updateSettings { current ->
             current.copy(autoActivity = enabled)
         }
@@ -205,7 +205,7 @@ class DebugDataRepositoryImpl @Inject constructor(
     /**
      * Toggle debug notification visibility
      */
-    override suspend fun toggleNotification(show: Boolean) {
+    override suspend fun setNotification(show: Boolean) {
         updateSettings { current ->
             current.copy(showNotification = show)
         }

@@ -144,7 +144,7 @@ class DebugActivityLifecycleCallbacks(
         }
 
         // Priority 3: Check saved preference in DataStore
-        val savedScenario = debugDataRepository.getSavedScenario()
+        val savedScenario = debugDataRepository.getScenario()
 
         // Use BuildConfig if it's not the default, otherwise use saved preference
         return when {

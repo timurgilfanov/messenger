@@ -17,7 +17,6 @@ import timur.gilfanov.messenger.util.Logger
  * for clearing and resetting local data. This is used for debug data generation
  * and testing scenarios. This class is only available in debug builds.
  */
-@Suppress("TooGenericExceptionCaught") // Debug code
 @Singleton
 class LocalDebugDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,

@@ -72,7 +72,7 @@ class DebugBroadcastReceiver : BroadcastReceiver() {
                     debugDataRepository.regenerateData()
 
                     // Update notification with current scenario
-                    val currentSettings = debugDataRepository.debugSettings.first()
+                    val currentSettings = debugDataRepository.settings.first()
                     debugNotificationService.updateNotification(currentSettings.scenario)
 
                     logger.d(TAG, "Debug data regeneration completed")

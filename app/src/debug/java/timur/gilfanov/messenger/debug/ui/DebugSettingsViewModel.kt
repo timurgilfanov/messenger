@@ -51,7 +51,7 @@ class DebugSettingsViewModel @Inject constructor(
     @OptIn(OrbitExperimental::class)
     private suspend fun observeDebugSettings() = subIntent {
         repeatOnSubscription {
-            debugDataRepository.debugSettings.collect { settings ->
+            debugDataRepository.settings.collect { settings ->
                 withContext(Dispatchers.Main) {
                     reduce {
                         state.copy(settings = settings)
@@ -99,7 +99,7 @@ class DebugSettingsViewModel @Inject constructor(
             reduce { state.copy(isLoading = true) }
             logger.d(TAG, "Clearing all data...")
 
-            debugDataRepository.clearAllData()
+            debugDataRepository.clearData()
 
             logger.d(TAG, "Data cleared")
         } catch (e: IOException) {
@@ -150,7 +150,7 @@ class DebugSettingsViewModel @Inject constructor(
     fun toggleAutoActivity(enabled: Boolean) = intent {
         try {
             logger.d(TAG, "Toggling auto-activity: $enabled")
-            debugDataRepository.toggleAutoActivity(enabled)
+            debugDataRepository.setAutoActivity(enabled)
         } catch (e: IOException) {
             logger.e(TAG, "Failed to toggle auto-activity - IO error", e)
         } catch (e: CancellationException) {
@@ -169,7 +169,7 @@ class DebugSettingsViewModel @Inject constructor(
     fun toggleNotification(show: Boolean) = intent {
         try {
             logger.d(TAG, "Toggling notification visibility: $show")
-            debugDataRepository.toggleNotification(show)
+            debugDataRepository.setNotification(show)
 
             if (show) {
                 val currentSettings = state.settings

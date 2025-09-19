@@ -3,13 +3,19 @@ package timur.gilfanov.messenger.debug
 import kotlinx.coroutines.flow.Flow
 
 interface DebugDataRepository {
+    suspend fun getScenario(): DataScenario?
 
-    suspend fun getSavedScenario(): DataScenario?
-    suspend fun toggleAutoActivity(enabled: Boolean)
-    suspend fun toggleNotification(show: Boolean)
-    suspend fun updateSettings(transform: (DebugSettings) -> DebugSettings)
-    suspend fun clearAllData()
-    suspend fun regenerateData()
     suspend fun initializeWithScenario(scenario: DataScenario)
-    val debugSettings: Flow<DebugSettings>
+
+    suspend fun regenerateData()
+
+    suspend fun clearData()
+
+    val settings: Flow<DebugSettings>
+
+    suspend fun updateSettings(transform: (DebugSettings) -> DebugSettings)
+
+    suspend fun setAutoActivity(enabled: Boolean)
+
+    suspend fun setNotification(show: Boolean)
 }

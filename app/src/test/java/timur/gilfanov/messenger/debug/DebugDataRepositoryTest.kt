@@ -82,7 +82,7 @@ class DebugDataRepositoryTest {
     @Test
     fun `debugSettings flow emits correct initial settings`() = testScope.runTest {
         // When
-        debugDataRepository.debugSettings.test {
+        debugDataRepository.settings.test {
             val settings = awaitItem()
 
             // Then
@@ -113,7 +113,7 @@ class DebugDataRepositoryTest {
         assertEquals(scenario.chatCount, remoteDebugDataSource.getChats().size)
 
         // Verify settings update
-        debugDataRepository.debugSettings.test {
+        debugDataRepository.settings.test {
             val settings = awaitItem()
             assertEquals(scenario, settings.scenario)
             assertNotNull(settings.lastGenerationTimestamp)
@@ -139,7 +139,7 @@ class DebugDataRepositoryTest {
     @Test
     fun `clearAllData clears both local and remote data`() = testScope.runTest {
         // When
-        debugDataRepository.clearAllData()
+        debugDataRepository.clearData()
 
         // Then
         assertTrue(localDebugDataSource.wasDeleteAllChatsCalled)
@@ -160,7 +160,7 @@ class DebugDataRepositoryTest {
         }
 
         // Then
-        debugDataRepository.debugSettings.test {
+        debugDataRepository.settings.test {
             val settings = awaitItem()
             assertEquals(DataScenario.DEMO, settings.scenario)
             assertTrue(settings.autoActivity)
@@ -170,26 +170,26 @@ class DebugDataRepositoryTest {
     }
 
     @Test
-    fun `getSavedScenario returns scenario from preferences`() = testScope.runTest {
+    fun `getScenario returns scenario from preferences`() = testScope.runTest {
         // Given - Set a scenario in preferences
         debugDataRepository.updateSettings { current ->
             current.copy(scenario = DataScenario.HEAVY)
         }
 
         // When
-        val savedScenario = debugDataRepository.getSavedScenario()
+        val savedScenario = debugDataRepository.getScenario()
 
         // Then
         assertEquals(DataScenario.HEAVY, savedScenario)
     }
 
     @Test
-    fun `toggleAutoActivity updates settings and controls auto activity`() = testScope.runTest {
+    fun `setAutoActivity updates settings and controls auto activity`() = testScope.runTest {
         // When - Enable auto activity
-        debugDataRepository.toggleAutoActivity(true)
+        debugDataRepository.setAutoActivity(true)
 
         // Then - Verify settings updated
-        debugDataRepository.debugSettings.test {
+        debugDataRepository.settings.test {
             val settings = awaitItem()
             assertTrue(settings.autoActivity)
             cancelAndIgnoreRemainingEvents()
@@ -197,12 +197,12 @@ class DebugDataRepositoryTest {
     }
 
     @Test
-    fun `toggleNotification updates notification setting`() = testScope.runTest {
+    fun `setNotification updates notification setting`() = testScope.runTest {
         // When
-        debugDataRepository.toggleNotification(false)
+        debugDataRepository.setNotification(false)
 
         // Then
-        debugDataRepository.debugSettings.test {
+        debugDataRepository.settings.test {
             val settings = awaitItem()
             assertFalse(settings.showNotification)
             cancelAndIgnoreRemainingEvents()
@@ -218,10 +218,10 @@ class DebugDataRepositoryTest {
         val initialMessageCount = remoteDebugDataSource.getMessagesSize()
 
         // When - Enable auto activity
-        debugDataRepository.toggleAutoActivity(true)
+        debugDataRepository.setAutoActivity(true)
 
         // Then - Verify the setting is enabled
-        debugDataRepository.debugSettings.test {
+        debugDataRepository.settings.test {
             val settings = awaitItem()
             assertTrue(settings.autoActivity, "Auto activity should be enabled")
             cancelAndIgnoreRemainingEvents()
@@ -265,13 +265,13 @@ class DebugDataRepositoryTest {
         val testChat = DebugTestData.createTestChat()
         remoteDebugDataSource.addChat(testChat)
 
-        debugDataRepository.toggleAutoActivity(true)
+        debugDataRepository.setAutoActivity(true)
         advanceTimeBy(6000L) // Trigger first message
 
         val initialMessageCount = remoteDebugDataSource.getMessagesSize()
 
         // When - Disable auto activity
-        debugDataRepository.toggleAutoActivity(false)
+        debugDataRepository.setAutoActivity(false)
         advanceTimeBy(10000L)
 
         // Then - No more messages should be generated after disabling
@@ -282,13 +282,13 @@ class DebugDataRepositoryTest {
     fun `regenerateData updates last generation timestamp`() = testScope.runTest {
         // Given - Get initial timestamp
         val initialLastGeneration =
-            debugDataRepository.debugSettings.first().lastGenerationTimestamp
+            debugDataRepository.settings.first().lastGenerationTimestamp
 
         // When
         debugDataRepository.regenerateData()
 
         // Then
-        debugDataRepository.debugSettings.test {
+        debugDataRepository.settings.test {
             val settings = awaitItem()
             assertTrue(
                 settings.lastGenerationTimestamp != initialLastGeneration,
@@ -317,7 +317,7 @@ class DebugDataRepositoryTest {
         assertEquals(scenario.chatCount, remoteDebugDataSource.getChats().size)
 
         // Verify final state
-        debugDataRepository.debugSettings.test {
+        debugDataRepository.settings.test {
             val settings = awaitItem()
             assertEquals(scenario, settings.scenario)
             assertEquals(scenario.chatCount, settings.scenario.chatCount)
@@ -467,7 +467,7 @@ class DebugDataRepositoryTest {
         }
 
         // Verify settings were updated correctly
-        debugDataRepository.debugSettings.test {
+        debugDataRepository.settings.test {
             val settings = awaitItem()
             assertEquals(scenario, settings.scenario)
             assertNotNull(settings.lastGenerationTimestamp) { "Should record generation timestamp" }

@@ -67,7 +67,7 @@ class DebugDataRepositoryTest {
         testScope = TestScope(StandardTestDispatcher())
         logger = TrackingTestLogger()
 
-        debugDataRepository = DebugDataRepository(
+        debugDataRepository = DebugDataRepositoryImpl(
             dataStore = dataStore,
             localDebugDataSource = localDebugDataSource,
             localDataSources = localDataSources,
@@ -432,7 +432,7 @@ class DebugDataRepositoryTest {
         }
 
         // Recreate repository with the spy
-        debugDataRepository = DebugDataRepository(
+        debugDataRepository = DebugDataRepositoryImpl(
             dataStore = dataStore,
             localDebugDataSource = localDebugDataSource,
             localDataSources = localDataSources,

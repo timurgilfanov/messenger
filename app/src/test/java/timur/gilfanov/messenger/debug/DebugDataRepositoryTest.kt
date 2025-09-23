@@ -11,8 +11,10 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -40,7 +42,7 @@ class DebugDataRepositoryTest {
     private lateinit var dataStore: DebugTestData.FakeDataStore
 
     private lateinit var localDebugDataSource: LocalDebugDataSourcesDecorator
-    private lateinit var remoteDebugDataSource: RemoteDebugDataSource
+    private lateinit var remoteDebugDataSource: FakeRemoteDebugDataSource
     private lateinit var sampleDataProvider: SampleDataProviderDecorator
     private lateinit var testScope: TestScope
     private lateinit var logger: TrackingTestLogger
@@ -166,7 +168,7 @@ class DebugDataRepositoryTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `auto activity starts when enabled via settings`() = testScope.runTest {
+    fun `auto activity add messages when enabled via settings`() = testScope.runTest {
         // Given - Setup chats for simulation
         val testChat = DebugTestData.createTestChat()
         remoteDebugDataSource.addChat(testChat)
@@ -181,8 +183,19 @@ class DebugDataRepositoryTest {
             assertTrue(settings.autoActivity, "Auto activity should be enabled")
         }
 
-        // Note: We can't reliably test message generation timing in this test
-        // because backgroundScope runs independently of test time control
+        remoteDebugDataSource.messageAddedCount.test {
+            val initial = awaitItem()
+            assertEquals(0, initial)
+            assertEquals(initialMessageCount, remoteDebugDataSource.getMessagesSize())
+
+            val first = awaitItem()
+            assertEquals(1, first)
+            assertEquals(initialMessageCount + 1, remoteDebugDataSource.getMessagesSize())
+
+            val second = awaitItem()
+            assertEquals(2, second)
+            assertEquals(initialMessageCount + 2, remoteDebugDataSource.getMessagesSize())
+        }
     }
 
     @Test
@@ -283,6 +296,8 @@ class DebugDataRepositoryTest {
         private val chats = mutableListOf<Chat>()
         private val messages = mutableListOf<Message>()
 
+        val messageAddedCount = MutableStateFlow(0)
+
         override fun clearData() {
             wasClearServerDataCalled = true
             chats.clear()
@@ -295,6 +310,7 @@ class DebugDataRepositoryTest {
 
         override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
             messages.add(message)
+            messageAddedCount.update { it + 1 }
             return ResultWithError.Success(Unit)
         }
 

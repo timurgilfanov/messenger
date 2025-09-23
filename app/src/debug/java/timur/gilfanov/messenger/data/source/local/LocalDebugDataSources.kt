@@ -10,4 +10,5 @@ interface LocalDebugDataSources :
     LocalSyncDataSource,
     LocalDebugDataSource {
     fun getChat(chatId: ChatId): ResultWithError<Chat, LocalDataSourceError>
+    fun getMessagesSize(): Int
 }

@@ -332,4 +332,6 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
     } catch (e: Exception) {
         ResultWithError.Failure(LocalUpdateSettingsError.TransformError(e))
     }
+
+    override fun getMessagesSize(): Int = chats.value.values.sumOf { it.messages.size }
 }

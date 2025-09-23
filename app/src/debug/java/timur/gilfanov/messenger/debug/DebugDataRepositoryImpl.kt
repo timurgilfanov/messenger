@@ -313,5 +313,5 @@ private sealed interface SimulateMessageError {
         val error: timur.gilfanov.messenger.data.source.remote.AddMessageError,
     ) : SimulateMessageError
 
-    object NoChatsAvailable : SimulateMessageError
+    data object NoChatsAvailable : SimulateMessageError
 }

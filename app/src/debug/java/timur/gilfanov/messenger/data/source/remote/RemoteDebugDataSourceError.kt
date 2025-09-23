@@ -3,12 +3,12 @@ package timur.gilfanov.messenger.data.source.remote
 import kotlin.time.Duration
 
 sealed interface RemoteDebugDataSourceError {
-    object NetworkNotAvailable : RemoteDebugDataSourceError
-    object ServerUnreachable : RemoteDebugDataSourceError
-    object ServerError : RemoteDebugDataSourceError
-    object Unauthorized : RemoteDebugDataSourceError
+    data object NetworkNotAvailable : RemoteDebugDataSourceError
+    data object ServerUnreachable : RemoteDebugDataSourceError
+    data object ServerError : RemoteDebugDataSourceError
+    data object Unauthorized : RemoteDebugDataSourceError
     data class CooldownActive(val remaining: Duration) : RemoteDebugDataSourceError
-    object RateLimitExceeded : RemoteDebugDataSourceError
+    data object RateLimitExceeded : RemoteDebugDataSourceError
 }
 sealed interface GetChatsError {
     data class RemoteError(val error: RemoteDebugDataSourceError) : GetChatsError

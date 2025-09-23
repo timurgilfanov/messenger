@@ -127,11 +127,6 @@ class DebugDataRepositoryImpl @Inject constructor(
         return ResultWithError.Success(Unit)
     }
 
-    private fun LocalUpdateSettingsError.toRepositoryError(): UpdateSettingsError = when (this) {
-        is LocalUpdateSettingsError.TransformError -> UpdateSettingsError.TransformError(e)
-        is LocalUpdateSettingsError.WriteError -> UpdateSettingsError.WriteError(e)
-    }
-
     @Suppress("TooGenericExceptionCaught") // TODO handle errors in remote data source
     private fun populateRemoteDataSource(
         chats: List<Chat>,
@@ -292,4 +287,9 @@ class DebugDataRepositoryImpl @Inject constructor(
 
         return chat.copy(messages = fixedMessages.toPersistentList())
     }
+}
+
+private fun LocalUpdateSettingsError.toRepositoryError(): UpdateSettingsError = when (this) {
+    is LocalUpdateSettingsError.TransformError -> UpdateSettingsError.TransformError(e)
+    is LocalUpdateSettingsError.WriteError -> UpdateSettingsError.WriteError(e)
 }

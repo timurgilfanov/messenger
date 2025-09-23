@@ -7,7 +7,6 @@ import javax.inject.Singleton
 import kotlin.random.Random
 import kotlin.time.Clock
 import kotlinx.collections.immutable.toPersistentList
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -237,17 +236,9 @@ class DebugDataRepositoryImpl @Inject constructor(
         logger.d(TAG, "Starting auto-activity simulation")
         autoActivityJob = coroutineScope.launch {
             while (isActive) {
-                try {
-                    // Random delay between 5-15 seconds
-                    delay(Random.nextLong(AUTO_ACTIVITY_MIN_DELAY_MS, AUTO_ACTIVITY_MAX_DELAY_MS))
-                    simulateNewMessage()
-                } catch (e: CancellationException) {
-                    throw e // Re-throw cancellation
-                } catch (e: IllegalStateException) {
-                    logger.w(TAG, "Error in auto-activity simulation - illegal state", e)
-                } catch (e: IllegalArgumentException) {
-                    logger.w(TAG, "Error in auto-activity simulation - invalid arguments", e)
-                }
+                // Random delay between 5-15 seconds
+                delay(Random.nextLong(AUTO_ACTIVITY_MIN_DELAY_MS, AUTO_ACTIVITY_MAX_DELAY_MS))
+                simulateNewMessage()
             }
         }
     }
@@ -258,23 +249,35 @@ class DebugDataRepositoryImpl @Inject constructor(
         logger.d(TAG, "Stopped auto-activity simulation")
     }
 
-    private fun simulateNewMessage() {
-        try {
-            // Get a random existing chat and add a message to it
-            val currentChats = remoteDebugDataSource.getChats()
-            if (currentChats.isNotEmpty()) {
-                val randomChat = currentChats.random()
-                val newMessage = sampleDataProvider.generateSingleMessage(randomChat)
+    /**
+     * Get a random existing chat and add a message to it
+     */
+    private fun simulateNewMessage(): ResultWithError<Unit, SimulateMessageError> {
+        val currentChats = remoteDebugDataSource.getChats().let { result ->
+            when (result) {
+                is ResultWithError.Failure -> {
+                    logger.w(TAG, "Failed to fetch chats for auto-activity: ${result.error}")
+                    return ResultWithError.Failure(SimulateMessageError.GetChatsError(result.error))
+                }
 
-                logger.d(TAG, "Simulating new message in chat: ${randomChat.name}")
-                remoteDebugDataSource.addMessage(newMessage)
+                is ResultWithError.Success -> result.data
             }
-        } catch (e: CancellationException) {
-            throw e // Re-throw cancellation
-        } catch (e: IllegalStateException) {
-            logger.w(TAG, "Failed to simulate new message - illegal state", e)
-        } catch (e: IllegalArgumentException) {
-            logger.w(TAG, "Failed to simulate new message - invalid arguments", e)
+        }
+        return if (currentChats.isNotEmpty()) {
+            val randomChat = currentChats.random()
+            val newMessage = sampleDataProvider.generateSingleMessage(randomChat)
+
+            logger.d(TAG, "Simulating new message in chat: ${randomChat.name}")
+            val result = remoteDebugDataSource.addMessage(newMessage)
+            if (result is ResultWithError.Failure) {
+                logger.w(TAG, "Failed to add simulated message: ${result.error}")
+                ResultWithError.Failure(SimulateMessageError.AddMessageError(result.error))
+            } else {
+                ResultWithError.Success(Unit)
+            }
+        } else {
+            logger.d(TAG, "No chats available for auto-activity simulation")
+            ResultWithError.Failure(SimulateMessageError.NoChatsAvailable)
         }
     }
 
@@ -300,4 +303,15 @@ class DebugDataRepositoryImpl @Inject constructor(
 private fun LocalUpdateSettingsError.toRepositoryError(): UpdateSettingsError = when (this) {
     is LocalUpdateSettingsError.TransformError -> UpdateSettingsError.TransformError(e)
     is LocalUpdateSettingsError.WriteError -> UpdateSettingsError.WriteError(e)
+}
+
+private sealed interface SimulateMessageError {
+    data class GetChatsError(val error: timur.gilfanov.messenger.data.source.remote.GetChatsError) :
+        SimulateMessageError
+
+    data class AddMessageError(
+        val error: timur.gilfanov.messenger.data.source.remote.AddMessageError,
+    ) : SimulateMessageError
+
+    object NoChatsAvailable : SimulateMessageError
 }

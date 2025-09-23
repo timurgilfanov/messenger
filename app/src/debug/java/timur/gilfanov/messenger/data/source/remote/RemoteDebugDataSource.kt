@@ -33,13 +33,13 @@ interface RemoteDebugDataSource {
      * Used for populating chats with debug messages.
      * This bypasses normal message sending flows and directly updates server state.
      */
-    fun addMessage(message: Message)
+    fun addMessage(message: Message): ResultWithError<Unit, AddMessageError>
 
     /**
      * Gets the current list of chats from the server (fake implementation).
      * Used for debug operations like auto-activity simulation.
      */
-    fun getChats(): ImmutableList<Chat>
+    fun getChats(): ResultWithError<ImmutableList<Chat>, GetChatsError>
 
     fun getMessagesSize(): Int
 

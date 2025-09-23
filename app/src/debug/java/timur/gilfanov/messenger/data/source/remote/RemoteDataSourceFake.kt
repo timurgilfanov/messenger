@@ -432,7 +432,7 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
-    override fun addMessage(message: Message) {
+    override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
         val chatId = message.recipient
 
         serverState.update { state ->
@@ -449,6 +449,7 @@ class RemoteDataSourceFake @Inject constructor() :
                 error("Trying to add message to non-existing chat: $chatId")
             }
         }
+        return ResultWithError.Success(Unit)
     }
 
     fun deleteMessageFromServerChat(messageId: MessageId) {
@@ -545,7 +546,8 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
-    override fun getChats(): ImmutableList<Chat> = serverState.value.chats.values.toImmutableList()
+    override fun getChats(): ResultWithError<ImmutableList<Chat>, GetChatsError> =
+        ResultWithError.Success(serverState.value.chats.values.toImmutableList())
 
     override fun getMessagesSize(): Int = serverState.value.chats.values.sumOf { it.messages.size }
 }

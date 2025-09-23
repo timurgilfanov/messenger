@@ -309,79 +309,82 @@ class DebugDataRepositoryTest {
 
     // Regression test for sync integration
     @Test
-    fun `initializeWithScenario generates data that syncs correctly`() = testScope.runTest {
-        // Given - Create a mock sync flow to verify the generated data can be synced
-        val generatedChats = mutableListOf<Chat>()
+    fun `initializeWithScenario add chats to remote data source with chat ID as recepient`() =
+        testScope.runTest {
+            // Given - Create a mock sync flow to verify the generated data can be synced
+            val generatedChats = mutableListOf<Chat>()
 
-        // Spy on the sync behavior by capturing what's added to remote
-        val spyRemoteDebugDataSource = object : RemoteDebugDataSource {
-            override fun clearData() {
-                // No-op for test
+            // Spy on the sync behavior by capturing what's added to remote
+            val spyRemoteDebugDataSource = object : RemoteDebugDataSource {
+                override fun clearData() {
+                    // No-op for test
+                }
+
+                override fun addChat(chat: Chat) {
+                    generatedChats.add(chat)
+                }
+
+                override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
+                    error("Not needed for this test")
+                }
+
+                override fun getChats(): ResultWithError<ImmutableList<Chat>, GetChatsError> {
+                    error("Not needed for this test")
+                }
+
+                override fun getMessagesSize(): Int {
+                    error("Not needed for this test")
+                }
+
+                override val chatPreviews:
+                    Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> = emptyFlow()
             }
 
-            override fun addChat(chat: Chat) {
-                generatedChats.add(chat)
+            // Recreate repository with the spy
+            debugDataRepository = DebugDataRepositoryImpl(
+                localDebugDataSource = localDebugDataSource,
+                remoteDebugDataSource = spyRemoteDebugDataSource,
+                sampleDataProvider = sampleDataProvider,
+                coroutineScope = testScope.backgroundScope,
+                logger = logger,
+            )
+
+            // When - Initialize with scenario
+            val scenario = DataScenario.DEMO
+            debugDataRepository.initializeWithScenario(scenario)
+
+            // Then - Verify data was generated with proper sync-compatible format
+            assertTrue(generatedChats.isNotEmpty(), "Should generate chats")
+            assertEquals(scenario.chatCount, generatedChats.size)
+
+            // Verify the generated chats have valid structure for sync
+            generatedChats.forEach { chat ->
+                // Chat should have valid ID
+                assertTrue(chat.id.id.toString().isNotEmpty())
+
+                // Messages should have correct recipient (this was the original bug)
+                chat.messages.forEach { message ->
+                    assertEquals(
+                        chat.id,
+                        message.recipient,
+                        "Message recipient should match chat ID for sync to work correctly",
+                    )
+                }
+
+                // Should have participants
+                assertTrue(chat.participants.isNotEmpty())
+
+                // Should have messages (DEMO scenario should have conversations)
+                assertTrue(chat.messages.isNotEmpty())
             }
 
-            override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
-                error("Not needed for this test")
+            // Verify settings were updated correctly
+            debugDataRepository.settings.test {
+                val settings = awaitItem()
+                assertEquals(scenario, settings.scenario)
+                assertNotNull(settings.lastGenerationTimestamp) {
+                    "Should record generation timestamp"
+                }
             }
-
-            override fun getChats(): ResultWithError<ImmutableList<Chat>, GetChatsError> {
-                error("Not needed for this test")
-            }
-
-            override fun getMessagesSize(): Int {
-                error("Not needed for this test")
-            }
-
-            override val chatPreviews:
-                Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> = emptyFlow()
         }
-
-        // Recreate repository with the spy
-        debugDataRepository = DebugDataRepositoryImpl(
-            localDebugDataSource = localDebugDataSource,
-            remoteDebugDataSource = spyRemoteDebugDataSource,
-            sampleDataProvider = sampleDataProvider,
-            coroutineScope = testScope.backgroundScope,
-            logger = logger,
-        )
-
-        // When - Initialize with scenario
-        val scenario = DataScenario.DEMO
-        debugDataRepository.initializeWithScenario(scenario)
-
-        // Then - Verify data was generated with proper sync-compatible format
-        assertTrue(generatedChats.isNotEmpty(), "Should generate chats")
-        assertEquals(scenario.chatCount, generatedChats.size)
-
-        // Verify the generated chats have valid structure for sync
-        generatedChats.forEach { chat ->
-            // Chat should have valid ID
-            assertTrue(chat.id.id.toString().isNotEmpty())
-
-            // Messages should have correct recipient (this was the original bug)
-            chat.messages.forEach { message ->
-                assertEquals(
-                    chat.id,
-                    message.recipient,
-                    "Message recipient should match chat ID for sync to work correctly",
-                )
-            }
-
-            // Should have participants
-            assertTrue(chat.participants.isNotEmpty())
-
-            // Should have messages (DEMO scenario should have conversations)
-            assertTrue(chat.messages.isNotEmpty())
-        }
-
-        // Verify settings were updated correctly
-        debugDataRepository.settings.test {
-            val settings = awaitItem()
-            assertEquals(scenario, settings.scenario)
-            assertNotNull(settings.lastGenerationTimestamp) { "Should record generation timestamp" }
-        }
-    }
 }

@@ -1,7 +1,5 @@
 package timur.gilfanov.messenger.data.source.local
 
-import androidx.datastore.core.IOException
-
 sealed interface LocalDataSourceError {
     // Entity-specific errors
     data object ChatNotFound : LocalDataSourceError
@@ -29,8 +27,4 @@ sealed interface LocalDataSourceError {
 
     // Fallback
     data class UnknownError(val cause: Throwable) : LocalDataSourceError
-
-    // Settings-specific errors
-    data class SettingsWriteError(val e: IOException) : LocalDataSourceError
-    data class SettingsTransformError(val e: Exception) : LocalDataSourceError
 }

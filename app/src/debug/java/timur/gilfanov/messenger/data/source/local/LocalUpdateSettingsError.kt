@@ -6,8 +6,3 @@ sealed interface LocalUpdateSettingsError {
     data class WriteError(val e: IOException) : LocalUpdateSettingsError
     data class TransformError(val e: Exception) : LocalUpdateSettingsError
 }
-
-sealed interface LocalGetSettingsError {
-    object NoData : LocalGetSettingsError
-    object ReadError : LocalGetSettingsError
-}

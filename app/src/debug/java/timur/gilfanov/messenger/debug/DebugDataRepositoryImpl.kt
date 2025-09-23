@@ -20,7 +20,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
-import timur.gilfanov.messenger.data.source.local.LocalGetSettingsError
 import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
 import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -131,11 +130,6 @@ class DebugDataRepositoryImpl @Inject constructor(
     private fun LocalUpdateSettingsError.toRepositoryError(): UpdateSettingsError = when (this) {
         is LocalUpdateSettingsError.TransformError -> UpdateSettingsError.TransformError(e)
         is LocalUpdateSettingsError.WriteError -> UpdateSettingsError.WriteError(e)
-    }
-
-    private fun LocalGetSettingsError.toRepositoryError(): GetSettingsError = when (this) {
-        is LocalGetSettingsError.ReadError -> GetSettingsError.ReadError
-        is LocalGetSettingsError.NoData -> GetSettingsError.NoData
     }
 
     @Suppress("TooGenericExceptionCaught") // TODO handle errors in remote data source

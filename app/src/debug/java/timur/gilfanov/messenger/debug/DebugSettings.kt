@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.debug
 
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
@@ -42,7 +43,7 @@ data class DebugSettings(
     /**
      * Write these settings to DataStore Preferences
      */
-    fun toPreferences(preferences: androidx.datastore.preferences.core.MutablePreferences) {
+    fun toPreferences(preferences: MutablePreferences) {
         preferences[DebugPreferences.USE_SAMPLE_DATA] = useSampleData
         preferences[DebugPreferences.DATA_SCENARIO] = scenario.name
         preferences[DebugPreferences.AUTO_ACTIVITY_ENABLED] = autoActivity

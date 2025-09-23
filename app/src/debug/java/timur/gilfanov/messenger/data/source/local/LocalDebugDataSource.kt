@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.data.source.local
 
+import kotlinx.coroutines.flow.Flow
+import timur.gilfanov.messenger.debug.DebugSettings
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 
 /**
@@ -26,4 +28,10 @@ interface LocalDebugDataSource {
      * Used when regenerating debug data to ensure sync starts fresh.
      */
     suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalDataSourceError>
+
+    val settings: Flow<DebugSettings>
+
+    suspend fun updateSettings(
+        transform: (DebugSettings) -> DebugSettings,
+    ): ResultWithError<Unit, LocalUpdateSettingsError>
 }

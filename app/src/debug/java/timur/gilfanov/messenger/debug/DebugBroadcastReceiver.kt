@@ -5,13 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import dagger.hilt.android.AndroidEntryPoint
-import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Named
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.util.Logger
 
 /**
@@ -65,38 +65,23 @@ class DebugBroadcastReceiver : BroadcastReceiver() {
         // Use goAsync() for background operations in broadcast receiver
         val pendingResult = goAsync()
 
-        try {
-            coroutineScope.launch {
-                try {
-                    logger.d(TAG, "Regenerating debug data...")
-                    debugDataRepository.regenerateData()
-
-                    // Update notification with current scenario
-                    val currentSettings = debugDataRepository.settings.first()
-                    debugNotificationService.updateNotification(currentSettings.scenario)
-
-                    logger.d(TAG, "Debug data regeneration completed")
-                } catch (e: IOException) {
-                    logger.e(TAG, "Failed to regenerate debug data - IO error", e)
-                } catch (e: CancellationException) {
-                    throw e // Re-throw cancellation
-                } catch (e: SecurityException) {
-                    logger.e(TAG, "Failed to regenerate debug data - permission denied", e)
-                } catch (e: IllegalArgumentException) {
-                    logger.e(TAG, "Failed to regenerate debug data - invalid arguments", e)
-                } finally {
-                    pendingResult.finish()
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                logger.d(TAG, "Regenerating debug data...")
+                when (val result = debugDataRepository.regenerateData()) {
+                    is ResultWithError.Success -> {
+                        // Update notification with current scenario
+                        val currentSettings = debugDataRepository.settings.first()
+                        debugNotificationService.updateNotification(currentSettings.scenario)
+                        logger.d(TAG, "Debug data regeneration completed")
+                    }
+                    is ResultWithError.Failure -> {
+                        logger.w(TAG, "Debug data regeneration failed: ${result.error}")
+                    }
                 }
+            } finally {
+                pendingResult.finish()
             }
-        } catch (e: IOException) {
-            logger.e(TAG, "Error handling regenerate data - IO error", e)
-            pendingResult.finish()
-        } catch (e: SecurityException) {
-            logger.e(TAG, "Error handling regenerate data - permission denied", e)
-            pendingResult.finish()
-        } catch (e: IllegalArgumentException) {
-            logger.e(TAG, "Error handling regenerate data - invalid arguments", e)
-            pendingResult.finish()
         }
     }
 }

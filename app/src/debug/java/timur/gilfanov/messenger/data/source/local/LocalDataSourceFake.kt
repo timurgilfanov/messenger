@@ -9,6 +9,7 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
@@ -16,6 +17,7 @@ import timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDelta
 import timur.gilfanov.messenger.data.source.remote.ChatListDelta
 import timur.gilfanov.messenger.data.source.remote.ChatUpdatedDelta
+import timur.gilfanov.messenger.debug.DebugSettings
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -339,5 +341,22 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         logger.d(TAG, "Clearing sync timestamp")
         syncTimestamp.update { null }
         return ResultWithError.Success(Unit)
+    }
+
+    private val _settings = MutableStateFlow(DebugSettings())
+
+    override val settings: Flow<DebugSettings>
+        get() = _settings.asStateFlow()
+
+    @Suppress("TooGenericExceptionCaught") // It's a test fake
+    override suspend fun updateSettings(
+        transform: (DebugSettings) -> DebugSettings,
+    ): ResultWithError<Unit, LocalUpdateSettingsError> = try {
+        _settings.update { currentSettings ->
+            transform(currentSettings)
+        }
+        ResultWithError.Success(Unit)
+    } catch (e: Exception) {
+        ResultWithError.Failure(LocalUpdateSettingsError.TransformError(e))
     }
 }

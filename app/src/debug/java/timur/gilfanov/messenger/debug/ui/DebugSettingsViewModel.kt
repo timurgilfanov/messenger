@@ -17,6 +17,7 @@ import timur.gilfanov.messenger.debug.DataScenario
 import timur.gilfanov.messenger.debug.DebugDataRepository
 import timur.gilfanov.messenger.debug.DebugNotificationService
 import timur.gilfanov.messenger.debug.DebugSettings
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.util.Logger
 
 data class DebugSettingsUiState(
@@ -148,17 +149,12 @@ class DebugSettingsViewModel @Inject constructor(
      */
     @OptIn(OrbitExperimental::class)
     fun toggleAutoActivity(enabled: Boolean) = intent {
-        try {
-            logger.d(TAG, "Toggling auto-activity: $enabled")
-            debugDataRepository.setAutoActivity(enabled)
-        } catch (e: IOException) {
-            logger.e(TAG, "Failed to toggle auto-activity - IO error", e)
-        } catch (e: CancellationException) {
-            throw e // Re-throw cancellation
-        } catch (e: SecurityException) {
-            logger.e(TAG, "Failed to toggle auto-activity - permission denied", e)
-        } catch (e: IllegalArgumentException) {
-            logger.e(TAG, "Failed to toggle auto-activity - invalid arguments", e)
+        logger.d(TAG, "Toggling auto-activity: $enabled")
+        val result = debugDataRepository.updateSettings { settings ->
+            settings.copy(autoActivity = enabled)
+        }
+        if (result is ResultWithError.Failure) {
+            logger.e(TAG, "Failed to update auto-activity setting: ${result.error}")
         }
     }
 
@@ -167,26 +163,22 @@ class DebugSettingsViewModel @Inject constructor(
      */
     @OptIn(OrbitExperimental::class)
     fun toggleNotification(show: Boolean) = intent {
-        try {
-            logger.d(TAG, "Toggling notification visibility: $show")
-            debugDataRepository.setNotification(show)
+        logger.d(TAG, "Toggling notification visibility: $show")
+        val result = debugDataRepository.updateSettings { settings ->
+            settings.copy(showNotification = show)
+        }
+        if (result is ResultWithError.Failure) {
+            logger.e(TAG, "Failed to update notification setting: ${result.error}")
+            return@intent
+        }
 
-            if (show) {
-                val currentSettings = state.settings
-                debugNotificationService.showPersistentDebugNotification(
-                    currentSettings.scenario,
-                )
-            } else {
-                debugNotificationService.hideDebugNotification()
-            }
-        } catch (e: IOException) {
-            logger.e(TAG, "Failed to toggle notification - IO error", e)
-        } catch (e: CancellationException) {
-            throw e // Re-throw cancellation
-        } catch (e: SecurityException) {
-            logger.e(TAG, "Failed to toggle notification - permission denied", e)
-        } catch (e: IllegalArgumentException) {
-            logger.e(TAG, "Failed to toggle notification - invalid arguments", e)
+        if (show) {
+            val currentSettings = state.settings
+            debugNotificationService.showPersistentDebugNotification(
+                currentSettings.scenario,
+            )
+        } else {
+            debugNotificationService.hideDebugNotification()
         }
     }
 }

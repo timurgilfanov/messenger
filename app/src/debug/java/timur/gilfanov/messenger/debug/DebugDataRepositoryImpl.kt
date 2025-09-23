@@ -1,8 +1,5 @@
 package timur.gilfanov.messenger.debug
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -21,20 +18,20 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import timur.gilfanov.messenger.data.source.local.LocalDataSources
+import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
+import timur.gilfanov.messenger.data.source.local.LocalGetSettingsError
+import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
 import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSource
-import timur.gilfanov.messenger.debug.datastore.DebugPreferences
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.util.Logger
 
-@Suppress("TooManyFunctions", "LongParameterList", "TooGenericExceptionCaught") // Debug code
+@Suppress("TooManyFunctions", "LongParameterList") // Debug code
 @Singleton
 class DebugDataRepositoryImpl @Inject constructor(
-    @param:Named("debug") private val dataStore: DataStore<Preferences>,
     private val localDebugDataSource: LocalDebugDataSource,
-    private val localDataSources: LocalDataSources,
     private val remoteDebugDataSource: RemoteDebugDataSource,
     private val sampleDataProvider: SampleDataProvider,
     @param:Named("debug") private val coroutineScope: CoroutineScope,
@@ -51,9 +48,7 @@ class DebugDataRepositoryImpl @Inject constructor(
     /**
      * Flow of current debug settings
      */
-    override val settings: Flow<DebugSettings> = dataStore.data.map { preferences ->
-        DebugSettings.fromPreferences(preferences)
-    }
+    override val settings: Flow<DebugSettings> = localDebugDataSource.settings
 
     init {
         // Monitor auto-activity setting and start/stop simulation accordingly
@@ -69,147 +64,175 @@ class DebugDataRepositoryImpl @Inject constructor(
     /**
      * Initialize debug data with the specified scenario
      */
-    override suspend fun initializeWithScenario(scenario: DataScenario) {
+    override suspend fun initializeWithScenario(
+        scenario: DataScenario,
+    ): ResultWithError<Unit, RegenerateDataError> {
         logger.d(TAG, "Initializing with scenario: ${scenario.name}")
-
-        // Update settings with the new scenario
-        updateSettings { current ->
-            current.copy(scenario = scenario)
-        }
-
-        // Generate and populate data
-        regenerateData(scenario)
+        return regenerateData(scenario)
     }
 
     /**
      * Regenerate data using current scenario
      */
-    override suspend fun regenerateData() {
+    override suspend fun regenerateData(): ResultWithError<Unit, RegenerateDataError> {
         val currentSettings = settings.first()
-        regenerateData(currentSettings.scenario)
+        return regenerateData(currentSettings.scenario)
     }
 
     /**
      * Regenerate data using specified scenario
      */
-    private suspend fun regenerateData(scenario: DataScenario) {
+    @Suppress("ReturnCount") // Early returns for error handling
+    private suspend fun regenerateData(
+        scenario: DataScenario,
+    ): ResultWithError<Unit, RegenerateDataError> {
         logger.d(TAG, "Regenerating data for scenario: ${scenario.name}")
 
-        // Get current sync timestamp to ensure generated data is newer
-        val lastSyncTimestamp = when (val result = localDataSources.sync.getLastSyncTimestamp()) {
-            is ResultWithError.Success -> result.data
-            is ResultWithError.Failure -> {
-                logger.w(TAG, "Failed to get last sync timestamp: ${result.error}, using epoch")
-                null
+        clearData().let { result ->
+            if (result is ResultWithError.Failure) {
+                logger.w(TAG, "Data clearing encountered issues: ${result.error}")
+                return ResultWithError.Failure(RegenerateDataError(clearData = result.error))
             }
         }
-        logger.d(TAG, "Current sync timestamp: $lastSyncTimestamp")
 
-        // Clear existing data from both local and remote sources
-        logger.d(TAG, "Clearing local database cache")
-        try {
-            localDebugDataSource.deleteAllChats()
-            localDebugDataSource.deleteAllMessages()
-            localDebugDataSource.clearSyncTimestamp()
-            logger.d(TAG, "Local cache cleared successfully")
-        } catch (e: Exception) {
-            logger.w(TAG, "Failed to clear local cache", e)
-            // Continue anyway - the sync will overwrite with new data
+        val chats = generateData(scenario).let { result ->
+            if (result is ResultWithError.Failure) {
+                logger.w(TAG, "Data generation failed: ${result.error}")
+                return ResultWithError.Failure(RegenerateDataError(generateData = result.error))
+            }
+            (result as ResultWithError.Success).data
         }
 
-        logger.d(TAG, "Clearing remote server data")
-        remoteDebugDataSource.clearData()
-
-        // Generate new data
-        val config = scenario.toConfig()
-        val chats = sampleDataProvider.generateChats(config)
-
-        logger.d(TAG, "Generated ${chats.size} chats with scenario ${scenario.name}")
-
-        // Populate server with new data
-        chats.forEach { chat ->
-            // Fix the recipient field in messages to match the chat ID
-            val fixedChat = fixMessageRecipients(chat)
-            remoteDebugDataSource.addChat(fixedChat)
+        populateRemoteDataSource(chats).let { result ->
+            if (result is ResultWithError.Failure) {
+                logger.w(TAG, "Populating remote data source failed: ${result.error}")
+                return ResultWithError.Failure(RegenerateDataError(populateRemote = result.error))
+            }
         }
 
-        // Update generation timestamp
-        dataStore.edit { preferences ->
-            preferences[DebugPreferences.LAST_DATA_GENERATION] =
-                Clock.System.now().toEpochMilliseconds()
-            preferences[DebugPreferences.LAST_USED_SCENARIO] = scenario.name
+        localDebugDataSource.updateSettings { settings ->
+            settings.copy(
+                scenario = scenario,
+                lastGenerationTimestamp = Clock.System.now(),
+            )
+        }.let { result ->
+            if (result is ResultWithError.Failure) {
+                logger.w(TAG, "Updating settings with new scenario failed: ${result.error}")
+                return ResultWithError.Failure(
+                    RegenerateDataError(updateSettings = result.error.toRepositoryError()),
+                )
+            }
         }
 
         logger.d(TAG, "Data generation complete - sync will refresh UI with new data")
+        return ResultWithError.Success(Unit)
+    }
+
+    private fun LocalUpdateSettingsError.toRepositoryError(): UpdateSettingsError = when (this) {
+        is LocalUpdateSettingsError.TransformError -> UpdateSettingsError.TransformError(e)
+        is LocalUpdateSettingsError.WriteError -> UpdateSettingsError.WriteError(e)
+    }
+
+    private fun LocalGetSettingsError.toRepositoryError(): GetSettingsError = when (this) {
+        is LocalGetSettingsError.ReadError -> GetSettingsError.ReadError
+        is LocalGetSettingsError.NoData -> GetSettingsError.NoData
+    }
+
+    @Suppress("TooGenericExceptionCaught") // TODO handle errors in remote data source
+    private fun populateRemoteDataSource(
+        chats: List<Chat>,
+    ): ResultWithError<Unit, PopulateRemoteError> = try {
+        chats.forEach { chat ->
+            val fixedChat = fixMessageRecipients(chat)
+            remoteDebugDataSource.addChat(fixedChat)
+        }
+        ResultWithError.Success(Unit)
+    } catch (e: Exception) {
+        ResultWithError.Failure(PopulateRemoteError(reason = e))
+    }
+
+    private fun generateData(
+        scenario: DataScenario,
+    ): ResultWithError<List<Chat>, GenerateDataError> {
+        val config = scenario.toConfig()
+        val chats = sampleDataProvider.generateChats(config)
+        return if (chats.isEmpty() && scenario != DataScenario.EMPTY) {
+            ResultWithError.Failure(GenerateDataError.NoChatsGenerated)
+        } else {
+            ResultWithError.Success(chats)
+        }
     }
 
     /**
      * Clear all data
      */
-    override suspend fun clearData() {
+    override suspend fun clearData(): ResultWithError<Unit, ClearDataError> {
         logger.d(TAG, "Clearing all debug data")
 
-        // Clear local database cache
         logger.d(TAG, "Clearing local database cache")
+        var operationsCounter = 0
+        val failedLocalOperations = mutableListOf<Pair<String, LocalDataSourceError>>()
+
+        operationsCounter++
+        localDebugDataSource.deleteAllChats().let { res ->
+            if (res is ResultWithError.Failure) {
+                logger.w(TAG, "Failed to delete chats: ${res.error}")
+                failedLocalOperations.add("deleteAllChats" to res.error)
+            }
+        }
+
+        operationsCounter++
+        localDebugDataSource.deleteAllMessages().let { res ->
+            if (res is ResultWithError.Failure) {
+                logger.w(TAG, "Failed to delete messages: ${res.error}")
+                failedLocalOperations.add("deleteAllMessages" to res.error)
+            }
+        }
+
+        // Not critical, but try to clear sync timestamp as well
+        operationsCounter++
+        localDebugDataSource.clearSyncTimestamp().let { res ->
+            if (res is ResultWithError.Failure) {
+                logger.w(TAG, "Failed to clear sync timestamp: ${res.error}")
+                failedLocalOperations.add("clearSyncTimestamp" to res.error)
+            }
+        }
+
+        val failedRemoteOperations = mutableListOf<Pair<String, Exception>>()
+        // Clear remote server data (should not fail in fake impl, but guard anyway)
+        operationsCounter++
+        @Suppress("TooGenericExceptionCaught") // TODO catch in remote data source
         try {
-            localDebugDataSource.deleteAllChats()
-            localDebugDataSource.deleteAllMessages()
-            localDebugDataSource.clearSyncTimestamp()
-            logger.d(TAG, "Local cache cleared successfully")
+            remoteDebugDataSource.clearData()
         } catch (e: Exception) {
-            logger.w(TAG, "Failed to clear local cache", e)
+            logger.w(TAG, "Failed to clear remote data: ${e.message}")
+            failedRemoteOperations.add("clearRemoteData" to e)
         }
 
-        // Clear remote server data
-        remoteDebugDataSource.clearData()
-
-        dataStore.edit { preferences ->
-            preferences[DebugPreferences.LAST_DATA_GENERATION] =
-                Clock.System.now().toEpochMilliseconds()
+        val failedOperations =
+            failedLocalOperations.map { it.first to it.second.toString() } +
+                failedRemoteOperations.map { it.first to it.second.toString() }
+        if (failedOperations.isNotEmpty()) {
+            return ResultWithError.Failure(
+                ClearDataError(
+                    partialSuccess = failedOperations.size != operationsCounter,
+                    failedOperations = failedOperations,
+                ),
+            )
         }
+        return ResultWithError.Success(Unit)
     }
 
     /**
      * Update debug settings
      */
-    override suspend fun updateSettings(transform: (DebugSettings) -> DebugSettings) {
-        dataStore.edit { preferences ->
-            val currentSettings = DebugSettings.fromPreferences(preferences)
-            val updatedSettings = transform(currentSettings)
-            updatedSettings.toPreferences(preferences)
+    override suspend fun updateSettings(
+        transform: (DebugSettings) -> DebugSettings,
+    ): ResultWithError<Unit, UpdateSettingsError> =
+        when (val result = localDebugDataSource.updateSettings(transform)) {
+            is ResultWithError.Success -> ResultWithError.Success(result.data)
+            is ResultWithError.Failure -> ResultWithError.Failure(result.error.toRepositoryError())
         }
-    }
-
-    /**
-     * Get saved scenario from preferences, if any
-     */
-    override suspend fun getScenario(): DataScenario? =
-        dataStore.data.first()[DebugPreferences.DATA_SCENARIO]?.let { scenarioName ->
-            try {
-                DataScenario.valueOf(scenarioName)
-            } catch (e: IllegalArgumentException) {
-                logger.w(TAG, "Invalid saved scenario: $scenarioName", e)
-                null
-            }
-        }
-
-    /**
-     * Toggle auto-activity feature
-     */
-    override suspend fun setAutoActivity(enabled: Boolean) {
-        updateSettings { current ->
-            current.copy(autoActivity = enabled)
-        }
-    }
-
-    /**
-     * Toggle debug notification visibility
-     */
-    override suspend fun setNotification(show: Boolean) {
-        updateSettings { current ->
-            current.copy(showNotification = show)
-        }
-    }
 
     private fun startAutoActivity() {
         stopAutoActivity() // Stop any existing activity
@@ -265,7 +288,7 @@ class DebugDataRepositoryImpl @Inject constructor(
     private fun fixMessageRecipients(chat: Chat): Chat {
         val fixedMessages = chat.messages.map { message ->
             when (message) {
-                is timur.gilfanov.messenger.domain.entity.message.TextMessage -> {
+                is TextMessage -> {
                     message.copy(recipient = chat.id)
                 }
                 // Add other message types here if needed

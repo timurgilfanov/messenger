@@ -2,13 +2,17 @@ package timur.gilfanov.messenger.data.source.local
 
 import android.database.sqlite.SQLiteException
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.room.withTransaction
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.datastore.SyncPreferences
+import timur.gilfanov.messenger.debug.DebugSettings
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.util.Logger
 
@@ -61,5 +65,25 @@ class LocalDebugDataSourceImpl @Inject constructor(
         ResultWithError.Success(Unit)
     } catch (e: SQLiteException) {
         ResultWithError.Failure(errorHandler.mapException(e))
+    }
+
+    override val settings: Flow<DebugSettings> = dataStore.data.map { preferences ->
+        DebugSettings.fromPreferences(preferences)
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    override suspend fun updateSettings(
+        transform: (DebugSettings) -> DebugSettings,
+    ): ResultWithError<Unit, LocalUpdateSettingsError> = try {
+        dataStore.edit { preferences ->
+            val currentSettings = DebugSettings.fromPreferences(preferences)
+            val updatedSettings = transform(currentSettings)
+            updatedSettings.toPreferences(preferences)
+        }
+        ResultWithError.Success(Unit)
+    } catch (e: IOException) {
+        ResultWithError.Failure(LocalUpdateSettingsError.WriteError(e))
+    } catch (e: Exception) {
+        ResultWithError.Failure(LocalUpdateSettingsError.TransformError(e))
     }
 }

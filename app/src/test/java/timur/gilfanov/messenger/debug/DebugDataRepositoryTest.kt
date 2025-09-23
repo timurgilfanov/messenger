@@ -39,7 +39,7 @@ class DebugDataRepositoryTest {
 
     private lateinit var dataStore: DebugTestData.FakeDataStore
 
-    private lateinit var localDebugDataSource: LocalDebugDataSource
+    private lateinit var localDebugDataSource: LocalDataSourceFake
     private lateinit var remoteDebugDataSource: RemoteDebugDataSource
     private lateinit var sampleDataProvider: SampleDataProvider
     private lateinit var testScope: TestScope
@@ -66,19 +66,36 @@ class DebugDataRepositoryTest {
     }
 
     @Test
-    fun `debugSettings flow emits correct initial settings`() = testScope.runTest {
-        // When
-        debugDataRepository.settings.test {
-            val settings = awaitItem()
+    fun `debugSettings have correct initial values and all values can be modified`() =
+        testScope.runTest {
+            // When
+            debugDataRepository.settings.test {
+                val settings = awaitItem()
+
+                // Then
+                assertEquals(DataScenario.STANDARD, settings.scenario)
+                assertFalse(settings.autoActivity)
+                assertTrue(settings.showNotification)
+                assertNull(settings.lastGenerationTimestamp)
+            }
+
+            // When
+            debugDataRepository.updateSettings { current ->
+                current.copy(
+                    scenario = DataScenario.DEMO,
+                    autoActivity = true,
+                    showNotification = false,
+                )
+            }
 
             // Then
-            assertEquals(DataScenario.STANDARD, settings.scenario)
-            assertFalse(settings.autoActivity)
-            assertTrue(settings.showNotification)
-            assertNull(settings.lastGenerationTimestamp)
-            cancelAndIgnoreRemainingEvents()
+            debugDataRepository.settings.test {
+                val settings = awaitItem()
+                assertEquals(DataScenario.DEMO, settings.scenario)
+                assertTrue(settings.autoActivity)
+                assertFalse(settings.showNotification)
+            }
         }
-    }
 
     @Test
     fun `initializeWithScenario clears data and generates new data`() = testScope.runTest {
@@ -98,7 +115,6 @@ class DebugDataRepositoryTest {
             val settings = awaitItem()
             assertEquals(scenario, settings.scenario)
             assertNotNull(settings.lastGenerationTimestamp)
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -124,31 +140,12 @@ class DebugDataRepositoryTest {
         debugDataRepository.clearData()
 
         // Then
-        // TODO import fake and test assertEquals(0, localDebugDataSource.getChats().size)
+        val localChats = localDebugDataSource.flowChatList().first()
+        assertIs<ResultWithError.Success<List<ChatPreview>, LocalDataSourceError>>(localChats)
+        assertEquals(0, localChats.data.size)
         val chats = remoteDebugDataSource.getChats()
         assertIs<ResultWithError.Success<ImmutableList<Chat>, GetChatsError>>(chats)
         assertEquals(0, chats.data.size)
-    }
-
-    @Test
-    fun `updateSettings modifies datastore preferences`() = testScope.runTest {
-        // When
-        debugDataRepository.updateSettings { current ->
-            current.copy(
-                scenario = DataScenario.DEMO,
-                autoActivity = true,
-                showNotification = false,
-            )
-        }
-
-        // Then
-        debugDataRepository.settings.test {
-            val settings = awaitItem()
-            assertEquals(DataScenario.DEMO, settings.scenario)
-            assertTrue(settings.autoActivity)
-            assertFalse(settings.showNotification)
-            cancelAndIgnoreRemainingEvents()
-        }
     }
 
     @Test
@@ -159,36 +156,12 @@ class DebugDataRepositoryTest {
         }
 
         // When
-        val savedScenario = debugDataRepository.settings.first().scenario
+        val settings = debugDataRepository.getSettings()
+        assertIs<ResultWithError.Success<DebugSettings, GetSettingsError>>(settings)
+        val savedScenario = settings.data.scenario
 
         // Then
         assertEquals(DataScenario.HEAVY, savedScenario)
-    }
-
-    @Test
-    fun `setAutoActivity updates settings and controls auto activity`() = testScope.runTest {
-        // When - Enable auto activity
-        debugDataRepository.updateSettings { settings -> settings.copy(autoActivity = true) }
-
-        // Then - Verify settings updated
-        debugDataRepository.settings.test {
-            val settings = awaitItem()
-            assertTrue(settings.autoActivity)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `setNotification updates notification setting`() = testScope.runTest {
-        // When
-        debugDataRepository.updateSettings { settings -> settings.copy(showNotification = false) }
-
-        // Then
-        debugDataRepository.settings.test {
-            val settings = awaitItem()
-            assertFalse(settings.showNotification)
-            cancelAndIgnoreRemainingEvents()
-        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -206,7 +179,6 @@ class DebugDataRepositoryTest {
         debugDataRepository.settings.test {
             val settings = awaitItem()
             assertTrue(settings.autoActivity, "Auto activity should be enabled")
-            cancelAndIgnoreRemainingEvents()
         }
 
         // Note: We can't reliably test message generation timing in this test
@@ -278,7 +250,6 @@ class DebugDataRepositoryTest {
                 settings.lastGenerationTimestamp != initialLastGeneration,
                 "Last generation should be updated after regenerating data",
             )
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -474,7 +445,6 @@ class DebugDataRepositoryTest {
             val settings = awaitItem()
             assertEquals(scenario, settings.scenario)
             assertNotNull(settings.lastGenerationTimestamp) { "Should record generation timestamp" }
-            cancelAndIgnoreRemainingEvents()
         }
     }
 }

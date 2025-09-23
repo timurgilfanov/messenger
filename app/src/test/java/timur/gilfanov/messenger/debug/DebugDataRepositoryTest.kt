@@ -39,7 +39,7 @@ class DebugDataRepositoryTest {
 
     private lateinit var dataStore: DebugTestData.FakeDataStore
 
-    private lateinit var localDebugDataSource: LocalDataSourceFake
+    private lateinit var localDebugDataSource: LocalDebugDataSourcesDecorator
     private lateinit var remoteDebugDataSource: RemoteDebugDataSource
     private lateinit var sampleDataProvider: SampleDataProviderDecorator
     private lateinit var testScope: TestScope
@@ -54,7 +54,7 @@ class DebugDataRepositoryTest {
         remoteDebugDataSource = FakeRemoteDebugDataSource()
         sampleDataProvider = SampleDataProviderDecorator(SampleDataProviderImpl())
         testScope = TestScope(StandardTestDispatcher())
-        localDebugDataSource = LocalDataSourceFake(logger)
+        localDebugDataSource = LocalDebugDataSourcesDecorator(LocalDataSourceFake(logger))
 
         debugDataRepository = DebugDataRepositoryImpl(
             localDebugDataSource = localDebugDataSource,

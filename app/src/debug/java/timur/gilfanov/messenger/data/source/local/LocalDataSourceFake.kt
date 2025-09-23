@@ -28,11 +28,7 @@ import timur.gilfanov.messenger.util.Logger
 
 @Singleton
 @Suppress("TooManyFunctions")
-class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
-    LocalChatDataSource,
-    LocalMessageDataSource,
-    LocalSyncDataSource,
-    LocalDebugDataSource {
+class LocalDataSourceFake @Inject constructor(private val logger: Logger) : LocalDebugDataSources {
 
     companion object {
         private const val TAG = "LocalDataSourceFake"
@@ -40,11 +36,6 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     private val chats = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
     private val syncTimestamp = MutableStateFlow<Instant?>(null)
-
-    // Test control flags for simulating failures
-    private var shouldFailGetLastSyncTimestamp = false
-    private var shouldFailFlowChatList = false
-    var debugDeleteAllChatsError: LocalDataSourceError? = null
 
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         logger.d(TAG, "Inserting chat: ${chat.id}")
@@ -80,7 +71,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         return ResultWithError.Success(Unit)
     }
 
-    fun getChat(chatId: ChatId): ResultWithError<Chat, LocalDataSourceError> {
+    override fun getChat(chatId: ChatId): ResultWithError<Chat, LocalDataSourceError> {
         val chat = chats.value[chatId]
         return if (chat != null) {
             ResultWithError.Success(chat)
@@ -91,12 +82,8 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
         chats.map { chats ->
-            if (shouldFailFlowChatList) {
-                ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
-            } else {
-                val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
-                ResultWithError.Success(chatPreviews)
-            }
+            val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
+            ResultWithError.Success(chatPreviews)
         }
 
     override fun flowChatUpdates(
@@ -207,16 +194,10 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         TODO("Not yet implemented")
     }
 
-    override suspend fun getLastSyncTimestamp(): ResultWithError<
-        Instant?,
-        LocalDataSourceError,
-        > =
-        if (shouldFailGetLastSyncTimestamp) {
-            ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
-        } else {
-            val timestamp = syncTimestamp.value
-            ResultWithError.Success(timestamp)
-        }
+    override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> {
+        val timestamp = syncTimestamp.value
+        return ResultWithError.Success(timestamp)
+    }
 
     override suspend fun updateLastSyncTimestamp(
         timestamp: Instant,
@@ -310,20 +291,8 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         return ResultWithError.Success(Unit)
     }
 
-    // Test control methods for simulating failures
-    fun simulateGetLastSyncTimestampFailure(shouldFail: Boolean) {
-        shouldFailGetLastSyncTimestamp = shouldFail
-    }
-
-    fun simulateFlowChatListFailure(shouldFail: Boolean) {
-        shouldFailFlowChatList = shouldFail
-    }
-
     override suspend fun deleteAllChats(): ResultWithError<Unit, LocalDataSourceError> {
         logger.d(TAG, "Deleting all chats")
-        debugDeleteAllChatsError?.let {
-            return ResultWithError.Failure(it)
-        }
         chats.update { emptyMap() }
         return ResultWithError.Success(Unit)
     }

@@ -23,6 +23,7 @@ import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSources
+import timur.gilfanov.messenger.debug.LocalDebugDataSourcesDecorator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -52,7 +53,7 @@ import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageErro
 class MessengerRepositoryImplTest {
 
     private val logger = TestLogger()
-    private lateinit var localDataSource: LocalDataSourceFake
+    private lateinit var localDataSource: LocalDebugDataSourcesDecorator
     private lateinit var remoteDataSource: RemoteDataSourceFake
     private lateinit var repository: MessengerRepositoryImpl
 
@@ -63,7 +64,7 @@ class MessengerRepositoryImplTest {
 
     @Before
     fun setup() {
-        localDataSource = LocalDataSourceFake(logger)
+        localDataSource = LocalDebugDataSourcesDecorator(LocalDataSourceFake(logger))
         remoteDataSource = RemoteDataSourceFake()
 
         testParticipant = Participant(
@@ -664,7 +665,7 @@ class MessengerRepositoryImplTest {
     @Test
     fun `repository should handle getLastSyncTimestamp failure during initialization`() = runTest {
         // Given: Local data source fails to get sync timestamp
-        localDataSource.simulateGetLastSyncTimestampFailure(true)
+        localDataSource.shouldFailGetLastSyncTimestamp = true
 
         // When: Repository is created (this triggers performDeltaSyncLoop)
         repository = repositoryImpl(backgroundScope)
@@ -676,15 +677,12 @@ class MessengerRepositoryImplTest {
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(result)
             assertEquals(0, result.data.size) // Empty initially
         }
-
-        // Cleanup
-        localDataSource.simulateGetLastSyncTimestampFailure(false)
     }
 
     @Test
     fun `flowChatList should handle local data source failures`() = runTest {
         // Given: Local data source fails to provide chat list
-        localDataSource.simulateFlowChatListFailure(true)
+        localDataSource.shouldFailFlowChatList = true
 
         // Create repository after setting up failure
         repository = repositoryImpl(backgroundScope)
@@ -695,9 +693,6 @@ class MessengerRepositoryImplTest {
             assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(result)
             assertEquals(FlowChatListError.LocalError, result.error)
         }
-
-        // Cleanup
-        localDataSource.simulateFlowChatListFailure(false)
     }
 
     @Test

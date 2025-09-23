@@ -22,8 +22,8 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
-import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
 import timur.gilfanov.messenger.data.source.remote.AddMessageError
 import timur.gilfanov.messenger.data.source.remote.GetChatsError
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
@@ -199,19 +199,32 @@ class DebugDataRepositoryTest {
     }
 
     @Test
-    fun `handles data generation errors gracefully`() = testScope.runTest {
+    fun `handles error in data regeneration`() = testScope.runTest {
         // Given - Simulate error by making local data source fail
-//        localDebugDataSource.shouldFailDeleteAllChats = true
+        localDebugDataSource.debugDeleteAllChatsError = LocalDataSourceError.StorageUnavailable
+        val localChats = localDebugDataSource.flowChatList().first()
+        val remoteChats = remoteDebugDataSource.getChats()
 
         // When - Initialize should still complete
-        debugDataRepository.initializeWithScenario(DataScenario.STANDARD)
+        val result = debugDataRepository.regenerateData()
 
-        // Then - Should handle error gracefully and still generate data
-//        assertTrue(localDebugDataSource.wasDeleteAllChatsCalled)
-        // Data should still be generated despite local clearing failures
-        val chats = remoteDebugDataSource.getChats()
-        assertIs<ResultWithError.Success<ImmutableList<Chat>, GetChatsError>>(chats)
-        assertTrue(chats.data.isNotEmpty())
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.clearData)
+        assertEquals(1, result.error.clearData.failedOperations.size)
+        assertTrue(result.error.clearData.partialSuccess)
+        assertEquals(
+            "deleteAllChats",
+            result.error.clearData.failedOperations[0].first,
+        )
+        assertEquals(
+            "StorageUnavailable",
+            result.error.clearData.failedOperations[0].second,
+        )
+
+        // Data should still be the same
+        assertEquals(localChats, localDebugDataSource.flowChatList().first())
+        assertEquals(remoteChats, remoteDebugDataSource.getChats())
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

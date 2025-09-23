@@ -44,6 +44,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     // Test control flags for simulating failures
     private var shouldFailGetLastSyncTimestamp = false
     private var shouldFailFlowChatList = false
+    var debugDeleteAllChatsError: LocalDataSourceError? = null
 
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         logger.d(TAG, "Inserting chat: ${chat.id}")
@@ -320,6 +321,9 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override suspend fun deleteAllChats(): ResultWithError<Unit, LocalDataSourceError> {
         logger.d(TAG, "Deleting all chats")
+        debugDeleteAllChatsError?.let {
+            return ResultWithError.Failure(it)
+        }
         chats.update { emptyMap() }
         return ResultWithError.Success(Unit)
     }

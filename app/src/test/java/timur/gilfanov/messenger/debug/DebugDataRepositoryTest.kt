@@ -41,7 +41,7 @@ class DebugDataRepositoryTest {
 
     private lateinit var localDebugDataSource: LocalDataSourceFake
     private lateinit var remoteDebugDataSource: RemoteDebugDataSource
-    private lateinit var sampleDataProvider: SampleDataProvider
+    private lateinit var sampleDataProvider: SampleDataProviderDecorator
     private lateinit var testScope: TestScope
     private lateinit var logger: TrackingTestLogger
     private lateinit var debugDataRepository: DebugDataRepository
@@ -52,7 +52,7 @@ class DebugDataRepositoryTest {
         logger = TrackingTestLogger()
         dataStore = DebugTestData.createTestDataStore()
         remoteDebugDataSource = FakeRemoteDebugDataSource()
-        sampleDataProvider = SampleDataProvider()
+        sampleDataProvider = SampleDataProviderDecorator(SampleDataProviderImpl())
         testScope = TestScope(StandardTestDispatcher())
         localDebugDataSource = LocalDataSourceFake(logger)
 
@@ -199,7 +199,7 @@ class DebugDataRepositoryTest {
     }
 
     @Test
-    fun `handles error in data regeneration`() = testScope.runTest {
+    fun `handles clear data error in data regeneration`() = testScope.runTest {
         // Given - Simulate error by making local data source fail
         localDebugDataSource.debugDeleteAllChatsError = LocalDataSourceError.StorageUnavailable
         val localChats = localDebugDataSource.flowChatList().first()
@@ -225,6 +225,27 @@ class DebugDataRepositoryTest {
         // Data should still be the same
         assertEquals(localChats, localDebugDataSource.flowChatList().first())
         assertEquals(remoteChats, remoteDebugDataSource.getChats())
+    }
+
+    @Test
+    fun `handles generation error in data regeneration`() = testScope.runTest {
+        // Given - Simulate error by making local data source fail
+        val initialTimestamp = debugDataRepository.settings.first().lastGenerationTimestamp
+        sampleDataProvider.generateEmptyChats = true
+
+        // When - Initialize should still complete
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.generateData)
+        assertEquals(GenerateDataError.NoChatsGenerated, result.error.generateData)
+
+        // Data should still be the same
+        assertEquals(
+            initialTimestamp,
+            debugDataRepository.settings.first().lastGenerationTimestamp,
+        )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

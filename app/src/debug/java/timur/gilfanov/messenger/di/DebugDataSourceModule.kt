@@ -19,6 +19,8 @@ import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
 import timur.gilfanov.messenger.debug.DebugDataRepository
 import timur.gilfanov.messenger.debug.DebugDataRepositoryImpl
+import timur.gilfanov.messenger.debug.SampleDataProvider
+import timur.gilfanov.messenger.debug.SampleDataProviderImpl
 import timur.gilfanov.messenger.util.Logger
 
 /**
@@ -64,6 +66,12 @@ abstract class DebugDataSourceModule {
     abstract fun bindDebugDataRepository(
         debugDataRepositoryImpl: DebugDataRepositoryImpl,
     ): DebugDataRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSampleDataProvider(
+        sampleDataProviderImpl: SampleDataProviderImpl,
+    ): SampleDataProvider
 
     companion object {
         @Provides

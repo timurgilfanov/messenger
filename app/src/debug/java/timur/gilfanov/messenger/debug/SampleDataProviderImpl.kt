@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.debug
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.min
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -249,12 +250,22 @@ class SampleDataProviderImpl @Inject constructor() : SampleDataProvider {
             generateMessages(participants, messageCount)
         }
 
-        val unreadCount = when {
-            messages.isEmpty() -> 0
-            Random.nextDouble() < 0.3 -> Random.nextInt(1, 6) // 30% have unread
-            else -> 0
-        }
+        val unreadCount = min(
+            messageCount,
+            when {
+                messages.isEmpty() -> 0
+                Random.nextDouble() < 0.3 -> Random.nextInt(1, 6) // 30% have unread
+                else -> 0
+            },
+        )
 
+        val lastReadMessageId = if (unreadCount > 0 && messages.isNotEmpty() &&
+            unreadCount < messages.size - 1
+        ) {
+            messages[messages.size - unreadCount - 1].id
+        } else {
+            null
+        }
         Chat(
             id = ChatId(UUID.randomUUID()),
             name = chatName,
@@ -263,11 +274,7 @@ class SampleDataProviderImpl @Inject constructor() : SampleDataProvider {
             rules = persistentSetOf(),
             messages = messages.toPersistentList(),
             unreadMessagesCount = unreadCount,
-            lastReadMessageId = if (unreadCount > 0 && messages.isNotEmpty()) {
-                messages[messages.size - unreadCount - 1].id
-            } else {
-                null
-            },
+            lastReadMessageId = lastReadMessageId,
         )
     }
 

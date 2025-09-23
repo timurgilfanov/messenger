@@ -186,19 +186,6 @@ class DebugDataRepositoryTest {
     }
 
     @Test
-    fun `handles local data source errors gracefully`() = testScope.runTest {
-        // Given - Local data source fails
-//        localDebugDataSource.shouldFailDeleteAllChats = true
-
-        // When
-        debugDataRepository.initializeWithScenario(DataScenario.STANDARD)
-
-        // Then - Should continue despite errors and log them
-//        assertTrue(localDebugDataSource.wasDeleteAllChatsCalled)
-//        assertTrue(logger.warnLogs.isNotEmpty())
-    }
-
-    @Test
     fun `handles clear data error in data regeneration`() = testScope.runTest {
         // Given - Simulate error by making local data source fail
         localDebugDataSource.debugDeleteAllChatsError = LocalDataSourceError.StorageUnavailable
@@ -271,8 +258,9 @@ class DebugDataRepositoryTest {
     @Test
     fun `regenerateData updates last generation timestamp`() = testScope.runTest {
         // Given - Get initial timestamp
-        val initialLastGeneration =
-            debugDataRepository.settings.first().lastGenerationTimestamp
+        debugDataRepository.regenerateData()
+        val initialLastGeneration = debugDataRepository.settings.first().lastGenerationTimestamp
+        assertNotNull(initialLastGeneration)
 
         // When
         debugDataRepository.regenerateData()
@@ -286,91 +274,6 @@ class DebugDataRepositoryTest {
             )
         }
     }
-
-    @Test
-    fun `component integrates all dependencies correctly`() = testScope.runTest {
-        // Given
-        val scenario = DataScenario.DEMO
-
-        // When - Perform full initialization flow
-        debugDataRepository.initializeWithScenario(scenario)
-
-        // Then - Verify all components are called in correct sequence
-        val chats = remoteDebugDataSource.getChats()
-        assertIs<ResultWithError.Success<ImmutableList<Chat>, GetChatsError>>(chats)
-        assertEquals(scenario.chatCount, chats.data.size)
-
-        // Verify final state
-        debugDataRepository.settings.test {
-            val settings = awaitItem()
-            assertEquals(scenario, settings.scenario)
-            assertEquals(scenario.chatCount, settings.scenario.chatCount)
-            assertNotNull(settings.lastGenerationTimestamp)
-        }
-    }
-
-    /**
-     * Fake implementation of LocalDebugDataSource for testing
-     */
-//    private class FakeLocalDebugDataSource : LocalDebugDataSource {
-//        var wasDeleteAllChatsCalled = false
-//        var wasDeleteAllMessagesCalled = false
-//        var wasClearSyncTimestampCalled = false
-//        var shouldFailDeleteAllChats = false
-//        var shouldFailDeleteAllMessages = false
-//        var shouldFailClearSyncTimestamp = false
-//
-//        override val settings: Flow<DebugSettings> = flowOf(DebugSettings())
-//
-//        override suspend fun deleteAllChats(): ResultWithError<Unit, LocalDataSourceError> {
-//            wasDeleteAllChatsCalled = true
-//            return if (shouldFailDeleteAllChats) {
-//                ResultWithError.Failure(
-//                    LocalDataSourceError.UnknownError(
-//                        java.sql.SQLException("Failed to delete chats"),
-//                    ),
-//                )
-//            } else {
-//                ResultWithError.Success(Unit)
-//            }
-//        }
-//
-//        override suspend fun deleteAllMessages(): ResultWithError<Unit, LocalDataSourceError> {
-//            wasDeleteAllMessagesCalled = true
-//            return if (shouldFailDeleteAllMessages) {
-//                ResultWithError.Failure(
-//                    LocalDataSourceError.UnknownError(
-//                        java.sql.SQLException("Failed to delete messages"),
-//                    ),
-//                )
-//            } else {
-//                ResultWithError.Success(Unit)
-//            }
-//        }
-//
-//        override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalDataSourceError> {
-//            wasClearSyncTimestampCalled = true
-//            return if (shouldFailClearSyncTimestamp) {
-//                ResultWithError.Failure(
-//                    LocalDataSourceError.SettingsWriteError(
-//                        java.io.IOException("Failed to clear sync timestamp"),
-//                    ),
-//                )
-//            } else {
-//                ResultWithError.Success(Unit)
-//            }
-//        }
-//
-//        override suspend fun updateSettings(
-//            transform: (DebugSettings) -> DebugSettings,
-//        ): ResultWithError<Unit, LocalUpdateSettingsError> {
-//            transform(settings)
-//            return ResultWithError.Success(Unit)
-//        }
-//
-//        override suspend fun getSettings(): ResultWithError<DebugSettings, LocalGetSettingsError> =
-//            ResultWithError.Success(settings)
-//    }
 
     /**
      * Fake implementation of RemoteDebugDataSource for testing

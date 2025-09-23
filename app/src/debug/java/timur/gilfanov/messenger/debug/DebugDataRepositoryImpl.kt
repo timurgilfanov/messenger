@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.debug
 
+import androidx.datastore.core.IOException
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -212,9 +213,6 @@ class DebugDataRepositoryImpl @Inject constructor(
         return ResultWithError.Success(Unit)
     }
 
-    /**
-     * Update debug settings
-     */
     override suspend fun updateSettings(
         transform: (DebugSettings) -> DebugSettings,
     ): ResultWithError<Unit, UpdateSettingsError> =
@@ -222,6 +220,16 @@ class DebugDataRepositoryImpl @Inject constructor(
             is ResultWithError.Success -> ResultWithError.Success(result.data)
             is ResultWithError.Failure -> ResultWithError.Failure(result.error.toRepositoryError())
         }
+
+    override suspend fun getSettings(): ResultWithError<DebugSettings, GetSettingsError> = try {
+        ResultWithError.Success(settings.first())
+    } catch (e: IOException) {
+        logger.e(TAG, "Error reading from DataStore", e)
+        ResultWithError.Failure(GetSettingsError.ReadError)
+    } catch (e: NoSuchElementException) {
+        logger.e(TAG, "No data found in DataStore", e)
+        ResultWithError.Failure(GetSettingsError.NoData)
+    }
 
     private fun startAutoActivity() {
         stopAutoActivity() // Stop any existing activity

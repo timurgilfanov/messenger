@@ -14,6 +14,8 @@ interface DebugDataRepository {
 
     val settings: Flow<DebugSettings>
 
+    suspend fun getSettings(): ResultWithError<DebugSettings, GetSettingsError>
+
     suspend fun updateSettings(
         transform: (DebugSettings) -> DebugSettings,
     ): ResultWithError<Unit, UpdateSettingsError>

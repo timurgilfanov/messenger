@@ -9,13 +9,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.datastore.core.IOException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.MainActivity
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.util.Logger
 
 /**
@@ -146,14 +145,14 @@ class DebugActivityLifecycleCallbacks(
         }
 
         // Priority 3: Check saved preference in DataStore
-        val savedScenario = try {
-            debugDataRepository.settings.first().scenario
-        } catch (e: IOException) {
-            logger.e(TAG, "Error reading from DataStore", e)
-            null
-        } catch (e: NoSuchElementException) {
-            logger.e(TAG, "No data found in DataStore", e)
-            null
+        val savedScenario = debugDataRepository.getSettings().let { settings ->
+            when (settings) {
+                is ResultWithError.Success -> settings.data.scenario
+                is ResultWithError.Failure -> {
+                    logger.w(TAG, "Failed to get saved scenario")
+                    null
+                }
+            }
         }
 
         // Use BuildConfig if it's not the default, otherwise use saved preference

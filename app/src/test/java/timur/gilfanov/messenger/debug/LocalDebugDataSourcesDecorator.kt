@@ -12,6 +12,8 @@ class LocalDebugDataSourcesDecorator(private val dataSource: LocalDebugDataSourc
     LocalDebugDataSources by dataSource {
 
     var debugDeleteAllChatsError: LocalDataSourceError? = null
+    var debugDeleteAllMessagesError: LocalDataSourceError? = null
+    var debugClearSyncTimestampError: LocalDataSourceError? = null
 
     var shouldFailGetLastSyncTimestamp = false
     var shouldFailFlowChatList = false
@@ -20,6 +22,16 @@ class LocalDebugDataSourcesDecorator(private val dataSource: LocalDebugDataSourc
         debugDeleteAllChatsError?.let {
             ResultWithError.Failure(it)
         } ?: dataSource.deleteAllChats()
+
+    override suspend fun deleteAllMessages(): ResultWithError<Unit, LocalDataSourceError> =
+        debugDeleteAllMessagesError?.let {
+            ResultWithError.Failure(it)
+        } ?: dataSource.deleteAllMessages()
+
+    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalDataSourceError> =
+        debugClearSyncTimestampError?.let {
+            ResultWithError.Failure(it)
+        } ?: dataSource.clearSyncTimestamp()
 
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
         dataSource.flowChatList().map {

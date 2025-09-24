@@ -228,6 +228,64 @@ class DebugDataRepositoryTest {
     }
 
     @Test
+    fun `handles clear messages error in data regeneration`() = testScope.runTest {
+        // Given - Simulate error by making local data source fail deleteAllMessages
+        localDebugDataSource.debugDeleteAllMessagesError = LocalDataSourceError.StorageUnavailable
+        val localChats = localDebugDataSource.flowChatList().first()
+        val remoteChats = remoteDebugDataSource.getChats()
+
+        // When - Initialize should still complete
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.clearData)
+        assertEquals(1, result.error.clearData.failedOperations.size)
+        assertTrue(result.error.clearData.partialSuccess)
+        assertEquals(
+            "deleteAllMessages",
+            result.error.clearData.failedOperations[0].first,
+        )
+        assertEquals(
+            "StorageUnavailable",
+            result.error.clearData.failedOperations[0].second,
+        )
+
+        // Data should still be the same
+        assertEquals(localChats, localDebugDataSource.flowChatList().first())
+        assertEquals(remoteChats, remoteDebugDataSource.getChats())
+    }
+
+    @Test
+    fun `handles clear sync timestamp error in data regeneration`() = testScope.runTest {
+        // Given - Simulate error by making local data source fail clearSyncTimestamp
+        localDebugDataSource.debugClearSyncTimestampError = LocalDataSourceError.StorageUnavailable
+        val localChats = localDebugDataSource.flowChatList().first()
+        val remoteChats = remoteDebugDataSource.getChats()
+
+        // When - Initialize should still complete
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.clearData)
+        assertEquals(1, result.error.clearData.failedOperations.size)
+        assertTrue(result.error.clearData.partialSuccess)
+        assertEquals(
+            "clearSyncTimestamp",
+            result.error.clearData.failedOperations[0].first,
+        )
+        assertEquals(
+            "StorageUnavailable",
+            result.error.clearData.failedOperations[0].second,
+        )
+
+        // Data should still be the same
+        assertEquals(localChats, localDebugDataSource.flowChatList().first())
+        assertEquals(remoteChats, remoteDebugDataSource.getChats())
+    }
+
+    @Test
     fun `handles generation error in data regeneration`() = testScope.runTest {
         // Given - Simulate error by making local data source fail
         val initialTimestamp = debugDataRepository.settings.first().lastGenerationTimestamp

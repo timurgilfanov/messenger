@@ -7,6 +7,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,10 +25,12 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
+import timur.gilfanov.messenger.data.source.remote.AddChatError
 import timur.gilfanov.messenger.data.source.remote.AddMessageError
 import timur.gilfanov.messenger.data.source.remote.GetChatsError
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSource
+import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
@@ -39,7 +42,7 @@ class DebugDataRepositoryTest {
     private lateinit var dataStore: DebugTestData.FakeDataStore
 
     private lateinit var localDebugDataSource: LocalDebugDataSourcesDecorator
-    private lateinit var remoteDebugDataSource: RemoteDebugDataSourceFake
+    private lateinit var remoteDebugDataSource: RemoteDebugDataSourceFakeDecorator
     private lateinit var sampleDataProvider: SampleDataProviderDecorator
     private lateinit var testScope: TestScope
     private lateinit var logger: TrackingTestLogger
@@ -50,7 +53,7 @@ class DebugDataRepositoryTest {
     fun setup() {
         logger = TrackingTestLogger()
         dataStore = DebugTestData.createTestDataStore()
-        remoteDebugDataSource = RemoteDebugDataSourceFake()
+        remoteDebugDataSource = RemoteDebugDataSourceFakeDecorator(RemoteDebugDataSourceFakeImpl())
         sampleDataProvider = SampleDataProviderDecorator(SampleDataProviderImpl())
         testScope = TestScope(StandardTestDispatcher())
         localDebugDataSource = LocalDebugDataSourcesDecorator(LocalDataSourceFake(logger))
@@ -245,6 +248,30 @@ class DebugDataRepositoryTest {
         )
     }
 
+    @Test
+    fun `handles data population error in data regeneration`() = testScope.runTest {
+        // Given - Simulate error by making remote add chat fail
+        val initialTimestamp = debugDataRepository.settings.first().lastGenerationTimestamp
+        val error = AddChatError.RemoteError(
+            error = RemoteDebugDataSourceError.CooldownActive(remaining = 1.minutes),
+        )
+        remoteDebugDataSource.remoteAddChatError = error
+
+        // When - Initialize should fail due to population error
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.populateRemote)
+        assertTrue(result.error.populateRemote.addChatError.isNotEmpty())
+
+        // Data should still be the same
+        assertEquals(
+            initialTimestamp,
+            debugDataRepository.settings.first().lastGenerationTimestamp,
+        )
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `auto activity stops when disabled`() = testScope.runTest {
@@ -298,8 +325,9 @@ class DebugDataRepositoryTest {
                     // No-op for test
                 }
 
-                override fun addChat(chat: Chat) {
+                override fun addChat(chat: Chat): ResultWithError<Unit, AddChatError> {
                     generatedChats.add(chat)
+                    return ResultWithError.Success(Unit)
                 }
 
                 override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
@@ -370,19 +398,20 @@ class DebugDataRepositoryTest {
 /**
  * Fake implementation of RemoteDebugDataSource for testing
  */
-private class RemoteDebugDataSourceFake : RemoteDebugDataSource {
+private class RemoteDebugDataSourceFakeImpl : RemoteDebugDataSourceFake {
     private val chats = mutableListOf<Chat>()
     private val messages = mutableListOf<Message>()
 
-    val messageAddedCount = MutableStateFlow(0)
+    override val messageAddedCount = MutableStateFlow(0)
 
     override fun clearData() {
         chats.clear()
         messages.clear()
     }
 
-    override fun addChat(chat: Chat) {
+    override fun addChat(chat: Chat): ResultWithError<Unit, AddChatError> {
         chats.add(chat)
+        return ResultWithError.Success(Unit)
     }
 
     override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
@@ -398,4 +427,9 @@ private class RemoteDebugDataSourceFake : RemoteDebugDataSource {
 
     override val chatPreviews: Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
         emptyFlow()
+}
+
+interface RemoteDebugDataSourceFake : RemoteDebugDataSource {
+
+    val messageAddedCount: MutableStateFlow<Int>
 }

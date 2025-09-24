@@ -1,6 +1,8 @@
 package timur.gilfanov.messenger.debug
 
 import java.io.IOException
+import timur.gilfanov.messenger.data.source.remote.AddChatError
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
 
 data class ClearDataError(
     val partialSuccess: Boolean,
@@ -11,7 +13,7 @@ sealed interface GenerateDataError {
     object NoChatsGenerated : GenerateDataError
 }
 
-data class PopulateRemoteError(val reason: Exception)
+data class PopulateRemoteError(val addChatError: Map<ChatId, AddChatError>)
 
 sealed interface UpdateSettingsError {
     data class WriteError(val e: IOException) : UpdateSettingsError

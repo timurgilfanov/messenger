@@ -26,7 +26,7 @@ interface RemoteDebugDataSource {
      * Used for populating the server with debug data.
      * This bypasses normal creation flows and directly updates server state.
      */
-    fun addChat(chat: Chat)
+    fun addChat(chat: Chat): ResultWithError<Unit, AddChatError>
 
     /**
      * Adds a message directly to an existing chat on the server (fake implementation).

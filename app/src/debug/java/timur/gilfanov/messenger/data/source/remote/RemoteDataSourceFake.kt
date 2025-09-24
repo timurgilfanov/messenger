@@ -424,12 +424,13 @@ class RemoteDataSourceFake @Inject constructor() :
         connectionState.update { connected }
     }
 
-    override fun addChat(chat: Chat) {
+    override fun addChat(chat: Chat): ResultWithError<Unit, AddChatError> {
         serverState.update { state ->
             state
                 .recordOperation("create_chat_${chat.id.id}")
                 .copy(chats = state.chats + (chat.id to chat))
         }
+        return ResultWithError.Success(Unit)
     }
 
     override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {

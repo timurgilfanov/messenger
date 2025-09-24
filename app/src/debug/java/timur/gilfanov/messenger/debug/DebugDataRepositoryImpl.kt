@@ -21,9 +21,11 @@ import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
 import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
+import timur.gilfanov.messenger.data.source.remote.AddChatError
 import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.util.Logger
 
@@ -127,17 +129,24 @@ class DebugDataRepositoryImpl @Inject constructor(
         return ResultWithError.Success(Unit)
     }
 
-    @Suppress("TooGenericExceptionCaught") // TODO handle errors in remote data source
     private fun populateRemoteDataSource(
         chats: List<Chat>,
-    ): ResultWithError<Unit, PopulateRemoteError> = try {
+    ): ResultWithError<Unit, PopulateRemoteError> {
+        val failures = mutableMapOf<ChatId, AddChatError>()
         chats.forEach { chat ->
             val fixedChat = fixMessageRecipients(chat)
-            remoteDebugDataSource.addChat(fixedChat)
+            remoteDebugDataSource.addChat(fixedChat).let { result ->
+                if (result is ResultWithError.Failure) {
+                    logger.w(TAG, "Failed to add chat '${chat.name}': ${result.error}")
+                    failures[chat.id] = result.error
+                }
+            }
         }
-        ResultWithError.Success(Unit)
-    } catch (e: Exception) {
-        ResultWithError.Failure(PopulateRemoteError(reason = e))
+        return if (failures.isNotEmpty()) {
+            ResultWithError.Failure(PopulateRemoteError(failures))
+        } else {
+            ResultWithError.Success(Unit)
+        }
     }
 
     private fun generateData(

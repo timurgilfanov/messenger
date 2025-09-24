@@ -19,3 +19,8 @@ sealed interface AddMessageError {
     data class RemoteError(val error: RemoteDebugDataSourceError) : AddMessageError
     data class UnknownError(val cause: Throwable) : AddMessageError
 }
+
+sealed interface AddChatError {
+    data class RemoteError(val error: RemoteDebugDataSourceError) : AddChatError
+    data class UnknownError(val cause: Throwable) : AddChatError
+}

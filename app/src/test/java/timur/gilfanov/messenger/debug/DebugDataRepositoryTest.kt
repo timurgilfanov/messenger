@@ -22,8 +22,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.AddMessageError
@@ -35,7 +33,6 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 
-@RunWith(RobolectricTestRunner::class)
 @Category(Unit::class)
 class DebugDataRepositoryTest {
 

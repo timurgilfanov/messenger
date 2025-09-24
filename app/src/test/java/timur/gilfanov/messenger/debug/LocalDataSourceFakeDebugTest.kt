@@ -8,8 +8,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
@@ -18,7 +16,6 @@ import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 
-@RunWith(RobolectricTestRunner::class)
 @Category(Unit::class)
 class LocalDataSourceFakeDebugTest {
 

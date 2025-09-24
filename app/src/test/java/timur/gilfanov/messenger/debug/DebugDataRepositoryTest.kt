@@ -42,7 +42,7 @@ class DebugDataRepositoryTest {
     private lateinit var dataStore: DebugTestData.FakeDataStore
 
     private lateinit var localDebugDataSource: LocalDebugDataSourcesDecorator
-    private lateinit var remoteDebugDataSource: FakeRemoteDebugDataSource
+    private lateinit var remoteDebugDataSource: RemoteDebugDataSourceFake
     private lateinit var sampleDataProvider: SampleDataProviderDecorator
     private lateinit var testScope: TestScope
     private lateinit var logger: TrackingTestLogger
@@ -53,7 +53,7 @@ class DebugDataRepositoryTest {
     fun setup() {
         logger = TrackingTestLogger()
         dataStore = DebugTestData.createTestDataStore()
-        remoteDebugDataSource = FakeRemoteDebugDataSource()
+        remoteDebugDataSource = RemoteDebugDataSourceFake()
         sampleDataProvider = SampleDataProviderDecorator(SampleDataProviderImpl())
         testScope = TestScope(StandardTestDispatcher())
         localDebugDataSource = LocalDebugDataSourcesDecorator(LocalDataSourceFake(logger))
@@ -288,41 +288,6 @@ class DebugDataRepositoryTest {
         }
     }
 
-    /**
-     * Fake implementation of RemoteDebugDataSource for testing
-     */
-    private class FakeRemoteDebugDataSource : RemoteDebugDataSource {
-        var wasClearServerDataCalled = false
-        private val chats = mutableListOf<Chat>()
-        private val messages = mutableListOf<Message>()
-
-        val messageAddedCount = MutableStateFlow(0)
-
-        override fun clearData() {
-            wasClearServerDataCalled = true
-            chats.clear()
-            messages.clear()
-        }
-
-        override fun addChat(chat: Chat) {
-            chats.add(chat)
-        }
-
-        override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
-            messages.add(message)
-            messageAddedCount.update { it + 1 }
-            return ResultWithError.Success(Unit)
-        }
-
-        override fun getChats(): ResultWithError<ImmutableList<Chat>, GetChatsError> =
-            ResultWithError.Success(chats.toImmutableList())
-
-        override fun getMessagesSize(): Int = messages.size
-
-        override val chatPreviews: Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
-            emptyFlow()
-    }
-
     // Regression test for sync integration
     @Test
     fun `initializeWithScenario add chats to remote data source with chat ID as recepient`() =
@@ -403,4 +368,37 @@ class DebugDataRepositoryTest {
                 }
             }
         }
+}
+
+/**
+ * Fake implementation of RemoteDebugDataSource for testing
+ */
+private class RemoteDebugDataSourceFake : RemoteDebugDataSource {
+    private val chats = mutableListOf<Chat>()
+    private val messages = mutableListOf<Message>()
+
+    val messageAddedCount = MutableStateFlow(0)
+
+    override fun clearData() {
+        chats.clear()
+        messages.clear()
+    }
+
+    override fun addChat(chat: Chat) {
+        chats.add(chat)
+    }
+
+    override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
+        messages.add(message)
+        messageAddedCount.update { it + 1 }
+        return ResultWithError.Success(Unit)
+    }
+
+    override fun getChats(): ResultWithError<ImmutableList<Chat>, GetChatsError> =
+        ResultWithError.Success(chats.toImmutableList())
+
+    override fun getMessagesSize(): Int = messages.size
+
+    override val chatPreviews: Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
+        emptyFlow()
 }

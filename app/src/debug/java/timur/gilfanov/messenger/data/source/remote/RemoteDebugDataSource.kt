@@ -19,7 +19,7 @@ interface RemoteDebugDataSource {
      * Used when regenerating debug data to start with a clean server state.
      * This is a synchronous operation as it only affects in-memory fake data.
      */
-    fun clearData()
+    fun clearData(): ResultWithError<Unit, ClearDataError>
 
     /**
      * Adds a chat directly to the server (fake implementation).

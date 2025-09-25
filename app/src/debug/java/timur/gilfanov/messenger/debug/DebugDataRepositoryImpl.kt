@@ -22,6 +22,7 @@ import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
 import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
 import timur.gilfanov.messenger.data.source.remote.AddChatError
+import timur.gilfanov.messenger.data.source.remote.ClearDataError as RemoteDataSourceClearDataError
 import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -196,15 +197,14 @@ class DebugDataRepositoryImpl @Inject constructor(
             }
         }
 
-        val failedRemoteOperations = mutableListOf<Pair<String, Exception>>()
-        // Clear remote server data (should not fail in fake impl, but guard anyway)
+        val failedRemoteOperations = mutableListOf<Pair<String, RemoteDataSourceClearDataError>>()
+        // Clear remote server data
         operationsCounter++
-        @Suppress("TooGenericExceptionCaught") // TODO catch in remote data source
-        try {
-            remoteDebugDataSource.clearData()
-        } catch (e: Exception) {
-            logger.w(TAG, "Failed to clear remote data: ${e.message}")
-            failedRemoteOperations.add("clearRemoteData" to e)
+        remoteDebugDataSource.clearData().let { result ->
+            if (result is ResultWithError.Failure) {
+                logger.w(TAG, "Failed to clear remote data: ${result.error}")
+                failedRemoteOperations.add("clearRemoteData" to result.error)
+            }
         }
 
         val failedOperations =

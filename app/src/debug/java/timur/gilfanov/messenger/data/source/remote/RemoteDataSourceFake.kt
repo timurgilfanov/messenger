@@ -489,7 +489,7 @@ class RemoteDataSourceFake @Inject constructor() :
         }
     }
 
-    override fun clearData() {
+    override fun clearData(): ResultWithError<Unit, ClearDataError> {
         serverState.update { state ->
             // Start from just after the last sync point to ensure new operations are newer than any sync
             // This provides deterministic behavior while preventing sync race conditions
@@ -502,6 +502,7 @@ class RemoteDataSourceFake @Inject constructor() :
                 lastSyncTimestamp = state.lastSyncTimestamp,
             )
         }
+        return ResultWithError.Success(Unit)
     }
 
     override suspend fun markMessagesAsRead(

@@ -27,6 +27,7 @@ import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.AddChatError
 import timur.gilfanov.messenger.data.source.remote.AddMessageError
+import timur.gilfanov.messenger.data.source.remote.ClearDataError
 import timur.gilfanov.messenger.data.source.remote.GetChatsError
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSource
@@ -330,6 +331,36 @@ class DebugDataRepositoryTest {
         )
     }
 
+    @Test
+    fun `handles clear remote data error in data regeneration`() = testScope.runTest {
+        // Given
+        val successResult = debugDataRepository.regenerateData()
+        assertIs<ResultWithError.Success<Unit, RegenerateDataError>>(successResult)
+
+        val remoteChats = remoteDebugDataSource.getChats()
+        assertIs<ResultWithError.Success<ImmutableList<Chat>, GetChatsError>>(remoteChats)
+        assertTrue(remoteChats.data.isNotEmpty())
+
+        // When
+        val error = ClearDataError.RemoteError(error = RemoteDebugDataSourceError.ServerError)
+        remoteDebugDataSource.remoteClearDataError = error
+        val errorResult = debugDataRepository.regenerateData()
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(errorResult)
+        assertNotNull(errorResult.error.clearData)
+        assertEquals(1, errorResult.error.clearData.failedOperations.size)
+        assertTrue(errorResult.error.clearData.partialSuccess)
+
+        val operationNames = errorResult.error.clearData.failedOperations.map { it.first }
+        assertTrue(operationNames.contains("clearRemoteData"))
+
+        val remoteChatsAfter = remoteDebugDataSource.getChats()
+        assertIs<ResultWithError.Success<ImmutableList<Chat>, GetChatsError>>(remoteChats)
+        assertTrue(remoteChats.data.isNotEmpty())
+        assertEquals(remoteChats, remoteChatsAfter)
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `auto activity stops when disabled`() = testScope.runTest {
@@ -379,8 +410,9 @@ class DebugDataRepositoryTest {
 
             // Spy on the sync behavior by capturing what's added to remote
             val spyRemoteDebugDataSource = object : RemoteDebugDataSource {
-                override fun clearData() {
+                override fun clearData(): ResultWithError<Unit, ClearDataError> {
                     // No-op for test
+                    return ResultWithError.Success(Unit)
                 }
 
                 override fun addChat(chat: Chat): ResultWithError<Unit, AddChatError> {
@@ -462,9 +494,10 @@ private class RemoteDebugDataSourceFakeImpl : RemoteDebugDataSourceFake {
 
     override val messageAddedCount = MutableStateFlow(0)
 
-    override fun clearData() {
+    override fun clearData(): ResultWithError<Unit, ClearDataError> {
         chats.clear()
         messages.clear()
+        return ResultWithError.Success(Unit)
     }
 
     override fun addChat(chat: Chat): ResultWithError<Unit, AddChatError> {

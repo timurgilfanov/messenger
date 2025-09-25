@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.debug
 import kotlinx.collections.immutable.ImmutableList
 import timur.gilfanov.messenger.data.source.remote.AddChatError
 import timur.gilfanov.messenger.data.source.remote.AddMessageError
+import timur.gilfanov.messenger.data.source.remote.ClearDataError
 import timur.gilfanov.messenger.data.source.remote.GetChatsError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -14,6 +15,7 @@ class RemoteDebugDataSourceFakeDecorator(private val source: RemoteDebugDataSour
     var remoteAddChatError: AddChatError? = null
     var remoteAddMessageError: AddMessageError? = null
     var remoteGetChatsError: GetChatsError? = null
+    var remoteClearDataError: ClearDataError? = null
 
     override fun addChat(chat: Chat): ResultWithError<Unit, AddChatError> {
         remoteAddChatError?.let { error ->
@@ -34,5 +36,12 @@ class RemoteDebugDataSourceFakeDecorator(private val source: RemoteDebugDataSour
             return ResultWithError.Failure(error)
         }
         return source.getChats()
+    }
+
+    override fun clearData(): ResultWithError<Unit, ClearDataError> {
+        remoteClearDataError?.let { error ->
+            return ResultWithError.Failure(error)
+        }
+        return source.clearData()
     }
 }

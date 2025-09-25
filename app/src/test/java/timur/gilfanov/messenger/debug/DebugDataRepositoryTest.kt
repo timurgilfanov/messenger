@@ -48,7 +48,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 @Category(Unit::class)
 class DebugDataRepositoryTest {
 
-    private lateinit var dataStore: DebugTestData.FakeDataStore
+    private lateinit var dataStore: DataStoreFake
 
     private lateinit var localDebugDataSource: LocalDebugDataSourcesDecorator
     private lateinit var remoteDebugDataSource: RemoteDebugDataSourceFakeDecorator

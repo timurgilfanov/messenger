@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.debug
 
+import java.io.IOException
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -15,6 +17,8 @@ import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSourceImpl
+import timur.gilfanov.messenger.data.source.local.LocalGetSettingsError
+import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.datastore.SyncPreferences
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -24,7 +28,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 class LocalDebugDataSourceImplTest {
 
     private lateinit var database: MessengerDatabase
-    private lateinit var dataStore: DebugTestData.FakeDataStore
+    private lateinit var dataStore: DataStoreFake
     private lateinit var logger: TrackingTestLogger
     private lateinit var debugDataSource: LocalDebugDataSource
 
@@ -202,5 +206,121 @@ class LocalDebugDataSourceImplTest {
         // Verify sync timestamp was cleared
         val finalPrefs = dataStore.data.first()
         assertNull(finalPrefs[SyncPreferences.LAST_SYNC_TIMESTAMP])
+    }
+
+    @Test
+    fun `updateSettings successfully updates debug settings`() = runTest {
+        // Given - Get initial settings
+        val initialSettings = debugDataSource.settings.first()
+        assertIs<ResultWithError.Success<DebugSettings, LocalGetSettingsError>>(initialSettings)
+        val initial = initialSettings.data
+
+        // When - Update settings
+        val result = debugDataSource.updateSettings { settings ->
+            settings.copy(
+                scenario = DataScenario.DEMO,
+                autoActivity = true,
+                showNotification = false,
+            )
+        }
+
+        // Then - Update should succeed
+        assertIs<ResultWithError.Success<Unit, LocalUpdateSettingsError>>(result)
+
+        // And settings should be updated
+        val updatedSettings = debugDataSource.settings.first()
+        assertIs<ResultWithError.Success<DebugSettings, LocalGetSettingsError>>(updatedSettings)
+        val updated = updatedSettings.data
+
+        assertEquals(DataScenario.DEMO, updated.scenario)
+        assertEquals(true, updated.autoActivity)
+        assertEquals(false, updated.showNotification)
+        // lastGenerationTimestamp should remain unchanged
+        assertEquals(initial.lastGenerationTimestamp, updated.lastGenerationTimestamp)
+    }
+
+    @Test
+    fun `settings flow emits correct initial and updated values`() = runTest {
+        // When - Get initial settings
+        val initialSettings = debugDataSource.settings.first()
+        assertIs<ResultWithError.Success<DebugSettings, LocalGetSettingsError>>(initialSettings)
+        val initial = initialSettings.data
+
+        // Then - Initial settings should have expected defaults
+        assertEquals(DataScenario.STANDARD, initial.scenario)
+        assertEquals(false, initial.autoActivity)
+        assertEquals(true, initial.showNotification)
+        assertNull(initial.lastGenerationTimestamp)
+
+        // When - Update settings
+        debugDataSource.updateSettings { settings ->
+            settings.copy(
+                scenario = DataScenario.EMPTY,
+                autoActivity = true,
+            )
+        }
+
+        // Then - Settings flow should emit updated values
+        val updatedSettings = debugDataSource.settings.first()
+        assertIs<ResultWithError.Success<DebugSettings, LocalGetSettingsError>>(updatedSettings)
+        val updated = updatedSettings.data
+
+        assertEquals(DataScenario.EMPTY, updated.scenario)
+        assertEquals(true, updated.autoActivity)
+        assertEquals(true, updated.showNotification) // Should remain unchanged
+        assertNull(updated.lastGenerationTimestamp) // Should remain unchanged
+    }
+
+    @Test
+    fun `updateSettings handles IOException as WriteError`() = runTest {
+        // Given - Configure dataStore to throw IOException
+        val ioException = IOException("DataStore write failed")
+        dataStore.updateDataIOException = ioException
+
+        // When - Attempt to update settings
+        val result = debugDataSource.updateSettings { settings ->
+            settings.copy(autoActivity = true)
+        }
+
+        // Then - Should return WriteError
+        assertIs<ResultWithError.Failure<Unit, LocalUpdateSettingsError>>(result)
+        assertIs<LocalUpdateSettingsError.WriteError>(result.error)
+        assertEquals(ioException, result.error.exception)
+        assertEquals("DataStore write failed", result.error.exception.message)
+    }
+
+    @Test
+    fun `updateSettings handles transform Exception as TransformError`() = runTest {
+        // Given - Configure dataStore to throw Exception during transform
+        val transformException = RuntimeException("Transform failed")
+        dataStore.transformException = transformException
+
+        // When - Attempt to update settings (the exception will be thrown during transform)
+        val result = debugDataSource.updateSettings { settings ->
+            settings.copy(scenario = DataScenario.DEMO)
+        }
+
+        // Then - Should return TransformError
+        assertIs<ResultWithError.Failure<Unit, LocalUpdateSettingsError>>(result)
+        assertIs<LocalUpdateSettingsError.TransformError>(result.error)
+        assertEquals(transformException, result.error.exception)
+        assertEquals("Transform failed", result.error.exception.message)
+    }
+
+    @Test
+    fun `updateSettings handles transform function exception as TransformError`() = runTest {
+        // Given - A transform function that will throw an exception
+        val transformException = IllegalArgumentException("Invalid scenario")
+
+        // When - Update settings with a transform that throws
+        val result = debugDataSource.updateSettings { _ ->
+            throw transformException
+        }
+
+        // Then - Should return TransformError with the thrown exception
+        assertIs<ResultWithError.Failure<Unit, LocalUpdateSettingsError>>(result)
+        assertIs<LocalUpdateSettingsError.TransformError>(result.error)
+        assertEquals(transformException, result.error.exception)
+        assertEquals("Invalid scenario", result.error.exception.message)
     }
 }

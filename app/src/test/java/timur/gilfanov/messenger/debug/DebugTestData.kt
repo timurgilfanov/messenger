@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.preferencesOf
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import java.io.IOException
 import java.util.UUID
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentSetOf
@@ -47,12 +48,12 @@ object DebugTestData {
     /**
      * Creates a test DataStore with predefined preferences
      */
-    fun createTestDataStore(scenario: DataScenario = DataScenario.STANDARD): FakeDataStore {
+    fun createTestDataStore(scenario: DataScenario = DataScenario.STANDARD): DataStoreFake {
         val preferences = preferencesOf(
             DebugPreferences.DATA_SCENARIO to scenario.name,
             DebugPreferences.AUTO_ACTIVITY_ENABLED to false,
         )
-        return FakeDataStore(preferences)
+        return DataStoreFake(preferences)
     }
 
     /**
@@ -151,38 +152,28 @@ object DebugTestData {
             )
         }
     }
+}
 
-    /**
-     * Fake DataStore implementation for testing
-     */
-    class FakeDataStore(private val initialPreferences: Preferences = preferencesOf()) :
-        DataStore<Preferences> {
+class DataStoreFake(initialPreferences: Preferences = preferencesOf()) : DataStore<Preferences> {
 
-        private val _data = MutableStateFlow(initialPreferences)
-        override val data: Flow<Preferences> = _data
+    private val _data = MutableStateFlow(initialPreferences)
+    override val data: Flow<Preferences> = _data
 
-        override suspend fun updateData(
-            transform: suspend (t: Preferences) -> Preferences,
-        ): Preferences {
-            val newPrefs = transform(_data.value)
-            _data.value = newPrefs
-            return newPrefs
+    var updateDataIOException: IOException? = null
+    var transformException: Exception? = null
+
+    override suspend fun updateData(
+        transform: suspend (t: Preferences) -> Preferences,
+    ): Preferences {
+        updateDataIOException?.let { throw it }
+
+        val actualTransform: suspend (t: Preferences) -> Preferences = { prefs ->
+            transformException?.let { throw it }
+            transform(prefs)
         }
-    }
 
-    /**
-     * Constants for testing
-     */
-    object Constants {
-        const val TEST_CHAT_COUNT = 3
-        const val TEST_PARTICIPANT_COUNT = 2
-        const val TEST_MESSAGE_COUNT = 5
-        const val TEST_TIMESTAMP = 1000L
-
-        val STANDARD_CONFIG = DataGenerationConfig(
-            scenario = DataScenario.STANDARD,
-            chatCount = 5,
-            messageCountRange = 1..10,
-        )
+        val newPrefs = actualTransform(_data.value)
+        _data.value = newPrefs
+        return newPrefs
     }
 }

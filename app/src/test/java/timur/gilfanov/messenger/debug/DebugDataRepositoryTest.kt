@@ -378,8 +378,8 @@ class DebugDataRepositoryTest {
         assertTrue(operationNames.contains("clearRemoteData"))
 
         val remoteChatsAfter = remoteDebugDataSource.getChats()
-        assertIs<Success<ImmutableList<Chat>, GetChatsError>>(remoteChats)
-        assertTrue(remoteChats.data.isNotEmpty())
+        assertIs<Success<ImmutableList<Chat>, GetChatsError>>(remoteChatsAfter)
+        assertTrue(remoteChatsAfter.data.isNotEmpty())
         assertEquals(remoteChats, remoteChatsAfter)
     }
 

@@ -28,6 +28,9 @@ import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.data.source.local.LocalClearSyncTimestampError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
+import timur.gilfanov.messenger.data.source.local.LocalDebugDataSources
+import timur.gilfanov.messenger.data.source.local.LocalGetSettingsError
+import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
 import timur.gilfanov.messenger.data.source.remote.AddChatError
 import timur.gilfanov.messenger.data.source.remote.AddMessageError
 import timur.gilfanov.messenger.data.source.remote.ClearDataError
@@ -629,6 +632,120 @@ class DebugDataRepositoryTest {
                 }
             }
         }
+
+    @Test
+    fun `regenerateData handles getSettings failure`() = testScope.runTest {
+        // Given - Configure local data source to fail when reading settings
+        val readError = LocalGetSettingsError.ReadError(IOException("Failed to read settings"))
+        localDebugDataSource.localGetSettingsError = readError
+
+        // When - Attempt to regenerate data
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should return failure with getSettings error
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertEquals(GetSettingsError.ReadError, result.error.getSettings)
+        assertNull(result.error.clearData)
+        assertNull(result.error.generateData)
+        assertNull(result.error.populateRemote)
+        assertNull(result.error.updateSettings)
+    }
+
+    @Test
+    fun `regenerateData handles updateSettings failure after successful generation`() =
+        testScope.runTest {
+            // Given - Configure local data source to fail when updating settings
+            val writeError = LocalUpdateSettingsError.WriteError(
+                IOException("Failed to write settings"),
+            )
+            localDebugDataSource.localUpdateSettingsError = writeError
+
+            // When - Attempt to regenerate data
+            val result = debugDataRepository.regenerateData()
+
+            // Then - Should return failure with updateSettings error
+            assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+            val expectedUpdateError = UpdateSettingsError.WriteError(writeError.exception)
+            assertEquals(expectedUpdateError, result.error.updateSettings)
+            assertNull(result.error.getSettings)
+            assertNull(result.error.clearData)
+            assertNull(result.error.generateData)
+            assertNull(result.error.populateRemote)
+        }
+
+    @Test
+    fun `updateSettings handles WriteError failure`() = testScope.runTest {
+        // Given - Configure local data source to fail with WriteError
+        val writeError = LocalUpdateSettingsError.WriteError(
+            IOException("Failed to write settings"),
+        )
+        localDebugDataSource.localUpdateSettingsError = writeError
+
+        // When - Attempt to update settings
+        val result = debugDataRepository.updateSettings { settings ->
+            settings.copy(scenario = DataScenario.DEMO)
+        }
+
+        // Then - Should return WriteError
+        assertIs<ResultWithError.Failure<Unit, UpdateSettingsError>>(result)
+        val expectedError = UpdateSettingsError.WriteError(writeError.exception)
+        assertEquals(expectedError, result.error)
+    }
+
+    @Test
+    fun `updateSettings handles TransformError failure`() = testScope.runTest {
+        // Given
+        val exception = RuntimeException("Transform failed")
+
+        // When - Attempt to update settings
+        val result = debugDataRepository.updateSettings { settings ->
+            throw exception
+        }
+
+        // Then - Should return TransformError
+        assertIs<ResultWithError.Failure<Unit, UpdateSettingsError>>(result)
+        assertEquals(UpdateSettingsError.TransformError(exception), result.error)
+    }
+
+    @Test
+    fun `getSettings handles ReadError failure`() = testScope.runTest {
+        // Given - Configure local data source to fail with ReadError
+        val readError = LocalGetSettingsError.ReadError(
+            IOException("Failed to read settings"),
+        )
+        localDebugDataSource.localGetSettingsError = readError
+
+        // When - Attempt to get settings
+        val result = debugDataRepository.getSettings()
+
+        // Then - Should return ReadError
+        assertIs<ResultWithError.Failure<DebugSettings, GetSettingsError>>(result)
+        assertEquals(GetSettingsError.ReadError, result.error)
+    }
+
+    @Test
+    fun `getSettings handles NoSuchElementException as NoData`() = testScope.runTest {
+        // Given - Create a special decorator that will cause an empty flow to trigger NoSuchElementException
+        val specialDecorator = object : LocalDebugDataSources by LocalDataSourceFake(logger) {
+            override val settings: Flow<ResultWithError<DebugSettings, LocalGetSettingsError>>
+                get() = emptyFlow()
+        }
+
+        val repositoryWithEmptyFlow = DebugDataRepositoryImpl(
+            localDebugDataSource = specialDecorator,
+            remoteDebugDataSource = remoteDebugDataSource,
+            sampleDataProvider = sampleDataProvider,
+            coroutineScope = testScope.backgroundScope,
+            logger = logger,
+        )
+
+        // When - Attempt to get settings from empty flow (will throw NoSuchElementException)
+        val result = repositoryWithEmptyFlow.getSettings()
+
+        // Then - Should return NoData error
+        assertIs<ResultWithError.Failure<DebugSettings, GetSettingsError>>(result)
+        assertEquals(GetSettingsError.NoData, result.error)
+    }
 }
 
 /**

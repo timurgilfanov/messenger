@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.LocalClearSyncTimestampError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSources
+import timur.gilfanov.messenger.data.source.local.LocalGetSettingsError
+import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 
@@ -15,6 +17,8 @@ class LocalDebugDataSourcesDecorator(private val dataSource: LocalDebugDataSourc
     var debugDeleteAllChatsError: LocalDataSourceError? = null
     var debugDeleteAllMessagesError: LocalDataSourceError? = null
     var debugClearSyncTimestampError: LocalClearSyncTimestampError? = null
+    var localGetSettingsError: LocalGetSettingsError? = null
+    var localUpdateSettingsError: LocalUpdateSettingsError? = null
 
     var shouldFailGetLastSyncTimestamp = false
     var shouldFailFlowChatList = false
@@ -49,4 +53,17 @@ class LocalDebugDataSourcesDecorator(private val dataSource: LocalDebugDataSourc
         } else {
             dataSource.getLastSyncTimestamp()
         }
+
+    override val settings: Flow<ResultWithError<DebugSettings, LocalGetSettingsError>>
+        get() = dataSource.settings.map { result ->
+            localGetSettingsError?.let { error ->
+                ResultWithError.Failure(error)
+            } ?: result
+        }
+
+    override suspend fun updateSettings(
+        transform: (DebugSettings) -> DebugSettings,
+    ): ResultWithError<Unit, LocalUpdateSettingsError> = localUpdateSettingsError?.let {
+        ResultWithError.Failure(it)
+    } ?: dataSource.updateSettings(transform)
 }

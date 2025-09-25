@@ -338,6 +338,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
         }
         ResultWithError.Success(Unit)
     } catch (e: Exception) {
+        logger.e(TAG, "Failed to update settings", e)
         ResultWithError.Failure(LocalUpdateSettingsError.TransformError(e))
     }
 

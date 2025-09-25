@@ -468,6 +468,43 @@ class DebugDataRepositoryTest {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `handles no chats available during auto activity simulation`() = testScope.runTest {
+        // Given - Enable auto activity without adding any chats (empty state)
+        val initialMessageCount = remoteDebugDataSource.getMessagesSize()
+        assertEquals(0, initialMessageCount)
+
+        debugDataRepository.updateSettings { settings -> settings.copy(autoActivity = true) }
+
+        // When - Advance time to trigger auto activity attempts with no chats available
+        remoteDebugDataSource.messageAddedCount.test {
+            val initial = awaitItem()
+            assertEquals(0, initial)
+
+            // Advance time to trigger multiple simulation attempts
+            advanceTimeBy(AUTO_ACTIVITY_MAX_DELAY_MS * 2)
+
+            // Then - No messages should be added because no chats are available
+            assertEquals(0, remoteDebugDataSource.messageAddedCount.value)
+            assertEquals(0, remoteDebugDataSource.getMessagesSize())
+
+            // When - Add a chat to verify auto activity resumes working
+            val testChat = DebugTestData.createTestChat()
+            remoteDebugDataSource.addChat(testChat)
+
+            // Then - Auto activity should resume and add a message
+            val firstMessage = awaitItem()
+            assertEquals(1, firstMessage)
+            assertEquals(1, remoteDebugDataSource.getMessagesSize())
+
+            // Verify continuous operation after recovery
+            val secondMessage = awaitItem()
+            assertEquals(2, secondMessage)
+            assertEquals(2, remoteDebugDataSource.getMessagesSize())
+        }
+    }
+
     @Test
     fun `regenerateData updates last generation timestamp`() = testScope.runTest {
         // Given - Get initial timestamp

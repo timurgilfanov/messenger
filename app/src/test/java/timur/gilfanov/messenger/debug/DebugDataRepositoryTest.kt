@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.debug
 
 import app.cash.turbine.test
+import java.io.IOException
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -23,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.data.source.local.LocalClearSyncTimestampError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.AddChatError
@@ -261,7 +263,9 @@ class DebugDataRepositoryTest {
     @Test
     fun `handles clear sync timestamp error in data regeneration`() = testScope.runTest {
         // Given - Simulate error by making local data source fail clearSyncTimestamp
-        localDebugDataSource.debugClearSyncTimestampError = LocalDataSourceError.StorageUnavailable
+        localDebugDataSource.debugClearSyncTimestampError = LocalClearSyncTimestampError.WriteError(
+            exception = IOException("Can't write"),
+        )
         val localChats = localDebugDataSource.flowChatList().first()
         val remoteChats = remoteDebugDataSource.getChats()
 

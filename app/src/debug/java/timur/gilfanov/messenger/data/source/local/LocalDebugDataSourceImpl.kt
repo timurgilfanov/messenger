@@ -56,16 +56,17 @@ class LocalDebugDataSourceImpl @Inject constructor(
         ResultWithError.Failure(errorHandler.mapException(e))
     }
 
-    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalDataSourceError> = try {
-        logger.d(TAG, "Clearing sync timestamp")
-        dataStore.edit { preferences ->
-            preferences.remove(SyncPreferences.LAST_SYNC_TIMESTAMP)
+    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalClearSyncTimestampError> =
+        try {
+            logger.d(TAG, "Clearing sync timestamp")
+            dataStore.edit { preferences ->
+                preferences.remove(SyncPreferences.LAST_SYNC_TIMESTAMP)
+            }
+            logger.d(TAG, "Successfully cleared sync timestamp")
+            ResultWithError.Success(Unit)
+        } catch (e: IOException) {
+            ResultWithError.Failure(LocalClearSyncTimestampError.WriteError(e))
         }
-        logger.d(TAG, "Successfully cleared sync timestamp")
-        ResultWithError.Success(Unit)
-    } catch (e: SQLiteException) {
-        ResultWithError.Failure(errorHandler.mapException(e))
-    }
 
     override val settings: Flow<DebugSettings> = dataStore.data.map { preferences ->
         DebugSettings.fromPreferences(preferences)

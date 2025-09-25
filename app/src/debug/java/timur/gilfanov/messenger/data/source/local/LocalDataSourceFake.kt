@@ -310,7 +310,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalDataSourceError> {
+    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalClearSyncTimestampError> {
         logger.d(TAG, "Clearing sync timestamp")
         syncTimestamp.update { null }
         return ResultWithError.Success(Unit)

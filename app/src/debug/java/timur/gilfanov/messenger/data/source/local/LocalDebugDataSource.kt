@@ -27,7 +27,7 @@ interface LocalDebugDataSource {
      * Clears the sync timestamp to force a full resync from the beginning.
      * Used when regenerating debug data to ensure sync starts fresh.
      */
-    suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalDataSourceError>
+    suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalClearSyncTimestampError>
 
     val settings: Flow<DebugSettings>
 

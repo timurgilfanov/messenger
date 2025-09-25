@@ -310,8 +310,8 @@ class DebugDataRepositoryImpl @Inject constructor(
 }
 
 private fun LocalUpdateSettingsError.toRepositoryError(): UpdateSettingsError = when (this) {
-    is LocalUpdateSettingsError.TransformError -> UpdateSettingsError.TransformError(e)
-    is LocalUpdateSettingsError.WriteError -> UpdateSettingsError.WriteError(e)
+    is LocalUpdateSettingsError.TransformError -> UpdateSettingsError.TransformError(exception)
+    is LocalUpdateSettingsError.WriteError -> UpdateSettingsError.WriteError(exception)
 }
 
 private sealed interface SimulateMessageError {

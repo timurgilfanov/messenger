@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.debug
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import timur.gilfanov.messenger.data.source.local.LocalClearSyncTimestampError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSources
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -13,7 +14,7 @@ class LocalDebugDataSourcesDecorator(private val dataSource: LocalDebugDataSourc
 
     var debugDeleteAllChatsError: LocalDataSourceError? = null
     var debugDeleteAllMessagesError: LocalDataSourceError? = null
-    var debugClearSyncTimestampError: LocalDataSourceError? = null
+    var debugClearSyncTimestampError: LocalClearSyncTimestampError? = null
 
     var shouldFailGetLastSyncTimestamp = false
     var shouldFailFlowChatList = false
@@ -28,7 +29,7 @@ class LocalDebugDataSourcesDecorator(private val dataSource: LocalDebugDataSourc
             ResultWithError.Failure(it)
         } ?: dataSource.deleteAllMessages()
 
-    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalDataSourceError> =
+    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalClearSyncTimestampError> =
         debugClearSyncTimestampError?.let {
             ResultWithError.Failure(it)
         } ?: dataSource.clearSyncTimestamp()

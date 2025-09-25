@@ -403,7 +403,7 @@ class DebugDataRepositoryTest {
 
     // Regression test for sync integration
     @Test
-    fun `initializeWithScenario add chats to remote data source with chat ID as recepient`() =
+    fun `initializeWithScenario add chats to remote data source with chat ID as recipient`() =
         testScope.runTest {
             // Given - Create a mock sync flow to verify the generated data can be synced
             val generatedChats = mutableListOf<Chat>()

@@ -72,7 +72,7 @@ class LocalDebugDataSourceImpl @Inject constructor(
         DebugSettings.fromPreferences(preferences)
     }
 
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught") // We don't control the transform function
     override suspend fun updateSettings(
         transform: (DebugSettings) -> DebugSettings,
     ): ResultWithError<Unit, LocalUpdateSettingsError> = try {

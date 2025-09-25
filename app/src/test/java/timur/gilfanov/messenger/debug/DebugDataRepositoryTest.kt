@@ -32,6 +32,7 @@ import timur.gilfanov.messenger.data.source.remote.GetChatsError
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSourceError
+import timur.gilfanov.messenger.debug.DebugDataRepositoryImpl.Companion.AUTO_ACTIVITY_MAX_DELAY_MS
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
@@ -379,6 +380,49 @@ class DebugDataRepositoryTest {
 
         // Then - No more messages should be generated after disabling
         assertEquals(initialMessageCount, remoteDebugDataSource.getMessagesSize())
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `handles getChats error during auto activity simulation`() = testScope.runTest {
+        // Given - Setup chats for simulation and enable auto activity
+        val testChat = DebugTestData.createTestChat()
+        remoteDebugDataSource.addChat(testChat)
+        val initialMessageCount = remoteDebugDataSource.getMessagesSize()
+
+        debugDataRepository.updateSettings { settings -> settings.copy(autoActivity = true) }
+
+        // Then - Verify auto activity starts working normally
+        remoteDebugDataSource.messageAddedCount.test {
+            val initial = awaitItem()
+            assertEquals(0, initial)
+
+            val first = awaitItem()
+            assertEquals(1, first)
+            assertEquals(initialMessageCount + 1, remoteDebugDataSource.getMessagesSize())
+
+            // When - Inject getChats error during simulation
+            val error = GetChatsError.RemoteError(
+                error = RemoteDebugDataSourceError.ServerError,
+            )
+            remoteDebugDataSource.remoteGetChatsError = error
+
+            // Advance time to trigger few next simulation attempts
+            advanceTimeBy(AUTO_ACTIVITY_MAX_DELAY_MS * 2)
+
+            // Then - Message count should remain unchanged due to error
+            // (No new message added because getChats failed)
+            assertEquals(1, remoteDebugDataSource.messageAddedCount.value)
+            assertEquals(initialMessageCount + 1, remoteDebugDataSource.getMessagesSize())
+
+            // When - Remove error injection to verify recovery
+            remoteDebugDataSource.remoteGetChatsError = null
+
+            // Then - Auto activity should recover and add another message
+            val recovered = awaitItem()
+            assertEquals(2, recovered)
+            assertEquals(initialMessageCount + 2, remoteDebugDataSource.getMessagesSize())
+        }
     }
 
     @Test

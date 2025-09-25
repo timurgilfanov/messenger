@@ -42,7 +42,7 @@ class DebugDataRepositoryImpl @Inject constructor(
     companion object {
         private const val TAG = "DebugDataRepository"
         private const val AUTO_ACTIVITY_MIN_DELAY_MS = 5000L
-        private const val AUTO_ACTIVITY_MAX_DELAY_MS = 15000L
+        const val AUTO_ACTIVITY_MAX_DELAY_MS = 15000L
     }
 
     private var autoActivityJob: Job? = null

@@ -29,6 +29,7 @@ data class RegenerateDataError(
     val clearData: ClearDataError? = null,
     val generateData: GenerateDataError? = null,
     val populateRemote: PopulateRemoteError? = null,
+    val getSettings: GetSettingsError? = null,
     val updateSettings: UpdateSettingsError? = null,
 ) {
     init {
@@ -36,6 +37,7 @@ data class RegenerateDataError(
             clearData != null ||
                 generateData != null ||
                 populateRemote != null ||
+                getSettings != null ||
                 updateSettings != null,
         ) {
             "At least one error must be non-null"

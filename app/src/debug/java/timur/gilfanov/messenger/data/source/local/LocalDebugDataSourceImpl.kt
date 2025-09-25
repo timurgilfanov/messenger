@@ -8,8 +8,13 @@ import androidx.datastore.preferences.core.edit
 import androidx.room.withTransaction
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.pow
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.datastore.SyncPreferences
 import timur.gilfanov.messenger.debug.DebugSettings
@@ -68,9 +73,35 @@ class LocalDebugDataSourceImpl @Inject constructor(
             ResultWithError.Failure(LocalClearSyncTimestampError.WriteError(e))
         }
 
-    override val settings: Flow<DebugSettings> = dataStore.data.map { preferences ->
-        DebugSettings.fromPreferences(preferences)
-    }
+    override val settings: Flow<ResultWithError<DebugSettings, LocalGetSettingsError>> =
+        dataStore.data
+            .map { preferences ->
+                ResultWithError.Success<DebugSettings, LocalGetSettingsError>(
+                    DebugSettings.fromPreferences(preferences),
+                )
+            }
+            .retryWhen { cause, attempt ->
+                if (cause is IOException && attempt < 3) {
+                    logger.w(TAG, "Retrying to read settings (attempt=$attempt)", cause)
+                    delay(minOf(2.0.pow(attempt.toInt()), 5.0).seconds)
+                    true
+                } else {
+                    false
+                }
+            }
+            .catch<ResultWithError<DebugSettings, LocalGetSettingsError>> {
+                when (it) {
+                    is IOException -> {
+                        logger.e(TAG, "Error reading debug settings", it)
+                        emit(
+                            ResultWithError.Failure<DebugSettings, LocalGetSettingsError>(
+                                LocalGetSettingsError.ReadError(it),
+                            ),
+                        )
+                    }
+                    else -> throw it
+                }
+            }
 
     @Suppress("TooGenericExceptionCaught") // We don't control the transform function
     override suspend fun updateSettings(

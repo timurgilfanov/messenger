@@ -29,7 +29,7 @@ interface LocalDebugDataSource {
      */
     suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalClearSyncTimestampError>
 
-    val settings: Flow<DebugSettings>
+    val settings: Flow<ResultWithError<DebugSettings, LocalGetSettingsError>>
 
     suspend fun updateSettings(
         transform: (DebugSettings) -> DebugSettings,

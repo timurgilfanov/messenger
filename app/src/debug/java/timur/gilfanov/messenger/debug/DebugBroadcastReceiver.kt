@@ -9,7 +9,6 @@ import javax.inject.Inject
 import javax.inject.Named
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.util.Logger
@@ -71,9 +70,20 @@ class DebugBroadcastReceiver : BroadcastReceiver() {
                 when (val result = debugDataRepository.regenerateData()) {
                     is ResultWithError.Success -> {
                         // Update notification with current scenario
-                        val currentSettings = debugDataRepository.settings.first()
-                        debugNotificationService.updateNotification(currentSettings.scenario)
-                        logger.d(TAG, "Debug data regeneration completed")
+                        when (val currentSettings = debugDataRepository.getSettings()) {
+                            is ResultWithError.Success -> {
+                                debugNotificationService.updateNotification(
+                                    currentSettings.data.scenario,
+                                )
+                                logger.d(TAG, "Debug data regeneration completed")
+                            }
+                            is ResultWithError.Failure -> {
+                                logger.w(
+                                    TAG,
+                                    "Failed to get current debug settings after regeneration: ${currentSettings.error}",
+                                )
+                            }
+                        }
                     }
                     is ResultWithError.Failure -> {
                         logger.w(TAG, "Debug data regeneration failed: ${result.error}")

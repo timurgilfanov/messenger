@@ -12,7 +12,7 @@ interface DebugDataRepository {
 
     suspend fun clearData(): ResultWithError<Unit, ClearDataError>
 
-    val settings: Flow<DebugSettings>
+    val settings: Flow<ResultWithError<DebugSettings, GetSettingsError.ReadError>>
 
     suspend fun getSettings(): ResultWithError<DebugSettings, GetSettingsError>
 

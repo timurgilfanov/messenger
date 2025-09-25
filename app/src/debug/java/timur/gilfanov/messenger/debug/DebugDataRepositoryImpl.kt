@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.debug
 
-import androidx.datastore.core.IOException
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -12,6 +11,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -20,6 +20,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
+import timur.gilfanov.messenger.data.source.local.LocalGetSettingsError
 import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
 import timur.gilfanov.messenger.data.source.remote.AddChatError
 import timur.gilfanov.messenger.data.source.remote.ClearDataError as RemoteDataSourceClearDataError
@@ -50,12 +51,23 @@ class DebugDataRepositoryImpl @Inject constructor(
     /**
      * Flow of current debug settings
      */
-    override val settings: Flow<DebugSettings> = localDebugDataSource.settings
+    override val settings: Flow<ResultWithError<DebugSettings, GetSettingsError.ReadError>> =
+        localDebugDataSource.settings.map {
+            when (it) {
+                is ResultWithError.Success -> ResultWithError.Success(it.data)
+                is ResultWithError.Failure -> ResultWithError.Failure(
+                    when (it.error) {
+                        is LocalGetSettingsError.ReadError -> GetSettingsError.ReadError
+                    },
+                )
+            }
+        }
 
     init {
         // Monitor auto-activity setting and start/stop simulation accordingly
         settings
-            .map { it.autoActivity }
+            .filterIsInstance<ResultWithError.Success<DebugSettings, LocalGetSettingsError>>()
+            .map { it.data.autoActivity }
             .distinctUntilChanged()
             .onEach { enabled ->
                 if (enabled) startAutoActivity() else stopAutoActivity()
@@ -77,7 +89,13 @@ class DebugDataRepositoryImpl @Inject constructor(
      * Regenerate data using current scenario
      */
     override suspend fun regenerateData(): ResultWithError<Unit, RegenerateDataError> {
-        val currentSettings = settings.first()
+        val currentSettings = getSettings().let { result ->
+            if (result is ResultWithError.Failure) {
+                logger.w(TAG, "Failed to fetch current settings: ${result.error}")
+                return ResultWithError.Failure(RegenerateDataError(getSettings = result.error))
+            }
+            (result as ResultWithError.Success).data
+        }
         return regenerateData(currentSettings.scenario)
     }
 
@@ -229,14 +247,21 @@ class DebugDataRepositoryImpl @Inject constructor(
             is ResultWithError.Failure -> ResultWithError.Failure(result.error.toRepositoryError())
         }
 
-    override suspend fun getSettings(): ResultWithError<DebugSettings, GetSettingsError> = try {
-        ResultWithError.Success(settings.first())
-    } catch (e: IOException) {
-        logger.e(TAG, "Error reading from DataStore", e)
-        ResultWithError.Failure(GetSettingsError.ReadError)
-    } catch (e: NoSuchElementException) {
-        logger.e(TAG, "No data found in DataStore", e)
-        ResultWithError.Failure(GetSettingsError.NoData)
+    override suspend fun getSettings(): ResultWithError<DebugSettings, GetSettingsError> {
+        val result = try {
+            settings.first()
+        } catch (e: NoSuchElementException) {
+            logger.e(TAG, "No data found in DataStore", e)
+            return ResultWithError.Failure(GetSettingsError.NoData)
+        }
+        return when (result) {
+            is ResultWithError.Failure -> {
+                logger.w(TAG, "Failed to fetch debug settings: ${result.error}")
+                ResultWithError.Failure(result.error)
+            }
+
+            is ResultWithError.Success -> ResultWithError.Success(result.data)
+        }
     }
 
     private fun startAutoActivity() {

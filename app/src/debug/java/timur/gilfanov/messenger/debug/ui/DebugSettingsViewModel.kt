@@ -8,6 +8,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.orbitmvi.orbit.ContainerHost
@@ -17,7 +18,9 @@ import timur.gilfanov.messenger.debug.DataScenario
 import timur.gilfanov.messenger.debug.DebugDataRepository
 import timur.gilfanov.messenger.debug.DebugNotificationService
 import timur.gilfanov.messenger.debug.DebugSettings
+import timur.gilfanov.messenger.debug.GetSettingsError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.util.Logger
 
 data class DebugSettingsUiState(
@@ -52,13 +55,15 @@ class DebugSettingsViewModel @Inject constructor(
     @OptIn(OrbitExperimental::class)
     private suspend fun observeDebugSettings() = subIntent {
         repeatOnSubscription {
-            debugDataRepository.settings.collect { settings ->
-                withContext(Dispatchers.Main) {
-                    reduce {
-                        state.copy(settings = settings)
+            debugDataRepository.settings
+                .filterIsInstance<Success<DebugSettings, GetSettingsError.ReadError>>()
+                .collect { settings ->
+                    withContext(Dispatchers.Main) {
+                        reduce {
+                            state.copy(settings = settings.data)
+                        }
                     }
                 }
-            }
         }
     }
 

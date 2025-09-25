@@ -316,9 +316,10 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
         return ResultWithError.Success(Unit)
     }
 
-    private val _settings = MutableStateFlow(DebugSettings())
+    private val _settings: MutableStateFlow<ResultWithError<DebugSettings, LocalGetSettingsError>> =
+        MutableStateFlow(ResultWithError.Success(DebugSettings()))
 
-    override val settings: Flow<DebugSettings>
+    override val settings: Flow<ResultWithError<DebugSettings, LocalGetSettingsError>>
         get() = _settings.asStateFlow()
 
     @Suppress("TooGenericExceptionCaught") // It's a test fake
@@ -326,7 +327,14 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
         transform: (DebugSettings) -> DebugSettings,
     ): ResultWithError<Unit, LocalUpdateSettingsError> = try {
         _settings.update { currentSettings ->
-            transform(currentSettings)
+            when (currentSettings) {
+                is ResultWithError.Success<DebugSettings, LocalGetSettingsError> -> {
+                    ResultWithError.Success(transform(currentSettings.data))
+                }
+                is ResultWithError.Failure<DebugSettings, LocalGetSettingsError> -> {
+                    currentSettings
+                }
+            }
         }
         ResultWithError.Success(Unit)
     } catch (e: Exception) {

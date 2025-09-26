@@ -71,25 +71,15 @@ class DebugActivityLifecycleCallbacks(
         }
     }
 
-    override fun onActivityStarted(activity: Activity) {
-        // No-op
-    }
+    override fun onActivityStarted(activity: Activity) = Unit
 
-    override fun onActivityResumed(activity: Activity) {
-        // No-op
-    }
+    override fun onActivityResumed(activity: Activity) = Unit
 
-    override fun onActivityPaused(activity: Activity) {
-        // No-op
-    }
+    override fun onActivityPaused(activity: Activity) = Unit
 
-    override fun onActivityStopped(activity: Activity) {
-        // No-op
-    }
+    override fun onActivityStopped(activity: Activity) = Unit
 
-    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
-        // No-op
-    }
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
 
     override fun onActivityDestroyed(activity: Activity) {
         // Clear intent data when MainActivity is destroyed
@@ -204,15 +194,25 @@ class DebugActivityLifecycleCallbacks(
      * than the regenerated data timestamps.
      */
     private suspend fun clearSyncStateForFreshStart() {
-        try {
-            logger.d(TAG, "Clearing local cache and sync timestamp for fresh start")
-            localDebugDataSource.deleteAllChats()
-            localDebugDataSource.deleteAllMessages()
-            localDebugDataSource.clearSyncTimestamp()
+        logger.d(TAG, "Clearing local cache and sync timestamp for fresh start")
+        val resultChats = localDebugDataSource.deleteAllChats()
+        if (resultChats is ResultWithError.Failure) {
+            logger.w(TAG, "Failed to clear chats: ${resultChats.error}")
+        }
+        val resultMessages = localDebugDataSource.deleteAllMessages()
+        if (resultMessages is ResultWithError.Failure) {
+            logger.w(TAG, "Failed to clear messages: ${resultMessages.error}")
+        }
+        val resultSyncTimestamp = localDebugDataSource.clearSyncTimestamp()
+        if (resultSyncTimestamp is ResultWithError.Failure) {
+            logger.w(TAG, "Failed to clear sync timestamp: ${resultSyncTimestamp.error}")
+        }
+
+        if (resultChats is ResultWithError.Success &&
+            resultMessages is ResultWithError.Success &&
+            resultSyncTimestamp is ResultWithError.Success
+        ) {
             logger.d(TAG, "Sync state cleared successfully")
-        } catch (e: Exception) {
-            logger.w(TAG, "Failed to clear sync state", e)
-            // Continue anyway - the initialization will still work
         }
     }
 }

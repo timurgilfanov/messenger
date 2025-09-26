@@ -2,10 +2,7 @@ package timur.gilfanov.messenger.debug.ui
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.io.IOException
-import java.lang.IllegalArgumentException
 import javax.inject.Inject
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterIsInstance
@@ -19,14 +16,9 @@ import timur.gilfanov.messenger.debug.DebugDataRepository
 import timur.gilfanov.messenger.debug.DebugNotificationService
 import timur.gilfanov.messenger.debug.DebugSettings
 import timur.gilfanov.messenger.debug.GetSettingsError
-import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.util.Logger
-
-data class DebugSettingsUiState(
-    val settings: DebugSettings = DebugSettings(),
-    val isLoading: Boolean = false,
-)
 
 /**
  * ViewModel for debug settings screen.
@@ -72,28 +64,22 @@ class DebugSettingsViewModel @Inject constructor(
      */
     @OptIn(OrbitExperimental::class)
     fun regenerateData() = intent {
-        try {
-            reduce { state.copy(isLoading = true) }
-            logger.d(TAG, "Regenerating data...")
+        reduce { state.copy(isLoading = true) }
+        logger.d(TAG, "Regenerating data...")
 
-            debugDataRepository.regenerateData()
-
-            // Update notification with current scenario
-            val currentSettings = state.settings
-            debugNotificationService.updateNotification(currentSettings.scenario)
-
-            logger.d(TAG, "Data regeneration completed")
-        } catch (e: IOException) {
-            logger.e(TAG, "Failed to regenerate data - IO error", e)
-        } catch (e: CancellationException) {
-            throw e // Re-throw cancellation
-        } catch (e: SecurityException) {
-            logger.e(TAG, "Failed to regenerate data - permission denied", e)
-        } catch (e: IllegalArgumentException) {
-            logger.e(TAG, "Failed to regenerate data - invalid arguments", e)
-        } finally {
-            reduce { state.copy(isLoading = false) }
+        val result = debugDataRepository.regenerateData()
+        when (result) {
+            is Success -> {
+                // Update notification with current scenario
+                val currentSettings = state.settings
+                debugNotificationService.updateNotification(currentSettings.scenario)
+                logger.d(TAG, "Data regeneration completed")
+            }
+            is Failure -> {
+                logger.w(TAG, "Failed to regenerate data: ${result.error}")
+            }
         }
+        reduce { state.copy(isLoading = false) }
     }
 
     /**
@@ -101,24 +87,19 @@ class DebugSettingsViewModel @Inject constructor(
      */
     @OptIn(OrbitExperimental::class)
     fun clearAllData() = intent {
-        try {
-            reduce { state.copy(isLoading = true) }
-            logger.d(TAG, "Clearing all data...")
+        reduce { state.copy(isLoading = true) }
+        logger.d(TAG, "Clearing all data...")
 
-            debugDataRepository.clearData()
-
-            logger.d(TAG, "Data cleared")
-        } catch (e: IOException) {
-            logger.e(TAG, "Failed to clear data - IO error", e)
-        } catch (e: CancellationException) {
-            throw e // Re-throw cancellation
-        } catch (e: SecurityException) {
-            logger.e(TAG, "Failed to clear data - permission denied", e)
-        } catch (e: IllegalArgumentException) {
-            logger.e(TAG, "Failed to clear data - invalid arguments", e)
-        } finally {
-            reduce { state.copy(isLoading = false) }
+        val result = debugDataRepository.clearData()
+        when (result) {
+            is Success -> {
+                logger.d(TAG, "Data cleared successfully")
+            }
+            is Failure -> {
+                logger.w(TAG, "Failed to clear data: ${result.error}")
+            }
         }
+        reduce { state.copy(isLoading = false) }
     }
 
     /**
@@ -126,27 +107,21 @@ class DebugSettingsViewModel @Inject constructor(
      */
     @OptIn(OrbitExperimental::class)
     fun switchScenario(scenario: DataScenario) = intent {
-        try {
-            reduce { state.copy(isLoading = true) }
-            logger.d(TAG, "Switching to scenario: ${scenario.name}")
+        reduce { state.copy(isLoading = true) }
+        logger.d(TAG, "Switching to scenario: ${scenario.name}")
 
-            debugDataRepository.initializeWithScenario(scenario)
-
-            // Update notification with new scenario
-            debugNotificationService.updateNotification(scenario)
-
-            logger.d(TAG, "Scenario switch completed")
-        } catch (e: IOException) {
-            logger.e(TAG, "Failed to switch scenario - IO error", e)
-        } catch (e: CancellationException) {
-            throw e // Re-throw cancellation
-        } catch (e: SecurityException) {
-            logger.e(TAG, "Failed to switch scenario - permission denied", e)
-        } catch (e: IllegalArgumentException) {
-            logger.e(TAG, "Failed to switch scenario - invalid arguments", e)
-        } finally {
-            reduce { state.copy(isLoading = false) }
+        val result = debugDataRepository.initializeWithScenario(scenario)
+        when (result) {
+            is Success -> {
+                // Update notification with new scenario
+                debugNotificationService.updateNotification(scenario)
+                logger.d(TAG, "Scenario switch completed")
+            }
+            is Failure -> {
+                logger.e(TAG, "Failed to switch scenario: ${result.error}")
+            }
         }
+        reduce { state.copy(isLoading = false) }
     }
 
     /**
@@ -158,8 +133,8 @@ class DebugSettingsViewModel @Inject constructor(
         val result = debugDataRepository.updateSettings { settings ->
             settings.copy(autoActivity = enabled)
         }
-        if (result is ResultWithError.Failure) {
-            logger.e(TAG, "Failed to update auto-activity setting: ${result.error}")
+        if (result is Failure) {
+            logger.w(TAG, "Failed to update auto-activity setting: ${result.error}")
         }
     }
 
@@ -172,8 +147,8 @@ class DebugSettingsViewModel @Inject constructor(
         val result = debugDataRepository.updateSettings { settings ->
             settings.copy(showNotification = show)
         }
-        if (result is ResultWithError.Failure) {
-            logger.e(TAG, "Failed to update notification setting: ${result.error}")
+        if (result is Failure) {
+            logger.w(TAG, "Failed to update notification setting: ${result.error}")
             return@intent
         }
 

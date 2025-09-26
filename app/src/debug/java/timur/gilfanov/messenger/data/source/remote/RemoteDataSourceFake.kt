@@ -143,6 +143,14 @@ class RemoteDataSourceFake @Inject constructor(private val logger: Logger) :
         if (!connectionState.value) {
             ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
         } else {
+            logger.d(
+                TAG,
+                "Observe server state since $since : " +
+                    "chats=${state.chats.size}, " +
+                    "ops=${state.operationTimestamps.size}, " +
+                    "currentTs=${state.currentTimestamp}, " +
+                    "lastSyncTs=${state.lastSyncTimestamp}",
+            )
             if (since == null) {
                 generateFullDelta(state.chats)
             } else {
@@ -151,6 +159,7 @@ class RemoteDataSourceFake @Inject constructor(private val logger: Logger) :
                 }.toList().sortedBy { it.second }
 
                 if (recentOperations.isEmpty()) {
+                    logger.d(TAG, "observeChatListUpdates: no recent operations")
                     ResultWithError.Success(
                         ChatListDelta(
                             changes = emptyList<ChatDelta>().toPersistentList(),
@@ -160,16 +169,21 @@ class RemoteDataSourceFake @Inject constructor(private val logger: Logger) :
                         ),
                     )
                 } else {
+                    logger.d(
+                        TAG,
+                        "observeChatListUpdates: found ${recentOperations.size} recent operations",
+                    )
                     val deltas = recentOperations.mapNotNull { (operationKey, timestamp) ->
                         generateChatDelta(operationKey, state.chats, timestamp, since)
                     }
 
-                    val latestTimestamp = recentOperations.maxOfOrNull { it.second } ?: since
+                    val latestTimestamp = recentOperations.maxOfOrNull { it.second }
+                    logger.d(TAG, "observeChatListUpdates: latestTimestamp: $latestTimestamp")
                     ResultWithError.Success(
                         ChatListDelta(
                             changes = deltas.toPersistentList(),
                             fromTimestamp = since,
-                            toTimestamp = latestTimestamp,
+                            toTimestamp = latestTimestamp ?: since,
                             hasMoreChanges = false,
                         ),
                     )
@@ -268,6 +282,7 @@ class RemoteDataSourceFake @Inject constructor(private val logger: Logger) :
     private fun generateFullDelta(
         chats: Map<ChatId, Chat>,
     ): ResultWithError.Success<ChatListDelta, RemoteDataSourceError> {
+        logger.d(TAG, "generateFullDelta called with chats size: ${chats.size}")
         val timestamp = serverState.value.currentTimestamp
         val createDeltas = chats.values.map { chat ->
             ChatCreatedDelta(

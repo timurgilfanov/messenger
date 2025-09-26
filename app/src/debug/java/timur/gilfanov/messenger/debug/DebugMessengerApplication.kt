@@ -20,8 +20,7 @@ class DebugMessengerApplication : MessengerApplication() {
 
     private lateinit var debugDataRepository: DebugDataRepository
     private lateinit var debugNotificationService: DebugNotificationService
-    private lateinit var localDebugDataSource:
-        timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
+
     private lateinit var logger: timur.gilfanov.messenger.util.Logger
 
     // Debug broadcast receiver for notification actions
@@ -45,7 +44,6 @@ class DebugMessengerApplication : MessengerApplication() {
         logger = entryPoint.logger()
         debugDataRepository = entryPoint.debugDataRepository()
         debugNotificationService = entryPoint.debugNotificationService()
-        localDebugDataSource = entryPoint.localDebugDataSource()
 
         logger.d(TAG, "Debug MessengerApplication starting")
 
@@ -67,7 +65,6 @@ class DebugMessengerApplication : MessengerApplication() {
             DebugActivityLifecycleCallbacks(
                 debugDataRepository,
                 debugNotificationService,
-                localDebugDataSource,
                 applicationScope,
                 logger,
             ),

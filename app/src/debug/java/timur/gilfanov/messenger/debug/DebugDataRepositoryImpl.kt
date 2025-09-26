@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import timur.gilfanov.messenger.data.source.local.LocalClearSyncTimestampError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
 import timur.gilfanov.messenger.data.source.local.LocalGetSettingsError
@@ -247,6 +248,16 @@ class DebugDataRepositoryImpl @Inject constructor(
         return ResultWithError.Success(Unit)
     }
 
+    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, ClearSyncTimestampError> {
+        localDebugDataSource.clearSyncTimestamp().let { res ->
+            if (res is ResultWithError.Failure) {
+                logger.w(TAG, "Failed to clear sync timestamp: ${res.error}")
+                return ResultWithError.Failure(res.error.toRepositoryError())
+            }
+        }
+        return ResultWithError.Success(Unit)
+    }
+
     override suspend fun updateSettings(
         transform: (DebugSettings) -> DebugSettings,
     ): ResultWithError<Unit, UpdateSettingsError> =
@@ -341,6 +352,11 @@ class DebugDataRepositoryImpl @Inject constructor(
         return chat.copy(messages = fixedMessages.toPersistentList())
     }
 }
+
+private fun LocalClearSyncTimestampError.toRepositoryError(): ClearSyncTimestampError =
+    when (this) {
+        is LocalClearSyncTimestampError.WriteError -> ClearSyncTimestampError.WriteError(exception)
+    }
 
 private fun LocalUpdateSettingsError.toRepositoryError(): UpdateSettingsError = when (this) {
     is LocalUpdateSettingsError.TransformError -> UpdateSettingsError.TransformError(exception)

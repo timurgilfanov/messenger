@@ -12,6 +12,8 @@ interface DebugDataRepository {
 
     suspend fun clearData(): ResultWithError<Unit, ClearDataError>
 
+    suspend fun clearSyncTimestamp(): ResultWithError<Unit, ClearSyncTimestampError>
+
     val settings: Flow<ResultWithError<DebugSettings, GetSettingsError.ReadError>>
 
     suspend fun getSettings(): ResultWithError<DebugSettings, GetSettingsError>

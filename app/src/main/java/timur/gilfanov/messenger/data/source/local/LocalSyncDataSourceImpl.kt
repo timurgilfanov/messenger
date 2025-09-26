@@ -56,6 +56,7 @@ class LocalSyncDataSourceImpl @Inject constructor(
     override suspend fun updateLastSyncTimestamp(
         timestamp: Instant,
     ): ResultWithError<Unit, LocalDataSourceError> = try {
+        logger.d(TAG, "Updating last sync timestamp to: $timestamp")
         dataStore.edit { preferences ->
             preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] = timestamp.toEpochMilliseconds()
         }

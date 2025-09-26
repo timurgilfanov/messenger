@@ -9,6 +9,11 @@ data class ClearDataError(
     val failedOperations: List<Pair<String, String>>, // List of (operation, reason)
 )
 
+sealed interface ClearSyncTimestampError {
+    data class WriteError(val exception: IOException) : ClearSyncTimestampError
+    companion object
+}
+
 sealed interface GenerateDataError {
     object NoChatsGenerated : GenerateDataError
 }

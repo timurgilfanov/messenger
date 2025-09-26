@@ -13,7 +13,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.MainActivity
-import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.util.Logger
 
@@ -26,7 +25,6 @@ import timur.gilfanov.messenger.util.Logger
 class DebugActivityLifecycleCallbacks(
     private val debugDataRepository: DebugDataRepository,
     private val debugNotificationService: DebugNotificationService,
-    private val localDebugDataSource: LocalDebugDataSource,
     private val applicationScope: CoroutineScope,
     private val logger: Logger,
 ) : Application.ActivityLifecycleCallbacks {
@@ -40,31 +38,15 @@ class DebugActivityLifecycleCallbacks(
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         if (activity is MainActivity && !isInitialized) {
-            // Capture debug scenario from intent FIRST
+            requestNotificationPermissionIfNeeded(activity)
+
             val scenario = activity.intent?.getStringExtra("debug_data_scenario")
             if (scenario != null) {
                 logger.d(TAG, "Captured debug data scenario from intent: $scenario")
                 DebugIntentHolder.debugDataScenario = scenario
-            }
-
-            // Request notification permission for debug builds (Android 13+)
-            requestNotificationPermissionIfNeeded(activity)
-
-            // Now initialize debug features with correct scenario
-            // Only initialize debug features for mock flavor (fake data sources)
-            @Suppress("KotlinConstantConditions")
-            if (!BuildConfig.USE_REAL_REMOTE_DATA_SOURCES) {
                 applicationScope.launch {
-                    // If we have a debug scenario from intent, clear sync state first
-                    // to prevent race condition with sync loop
-                    if (scenario != null) {
-                        logger.d(TAG, "Clearing sync state before initializing scenario: $scenario")
-                        clearSyncStateForFreshStart()
-                    }
                     initializeDebugFeatures()
                 }
-            } else {
-                logger.d(TAG, "Using real data sources, skipping debug initialization")
             }
 
             isInitialized = true
@@ -90,6 +72,27 @@ class DebugActivityLifecycleCallbacks(
 
     private suspend fun initializeDebugFeatures() {
         logger.d(TAG, "Initializing debug features...")
+
+        // RemoteDataSourceFake use it's own time from zero Unix time and switch from data source
+        // with real time broke sync logic. Realtime datasource operation synced with local data
+        // source and set last sync time. After than we change build to debug with mock that use
+        // it's own time that less than last sync time in local data source. That leads to starting
+        // sync loop with time ahead of remote operations and leads to skipping all operations.
+        // There is no side effects when switching from fake to real time, because it's real time is
+        // ahead of fake time that starts from zero Unix time.
+        // To fix this issue we just clear last sync time on each debug launch started with data
+        // scenario parameter in intent. We don't clean on each launch to keep data consistent
+        // between debug builds. This solution relies on assumption that observing sync  deltas
+        // will be called after sync timestamp will be cleared. Another solution is to include
+        // clear login in repository that sync deltas but it will leak knowledge about debug builds
+        // into product source set. So, we need to clean sync timestamp before repository created.
+        debugDataRepository.clearSyncTimestamp().let { result ->
+            if (result is ResultWithError.Failure) {
+                logger.w(TAG, "Failed to clear sync timestamp: ${result.error}")
+            } else {
+                logger.d(TAG, "Cleared sync timestamp successfully")
+            }
+        }
 
         val scenario = determineDataScenario()
         logger.d(TAG, "Using data scenario: ${scenario.name}")
@@ -185,34 +188,6 @@ class DebugActivityLifecycleCallbacks(
             }
         } else {
             logger.d(TAG, "Android < 13, notification permission not required")
-        }
-    }
-
-    /**
-     * Clear sync state to ensure fresh sync when launching with a debug scenario.
-     * This prevents race condition where sync loop uses cached timestamp that's newer
-     * than the regenerated data timestamps.
-     */
-    private suspend fun clearSyncStateForFreshStart() {
-        logger.d(TAG, "Clearing local cache and sync timestamp for fresh start")
-        val resultChats = localDebugDataSource.deleteAllChats()
-        if (resultChats is ResultWithError.Failure) {
-            logger.w(TAG, "Failed to clear chats: ${resultChats.error}")
-        }
-        val resultMessages = localDebugDataSource.deleteAllMessages()
-        if (resultMessages is ResultWithError.Failure) {
-            logger.w(TAG, "Failed to clear messages: ${resultMessages.error}")
-        }
-        val resultSyncTimestamp = localDebugDataSource.clearSyncTimestamp()
-        if (resultSyncTimestamp is ResultWithError.Failure) {
-            logger.w(TAG, "Failed to clear sync timestamp: ${resultSyncTimestamp.error}")
-        }
-
-        if (resultChats is ResultWithError.Success &&
-            resultMessages is ResultWithError.Success &&
-            resultSyncTimestamp is ResultWithError.Success
-        ) {
-            logger.d(TAG, "Sync state cleared successfully")
         }
     }
 }

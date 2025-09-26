@@ -49,6 +49,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Code Quality
 - Do not generate comments
 - Run code quality checks and auto corrections after code editing
+- **Exception Handling**: Always catch specific exceptions, never generic ones:
+  - Use `IOException` for DataStore/file operations
+  - Use `SecurityException` for permission issues  
+  - Use `IllegalArgumentException` for validation failures
+  - Always re-throw `CancellationException` to maintain coroutine cancellation
+- **Architecture Consistency**: Follow existing patterns (e.g., Orbit MVI like ChatViewModel, ChatListViewModel)
+- **Code Abstractions**: Use existing abstractions (e.g., Logger instead of Android Log)
+
 ```bash
 # Auto-format code with ktlint and use detekt to static analysis with autocorrection
 ./gradlew ktlintFormat detekt --auto-correct
@@ -144,6 +152,7 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 - **Use Case Pattern**: Each business operation is encapsulated in a dedicated use case class
 - **Validation Pattern**: Separate validator classes with specific error types
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
+- **Orbit MVI Pattern**: ViewModels use `ContainerHost<State, SideEffect>` with `intent{}`, `reduce{}`, and `subIntent{}` for state management
 
 ### Testing
 Full strategy in `docs/Testing Strategy.md`.

@@ -233,6 +233,6 @@ class AndroidTestRepositoryWithRealImplementation(
         )
 
         // Add the message to Bob's chat
-        remoteDataSourceFake.addMessageToServerChat(message)
+        remoteDataSourceFake.addMessage(message)
     }
 }

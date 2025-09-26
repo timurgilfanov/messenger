@@ -23,16 +23,18 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.util.Logger
 
 @Singleton
 @Suppress("TooManyFunctions")
-class RemoteDataSourceFake @Inject constructor() :
+class RemoteDataSourceFake @Inject constructor(private val logger: Logger) :
     RemoteChatDataSource,
     RemoteMessageDataSource,
     RemoteSyncDataSource,
     RemoteDebugDataSource {
 
     companion object {
+        private const val TAG = "RemoteDataSourceFake"
         private const val NETWORK_DELAY_MS = 300L
         private const val SENDING_DELAY_MS = 500L
         private const val DELIVERY_DELAY_MS = 300L
@@ -46,6 +48,7 @@ class RemoteDataSourceFake @Inject constructor() :
     private val connectionState = MutableStateFlow(true)
 
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, RemoteDataSourceError> {
+        logger.d(TAG, "createChat called with chat: $chat")
         delay(NETWORK_DELAY_MS)
 
         if (!connectionState.value) {
@@ -62,6 +65,7 @@ class RemoteDataSourceFake @Inject constructor() :
     }
 
     override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, RemoteDataSourceError> {
+        logger.d(TAG, "deleteChat called with chatId: $chatId")
         delay(NETWORK_DELAY_MS)
 
         if (!connectionState.value) {
@@ -86,6 +90,7 @@ class RemoteDataSourceFake @Inject constructor() :
         chatId: ChatId,
         inviteLink: String?,
     ): ResultWithError<Chat, RemoteDataSourceError> {
+        logger.d(TAG, "joinChat called with chatId: $chatId, inviteLink: $inviteLink")
         delay(NETWORK_DELAY_MS)
 
         if (!connectionState.value) {
@@ -101,6 +106,7 @@ class RemoteDataSourceFake @Inject constructor() :
     }
 
     override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, RemoteDataSourceError> {
+        logger.d(TAG, "leaveChat called with chatId: $chatId")
         delay(NETWORK_DELAY_MS)
 
         if (!connectionState.value) {
@@ -391,6 +397,7 @@ class RemoteDataSourceFake @Inject constructor() :
         messageId: MessageId,
         mode: DeleteMessageMode,
     ): ResultWithError<Unit, RemoteDataSourceError> {
+        logger.d(TAG, "deleteMessage called with messageId: $messageId, mode: $mode")
         delay(NETWORK_DELAY_MS)
 
         if (!connectionState.value) {
@@ -425,6 +432,7 @@ class RemoteDataSourceFake @Inject constructor() :
     }
 
     override fun addChat(chat: Chat): ResultWithError<Unit, AddChatError> {
+        logger.d(TAG, "addChat called with chat: $chat")
         serverState.update { state ->
             state
                 .recordOperation("create_chat_${chat.id.id}")
@@ -434,6 +442,7 @@ class RemoteDataSourceFake @Inject constructor() :
     }
 
     override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
+        logger.d(TAG, "addMessage called with message: $message")
         val chatId = message.recipient
 
         serverState.update { state ->
@@ -490,6 +499,7 @@ class RemoteDataSourceFake @Inject constructor() :
     }
 
     override fun clearData(): ResultWithError<Unit, ClearDataError> {
+        logger.d(TAG, "clearData called")
         serverState.update { state ->
             // Start from just after the last sync point to ensure new operations are newer than any sync
             // This provides deterministic behavior while preventing sync race conditions
@@ -509,6 +519,10 @@ class RemoteDataSourceFake @Inject constructor() :
         chatId: ChatId,
         upToMessageId: MessageId,
     ): ResultWithError<Unit, RemoteDataSourceError> {
+        logger.d(
+            TAG,
+            "markMessagesAsRead called with chatId: $chatId, upToMessageId: $upToMessageId",
+        )
         delay(NETWORK_DELAY_MS)
         if (!connectionState.value) {
             return ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)

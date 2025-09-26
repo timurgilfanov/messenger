@@ -83,7 +83,7 @@ class TestRepositoryWithRealImplementation :
             )
 
             // Create and configure remote data source fake
-            val remoteDataSourceFake = RemoteDataSourceFake()
+            val remoteDataSourceFake = RemoteDataSourceFake(logger)
 
             // Prepopulate database with test data
             runBlocking {

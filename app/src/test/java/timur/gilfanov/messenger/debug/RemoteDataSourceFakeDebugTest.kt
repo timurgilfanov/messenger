@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceFake
@@ -22,7 +23,7 @@ class RemoteDataSourceFakeDebugTest {
 
     @Before
     fun setup() {
-        remoteDataSourceFake = RemoteDataSourceFake()
+        remoteDataSourceFake = RemoteDataSourceFake(NoOpLogger())
         remoteDebugDataSource = remoteDataSourceFake
     }
 

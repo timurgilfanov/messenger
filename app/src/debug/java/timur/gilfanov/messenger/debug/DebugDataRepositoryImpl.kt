@@ -143,6 +143,7 @@ class DebugDataRepositoryImpl @Inject constructor(
                 )
             }
         }
+        logger.d(TAG, "Updated settings with new scenario: ${scenario.name}")
 
         logger.d(TAG, "Data generation complete - sync will refresh UI with new data")
         return ResultWithError.Success(Unit)
@@ -151,6 +152,7 @@ class DebugDataRepositoryImpl @Inject constructor(
     private fun populateRemoteDataSource(
         chats: List<Chat>,
     ): ResultWithError<Unit, PopulateRemoteError> {
+        logger.d(TAG, "Populating remote data source with ${chats.size} chats")
         val failures = mutableMapOf<ChatId, AddChatError>()
         chats.forEach { chat ->
             val fixedChat = fixMessageRecipients(chat)
@@ -162,8 +164,10 @@ class DebugDataRepositoryImpl @Inject constructor(
             }
         }
         return if (failures.isNotEmpty()) {
+            logger.w(TAG, "Failed to populate remote data source with ${failures.size} chats")
             ResultWithError.Failure(PopulateRemoteError(failures))
         } else {
+            logger.d(TAG, "Successfully populated remote data source")
             ResultWithError.Success(Unit)
         }
     }
@@ -171,11 +175,14 @@ class DebugDataRepositoryImpl @Inject constructor(
     private fun generateData(
         scenario: DataScenario,
     ): ResultWithError<List<Chat>, GenerateDataError> {
+        logger.d(TAG, "Generating data for scenario: ${scenario.name}")
         val config = scenario.toConfig()
         val chats = sampleDataProvider.generateChats(config)
         return if (chats.isEmpty() && scenario != DataScenario.EMPTY) {
+            logger.w(TAG, "Generated data is empty - this is not allowed")
             ResultWithError.Failure(GenerateDataError.NoChatsGenerated)
         } else {
+            logger.d(TAG, "Generated ${chats.size} chats for scenario: ${scenario.name}")
             ResultWithError.Success(chats)
         }
     }
@@ -236,6 +243,7 @@ class DebugDataRepositoryImpl @Inject constructor(
                 ),
             )
         }
+        logger.d(TAG, "All data cleared successfully")
         return ResultWithError.Success(Unit)
     }
 

@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.debug.DebugTestData
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -65,7 +66,7 @@ class RemoteDataSourceFakeTest {
 
     @Before
     fun setup() {
-        remoteDataSource = RemoteDataSourceFake()
+        remoteDataSource = RemoteDataSourceFake(NoOpLogger())
 
         testParticipant = Participant(
             id = TEST_PARTICIPANT_ID,

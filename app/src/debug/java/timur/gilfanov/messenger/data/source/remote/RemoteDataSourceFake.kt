@@ -139,54 +139,62 @@ class RemoteDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override fun observeChatListUpdates(
         since: Instant?,
-    ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>> = serverState.map { state ->
-        if (!connectionState.value) {
-            ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
-        } else {
-            logger.d(
-                TAG,
-                "Observe server state since $since : " +
-                    "chats=${state.chats.size}, " +
-                    "ops=${state.operationTimestamps.size}, " +
-                    "currentTs=${state.currentTimestamp}, " +
-                    "lastSyncTs=${state.lastSyncTimestamp}",
-            )
-            if (since == null) {
-                generateFullDelta(state.chats)
+    ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>> {
+        val funTag = "observeChatListUpdates"
+        var lastSync: Instant = since ?: Instant.fromEpochMilliseconds(0)
+        return serverState.map { state ->
+            if (!connectionState.value) {
+                ResultWithError.Failure(RemoteDataSourceError.NetworkNotAvailable)
             } else {
-                val recentOperations = state.operationTimestamps.filter { (_, timestamp) ->
-                    timestamp > since
-                }.toList().sortedBy { it.second }
-
-                if (recentOperations.isEmpty()) {
-                    logger.d(TAG, "observeChatListUpdates: no recent operations")
-                    ResultWithError.Success(
-                        ChatListDelta(
-                            changes = emptyList<ChatDelta>().toPersistentList(),
-                            fromTimestamp = since,
-                            toTimestamp = since, // Keep original timestamp when no changes
-                            hasMoreChanges = false,
-                        ),
-                    )
-                } else {
-                    logger.d(
-                        TAG,
-                        "observeChatListUpdates: found ${recentOperations.size} recent operations",
-                    )
-                    val deltas = recentOperations.mapNotNull { (operationKey, timestamp) ->
-                        generateChatDelta(operationKey, state.chats, timestamp, since)
+                logger.d(
+                    TAG,
+                    "$funTag: since $lastSync, " +
+                        "chats=${state.chats.size}, " +
+                        "ops=${state.operationTimestamps.size}, " +
+                        "currentTs=${state.currentTimestamp}, " +
+                        "lastSyncTs=${state.lastSyncTimestamp}",
+                )
+                if (lastSync == Instant.fromEpochMilliseconds(0)) {
+                    generateFullDelta(state.chats).also { result ->
+                        @Suppress("USELESS_IS_CHECK") // will be useful when adding error cases
+                        if (result is ResultWithError.Success) {
+                            lastSync = state.currentTimestamp
+                        }
                     }
+                } else {
+                    val recentOperations = state.operationTimestamps.filter { (_, timestamp) ->
+                        timestamp > lastSync
+                    }.toList().sortedBy { it.second }
 
-                    val latestTimestamp = recentOperations.maxOfOrNull { it.second }
-                    logger.d(TAG, "observeChatListUpdates: latestTimestamp: $latestTimestamp")
-                    ResultWithError.Success(
-                        ChatListDelta(
-                            changes = deltas.toPersistentList(),
-                            fromTimestamp = since,
-                            toTimestamp = latestTimestamp ?: since,
-                            hasMoreChanges = false,
-                        ),
-                    )
+                    logger.d(TAG, "$funTag: ${recentOperations.size} recent operations")
+                    if (recentOperations.isEmpty()) {
+                        ResultWithError.Success(
+                            ChatListDelta(
+                                changes = emptyList<ChatDelta>().toPersistentList(),
+                                fromTimestamp = lastSync,
+                                toTimestamp = lastSync, // Keep original timestamp when no changes
+                                hasMoreChanges = false,
+                            ),
+                        )
+                    } else {
+                        val deltas = recentOperations.mapNotNull { (operationKey, timestamp) ->
+                            generateChatDelta(operationKey, state.chats, timestamp, lastSync)
+                        }
+                        val latestTimestamp = recentOperations.maxOfOrNull { it.second }
+                        logger.d(TAG, "$funTag: latestTimestamp=$latestTimestamp")
+                        ResultWithError.Success<ChatListDelta, RemoteDataSourceError>(
+                            ChatListDelta(
+                                changes = deltas.toPersistentList(),
+                                fromTimestamp = lastSync,
+                                toTimestamp = latestTimestamp ?: lastSync,
+                                hasMoreChanges = false,
+                            ),
+                        ).also {
+                            if (latestTimestamp != null) {
+                                lastSync = latestTimestamp
+                            }
+                        }
+                    }
                 }
             }
         }

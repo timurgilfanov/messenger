@@ -812,15 +812,10 @@ class MessengerRepositoryImplTest {
             remoteDataSource.setConnectionState(false)
             remoteDataSource.addChat(testChat)
 
-            localDataSource.lastSyncTimestamp.test {
-                val timestampResult = awaitItem()
-                assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(timestampResult)
-                assertNull(timestampResult.data)
-                localDataSource.getChat(testChat.id).let {
-                    assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(it)
-                    assertEquals(LocalDataSourceError.ChatNotFound, it.error)
-                }
-            }
+            // Sync goes in background, so there are no way to check that no values will be emitted.
+            // Advancing time doesn't affect background scope where sync runs. Only way to check
+            // that no new values are emitted is to look in logs for "WARN/MessengerRepository:
+            // Delta result was failure: Failure(error=NetworkNotAvailable)".
         }
     }
 

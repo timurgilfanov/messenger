@@ -2,14 +2,21 @@ package timur.gilfanov.messenger.data.source.local
 
 import android.database.sqlite.SQLiteException
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.room.withTransaction
 import javax.inject.Inject
+import kotlin.math.pow
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentSet
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
@@ -40,18 +47,30 @@ class LocalSyncDataSourceImpl @Inject constructor(
 
     private val errorHandler = DatabaseErrorHandler(logger)
 
-    override suspend fun getLastSyncTimestamp(): ResultWithError<
-        Instant?,
-        LocalDataSourceError,
-        > =
-        try {
-            val preferences = dataStore.data.first()
-            val timestamp = preferences[SyncPreferences.LAST_SYNC_TIMESTAMP]
-            val instant = timestamp?.let { Instant.fromEpochMilliseconds(it) }
-            ResultWithError.Success(instant)
-        } catch (@Suppress("SwallowedException") e: androidx.datastore.core.IOException) {
-            ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
-        }
+    override val lastSyncTimestamp: Flow<ResultWithError<Instant?, LocalDataSourceError>> =
+        dataStore.data
+            .map<Preferences, ResultWithError<Instant?, LocalDataSourceError>> { preferences ->
+                val timestamp = preferences[SyncPreferences.LAST_SYNC_TIMESTAMP]
+                val instant = timestamp?.let { Instant.fromEpochMilliseconds(it) }
+                ResultWithError.Success(instant)
+            }.retryWhen { cause, attempt ->
+                if (cause is IOException && attempt < 3) {
+                    logger.w(TAG, "Retrying to read preferences (attempt=$attempt)", cause)
+                    delay(minOf(2.0.pow(attempt.toInt()), 5.0).seconds)
+                    true
+                } else {
+                    false
+                }
+            }.catch { cause ->
+                emit(
+                    ResultWithError.Failure(
+                        when (cause) {
+                            is IOException -> LocalDataSourceError.StorageUnavailable
+                            else -> LocalDataSourceError.UnknownError(cause)
+                        },
+                    ),
+                )
+            }
 
     override suspend fun updateLastSyncTimestamp(
         timestamp: Instant,

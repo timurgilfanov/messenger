@@ -5,15 +5,20 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
 import timur.gilfanov.messenger.data.source.paging.MessagePagingSource
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
@@ -64,30 +69,53 @@ class MessengerRepositoryImpl @Inject constructor(
     private fun performDeltaSyncLoop(scope: CoroutineScope) {
         scope.launch(Dispatchers.IO) {
             logger.d(TAG, "Starting delta sync loop")
-            val lastSyncTimestamp =
-                when (val result = localDataSources.sync.getLastSyncTimestamp()) {
-                    is ResultWithError.Success -> result.data
-                    is ResultWithError.Failure -> {
-                        logger.w(TAG, "Failed to get last sync timestamp: ${result.error}")
-                        null // Start from scratch if no timestamp available
+            var previousLastSyncTimestamp: Instant? = null
+            var wasInitiated = false
+            localDataSources.sync.lastSyncTimestamp
+                .filterIsInstance<ResultWithError.Success<Instant?, LocalDataSourceError>>()
+                .map { it.data }
+                .filter { lastSyncTimestamp ->
+                    // Only proceed if it's an initial sync or timestamp has regressed.
+                    // If timestamp moves forward, there is no need to restart the sync.
+                    logger.d(
+                        TAG,
+                        "Evaluating last sync timestamp: $lastSyncTimestamp, previous: $previousLastSyncTimestamp",
+                    )
+                    val previous = previousLastSyncTimestamp
+
+                    val result = !wasInitiated || // initial start
+                        (lastSyncTimestamp == null && previous != null) || // reset to null
+                        ( // time went backwards
+                            previous != null && lastSyncTimestamp != null &&
+                                lastSyncTimestamp < previous
+                            )
+                    logger.d(TAG, "Should restart sync: $result")
+
+                    if (result) {
+                        logger.d(TAG, "Set previous last sync timestamp to $lastSyncTimestamp")
+                        previousLastSyncTimestamp = lastSyncTimestamp
+                        wasInitiated = true
                     }
+                    result
                 }
-            logger.d(TAG, "Last sync timestamp: $lastSyncTimestamp")
-            remoteDataSources.sync.observeChatListUpdates(lastSyncTimestamp)
-                .onEach { deltaResult ->
-                    if (deltaResult is ResultWithError.Success) {
-                        logger.d(TAG, "Received delta updates: ${deltaResult.data}")
-                        isUpdatingFlow.value = true
-                        localDataSources.sync.applyChatListDelta(deltaResult.data)
-                        isUpdatingFlow.value = false
-                    } else {
-                        logger.w(TAG, "Delta result was failure: $deltaResult")
-                    }
+                .collectLatest { lastSyncTimestamp ->
+                    logger.d(TAG, "Last sync timestamp: $lastSyncTimestamp")
+                    remoteDataSources.sync.observeChatListUpdates(lastSyncTimestamp)
+                        .onEach { deltaResult ->
+                            if (deltaResult is ResultWithError.Success) {
+                                logger.d(TAG, "Received delta updates: ${deltaResult.data}")
+                                isUpdatingFlow.value = true
+                                localDataSources.sync.applyChatListDelta(deltaResult.data)
+                                isUpdatingFlow.value = false
+                            } else {
+                                logger.w(TAG, "Delta result was failure: $deltaResult")
+                            }
+                        }
+                        .catch { e ->
+                            logger.e(TAG, "Error collecting chat list updates", e)
+                        }
+                        .collect()
                 }
-                .catch { e ->
-                    logger.e(TAG, "Error collecting chat list updates", e)
-                }
-                .collect()
         }
     }
 

@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -122,27 +123,28 @@ class LocalDataSourceFakeDebugTest {
 
     @Test
     fun `clearSyncTimestamp should reset sync timestamp in memory`() = runTest {
-        // Given - Set a sync timestamp in the fake
-        // First trigger sync timestamp storage by getting it
-        localDataSourceFake.getLastSyncTimestamp()
+        localDataSourceFake.lastSyncTimestamp.test {
+            // Given
+            val before = awaitItem()
+            assertIs<ResultWithError.Success<*, *>>(before)
+            assertEquals(null, before.data)
 
-        // When
-        val clearResult = localDebugDataSource.clearSyncTimestamp()
+            val updateResult =
+                localDataSourceFake.updateLastSyncTimestamp(Instant.fromEpochMilliseconds(1))
+            assertIs<ResultWithError.Success<*, *>>(updateResult)
 
-        // Then
-        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(clearResult)
+            val updated = awaitItem()
+            assertIs<ResultWithError.Success<*, *>>(updated)
+            assertEquals(Instant.fromEpochMilliseconds(1), updated.data)
 
-        // Verify timestamp is cleared (should return null/default)
-        val timestampResult = localDataSourceFake.getLastSyncTimestamp()
-        when (timestampResult) {
-            is ResultWithError.Success -> {
-                // Timestamp should be null or reset
-                assertTrue(timestampResult.data == null)
-            }
-            is ResultWithError.Failure -> {
-                // Or it might return an error indicating no timestamp exists
-                assertTrue(true) // This is acceptable
-            }
+            // When
+            val clearResult = localDebugDataSource.clearSyncTimestamp()
+            assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(clearResult)
+
+            // Then
+            val after = awaitItem()
+            assertIs<ResultWithError.Success<*, *>>(after)
+            assertTrue(after.data == null)
         }
     }
 

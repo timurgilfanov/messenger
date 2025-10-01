@@ -47,11 +47,13 @@ class LocalDebugDataSourcesDecorator(private val dataSource: LocalDebugDataSourc
             }
         }
 
-    override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> =
-        if (shouldFailGetLastSyncTimestamp) {
-            ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
-        } else {
-            dataSource.getLastSyncTimestamp()
+    override val lastSyncTimestamp: Flow<ResultWithError<Instant?, LocalDataSourceError>>
+        get() = dataSource.lastSyncTimestamp.map { result ->
+            if (shouldFailGetLastSyncTimestamp) {
+                ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
+            } else {
+                result
+            }
         }
 
     override val settings: Flow<ResultWithError<DebugSettings, LocalGetSettingsError>>

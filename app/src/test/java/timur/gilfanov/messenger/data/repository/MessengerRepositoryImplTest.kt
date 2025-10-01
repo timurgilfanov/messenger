@@ -15,7 +15,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
@@ -91,7 +90,7 @@ class MessengerRepositoryImplTest {
             participants = persistentSetOf(testParticipant),
             name = "Test Chat",
             pictureUrl = null,
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
+            rules = persistentSetOf(),
             unreadMessagesCount = 0,
             lastReadMessageId = null,
             messages = persistentListOf(testMessage),
@@ -348,7 +347,7 @@ class MessengerRepositoryImplTest {
                 sender = testParticipant,
                 recipient = testChat.id,
                 createdAt = Instant.fromEpochMilliseconds(1500), // After sync timestamp (1000ms)
-                deliveryStatus = DeliveryStatus.Sent,
+                deliveryStatus = DeliveryStatus.Delivered,
             )
             // Add message to existing remote chat instead of replacing entire chat
             remoteDataSource.addMessage(newMessage)
@@ -813,14 +812,14 @@ class MessengerRepositoryImplTest {
             remoteDataSource.setConnectionState(false)
             remoteDataSource.addChat(testChat)
 
-            val timestampResult = localDataSource.getLastSyncTimestamp()
-            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(
-                timestampResult,
-            )
-            assertNull(timestampResult.data)
-            localDataSource.getChat(testChat.id).let {
-                assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(it)
-                assertEquals(LocalDataSourceError.ChatNotFound, it.error)
+            localDataSource.lastSyncTimestamp.test {
+                val timestampResult = awaitItem()
+                assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(timestampResult)
+                assertNull(timestampResult.data)
+                localDataSource.getChat(testChat.id).let {
+                    assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(it)
+                    assertEquals(LocalDataSourceError.ChatNotFound, it.error)
+                }
             }
         }
     }
@@ -973,6 +972,52 @@ class MessengerRepositoryImplTest {
         }
     }
 
+    @Test
+    fun `when sync timestamp going backward then repository should re-apply deltas`() = runTest {
+        // Given chat with two messages
+        val message2 = testMessage.copy(
+            id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440011")),
+            text = "Second message",
+            createdAt = Instant.fromEpochMilliseconds(1800),
+            deliveryStatus = DeliveryStatus.Read,
+        )
+        localDataSource.insertChat(testChat)
+        localDataSource.insertMessage(message2)
+        val firstSyncTimestamp = Instant.fromEpochMilliseconds(2000)
+        localDataSource.updateLastSyncTimestamp(firstSyncTimestamp)
+        remoteDataSource.addChat(testChat)
+        remoteDataSource.addMessage(message2)
+
+        repository = repositoryImpl(backgroundScope)
+        repository.receiveChatUpdates(testChat.id).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(result)
+            assertEquals(2, result.data.messages.size)
+
+            localDataSource.lastSyncTimestamp.test {
+                val first = awaitItem()
+                assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(first)
+                assertEquals(firstSyncTimestamp, first.data)
+                expectNoEvents()
+
+                // When set local timestamp backward between first and second operation
+                val secondSyncTimestamp = Instant.fromEpochMilliseconds(1500)
+                localDataSource.updateLastSyncTimestamp(secondSyncTimestamp)
+
+                val second = awaitItem()
+                assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(second)
+                assertEquals(secondSyncTimestamp, second.data)
+
+                // Then timestamp should be updated
+                val third = awaitItem()
+                assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(third)
+                assertEquals(firstSyncTimestamp, third.data)
+            }
+
+            // And after applying deltas content should be the same
+        }
+    }
+
     private fun repositoryImpl(scope: CoroutineScope): MessengerRepositoryImpl =
         MessengerRepositoryImpl(
             localDataSources = LocalDataSources(
@@ -985,7 +1030,7 @@ class MessengerRepositoryImplTest {
                 message = remoteDataSource,
                 sync = remoteDataSource,
             ),
-            logger = NoOpLogger(),
+            logger = TestLogger(),
             backgroundScope = scope,
         )
 }

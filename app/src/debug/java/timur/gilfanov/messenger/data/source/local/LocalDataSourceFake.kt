@@ -100,6 +100,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
     override suspend fun insertMessage(
         message: Message,
     ): ResultWithError<Message, LocalDataSourceError> {
+        logger.d(TAG, "Inserting message: ${message.id} into chat: ${message.recipient}")
         val chatId = message.recipient
         val currentChats = chats.value
         val chat = currentChats[chatId]
@@ -123,6 +124,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
     override suspend fun updateMessage(
         message: Message,
     ): ResultWithError<Message, LocalDataSourceError> {
+        logger.d(TAG, "Updating message: ${message.id} in chat: ${message.recipient}")
         val chatId = message.recipient
         val currentChats = chats.value
         val chat = currentChats[chatId]
@@ -151,6 +153,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
     override suspend fun deleteMessage(
         messageId: MessageId,
     ): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Deleting message: $messageId")
         val currentChats = chats.value
 
         // Find the chat containing the message
@@ -194,14 +197,17 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
         TODO("Not yet implemented")
     }
 
-    override suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError> {
-        val timestamp = syncTimestamp.value
-        return ResultWithError.Success(timestamp)
-    }
+    override val lastSyncTimestamp: Flow<ResultWithError<Instant?, LocalDataSourceError>> =
+        syncTimestamp
+            .asStateFlow()
+            .map { instant ->
+                ResultWithError.Success(instant)
+            }
 
     override suspend fun updateLastSyncTimestamp(
         timestamp: Instant,
     ): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Update last sync timestamp to $timestamp")
         syncTimestamp.update { timestamp }
         return ResultWithError.Success(Unit)
     }

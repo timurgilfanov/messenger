@@ -471,9 +471,14 @@ class RemoteDataSourceFake @Inject constructor(private val logger: Logger) :
         serverState.update { state ->
             val existingChat = state.chats[chatId]
             if (existingChat != null) {
+                val unreadMessagesCount =
+                    existingChat.unreadMessagesCount + when (message.deliveryStatus) {
+                        DeliveryStatus.Delivered -> 1
+                        else -> 0
+                    }
                 val updatedChat = existingChat.copy(
                     messages = existingChat.messages.add(message),
-                    unreadMessagesCount = existingChat.unreadMessagesCount + 1,
+                    unreadMessagesCount = unreadMessagesCount,
                 )
                 state
                     .recordOperation("add_message_${message.id.id}_in_${chatId.id}")

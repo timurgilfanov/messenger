@@ -7,8 +7,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
@@ -19,34 +19,30 @@ import timur.gilfanov.messenger.data.source.local.LocalDebugDataSource
 import timur.gilfanov.messenger.data.source.local.LocalDebugDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalGetSettingsError
 import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
-import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.datastore.SyncPreferences
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 
 @RunWith(RobolectricTestRunner::class)
 @Category(Unit::class)
 class LocalDebugDataSourceImplTest {
 
-    private lateinit var database: MessengerDatabase
+    @get:Rule
+    val databaseRule = InMemoryDatabaseRule()
+
     private lateinit var dataStore: DataStoreFake
     private lateinit var logger: TrackingTestLogger
     private lateinit var debugDataSource: LocalDebugDataSource
 
     @Before
     fun setup() {
-        database = DebugTestData.createTestDatabase()
         dataStore = DebugTestData.createTestDataStore()
         logger = TrackingTestLogger()
         debugDataSource = LocalDebugDataSourceImpl(
-            database = database,
+            database = databaseRule.database,
             dataStore = dataStore,
             logger = logger,
         )
-    }
-
-    @After
-    fun tearDown() {
-        database.close()
     }
 
     @Test
@@ -142,11 +138,11 @@ class LocalDebugDataSourceImplTest {
         // This test verifies the exception handling structure rather than actual database failures.
         // In practice, database errors are rare but the error handling paths are still important.
 
-        database.close()
+        databaseRule.database.close()
 
         // Create a new debug data source with the closed database
         val debugDataSourceWithClosedDb = LocalDebugDataSourceImpl(
-            database = database,
+            database = databaseRule.database,
             dataStore = dataStore,
             logger = logger,
         )

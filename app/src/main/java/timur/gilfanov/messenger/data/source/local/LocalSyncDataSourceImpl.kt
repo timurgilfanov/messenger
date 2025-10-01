@@ -104,26 +104,31 @@ class LocalSyncDataSourceImpl @Inject constructor(
     ): ResultWithError<Unit, LocalDataSourceError> = try {
         logger.d(TAG, "Applying chat list delta with ${delta.changes.size} changes")
         database.withTransaction {
-            delta.changes.forEach { chatDelta ->
+            delta.changes.sortedBy { it.timestamp }.forEach { chatDelta ->
                 logger.d(TAG, "Applying chat delta: $chatDelta")
                 when (chatDelta) {
                     is ChatCreatedDelta -> applyChatCreatedDelta(chatDelta)
                     is ChatUpdatedDelta -> applyChatUpdatedDelta(chatDelta)
                     is ChatDeletedDelta -> applyChatDeletedDelta(chatDelta)
                 }
+                dataStore.edit { preferences ->
+                    val instant = chatDelta.timestamp
+                    logger.d(TAG, "Updating last sync timestamp to: $instant")
+                    preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] = instant.toEpochMilliseconds()
+                }
             }
         }
 
         dataStore.edit { preferences ->
-            logger.d(TAG, "Updating last sync timestamp to: ${delta.toTimestamp}")
-            preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] =
-                delta.toTimestamp.toEpochMilliseconds()
+            val instant = delta.toTimestamp
+            logger.d(TAG, "Updating last sync timestamp to delta end: $instant")
+            preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] = instant.toEpochMilliseconds()
         }
 
         ResultWithError.Success(Unit)
     } catch (e: SQLiteException) {
         ResultWithError.Failure(errorHandler.mapException(e))
-    } catch (@Suppress("SwallowedException") e: androidx.datastore.core.IOException) {
+    } catch (_: IOException) {
         ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
     }
 

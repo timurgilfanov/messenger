@@ -292,8 +292,9 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) : Loca
             if (result is ResultWithError.Failure) {
                 return result
             }
-            updateLastSyncTimestamp(delta.toTimestamp)
+            updateLastSyncTimestamp(chatDelta.timestamp)
         }
+        updateLastSyncTimestamp(delta.toTimestamp)
         return ResultWithError.Success(Unit)
     }
 

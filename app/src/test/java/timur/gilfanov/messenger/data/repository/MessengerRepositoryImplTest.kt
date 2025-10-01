@@ -1030,7 +1030,7 @@ class MessengerRepositoryImplTest {
                 message = remoteDataSource,
                 sync = remoteDataSource,
             ),
-            logger = TestLogger(),
+            logger = logger,
             backgroundScope = scope,
         )
 }

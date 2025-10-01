@@ -89,7 +89,7 @@ class MessengerRepositoryImpl @Inject constructor(
                             previous != null && lastSyncTimestamp != null &&
                                 lastSyncTimestamp < previous
                             )
-                    logger.d(TAG, "Should restart sync: $result")
+                    logger.d(TAG, "Should start or restart sync: $result")
 
                     if (result) {
                         logger.d(TAG, "Set previous last sync timestamp to $lastSyncTimestamp")

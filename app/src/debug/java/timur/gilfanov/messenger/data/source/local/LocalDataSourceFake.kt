@@ -9,6 +9,7 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
@@ -16,6 +17,7 @@ import timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDelta
 import timur.gilfanov.messenger.data.source.remote.ChatListDelta
 import timur.gilfanov.messenger.data.source.remote.ChatUpdatedDelta
+import timur.gilfanov.messenger.debug.DebugSettings
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -26,25 +28,18 @@ import timur.gilfanov.messenger.util.Logger
 
 @Singleton
 @Suppress("TooManyFunctions")
-class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
-    LocalChatDataSource,
-    LocalMessageDataSource,
-    LocalSyncDataSource {
+class LocalDataSourceFake @Inject constructor(private val logger: Logger) : LocalDebugDataSources {
 
     companion object {
         private const val TAG = "LocalDataSourceFake"
     }
 
-    private val chatsFlow = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
+    private val chats = MutableStateFlow<Map<ChatId, Chat>>(emptyMap())
     private val syncTimestamp = MutableStateFlow<Instant?>(null)
-
-    // Test control flags for simulating failures
-    private var shouldFailGetLastSyncTimestamp = false
-    private var shouldFailFlowChatList = false
 
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         logger.d(TAG, "Inserting chat: ${chat.id}")
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats + (chat.id to chat)
         }
         return ResultWithError.Success(chat)
@@ -52,12 +47,12 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override suspend fun updateChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
         logger.d(TAG, "Updating chat: ${chat.id}")
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
         if (chat.id !in currentChats) {
             return ResultWithError.Failure(LocalDataSourceError.ChatNotFound)
         }
 
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats + (chat.id to chat)
         }
         return ResultWithError.Success(chat)
@@ -65,19 +60,19 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
 
     override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, LocalDataSourceError> {
         logger.d(TAG, "Deleting chat: $chatId")
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
         if (chatId !in currentChats) {
             return ResultWithError.Failure(LocalDataSourceError.ChatNotFound)
         }
 
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats - chatId
         }
         return ResultWithError.Success(Unit)
     }
 
-    fun getChat(chatId: ChatId): ResultWithError<Chat, LocalDataSourceError> {
-        val chat = chatsFlow.value[chatId]
+    override fun getChat(chatId: ChatId): ResultWithError<Chat, LocalDataSourceError> {
+        val chat = chats.value[chatId]
         return if (chat != null) {
             ResultWithError.Success(chat)
         } else {
@@ -86,18 +81,14 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     }
 
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
-        chatsFlow.map { chats ->
-            if (shouldFailFlowChatList) {
-                ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
-            } else {
-                val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
-                ResultWithError.Success(chatPreviews)
-            }
+        chats.map { chats ->
+            val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
+            ResultWithError.Success(chatPreviews)
         }
 
     override fun flowChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, LocalDataSourceError>> = chatsFlow.map { chats ->
+    ): Flow<ResultWithError<Chat, LocalDataSourceError>> = chats.map { chats ->
         val chat = chats[chatId]
         if (chat != null) {
             ResultWithError.Success(chat)
@@ -109,8 +100,9 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     override suspend fun insertMessage(
         message: Message,
     ): ResultWithError<Message, LocalDataSourceError> {
+        logger.d(TAG, "Inserting message: ${message.id} into chat: ${message.recipient}")
         val chatId = message.recipient
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
         val chat = currentChats[chatId]
 
         if (chat == null) {
@@ -122,7 +114,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         }.toPersistentList()
 
         val updatedChat = chat.copy(messages = updatedMessages)
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats + (chatId to updatedChat)
         }
 
@@ -132,8 +124,9 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     override suspend fun updateMessage(
         message: Message,
     ): ResultWithError<Message, LocalDataSourceError> {
+        logger.d(TAG, "Updating message: ${message.id} in chat: ${message.recipient}")
         val chatId = message.recipient
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
         val chat = currentChats[chatId]
 
         if (chat == null) {
@@ -149,7 +142,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
             }.toPersistentList()
 
             val updatedChat = chat.copy(messages = updatedMessages)
-            chatsFlow.update { currentChats ->
+            chats.update { currentChats ->
                 currentChats + (chatId to updatedChat)
             }
 
@@ -160,7 +153,8 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     override suspend fun deleteMessage(
         messageId: MessageId,
     ): ResultWithError<Unit, LocalDataSourceError> {
-        val currentChats = chatsFlow.value
+        logger.d(TAG, "Deleting message: $messageId")
+        val currentChats = chats.value
 
         // Find the chat containing the message
         val chatWithMessage = currentChats.values.find { chat ->
@@ -176,7 +170,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         }.toPersistentList()
 
         val updatedChat = chatWithMessage.copy(messages = updatedMessages)
-        chatsFlow.update { currentChats ->
+        chats.update { currentChats ->
             currentChats + (chatWithMessage.id to updatedChat)
         }
 
@@ -186,7 +180,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     override suspend fun getMessage(
         messageId: MessageId,
     ): ResultWithError<Message, LocalDataSourceError> {
-        val currentChats = chatsFlow.value
+        val currentChats = chats.value
 
         // Search through all chats for the message
         for (chat in currentChats.values) {
@@ -203,20 +197,17 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         TODO("Not yet implemented")
     }
 
-    override suspend fun getLastSyncTimestamp(): ResultWithError<
-        Instant?,
-        LocalDataSourceError,
-        > =
-        if (shouldFailGetLastSyncTimestamp) {
-            ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
-        } else {
-            val timestamp = syncTimestamp.value
-            ResultWithError.Success(timestamp)
-        }
+    override val lastSyncTimestamp: Flow<ResultWithError<Instant?, LocalDataSourceError>> =
+        syncTimestamp
+            .asStateFlow()
+            .map { instant ->
+                ResultWithError.Success(instant)
+            }
 
     override suspend fun updateLastSyncTimestamp(
         timestamp: Instant,
     ): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Update last sync timestamp to $timestamp")
         syncTimestamp.update { timestamp }
         return ResultWithError.Success(Unit)
     }
@@ -237,12 +228,12 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
                     messages = delta.initialMessages.toPersistentList(),
                 )
 
-                chatsFlow.update { currentChats ->
+                chats.update { currentChats ->
                     currentChats + (delta.chatId to newChat)
                 }
             }
             is ChatUpdatedDelta -> {
-                val chat = chatsFlow.value[delta.chatId]!!
+                val chat = chats.value[delta.chatId]!!
                 val messages = updateMessages(chat, delta.messagesToAdd, delta.messagesToDelete)
 
                 val updatedChat = chat.copy(
@@ -255,12 +246,12 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
                     messages = messages.toPersistentList(),
                 )
 
-                chatsFlow.update { currentChats ->
+                chats.update { currentChats ->
                     currentChats + (delta.chatId to updatedChat)
                 }
             }
             is ChatDeletedDelta -> {
-                chatsFlow.update { currentChats ->
+                chats.update { currentChats ->
                     currentChats - delta.chatId
                 }
             }
@@ -301,17 +292,62 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
             if (result is ResultWithError.Failure) {
                 return result
             }
-            updateLastSyncTimestamp(delta.toTimestamp)
+            updateLastSyncTimestamp(chatDelta.timestamp)
         }
+        updateLastSyncTimestamp(delta.toTimestamp)
         return ResultWithError.Success(Unit)
     }
 
-    // Test control methods for simulating failures
-    fun simulateGetLastSyncTimestampFailure(shouldFail: Boolean) {
-        shouldFailGetLastSyncTimestamp = shouldFail
+    override suspend fun deleteAllChats(): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Deleting all chats")
+        chats.update { emptyMap() }
+        return ResultWithError.Success(Unit)
     }
 
-    fun simulateFlowChatListFailure(shouldFail: Boolean) {
-        shouldFailFlowChatList = shouldFail
+    override suspend fun deleteAllMessages(): ResultWithError<Unit, LocalDataSourceError> {
+        logger.d(TAG, "Deleting all messages")
+
+        // Clear all messages from all chats while keeping the chats themselves
+        chats.update { currentChats ->
+            currentChats.mapValues { (_, chat) ->
+                chat.copy(messages = emptyList<Message>().toPersistentList())
+            }
+        }
+
+        return ResultWithError.Success(Unit)
     }
+
+    override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalClearSyncTimestampError> {
+        logger.d(TAG, "Clearing sync timestamp")
+        syncTimestamp.update { null }
+        return ResultWithError.Success(Unit)
+    }
+
+    private val _settings: MutableStateFlow<ResultWithError<DebugSettings, LocalGetSettingsError>> =
+        MutableStateFlow(ResultWithError.Success(DebugSettings()))
+
+    override val settings: Flow<ResultWithError<DebugSettings, LocalGetSettingsError>>
+        get() = _settings.asStateFlow()
+
+    @Suppress("TooGenericExceptionCaught") // It's a test fake
+    override suspend fun updateSettings(
+        transform: (DebugSettings) -> DebugSettings,
+    ): ResultWithError<Unit, LocalUpdateSettingsError> = try {
+        _settings.update { currentSettings ->
+            when (currentSettings) {
+                is ResultWithError.Success<DebugSettings, LocalGetSettingsError> -> {
+                    ResultWithError.Success(transform(currentSettings.data))
+                }
+                is ResultWithError.Failure<DebugSettings, LocalGetSettingsError> -> {
+                    currentSettings
+                }
+            }
+        }
+        ResultWithError.Success(Unit)
+    } catch (e: Exception) {
+        logger.e(TAG, "Failed to update settings", e)
+        ResultWithError.Failure(LocalUpdateSettingsError.TransformError(e))
+    }
+
+    override fun getMessagesSize(): Int = chats.value.values.sumOf { it.messages.size }
 }

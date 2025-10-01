@@ -10,6 +10,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import javax.inject.Singleton
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
@@ -55,6 +56,7 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    @Named("sync")
     fun provideSyncDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
         context.syncDataStore
 }

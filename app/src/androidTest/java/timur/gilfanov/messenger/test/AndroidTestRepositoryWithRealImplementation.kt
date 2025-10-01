@@ -55,7 +55,7 @@ class AndroidTestRepositoryWithRealImplementation(
     Closeable {
 
     private val instanceId = Integer.toHexString(System.identityHashCode(this))
-    val remoteDataSourceFake = RemoteDataSourceFake()
+    val remoteDataSourceFake = RemoteDataSourceFake(logger)
 
     companion object {
         private const val TAG = "AndroidTestRepo"
@@ -233,6 +233,6 @@ class AndroidTestRepositoryWithRealImplementation(
         )
 
         // Add the message to Bob's chat
-        remoteDataSourceFake.addMessageToServerChat(message)
+        remoteDataSourceFake.addMessage(message)
     }
 }

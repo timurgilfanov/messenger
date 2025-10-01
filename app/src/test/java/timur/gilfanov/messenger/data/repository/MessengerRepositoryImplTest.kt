@@ -15,7 +15,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
@@ -23,6 +22,7 @@ import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSources
+import timur.gilfanov.messenger.debug.LocalDebugDataSourcesDecorator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -52,7 +52,7 @@ import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageErro
 class MessengerRepositoryImplTest {
 
     private val logger = TestLogger()
-    private lateinit var localDataSource: LocalDataSourceFake
+    private lateinit var localDataSource: LocalDebugDataSourcesDecorator
     private lateinit var remoteDataSource: RemoteDataSourceFake
     private lateinit var repository: MessengerRepositoryImpl
 
@@ -63,8 +63,8 @@ class MessengerRepositoryImplTest {
 
     @Before
     fun setup() {
-        localDataSource = LocalDataSourceFake(logger)
-        remoteDataSource = RemoteDataSourceFake()
+        localDataSource = LocalDebugDataSourcesDecorator(LocalDataSourceFake(logger))
+        remoteDataSource = RemoteDataSourceFake(logger)
 
         testParticipant = Participant(
             id = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001")),
@@ -90,7 +90,7 @@ class MessengerRepositoryImplTest {
             participants = persistentSetOf(testParticipant),
             name = "Test Chat",
             pictureUrl = null,
-            rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
+            rules = persistentSetOf(),
             unreadMessagesCount = 0,
             lastReadMessageId = null,
             messages = persistentListOf(testMessage),
@@ -106,7 +106,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(1_000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // Create repository after data source setup
         repository = repositoryImpl(backgroundScope)
@@ -212,7 +212,7 @@ class MessengerRepositoryImplTest {
     fun `deleteChat should remove from local and remote`() = runTest {
         // Given: Set up repository with chat
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         localDataSource.flowChatList().test {
@@ -232,7 +232,7 @@ class MessengerRepositoryImplTest {
 
     @Test
     fun `joinChat should return chat and store locally`() = runTest {
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         val result = repository.joinChat(testChat.id, null)
@@ -248,7 +248,7 @@ class MessengerRepositoryImplTest {
     @Test
     fun `leaveChat should remove from local storage`() = runTest {
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         repository.flowChatList().test {
@@ -289,7 +289,7 @@ class MessengerRepositoryImplTest {
     fun `editMessage should update message`() = runTest {
         // Given: Set up repository with chat and message
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         val editedMessage = testMessage.copy(
@@ -313,7 +313,7 @@ class MessengerRepositoryImplTest {
     fun `deleteMessage should remove message`() = runTest {
         // Given: Set up repository with chat and message
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         repository = repositoryImpl(backgroundScope)
 
         // When: Delete message
@@ -328,7 +328,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(1000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         repository = repositoryImpl(backgroundScope)
 
@@ -347,10 +347,10 @@ class MessengerRepositoryImplTest {
                 sender = testParticipant,
                 recipient = testChat.id,
                 createdAt = Instant.fromEpochMilliseconds(1500), // After sync timestamp (1000ms)
-                deliveryStatus = DeliveryStatus.Sent,
+                deliveryStatus = DeliveryStatus.Delivered,
             )
             // Add message to existing remote chat instead of replacing entire chat
-            remoteDataSource.addMessageToServerChat(newMessage)
+            remoteDataSource.addMessage(newMessage)
 
             val secondResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(secondResult)
@@ -368,7 +368,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(100_000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         val newMessage = TextMessage(
             id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
             text = "Test message",
@@ -379,7 +379,7 @@ class MessengerRepositoryImplTest {
             deliveryStatus = DeliveryStatus.Sending(0),
         )
         // Add message to existing remote chat instead of replacing entire chat
-        remoteDataSource.addMessageToServerChat(newMessage)
+        remoteDataSource.addMessage(newMessage)
         remoteDataSource.setConnectionState(false)
 
         // Create repository after data source setup
@@ -430,7 +430,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(100_000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         remoteDataSource.setConnectionState(false)
 
         // Create repository after data source setup
@@ -462,7 +462,7 @@ class MessengerRepositoryImplTest {
                 assertEquals(false, awaitItem())
 
                 // Add chat to remote to trigger delta sync
-                remoteDataSource.addChatToServer(testChat)
+                remoteDataSource.addChat(testChat)
 
                 // Should emit true when delta sync starts processing
                 assertEquals(true, awaitItem())
@@ -506,7 +506,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(1000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // Create repository after data source setup
         repository = repositoryImpl(backgroundScope)
@@ -550,7 +550,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(testChat)
         val syncTimestamp = Instant.fromEpochMilliseconds(1000)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
 
         // Create repository after data source setup
         repository = repositoryImpl(backgroundScope)
@@ -591,7 +591,7 @@ class MessengerRepositoryImplTest {
             localDataSource.insertChat(testChat)
             val syncTimestamp = Instant.fromEpochMilliseconds(800)
             localDataSource.updateLastSyncTimestamp(syncTimestamp)
-            remoteDataSource.addChatToServer(testChat)
+            remoteDataSource.addChat(testChat)
 
             // Create repository after data source setup
             repository = repositoryImpl(backgroundScope)
@@ -614,7 +614,7 @@ class MessengerRepositoryImplTest {
                     deliveryStatus = DeliveryStatus.Sent,
                 )
                 // Add message to existing remote chat to simulate remote change
-                remoteDataSource.addMessageToServerChat(newMessage)
+                remoteDataSource.addMessage(newMessage)
 
                 val secondResult = awaitItem()
                 assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(secondResult)
@@ -664,7 +664,7 @@ class MessengerRepositoryImplTest {
     @Test
     fun `repository should handle getLastSyncTimestamp failure during initialization`() = runTest {
         // Given: Local data source fails to get sync timestamp
-        localDataSource.simulateGetLastSyncTimestampFailure(true)
+        localDataSource.shouldFailGetLastSyncTimestamp = true
 
         // When: Repository is created (this triggers performDeltaSyncLoop)
         repository = repositoryImpl(backgroundScope)
@@ -676,15 +676,12 @@ class MessengerRepositoryImplTest {
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(result)
             assertEquals(0, result.data.size) // Empty initially
         }
-
-        // Cleanup
-        localDataSource.simulateGetLastSyncTimestampFailure(false)
     }
 
     @Test
     fun `flowChatList should handle local data source failures`() = runTest {
         // Given: Local data source fails to provide chat list
-        localDataSource.simulateFlowChatListFailure(true)
+        localDataSource.shouldFailFlowChatList = true
 
         // Create repository after setting up failure
         repository = repositoryImpl(backgroundScope)
@@ -695,9 +692,6 @@ class MessengerRepositoryImplTest {
             assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(result)
             assertEquals(FlowChatListError.LocalError, result.error)
         }
-
-        // Cleanup
-        localDataSource.simulateFlowChatListFailure(false)
     }
 
     @Test
@@ -764,7 +758,7 @@ class MessengerRepositoryImplTest {
 
     @Test
     fun `joinChat should handle network failures`() = runTest {
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         remoteDataSource.setConnectionState(false)
 
         repository = repositoryImpl(backgroundScope)
@@ -778,7 +772,7 @@ class MessengerRepositoryImplTest {
     @Test
     fun `leaveChat should handle network failures`() = runTest {
         localDataSource.insertChat(testChat)
-        remoteDataSource.addChatToServer(testChat)
+        remoteDataSource.addChat(testChat)
         remoteDataSource.setConnectionState(false)
 
         repository = repositoryImpl(backgroundScope)
@@ -816,17 +810,12 @@ class MessengerRepositoryImplTest {
             assertEquals(0, initialResult.data.size)
 
             remoteDataSource.setConnectionState(false)
-            remoteDataSource.addChatToServer(testChat)
+            remoteDataSource.addChat(testChat)
 
-            val timestampResult = localDataSource.getLastSyncTimestamp()
-            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(
-                timestampResult,
-            )
-            assertNull(timestampResult.data)
-            localDataSource.getChat(testChat.id).let {
-                assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(it)
-                assertEquals(LocalDataSourceError.ChatNotFound, it.error)
-            }
+            // Sync goes in background, so there are no way to check that no values will be emitted.
+            // Advancing time doesn't affect background scope where sync runs. Only way to check
+            // that no new values are emitted is to look in logs for "WARN/MessengerRepository:
+            // Delta result was failure: Failure(error=NetworkNotAvailable)".
         }
     }
 
@@ -892,7 +881,7 @@ class MessengerRepositoryImplTest {
             lastReadMessageId = null,
         )
         localDataSource.insertChat(chatWithUnreadMessages)
-        remoteDataSource.addChatToServer(chatWithUnreadMessages)
+        remoteDataSource.addChat(chatWithUnreadMessages)
         repository = repositoryImpl(backgroundScope)
 
         // When: Mark messages as read
@@ -907,7 +896,7 @@ class MessengerRepositoryImplTest {
         runTest {
             // Given: Chat exists but network is disconnected
             localDataSource.insertChat(testChat)
-            remoteDataSource.addChatToServer(testChat)
+            remoteDataSource.addChat(testChat)
             remoteDataSource.setConnectionState(false)
             repository = repositoryImpl(backgroundScope)
 
@@ -953,7 +942,7 @@ class MessengerRepositoryImplTest {
         localDataSource.insertChat(chatWithUnreadMessages)
         val syncTimestamp = Instant.fromEpochMilliseconds(500)
         localDataSource.updateLastSyncTimestamp(syncTimestamp)
-        remoteDataSource.addChatToServer(chatWithUnreadMessages)
+        remoteDataSource.addChat(chatWithUnreadMessages)
 
         repository = repositoryImpl(backgroundScope)
 
@@ -978,6 +967,52 @@ class MessengerRepositoryImplTest {
         }
     }
 
+    @Test
+    fun `when sync timestamp going backward then repository should re-apply deltas`() = runTest {
+        // Given chat with two messages
+        val message2 = testMessage.copy(
+            id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440011")),
+            text = "Second message",
+            createdAt = Instant.fromEpochMilliseconds(1800),
+            deliveryStatus = DeliveryStatus.Read,
+        )
+        localDataSource.insertChat(testChat)
+        localDataSource.insertMessage(message2)
+        val firstSyncTimestamp = Instant.fromEpochMilliseconds(2000)
+        localDataSource.updateLastSyncTimestamp(firstSyncTimestamp)
+        remoteDataSource.addChat(testChat)
+        remoteDataSource.addMessage(message2)
+
+        repository = repositoryImpl(backgroundScope)
+        repository.receiveChatUpdates(testChat.id).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(result)
+            assertEquals(2, result.data.messages.size)
+
+            localDataSource.lastSyncTimestamp.test {
+                val first = awaitItem()
+                assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(first)
+                assertEquals(firstSyncTimestamp, first.data)
+                expectNoEvents()
+
+                // When set local timestamp backward between first and second operation
+                val secondSyncTimestamp = Instant.fromEpochMilliseconds(1500)
+                localDataSource.updateLastSyncTimestamp(secondSyncTimestamp)
+
+                val second = awaitItem()
+                assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(second)
+                assertEquals(secondSyncTimestamp, second.data)
+
+                // Then timestamp should be updated
+                val third = awaitItem()
+                assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(third)
+                assertEquals(firstSyncTimestamp, third.data)
+            }
+
+            // And after applying deltas content should be the same
+        }
+    }
+
     private fun repositoryImpl(scope: CoroutineScope): MessengerRepositoryImpl =
         MessengerRepositoryImpl(
             localDataSources = LocalDataSources(
@@ -990,7 +1025,7 @@ class MessengerRepositoryImplTest {
                 message = remoteDataSource,
                 sync = remoteDataSource,
             ),
-            logger = NoOpLogger(),
+            logger = logger,
             backgroundScope = scope,
         )
 }

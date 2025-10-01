@@ -307,7 +307,7 @@ object AndroidTestDataHelper {
     }
 
     fun prepopulateRemoteDataSource(remoteDataSourceFake: RemoteDataSourceFake) {
-        remoteDataSourceFake.addChatToServer(aliceChat)
-        remoteDataSourceFake.addChatToServer(bobChat)
+        remoteDataSourceFake.addChat(aliceChat)
+        remoteDataSourceFake.addChat(bobChat)
     }
 }

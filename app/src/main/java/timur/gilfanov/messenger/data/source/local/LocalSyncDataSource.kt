@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.data.source.local
 
 import kotlin.time.Instant
+import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.data.source.remote.ChatDelta
 import timur.gilfanov.messenger.data.source.remote.ChatListDelta
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -12,10 +13,10 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 interface LocalSyncDataSource {
 
     /**
-     * Retrieves the last synchronization timestamp.
-     * Returns null if no synchronization has occurred yet.
+     * Flow that emits the last synchronization timestamp.
+     * Emits null if no sync has occurred yet.
      */
-    suspend fun getLastSyncTimestamp(): ResultWithError<Instant?, LocalDataSourceError>
+    val lastSyncTimestamp: Flow<ResultWithError<Instant?, LocalDataSourceError>>
 
     /**
      * Updates the last synchronization timestamp.

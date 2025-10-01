@@ -2,14 +2,22 @@ package timur.gilfanov.messenger.data.source.local
 
 import android.database.sqlite.SQLiteException
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.room.withTransaction
 import javax.inject.Inject
+import javax.inject.Named
+import kotlin.math.pow
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentSet
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
@@ -26,7 +34,7 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.util.Logger
 
 class LocalSyncDataSourceImpl @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
+    @param:Named("sync") private val dataStore: DataStore<Preferences>,
     private val database: MessengerDatabase,
     private val chatDao: ChatDao,
     private val messageDao: MessageDao,
@@ -40,22 +48,35 @@ class LocalSyncDataSourceImpl @Inject constructor(
 
     private val errorHandler = DatabaseErrorHandler(logger)
 
-    override suspend fun getLastSyncTimestamp(): ResultWithError<
-        Instant?,
-        LocalDataSourceError,
-        > =
-        try {
-            val preferences = dataStore.data.first()
-            val timestamp = preferences[SyncPreferences.LAST_SYNC_TIMESTAMP]
-            val instant = timestamp?.let { Instant.fromEpochMilliseconds(it) }
-            ResultWithError.Success(instant)
-        } catch (@Suppress("SwallowedException") e: androidx.datastore.core.IOException) {
-            ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
-        }
+    override val lastSyncTimestamp: Flow<ResultWithError<Instant?, LocalDataSourceError>> =
+        dataStore.data
+            .map<Preferences, ResultWithError<Instant?, LocalDataSourceError>> { preferences ->
+                val timestamp = preferences[SyncPreferences.LAST_SYNC_TIMESTAMP]
+                val instant = timestamp?.let { Instant.fromEpochMilliseconds(it) }
+                ResultWithError.Success(instant)
+            }.retryWhen { cause, attempt ->
+                if (cause is IOException && attempt < 3) {
+                    logger.w(TAG, "Retrying to read preferences (attempt=$attempt)", cause)
+                    delay(minOf(2.0.pow(attempt.toInt()), 5.0).seconds)
+                    true
+                } else {
+                    false
+                }
+            }.catch { cause ->
+                emit(
+                    ResultWithError.Failure(
+                        when (cause) {
+                            is IOException -> LocalDataSourceError.StorageUnavailable
+                            else -> LocalDataSourceError.UnknownError(cause)
+                        },
+                    ),
+                )
+            }
 
     override suspend fun updateLastSyncTimestamp(
         timestamp: Instant,
     ): ResultWithError<Unit, LocalDataSourceError> = try {
+        logger.d(TAG, "Updating last sync timestamp to: $timestamp")
         dataStore.edit { preferences ->
             preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] = timestamp.toEpochMilliseconds()
         }
@@ -84,26 +105,31 @@ class LocalSyncDataSourceImpl @Inject constructor(
     ): ResultWithError<Unit, LocalDataSourceError> = try {
         logger.d(TAG, "Applying chat list delta with ${delta.changes.size} changes")
         database.withTransaction {
-            delta.changes.forEach { chatDelta ->
+            delta.changes.sortedBy { it.timestamp }.forEach { chatDelta ->
                 logger.d(TAG, "Applying chat delta: $chatDelta")
                 when (chatDelta) {
                     is ChatCreatedDelta -> applyChatCreatedDelta(chatDelta)
                     is ChatUpdatedDelta -> applyChatUpdatedDelta(chatDelta)
                     is ChatDeletedDelta -> applyChatDeletedDelta(chatDelta)
                 }
+                dataStore.edit { preferences ->
+                    val instant = chatDelta.timestamp
+                    logger.d(TAG, "Updating last sync timestamp to: $instant")
+                    preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] = instant.toEpochMilliseconds()
+                }
             }
         }
 
         dataStore.edit { preferences ->
-            logger.d(TAG, "Updating last sync timestamp to: ${delta.toTimestamp}")
-            preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] =
-                delta.toTimestamp.toEpochMilliseconds()
+            val instant = delta.toTimestamp
+            logger.d(TAG, "Updating last sync timestamp to delta end: $instant")
+            preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] = instant.toEpochMilliseconds()
         }
 
         ResultWithError.Success(Unit)
     } catch (e: SQLiteException) {
         ResultWithError.Failure(errorHandler.mapException(e))
-    } catch (@Suppress("SwallowedException") e: androidx.datastore.core.IOException) {
+    } catch (_: IOException) {
         ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
     }
 

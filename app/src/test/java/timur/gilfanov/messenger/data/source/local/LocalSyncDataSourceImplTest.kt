@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -78,12 +79,11 @@ class LocalSyncDataSourceImplTest {
 
     @Test
     fun `getLastSyncTimestamp returns null when no sync has occurred`() = runTest {
-        // When
-        val result = localSyncDataSource.getLastSyncTimestamp()
-
-        // Then
-        assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(result)
-        assertNull(result.data)
+        localSyncDataSource.lastSyncTimestamp.test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(result)
+            assertNull(result.data)
+        }
     }
 
     @Test
@@ -91,14 +91,20 @@ class LocalSyncDataSourceImplTest {
         // Given
         val timestamp = Instant.fromEpochMilliseconds(2000000)
 
-        // When
-        val updateResult = localSyncDataSource.updateLastSyncTimestamp(timestamp)
-        val getResult = localSyncDataSource.getLastSyncTimestamp()
+        localSyncDataSource.lastSyncTimestamp.test {
+            val before = awaitItem()
+            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(before)
+            assertNull(before.data)
 
-        // Then
-        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(updateResult)
-        assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(getResult)
-        assertEquals(timestamp, getResult.data)
+            // When
+            val updateResult = localSyncDataSource.updateLastSyncTimestamp(timestamp)
+
+            val after = awaitItem()
+            // Then
+            assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(updateResult)
+            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(after)
+            assertEquals(timestamp, after.data)
+        }
     }
 
     @Test
@@ -354,14 +360,14 @@ class LocalSyncDataSourceImplTest {
         assertEquals("Chat 2", storedChat2.name)
 
         // Verify sync timestamp was updated in DataStore
-        val timestampResult = localSyncDataSource.getLastSyncTimestamp()
-        assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(
-            timestampResult,
-        )
-        assertEquals(
-            chatListDelta.toTimestamp.toEpochMilliseconds(),
-            timestampResult.data?.toEpochMilliseconds(),
-        )
+        localSyncDataSource.lastSyncTimestamp.test {
+            val timestampResult = awaitItem()
+            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(timestampResult)
+            assertEquals(
+                chatListDelta.toTimestamp.toEpochMilliseconds(),
+                timestampResult.data?.toEpochMilliseconds(),
+            )
+        }
     }
 
     private fun createTestParticipants() = persistentSetOf(

@@ -55,6 +55,7 @@ class ChatFeatureTest {
     @get:Rule(order = 2)
     val repositoryCleanupRule = RepositoryCleanupRule(repositoryProvider = { chatRepository })
 
+    @Suppress("unused")
     @Module
     @InstallIn(SingletonComponent::class)
     object ChatScreenDisplayTestRepositoryModule {
@@ -69,6 +70,7 @@ class ChatFeatureTest {
         fun provideMessageRepository(): MessageRepository = repository
     }
 
+    @Suppress("unused")
     @Module
     @InstallIn(SingletonComponent::class)
     object TestUserChatModule {

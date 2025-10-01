@@ -1,0 +1,789 @@
+package timur.gilfanov.messenger.debug
+
+import app.cash.turbine.test
+import java.io.IOException
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
+import org.junit.Test
+import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.data.source.local.LocalClearSyncTimestampError
+import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
+import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
+import timur.gilfanov.messenger.data.source.local.LocalDebugDataSources
+import timur.gilfanov.messenger.data.source.local.LocalGetSettingsError
+import timur.gilfanov.messenger.data.source.local.LocalUpdateSettingsError
+import timur.gilfanov.messenger.data.source.remote.AddChatError
+import timur.gilfanov.messenger.data.source.remote.AddMessageError
+import timur.gilfanov.messenger.data.source.remote.ClearDataError
+import timur.gilfanov.messenger.data.source.remote.GetChatsError
+import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
+import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSource
+import timur.gilfanov.messenger.data.source.remote.RemoteDebugDataSourceError
+import timur.gilfanov.messenger.debug.DebugDataRepositoryImpl.Companion.AUTO_ACTIVITY_MAX_DELAY_MS
+import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
+import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
+import timur.gilfanov.messenger.domain.entity.message.Message
+
+@Category(Unit::class)
+class DebugDataRepositoryTest {
+
+    private lateinit var dataStore: DataStoreFake
+
+    private lateinit var localDebugDataSource: LocalDebugDataSourcesDecorator
+    private lateinit var remoteDebugDataSource: RemoteDebugDataSourceFakeDecorator
+    private lateinit var sampleDataProvider: SampleDataProviderDecorator
+    private lateinit var testScope: TestScope
+    private lateinit var logger: TrackingTestLogger
+    private lateinit var debugDataRepository: DebugDataRepository
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Before
+    fun setup() {
+        logger = TrackingTestLogger()
+        dataStore = DebugTestData.createTestDataStore()
+        remoteDebugDataSource = RemoteDebugDataSourceFakeDecorator(RemoteDebugDataSourceFakeImpl())
+        sampleDataProvider = SampleDataProviderDecorator(SampleDataProviderImpl())
+        testScope = TestScope(StandardTestDispatcher())
+        localDebugDataSource = LocalDebugDataSourcesDecorator(LocalDataSourceFake(logger))
+
+        debugDataRepository = DebugDataRepositoryImpl(
+            localDebugDataSource = localDebugDataSource,
+            remoteDebugDataSource = remoteDebugDataSource,
+            sampleDataProvider = sampleDataProvider,
+            coroutineScope = testScope.backgroundScope,
+            logger = logger,
+        )
+    }
+
+    @Test
+    fun `debugSettings have correct initial values and all values can be modified`() =
+        testScope.runTest {
+            // When
+            debugDataRepository.settings
+                .filterIsInstance<Success<DebugSettings, GetSettingsError.ReadError>>()
+                .test {
+                    val settings = awaitItem().data
+
+                    // Then
+                    assertEquals(DataScenario.STANDARD, settings.scenario)
+                    assertFalse(settings.autoActivity)
+                    assertTrue(settings.showNotification)
+                    assertNull(settings.lastGenerationTimestamp)
+                }
+
+            // When
+            debugDataRepository.updateSettings { current ->
+                current.copy(
+                    scenario = DataScenario.DEMO,
+                    autoActivity = true,
+                    showNotification = false,
+                )
+            }
+
+            // Then
+            debugDataRepository.settings
+                .filterIsInstance<Success<DebugSettings, GetSettingsError.ReadError>>()
+                .test {
+                    val settings = awaitItem().data
+                    assertEquals(DataScenario.DEMO, settings.scenario)
+                    assertTrue(settings.autoActivity)
+                    assertFalse(settings.showNotification)
+                }
+        }
+
+    @Test
+    fun `initializeWithScenario clears data and generates new data`() = testScope.runTest {
+        // Given
+        val scenario = DataScenario.MINIMAL
+
+        // When
+        debugDataRepository.initializeWithScenario(scenario)
+
+        // Then - Verify data generation - check that chats were added to remote
+        val chats = remoteDebugDataSource.getChats()
+        assertIs<Success<ImmutableList<Chat>, GetChatsError>>(chats)
+        assertEquals(scenario.chatCount, chats.data.size)
+
+        // Verify settings update
+        debugDataRepository.settings
+            .filterIsInstance<Success<DebugSettings, GetSettingsError.ReadError>>()
+            .test {
+                val settings = awaitItem().data
+                assertEquals(scenario, settings.scenario)
+                assertNotNull(settings.lastGenerationTimestamp)
+            }
+    }
+
+    @Test
+    fun `regenerateData uses current scenario from settings`() = testScope.runTest {
+        // Given - Set initial scenario
+        debugDataRepository.updateSettings { current ->
+            current.copy(scenario = DataScenario.EDGE_CASES)
+        }
+
+        // When
+        debugDataRepository.regenerateData()
+
+        // Then - Verify data was regenerated by checking added chats
+        val chats = remoteDebugDataSource.getChats()
+        assertIs<Success<ImmutableList<Chat>, GetChatsError>>(chats)
+        assertEquals(DataScenario.EDGE_CASES.chatCount, chats.data.size)
+    }
+
+    @Test
+    fun `clearAllData clears both local and remote data`() = testScope.runTest {
+        // When
+        debugDataRepository.clearData()
+
+        // Then
+        val localChats = localDebugDataSource.flowChatList().first()
+        assertIs<Success<List<ChatPreview>, LocalDataSourceError>>(localChats)
+        assertEquals(0, localChats.data.size)
+        val chats = remoteDebugDataSource.getChats()
+        assertIs<Success<ImmutableList<Chat>, GetChatsError>>(chats)
+        assertEquals(0, chats.data.size)
+    }
+
+    @Test
+    fun `getScenario returns scenario from preferences`() = testScope.runTest {
+        // Given - Set a scenario in preferences
+        debugDataRepository.updateSettings { current ->
+            current.copy(scenario = DataScenario.HEAVY)
+        }
+
+        // When
+        val settings = debugDataRepository.getSettings()
+        assertIs<Success<DebugSettings, GetSettingsError>>(settings)
+        val savedScenario = settings.data.scenario
+
+        // Then
+        assertEquals(DataScenario.HEAVY, savedScenario)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `auto activity add messages when enabled via settings`() = testScope.runTest {
+        // Given - Setup chats for simulation
+        val testChat = DebugTestData.createTestChat()
+        remoteDebugDataSource.addChat(testChat)
+        val initialMessageCount = remoteDebugDataSource.getMessagesSize()
+
+        // When - Enable auto activity
+        debugDataRepository.updateSettings { settings -> settings.copy(autoActivity = true) }
+
+        // Then - Verify the setting is enabled
+        debugDataRepository.settings
+            .filterIsInstance<Success<DebugSettings, GetSettingsError.ReadError>>()
+            .test {
+                val settings = awaitItem().data
+                assertTrue(settings.autoActivity, "Auto activity should be enabled")
+            }
+
+        remoteDebugDataSource.messageAddedCount.test {
+            val initial = awaitItem()
+            assertEquals(0, initial)
+            assertEquals(initialMessageCount, remoteDebugDataSource.getMessagesSize())
+
+            val first = awaitItem()
+            assertEquals(1, first)
+            assertEquals(initialMessageCount + 1, remoteDebugDataSource.getMessagesSize())
+
+            val second = awaitItem()
+            assertEquals(2, second)
+            assertEquals(initialMessageCount + 2, remoteDebugDataSource.getMessagesSize())
+        }
+    }
+
+    @Test
+    fun `handles clear data error in data regeneration`() = testScope.runTest {
+        // Given - Simulate error by making local data source fail
+        localDebugDataSource.debugDeleteAllChatsError = LocalDataSourceError.StorageUnavailable
+        val localChats = localDebugDataSource.flowChatList().first()
+        val remoteChats = remoteDebugDataSource.getChats()
+
+        // When - Initialize should still complete
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.clearData)
+        assertEquals(1, result.error.clearData.failedOperations.size)
+        assertTrue(result.error.clearData.partialSuccess)
+        assertEquals(
+            "deleteAllChats",
+            result.error.clearData.failedOperations[0].first,
+        )
+        assertEquals(
+            "StorageUnavailable",
+            result.error.clearData.failedOperations[0].second,
+        )
+
+        // Data should still be the same
+        assertEquals(localChats, localDebugDataSource.flowChatList().first())
+        assertEquals(remoteChats, remoteDebugDataSource.getChats())
+    }
+
+    @Test
+    fun `handles clear messages error in data regeneration`() = testScope.runTest {
+        // Given - Simulate error by making local data source fail deleteAllMessages
+        localDebugDataSource.debugDeleteAllMessagesError = LocalDataSourceError.StorageUnavailable
+        val localChats = localDebugDataSource.flowChatList().first()
+        val remoteChats = remoteDebugDataSource.getChats()
+
+        // When - Initialize should still complete
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.clearData)
+        assertEquals(1, result.error.clearData.failedOperations.size)
+        assertTrue(result.error.clearData.partialSuccess)
+        assertEquals(
+            "deleteAllMessages",
+            result.error.clearData.failedOperations[0].first,
+        )
+        assertEquals(
+            "StorageUnavailable",
+            result.error.clearData.failedOperations[0].second,
+        )
+
+        // Data should still be the same
+        assertEquals(localChats, localDebugDataSource.flowChatList().first())
+        assertEquals(remoteChats, remoteDebugDataSource.getChats())
+    }
+
+    @Test
+    fun `handles clear sync timestamp error in data regeneration`() = testScope.runTest {
+        // Given - Simulate error by making local data source fail clearSyncTimestamp
+        localDebugDataSource.debugClearSyncTimestampError = LocalClearSyncTimestampError.WriteError(
+            exception = IOException("Can't write"),
+        )
+        val localChats = localDebugDataSource.flowChatList().first()
+        val remoteChats = remoteDebugDataSource.getChats()
+
+        // When - Initialize should still complete
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.clearData)
+        assertEquals(1, result.error.clearData.failedOperations.size)
+        assertTrue(result.error.clearData.partialSuccess)
+        assertEquals(
+            "clearSyncTimestamp",
+            result.error.clearData.failedOperations[0].first,
+        )
+        assertEquals(
+            "WriteError(exception=java.io.IOException: Can't write)",
+            result.error.clearData.failedOperations[0].second,
+        )
+
+        // Data should still be the same
+        assertEquals(localChats, localDebugDataSource.flowChatList().first())
+        assertEquals(remoteChats, remoteDebugDataSource.getChats())
+    }
+
+    @Test
+    fun `handles generation error in data regeneration`() = testScope.runTest {
+        // Given - Simulate error by making local data source fail
+        val settings = debugDataRepository.getSettings()
+        assertIs<Success<DebugSettings, GetSettingsError.ReadError>>(settings)
+        val initialTimestamp = settings.data.lastGenerationTimestamp
+        sampleDataProvider.generateEmptyChats = true
+
+        // When - Initialize should still complete
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.generateData)
+        assertEquals(GenerateDataError.NoChatsGenerated, result.error.generateData)
+
+        // Data should still be the same
+        val settingsAfter = debugDataRepository.getSettings()
+        assertIs<Success<DebugSettings, GetSettingsError.ReadError>>(settingsAfter)
+        val timestampAfter = settingsAfter.data.lastGenerationTimestamp
+        assertEquals(initialTimestamp, timestampAfter)
+    }
+
+    @Test
+    fun `handles data population error in data regeneration`() = testScope.runTest {
+        // Given - Simulate error by making remote add chat fail
+        val settings = debugDataRepository.getSettings()
+        assertIs<Success<DebugSettings, GetSettingsError.ReadError>>(settings)
+        val initialTimestamp = settings.data.lastGenerationTimestamp
+        val error = AddChatError.RemoteError(
+            error = RemoteDebugDataSourceError.CooldownActive(remaining = 1.minutes),
+        )
+        remoteDebugDataSource.remoteAddChatError = error
+
+        // When - Initialize should fail due to population error
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should handle error gracefully
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertNotNull(result.error.populateRemote)
+        assertTrue(result.error.populateRemote.addChatError.isNotEmpty())
+
+        // Data should still be the same
+        val settingsAfter = debugDataRepository.getSettings()
+        assertIs<Success<DebugSettings, GetSettingsError.ReadError>>(settingsAfter)
+        val timestampAfter = settingsAfter.data.lastGenerationTimestamp
+        assertEquals(initialTimestamp, timestampAfter)
+    }
+
+    @Test
+    fun `handles clear remote data error in data regeneration`() = testScope.runTest {
+        // Given
+        val successResult = debugDataRepository.regenerateData()
+        assertIs<Success<Unit, RegenerateDataError>>(successResult)
+
+        val remoteChats = remoteDebugDataSource.getChats()
+        assertIs<Success<ImmutableList<Chat>, GetChatsError>>(remoteChats)
+        assertTrue(remoteChats.data.isNotEmpty())
+
+        // When
+        val error = ClearDataError.RemoteError(error = RemoteDebugDataSourceError.ServerError)
+        remoteDebugDataSource.remoteClearDataError = error
+        val errorResult = debugDataRepository.regenerateData()
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(errorResult)
+        assertNotNull(errorResult.error.clearData)
+        assertEquals(1, errorResult.error.clearData.failedOperations.size)
+        assertTrue(errorResult.error.clearData.partialSuccess)
+
+        val operationNames = errorResult.error.clearData.failedOperations.map { it.first }
+        assertTrue(operationNames.contains("clearRemoteData"))
+
+        val remoteChatsAfter = remoteDebugDataSource.getChats()
+        assertIs<Success<ImmutableList<Chat>, GetChatsError>>(remoteChatsAfter)
+        assertTrue(remoteChatsAfter.data.isNotEmpty())
+        assertEquals(remoteChats, remoteChatsAfter)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `auto activity stops when disabled`() = testScope.runTest {
+        // Given - Auto activity is running
+        val testChat = DebugTestData.createTestChat()
+        remoteDebugDataSource.addChat(testChat)
+
+        debugDataRepository.updateSettings { settings -> settings.copy(autoActivity = true) }
+        advanceTimeBy(6000L) // Trigger first message
+
+        val initialMessageCount = remoteDebugDataSource.getMessagesSize()
+
+        // When - Disable auto activity
+        debugDataRepository.updateSettings { settings -> settings.copy(autoActivity = false) }
+        advanceTimeBy(10000L)
+
+        // Then - No more messages should be generated after disabling
+        assertEquals(initialMessageCount, remoteDebugDataSource.getMessagesSize())
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `handles getChats error during auto activity simulation`() = testScope.runTest {
+        // Given - Setup chats for simulation and enable auto activity
+        val testChat = DebugTestData.createTestChat()
+        remoteDebugDataSource.addChat(testChat)
+        val initialMessageCount = remoteDebugDataSource.getMessagesSize()
+
+        debugDataRepository.updateSettings { settings -> settings.copy(autoActivity = true) }
+
+        // Then - Verify auto activity starts working normally
+        remoteDebugDataSource.messageAddedCount.test {
+            val initial = awaitItem()
+            assertEquals(0, initial)
+
+            val first = awaitItem()
+            assertEquals(1, first)
+            assertEquals(initialMessageCount + 1, remoteDebugDataSource.getMessagesSize())
+
+            // When - Inject getChats error during simulation
+            val error = GetChatsError.RemoteError(
+                error = RemoteDebugDataSourceError.ServerError,
+            )
+            remoteDebugDataSource.remoteGetChatsError = error
+
+            // Advance time to trigger few next simulation attempts
+            advanceTimeBy(AUTO_ACTIVITY_MAX_DELAY_MS * 2)
+
+            // Then - Message count should remain unchanged due to error
+            // (No new message added because getChats failed)
+            assertEquals(1, remoteDebugDataSource.messageAddedCount.value)
+            assertEquals(initialMessageCount + 1, remoteDebugDataSource.getMessagesSize())
+
+            // When - Remove error injection to verify recovery
+            remoteDebugDataSource.remoteGetChatsError = null
+
+            // Then - Auto activity should recover and add another message
+            val recovered = awaitItem()
+            assertEquals(2, recovered)
+            assertEquals(initialMessageCount + 2, remoteDebugDataSource.getMessagesSize())
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `handles addMessage error during auto activity simulation`() = testScope.runTest {
+        // Given - Setup chats for simulation and enable auto activity
+        val testChat = DebugTestData.createTestChat()
+        remoteDebugDataSource.addChat(testChat)
+        val initialMessageCount = remoteDebugDataSource.getMessagesSize()
+
+        debugDataRepository.updateSettings { settings -> settings.copy(autoActivity = true) }
+
+        // Then - Verify auto activity starts working normally
+        remoteDebugDataSource.messageAddedCount.test {
+            val initial = awaitItem()
+            assertEquals(0, initial)
+
+            val first = awaitItem()
+            assertEquals(1, first)
+            assertEquals(initialMessageCount + 1, remoteDebugDataSource.getMessagesSize())
+
+            // When - Inject addMessage error during simulation
+            val error = AddMessageError.RemoteError(
+                error = RemoteDebugDataSourceError.RateLimitExceeded,
+            )
+            remoteDebugDataSource.remoteAddMessageError = error
+
+            // Advance time to trigger few next simulation attempts
+            advanceTimeBy(AUTO_ACTIVITY_MAX_DELAY_MS * 2)
+
+            // Then - Message count should remain unchanged due to error
+            // (No new message added because addMessage failed)
+            assertEquals(1, remoteDebugDataSource.messageAddedCount.value)
+            assertEquals(initialMessageCount + 1, remoteDebugDataSource.getMessagesSize())
+
+            // When - Remove error injection to verify recovery
+            remoteDebugDataSource.remoteAddMessageError = null
+
+            // Then - Auto activity should recover and add another message
+            val recovered = awaitItem()
+            assertEquals(2, recovered)
+            assertEquals(initialMessageCount + 2, remoteDebugDataSource.getMessagesSize())
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `handles no chats available during auto activity simulation`() = testScope.runTest {
+        // Given - Enable auto activity without adding any chats (empty state)
+        val initialMessageCount = remoteDebugDataSource.getMessagesSize()
+        assertEquals(0, initialMessageCount)
+
+        debugDataRepository.updateSettings { settings -> settings.copy(autoActivity = true) }
+
+        // When - Advance time to trigger auto activity attempts with no chats available
+        remoteDebugDataSource.messageAddedCount.test {
+            val initial = awaitItem()
+            assertEquals(0, initial)
+
+            // Advance time to trigger multiple simulation attempts
+            advanceTimeBy(AUTO_ACTIVITY_MAX_DELAY_MS * 2)
+
+            // Then - No messages should be added because no chats are available
+            assertEquals(0, remoteDebugDataSource.messageAddedCount.value)
+            assertEquals(0, remoteDebugDataSource.getMessagesSize())
+
+            // When - Add a chat to verify auto activity resumes working
+            val testChat = DebugTestData.createTestChat()
+            remoteDebugDataSource.addChat(testChat)
+
+            // Then - Auto activity should resume and add a message
+            val firstMessage = awaitItem()
+            assertEquals(1, firstMessage)
+            assertEquals(1, remoteDebugDataSource.getMessagesSize())
+
+            // Verify continuous operation after recovery
+            val secondMessage = awaitItem()
+            assertEquals(2, secondMessage)
+            assertEquals(2, remoteDebugDataSource.getMessagesSize())
+        }
+    }
+
+    @Test
+    fun `regenerateData updates last generation timestamp`() = testScope.runTest {
+        // Given - Get initial timestamp
+        debugDataRepository.regenerateData()
+        val settings = debugDataRepository.getSettings()
+        assertIs<Success<DebugSettings, GetSettingsError.ReadError>>(settings)
+        val initialLastGeneration = settings.data.lastGenerationTimestamp
+        assertNotNull(initialLastGeneration)
+
+        // When
+        debugDataRepository.regenerateData()
+
+        // Then
+        debugDataRepository.settings.test {
+            val settings = awaitItem()
+            assertIs<Success<DebugSettings, GetSettingsError.ReadError>>(settings)
+            assertTrue(
+                settings.data.lastGenerationTimestamp != initialLastGeneration,
+                "Last generation should be updated after regenerating data",
+            )
+        }
+    }
+
+    // Regression test for sync integration
+    @Test
+    fun `initializeWithScenario add chats to remote data source with chat ID as recipient`() =
+        testScope.runTest {
+            // Given - Create a mock sync flow to verify the generated data can be synced
+            val generatedChats = mutableListOf<Chat>()
+
+            // Spy on the sync behavior by capturing what's added to remote
+            val spyRemoteDebugDataSource = object : RemoteDebugDataSource {
+                override fun clearData(): ResultWithError<Unit, ClearDataError> {
+                    // No-op for test
+                    return Success(Unit)
+                }
+
+                override fun addChat(chat: Chat): ResultWithError<Unit, AddChatError> {
+                    generatedChats.add(chat)
+                    return Success(Unit)
+                }
+
+                override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
+                    error("Not needed for this test")
+                }
+
+                override fun getChats(): ResultWithError<ImmutableList<Chat>, GetChatsError> {
+                    error("Not needed for this test")
+                }
+
+                override fun getMessagesSize(): Int {
+                    error("Not needed for this test")
+                }
+
+                override val chatPreviews:
+                    Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> = emptyFlow()
+            }
+
+            // Recreate repository with the spy
+            debugDataRepository = DebugDataRepositoryImpl(
+                localDebugDataSource = localDebugDataSource,
+                remoteDebugDataSource = spyRemoteDebugDataSource,
+                sampleDataProvider = sampleDataProvider,
+                coroutineScope = testScope.backgroundScope,
+                logger = logger,
+            )
+
+            // When - Initialize with scenario
+            val scenario = DataScenario.DEMO
+            debugDataRepository.initializeWithScenario(scenario)
+
+            // Then - Verify data was generated with proper sync-compatible format
+            assertTrue(generatedChats.isNotEmpty(), "Should generate chats")
+            assertEquals(scenario.chatCount, generatedChats.size)
+
+            // Verify the generated chats have valid structure for sync
+            generatedChats.forEach { chat ->
+                // Chat should have valid ID
+                assertTrue(chat.id.id.toString().isNotEmpty())
+
+                // Messages should have correct recipient (this was the original bug)
+                chat.messages.forEach { message ->
+                    assertEquals(
+                        chat.id,
+                        message.recipient,
+                        "Message recipient should match chat ID for sync to work correctly",
+                    )
+                }
+
+                // Should have participants
+                assertTrue(chat.participants.isNotEmpty())
+
+                // Should have messages (DEMO scenario should have conversations)
+                assertTrue(chat.messages.isNotEmpty())
+            }
+
+            // Verify settings were updated correctly
+            debugDataRepository.settings.test {
+                val settings = awaitItem()
+                assertIs<Success<DebugSettings, GetSettingsError.ReadError>>(settings)
+                assertEquals(scenario, settings.data.scenario)
+                assertNotNull(settings.data.lastGenerationTimestamp) {
+                    "Should record generation timestamp"
+                }
+            }
+        }
+
+    @Test
+    fun `regenerateData handles getSettings failure`() = testScope.runTest {
+        // Given - Configure local data source to fail when reading settings
+        val readError = LocalGetSettingsError.ReadError(IOException("Failed to read settings"))
+        localDebugDataSource.localGetSettingsError = readError
+
+        // When - Attempt to regenerate data
+        val result = debugDataRepository.regenerateData()
+
+        // Then - Should return failure with getSettings error
+        assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+        assertEquals(GetSettingsError.ReadError, result.error.getSettings)
+        assertNull(result.error.clearData)
+        assertNull(result.error.generateData)
+        assertNull(result.error.populateRemote)
+        assertNull(result.error.updateSettings)
+    }
+
+    @Test
+    fun `regenerateData handles updateSettings failure after successful generation`() =
+        testScope.runTest {
+            // Given - Configure local data source to fail when updating settings
+            val writeError = LocalUpdateSettingsError.WriteError(
+                IOException("Failed to write settings"),
+            )
+            localDebugDataSource.localUpdateSettingsError = writeError
+
+            // When - Attempt to regenerate data
+            val result = debugDataRepository.regenerateData()
+
+            // Then - Should return failure with updateSettings error
+            assertIs<ResultWithError.Failure<Unit, RegenerateDataError>>(result)
+            val expectedUpdateError = UpdateSettingsError.WriteError(writeError.exception)
+            assertEquals(expectedUpdateError, result.error.updateSettings)
+            assertNull(result.error.getSettings)
+            assertNull(result.error.clearData)
+            assertNull(result.error.generateData)
+            assertNull(result.error.populateRemote)
+        }
+
+    @Test
+    fun `updateSettings handles WriteError failure`() = testScope.runTest {
+        // Given - Configure local data source to fail with WriteError
+        val writeError = LocalUpdateSettingsError.WriteError(
+            IOException("Failed to write settings"),
+        )
+        localDebugDataSource.localUpdateSettingsError = writeError
+
+        // When - Attempt to update settings
+        val result = debugDataRepository.updateSettings { settings ->
+            settings.copy(scenario = DataScenario.DEMO)
+        }
+
+        // Then - Should return WriteError
+        assertIs<ResultWithError.Failure<Unit, UpdateSettingsError>>(result)
+        val expectedError = UpdateSettingsError.WriteError(writeError.exception)
+        assertEquals(expectedError, result.error)
+    }
+
+    @Test
+    fun `updateSettings handles TransformError failure`() = testScope.runTest {
+        // Given
+        val exception = RuntimeException("Transform failed")
+
+        // When - Attempt to update settings
+        val result = debugDataRepository.updateSettings { settings ->
+            throw exception
+        }
+
+        // Then - Should return TransformError
+        assertIs<ResultWithError.Failure<Unit, UpdateSettingsError>>(result)
+        assertEquals(UpdateSettingsError.TransformError(exception), result.error)
+    }
+
+    @Test
+    fun `getSettings handles ReadError failure`() = testScope.runTest {
+        // Given - Configure local data source to fail with ReadError
+        val readError = LocalGetSettingsError.ReadError(
+            IOException("Failed to read settings"),
+        )
+        localDebugDataSource.localGetSettingsError = readError
+
+        // When - Attempt to get settings
+        val result = debugDataRepository.getSettings()
+
+        // Then - Should return ReadError
+        assertIs<ResultWithError.Failure<DebugSettings, GetSettingsError>>(result)
+        assertEquals(GetSettingsError.ReadError, result.error)
+    }
+
+    @Test
+    fun `getSettings handles NoSuchElementException as NoData`() = testScope.runTest {
+        // Given - Create a special decorator that will cause an empty flow to trigger NoSuchElementException
+        val specialDecorator = object : LocalDebugDataSources by LocalDataSourceFake(logger) {
+            override val settings: Flow<ResultWithError<DebugSettings, LocalGetSettingsError>>
+                get() = emptyFlow()
+        }
+
+        val repositoryWithEmptyFlow = DebugDataRepositoryImpl(
+            localDebugDataSource = specialDecorator,
+            remoteDebugDataSource = remoteDebugDataSource,
+            sampleDataProvider = sampleDataProvider,
+            coroutineScope = testScope.backgroundScope,
+            logger = logger,
+        )
+
+        // When - Attempt to get settings from empty flow (will throw NoSuchElementException)
+        val result = repositoryWithEmptyFlow.getSettings()
+
+        // Then - Should return NoData error
+        assertIs<ResultWithError.Failure<DebugSettings, GetSettingsError>>(result)
+        assertEquals(GetSettingsError.NoData, result.error)
+    }
+}
+
+/**
+ * Fake implementation of RemoteDebugDataSource for testing
+ */
+private class RemoteDebugDataSourceFakeImpl : RemoteDebugDataSourceFake {
+    private val chats = mutableListOf<Chat>()
+    private val messages = mutableListOf<Message>()
+
+    override val messageAddedCount = MutableStateFlow(0)
+
+    override fun clearData(): ResultWithError<Unit, ClearDataError> {
+        chats.clear()
+        messages.clear()
+        return Success(Unit)
+    }
+
+    override fun addChat(chat: Chat): ResultWithError<Unit, AddChatError> {
+        chats.add(chat)
+        return Success(Unit)
+    }
+
+    override fun addMessage(message: Message): ResultWithError<Unit, AddMessageError> {
+        messages.add(message)
+        messageAddedCount.update { it + 1 }
+        return Success(Unit)
+    }
+
+    override fun getChats(): ResultWithError<ImmutableList<Chat>, GetChatsError> =
+        Success(chats.toImmutableList())
+
+    override fun getMessagesSize(): Int = messages.size
+
+    override val chatPreviews: Flow<ResultWithError<List<ChatPreview>, RemoteDataSourceError>> =
+        emptyFlow()
+}
+
+interface RemoteDebugDataSourceFake : RemoteDebugDataSource {
+
+    val messageAddedCount: MutableStateFlow<Int>
+}

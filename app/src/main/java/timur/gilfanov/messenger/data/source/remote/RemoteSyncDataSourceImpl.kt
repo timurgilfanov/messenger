@@ -43,7 +43,7 @@ class RemoteSyncDataSourceImpl @Inject constructor(
         return error
     }
 
-    override fun chatsDeltaUpdates(
+    override fun observeChatListUpdates(
         since: Instant?,
     ): Flow<ResultWithError<ChatListDelta, RemoteDataSourceError>> = flow {
         try {

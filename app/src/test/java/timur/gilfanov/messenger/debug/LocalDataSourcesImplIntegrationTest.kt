@@ -38,14 +38,14 @@ class LocalDataSourcesImplIntegrationTest {
 
     private var logger = TestLogger()
 
-    private lateinit var dataStore: DataStore<Preferences>
+    private lateinit var syncDataStore: DataStore<Preferences>
 
     private lateinit var syncDataSource: LocalSyncDataSourceImpl
     private lateinit var debugDataSource: LocalDebugDataSourceImpl
 
     private fun setupDataSource(scope: CoroutineScope) {
         val context: Context = ApplicationProvider.getApplicationContext()
-        dataStore = PreferenceDataStoreFactory.create(
+        syncDataStore = PreferenceDataStoreFactory.create(
             scope = scope,
             produceFile = {
                 context.preferencesDataStoreFile(
@@ -53,9 +53,17 @@ class LocalDataSourcesImplIntegrationTest {
                 )
             },
         )
+        val debugDataStore = PreferenceDataStoreFactory.create(
+            scope = scope,
+            produceFile = {
+                context.preferencesDataStoreFile(
+                    "test_debug_${System.currentTimeMillis()}",
+                )
+            },
+        )
 
         syncDataSource = LocalSyncDataSourceImpl(
-            dataStore = dataStore,
+            dataStore = syncDataStore,
             database = databaseRule.database,
             chatDao = databaseRule.chatDao,
             messageDao = databaseRule.messageDao,
@@ -65,7 +73,8 @@ class LocalDataSourcesImplIntegrationTest {
 
         debugDataSource = LocalDebugDataSourceImpl(
             database = databaseRule.database,
-            dataStore = dataStore,
+            debugDataStore = debugDataStore,
+            syncDataStore = syncDataStore,
             logger = logger,
         )
     }
@@ -74,16 +83,20 @@ class LocalDataSourcesImplIntegrationTest {
     fun `when clear last sync timestamp then sync data source flow should emit`() = runTest {
         setupDataSource(backgroundScope)
 
-        // Given
-        dataStore.edit { preferences ->
-            preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] = 12345L
-        }
-
         syncDataSource.lastSyncTimestamp.test {
+            // Given
+            syncDataStore.edit { preferences ->
+                preferences[SyncPreferences.LAST_SYNC_TIMESTAMP] = 12345L
+            }
+
             val initialItem = awaitItem()
             assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(initialItem)
-            assertNotNull(initialItem.data)
-            assertEquals(12345L, initialItem.data.toEpochMilliseconds())
+            assertNull(initialItem.data)
+
+            val initialItem2 = awaitItem()
+            assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(initialItem2)
+            assertNotNull(initialItem2.data)
+            assertEquals(12345L, initialItem2.data.toEpochMilliseconds())
             expectNoEvents()
 
             // When

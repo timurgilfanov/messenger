@@ -30,17 +30,20 @@ class LocalDebugDataSourceImplTest {
     @get:Rule
     val databaseRule = InMemoryDatabaseRule()
 
-    private lateinit var dataStore: DataStoreFake
+    private lateinit var debugDataStore: DataStoreFake
+    private lateinit var syncDataStore: DataStoreFake
     private lateinit var logger: TrackingTestLogger
     private lateinit var debugDataSource: LocalDebugDataSource
 
     @Before
     fun setup() {
-        dataStore = DebugTestData.createTestDataStore()
+        debugDataStore = DebugTestData.createTestDataStore()
+        syncDataStore = DataStoreFake()
         logger = TrackingTestLogger()
         debugDataSource = LocalDebugDataSourceImpl(
             database = databaseRule.database,
-            dataStore = dataStore,
+            debugDataStore = debugDataStore,
+            syncDataStore = syncDataStore,
             logger = logger,
         )
     }
@@ -96,14 +99,14 @@ class LocalDebugDataSourceImplTest {
     @Test
     fun `clearSyncTimestamp should remove sync timestamp from datastore`() = runTest {
         // Given - Set a sync timestamp in datastore
-        dataStore.updateData { preferences ->
+        syncDataStore.updateData { preferences ->
             preferences.toMutablePreferences().apply {
                 set(SyncPreferences.LAST_SYNC_TIMESTAMP, 12345L)
             }.toPreferences()
         }
 
         // Verify timestamp exists
-        val initialPrefs = dataStore.data.first()
+        val initialPrefs = syncDataStore.data.first()
         assertTrue(
             initialPrefs.contains(SyncPreferences.LAST_SYNC_TIMESTAMP),
             "Timestamp should exist before clearing",
@@ -116,7 +119,7 @@ class LocalDebugDataSourceImplTest {
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
 
         // Verify timestamp is removed
-        val finalPrefs = dataStore.data.first()
+        val finalPrefs = syncDataStore.data.first()
         assertNull(finalPrefs[SyncPreferences.LAST_SYNC_TIMESTAMP], "Timestamp should be cleared")
     }
 
@@ -143,7 +146,8 @@ class LocalDebugDataSourceImplTest {
         // Create a new debug data source with the closed database
         val debugDataSourceWithClosedDb = LocalDebugDataSourceImpl(
             database = databaseRule.database,
-            dataStore = dataStore,
+            debugDataStore = debugDataStore,
+            syncDataStore = syncDataStore,
             logger = logger,
         )
 
@@ -183,7 +187,7 @@ class LocalDebugDataSourceImplTest {
     @Test
     fun `operations should complete in order when called sequentially`() = runTest {
         // Given - Setup datastore with test data
-        dataStore.updateData { preferences ->
+        syncDataStore.updateData { preferences ->
             preferences.toMutablePreferences().apply {
                 set(SyncPreferences.LAST_SYNC_TIMESTAMP, 12345L)
             }.toPreferences()
@@ -200,7 +204,7 @@ class LocalDebugDataSourceImplTest {
         assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(syncResult)
 
         // Verify sync timestamp was cleared
-        val finalPrefs = dataStore.data.first()
+        val finalPrefs = syncDataStore.data.first()
         assertNull(finalPrefs[SyncPreferences.LAST_SYNC_TIMESTAMP])
     }
 
@@ -271,7 +275,7 @@ class LocalDebugDataSourceImplTest {
     fun `updateSettings handles IOException as WriteError`() = runTest {
         // Given - Configure dataStore to throw IOException
         val ioException = IOException("DataStore write failed")
-        dataStore.updateDataIOException = ioException
+        debugDataStore.updateDataIOException = ioException
 
         // When - Attempt to update settings
         val result = debugDataSource.updateSettings { settings ->
@@ -289,7 +293,7 @@ class LocalDebugDataSourceImplTest {
     fun `updateSettings handles transform Exception as TransformError`() = runTest {
         // Given - Configure dataStore to throw Exception during transform
         val transformException = RuntimeException("Transform failed")
-        dataStore.transformException = transformException
+        debugDataStore.transformException = transformException
 
         // When - Attempt to update settings (the exception will be thrown during transform)
         val result = debugDataSource.updateSettings { settings ->

@@ -78,11 +78,13 @@ abstract class DebugDataSourceModule {
         @Singleton
         fun provideLocalDebugDataSource(
             database: MessengerDatabase,
-            @Named("debug") dataStore: DataStore<Preferences>,
+            @Named("sync") syncDataStore: DataStore<Preferences>,
+            @Named("debug") debugDataStore: DataStore<Preferences>,
             logger: Logger,
         ): LocalDebugDataSource = LocalDebugDataSourceImpl(
             database = database,
-            dataStore = dataStore,
+            syncDataStore = syncDataStore,
+            debugDataStore = debugDataStore,
             logger = logger,
         )
     }

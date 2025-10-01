@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.room.withTransaction
 import javax.inject.Inject
+import javax.inject.Named
 import kotlin.math.pow
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -33,7 +34,7 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.util.Logger
 
 class LocalSyncDataSourceImpl @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
+    @param:Named("sync") private val dataStore: DataStore<Preferences>,
     private val database: MessengerDatabase,
     private val chatDao: ChatDao,
     private val messageDao: MessageDao,

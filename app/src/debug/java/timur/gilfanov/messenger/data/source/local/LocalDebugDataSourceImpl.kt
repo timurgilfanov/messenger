@@ -29,7 +29,8 @@ import timur.gilfanov.messenger.util.Logger
 @Singleton
 class LocalDebugDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
-    private val dataStore: DataStore<Preferences>,
+    private val syncDataStore: DataStore<Preferences>,
+    private val debugDataStore: DataStore<Preferences>,
     private val logger: Logger,
 ) : LocalDebugDataSource {
 
@@ -64,7 +65,7 @@ class LocalDebugDataSourceImpl @Inject constructor(
     override suspend fun clearSyncTimestamp(): ResultWithError<Unit, LocalClearSyncTimestampError> =
         try {
             logger.d(TAG, "Clearing sync timestamp")
-            dataStore.edit { preferences ->
+            syncDataStore.edit { preferences ->
                 preferences.remove(SyncPreferences.LAST_SYNC_TIMESTAMP)
             }
             logger.d(TAG, "Successfully cleared sync timestamp")
@@ -74,7 +75,7 @@ class LocalDebugDataSourceImpl @Inject constructor(
         }
 
     override val settings: Flow<ResultWithError<DebugSettings, LocalGetSettingsError>> =
-        dataStore.data
+        debugDataStore.data
             .map { preferences ->
                 ResultWithError.Success<DebugSettings, LocalGetSettingsError>(
                     DebugSettings.fromPreferences(preferences),
@@ -107,7 +108,7 @@ class LocalDebugDataSourceImpl @Inject constructor(
     override suspend fun updateSettings(
         transform: (DebugSettings) -> DebugSettings,
     ): ResultWithError<Unit, LocalUpdateSettingsError> = try {
-        dataStore.edit { preferences ->
+        debugDataStore.edit { preferences ->
             val currentSettings = DebugSettings.fromPreferences(preferences)
             val updatedSettings = transform(currentSettings)
             updatedSettings.toPreferences(preferences)

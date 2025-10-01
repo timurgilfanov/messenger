@@ -73,27 +73,6 @@ class DebugActivityLifecycleCallbacks(
     private suspend fun initializeDebugFeatures() {
         logger.d(TAG, "Initializing debug features...")
 
-        // RemoteDataSourceFake use it's own time from zero Unix time and switch from data source
-        // with real time broke sync logic. Realtime datasource operation synced with local data
-        // source and set last sync time. After than we change build to debug with mock that use
-        // it's own time that less than last sync time in local data source. That leads to starting
-        // sync loop with time ahead of remote operations and leads to skipping all operations.
-        // There is no side effects when switching from fake to real time, because it's real time is
-        // ahead of fake time that starts from zero Unix time.
-        // To fix this issue we just clear last sync time on each debug launch started with data
-        // scenario parameter in intent. We don't clean on each launch to keep data consistent
-        // between debug builds. This solution relies on assumption that observing sync  deltas
-        // will be called after sync timestamp will be cleared. Another solution is to include
-        // clear login in repository that sync deltas but it will leak knowledge about debug builds
-        // into product source set. So, we need to clean sync timestamp before repository created.
-        debugDataRepository.clearSyncTimestamp().let { result ->
-            if (result is ResultWithError.Failure) {
-                logger.w(TAG, "Failed to clear sync timestamp: ${result.error}")
-            } else {
-                logger.d(TAG, "Cleared sync timestamp successfully")
-            }
-        }
-
         val scenario = determineDataScenario()
         logger.d(TAG, "Using data scenario: ${scenario.name}")
 

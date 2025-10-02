@@ -1,3 +1,3 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
-sealed interface ChangeUILanguageError
+sealed interface ChangeUiLanguageError

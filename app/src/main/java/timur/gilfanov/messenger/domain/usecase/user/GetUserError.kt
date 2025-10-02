@@ -1,3 +1,3 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
-sealed interface GetUserError
+sealed interface GetUserError : UserOperationError

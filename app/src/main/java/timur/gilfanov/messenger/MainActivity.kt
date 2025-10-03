@@ -16,6 +16,7 @@ import java.util.UUID
 import kotlinx.serialization.Serializable
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.ui.screen.MainScreen
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
@@ -26,6 +27,15 @@ data object ChatList : NavKey
 
 @Serializable
 data class Chat(val chatId: String) : NavKey
+
+@Serializable
+data object Settings : NavKey
+
+@Serializable
+data object ProfileEdit : NavKey
+
+@Serializable
+data object Language : NavKey
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -39,36 +49,44 @@ class MainActivity : ComponentActivity() {
                     UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
                 )
 
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = { backStack.removeLastOrNull() },
-                    entryProvider = entryProvider {
-                        entry<ChatList> {
-                            ChatListScreen(
-                                currentUserId = currentUserId,
-                                actions = ChatListActions(
-                                    onChatClick = { chatId ->
-                                        backStack.add(Chat(chatId.id.toString()))
-                                    },
-                                    onNewChatClick = {
-                                        // Navigation to new chat screen will be implemented later
-                                    },
-                                    onSearchClick = {
-                                        // Navigation to search screen will be implemented later
-                                    },
-                                ),
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        }
-                        entry<Chat> { chat ->
-                            ChatScreen(
-                                chatId = ChatId(UUID.fromString(chat.chatId)),
-                                currentUserId = currentUserId,
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        }
-                    },
-                )
+                if (BuildConfig.FEATURE_SETTINGS) {
+                    MainScreen(
+                        chatsBackStack = backStack,
+                        onChatClick = { chatId -> backStack.add(Chat(chatId)) },
+                        currentUserId = currentUserId,
+                    )
+                } else {
+                    NavDisplay(
+                        backStack = backStack,
+                        onBack = { backStack.removeLastOrNull() },
+                        entryProvider = entryProvider {
+                            entry<ChatList> {
+                                ChatListScreen(
+                                    currentUserId = currentUserId,
+                                    actions = ChatListActions(
+                                        onChatClick = { chatId ->
+                                            backStack.add(Chat(chatId.id.toString()))
+                                        },
+                                        onNewChatClick = {
+                                            // Navigation to new chat screen will be implemented later
+                                        },
+                                        onSearchClick = {
+                                            // Navigation to search screen will be implemented later
+                                        },
+                                    ),
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                            entry<Chat> { chat ->
+                                ChatScreen(
+                                    chatId = ChatId(UUID.fromString(chat.chatId)),
+                                    currentUserId = currentUserId,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                        },
+                    )
+                }
             }
         }
     }

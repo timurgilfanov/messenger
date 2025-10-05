@@ -14,4 +14,6 @@ class ProfileEditViewModel :
     suspend fun launchPicturePicker(): Unit = TODO("Not yet implemented")
 
     suspend fun updatePicture(@Suppress("unused") picture: Uri): Unit = TODO("Not yet implemented")
+
+    suspend fun removePicture(@Suppress("unused") picture: Uri): Unit = TODO("Not yet implemented")
 }

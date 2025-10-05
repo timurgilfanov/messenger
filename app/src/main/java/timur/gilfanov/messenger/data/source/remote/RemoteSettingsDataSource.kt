@@ -10,8 +10,8 @@ interface RemoteSettingsDataSource {
         userId: UserId,
     ): ResultWithError<Settings, RemoteSettingsDataSourceError>
 
-    suspend fun updateLanguage(
+    suspend fun changeUiLanguage(
         userId: UserId,
         language: UiLanguage,
-    ): ResultWithError<Unit, RemoteSettingsDataSourceError>
+    ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError>
 }

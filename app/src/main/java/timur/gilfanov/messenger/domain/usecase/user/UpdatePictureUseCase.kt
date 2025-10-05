@@ -4,11 +4,11 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.PictureUri
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
-class EditPictureUseCase {
+class UpdatePictureUseCase {
     operator fun invoke(
         userId: UserId,
         pictureUri: PictureUri,
-    ): ResultWithError<Unit, EditPictureError> {
+    ): ResultWithError<Unit, UpdatePictureError> {
         TODO("Not implemented yet")
     }
 }

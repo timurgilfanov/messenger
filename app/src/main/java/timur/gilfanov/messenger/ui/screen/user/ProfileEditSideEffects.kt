@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.user
 
 sealed interface ProfileEditSideEffects {
-    data object PictureUpdated
-    data class PictureUpdatingFailed(val reason: String)
+    data class LaunchPicturePickerFailed(val reason: String) : ProfileEditSideEffects
+    data object PictureUpdated : ProfileEditSideEffects
 }

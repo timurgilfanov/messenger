@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.user
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
@@ -10,5 +11,7 @@ class ProfileEditViewModel :
     override val container: Container<ProfileEditUiState, ProfileEditSideEffects>
         get() = TODO("Not yet implemented")
 
-    fun updatePicture(): Unit = TODO("Not yet implemented")
+    suspend fun launchPicturePicker(): Unit = TODO("Not yet implemented")
+
+    suspend fun updatePicture(@Suppress("unused") picture: Uri): Unit = TODO("Not yet implemented")
 }

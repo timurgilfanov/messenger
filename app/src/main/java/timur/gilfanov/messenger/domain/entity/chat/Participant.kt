@@ -6,6 +6,8 @@ import kotlin.time.Instant
 @JvmInline
 value class ParticipantId(val id: UUID)
 
+fun String.toParticipantId(): ParticipantId = ParticipantId(UUID.fromString(this))
+
 data class Participant(
     val id: ParticipantId,
     val name: String,

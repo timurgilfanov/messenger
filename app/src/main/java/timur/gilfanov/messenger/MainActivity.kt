@@ -14,10 +14,9 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
-import java.util.UUID
 import kotlinx.serialization.Serializable
-import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.chat.toChatId
+import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
 import timur.gilfanov.messenger.ui.screen.MainScreen
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
@@ -47,9 +46,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MessengerTheme {
                 val backStack = rememberNavBackStack(ChatList)
-                val currentUserId = ParticipantId(
-                    UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
-                )
+                val currentUserId = "550e8400-e29b-41d4-a716-446655440000".toParticipantId()
 
                 val chatNavDisplay = remember(backStack, currentUserId) {
                     movableContentOf {
@@ -76,7 +73,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 entry<Chat> { chat ->
                                     ChatScreen(
-                                        chatId = ChatId(UUID.fromString(chat.chatId)),
+                                        chatId = chat.chatId.toChatId(),
                                         currentUserId = currentUserId,
                                         modifier = Modifier.fillMaxSize(),
                                     )

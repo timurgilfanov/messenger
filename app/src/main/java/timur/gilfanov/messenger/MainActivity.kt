@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entry
@@ -49,43 +51,47 @@ class MainActivity : ComponentActivity() {
                     UUID.fromString("550e8400-e29b-41d4-a716-446655440000"),
                 )
 
+                val chatNavDisplay = remember(backStack, currentUserId) {
+                    movableContentOf {
+                        NavDisplay(
+                            backStack = backStack,
+                            onBack = { backStack.removeLastOrNull() },
+                            entryProvider = entryProvider {
+                                entry<ChatList> {
+                                    ChatListScreen(
+                                        currentUserId = currentUserId,
+                                        actions = ChatListActions(
+                                            onChatClick = { chatId ->
+                                                backStack.add(Chat(chatId.id.toString()))
+                                            },
+                                            onNewChatClick = {
+                                                // Navigation to new chat screen will be implemented later
+                                            },
+                                            onSearchClick = {
+                                                // Navigation to search screen will be implemented later
+                                            },
+                                        ),
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                }
+                                entry<Chat> { chat ->
+                                    ChatScreen(
+                                        chatId = ChatId(UUID.fromString(chat.chatId)),
+                                        currentUserId = currentUserId,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                }
+                            },
+                        )
+                    }
+                }
+
                 if (BuildConfig.FEATURE_SETTINGS) {
                     MainScreen(
-                        chatsBackStack = backStack,
-                        onChatClick = { chatId -> backStack.add(Chat(chatId)) },
-                        currentUserId = currentUserId,
+                        chatNavDisplay = chatNavDisplay,
                     )
                 } else {
-                    NavDisplay(
-                        backStack = backStack,
-                        onBack = { backStack.removeLastOrNull() },
-                        entryProvider = entryProvider {
-                            entry<ChatList> {
-                                ChatListScreen(
-                                    currentUserId = currentUserId,
-                                    actions = ChatListActions(
-                                        onChatClick = { chatId ->
-                                            backStack.add(Chat(chatId.id.toString()))
-                                        },
-                                        onNewChatClick = {
-                                            // Navigation to new chat screen will be implemented later
-                                        },
-                                        onSearchClick = {
-                                            // Navigation to search screen will be implemented later
-                                        },
-                                    ),
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            }
-                            entry<Chat> { chat ->
-                                ChatScreen(
-                                    chatId = ChatId(UUID.fromString(chat.chatId)),
-                                    currentUserId = currentUserId,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            }
-                        },
-                    )
+                    chatNavDisplay()
                 }
             }
         }

@@ -16,22 +16,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import java.util.UUID
-import timur.gilfanov.messenger.Chat
-import timur.gilfanov.messenger.ChatList
 import timur.gilfanov.messenger.Language
 import timur.gilfanov.messenger.ProfileEdit
 import timur.gilfanov.messenger.Settings
-import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
-import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
-import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
 import timur.gilfanov.messenger.ui.screen.user.LanguageScreen
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModel
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditScreen
@@ -42,9 +33,7 @@ import timur.gilfanov.messenger.ui.screen.user.UserViewModel
 @Suppress("LongMethod") // remove suppression on implementation stage
 @Composable
 fun MainScreen(
-    chatsBackStack: NavBackStack,
-    onChatClick: (String) -> Unit,
-    currentUserId: ParticipantId,
+    chatNavDisplay: @Composable () -> Unit,
     @Suppress("unused") modifier: Modifier = Modifier, // really not needed
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -72,32 +61,7 @@ fun MainScreen(
             .fillMaxSize()
             .padding(paddingValues)
         when (selectedTab) {
-            0 -> NavDisplay(
-                backStack = chatsBackStack,
-                onBack = { chatsBackStack.removeLastOrNull() },
-                entryProvider = entryProvider {
-                    entry<ChatList> {
-                        ChatListScreen(
-                            currentUserId = currentUserId,
-                            actions = ChatListActions(
-                                onChatClick = { chatId ->
-                                    onChatClick(chatId.id.toString())
-                                },
-                                onNewChatClick = {},
-                                onSearchClick = {},
-                            ),
-                            modifier = defaultModifier,
-                        )
-                    }
-                    entry<Chat> { chat ->
-                        ChatScreen(
-                            chatId = ChatId(UUID.fromString(chat.chatId)),
-                            currentUserId = currentUserId,
-                            modifier = defaultModifier,
-                        )
-                    }
-                },
-            )
+            0 -> chatNavDisplay()
 
             1 -> NavDisplay(
                 backStack = settingsBackStack,

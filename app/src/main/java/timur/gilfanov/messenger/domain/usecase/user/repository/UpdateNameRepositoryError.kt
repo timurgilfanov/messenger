@@ -1,3 +1,3 @@
 package timur.gilfanov.messenger.domain.usecase.user.repository
 
-sealed interface UpdateNameRepositoryError : ProfileRepositoryError
+sealed interface UpdateNameRepositoryError : UserRepositoryError

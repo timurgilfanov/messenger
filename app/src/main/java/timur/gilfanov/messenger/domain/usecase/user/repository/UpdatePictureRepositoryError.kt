@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.user.repository
 
-sealed interface UpdatePictureRepositoryError : ProfileRepositoryError {
+sealed interface UpdatePictureRepositoryError : UserRepositoryError {
     data class FileSizeOutOfBounds(val size: Int, val min: Int, val max: Int) :
         UpdatePictureRepositoryError
 

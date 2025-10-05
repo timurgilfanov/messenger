@@ -7,7 +7,7 @@ import timur.gilfanov.messenger.domain.entity.user.Profile
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 interface ProfileRepository {
-    fun observeUser(userId: UserId): Flow<ResultWithError<Profile, ProfileRepositoryError>>
+    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, UserRepositoryError>>
 
     suspend fun updateName(
         userId: UserId,

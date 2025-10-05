@@ -8,35 +8,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.serialization.Serializable
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
 import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
+import timur.gilfanov.messenger.navigation.Chat
+import timur.gilfanov.messenger.navigation.ChatList
 import timur.gilfanov.messenger.ui.screen.MainScreen
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
-
-@Serializable
-data object ChatList : NavKey
-
-@Serializable
-data class Chat(val chatId: String) : NavKey
-
-@Serializable
-data object Settings : NavKey
-
-@Serializable
-data object ProfileEdit : NavKey
-
-@Serializable
-data object Language : NavKey
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

@@ -20,9 +20,9 @@ import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import timur.gilfanov.messenger.Language
-import timur.gilfanov.messenger.ProfileEdit
-import timur.gilfanov.messenger.Settings
+import timur.gilfanov.messenger.navigation.Language
+import timur.gilfanov.messenger.navigation.ProfileEdit
+import timur.gilfanov.messenger.navigation.Settings
 import timur.gilfanov.messenger.ui.screen.user.LanguageScreen
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModel
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditScreen

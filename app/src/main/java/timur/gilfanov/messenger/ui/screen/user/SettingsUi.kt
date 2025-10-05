@@ -1,3 +1,3 @@
 package timur.gilfanov.messenger.ui.screen.user
 
-data class SettingsUI(val language: String)
+data class SettingsUi(val language: String)

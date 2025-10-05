@@ -7,17 +7,22 @@ import timur.gilfanov.messenger.domain.entity.user.Profile
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 interface RemoteProfileDataSource {
-    suspend fun getProfile(userId: UserId): ResultWithError<Profile, RemoteProfileDataSourceError>
+    suspend fun getProfile(userId: UserId): ResultWithError<Profile, RemoteUserDataSourceError>
 
     suspend fun updateName(
         userId: UserId,
         name: String,
-    ): ResultWithError<Unit, RemoteProfileDataSourceError>
+    ): ResultWithError<Unit, UpdateNameRemoteDataSourceError>
 
     suspend fun updatePicture(
         userId: UserId,
         pictureStream: InputStream,
         mimeType: String,
         contentLength: Long,
-    ): Flow<ResultWithError<UploadProgress, RemoteProfileDataSourceError>>
+    ): Flow<ResultWithError<UploadProgress, UpdatePictureRemoteDataSourceError>>
+
+    suspend fun removePicture(
+        userId: UserId,
+        pictureUrl: String,
+    ): ResultWithError<Unit, RemovePictureRemoteDataSourceError>
 }

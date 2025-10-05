@@ -6,9 +6,7 @@ import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 interface RemoteSettingsDataSource {
-    suspend fun getSettings(
-        userId: UserId,
-    ): ResultWithError<Settings, RemoteSettingsDataSourceError>
+    suspend fun getSettings(userId: UserId): ResultWithError<Settings, RemoteUserDataSourceError>
 
     suspend fun changeUiLanguage(
         userId: UserId,

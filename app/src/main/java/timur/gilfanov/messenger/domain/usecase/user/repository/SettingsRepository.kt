@@ -7,7 +7,7 @@ import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 interface SettingsRepository {
-    fun observeSettings(userId: UserId): Flow<ResultWithError<Settings, SettingsRepositoryError>>
+    fun observeSettings(userId: UserId): Flow<ResultWithError<Settings, UserRepositoryError>>
 
     suspend fun changeLanguage(
         userId: UserId,

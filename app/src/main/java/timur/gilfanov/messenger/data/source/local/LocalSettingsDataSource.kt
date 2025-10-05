@@ -3,19 +3,13 @@ package timur.gilfanov.messenger.data.source.local
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 interface LocalSettingsDataSource {
-    fun flowSettings(userId: UserId): Flow<ResultWithError<Settings, LocalSettingsDataSourceError>>
+    fun observeSettings(userId: UserId): Flow<ResultWithError<Settings, LocalUserDataSourceError>>
 
-    suspend fun insertSettings(
+    suspend fun updateSettings(
         userId: UserId,
-        settings: Settings,
-    ): ResultWithError<Settings, LocalSettingsDataSourceError>
-
-    suspend fun updateLanguage(
-        userId: UserId,
-        language: UiLanguage,
-    ): ResultWithError<Unit, LocalSettingsDataSourceError>
+        transform: (Settings) -> Settings,
+    ): ResultWithError<Unit, LocalUserDataSourceError>
 }

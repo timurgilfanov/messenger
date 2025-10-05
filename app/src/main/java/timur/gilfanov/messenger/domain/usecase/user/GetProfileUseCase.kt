@@ -4,8 +4,8 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Profile
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
-class GetUserUseCase {
-    operator fun invoke(userId: UserId): ResultWithError<Profile, GetUserError> {
+class GetProfileUseCase {
+    operator fun invoke(userId: UserId): ResultWithError<Profile, GetProfileError> {
         TODO("Not implemented yet")
     }
 }

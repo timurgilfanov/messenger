@@ -1,7 +1,7 @@
 package timur.gilfanov.messenger.data.source.remote
 
 sealed interface UpdatePictureRemoteDataSourceError : RemoteUserDataSourceError {
-    data class FileSizeOutOfBounds(val size: Int, val min: Int, val max: Int) :
+    data class FileSizeOutOfBounds(val size: Long, val min: Long, val max: Long) :
         UpdatePictureRemoteDataSourceError
 
     data class WidthOutOfBounds(val width: Int, val min: Int, val max: Int) :

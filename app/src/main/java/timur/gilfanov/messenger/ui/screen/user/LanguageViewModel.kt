@@ -9,4 +9,6 @@ class LanguageViewModel :
     ContainerHost<LanguageUiState, LanguageSideEffects> {
     override val container: Container<LanguageUiState, LanguageSideEffects>
         get() = TODO("Not yet implemented")
+
+    fun changeLanguage(@Suppress("unused") value: LanguageItem): Unit = TODO("Not yet implemented")
 }

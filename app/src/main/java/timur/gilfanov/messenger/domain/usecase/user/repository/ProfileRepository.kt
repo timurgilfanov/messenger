@@ -18,4 +18,9 @@ interface ProfileRepository {
         userId: UserId,
         pictureUri: PictureUri,
     ): ResultWithError<Unit, UpdatePictureRepositoryError>
+
+    suspend fun removePicture(
+        userId: UserId,
+        pictureUri: PictureUri,
+    ): ResultWithError<Unit, RemovePictureRepositoryError>
 }

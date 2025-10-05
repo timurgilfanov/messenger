@@ -7,7 +7,7 @@ import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationE
 data class ProfileEditUiState(
     val nameInput: TextFieldState,
     val nameInputValidationError: TextValidationError? = null,
-    val picture: Uri,
+    val picture: Uri?,
     val pictureValidationError: ProfilePictureValidationError? = null,
     val pictureUploadProgress: Int? = null,
     val pictureUploadError: ProfilePictureUploadError? = null,

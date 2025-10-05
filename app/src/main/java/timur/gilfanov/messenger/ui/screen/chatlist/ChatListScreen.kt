@@ -20,6 +20,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -50,6 +51,7 @@ data class ChatListActions(
     val onSearchClick: () -> Unit = {},
 )
 
+@Immutable
 data class ChatListContentActions(
     val onChatClick: (ChatId) -> Unit,
     val onNewChatClick: () -> Unit,
@@ -73,14 +75,17 @@ fun ChatListScreen(
 ) {
     val screenState by viewModel.collectAsState()
 
-    ChatListScreenContent(
-        screenState = screenState,
-        actions = ChatListContentActions(
+    val contentActions = remember(actions) {
+        ChatListContentActions(
             onChatClick = actions.onChatClick,
             onNewChatClick = actions.onNewChatClick,
             onSearchClick = actions.onSearchClick,
             onDeleteChat = { /* Delete chat not implemented yet */ },
-        ),
+        )
+    }
+    ChatListScreenContent(
+        screenState = screenState,
+        actions = contentActions,
         modifier = modifier,
     )
 }

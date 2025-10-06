@@ -7,5 +7,6 @@ sealed interface RepositoryError {
         data object Timeout : ServiceUnavailable
     }
     data object AccessDenied : RepositoryError
+    data class UnknownServiceError(val reason: String) : RepositoryError
     data object LocalDataCorrupted : RepositoryError
 }

@@ -18,7 +18,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -42,12 +44,30 @@ import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.NotEmpty
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
+/**
+ * Actions for chat list screen.
+ *
+ * Marked as [Stable] rather than `@Immutable` because:
+ * - Lambda functions may capture mutable state (e.g., NavBackStack)
+ * - The lambda references themselves remain stable across recompositions
+ * - `@Immutable` would be too strong a promise when lambdas capture mutable state
+ * - `@Stable` allows Compose to skip recompositions while being semantically accurate
+ */
+@Stable
 data class ChatListActions(
     val onChatClick: (ChatId) -> Unit = {},
     val onNewChatClick: () -> Unit = {},
     val onSearchClick: () -> Unit = {},
 )
 
+/**
+ * Internal actions for chat list content.
+ *
+ * Marked as [Stable] rather than `@Immutable` because:
+ * - Lambda functions are derived from [ChatListActions] which capture mutable state
+ * - Allows Compose to optimize recompositions without false immutability promises
+ */
+@Stable
 data class ChatListContentActions(
     val onChatClick: (ChatId) -> Unit,
     val onNewChatClick: () -> Unit,
@@ -71,14 +91,17 @@ fun ChatListScreen(
 ) {
     val screenState by viewModel.collectAsState()
 
-    ChatListScreenContent(
-        screenState = screenState,
-        actions = ChatListContentActions(
+    val contentActions = remember(actions) {
+        ChatListContentActions(
             onChatClick = actions.onChatClick,
             onNewChatClick = actions.onNewChatClick,
             onSearchClick = actions.onSearchClick,
             onDeleteChat = { /* Delete chat not implemented yet */ },
-        ),
+        )
+    }
+    ChatListScreenContent(
+        screenState = screenState,
+        actions = contentActions,
         modifier = modifier,
     )
 }

@@ -10,6 +10,8 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 @JvmInline
 value class ChatId(val id: UUID)
 
+fun String.toChatId(): ChatId = ChatId(UUID.fromString(this))
+
 data class Chat(
     val id: ChatId,
     val name: String,

@@ -44,6 +44,15 @@ import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.NotEmpty
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
+/**
+ * Actions for chat list screen.
+ *
+ * Marked as [Stable] rather than `@Immutable` because:
+ * - Lambda functions may capture mutable state (e.g., NavBackStack)
+ * - The lambda references themselves remain stable across recompositions
+ * - `@Immutable` would be too strong a promise when lambdas capture mutable state
+ * - `@Stable` allows Compose to skip recompositions while being semantically accurate
+ */
 @Stable
 data class ChatListActions(
     val onChatClick: (ChatId) -> Unit = {},
@@ -51,6 +60,13 @@ data class ChatListActions(
     val onSearchClick: () -> Unit = {},
 )
 
+/**
+ * Internal actions for chat list content.
+ *
+ * Marked as [Stable] rather than `@Immutable` because:
+ * - Lambda functions are derived from [ChatListActions] which capture mutable state
+ * - Allows Compose to optimize recompositions without false immutability promises
+ */
 @Stable
 data class ChatListContentActions(
     val onChatClick: (ChatId) -> Unit,

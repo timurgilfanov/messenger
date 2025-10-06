@@ -18,7 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -44,14 +44,14 @@ import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.NotEmpty
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
-@Immutable
+@Stable
 data class ChatListActions(
     val onChatClick: (ChatId) -> Unit = {},
     val onNewChatClick: () -> Unit = {},
     val onSearchClick: () -> Unit = {},
 )
 
-@Immutable
+@Stable
 data class ChatListContentActions(
     val onChatClick: (ChatId) -> Unit,
     val onNewChatClick: () -> Unit,

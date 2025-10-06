@@ -41,5 +41,5 @@ data class ProfileEditUiState(
     val nameInputValidationError: UpdateNameError? = null,
     val picture: Uri?,
     val pictureUpdatingError: UpdatePictureError? = null,
-    val pictureUpdatingProgress: Int? = null,
+    val pictureUploadState: FileUploadState = FileUploadState.Idle,
 )

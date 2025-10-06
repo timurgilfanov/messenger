@@ -10,4 +10,5 @@ sealed interface RemoteDataSourceErrorV2 {
     data object Unauthorized : RemoteDataSourceErrorV2
     data object Forbidden : RemoteDataSourceErrorV2
     data object RateLimitExceeded : RemoteDataSourceErrorV2
+    data class UnknownServiceError(val reason: String) : RemoteDataSourceErrorV2
 }

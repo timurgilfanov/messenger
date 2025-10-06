@@ -12,5 +12,6 @@ sealed interface UserOperationError {
     data class RateLimitExceeded(val waitFor: Duration) : UserOperationError
     data object UserNotFound : UserOperationError
     data object Unauthorized : UserOperationError
+    data class UnknownServiceError(val reason: String) : UserOperationError
     data object LocalDataCorrupted : UserOperationError
 }

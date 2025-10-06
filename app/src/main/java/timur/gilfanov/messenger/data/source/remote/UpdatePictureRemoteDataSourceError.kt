@@ -15,6 +15,4 @@ sealed interface UpdatePictureRemoteDataSourceError : RemoteUserDataSourceError 
         data object Violence : PlatformPolicyViolation
         data object IllegalSubstance : PlatformPolicyViolation
     }
-
-    data class UnknownError(val reason: String) : UpdatePictureRemoteDataSourceError
 }

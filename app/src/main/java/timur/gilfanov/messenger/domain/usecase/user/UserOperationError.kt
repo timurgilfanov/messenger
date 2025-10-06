@@ -9,7 +9,8 @@ sealed interface UserOperationError {
         data object Timeout : ServiceUnavailable
     }
 
-    data class RateLimitExceeded(val waitFor: Duration) : UserOperationError
+    data object RateLimitExceeded : UserOperationError
+    data class CooldownActive(val remaining: Duration) : UserOperationError
     data object UserNotFound : UserOperationError
     data object Unauthorized : UserOperationError
     data class UnknownServiceError(val reason: String) : UserOperationError

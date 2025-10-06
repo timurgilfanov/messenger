@@ -9,7 +9,4 @@ class UserViewModel :
     ContainerHost<UserUiState, Nothing> {
     override val container: Container<UserUiState, Nothing>
         get() = TODO("Not yet implemented")
-
-    fun enlargeProfilePicture(): Unit = TODO("Not yet implemented")
-    fun smallerProfilePicture(): Unit = TODO("Not yet implemented")
 }

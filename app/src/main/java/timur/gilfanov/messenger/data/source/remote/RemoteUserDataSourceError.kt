@@ -6,6 +6,12 @@ package timur.gilfanov.messenger.data.source.remote
  * ## User-Specific Errors
  * - [UserNotFound] - User does not exist on the backend
  *
+ * ## Authentication Errors (Who are you?)
+ * - [Authentication] - Identity verification failures
+ *
+ * ## Authorization Errors (What can you do?)
+ * - [InsufficientPermissions] - Authenticated user lacks required permissions
+ *
  * ## Common Errors
  * - [RemoteDataSource] - Wraps common remote data source errors
  */
@@ -16,6 +22,50 @@ sealed interface RemoteUserDataSourceError {
      * Indicates the requested user ID is not found in the system.
      */
     data object UserNotFound : RemoteUserDataSourceError
+
+    /**
+     * Authentication errors related to identity verification.
+     *
+     * These errors indicate problems with proving who the user is.
+     * Resolution typically requires re-authentication (login).
+     */
+    sealed interface Authentication : RemoteUserDataSourceError {
+        /**
+         * Authentication token is missing from the request.
+         */
+        data object TokenMissing : Authentication
+
+        /**
+         * Authentication token has expired.
+         *
+         * User session has timed out and requires re-authentication.
+         */
+        data object TokenExpired : Authentication
+
+        /**
+         * Authentication token is invalid or malformed.
+         *
+         * May indicate token tampering or corruption.
+         */
+        data object TokenInvalid : Authentication
+
+        /**
+         * User session has been revoked.
+         *
+         * Token was valid but session was explicitly terminated
+         * (e.g., user logged out from another device, password changed).
+         */
+        data object SessionRevoked : Authentication
+    }
+
+    /**
+     * User lacks required permissions for this operation.
+     *
+     * User is authenticated (identity verified) but does not have
+     * the necessary permissions or role to perform the requested action.
+     * This is an authorization failure, not authentication.
+     */
+    data object InsufficientPermissions : RemoteUserDataSourceError
 
     /**
      * Common remote data source errors.

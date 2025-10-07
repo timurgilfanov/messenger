@@ -11,10 +11,10 @@ package timur.gilfanov.messenger.data.source.remote
  * - [HeightOutOfBounds] - Image height doesn't meet requirements
  * - [PlatformPolicyViolation] - Image violates content policy
  *
- * ## Inherited Errors
- * Inherits all errors from [RemoteUserDataSourceError] and [RemoteDataSourceErrorV2].
+ * ## Common Errors
+ * - [RemoteUserDataSource] - Wraps remote user data source errors
  */
-sealed interface UpdatePictureRemoteDataSourceError : RemoteUserDataSourceError {
+sealed interface UpdatePictureRemoteDataSourceError {
     /**
      * Picture file size does not meet requirements.
      *
@@ -53,4 +53,12 @@ sealed interface UpdatePictureRemoteDataSourceError : RemoteUserDataSourceError 
         data object Violence : PlatformPolicyViolation
         data object IllegalSubstance : PlatformPolicyViolation
     }
+
+    /**
+     * Common remote user data source errors.
+     *
+     * @property error The underlying remote user data source error
+     */
+    data class RemoteUserDataSource(val error: RemoteUserDataSourceError) :
+        UpdatePictureRemoteDataSourceError
 }

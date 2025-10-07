@@ -9,15 +9,22 @@ package timur.gilfanov.messenger.data.source.remote
  * ## Operation-Specific Errors
  * - [LanguageNotChangedForAllDevices] - Partial synchronization failure
  *
- * ## Inherited Errors
- * Inherits all errors from [RemoteDataSourceErrorV2] such as network issues
- * and authentication failures.
+ * ## Common Errors
+ * - [RemoteUserDataSource] - Wraps remote user data source errors
  */
-sealed interface ChangeUiLanguageRemoteDataSourceError : RemoteDataSourceErrorV2 {
+sealed interface ChangeUiLanguageRemoteDataSourceError {
     /**
      * Language preference was updated on some devices but not all.
      *
      * Indicates partial success where synchronization failed for some devices.
      */
     data object LanguageNotChangedForAllDevices : ChangeUiLanguageRemoteDataSourceError
+
+    /**
+     * Common remote user data source errors.
+     *
+     * @property error The underlying remote user data source error
+     */
+    data class RemoteUserDataSource(val error: RemoteUserDataSourceError) :
+        ChangeUiLanguageRemoteDataSourceError
 }

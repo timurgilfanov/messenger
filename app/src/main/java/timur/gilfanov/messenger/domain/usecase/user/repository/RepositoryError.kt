@@ -40,13 +40,6 @@ sealed interface RepositoryError {
     }
 
     /**
-     * User not authenticated or lacks required permissions.
-     *
-     * Indicates session expired or user is not authorized for the operation.
-     */
-    data object AccessDenied : RepositoryError
-
-    /**
      * User-specific cooldown restriction with remaining time.
      *
      * Business rule enforcement preventing too frequent operations.

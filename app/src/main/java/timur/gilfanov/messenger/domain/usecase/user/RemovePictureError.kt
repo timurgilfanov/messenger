@@ -1,28 +1,11 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
+import timur.gilfanov.messenger.domain.usecase.user.repository.RemovePictureRepositoryError
+
 /**
- * Errors specific to profile picture removal operations.
+ * Errors for profile picture removal operations.
  *
- * Defines operation-specific errors for picture removal, in addition to
- * common errors from [UserOperationError].
- *
- * ## Operation-Specific Errors
- * - [PictureNotFound] - Picture doesn't exist or was already removed
- *
- * ## Inherited Errors
- * - Network/Service errors ([UserOperationError.ServiceUnavailable])
- * - Rate limiting ([UserOperationError.RateLimitExceeded])
- * - Cooldown restrictions ([UserOperationError.CooldownActive])
- * - Authentication errors ([UserOperationError.Unauthorized])
+ * Type alias to [RemovePictureRepositoryError] as use case layer has no unique errors.
+ * If use case-specific errors are needed, convert this to a sealed interface.
  */
-sealed interface RemovePictureError : UserOperationError {
-    /**
-     * The specified picture does not exist or was already removed.
-     *
-     * This can occur if:
-     * - Another client/device already removed the picture
-     * - The picture URI is outdated or invalid
-     * - The user never had a profile picture set
-     */
-    data object PictureNotFound : RemovePictureError
-}
+typealias RemovePictureError = RemovePictureRepositoryError

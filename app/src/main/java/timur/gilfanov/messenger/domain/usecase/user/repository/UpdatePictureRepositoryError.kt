@@ -11,10 +11,10 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
  * - [HeightOutOfBounds] - Image height doesn't meet requirements
  * - [PlatformPolicyViolation] - Image violates content policy
  *
- * ## Inherited Errors
- * Inherits all errors from [UserRepositoryError] and [RepositoryError].
+ * ## Common Errors
+ * - [UserRepository] - Wraps user-related repository errors
  */
-sealed interface UpdatePictureRepositoryError : UserRepositoryError {
+sealed interface UpdatePictureRepositoryError {
     /**
      * Picture file size does not meet requirements.
      *
@@ -53,4 +53,11 @@ sealed interface UpdatePictureRepositoryError : UserRepositoryError {
         data object Violence : PlatformPolicyViolation
         data object IllegalSubstance : PlatformPolicyViolation
     }
+
+    /**
+     * Common user repository errors.
+     *
+     * @property error The underlying user repository error
+     */
+    data class UserRepository(val error: UserRepositoryError) : UpdatePictureRepositoryError
 }

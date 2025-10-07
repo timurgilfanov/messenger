@@ -9,14 +9,21 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
  * ## Operation-Specific Errors
  * - [LanguageNotChangedForAllDevices] - Partial synchronization failure
  *
- * ## Inherited Errors
- * Inherits all errors from [UserRepositoryError] and [RepositoryError].
+ * ## Common Errors
+ * - [UserRepository] - Wraps user-related repository errors
  */
-sealed interface ChangeLanguageRepositoryError : UserRepositoryError {
+sealed interface ChangeLanguageRepositoryError {
     /**
      * Language preference was updated on some devices but not all.
      *
      * Indicates partial success where synchronization failed for some devices.
      */
     data object LanguageNotChangedForAllDevices : ChangeLanguageRepositoryError
+
+    /**
+     * Common user repository errors.
+     *
+     * @property error The underlying user repository error
+     */
+    data class UserRepository(val error: UserRepositoryError) : ChangeLanguageRepositoryError
 }

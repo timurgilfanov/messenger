@@ -5,7 +5,8 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
  *
  * ## User-Specific Errors
  * - [UserNotFound] - Target user does not exist
- * - [AccessDenied] - User not authenticated or lacks permissions
+ * - [Unauthenticated] - User session expired or not logged in
+ * - [InsufficientPermissions] - User lacks required permissions
  *
  * ## Common Repository Errors
  * - [Repository] - Wraps common repository errors like network issues, cooldowns, etc.
@@ -19,11 +20,21 @@ sealed interface UserRepositoryError {
     data object UserNotFound : UserRepositoryError
 
     /**
-     * User not authenticated or lacks required permissions.
+     * User is not authenticated.
      *
-     * Indicates session expired or user is not authorized for the operation.
+     * Indicates the user's session has expired or they are not logged in.
+     * Client should redirect to login/authentication flow.
      */
-    data object AccessDenied : UserRepositoryError
+    data object Unauthenticated : UserRepositoryError
+
+    /**
+     * User lacks required permissions for this operation.
+     *
+     * Indicates the authenticated user does not have the necessary
+     * permissions to perform this action. Client should show
+     * appropriate permission denied message.
+     */
+    data object InsufficientPermissions : UserRepositoryError
 
     /**
      * Common repository errors that can occur across operations.

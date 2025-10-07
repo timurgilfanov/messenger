@@ -5,9 +5,10 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
  *
  * ## User-Specific Errors
  * - [UserNotFound] - Target user does not exist
+ * - [AccessDenied] - User not authenticated or lacks permissions
  *
  * ## Common Repository Errors
- * - [Repository] - Wraps common repository errors like network issues, access control, etc.
+ * - [Repository] - Wraps common repository errors like network issues, cooldowns, etc.
  */
 sealed interface UserRepositoryError {
     /**
@@ -16,6 +17,13 @@ sealed interface UserRepositoryError {
      * Indicates the requested user ID is not found in the system.
      */
     data object UserNotFound : UserRepositoryError
+
+    /**
+     * User not authenticated or lacks required permissions.
+     *
+     * Indicates session expired or user is not authorized for the operation.
+     */
+    data object AccessDenied : UserRepositoryError
 
     /**
      * Common repository errors that can occur across operations.

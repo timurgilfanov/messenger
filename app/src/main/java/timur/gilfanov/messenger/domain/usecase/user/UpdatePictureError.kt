@@ -1,10 +1,9 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
+import timur.gilfanov.messenger.domain.usecase.user.repository.UpdatePictureRepositoryError
+
 /**
  * Errors specific to profile picture update operations.
- *
- * Defines validation errors that can occur when uploading a new profile picture,
- * in addition to common errors from [UserOperationError].
  *
  * ## Validation Errors
  * - [FileSizeOutOfBounds] - Image file too small or too large
@@ -12,13 +11,10 @@ package timur.gilfanov.messenger.domain.usecase.user
  * - [HeightOutOfBounds] - Image height doesn't meet requirements
  * - [PlatformPolicyViolation] - Image violates content policy
  *
- * ## Inherited Errors
- * - Network/Service errors ([UserOperationError.ServiceUnavailable])
- * - Rate limiting ([UserOperationError.RateLimitExceeded])
- * - Cooldown restrictions ([UserOperationError.CooldownActive])
- * - Authentication errors ([UserOperationError.Unauthorized])
+ * ## Repository Errors
+ * - [RepositoryError] - Wraps repository layer errors
  */
-sealed interface UpdatePictureError : UserOperationError {
+sealed interface UpdatePictureError {
     /**
      * Picture file size does not meet requirements.
      *
@@ -58,4 +54,11 @@ sealed interface UpdatePictureError : UserOperationError {
         data object Violence : PlatformPolicyViolation
         data object IllegalSubstance : PlatformPolicyViolation
     }
+
+    /**
+     * Repository layer errors.
+     *
+     * @property error The underlying repository error
+     */
+    data class RepositoryError(val error: UpdatePictureRepositoryError) : UpdatePictureError
 }

@@ -12,10 +12,10 @@ import kotlinx.collections.immutable.ImmutableList
  * - [ForbiddenCharacter] - Name contains prohibited characters
  * - [PlatformPolicyViolation] - Name violates content policy
  *
- * ## Inherited Errors
- * Inherits all errors from [UserRepositoryError] and [RepositoryError].
+ * ## Common Errors
+ * - [UserRepository] - Wraps user-related repository errors
  */
-sealed interface UpdateNameRepositoryError : UserRepositoryError {
+sealed interface UpdateNameRepositoryError {
     /**
      * Name length does not meet requirements.
      *
@@ -45,4 +45,11 @@ sealed interface UpdateNameRepositoryError : UserRepositoryError {
         data object Violence : PlatformPolicyViolation
         data object IllegalSubstance : PlatformPolicyViolation
     }
+
+    /**
+     * Common user repository errors.
+     *
+     * @property error The underlying user repository error
+     */
+    data class UserRepository(val error: UserRepositoryError) : UpdateNameRepositoryError
 }

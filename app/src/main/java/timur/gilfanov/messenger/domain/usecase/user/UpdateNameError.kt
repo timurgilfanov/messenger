@@ -1,25 +1,20 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
 import kotlinx.collections.immutable.ImmutableList
+import timur.gilfanov.messenger.domain.usecase.user.repository.UpdateNameRepositoryError
 
 /**
  * Errors specific to name update operations.
- *
- * Defines validation errors that can occur when updating a user's display name,
- * in addition to common errors from [UserOperationError].
  *
  * ## Validation Errors
  * - [LengthOutOfBounds] - Name too short or too long
  * - [ForbiddenCharacter] - Name contains prohibited characters
  * - [PlatformPolicyViolation] - Name violates content policy
  *
- * ## Inherited Errors
- * - Network/Service errors ([UserOperationError.ServiceUnavailable])
- * - Rate limiting ([UserOperationError.RateLimitExceeded])
- * - Cooldown restrictions ([UserOperationError.CooldownActive])
- * - Authentication errors ([UserOperationError.Unauthorized])
+ * ## Repository Errors
+ * - [RepositoryError] - Wraps repository layer errors
  */
-sealed interface UpdateNameError : UserOperationError {
+sealed interface UpdateNameError {
     /**
      * Name length does not meet requirements.
      *
@@ -51,4 +46,11 @@ sealed interface UpdateNameError : UserOperationError {
         data object Violence : PlatformPolicyViolation
         data object IllegalSubstance : PlatformPolicyViolation
     }
+
+    /**
+     * Repository layer errors.
+     *
+     * @property error The underlying repository error
+     */
+    data class RepositoryError(val error: UpdateNameRepositoryError) : UpdateNameError
 }

@@ -12,10 +12,10 @@ import kotlinx.collections.immutable.ImmutableList
  * - [ForbiddenCharacter] - Name contains prohibited characters
  * - [PlatformPolicyViolation] - Name violates content policy
  *
- * ## Inherited Errors
- * Inherits all errors from [RemoteUserDataSourceError] and [RemoteDataSourceErrorV2].
+ * ## Common Errors
+ * - [RemoteUser] - Wraps remote user data source errors
  */
-sealed interface UpdateNameRemoteDataSourceError : RemoteUserDataSourceError {
+sealed interface UpdateNameRemoteDataSourceError {
     /**
      * Name length does not meet requirements.
      *
@@ -45,4 +45,11 @@ sealed interface UpdateNameRemoteDataSourceError : RemoteUserDataSourceError {
         data object Violence : PlatformPolicyViolation
         data object IllegalSubstance : PlatformPolicyViolation
     }
+
+    /**
+     * Common remote user data source errors.
+     *
+     * @property error The underlying remote user data source error
+     */
+    data class RemoteUser(val error: RemoteUserDataSourceError) : UpdateNameRemoteDataSourceError
 }

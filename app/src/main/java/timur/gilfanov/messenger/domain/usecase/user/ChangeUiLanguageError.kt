@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
+import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
+
 /**
  * Errors specific to UI language change operations.
  *
@@ -14,7 +16,7 @@ package timur.gilfanov.messenger.domain.usecase.user
  * - Rate limiting ([UserOperationError.RateLimitExceeded])
  * - Authentication errors ([UserOperationError.Unauthorized])
  */
-sealed interface ChangeUiLanguageError : UserOperationError {
+sealed interface ChangeUiLanguageError {
     /**
      * Language preference was updated on some devices but not all.
      *
@@ -23,5 +25,5 @@ sealed interface ChangeUiLanguageError : UserOperationError {
      * current device will reflect the new language, but other devices may
      * still show the old language until they can be synced.
      */
-    data object LanguageNotChangedForAllDevices : ChangeUiLanguageError
+    data class RepositoryError(val error: ChangeLanguageRepositoryError) : ChangeUiLanguageError
 }

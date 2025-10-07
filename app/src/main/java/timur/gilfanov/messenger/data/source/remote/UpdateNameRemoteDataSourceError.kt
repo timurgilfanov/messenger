@@ -13,7 +13,7 @@ import kotlinx.collections.immutable.ImmutableList
  * - [PlatformPolicyViolation] - Name violates content policy
  *
  * ## Common Errors
- * - [RemoteUser] - Wraps remote user data source errors
+ * - [RemoteUserDataSource] - Wraps remote user data source errors
  */
 sealed interface UpdateNameRemoteDataSourceError {
     /**
@@ -51,5 +51,6 @@ sealed interface UpdateNameRemoteDataSourceError {
      *
      * @property error The underlying remote user data source error
      */
-    data class RemoteUser(val error: RemoteUserDataSourceError) : UpdateNameRemoteDataSourceError
+    data class RemoteUserDataSource(val error: RemoteUserDataSourceError) :
+        UpdateNameRemoteDataSourceError
 }

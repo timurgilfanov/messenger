@@ -9,7 +9,7 @@ package timur.gilfanov.messenger.data.source.remote
  * - [PictureNotFound] - Picture doesn't exist or was already removed
  *
  * ## Common Errors
- * - [RemoteUser] - Wraps remote user data source errors
+ * - [RemoteUserDataSource] - Wraps remote user data source errors
  */
 sealed interface RemovePictureRemoteDataSourceError {
     /**
@@ -22,5 +22,6 @@ sealed interface RemovePictureRemoteDataSourceError {
      *
      * @property error The underlying remote user data source error
      */
-    data class RemoteUser(val error: RemoteUserDataSourceError) : RemovePictureRemoteDataSourceError
+    data class RemoteUserDataSource(val error: RemoteUserDataSourceError) :
+        RemovePictureRemoteDataSourceError
 }

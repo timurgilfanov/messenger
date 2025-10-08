@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.domain.usecase.user
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 
 /**
  * Changes user's UI language preference.
@@ -19,11 +20,13 @@ import timur.gilfanov.messenger.domain.entity.user.UserId
  * Returns [ChangeUiLanguageError.LanguageNotChangedForAllDevices] if synchronization
  * fails for some devices, and inherits common errors from [UserOperationError].
  */
-class ChangeUiLanguageUseCase {
-    operator fun invoke(
+class ChangeUiLanguageUseCase(private val settingsRepository: SettingsRepository) {
+    suspend operator fun invoke(
         userId: UserId,
         newUiLanguage: UiLanguage,
-    ): ResultWithError<Unit, ChangeUiLanguageError> {
-        TODO("Not implemented yet")
-    }
+    ): ResultWithError<Unit, ChangeUiLanguageError> =
+        when (val result = settingsRepository.changeLanguage(userId, newUiLanguage)) {
+            is ResultWithError.Failure -> ResultWithError.Failure(result.error)
+            is ResultWithError.Success -> ResultWithError.Success(Unit)
+        }
 }

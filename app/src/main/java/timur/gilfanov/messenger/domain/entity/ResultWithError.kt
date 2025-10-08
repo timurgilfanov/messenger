@@ -21,3 +21,19 @@ inline fun <R, E> ResultWithError<R, E>.onFailure(action: (E) -> Unit): ResultWi
     }
     return this
 }
+
+// This map function is good for chained call, because it transform the result value
+inline fun <R1, E1, R2, E2> ResultWithError<R1, E1>.mapResult(
+    success: (R1) -> ResultWithError<R2, E2>,
+    failure: (E1) -> ResultWithError<R2, E2>,
+): ResultWithError<R2, E2> = when (this) {
+    is ResultWithError.Failure -> failure(this.error)
+    is ResultWithError.Success -> success(this.data)
+}
+
+inline fun <R, E1, E2> ResultWithError<R, E1>.mapFailure(
+    failure: (E1) -> ResultWithError<R, E2>,
+): ResultWithError<R, E2> = when (this) {
+    is ResultWithError.Failure -> failure(this.error)
+    is ResultWithError.Success -> ResultWithError.Success(this.data)
+}

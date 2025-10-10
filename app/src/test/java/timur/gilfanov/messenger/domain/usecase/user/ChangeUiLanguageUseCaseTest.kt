@@ -4,12 +4,15 @@ import java.util.UUID
 import kotlin.test.assertIs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
+import timur.gilfanov.messenger.domain.entity.user.DeviceId
+import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
@@ -17,27 +20,40 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRep
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.domain.usecase.user.repository.UserRepositoryError
 
-@Category(Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class ChangeUiLanguageUseCaseTest {
-    val userId = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
+    private val identityRepository: IdentityRepository = object : IdentityRepository {
+        override val identity: Flow<ResultWithError<Identity, GetIdentityError>> =
+            flowOf(
+                Success(
+                    Identity(
+                        userId = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
+                        deviceId = DeviceId(
+                            UUID.fromString("550e8400-e29b-41d4-a716-446655440001"),
+                        ),
+                    ),
+                ),
+            )
+    }
 
     @Test
     fun `when repository succeed then use case succeed`() = runTest {
         val settingsRepository = SettingsRepositoryStub(Success(Unit))
-        val useCase = ChangeUiLanguageUseCase(settingsRepository)
-        val result = useCase(userId, UiLanguage.English)
+        val useCase = ChangeUiLanguageUseCase(identityRepository, settingsRepository)
+        val result = useCase(UiLanguage.English)
         assertIs<Success<Unit, *>>(result)
     }
 
     @Test
     fun `when repository failed then use case failed`() = runTest {
         val settingsRepository = SettingsRepositoryStub(
-            Failure(ChangeLanguageRepositoryError.LanguageNotChangedForAllDevices),
+            Failure(ChangeLanguageRepositoryError.LanguageNotChanged(transient = false)),
         )
-        val useCase = ChangeUiLanguageUseCase(settingsRepository)
-        val result = useCase(userId, UiLanguage.English)
+        val useCase = ChangeUiLanguageUseCase(identityRepository, settingsRepository)
+        val result = useCase(UiLanguage.English)
         assertIs<Failure<*, ChangeUiLanguageError>>(result)
-        assertIs<ChangeLanguageRepositoryError.LanguageNotChangedForAllDevices>(result.error)
+        assertIs<ChangeUiLanguageError.ChangeLanguageRepository>(result.error)
+        assertIs<ChangeLanguageRepositoryError.LanguageNotChanged>(result.error.error)
     }
 }
 
@@ -45,11 +61,11 @@ private class SettingsRepositoryStub(
     val changeLanguageResult: ResultWithError<Unit, ChangeLanguageRepositoryError>,
 ) : SettingsRepository {
     override fun observeSettings(
-        userId: UserId,
+        identity: Identity,
     ): Flow<ResultWithError<Settings, UserRepositoryError>> = emptyFlow()
 
     override suspend fun changeLanguage(
-        userId: UserId,
+        identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = changeLanguageResult
 }

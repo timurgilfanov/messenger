@@ -1,9 +1,65 @@
 package timur.gilfanov.messenger.data.source.local
 
+/**
+ * Common errors for local data source operations.
+ *
+ * Focused on infrastructure-level failures during I/O and serialization.
+ * Entity-specific errors (e.g., UserDataNotFound) are defined in separate
+ * interfaces (e.g., LocalUserDataSourceError) and compose this interface
+ * for common infrastructure errors.
+ *
+ * ## Migration from LocalDataSourceError
+ *
+ * This interface replaces [LocalDataSourceError] with better separation of concerns:
+ *
+ * ### Errors moved to entity-specific interfaces:
+ * - ChatNotFound, MessageNotFound, ParticipantNotFound → LocalChatDataSourceError, etc.
+ *
+ * ### Errors moved to operation-specific interfaces:
+ * - DuplicateEntity, RelatedEntityMissing → Operation-specific error types
+ *
+ * ### Errors mapped to infrastructure errors:
+ * - StorageUnavailable → ReadError or WriteError with IOException
+ *
+ */
 sealed interface LocalDataSourceErrorV2 {
-    data object StorageUnavailable : LocalDataSourceErrorV2
-    data object StorageFull : LocalDataSourceErrorV2
-    data object DataCorrupted : LocalDataSourceErrorV2
-    data object ConcurrentModificationError : LocalDataSourceErrorV2
-    data class InvalidData(val field: String, val reason: String) : LocalDataSourceErrorV2
+    /**
+     * Storage read operation failed.
+     *
+     * Occurs when reading data from local storage (DataStore, Room, etc.) fails.
+     * Common causes include I/O errors, missing files, or corrupted data.
+     *
+     * @property reason The exception that caused the read failure
+     */
+    data class ReadError(val reason: Throwable) : LocalDataSourceErrorV2
+
+    /**
+     * Storage write operation failed.
+     *
+     * Occurs when writing data to local storage (DataStore, Room, etc.) fails.
+     * Common causes include I/O errors, insufficient storage space, or permission issues.
+     *
+     * @property reason The exception that caused the write failure
+     */
+    data class WriteError(val reason: Throwable) : LocalDataSourceErrorV2
+
+    /**
+     * Data serialization failed.
+     *
+     * Occurs when converting domain entities to storage format fails.
+     * This typically indicates a programming error in serialization logic.
+     *
+     * @property reason The exception that caused the serialization failure
+     */
+    data class SerializationError(val reason: Throwable) : LocalDataSourceErrorV2
+
+    /**
+     * Data deserialization failed.
+     *
+     * Occurs when converting storage format to domain entities fails.
+     * Common causes include schema migration issues or corrupted data.
+     *
+     * @property reason The exception that caused the deserialization failure
+     */
+    data class DeserializationError(val reason: Throwable) : LocalDataSourceErrorV2
 }

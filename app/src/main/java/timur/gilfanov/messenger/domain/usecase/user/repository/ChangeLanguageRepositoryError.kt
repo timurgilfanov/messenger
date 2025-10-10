@@ -1,29 +1,40 @@
 package timur.gilfanov.messenger.domain.usecase.user.repository
 
 /**
- * Errors specific to language change repository operations.
+ * Errors that can occur during language change repository operations.
  *
- * Defines operation-specific errors returned by the repository layer
- * when changing language preferences.
- *
- * ## Operation-Specific Errors
- * - [LanguageNotChangedForAllDevices] - Partial synchronization failure
- *
- * ## Common Errors
- * - [UserRepository] - Wraps user-related repository errors
+ * Represents failures when changing user language preferences at the repository layer.
  */
 sealed interface ChangeLanguageRepositoryError {
     /**
-     * Language preference was updated on some devices but not all.
+     * The language preference was not changed.
      *
-     * Indicates partial success where synchronization failed for some devices.
+     * @property transient Indicates if the error is transient (retriable) or permanent
      */
-    data object LanguageNotChangedForAllDevices : ChangeLanguageRepositoryError
+    data class LanguageNotChanged(val transient: Boolean) : ChangeLanguageRepositoryError
 
     /**
-     * Common user repository errors.
+     * Settings were not found and were reset to default values.
      *
-     * @property error The underlying user repository error
+     * The language change operation triggered a settings reset because no settings
+     * existed for the user.
      */
-    data class UserRepository(val error: UserRepositoryError) : ChangeLanguageRepositoryError
+    data object SettingsResetToDefaults : ChangeLanguageRepositoryError
+
+    /**
+     * Settings could not be created or initialized.
+     *
+     * Occurs when settings are missing and cannot be restored from any source.
+     */
+    data object SettingsEmpty : ChangeLanguageRepositoryError
+
+    /**
+     * Language change succeeded locally but backup to remote failed.
+     *
+     * The language preference was updated locally but could not be synchronized
+     * to the remote server.
+     *
+     * @property error Details about the backup failure
+     */
+    data class Backup(val error: SettingsChangeBackupError) : ChangeLanguageRepositoryError
 }

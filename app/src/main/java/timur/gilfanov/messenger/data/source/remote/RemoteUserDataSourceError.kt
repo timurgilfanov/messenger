@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.data.source.remote
 
+import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsChangeBackupError
+
 /**
  * Errors specific to remote user data operations.
  *
@@ -74,3 +76,37 @@ sealed interface RemoteUserDataSourceError {
      */
     data class RemoteDataSource(val error: RemoteDataSourceErrorV2) : RemoteUserDataSourceError
 }
+
+fun RemoteUserDataSourceError.toSettingsChangeBackupError(): SettingsChangeBackupError =
+    when (this) {
+        RemoteUserDataSourceError.Authentication.SessionRevoked,
+        RemoteUserDataSourceError.Authentication.TokenInvalid,
+        RemoteUserDataSourceError.Authentication.TokenMissing,
+        RemoteUserDataSourceError.Authentication.TokenExpired,
+        RemoteUserDataSourceError.UserNotFound,
+        -> SettingsChangeBackupError.Unauthenticated
+
+        RemoteUserDataSourceError.InsufficientPermissions ->
+            SettingsChangeBackupError.InsufficientPermissions
+
+        is RemoteUserDataSourceError.RemoteDataSource ->
+            when (error) {
+                is RemoteDataSourceErrorV2.CooldownActive ->
+                    SettingsChangeBackupError.ChangeNotBackedUp.Cooldown(error.remaining)
+
+                RemoteDataSourceErrorV2.RateLimitExceeded,
+                RemoteDataSourceErrorV2.ServerError,
+                RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+                ->
+                    SettingsChangeBackupError.ChangeNotBackedUp.ServiceDown
+
+                RemoteDataSourceErrorV2.ServiceUnavailable.Timeout ->
+                    SettingsChangeBackupError.ChangeBackupTimeout
+
+                RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable ->
+                    SettingsChangeBackupError.ChangeNotBackedUp.NetworkNotAvailable
+
+                is RemoteDataSourceErrorV2.UnknownServiceError ->
+                    SettingsChangeBackupError.ChangeNotBackedUp.UnknownError
+            }
+    }

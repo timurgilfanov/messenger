@@ -5,33 +5,44 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.LocalUserDataSourceError
-import timur.gilfanov.messenger.data.source.remote.ChangeUiLanguageRemoteDataSourceError
+import timur.gilfanov.messenger.data.source.local.UpdateSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
+import timur.gilfanov.messenger.data.source.remote.toSettingsChangeBackupError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
-import timur.gilfanov.messenger.domain.entity.mapFailure
-import timur.gilfanov.messenger.domain.entity.mapResult
+import timur.gilfanov.messenger.domain.entity.bimap
+import timur.gilfanov.messenger.domain.entity.fold
+import timur.gilfanov.messenger.domain.entity.foldError
+import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
+import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.domain.usecase.user.repository.UserRepositoryError
+import timur.gilfanov.messenger.util.Logger
 
 class SettingsRepositoryImpl(
     private val localDataSource: LocalSettingsDataSource,
     private val remoteDataSource: RemoteSettingsDataSource,
+    private val logger: Logger,
 ) : SettingsRepository {
+
+    companion object {
+        private const val TAG = "SettingsRepository"
+    }
+
     override fun observeSettings(
-        userId: UserId,
+        identity: Identity,
     ): Flow<ResultWithError<Settings, UserRepositoryError>> =
-        localDataSource.observeSettings(userId)
+        localDataSource.observeSettings(identity.userId)
             .map { result ->
-                result.mapFailure { error ->
+                result.foldError { error ->
                     Failure(
                         when (error) {
-                            LocalUserDataSourceError.UserNotFound ->
-                                UserRepositoryError.UserNotFound
+                            LocalUserDataSourceError.UserDataNotFound -> TODO(
+                                "Create data store and restore from remote",
+                            )
 
                             is LocalUserDataSourceError.LocalDataSource -> TODO(
                                 "Looks like LocalDataSourceV2 and RepositoryError need " +
@@ -47,38 +58,64 @@ class SettingsRepositoryImpl(
             }.distinctUntilChanged()
 
     override suspend fun changeLanguage(
-        userId: UserId,
+        identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> =
-        remoteDataSource.changeUiLanguage(userId, language).mapResult(
-            success = {
-                localDataSource.updateSettings(userId) { settings ->
-                    settings.copy(language = language)
-                }.mapFailure { localError ->
-                    when (localError) {
-                        LocalUserDataSourceError.UserNotFound -> Failure(
-                            ChangeLanguageRepositoryError.UserRepository(
-                                UserRepositoryError.UserNotFound,
-                            ),
+        localDataSource.updateSettings(identity.userId) { settings ->
+            settings.copy(language = language)
+        }.fold(
+            onSuccess = {
+                remoteDataSource.changeUiLanguage(identity, language).bimap(
+                    onSuccess = {
+                        logger.d(TAG, "Language change backed up successfully")
+                    },
+                    onFailure = { remoteError ->
+                        ChangeLanguageRepositoryError.Backup(
+                            remoteError.toSettingsChangeBackupError(),
                         )
+                    },
+                )
+            },
+            onFailure = { localError ->
+                when (localError) {
+                    is UpdateSettingsLocalDataSourceError.TransformError -> Failure(
+                        ChangeLanguageRepositoryError.LanguageNotChanged(transient = false),
+                    )
 
-                        is LocalUserDataSourceError.LocalDataSource -> TODO(
-                            "Return to unhappy path implementation when local data " +
-                                "source will be implemented.",
+                    is UpdateSettingsLocalDataSourceError.LocalUserDataSource,
+                    -> when (localError.error) {
+                        LocalUserDataSourceError.UserDataNotFound -> {
+                            remoteDataSource.getSettings(identity).foldWithErrorMapping(
+                                onSuccess = { remoteSettings ->
+                                    localDataSource.insertSettings(
+                                        identity.userId,
+                                        remoteSettings,
+                                    ).foldWithErrorMapping(
+                                        onSuccess = {
+                                            changeLanguage(identity, language)
+                                        },
+                                        onFailure = {
+                                            ChangeLanguageRepositoryError.SettingsEmpty
+                                        },
+                                    )
+                                },
+                                onFailure = {
+                                    localDataSource.resetSettings(identity.userId).fold(
+                                        onSuccess = {
+                                            ChangeLanguageRepositoryError.SettingsResetToDefaults
+                                        },
+                                        onFailure = { error ->
+                                            ChangeLanguageRepositoryError.SettingsEmpty
+                                        },
+                                    )
+                                },
+                            )
+                        }
+
+                        is LocalUserDataSourceError.LocalDataSource -> Failure(
+                            ChangeLanguageRepositoryError.LanguageNotChanged(transient = true),
                         )
                     }
-                }
-            },
-            failure = { remoteError ->
-                when (remoteError) {
-                    ChangeUiLanguageRemoteDataSourceError.LanguageNotChangedForAllDevices ->
-                        Failure(ChangeLanguageRepositoryError.LanguageNotChangedForAllDevices)
-
-                    is ChangeUiLanguageRemoteDataSourceError.RemoteUserDataSource -> TODO(
-                        "Work on unhappy path after remote data source implemented. " +
-                            "Probably, this will require changes in RemoteDataSourceErrorV2" +
-                            "and, definitely, a documentation.",
-                    )
                 }
             },
         )

@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.data.source.local
 
-import kotlin.time.Clock
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,10 +8,26 @@ import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
+import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
+import kotlin.time.Clock
+import kotlin.time.Instant
 
-class LocalSettingsDataSourceFake(private val initialSettings: PersistentMap<UserId, Settings>) :
+class LocalSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Settings>) :
     LocalSettingsDataSource {
+
+    companion object {
+        private const val DEFAULT_LAST_MODIFICATION_TIMESTAMP = 1000L
+    }
+
+    private val defaultSettings = Settings(
+        metadata = SettingsMetadata(
+            isDefault = true,
+            lastModifiedAt = Instant.fromEpochMilliseconds(DEFAULT_LAST_MODIFICATION_TIMESTAMP),
+            lastSyncedAt = null,
+        ),
+        language = UiLanguage.English,
+    )
 
     private val settings = MutableStateFlow(initialSettings)
 
@@ -61,5 +76,6 @@ class LocalSettingsDataSourceFake(private val initialSettings: PersistentMap<Use
     override suspend fun resetSettings(
         userId: UserId,
     ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> =
-        insertSettings(userId, initialSettings[userId]!!)
+        insertSettings(userId, defaultSettings)
+
 }

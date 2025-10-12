@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.domain.usecase.user.repository
 
+import timur.gilfanov.messenger.domain.entity.user.Settings
+
 /**
  * Errors that can occur during language change repository operations.
  *
@@ -27,6 +29,22 @@ sealed interface ChangeLanguageRepositoryError {
      * Occurs when settings are missing and cannot be restored from any source.
      */
     data object SettingsEmpty : ChangeLanguageRepositoryError
+
+    /**
+     * Settings conflict detected between local and remote versions.
+     *
+     * This occurs when both local and remote settings have been modified since last sync.
+     * Currently triggered during recovery when changing language with missing local settings.
+     * In the future, will also occur when applying changes from the unified sync channel.
+     *
+     * Use [SettingsRepository.applyRemoteSettings] or [SettingsRepository.syncLocalToRemote]
+     * to resolve the conflict, then retry the operation.
+     *
+     * @property localSettings The current local settings with user modifications
+     * @property remoteSettings The remote settings from backup
+     */
+    data class SettingsConflict(val localSettings: Settings, val remoteSettings: Settings) :
+        ChangeLanguageRepositoryError
 
     /**
      * Language change succeeded locally but backup to remote failed.

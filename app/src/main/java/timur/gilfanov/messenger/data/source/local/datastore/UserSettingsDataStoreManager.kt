@@ -12,9 +12,7 @@ class UserSettingsDataStoreManager(private val context: Context) {
 
     private val dataStores = ConcurrentHashMap<UserId, DataStore<Preferences>>()
 
-    fun getDataStore(userId: UserId): DataStore<Preferences>? = dataStores[userId]
-
-    fun getOrCreateDataStore(userId: UserId): DataStore<Preferences> = dataStores.getOrPut(userId) {
+    fun getDataStore(userId: UserId): DataStore<Preferences> = dataStores.getOrPut(userId) {
         PreferenceDataStoreFactory.create(
             produceFile = { context.preferencesDataStoreFile("user_settings_${userId.id}") },
         )

@@ -19,7 +19,9 @@ interface LocalSettingsDataSource {
      * @param userId The unique identifier of the user to observe
      * @return Flow emitting settings updates or errors
      */
-    fun observeSettings(userId: UserId): Flow<ResultWithError<Settings, LocalUserDataSourceError>>
+    fun observeSettings(
+        userId: UserId,
+    ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>>
 
     /**
      * Updates settings using a transformation function.

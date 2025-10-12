@@ -31,6 +31,8 @@ private const val ENGLISH_PREFERENCE = "en"
 
 private const val GERMAN_PREFERENCE = "de"
 
+private const val TEST_TIMESTAMP = 1L
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
@@ -64,20 +66,21 @@ class LocalSettingsDataSourceImplTest {
     }
 
     @Test
-    fun `observeSettings returns UserNotFound when user has no settings`() = runTest {
+    fun `observeSettings returns SettingsNotFound when user has no settings`() = runTest {
         dataSource.observeSettings(testUserId).test {
             val result = awaitItem()
 
-            assertIs<ResultWithError.Failure<*, LocalUserDataSourceError>>(result)
-            assertEquals(LocalUserDataSourceError.UserDataNotFound, result.error)
-            awaitComplete()
+            assertIs<ResultWithError.Failure<*, GetSettingsLocalDataSourceError>>(result)
+            assertEquals(GetSettingsLocalDataSourceError.SettingsNotFound, result.error)
         }
     }
 
     @Test
     fun `observeSettings returns Settings when user has settings`() = runTest {
-        val dataStore = dataStoreManager.getOrCreateDataStore(testUserId)
+        val dataStore = dataStoreManager.getDataStore(testUserId)
         dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
             prefs[UserSettingsPreferences.UI_LANGUAGE] = ENGLISH_PREFERENCE
         }
 
@@ -85,14 +88,16 @@ class LocalSettingsDataSourceImplTest {
             val result = awaitItem()
 
             assertIs<ResultWithError.Success<Settings, *>>(result)
-            assertEquals(Settings(UiLanguage.English), result.data)
+            assertEquals(UiLanguage.English, result.data.language)
         }
     }
 
     @Test
     fun `observeSettings emits updates when settings change`() = runTest {
-        val dataStore = dataStoreManager.getOrCreateDataStore(testUserId)
+        val dataStore = dataStoreManager.getDataStore(testUserId)
         dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
             prefs[UserSettingsPreferences.UI_LANGUAGE] = ENGLISH_PREFERENCE
         }
 
@@ -113,13 +118,17 @@ class LocalSettingsDataSourceImplTest {
 
     @Test
     fun `observeSettings isolates different users`() = runTest {
-        val dataStore1 = dataStoreManager.getOrCreateDataStore(testUserId)
-        val dataStore2 = dataStoreManager.getOrCreateDataStore(anotherUserId)
+        val dataStore1 = dataStoreManager.getDataStore(testUserId)
+        val dataStore2 = dataStoreManager.getDataStore(anotherUserId)
 
         dataStore1.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
             prefs[UserSettingsPreferences.UI_LANGUAGE] = ENGLISH_PREFERENCE
         }
         dataStore2.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
             prefs[UserSettingsPreferences.UI_LANGUAGE] = GERMAN_PREFERENCE
         }
 
@@ -137,20 +146,21 @@ class LocalSettingsDataSourceImplTest {
     }
 
     @Test
-    fun `updateSettings returns UserNotFound when user has no settings`() = runTest {
+    fun `updateSettings returns SettingsNotFound when user has no settings`() = runTest {
         val result = dataSource.updateSettings(testUserId) { settings ->
             settings.copy(language = UiLanguage.German)
         }
 
         assertIs<ResultWithError.Failure<*, UpdateSettingsLocalDataSourceError>>(result)
-        assertIs<UpdateSettingsLocalDataSourceError.LocalUserDataSource>(result.error)
-        assertEquals(LocalUserDataSourceError.UserDataNotFound, result.error.error)
+        assertIs<UpdateSettingsLocalDataSourceError.SettingsNotFound>(result.error)
     }
 
     @Test
     fun `updateSettings successfully updates existing settings`() = runTest {
-        val dataStore = dataStoreManager.getOrCreateDataStore(testUserId)
+        val dataStore = dataStoreManager.getDataStore(testUserId)
         dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
             prefs[UserSettingsPreferences.UI_LANGUAGE] = ENGLISH_PREFERENCE
         }
 
@@ -169,8 +179,10 @@ class LocalSettingsDataSourceImplTest {
 
     @Test
     fun `updateSettings applies transformation correctly`() = runTest {
-        val dataStore = dataStoreManager.getOrCreateDataStore(testUserId)
+        val dataStore = dataStoreManager.getDataStore(testUserId)
         dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
             prefs[UserSettingsPreferences.UI_LANGUAGE] = GERMAN_PREFERENCE
         }
 
@@ -190,13 +202,17 @@ class LocalSettingsDataSourceImplTest {
 
     @Test
     fun `updateSettings isolates different users`() = runTest {
-        val dataStore1 = dataStoreManager.getOrCreateDataStore(testUserId)
-        val dataStore2 = dataStoreManager.getOrCreateDataStore(anotherUserId)
+        val dataStore1 = dataStoreManager.getDataStore(testUserId)
+        val dataStore2 = dataStoreManager.getDataStore(anotherUserId)
 
         dataStore1.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
             prefs[UserSettingsPreferences.UI_LANGUAGE] = ENGLISH_PREFERENCE
         }
         dataStore2.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
             prefs[UserSettingsPreferences.UI_LANGUAGE] = GERMAN_PREFERENCE
         }
 
@@ -221,8 +237,10 @@ class LocalSettingsDataSourceImplTest {
 
     @Test
     fun `observeSettings defaults to English for unknown values`() = runTest {
-        val dataStore = dataStoreManager.getOrCreateDataStore(testUserId)
+        val dataStore = dataStoreManager.getDataStore(testUserId)
         dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
             prefs[UserSettingsPreferences.UI_LANGUAGE] = "unknown"
         }
 

@@ -16,9 +16,11 @@ import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.usecase.user.repository.ApplyRemoteSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
-import timur.gilfanov.messenger.domain.usecase.user.repository.UserRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class ChangeUiLanguageUseCaseTest {
@@ -62,10 +64,20 @@ private class SettingsRepositoryStub(
 ) : SettingsRepository {
     override fun observeSettings(
         identity: Identity,
-    ): Flow<ResultWithError<Settings, UserRepositoryError>> = emptyFlow()
+    ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> = emptyFlow()
 
     override suspend fun changeLanguage(
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = changeLanguageResult
+
+    override suspend fun applyRemoteSettings(
+        identity: Identity,
+        settings: Settings,
+    ): ResultWithError<Unit, ApplyRemoteSettingsRepositoryError> = Success(Unit)
+
+    override suspend fun syncLocalToRemote(
+        identity: Identity,
+        settings: Settings,
+    ): ResultWithError<Unit, SyncLocalToRemoteRepositoryError> = Success(Unit)
 }

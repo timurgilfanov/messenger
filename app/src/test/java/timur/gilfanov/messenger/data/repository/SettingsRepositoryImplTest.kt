@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -15,6 +16,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.DeviceId
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
+import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
@@ -29,7 +31,16 @@ class SettingsRepositoryImplTest {
     private val defaultUiLanguage = UiLanguage.English
 
     private val defaultSettings =
-        persistentMapOf(identity.userId to Settings(language = defaultUiLanguage))
+        persistentMapOf(
+            identity.userId to Settings(
+                language = defaultUiLanguage,
+                metadata = SettingsMetadata(
+                    isDefault = false,
+                    lastModifiedAt = Instant.fromEpochMilliseconds(1),
+                    lastSyncedAt = Instant.fromEpochMilliseconds(1),
+                ),
+            ),
+        )
 
     private val repository = SettingsRepositoryImpl(
         localDataSource = LocalSettingsDataSourceFake(defaultSettings),

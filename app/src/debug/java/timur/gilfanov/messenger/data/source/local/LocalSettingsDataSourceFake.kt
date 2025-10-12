@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.data.source.local
 
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,8 +12,6 @@ import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
-import kotlin.time.Clock
-import kotlin.time.Instant
 
 class LocalSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Settings>) :
     LocalSettingsDataSource {
@@ -77,5 +77,4 @@ class LocalSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Setting
         userId: UserId,
     ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> =
         insertSettings(userId, defaultSettings)
-
 }

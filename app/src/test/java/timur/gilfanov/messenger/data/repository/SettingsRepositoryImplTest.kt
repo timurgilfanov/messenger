@@ -1,6 +1,10 @@
 package timur.gilfanov.messenger.data.repository
 
 import app.cash.turbine.test
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -36,10 +40,6 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRep
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsChangeBackupError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
-import java.util.UUID
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.time.Instant
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class SettingsRepositoryImplTest {

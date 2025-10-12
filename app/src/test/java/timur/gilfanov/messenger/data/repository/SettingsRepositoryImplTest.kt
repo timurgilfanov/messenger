@@ -404,4 +404,123 @@ class SettingsRepositoryImplTest {
         assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
         assertIs<SyncLocalToRemoteRepositoryError.SettingsNotSynced>(result.error)
     }
+
+    @Test
+    fun `changeLanguage triggers recovery and succeeds when remote has settings`() = runTest {
+        val localDataSourceWithRecovery = object : LocalSettingsDataSource {
+            private var currentSettings: Settings? = null
+
+            override fun observeSettings(
+                userId: UserId,
+            ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
+                currentSettings?.let { Success(it) }
+                    ?: Success(defaultSettings[userId]!!),
+            )
+
+            override suspend fun updateSettings(
+                userId: UserId,
+                transform: (Settings) -> Settings,
+            ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> =
+                if (currentSettings == null) {
+                    Failure(UpdateSettingsLocalDataSourceError.SettingsNotFound)
+                } else {
+                    currentSettings = transform(currentSettings!!)
+                    Success(Unit)
+                }
+
+            override suspend fun insertSettings(
+                userId: UserId,
+                settings: Settings,
+            ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> {
+                currentSettings = settings
+                return Success(Unit)
+            }
+
+            override suspend fun resetSettings(
+                userId: UserId,
+            ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
+        }
+
+        val remoteSettings = Settings(
+            language = UiLanguage.English,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(100),
+                lastSyncedAt = Instant.fromEpochMilliseconds(100),
+            ),
+        )
+        val remoteDataSource = RemoteSettingsDataSourceFake(
+            persistentMapOf(identity.userId to remoteSettings),
+        )
+
+        val repositoryWithRecovery = SettingsRepositoryImpl(
+            localDataSource = localDataSourceWithRecovery,
+            remoteDataSource = remoteDataSource,
+            logger = NoOpLogger(),
+        )
+
+        val result = repositoryWithRecovery.changeLanguage(identity, UiLanguage.German)
+
+        assertIs<Success<Unit, *>>(result)
+    }
+
+    @Test
+    fun `changeLanguage returns SettingsEmpty when recovery fails completely`() = runTest {
+        val localDataSourceWithFailures = object : LocalSettingsDataSource {
+            override fun observeSettings(
+                userId: UserId,
+            ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
+                Success(defaultSettings[userId]!!),
+            )
+
+            override suspend fun updateSettings(
+                userId: UserId,
+                transform: (Settings) -> Settings,
+            ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
+                UpdateSettingsLocalDataSourceError.SettingsNotFound,
+            )
+
+            override suspend fun insertSettings(
+                userId: UserId,
+                settings: Settings,
+            ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
+
+            override suspend fun resetSettings(
+                userId: UserId,
+            ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Failure(
+                LocalDataSourceErrorV2.WriteError(Exception("Reset failed")),
+            )
+        }
+
+        val remoteWithError = object : RemoteSettingsDataSource {
+            override suspend fun getSettings(
+                identity: Identity,
+            ): ResultWithError<Settings, RemoteUserDataSourceError> = Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+                ),
+            )
+
+            override suspend fun changeUiLanguage(
+                identity: Identity,
+                language: UiLanguage,
+            ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
+
+            override suspend fun updateSettings(
+                identity: Identity,
+                settings: Settings,
+            ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
+        }
+
+        val repositoryWithCompleteFailure = SettingsRepositoryImpl(
+            localDataSource = localDataSourceWithFailures,
+            remoteDataSource = remoteWithError,
+            logger = NoOpLogger(),
+        )
+
+        val result = repositoryWithCompleteFailure.changeLanguage(identity, UiLanguage.German)
+
+        assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
+        assertIs<ChangeLanguageRepositoryError.SettingsEmpty>(result.error)
+    }
 }

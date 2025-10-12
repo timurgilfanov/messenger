@@ -37,4 +37,17 @@ class RemoteSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Settin
         }
         return ResultWithError.Success(Unit)
     }
+
+    override suspend fun updateSettings(
+        identity: Identity,
+        settings: Settings,
+    ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> {
+        this.settings.update {
+            if (!it.containsKey(identity.userId)) {
+                return ResultWithError.Failure(RemoteUserDataSourceError.UserNotFound)
+            }
+            it.put(identity.userId, settings)
+        }
+        return ResultWithError.Success(Unit)
+    }
 }

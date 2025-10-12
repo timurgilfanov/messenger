@@ -41,6 +41,74 @@ import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageErro
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 import timur.gilfanov.messenger.util.Logger
 
+/**
+ * Implementation of [ChatRepository] and [MessageRepository] that manages chats and messages
+ * with local caching and real-time synchronization.
+ *
+ * ## Current Architecture (Chat-Only Sync):
+ * - Subscribes to [RemoteSyncDataSource.chatsDeltaUpdates] for chat synchronization
+ * - Delta updates applied to local database via [LocalSyncDataSource.applyChatListDelta]
+ * - HTTP long polling with adaptive delays (2s idle, 0.5s when catching up)
+ *
+ * ## Planned Architecture (Unified Sync Channel):
+ * Will share a unified sync channel with [SettingsRepositoryImpl] to reduce network overhead
+ * and provide consistent synchronization timestamps.
+ *
+ * ### Migration Plan:
+ *
+ * 1. **Update RemoteSyncDataSource to return unified SyncDelta**:
+ *    - Rename `chatsDeltaUpdates()` → `deltaUpdates()`
+ *    - Delta now contains both `chatChanges` and `settingsChange`
+ *    - Same HTTP polling mechanism, single endpoint
+ *
+ * 2. **Filter relevant changes in performDeltaSyncLoop()**:
+ * ```kotlin
+ * private fun performDeltaSyncLoop(scope: CoroutineScope) {
+ *     scope.launch(Dispatchers.IO) {
+ *         val lastSync = localDataSources.sync.getLastSyncTimestamp().getOrNull()
+ *
+ *         remoteDataSources.sync.deltaUpdates(lastSync)  // Unified stream
+ *             .onEach { result ->
+ *                 if (result is ResultWithError.Success) {
+ *                     val delta = result.data
+ *
+ *                     // Process chat changes (this repository's responsibility)
+ *                     if (delta.chatChanges.isNotEmpty()) {
+ *                         isUpdatingFlow.value = true
+ *                         localDataSources.sync.applyChatListDelta(
+ *                             ChatListDelta(
+ *                                 changes = delta.chatChanges,
+ *                                 toTimestamp = delta.toTimestamp,
+ *                                 hasMoreChanges = delta.hasMoreChanges
+ *                             )
+ *                         )
+ *                         isUpdatingFlow.value = false
+ *                     }
+ *
+ *                     // Note: settingsChange filtered out (SettingsRepository handles it)
+ *                 }
+ *             }
+ *             .catch { e -> logger.e(TAG, "Error collecting deltaUpdates", e) }
+ *             .collect()
+ *     }
+ * }
+ * ```
+ *
+ * 3. **Benefits**:
+ *    - Single HTTP polling connection shared between repositories
+ *    - Consistent `toTimestamp` across all entity types
+ *    - Atomic updates (chat + settings changed together arrive together)
+ *    - Reduced battery/data usage
+ *    - Simpler testing (single source to mock)
+ *
+ * 4. **Backward Compatibility**:
+ *    - Keep `chatsDeltaUpdates()` deprecated during migration
+ *    - Both methods can coexist temporarily
+ *    - Remove old method after all consumers migrated
+ *
+ * @see RemoteSyncDataSource for unified sync channel details
+ * @see SettingsRepositoryImpl for settings sync implementation
+ */
 @Singleton
 @Suppress("TooManyFunctions") // Combines ChatRepository and MessageRepository interfaces
 class MessengerRepositoryImpl @Inject constructor(

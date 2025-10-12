@@ -19,7 +19,9 @@ interface SettingsRepository {
      * @param identity The user identity for which to observe settings
      * @return Flow emitting settings updates or errors
      */
-    fun observeSettings(identity: Identity): Flow<ResultWithError<Settings, UserRepositoryError>>
+    fun observeSettings(
+        identity: Identity,
+    ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>>
 
     /**
      * Changes user's UI language preference.
@@ -32,4 +34,14 @@ interface SettingsRepository {
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError>
+
+    suspend fun applyRemoteSettings(
+        identity: Identity,
+        settings: Settings,
+    ): ResultWithError<Unit, ApplyRemoteSettingsRepositoryError>
+
+    suspend fun syncLocalToRemote(
+        identity: Identity,
+        settings: Settings,
+    ): ResultWithError<Unit, SyncLocalToRemoteRepositoryError>
 }

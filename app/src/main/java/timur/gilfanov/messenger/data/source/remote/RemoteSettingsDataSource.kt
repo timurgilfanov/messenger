@@ -33,4 +33,9 @@ interface RemoteSettingsDataSource {
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError>
+
+    suspend fun updateSettings(
+        identity: Identity,
+        settings: Settings,
+    ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError>
 }

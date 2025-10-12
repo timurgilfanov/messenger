@@ -9,6 +9,7 @@ import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -23,6 +24,7 @@ import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsDataStor
 import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsPreferences
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Settings
+import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -249,6 +251,66 @@ class LocalSettingsDataSourceImplTest {
 
             assertIs<ResultWithError.Success<Settings, *>>(result)
             assertEquals(UiLanguage.English, result.data.language)
+        }
+    }
+
+    @Test
+    fun `updateSettings returns TransformError when transformation throws exception`() = runTest {
+        val dataStore = dataStoreManager.getDataStore(testUserId)
+        dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.UI_LANGUAGE] = ENGLISH_PREFERENCE
+        }
+
+        val result = dataSource.updateSettings(testUserId) {
+            throw IllegalStateException("Transformation failed")
+        }
+
+        assertIs<ResultWithError.Failure<*, UpdateSettingsLocalDataSourceError>>(result)
+        assertIs<UpdateSettingsLocalDataSourceError.TransformError>(result.error)
+    }
+
+    @Test
+    fun `insertSettings successfully inserts new settings`() = runTest {
+        val settingsToInsert = Settings(
+            language = UiLanguage.German,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(TEST_TIMESTAMP),
+                lastSyncedAt = Instant.fromEpochMilliseconds(TEST_TIMESTAMP),
+            ),
+        )
+
+        val result = dataSource.insertSettings(testUserId, settingsToInsert)
+
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+
+        dataSource.observeSettings(testUserId).test {
+            val settings = awaitItem()
+            assertIs<ResultWithError.Success<Settings, *>>(settings)
+            assertEquals(UiLanguage.German, settings.data.language)
+        }
+    }
+
+    @Test
+    fun `resetSettings successfully resets to default settings`() = runTest {
+        val dataStore = dataStoreManager.getDataStore(testUserId)
+        dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.UI_LANGUAGE] = GERMAN_PREFERENCE
+        }
+
+        val result = dataSource.resetSettings(testUserId)
+
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+
+        dataSource.observeSettings(testUserId).test {
+            val settings = awaitItem()
+            assertIs<ResultWithError.Success<Settings, *>>(settings)
+            assertEquals(UiLanguage.English, settings.data.language)
+            assertEquals(true, settings.data.metadata.isDefault)
         }
     }
 }

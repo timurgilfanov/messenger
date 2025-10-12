@@ -41,13 +41,17 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         userId: UserId,
     ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> =
         dataStoreManager.getDataStore(userId).data
-            .map<Preferences, ResultWithError<Settings, GetSettingsLocalDataSourceError>> { pref ->
-                val settings = getSettings(pref)
-                if (settings.metadata.source == SettingsSource.EMPTY) {
-                    Failure(GetSettingsLocalDataSourceError.SettingsNotFound)
-                } else {
-                    Success(settings)
-                }
+            .map { pref ->
+                pref.toSettings().foldWithErrorMapping(
+                    onSuccess = { settings ->
+                        if (settings.metadata.source == SettingsSource.EMPTY) {
+                            Failure(GetSettingsLocalDataSourceError.SettingsNotFound)
+                        } else {
+                            Success(settings)
+                        }
+                    },
+                    onFailure = { GetSettingsLocalDataSourceError.LocalDataSource(it) },
+                )
             }
             .catch { exception ->
                 logger.e(TAG, "Error observing settings for user $userId", exception)
@@ -144,32 +148,42 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             logger.e(TAG, "Storage read failed", exception)
             return Failure(LocalDataSourceErrorV2.ReadError(exception))
         }
-        val currentSettings = getSettings(preferences)
-        return Success(currentSettings)
+        return preferences.toSettings()
     }
 
-    private fun getSettings(preferences: Preferences): Settings {
-        val uiLanguageString = preferences[UserSettingsPreferences.UI_LANGUAGE]
-        val currentUiLanguage = uiLanguageString
-            ?.let { parseUiLanguage(it) }
-            ?: defaultSettings.language
+    private fun Preferences.toSettings(): ResultWithError<
+        Settings,
+        LocalDataSourceErrorV2.DeserializationError,
+        > =
+        try {
+            val uiLanguageString = this[UserSettingsPreferences.UI_LANGUAGE]
+            val currentUiLanguage = uiLanguageString
+                ?.let { parseUiLanguage(it) }
+                ?: defaultSettings.language
 
-        val isDefault = preferences[UserSettingsPreferences.METADATA_DEFAULT] ?: false
-        val lastModifiedAtEpochMilli =
-            preferences[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] ?: 0L
-        val lastSyncedAtEpochMilli = preferences[UserSettingsPreferences.METADATA_LAST_SYNCED_AT]
+            val isDefault = this[UserSettingsPreferences.METADATA_DEFAULT] ?: false
+            val lastModifiedAtEpochMilli =
+                this[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] ?: 0L
+            val lastSyncedAtEpochMilli = this[UserSettingsPreferences.METADATA_LAST_SYNCED_AT]
 
-        val metadata = SettingsMetadata(
-            isDefault = isDefault,
-            lastModifiedAt = Instant.fromEpochMilliseconds(lastModifiedAtEpochMilli),
-            lastSyncedAt = lastSyncedAtEpochMilli?.let { Instant.fromEpochMilliseconds(it) },
-        )
+            val metadata = SettingsMetadata(
+                isDefault = isDefault,
+                lastModifiedAt = Instant.fromEpochMilliseconds(lastModifiedAtEpochMilli),
+                lastSyncedAt = lastSyncedAtEpochMilli?.let { Instant.fromEpochMilliseconds(it) },
+            )
 
-        return Settings(
-            language = currentUiLanguage,
-            metadata = metadata,
-        )
-    }
+            Success(
+                Settings(
+                    language = currentUiLanguage,
+                    metadata = metadata,
+                ),
+            )
+        } catch (
+            @Suppress("TooGenericExceptionCaught") exception: Exception,
+        ) {
+            logger.e(TAG, "Settings deserialization failed", exception)
+            Failure(LocalDataSourceErrorV2.DeserializationError(exception))
+        }
 
     private suspend fun updateSettings(
         dataStore: DataStore<Preferences>,

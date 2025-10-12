@@ -31,7 +31,11 @@ import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.SettingsSource
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.usecase.user.repository.ApplyRemoteSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsChangeBackupError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -231,5 +235,173 @@ class SettingsRepositoryImplTest {
         val result = repository.syncLocalToRemote(identity, settingsToSync)
 
         assertIs<Success<Unit, *>>(result)
+    }
+
+    @Test
+    fun `changeLanguage returns Backup error when remote sync fails`() = runTest {
+        val remoteWithError = object : RemoteSettingsDataSource {
+            override suspend fun getSettings(
+                identity: Identity,
+            ): ResultWithError<Settings, RemoteUserDataSourceError> =
+                Success(defaultSettings[identity.userId]!!)
+
+            override suspend fun changeUiLanguage(
+                identity: Identity,
+                language: UiLanguage,
+            ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+                ),
+            )
+
+            override suspend fun updateSettings(
+                identity: Identity,
+                settings: Settings,
+            ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
+        }
+
+        val repositoryWithBackupError = SettingsRepositoryImpl(
+            localDataSource = LocalSettingsDataSourceFake(defaultSettings),
+            remoteDataSource = remoteWithError,
+            logger = NoOpLogger(),
+        )
+
+        val result = repositoryWithBackupError.changeLanguage(identity, UiLanguage.German)
+
+        assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
+        assertIs<ChangeLanguageRepositoryError.Backup>(result.error)
+        assertIs<SettingsChangeBackupError.ChangeNotBackedUp.ServiceDown>(result.error.error)
+    }
+
+    @Test
+    fun `changeLanguage returns LanguageNotChanged when LocalDataSource error occurs`() = runTest {
+        val localDataSourceWithError = object : LocalSettingsDataSource {
+            override fun observeSettings(
+                userId: UserId,
+            ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
+                Success(defaultSettings[userId]!!),
+            )
+
+            override suspend fun updateSettings(
+                userId: UserId,
+                transform: (Settings) -> Settings,
+            ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
+                UpdateSettingsLocalDataSourceError.LocalDataSource(
+                    LocalDataSourceErrorV2.WriteError(Exception("Write failed")),
+                ),
+            )
+
+            override suspend fun insertSettings(
+                userId: UserId,
+                settings: Settings,
+            ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
+
+            override suspend fun resetSettings(
+                userId: UserId,
+            ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
+        }
+
+        val repositoryWithError = SettingsRepositoryImpl(
+            localDataSource = localDataSourceWithError,
+            remoteDataSource = RemoteSettingsDataSourceFake(defaultSettings),
+            logger = NoOpLogger(),
+        )
+
+        val result = repositoryWithError.changeLanguage(identity, UiLanguage.German)
+
+        assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
+        assertIs<ChangeLanguageRepositoryError.LanguageNotChanged>(result.error)
+        assertEquals(true, result.error.transient)
+    }
+
+    @Test
+    fun `applyRemoteSettings fails when insert fails`() = runTest {
+        val localDataSourceWithError = object : LocalSettingsDataSource {
+            override fun observeSettings(
+                userId: UserId,
+            ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
+                Success(defaultSettings[userId]!!),
+            )
+
+            override suspend fun updateSettings(
+                userId: UserId,
+                transform: (Settings) -> Settings,
+            ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Success(Unit)
+
+            override suspend fun insertSettings(
+                userId: UserId,
+                settings: Settings,
+            ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Failure(
+                LocalDataSourceErrorV2.WriteError(Exception("Insert failed")),
+            )
+
+            override suspend fun resetSettings(
+                userId: UserId,
+            ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
+        }
+
+        val repositoryWithError = SettingsRepositoryImpl(
+            localDataSource = localDataSourceWithError,
+            remoteDataSource = RemoteSettingsDataSourceFake(defaultSettings),
+            logger = NoOpLogger(),
+        )
+
+        val newSettings = Settings(
+            language = UiLanguage.German,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(200),
+                lastSyncedAt = Instant.fromEpochMilliseconds(200),
+            ),
+        )
+
+        val result = repositoryWithError.applyRemoteSettings(identity, newSettings)
+
+        assertIs<Failure<*, ApplyRemoteSettingsRepositoryError>>(result)
+        assertIs<ApplyRemoteSettingsRepositoryError.SettingsNotApplied>(result.error)
+    }
+
+    @Test
+    fun `syncLocalToRemote fails when remote update fails`() = runTest {
+        val remoteWithError = object : RemoteSettingsDataSource {
+            override suspend fun getSettings(
+                identity: Identity,
+            ): ResultWithError<Settings, RemoteUserDataSourceError> =
+                Success(defaultSettings[identity.userId]!!)
+
+            override suspend fun changeUiLanguage(
+                identity: Identity,
+                language: UiLanguage,
+            ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
+
+            override suspend fun updateSettings(
+                identity: Identity,
+                settings: Settings,
+            ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+                ),
+            )
+        }
+
+        val repositoryWithError = SettingsRepositoryImpl(
+            localDataSource = LocalSettingsDataSourceFake(defaultSettings),
+            remoteDataSource = remoteWithError,
+            logger = NoOpLogger(),
+        )
+
+        val settingsToSync = Settings(
+            language = UiLanguage.German,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(300),
+                lastSyncedAt = Instant.fromEpochMilliseconds(300),
+            ),
+        )
+
+        val result = repositoryWithError.syncLocalToRemote(identity, settingsToSync)
+
+        assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
+        assertIs<SyncLocalToRemoteRepositoryError.SettingsNotSynced>(result.error)
     }
 }

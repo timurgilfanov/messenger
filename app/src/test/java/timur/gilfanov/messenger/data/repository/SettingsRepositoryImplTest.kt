@@ -523,4 +523,66 @@ class SettingsRepositoryImplTest {
         assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
         assertIs<ChangeLanguageRepositoryError.SettingsEmpty>(result.error)
     }
+
+    @Test
+    fun `changeLanguage returns SettingsConflict when local modified and remote newer`() = runTest {
+        val localModifiedSettings = Settings(
+            language = UiLanguage.German,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(150),
+                lastSyncedAt = Instant.fromEpochMilliseconds(100),
+            ),
+        )
+
+        val remoteNewerSettings = Settings(
+            language = UiLanguage.English,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(200),
+                lastSyncedAt = Instant.fromEpochMilliseconds(200),
+            ),
+        )
+
+        val localDataSourceWithConflict = object : LocalSettingsDataSource {
+            override fun observeSettings(
+                userId: UserId,
+            ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
+                Success(localModifiedSettings),
+            )
+
+            override suspend fun updateSettings(
+                userId: UserId,
+                transform: (Settings) -> Settings,
+            ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
+                UpdateSettingsLocalDataSourceError.SettingsNotFound,
+            )
+
+            override suspend fun insertSettings(
+                userId: UserId,
+                settings: Settings,
+            ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
+
+            override suspend fun resetSettings(
+                userId: UserId,
+            ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
+        }
+
+        val remoteDataSource = RemoteSettingsDataSourceFake(
+            persistentMapOf(identity.userId to remoteNewerSettings),
+        )
+
+        val repositoryWithConflict = SettingsRepositoryImpl(
+            localDataSource = localDataSourceWithConflict,
+            remoteDataSource = remoteDataSource,
+            logger = NoOpLogger(),
+        )
+
+        val result = repositoryWithConflict.changeLanguage(identity, UiLanguage.English)
+
+        assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
+        assertIs<ChangeLanguageRepositoryError.SettingsConflict>(result.error)
+        assertEquals(localModifiedSettings, result.error.localSettings)
+        assertEquals(remoteNewerSettings, result.error.remoteSettings)
+    }
 }

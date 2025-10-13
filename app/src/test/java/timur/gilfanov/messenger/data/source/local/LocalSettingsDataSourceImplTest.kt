@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.data.source.local
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
@@ -20,7 +19,6 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.NoOpLogger
-import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsDataStoreManager
 import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsPreferences
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Settings
@@ -45,7 +43,7 @@ class LocalSettingsDataSourceImplTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var context: Context
-    private lateinit var dataStoreManager: UserSettingsDataStoreManager
+    private lateinit var dataStoreManager: UserSettingsDataStoreManagerFake
     private lateinit var dataSource: LocalSettingsDataSource
 
     private val testUserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
@@ -54,7 +52,7 @@ class LocalSettingsDataSourceImplTest {
     @Before
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
-        dataStoreManager = UserSettingsDataStoreManager(context)
+        dataStoreManager = UserSettingsDataStoreManagerFake(context)
         dataSource = LocalSettingsDataSourceImpl(
             dataStoreManager = dataStoreManager,
             logger = NoOpLogger(),
@@ -63,8 +61,8 @@ class LocalSettingsDataSourceImplTest {
 
     @After
     fun tearDown() {
-        context.preferencesDataStoreFile("user_settings_${testUserId.id}").delete()
-        context.preferencesDataStoreFile("user_settings_${anotherUserId.id}").delete()
+        dataStoreManager.clear(testUserId)
+        dataStoreManager.clear(anotherUserId)
     }
 
     @Test
@@ -312,5 +310,103 @@ class LocalSettingsDataSourceImplTest {
             assertEquals(UiLanguage.English, settings.data.language)
             assertEquals(true, settings.data.metadata.isDefault)
         }
+    }
+
+    @Test
+    fun `observeSettings returns ReadError when data store read failed`() = runTest {
+        val dataStore = dataStoreManager.getDataStore(testUserId)
+        dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.UI_LANGUAGE] = ENGLISH_PREFERENCE
+        }
+
+        dataStoreManager.setReadError(testUserId)
+
+        dataSource.observeSettings(testUserId).test {
+            val result = awaitItem()
+
+            assertIs<ResultWithError.Failure<*, GetSettingsLocalDataSourceError>>(result)
+            assertIs<GetSettingsLocalDataSourceError.LocalDataSource>(result.error)
+            assertIs<LocalDataSourceErrorV2.ReadError>(result.error.error)
+
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `updateSettings returns LocalDataSource WriteError when write fails`() = runTest {
+        val dataStore = dataStoreManager.getDataStore(testUserId)
+        dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.UI_LANGUAGE] = ENGLISH_PREFERENCE
+        }
+
+        dataStoreManager.setWriteError(testUserId)
+
+        val result = dataSource.updateSettings(testUserId) { settings ->
+            settings.copy(language = UiLanguage.German)
+        }
+
+        assertIs<ResultWithError.Failure<*, UpdateSettingsLocalDataSourceError>>(result)
+        assertIs<UpdateSettingsLocalDataSourceError.LocalDataSource>(result.error)
+        assertIs<LocalDataSourceErrorV2.WriteError>(result.error.error)
+    }
+
+    @Test
+    fun `updateSettings returns LocalDataSource ReadError when read fails`() = runTest {
+        val dataStore = dataStoreManager.getDataStore(testUserId)
+        dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.UI_LANGUAGE] = ENGLISH_PREFERENCE
+        }
+
+        dataStoreManager.setReadError(testUserId)
+
+        val result = dataSource.updateSettings(testUserId) { settings ->
+            settings.copy(language = UiLanguage.German)
+        }
+
+        assertIs<ResultWithError.Failure<*, UpdateSettingsLocalDataSourceError>>(result)
+        assertIs<UpdateSettingsLocalDataSourceError.LocalDataSource>(result.error)
+        assertIs<LocalDataSourceErrorV2.ReadError>(result.error.error)
+    }
+
+    @Test
+    fun `insertSettings returns failure when DataStore write fails`() = runTest {
+        val settingsToInsert = Settings(
+            language = UiLanguage.German,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(TEST_TIMESTAMP),
+                lastSyncedAt = Instant.fromEpochMilliseconds(TEST_TIMESTAMP),
+            ),
+        )
+
+        dataStoreManager.setWriteError(testUserId)
+
+        val result = dataSource.insertSettings(testUserId, settingsToInsert)
+
+        assertIs<ResultWithError.Failure<*, InsertSettingsLocalDataSourceError>>(result)
+        assertIs<LocalDataSourceErrorV2.WriteError>(result.error)
+    }
+
+    @Test
+    fun `resetSettings returns failure when DataStore write fails`() = runTest {
+        val dataStore = dataStoreManager.getDataStore(testUserId)
+        dataStore.edit { prefs ->
+            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] = TEST_TIMESTAMP
+            prefs[UserSettingsPreferences.UI_LANGUAGE] = GERMAN_PREFERENCE
+        }
+
+        dataStoreManager.setWriteError(testUserId)
+
+        val result = dataSource.resetSettings(testUserId)
+
+        assertIs<ResultWithError.Failure<*, ResetSettingsLocalDataSourceError>>(result)
+        assertIs<LocalDataSourceErrorV2.WriteError>(result.error)
     }
 }

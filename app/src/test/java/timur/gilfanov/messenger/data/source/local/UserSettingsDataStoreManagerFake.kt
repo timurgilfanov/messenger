@@ -4,10 +4,10 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
+import java.util.concurrent.ConcurrentHashMap
 import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsDataStoreManager
 import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsDataStoreManagerImpl
 import timur.gilfanov.messenger.domain.entity.user.UserId
-import java.util.concurrent.ConcurrentHashMap
 
 class UserSettingsDataStoreManagerFake(private val context: Context) :
     UserSettingsDataStoreManager {

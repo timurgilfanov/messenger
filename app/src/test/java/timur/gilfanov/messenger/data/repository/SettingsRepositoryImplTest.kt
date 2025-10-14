@@ -162,6 +162,50 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
+    fun `observeSettings recovery returns SettingsEmpty when insert fails`() = runTest {
+        val localDataSourceWithInsertFailure = object : LocalSettingsDataSource {
+            override fun observeSettings(
+                userId: UserId,
+            ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
+                Failure(GetSettingsLocalDataSourceError.SettingsNotFound),
+            )
+
+            override suspend fun updateSettings(
+                userId: UserId,
+                transform: (Settings) -> Settings,
+            ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Success(Unit)
+
+            override suspend fun insertSettings(
+                userId: UserId,
+                settings: Settings,
+            ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Failure(
+                LocalDataSourceErrorV2.WriteError(ErrorReason("Insert failed during recovery")),
+            )
+
+            override suspend fun resetSettings(
+                userId: UserId,
+            ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
+        }
+
+        val remoteDataSource = RemoteSettingsDataSourceFake(defaultSettings)
+
+        val repositoryWithInsertFailure = SettingsRepositoryImpl(
+            localDataSource = localDataSourceWithInsertFailure,
+            remoteDataSource = remoteDataSource,
+            logger = NoOpLogger(),
+        )
+
+        repositoryWithInsertFailure.observeSettings(identity).test {
+            val result = awaitItem()
+
+            assertIs<Failure<*, GetSettingsRepositoryError>>(result)
+            assertEquals(GetSettingsRepositoryError.SettingsEmpty, result.error)
+
+            awaitComplete()
+        }
+    }
+
+    @Test
     fun `performRecovery falls back to defaults when remote fetch fails`() = runTest {
         val emptyLocal = LocalSettingsDataSourceFake(persistentMapOf())
         val remoteWithError = object : RemoteSettingsDataSource {

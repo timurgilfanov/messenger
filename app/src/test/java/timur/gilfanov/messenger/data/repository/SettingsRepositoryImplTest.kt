@@ -570,6 +570,64 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
+    fun `changeLanguage returns SettingsResetToDefaults when recovery resets settings`() = runTest {
+        val localDataSourceWithReset = object : LocalSettingsDataSource {
+            override fun observeSettings(
+                userId: UserId,
+            ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
+                Success(defaultSettings[userId]!!),
+            )
+
+            override suspend fun updateSettings(
+                userId: UserId,
+                transform: (Settings) -> Settings,
+            ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
+                UpdateSettingsLocalDataSourceError.SettingsNotFound,
+            )
+
+            override suspend fun insertSettings(
+                userId: UserId,
+                settings: Settings,
+            ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
+
+            override suspend fun resetSettings(
+                userId: UserId,
+            ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
+        }
+
+        val remoteWithTemporaryFailure = object : RemoteSettingsDataSource {
+            override suspend fun getSettings(
+                identity: Identity,
+            ): ResultWithError<Settings, RemoteUserDataSourceError> = Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+                ),
+            )
+
+            override suspend fun changeUiLanguage(
+                identity: Identity,
+                language: UiLanguage,
+            ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
+
+            override suspend fun updateSettings(
+                identity: Identity,
+                settings: Settings,
+            ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
+        }
+
+        val repositoryWithReset = SettingsRepositoryImpl(
+            localDataSource = localDataSourceWithReset,
+            remoteDataSource = remoteWithTemporaryFailure,
+            logger = NoOpLogger(),
+        )
+
+        val result = repositoryWithReset.changeLanguage(identity, UiLanguage.German)
+
+        assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
+        assertIs<ChangeLanguageRepositoryError.SettingsResetToDefaults>(result.error)
+    }
+
+    @Test
     fun `changeLanguage returns SettingsConflict when local modified and remote newer`() = runTest {
         val localModifiedSettings = Settings(
             language = UiLanguage.German,

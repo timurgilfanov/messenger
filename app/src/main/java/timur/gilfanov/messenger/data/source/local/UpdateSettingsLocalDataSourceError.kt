@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.data.source.local
 
+import timur.gilfanov.messenger.data.source.ErrorReason
+
 /**
  * Errors that can occur during settings update operations.
  *
@@ -25,9 +27,9 @@ sealed interface UpdateSettingsLocalDataSourceError {
      * Occurs when the provided transformation function fails to execute successfully.
      * This indicates a logic error in the transformation code, not a storage error.
      *
-     * @property exception The exception thrown by the transformation function
+     * @property reason Description for logging of the cause of transformation failure
      */
-    data class TransformError(val exception: Exception) : UpdateSettingsLocalDataSourceError
+    data class TransformError(val reason: ErrorReason) : UpdateSettingsLocalDataSourceError
 
     /**
      * Low-level data source error.

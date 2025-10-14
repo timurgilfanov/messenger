@@ -89,7 +89,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                     logger.e(TAG, "Settings transformation failed", e)
                     return@foldWithErrorMapping Failure(
-                        UpdateSettingsLocalDataSourceError.TransformError(e),
+                        UpdateSettingsLocalDataSourceError.TransformError(e.errorReason),
                     )
                 }
                 val newSettings = transformedSettings.copy(

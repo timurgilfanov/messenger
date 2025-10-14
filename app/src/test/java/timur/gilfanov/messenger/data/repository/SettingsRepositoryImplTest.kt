@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.NoOpLogger
+import timur.gilfanov.messenger.data.source.ErrorReason
 import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.InsertSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceErrorV2
@@ -124,7 +125,7 @@ class SettingsRepositoryImplTest {
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 Failure(
                     GetSettingsLocalDataSourceError.LocalDataSource(
-                        LocalDataSourceErrorV2.ReadError(Exception("DataStore corruption")),
+                        LocalDataSourceErrorV2.ReadError(ErrorReason("DataStore corruption")),
                     ),
                 ),
             )
@@ -287,7 +288,7 @@ class SettingsRepositoryImplTest {
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
                 UpdateSettingsLocalDataSourceError.LocalDataSource(
-                    LocalDataSourceErrorV2.WriteError(Exception("Write failed")),
+                    LocalDataSourceErrorV2.WriteError(ErrorReason("Write failed")),
                 ),
             )
 
@@ -332,7 +333,7 @@ class SettingsRepositoryImplTest {
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Failure(
-                LocalDataSourceErrorV2.WriteError(Exception("Insert failed")),
+                LocalDataSourceErrorV2.WriteError(ErrorReason("Insert failed")),
             )
 
             override suspend fun resetSettings(
@@ -488,7 +489,7 @@ class SettingsRepositoryImplTest {
             override suspend fun resetSettings(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Failure(
-                LocalDataSourceErrorV2.WriteError(Exception("Reset failed")),
+                LocalDataSourceErrorV2.WriteError(ErrorReason("Reset failed")),
             )
         }
 

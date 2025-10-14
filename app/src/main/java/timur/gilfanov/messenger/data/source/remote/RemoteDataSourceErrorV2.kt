@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import kotlin.time.Duration
+import timur.gilfanov.messenger.data.source.ErrorReason
 
 /**
  * Common errors for remote data source operations.
@@ -101,7 +102,7 @@ sealed interface RemoteDataSourceErrorV2 {
      * continue functioning by treating unknown errors generically until
      * it's updated to handle the new error types explicitly.
      *
-     * @property reason Description of the unknown error
+     * @property reason Description for logging of the unknown error
      */
-    data class UnknownServiceError(val reason: String) : RemoteDataSourceErrorV2
+    data class UnknownServiceError(val reason: ErrorReason) : RemoteDataSourceErrorV2
 }

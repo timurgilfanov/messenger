@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import timur.gilfanov.messenger.data.source.errorReason
 import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsDataStoreManager
 import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsPreferences
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -59,9 +60,13 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                     Failure(
                         GetSettingsLocalDataSourceError.LocalDataSource(
                             when (exception) {
-                                is IOException -> LocalDataSourceErrorV2.ReadError(exception)
+                                is IOException -> LocalDataSourceErrorV2.ReadError(
+                                    exception.errorReason,
+                                )
 
-                                else -> LocalDataSourceErrorV2.DeserializationError(exception)
+                                else -> LocalDataSourceErrorV2.DeserializationError(
+                                    exception.errorReason,
+                                )
                             },
                         ),
                     ),
@@ -146,7 +151,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             dataStore.data.first()
         } catch (exception: IOException) {
             logger.e(TAG, "Storage read failed", exception)
-            return Failure(LocalDataSourceErrorV2.ReadError(exception))
+            return Failure(LocalDataSourceErrorV2.ReadError(exception.errorReason))
         }
         return preferences.toSettings()
     }
@@ -182,7 +187,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             @Suppress("TooGenericExceptionCaught") exception: Exception,
         ) {
             logger.e(TAG, "Settings deserialization failed", exception)
-            Failure(LocalDataSourceErrorV2.DeserializationError(exception))
+            Failure(LocalDataSourceErrorV2.DeserializationError(exception.errorReason))
         }
 
     private suspend fun updateSettings(
@@ -202,14 +207,14 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         Success(Unit)
     } catch (exception: IOException) {
         logger.e(TAG, "Update settings failed", exception)
-        Failure(LocalDataSourceErrorV2.WriteError(exception))
+        Failure(LocalDataSourceErrorV2.WriteError(exception.errorReason))
     } catch (e: CancellationException) {
         throw e
     } catch (
         @Suppress("TooGenericExceptionCaught") exception: Exception,
     ) {
         logger.e(TAG, "Settings transformation failed", exception)
-        Failure(LocalDataSourceErrorV2.SerializationError(exception))
+        Failure(LocalDataSourceErrorV2.SerializationError(exception.errorReason))
     }
 
     private fun parseUiLanguage(value: String): UiLanguage = when (value) {

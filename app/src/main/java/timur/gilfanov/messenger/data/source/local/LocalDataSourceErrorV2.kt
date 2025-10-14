@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.data.source.local
 
+import timur.gilfanov.messenger.data.source.ErrorReason
+
 /**
  * Common errors for local data source operations.
  *
@@ -29,9 +31,9 @@ sealed interface LocalDataSourceErrorV2 {
      * Occurs when reading data from local storage (DataStore, Room, etc.) fails.
      * Common causes include I/O errors, missing files, or corrupted data.
      *
-     * @property reason The exception that caused the read failure
+     * @property reason Description for logging of the cause of read failure
      */
-    data class ReadError(val reason: Throwable) : LocalDataSourceErrorV2
+    data class ReadError(val reason: ErrorReason) : LocalDataSourceErrorV2
 
     /**
      * Storage write operation failed.
@@ -39,9 +41,9 @@ sealed interface LocalDataSourceErrorV2 {
      * Occurs when writing data to local storage (DataStore, Room, etc.) fails.
      * Common causes include I/O errors, insufficient storage space, or permission issues.
      *
-     * @property reason The exception that caused the write failure
+     * @property reason Description for logging of the cause of write failure
      */
-    data class WriteError(val reason: Throwable) : LocalDataSourceErrorV2
+    data class WriteError(val reason: ErrorReason) : LocalDataSourceErrorV2
 
     /**
      * Data serialization failed.
@@ -49,9 +51,9 @@ sealed interface LocalDataSourceErrorV2 {
      * Occurs when converting domain entities to storage format fails.
      * This typically indicates a programming error in serialization logic.
      *
-     * @property reason The exception that caused the serialization failure
+     * @property reason Description for logging of the cause of serialization failure
      */
-    data class SerializationError(val reason: Throwable) : LocalDataSourceErrorV2
+    data class SerializationError(val reason: ErrorReason) : LocalDataSourceErrorV2
 
     /**
      * Data deserialization failed.
@@ -59,7 +61,7 @@ sealed interface LocalDataSourceErrorV2 {
      * Occurs when converting storage format to domain entities fails.
      * Common causes include schema migration issues or corrupted data.
      *
-     * @property reason The exception that caused the deserialization failure
+     * @property reason Description for logging of the cause of deserialization failure
      */
-    data class DeserializationError(val reason: Throwable) : LocalDataSourceErrorV2
+    data class DeserializationError(val reason: ErrorReason) : LocalDataSourceErrorV2
 }

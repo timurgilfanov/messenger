@@ -64,9 +64,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                                     exception.errorReason,
                                 )
 
-                                else -> LocalDataSourceErrorV2.DeserializationError(
-                                    exception.errorReason,
-                                )
+                                else -> throw exception
                             },
                         ),
                     ),

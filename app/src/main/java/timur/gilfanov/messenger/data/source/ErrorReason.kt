@@ -4,4 +4,4 @@ package timur.gilfanov.messenger.data.source
 value class ErrorReason(val value: String)
 
 val Throwable.errorReason: ErrorReason
-    get() = ErrorReason(this.message ?: this::class.simpleName ?: "Exception has no name")
+    get() = ErrorReason(this.message ?: this::class.simpleName ?: "Unnamed exception")

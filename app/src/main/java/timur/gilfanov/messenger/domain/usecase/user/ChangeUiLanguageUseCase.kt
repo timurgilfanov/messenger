@@ -20,6 +20,7 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepositor
  * - [ChangeUiLanguageError.IdentityError]: Current user identity cannot be retrieved
  * - [ChangeUiLanguageError.ChangeLanguageRepository]: Language change operation failed
  */
+@Suppress("KDocUnresolvedReference")
 class ChangeUiLanguageUseCase(
     private val identityRepository: IdentityRepository,
     private val settingsRepository: SettingsRepository,

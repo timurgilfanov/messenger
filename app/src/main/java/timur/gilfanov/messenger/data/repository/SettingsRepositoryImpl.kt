@@ -109,7 +109,7 @@ import timur.gilfanov.messenger.util.Logger
  * - Reduced recovery overhead
  * - Better UX with proactive sync
  *
- * @see RemoteSyncDataSource for unified sync channel details
+ * @see timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource for unified sync channel details
  * @see MessengerRepositoryImpl for chat sync implementation
  */
 class SettingsRepositoryImpl(

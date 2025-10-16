@@ -27,7 +27,8 @@ data class SettingsMetadata(
         get() = when {
             lastModifiedAt == Instant.fromEpochMilliseconds(0) -> SettingsState.EMPTY
             isDefault && lastSyncedAt == null -> SettingsState.DEFAULT
-            lastSyncedAt != null && lastModifiedAt == lastSyncedAt -> SettingsState.IN_SYNC_WITH_REMOTE
+            lastSyncedAt != null && lastModifiedAt == lastSyncedAt ->
+                SettingsState.IN_SYNC_WITH_REMOTE
             lastSyncedAt != null && lastModifiedAt > lastSyncedAt -> SettingsState.MODIFIED
             else -> SettingsState.EMPTY
         }

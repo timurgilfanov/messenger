@@ -15,7 +15,7 @@ sealed interface ChangeUiLanguageError {
      * This error occurs when [IdentityRepository] cannot provide the identity needed
      * to perform the language change operation.
      */
-    data object IdentityError : ChangeUiLanguageError
+    data object Unauthorized : ChangeUiLanguageError
 
     /**
      * Language change operation failed at the repository layer.

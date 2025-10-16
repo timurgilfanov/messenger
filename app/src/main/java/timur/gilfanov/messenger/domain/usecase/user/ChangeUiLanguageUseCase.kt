@@ -17,7 +17,7 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepositor
  * @return Success or failure with [ChangeUiLanguageError]
  *
  * ## Error Handling
- * - [ChangeUiLanguageError.IdentityError]: Current user identity cannot be retrieved
+ * - [ChangeUiLanguageError.Unauthorized]: Current user identity cannot be retrieved
  * - [ChangeUiLanguageError.ChangeLanguageRepository]: Language change operation failed
  */
 @Suppress("KDocUnresolvedReference")
@@ -36,7 +36,7 @@ class ChangeUiLanguageUseCase(
                     }
             },
             onFailure = {
-                ChangeUiLanguageError.IdentityError
+                ChangeUiLanguageError.Unauthorized
             },
         )
 }

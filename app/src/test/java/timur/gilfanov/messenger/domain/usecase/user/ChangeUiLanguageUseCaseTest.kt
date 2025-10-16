@@ -57,6 +57,21 @@ class ChangeUiLanguageUseCaseTest {
         assertIs<ChangeUiLanguageError.ChangeLanguageRepository>(result.error)
         assertIs<ChangeLanguageRepositoryError.LanguageNotChanged>(result.error.error)
     }
+
+    @Test
+    fun `when identity repository fails then use case returns unauthorized`() = runTest {
+        val failingIdentityRepository = object : IdentityRepository {
+            override val identity: Flow<ResultWithError<Identity, GetIdentityError>> =
+                flowOf(Failure(Unit))
+        }
+        val settingsRepository = SettingsRepositoryStub(Success(Unit))
+        val useCase = ChangeUiLanguageUseCase(failingIdentityRepository, settingsRepository)
+
+        val result = useCase(UiLanguage.German)
+
+        assertIs<Failure<*, ChangeUiLanguageError>>(result)
+        assertIs<ChangeUiLanguageError.Unauthorized>(result.error)
+    }
 }
 
 private class SettingsRepositoryStub(

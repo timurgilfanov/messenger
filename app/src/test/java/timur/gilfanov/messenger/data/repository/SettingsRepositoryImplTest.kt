@@ -33,7 +33,7 @@ import timur.gilfanov.messenger.domain.entity.user.DeviceId
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
-import timur.gilfanov.messenger.domain.entity.user.SettingsSource
+import timur.gilfanov.messenger.domain.entity.user.SettingsState
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.ApplyRemoteSettingsRepositoryError
@@ -246,7 +246,7 @@ class SettingsRepositoryImplTest {
 
             val secondResult = awaitItem()
             assertIs<Success<Settings, *>>(secondResult)
-            assertEquals(SettingsSource.DEFAULT, secondResult.data.metadata.source)
+            assertEquals(SettingsState.DEFAULT, secondResult.data.metadata.state)
         }
     }
 

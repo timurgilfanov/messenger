@@ -22,7 +22,7 @@ import timur.gilfanov.messenger.domain.entity.bimap
 import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
-import timur.gilfanov.messenger.domain.entity.user.SettingsSource
+import timur.gilfanov.messenger.domain.entity.user.SettingsState
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.util.Logger
@@ -36,7 +36,8 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         private const val TAG = "LocalSettingsDataSource"
     }
 
-    private val defaultSettings = Settings(uiLanguage = UiLanguage.English)
+    private val emptySettings =
+        Settings(uiLanguage = UiLanguage.English, metadata = SettingsMetadata.EMPTY)
 
     override fun observeSettings(
         userId: UserId,
@@ -45,7 +46,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             .map { pref ->
                 pref.toSettings().foldWithErrorMapping(
                     onSuccess = { settings ->
-                        if (settings.metadata.source == SettingsSource.EMPTY) {
+                        if (settings.metadata.state == SettingsState.EMPTY) {
                             Failure(GetSettingsLocalDataSourceError.SettingsNotFound)
                         } else {
                             Success(settings)
@@ -78,7 +79,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         val dataStore = dataStoreManager.getDataStore(userId)
         return getSettings(dataStore).foldWithErrorMapping(
             onSuccess = { settings ->
-                if (settings.metadata.source == SettingsSource.EMPTY) {
+                if (settings.metadata.state == SettingsState.EMPTY) {
                     return@foldWithErrorMapping Failure(
                         UpdateSettingsLocalDataSourceError.SettingsNotFound,
                     )
@@ -132,7 +133,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         userId: UserId,
     ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> {
         val dataStore = dataStoreManager.getDataStore(userId)
-        val settingsWithMetadata = defaultSettings.copy(
+        val settingsWithMetadata = emptySettings.copy(
             metadata = SettingsMetadata(
                 isDefault = true,
                 lastModifiedAt = Clock.System.now(),
@@ -159,26 +160,29 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         LocalDataSourceErrorV2.DeserializationError,
         > =
         try {
-            val uiLanguageString = this[UserSettingsPreferences.UI_LANGUAGE]
-            val currentUiLanguage = uiLanguageString
+            val uiLanguage = this[UserSettingsPreferences.UI_LANGUAGE]
                 ?.let { parseUiLanguage(it) }
-                ?: defaultSettings.uiLanguage
+                ?: emptySettings.uiLanguage
 
-            val isDefault = this[UserSettingsPreferences.METADATA_DEFAULT] ?: false
-            val lastModifiedAtEpochMilli =
-                this[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] ?: 0L
-            val lastSyncedAtEpochMilli = this[UserSettingsPreferences.METADATA_LAST_SYNCED_AT]
+            val isDefault = this[UserSettingsPreferences.METADATA_DEFAULT]
+                ?: emptySettings.metadata.isDefault
 
-            val metadata = SettingsMetadata(
-                isDefault = isDefault,
-                lastModifiedAt = Instant.fromEpochMilliseconds(lastModifiedAtEpochMilli),
-                lastSyncedAt = lastSyncedAtEpochMilli?.let { Instant.fromEpochMilliseconds(it) },
-            )
+            val lastModifiedAt = this[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT]
+                ?.let { Instant.fromEpochMilliseconds(it) }
+                ?: emptySettings.metadata.lastModifiedAt
+
+            val lastSyncedAt = this[UserSettingsPreferences.METADATA_LAST_SYNCED_AT]
+                ?.let { Instant.fromEpochMilliseconds(it) }
+                ?: emptySettings.metadata.lastSyncedAt
 
             Success(
                 Settings(
-                    uiLanguage = currentUiLanguage,
-                    metadata = metadata,
+                    uiLanguage = uiLanguage,
+                    metadata = SettingsMetadata(
+                        isDefault = isDefault,
+                        lastModifiedAt = lastModifiedAt,
+                        lastSyncedAt = lastSyncedAt,
+                    ),
                 ),
             )
         } catch (

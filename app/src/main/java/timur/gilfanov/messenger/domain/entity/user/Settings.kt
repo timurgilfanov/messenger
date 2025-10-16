@@ -9,7 +9,4 @@ package timur.gilfanov.messenger.domain.entity.user
  * @property uiLanguage UI language preference for the application
  * @property metadata Metadata about settings state and synchronization
  */
-data class Settings(
-    val uiLanguage: UiLanguage,
-    val metadata: SettingsMetadata = SettingsMetadata.EMPTY,
-)
+data class Settings(val uiLanguage: UiLanguage, val metadata: SettingsMetadata)

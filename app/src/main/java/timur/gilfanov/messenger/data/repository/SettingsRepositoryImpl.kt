@@ -21,7 +21,7 @@ import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.SettingsSource
+import timur.gilfanov.messenger.domain.entity.user.SettingsState
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.ApplyRemoteSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
@@ -68,7 +68,7 @@ import timur.gilfanov.messenger.util.Logger
  *         }
  *
  *         // Local has unsaved changes + remote is newer = conflict
- *         currentLocal.metadata.source == SettingsSource.LOCAL_MODIFIED &&
+ *         currentLocal.metadata.state == SettingsState.LOCAL_MODIFIED &&
  *         remoteSettings.metadata.lastModifiedAt > currentLocal.metadata.lastSyncedAt -> {
  *             // Emit conflict event for UI to resolve
  *             _settingsConflicts.emit(SettingsConflict(currentLocal, remoteSettings))
@@ -169,7 +169,7 @@ class SettingsRepositoryImpl(
                     ?: Instant.fromEpochMilliseconds(0)
 
                 if (currentLocal != null &&
-                    currentLocal.metadata.source == SettingsSource.LOCAL_MODIFIED &&
+                    currentLocal.metadata.state == SettingsState.MODIFIED &&
                     remoteSettings.metadata.lastModifiedAt > lastSyncedAt
                 ) {
                     // TODO We can try to resolve conflict here:

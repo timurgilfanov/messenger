@@ -26,7 +26,7 @@ class LocalSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Setting
             lastModifiedAt = Instant.fromEpochMilliseconds(DEFAULT_LAST_MODIFICATION_TIMESTAMP),
             lastSyncedAt = null,
         ),
-        language = UiLanguage.English,
+        uiLanguage = UiLanguage.English,
     )
 
     private val settings = MutableStateFlow(initialSettings)

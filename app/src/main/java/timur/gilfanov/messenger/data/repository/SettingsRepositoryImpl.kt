@@ -200,12 +200,12 @@ class SettingsRepositoryImpl(
             },
         )
 
-    override suspend fun changeLanguage(
+    override suspend fun changeUiLanguage(
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> =
         localDataSource.updateSettings(identity.userId) { settings ->
-            settings.copy(language = language)
+            settings.copy(uiLanguage = language)
         }.fold(
             onSuccess = {
                 remoteDataSource.changeUiLanguage(identity, language).bimap(
@@ -223,7 +223,7 @@ class SettingsRepositoryImpl(
                 when (localError) {
                     UpdateSettingsLocalDataSourceError.SettingsNotFound -> {
                         performRecovery(identity).foldWithErrorMapping(
-                            onSuccess = { changeLanguage(identity, language) },
+                            onSuccess = { changeUiLanguage(identity, language) },
                             onFailure = { error ->
                                 when (error) {
                                     GetSettingsRepositoryError.SettingsResetToDefaults ->

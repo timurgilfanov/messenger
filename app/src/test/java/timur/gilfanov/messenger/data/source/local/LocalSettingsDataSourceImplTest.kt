@@ -88,7 +88,7 @@ class LocalSettingsDataSourceImplTest {
             val result = awaitItem()
 
             assertIs<ResultWithError.Success<Settings, *>>(result)
-            assertEquals(UiLanguage.English, result.data.language)
+            assertEquals(UiLanguage.English, result.data.uiLanguage)
         }
     }
 
@@ -104,7 +104,7 @@ class LocalSettingsDataSourceImplTest {
         dataSource.observeSettings(testUserId).test {
             val firstResult = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(firstResult)
-            assertEquals(UiLanguage.English, firstResult.data.language)
+            assertEquals(UiLanguage.English, firstResult.data.uiLanguage)
 
             dataStore.edit { prefs ->
                 prefs[UserSettingsPreferences.UI_LANGUAGE] = GERMAN_PREFERENCE
@@ -112,7 +112,7 @@ class LocalSettingsDataSourceImplTest {
 
             val secondResult = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(secondResult)
-            assertEquals(UiLanguage.German, secondResult.data.language)
+            assertEquals(UiLanguage.German, secondResult.data.uiLanguage)
         }
     }
 
@@ -135,20 +135,20 @@ class LocalSettingsDataSourceImplTest {
         dataSource.observeSettings(testUserId).test {
             val result1 = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(result1)
-            assertEquals(UiLanguage.English, result1.data.language)
+            assertEquals(UiLanguage.English, result1.data.uiLanguage)
         }
 
         dataSource.observeSettings(anotherUserId).test {
             val result2 = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(result2)
-            assertEquals(UiLanguage.German, result2.data.language)
+            assertEquals(UiLanguage.German, result2.data.uiLanguage)
         }
     }
 
     @Test
     fun `updateSettings returns SettingsNotFound when user has no settings`() = runTest {
         val result = dataSource.updateSettings(testUserId) { settings ->
-            settings.copy(language = UiLanguage.German)
+            settings.copy(uiLanguage = UiLanguage.German)
         }
 
         assertIs<ResultWithError.Failure<*, UpdateSettingsLocalDataSourceError>>(result)
@@ -165,7 +165,7 @@ class LocalSettingsDataSourceImplTest {
         }
 
         val result = dataSource.updateSettings(testUserId) { settings ->
-            settings.copy(language = UiLanguage.German)
+            settings.copy(uiLanguage = UiLanguage.German)
         }
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
@@ -173,7 +173,7 @@ class LocalSettingsDataSourceImplTest {
         dataSource.observeSettings(testUserId).test {
             val updatedSettings = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(updatedSettings)
-            assertEquals(UiLanguage.German, updatedSettings.data.language)
+            assertEquals(UiLanguage.German, updatedSettings.data.uiLanguage)
         }
     }
 
@@ -187,8 +187,8 @@ class LocalSettingsDataSourceImplTest {
         }
 
         val result = dataSource.updateSettings(testUserId) { currentSettings ->
-            assertEquals(UiLanguage.German, currentSettings.language)
-            currentSettings.copy(language = UiLanguage.English)
+            assertEquals(UiLanguage.German, currentSettings.uiLanguage)
+            currentSettings.copy(uiLanguage = UiLanguage.English)
         }
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
@@ -196,7 +196,7 @@ class LocalSettingsDataSourceImplTest {
         dataSource.observeSettings(testUserId).test {
             val updatedSettings = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(updatedSettings)
-            assertEquals(UiLanguage.English, updatedSettings.data.language)
+            assertEquals(UiLanguage.English, updatedSettings.data.uiLanguage)
         }
     }
 
@@ -217,7 +217,7 @@ class LocalSettingsDataSourceImplTest {
         }
 
         val result = dataSource.updateSettings(testUserId) { settings ->
-            settings.copy(language = UiLanguage.German)
+            settings.copy(uiLanguage = UiLanguage.German)
         }
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
@@ -225,13 +225,13 @@ class LocalSettingsDataSourceImplTest {
         dataSource.observeSettings(testUserId).test {
             val result1 = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(result1)
-            assertEquals(UiLanguage.German, result1.data.language)
+            assertEquals(UiLanguage.German, result1.data.uiLanguage)
         }
 
         dataSource.observeSettings(anotherUserId).test {
             val result2 = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(result2)
-            assertEquals(UiLanguage.German, result2.data.language)
+            assertEquals(UiLanguage.German, result2.data.uiLanguage)
         }
     }
 
@@ -248,7 +248,7 @@ class LocalSettingsDataSourceImplTest {
             val result = awaitItem()
 
             assertIs<ResultWithError.Success<Settings, *>>(result)
-            assertEquals(UiLanguage.English, result.data.language)
+            assertEquals(UiLanguage.English, result.data.uiLanguage)
         }
     }
 
@@ -272,7 +272,7 @@ class LocalSettingsDataSourceImplTest {
     @Test
     fun `insertSettings successfully inserts new settings`() = runTest {
         val settingsToInsert = Settings(
-            language = UiLanguage.German,
+            uiLanguage = UiLanguage.German,
             metadata = SettingsMetadata(
                 isDefault = false,
                 lastModifiedAt = Instant.fromEpochMilliseconds(TEST_TIMESTAMP),
@@ -287,7 +287,7 @@ class LocalSettingsDataSourceImplTest {
         dataSource.observeSettings(testUserId).test {
             val settings = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(settings)
-            assertEquals(UiLanguage.German, settings.data.language)
+            assertEquals(UiLanguage.German, settings.data.uiLanguage)
         }
     }
 
@@ -307,7 +307,7 @@ class LocalSettingsDataSourceImplTest {
         dataSource.observeSettings(testUserId).test {
             val settings = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(settings)
-            assertEquals(UiLanguage.English, settings.data.language)
+            assertEquals(UiLanguage.English, settings.data.uiLanguage)
             assertEquals(true, settings.data.metadata.isDefault)
         }
     }
@@ -346,7 +346,7 @@ class LocalSettingsDataSourceImplTest {
         dataStoreManager.setWriteError(testUserId)
 
         val result = dataSource.updateSettings(testUserId) { settings ->
-            settings.copy(language = UiLanguage.German)
+            settings.copy(uiLanguage = UiLanguage.German)
         }
 
         assertIs<ResultWithError.Failure<*, UpdateSettingsLocalDataSourceError>>(result)
@@ -366,7 +366,7 @@ class LocalSettingsDataSourceImplTest {
         dataStoreManager.setReadError(testUserId)
 
         val result = dataSource.updateSettings(testUserId) { settings ->
-            settings.copy(language = UiLanguage.German)
+            settings.copy(uiLanguage = UiLanguage.German)
         }
 
         assertIs<ResultWithError.Failure<*, UpdateSettingsLocalDataSourceError>>(result)
@@ -377,7 +377,7 @@ class LocalSettingsDataSourceImplTest {
     @Test
     fun `insertSettings returns failure when DataStore write fails`() = runTest {
         val settingsToInsert = Settings(
-            language = UiLanguage.German,
+            uiLanguage = UiLanguage.German,
             metadata = SettingsMetadata(
                 isDefault = false,
                 lastModifiedAt = Instant.fromEpochMilliseconds(TEST_TIMESTAMP),

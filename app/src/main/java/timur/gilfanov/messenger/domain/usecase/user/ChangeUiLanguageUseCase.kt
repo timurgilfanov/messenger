@@ -30,7 +30,7 @@ class ChangeUiLanguageUseCase(
     ): ResultWithError<Unit, ChangeUiLanguageError> =
         identityRepository.identity.first().foldWithErrorMapping(
             onSuccess = { identity ->
-                settingsRepository.changeLanguage(identity, newUiLanguage)
+                settingsRepository.changeUiLanguage(identity, newUiLanguage)
                     .mapError { error ->
                         ChangeUiLanguageError.ChangeLanguageRepository(error)
                     }

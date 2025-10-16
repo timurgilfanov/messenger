@@ -30,7 +30,7 @@ interface SettingsRepository {
      * @param language The new language preference
      * @return Success or failure with [ChangeLanguageRepositoryError]
      */
-    suspend fun changeLanguage(
+    suspend fun changeUiLanguage(
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError>

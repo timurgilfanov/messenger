@@ -33,7 +33,7 @@ class RemoteSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Settin
             val userSettings = it[identity.userId] ?: return ResultWithError.Failure(
                 RemoteUserDataSourceError.UserNotFound,
             )
-            it.put(identity.userId, userSettings.copy(language = language))
+            it.put(identity.userId, userSettings.copy(uiLanguage = language))
         }
         return ResultWithError.Success(Unit)
     }

@@ -36,7 +36,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         private const val TAG = "LocalSettingsDataSource"
     }
 
-    private val defaultSettings = Settings(language = UiLanguage.English)
+    private val defaultSettings = Settings(uiLanguage = UiLanguage.English)
 
     override fun observeSettings(
         userId: UserId,
@@ -162,7 +162,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             val uiLanguageString = this[UserSettingsPreferences.UI_LANGUAGE]
             val currentUiLanguage = uiLanguageString
                 ?.let { parseUiLanguage(it) }
-                ?: defaultSettings.language
+                ?: defaultSettings.uiLanguage
 
             val isDefault = this[UserSettingsPreferences.METADATA_DEFAULT] ?: false
             val lastModifiedAtEpochMilli =
@@ -177,7 +177,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
 
             Success(
                 Settings(
-                    language = currentUiLanguage,
+                    uiLanguage = currentUiLanguage,
                     metadata = metadata,
                 ),
             )
@@ -193,7 +193,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         newSettings: Settings,
     ): ResultWithError<Unit, LocalDataSourceErrorV2> = try {
         dataStore.edit { prefs ->
-            prefs[UserSettingsPreferences.UI_LANGUAGE] = serializeUiLanguage(newSettings.language)
+            prefs[UserSettingsPreferences.UI_LANGUAGE] = serializeUiLanguage(newSettings.uiLanguage)
             prefs[UserSettingsPreferences.METADATA_DEFAULT] = newSettings.metadata.isDefault
             prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] =
                 newSettings.metadata.lastModifiedAt.toEpochMilliseconds()

@@ -66,7 +66,7 @@ private class SettingsRepositoryStub(
         identity: Identity,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> = emptyFlow()
 
-    override suspend fun changeLanguage(
+    override suspend fun changeUiLanguage(
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = changeLanguageResult

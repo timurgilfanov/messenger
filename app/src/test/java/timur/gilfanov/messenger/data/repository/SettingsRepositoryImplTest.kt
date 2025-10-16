@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.flow.Flow
@@ -684,7 +685,140 @@ class SettingsRepositoryImplTest {
         val result = repositoryWithError.syncLocalToRemote(identity, settingsToSync)
 
         assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
-        assertIs<SyncLocalToRemoteRepositoryError.SettingsNotSynced>(result.error)
+        assertIs<SyncLocalToRemoteRepositoryError.Failed.ServiceDown>(result.error)
+    }
+
+    @Test
+    fun `syncLocalToRemote returns cooldown when remote throttles`() = runTest {
+        val cooldown = 5.seconds
+        val remoteWithCooldown = object : RemoteSettingsDataSource {
+            override suspend fun getSettings(
+                identity: Identity,
+            ): ResultWithError<Settings, RemoteUserDataSourceError> =
+                Success(defaultSettings[identity.userId]!!)
+
+            override suspend fun changeUiLanguage(
+                identity: Identity,
+                language: UiLanguage,
+            ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
+
+            override suspend fun updateSettings(
+                identity: Identity,
+                settings: Settings,
+            ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.CooldownActive(cooldown),
+                ),
+            )
+        }
+
+        val repositoryWithCooldown = SettingsRepositoryImpl(
+            localDataSource = LocalSettingsDataSourceFake(defaultSettings),
+            remoteDataSource = remoteWithCooldown,
+            logger = NoOpLogger(),
+        )
+
+        val settingsToSync = Settings(
+            uiLanguage = UiLanguage.German,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(300),
+                lastSyncedAt = Instant.fromEpochMilliseconds(300),
+            ),
+        )
+
+        val result = repositoryWithCooldown.syncLocalToRemote(identity, settingsToSync)
+
+        assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
+        val error = result.error
+        assertIs<SyncLocalToRemoteRepositoryError.Failed.Cooldown>(error)
+        assertEquals(cooldown, error.remaining)
+    }
+
+    @Test
+    fun `syncLocalToRemote returns unauthenticated when remote session revoked`() = runTest {
+        val remoteWithAuthError = object : RemoteSettingsDataSource {
+            override suspend fun getSettings(
+                identity: Identity,
+            ): ResultWithError<Settings, RemoteUserDataSourceError> =
+                Success(defaultSettings[identity.userId]!!)
+
+            override suspend fun changeUiLanguage(
+                identity: Identity,
+                language: UiLanguage,
+            ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
+
+            override suspend fun updateSettings(
+                identity: Identity,
+                settings: Settings,
+            ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
+                RemoteUserDataSourceError.Authentication.SessionRevoked,
+            )
+        }
+
+        val repositoryWithAuthError = SettingsRepositoryImpl(
+            localDataSource = LocalSettingsDataSourceFake(defaultSettings),
+            remoteDataSource = remoteWithAuthError,
+            logger = NoOpLogger(),
+        )
+
+        val settingsToSync = Settings(
+            uiLanguage = UiLanguage.German,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(300),
+                lastSyncedAt = Instant.fromEpochMilliseconds(300),
+            ),
+        )
+
+        val result = repositoryWithAuthError.syncLocalToRemote(identity, settingsToSync)
+
+        assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
+        assertIs<SyncLocalToRemoteRepositoryError.Unauthenticated>(result.error)
+    }
+
+    @Test
+    fun `syncLocalToRemote returns timeout when remote status unknown`() = runTest {
+        val remoteWithTimeout = object : RemoteSettingsDataSource {
+            override suspend fun getSettings(
+                identity: Identity,
+            ): ResultWithError<Settings, RemoteUserDataSourceError> =
+                Success(defaultSettings[identity.userId]!!)
+
+            override suspend fun changeUiLanguage(
+                identity: Identity,
+                language: UiLanguage,
+            ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
+
+            override suspend fun updateSettings(
+                identity: Identity,
+                settings: Settings,
+            ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServiceUnavailable.Timeout,
+                ),
+            )
+        }
+
+        val repositoryWithTimeout = SettingsRepositoryImpl(
+            localDataSource = LocalSettingsDataSourceFake(defaultSettings),
+            remoteDataSource = remoteWithTimeout,
+            logger = NoOpLogger(),
+        )
+
+        val settingsToSync = Settings(
+            uiLanguage = UiLanguage.German,
+            metadata = SettingsMetadata(
+                isDefault = false,
+                lastModifiedAt = Instant.fromEpochMilliseconds(300),
+                lastSyncedAt = Instant.fromEpochMilliseconds(300),
+            ),
+        )
+
+        val result = repositoryWithTimeout.syncLocalToRemote(identity, settingsToSync)
+
+        assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
+        assertIs<SyncLocalToRemoteRepositoryError.StatusUnknown.ServiceTimeout>(result.error)
     }
 
     @Test

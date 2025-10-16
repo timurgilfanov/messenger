@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsChangeBackupError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
 
 /**
  * Errors specific to remote user data operations.
@@ -109,4 +110,36 @@ fun RemoteUserDataSourceError.toSettingsChangeBackupError(): SettingsChangeBacku
                 is RemoteDataSourceErrorV2.UnknownServiceError ->
                     SettingsChangeBackupError.ChangeNotBackedUp.UnknownError
             }
+    }
+
+fun RemoteUserDataSourceError.toSyncLocalToRemoteError(): SyncLocalToRemoteRepositoryError =
+    when (this) {
+        RemoteUserDataSourceError.Authentication.SessionRevoked,
+        RemoteUserDataSourceError.Authentication.TokenExpired,
+        RemoteUserDataSourceError.Authentication.TokenInvalid,
+        RemoteUserDataSourceError.Authentication.TokenMissing,
+        RemoteUserDataSourceError.UserNotFound,
+        -> SyncLocalToRemoteRepositoryError.Unauthenticated
+
+        RemoteUserDataSourceError.InsufficientPermissions ->
+            SyncLocalToRemoteRepositoryError.InsufficientPermissions
+
+        is RemoteUserDataSourceError.RemoteDataSource -> when (error) {
+            is RemoteDataSourceErrorV2.CooldownActive ->
+                SyncLocalToRemoteRepositoryError.Failed.Cooldown(error.remaining)
+
+            RemoteDataSourceErrorV2.RateLimitExceeded,
+            RemoteDataSourceErrorV2.ServerError,
+            RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+            -> SyncLocalToRemoteRepositoryError.Failed.ServiceDown
+
+            RemoteDataSourceErrorV2.ServiceUnavailable.Timeout ->
+                SyncLocalToRemoteRepositoryError.StatusUnknown.ServiceTimeout
+
+            RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable ->
+                SyncLocalToRemoteRepositoryError.Failed.NetworkNotAvailable
+
+            is RemoteDataSourceErrorV2.UnknownServiceError ->
+                SyncLocalToRemoteRepositoryError.Failed.UnknownError
+        }
     }

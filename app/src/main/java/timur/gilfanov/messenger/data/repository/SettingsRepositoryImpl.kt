@@ -14,6 +14,7 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.UpdateSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.toSettingsChangeBackupError
+import timur.gilfanov.messenger.data.source.remote.toSyncLocalToRemoteError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -280,6 +281,7 @@ class SettingsRepositoryImpl(
             when (it) {
                 is LocalDataSourceErrorV2.SerializationError ->
                     ApplyRemoteSettingsRepositoryError.NotTransient
+
                 is LocalDataSourceErrorV2.WriteError -> ApplyRemoteSettingsRepositoryError.Transient
             }
         },
@@ -296,6 +298,8 @@ class SettingsRepositoryImpl(
                     onFailure = {},
                 )
             },
-            onFailure = { SyncLocalToRemoteRepositoryError.SettingsNotSynced },
+            onFailure = {
+                it.toSyncLocalToRemoteError()
+            },
         )
 }

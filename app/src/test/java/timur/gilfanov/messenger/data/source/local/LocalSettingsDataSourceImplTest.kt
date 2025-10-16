@@ -350,7 +350,7 @@ class LocalSettingsDataSourceImplTest {
         }
 
         assertIs<ResultWithError.Failure<*, UpdateSettingsLocalDataSourceError>>(result)
-        assertIs<UpdateSettingsLocalDataSourceError.LocalDataSource>(result.error)
+        assertIs<UpdateSettingsLocalDataSourceError.UpdateSettingsLocalDataSource>(result.error)
         assertIs<LocalDataSourceErrorV2.WriteError>(result.error.error)
     }
 
@@ -370,7 +370,7 @@ class LocalSettingsDataSourceImplTest {
         }
 
         assertIs<ResultWithError.Failure<*, UpdateSettingsLocalDataSourceError>>(result)
-        assertIs<UpdateSettingsLocalDataSourceError.LocalDataSource>(result.error)
+        assertIs<UpdateSettingsLocalDataSourceError.GetSettingsLocalDataSource>(result.error)
         assertIs<LocalDataSourceErrorV2.ReadError>(result.error.error)
     }
 

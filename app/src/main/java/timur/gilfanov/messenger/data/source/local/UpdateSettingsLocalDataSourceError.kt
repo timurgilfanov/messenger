@@ -32,13 +32,20 @@ sealed interface UpdateSettingsLocalDataSourceError {
     data class TransformError(val reason: ErrorReason) : UpdateSettingsLocalDataSourceError
 
     /**
-     * Low-level data source error.
+     * Failures that happened while reading the current settings snapshot before applying the
+     * transformation (e.g. I/O or deserialization issues).
      *
-     * Wraps underlying storage errors such as I/O failures during read or write operations,
-     * or serialization/deserialization errors.
-     *
-     * @property error The underlying data source error
+     * The [error] is typed with [LocalDataSourceReadError] so callers can distinguish transient
+     * read problems from permanent data corruption.
      */
-    data class LocalDataSource(val error: LocalDataSourceErrorV2) :
+    data class GetSettingsLocalDataSource(val error: LocalDataSourceReadError) :
+        UpdateSettingsLocalDataSourceError
+
+    /**
+     * Failures that happened while persisting transformed settings (e.g. serialization issues or a
+     * write I/O error). The [error] implements [LocalDataSourceWriteError], allowing the caller to
+     * infer retryability.
+     */
+    data class UpdateSettingsLocalDataSource(val error: LocalDataSourceWriteError) :
         UpdateSettingsLocalDataSourceError
 }

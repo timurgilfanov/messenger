@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
+import timur.gilfanov.messenger.data.source.local.LocalDataSourceErrorV2
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.UpdateSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
@@ -246,8 +247,22 @@ class SettingsRepositoryImpl(
                         ChangeLanguageRepositoryError.LanguageNotChanged(transient = false),
                     )
 
-                    is UpdateSettingsLocalDataSourceError.LocalDataSource -> Failure(
-                        ChangeLanguageRepositoryError.LanguageNotChanged(transient = true),
+                    is UpdateSettingsLocalDataSourceError.GetSettingsLocalDataSource -> Failure(
+                        ChangeLanguageRepositoryError.LanguageNotChanged(
+                            transient = when (localError.error) {
+                                is LocalDataSourceErrorV2.DeserializationError -> false
+                                is LocalDataSourceErrorV2.ReadError -> true
+                            },
+                        ),
+                    )
+
+                    is UpdateSettingsLocalDataSourceError.UpdateSettingsLocalDataSource -> Failure(
+                        ChangeLanguageRepositoryError.LanguageNotChanged(
+                            transient = when (localError.error) {
+                                is LocalDataSourceErrorV2.SerializationError -> false
+                                is LocalDataSourceErrorV2.WriteError -> true
+                            },
+                        ),
                     )
                 }
             },
@@ -261,7 +276,13 @@ class SettingsRepositoryImpl(
         settings = settings,
     ).foldWithErrorMapping(
         onSuccess = { Success(Unit) },
-        onFailure = { ApplyRemoteSettingsRepositoryError.SettingsNotApplied },
+        onFailure = {
+            when (it) {
+                is LocalDataSourceErrorV2.SerializationError ->
+                    ApplyRemoteSettingsRepositoryError.NotTransient
+                is LocalDataSourceErrorV2.WriteError -> ApplyRemoteSettingsRepositoryError.Transient
+            }
+        },
     )
 
     override suspend fun syncLocalToRemote(

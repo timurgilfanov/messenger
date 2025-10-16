@@ -33,7 +33,9 @@ sealed interface LocalDataSourceErrorV2 {
      *
      * @property reason Description for logging of the cause of read failure
      */
-    data class ReadError(val reason: ErrorReason) : LocalDataSourceErrorV2
+    data class ReadError(val reason: ErrorReason) :
+        LocalDataSourceErrorV2,
+        LocalDataSourceReadError
 
     /**
      * Storage write operation failed.
@@ -43,7 +45,9 @@ sealed interface LocalDataSourceErrorV2 {
      *
      * @property reason Description for logging of the cause of write failure
      */
-    data class WriteError(val reason: ErrorReason) : LocalDataSourceErrorV2
+    data class WriteError(val reason: ErrorReason) :
+        LocalDataSourceErrorV2,
+        LocalDataSourceWriteError
 
     /**
      * Data serialization failed.
@@ -53,7 +57,9 @@ sealed interface LocalDataSourceErrorV2 {
      *
      * @property reason Description for logging of the cause of serialization failure
      */
-    data class SerializationError(val reason: ErrorReason) : LocalDataSourceErrorV2
+    data class SerializationError(val reason: ErrorReason) :
+        LocalDataSourceErrorV2,
+        LocalDataSourceWriteError
 
     /**
      * Data deserialization failed.
@@ -63,5 +69,19 @@ sealed interface LocalDataSourceErrorV2 {
      *
      * @property reason Description for logging of the cause of deserialization failure
      */
-    data class DeserializationError(val reason: ErrorReason) : LocalDataSourceErrorV2
+    data class DeserializationError(val reason: ErrorReason) :
+        LocalDataSourceErrorV2,
+        LocalDataSourceReadError
 }
+
+/**
+ * Marker interface for write-path failures that may allow clients to distinguish
+ * between transient I/O problems and permanent serialization/validation bugs.
+ */
+sealed interface LocalDataSourceWriteError
+
+/**
+ * Marker interface for read-path failures to help clients decide whether retrying
+ * the operation or falling back to a recovery flow makes sense.
+ */
+sealed interface LocalDataSourceReadError

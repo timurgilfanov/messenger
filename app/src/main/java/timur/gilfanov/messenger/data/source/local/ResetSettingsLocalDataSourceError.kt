@@ -1,3 +1,3 @@
 package timur.gilfanov.messenger.data.source.local
 
-typealias ResetSettingsLocalDataSourceError = InsertSettingsLocalDataSourceError
+typealias ResetSettingsLocalDataSourceError = LocalDataSourceWriteError

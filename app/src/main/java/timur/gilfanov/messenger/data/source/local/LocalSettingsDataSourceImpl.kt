@@ -103,12 +103,12 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 updateSettings(dataStore, newSettings).bimap(
                     onSuccess = { },
                     onFailure = { error ->
-                        UpdateSettingsLocalDataSourceError.LocalDataSource(error)
+                        UpdateSettingsLocalDataSourceError.UpdateSettingsLocalDataSource(error)
                     },
                 )
             },
             onFailure = { error ->
-                UpdateSettingsLocalDataSourceError.LocalDataSource(error)
+                UpdateSettingsLocalDataSourceError.GetSettingsLocalDataSource(error)
             },
         )
     }
@@ -145,7 +145,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
 
     private suspend fun getSettings(
         dataStore: DataStore<Preferences>,
-    ): ResultWithError<Settings, LocalDataSourceErrorV2> {
+    ): ResultWithError<Settings, LocalDataSourceReadError> {
         val preferences = try {
             dataStore.data.first()
         } catch (exception: IOException) {
@@ -195,7 +195,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     private suspend fun updateSettings(
         dataStore: DataStore<Preferences>,
         newSettings: Settings,
-    ): ResultWithError<Unit, LocalDataSourceErrorV2> = try {
+    ): ResultWithError<Unit, LocalDataSourceWriteError> = try {
         dataStore.edit { prefs ->
             prefs[UserSettingsPreferences.UI_LANGUAGE] = serializeUiLanguage(newSettings.uiLanguage)
             prefs[UserSettingsPreferences.METADATA_DEFAULT] = newSettings.metadata.isDefault

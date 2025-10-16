@@ -70,7 +70,7 @@ import timur.gilfanov.messenger.util.Logger
  *         }
  *
  *         // Local has unsaved changes + remote is newer = conflict
- *         currentLocal.metadata.state == SettingsState.LOCAL_MODIFIED &&
+ *         currentLocal.metadata.state == SettingsState.MODIFIED &&
  *         remoteSettings.metadata.lastModifiedAt > currentLocal.metadata.lastSyncedAt -> {
  *             // Emit conflict event for UI to resolve
  *             _settingsConflicts.emit(SettingsConflict(currentLocal, remoteSettings))

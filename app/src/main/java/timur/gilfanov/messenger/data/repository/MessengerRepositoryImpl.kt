@@ -3,8 +3,6 @@ package timur.gilfanov.messenger.data.repository
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -40,14 +38,17 @@ import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageEr
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 import timur.gilfanov.messenger.util.Logger
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Implementation of [ChatRepository] and [MessageRepository] that manages chats and messages
  * with local caching and real-time synchronization.
  *
  * ## Current Architecture (Chat-Only Sync):
- * - Subscribes to [RemoteSyncDataSource.chatsDeltaUpdates] for chat synchronization
- * - Delta updates applied to local database via [LocalSyncDataSource.applyChatListDelta]
+ * - Subscribes to
+ * [timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource.chatsDeltaUpdates] for chat synchronization
+ * - Delta updates applied to local database via [timur.gilfanov.messenger.data.source.local.LocalSyncDataSource.applyChatListDelta]
  * - HTTP long polling with adaptive delays (2s idle, 0.5s when catching up)
  *
  * ## Planned Architecture (Unified Sync Channel):
@@ -106,7 +107,7 @@ import timur.gilfanov.messenger.util.Logger
  *    - Both methods can coexist temporarily
  *    - Remove old method after all consumers migrated
  *
- * @see RemoteSyncDataSource for unified sync channel details
+ * @see timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource for unified sync channel details
  * @see SettingsRepositoryImpl for settings sync implementation
  */
 @Singleton
@@ -166,6 +167,7 @@ class MessengerRepositoryImpl @Inject constructor(
                 localDataSources.chat.insertChat(result.data)
                 ResultWithError.Success(result.data)
             }
+
             is ResultWithError.Failure -> {
                 ResultWithError.Failure(mapRemoteErrorToCreateChatError(result.error))
             }
@@ -179,6 +181,7 @@ class MessengerRepositoryImpl @Inject constructor(
                 localDataSources.chat.deleteChat(chatId)
                 ResultWithError.Success(Unit)
             }
+
             is ResultWithError.Failure -> {
                 ResultWithError.Failure(mapRemoteErrorToDeleteChatError(result.error, chatId))
             }
@@ -193,6 +196,7 @@ class MessengerRepositoryImpl @Inject constructor(
                 localDataSources.chat.insertChat(result.data)
                 ResultWithError.Success(result.data)
             }
+
             is ResultWithError.Failure -> {
                 ResultWithError.Failure(mapRemoteErrorToJoinChatError(result.error))
             }
@@ -206,6 +210,7 @@ class MessengerRepositoryImpl @Inject constructor(
                 localDataSources.chat.deleteChat(chatId)
                 ResultWithError.Success(Unit)
             }
+
             is ResultWithError.Failure -> {
                 ResultWithError.Failure(mapRemoteErrorToLeaveChatError(result.error))
             }
@@ -242,6 +247,7 @@ class MessengerRepositoryImpl @Inject constructor(
                 // The delta sync loop will pick up the chat updates automatically
                 ResultWithError.Success(Unit)
             }
+
             is ResultWithError.Failure -> {
                 ResultWithError.Failure(mapRemoteErrorToMarkMessagesAsReadError(result.error))
             }
@@ -259,6 +265,7 @@ class MessengerRepositoryImpl @Inject constructor(
                     localDataSources.message.updateMessage(result.data)
                     ResultWithError.Success(result.data)
                 }
+
                 is ResultWithError.Failure -> {
                     ResultWithError.Failure(mapRemoteErrorToSendMessageError(result.error))
                 }
@@ -275,6 +282,7 @@ class MessengerRepositoryImpl @Inject constructor(
                     localDataSources.message.updateMessage(result.data)
                     ResultWithError.Success(result.data)
                 }
+
                 is ResultWithError.Failure -> {
                     ResultWithError.Failure(mapRemoteErrorToEditMessageError(result.error))
                 }
@@ -290,6 +298,7 @@ class MessengerRepositoryImpl @Inject constructor(
                 localDataSources.message.deleteMessage(messageId)
                 ResultWithError.Success(Unit)
             }
+
             is ResultWithError.Failure -> {
                 ResultWithError.Failure(mapRemoteErrorToDeleteMessageError(result.error))
             }
@@ -345,6 +354,7 @@ private fun mapRemoteErrorToJoinChatError(error: RemoteDataSourceError): Reposit
         is RemoteDataSourceError.CooldownActive -> RepositoryJoinChatError.CooldownActive(
             error.remaining,
         )
+
         else -> RepositoryJoinChatError.LocalError
     }
 

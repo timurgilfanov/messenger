@@ -94,10 +94,9 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                     )
                 }
                 val newSettings = transformedSettings.copy(
-                    metadata = SettingsMetadata(
-                        isDefault = settings.metadata.isDefault,
+                    metadata = transformedSettings.metadata.copy(
+                        isDefault = false,
                         lastModifiedAt = Clock.System.now(),
-                        lastSyncedAt = settings.metadata.lastSyncedAt,
                     ),
                 )
                 dataStore.put(newSettings).bimap(

@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.domain.usecase.user.repository
 
+import timur.gilfanov.messenger.domain.entity.user.Settings
+
 sealed interface GetSettingsRepositoryError {
     /**
      * Settings were not found and were reset to default values.
@@ -25,7 +27,7 @@ sealed interface GetSettingsRepositoryError {
      * @property remoteSettings The remote settings from backup
      */
     data class SettingsConflict(
-        val localSettings: timur.gilfanov.messenger.domain.entity.user.Settings,
-        val remoteSettings: timur.gilfanov.messenger.domain.entity.user.Settings,
+        val localSettings: Settings,
+        val remoteSettings: Settings,
     ) : GetSettingsRepositoryError
 }

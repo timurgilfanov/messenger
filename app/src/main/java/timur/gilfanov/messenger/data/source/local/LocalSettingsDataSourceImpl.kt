@@ -77,7 +77,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         transform: (Settings) -> Settings,
     ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> {
         val dataStore = dataStoreManager.getDataStore(userId)
-        return getSettings(dataStore).foldWithErrorMapping(
+        return dataStore.get().foldWithErrorMapping(
             onSuccess = { settings ->
                 if (settings.metadata.state == SettingsState.EMPTY) {
                     return@foldWithErrorMapping Failure(
@@ -100,7 +100,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                         lastSyncedAt = settings.metadata.lastSyncedAt,
                     ),
                 )
-                updateSettings(dataStore, newSettings).bimap(
+                dataStore.put(newSettings).bimap(
                     onSuccess = { },
                     onFailure = { error ->
                         UpdateSettingsLocalDataSourceError.UpdateSettingsLocalDataSource(error)
@@ -126,7 +126,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 lastSyncedAt = now,
             ),
         )
-        return updateSettings(dataStore, settingsWithMetadata)
+        return dataStore.put(settingsWithMetadata)
     }
 
     override suspend fun reset(
@@ -140,14 +140,15 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 lastSyncedAt = null,
             ),
         )
-        return updateSettings(dataStore, settingsWithMetadata)
+        return dataStore.put(settingsWithMetadata)
     }
 
-    private suspend fun getSettings(
-        dataStore: DataStore<Preferences>,
-    ): ResultWithError<Settings, LocalDataSourceReadError> {
+    private suspend fun DataStore<Preferences>.get(): ResultWithError<
+        Settings,
+        LocalDataSourceReadError,
+        > {
         val preferences = try {
-            dataStore.data.first()
+            data.first()
         } catch (exception: IOException) {
             logger.e(TAG, "Storage read failed", exception)
             return Failure(LocalDataSourceErrorV2.ReadError(exception.errorReason))
@@ -192,16 +193,15 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             Failure(LocalDataSourceErrorV2.DeserializationError(exception.errorReason))
         }
 
-    private suspend fun updateSettings(
-        dataStore: DataStore<Preferences>,
-        newSettings: Settings,
+    private suspend fun DataStore<Preferences>.put(
+        settings: Settings,
     ): ResultWithError<Unit, LocalDataSourceWriteError> = try {
-        dataStore.edit { prefs ->
-            prefs[UserSettingsPreferences.UI_LANGUAGE] = serializeUiLanguage(newSettings.uiLanguage)
-            prefs[UserSettingsPreferences.METADATA_DEFAULT] = newSettings.metadata.isDefault
+        this.edit { prefs ->
+            prefs[UserSettingsPreferences.UI_LANGUAGE] = serializeUiLanguage(settings.uiLanguage)
+            prefs[UserSettingsPreferences.METADATA_DEFAULT] = settings.metadata.isDefault
             prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] =
-                newSettings.metadata.lastModifiedAt.toEpochMilliseconds()
-            newSettings.metadata.lastSyncedAt?.let { syncedAt ->
+                settings.metadata.lastModifiedAt.toEpochMilliseconds()
+            settings.metadata.lastSyncedAt?.let { syncedAt ->
                 prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] =
                     syncedAt.toEpochMilliseconds()
             } ?: prefs.remove(UserSettingsPreferences.METADATA_LAST_SYNCED_AT)

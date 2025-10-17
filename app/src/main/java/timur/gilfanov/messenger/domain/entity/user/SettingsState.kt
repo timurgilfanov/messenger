@@ -13,7 +13,7 @@ enum class SettingsState {
     /** Default values generated on-device with no remote sync history. */
     DEFAULT,
 
-    /** Settings that match the last successful remote sync (authoritative copy). */
+    /** Settings that match the last successful remote sync. */
     IN_SYNC_WITH_REMOTE,
 
     /** Settings changed locally since last sync with remote. */

@@ -1,9 +1,6 @@
 package timur.gilfanov.messenger.di
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -17,19 +14,13 @@ import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
 
 /**
- * Hilt module that provides database-related dependencies.
+ * Hilt module that provides Room database dependencies.
+ *
+ * Provides MessengerDatabase and its DAOs for local data persistence.
  */
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
-    /**
-     * Extension property for Context to get DataStore instance.
-     * Creates a singleton DataStore for sync preferences.
-     */
-    private val Context.syncDataStore: DataStore<Preferences> by preferencesDataStore(
-        name = "sync_preferences",
-    )
 
     @Provides
     @Singleton
@@ -52,9 +43,4 @@ object DatabaseModule {
     @Singleton
     fun provideParticipantDao(database: MessengerDatabase): ParticipantDao =
         database.participantDao()
-
-    @Provides
-    @Singleton
-    fun provideSyncDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
-        context.syncDataStore
 }

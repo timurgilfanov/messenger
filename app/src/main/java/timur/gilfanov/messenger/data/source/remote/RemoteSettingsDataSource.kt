@@ -1,9 +1,9 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
  * Remote data source for user settings data.
@@ -13,24 +13,34 @@ import timur.gilfanov.messenger.domain.entity.user.UserId
  */
 interface RemoteSettingsDataSource {
     /**
-     * Retrieves settings from the backend.
+     * Retrieves settings from the remote server.
      *
-     * @param userId The unique identifier of the user
+     * @param identity The user identity for which to retrieve settings
      * @return Success with [Settings] or failure with [RemoteUserDataSourceError]
      */
-    suspend fun getSettings(userId: UserId): ResultWithError<Settings, RemoteUserDataSourceError>
+    suspend fun get(identity: Identity): ResultWithError<Settings, RemoteUserDataSourceError>
 
     /**
-     * Changes user's UI language preference on the backend.
+     * Changes user's UI language preference on the remote server.
      *
-     * Attempts to synchronize the change across all user's devices.
-     *
-     * @param userId The unique identifier of the user
+     * @param identity The user identity for which to change the language
      * @param language The new language preference
      * @return Success or failure with [ChangeUiLanguageRemoteDataSourceError]
      */
     suspend fun changeUiLanguage(
-        userId: UserId,
+        identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError>
+
+    /**
+     * Pushes settings to the remote server.
+     *
+     * @param identity Identity whose settings should be updated
+     * @param settings Settings payload to send to remote
+     * @return Success or failure with [UpdateSettingsRemoteDataSourceError]
+     */
+    suspend fun put(
+        identity: Identity,
+        settings: Settings,
+    ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError>
 }

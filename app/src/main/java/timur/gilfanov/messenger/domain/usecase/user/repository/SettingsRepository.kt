@@ -2,35 +2,60 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
 
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
- * Repository for managing user settings data.
+ * Repository for managing user settings.
  *
  * Provides access to user settings and operations for updating preferences
- * such as UI language. Coordinates between remote and local data sources
- * to ensure settings are synchronized across devices.
+ * such as UI language.
  */
 interface SettingsRepository {
     /**
      * Observes settings changes for a specific user.
      *
-     * @param userId The unique identifier of the user to observe
+     * @param identity The user identity for which to observe settings
      * @return Flow emitting settings updates or errors
      */
-    fun observeSettings(userId: UserId): Flow<ResultWithError<Settings, UserRepositoryError>>
+    fun observeSettings(
+        identity: Identity,
+    ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>>
 
     /**
      * Changes user's UI language preference.
      *
-     * @param userId The unique identifier of the user
+     * @param identity The user identity for which to change the language
      * @param language The new language preference
      * @return Success or failure with [ChangeLanguageRepositoryError]
      */
-    suspend fun changeLanguage(
-        userId: UserId,
+    suspend fun changeUiLanguage(
+        identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError>
+
+    /**
+     * Applies a snapshot received from remote to the local cache.
+     *
+     * @param identity Identity whose settings should be replaced
+     * @param settings Snapshot fetched from remote storage
+     * @return Success or failure with [ApplyRemoteSettingsRepositoryError]
+     */
+    suspend fun applyRemoteSettings(
+        identity: Identity,
+        settings: Settings,
+    ): ResultWithError<Unit, ApplyRemoteSettingsRepositoryError>
+
+    /**
+     * Pushes locally modified settings to remote storage.
+     *
+     * @param identity Identity whose settings should be synced
+     * @param settings Settings payload to send to remote
+     * @return Success or failure with [SyncLocalToRemoteRepositoryError]
+     */
+    suspend fun syncLocalToRemote(
+        identity: Identity,
+        settings: Settings,
+    ): ResultWithError<Unit, SyncLocalToRemoteRepositoryError>
 }

@@ -117,12 +117,10 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         settings: Settings,
     ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> {
         val dataStore = dataStoreManager.getDataStore(userId)
-        val now = Clock.System.now()
         val settingsWithMetadata = settings.copy(
-            metadata = SettingsMetadata(
+            metadata = settings.metadata.copy(
                 isDefault = false,
-                lastModifiedAt = now,
-                lastSyncedAt = now,
+                lastModifiedAt = Clock.System.now(),
             ),
         )
         return dataStore.put(settingsWithMetadata)

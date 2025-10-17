@@ -5,9 +5,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceErrorV2
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
@@ -129,27 +127,18 @@ class SettingsRepositoryImpl(
         identity: Identity,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
         localDataSource.observeSettings(identity.userId)
-            .flatMapLatest { result ->
+            .map { result ->
                 result.fold(
                     onSuccess = { settings ->
-                        flowOf(Success(settings))
+                        Success(settings)
                     },
                     onFailure = { error ->
                         when (error) {
-                            GetSettingsLocalDataSourceError.SettingsNotFound -> {
-                                flow {
-                                    val recoveryResult = performRecovery(identity)
-                                    emit(recoveryResult)
-                                }
-                            }
+                            GetSettingsLocalDataSourceError.SettingsNotFound ->
+                                performRecovery(identity)
 
-                            is GetSettingsLocalDataSourceError.LocalDataSource -> {
-                                flowOf(
-                                    Failure<Settings, GetSettingsRepositoryError>(
-                                        GetSettingsRepositoryError.SettingsEmpty,
-                                    ),
-                                )
-                            }
+                            is GetSettingsLocalDataSourceError.LocalDataSource ->
+                                Failure(GetSettingsRepositoryError.SettingsEmpty)
                         }
                     },
                 )

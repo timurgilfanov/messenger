@@ -39,7 +39,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     private val emptySettings =
         Settings(uiLanguage = UiLanguage.English, metadata = SettingsMetadata.EMPTY)
 
-    override fun observeSettings(
+    override fun observe(
         userId: UserId,
     ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> =
         dataStoreManager.getDataStore(userId).data
@@ -72,7 +72,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 )
             }
 
-    override suspend fun updateSettings(
+    override suspend fun update(
         userId: UserId,
         transform: (Settings) -> Settings,
     ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> {
@@ -113,7 +113,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         )
     }
 
-    override suspend fun insertSettings(
+    override suspend fun put(
         userId: UserId,
         settings: Settings,
     ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> {
@@ -129,7 +129,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         return updateSettings(dataStore, settingsWithMetadata)
     }
 
-    override suspend fun resetSettings(
+    override suspend fun reset(
         userId: UserId,
     ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> {
         val dataStore = dataStoreManager.getDataStore(userId)

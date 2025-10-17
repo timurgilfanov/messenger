@@ -126,7 +126,7 @@ class SettingsRepositoryImpl(
     override fun observeSettings(
         identity: Identity,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
-        localDataSource.observeSettings(identity.userId)
+        localDataSource.observe(identity.userId)
             .map { result ->
                 result.fold(
                     onSuccess = { settings ->
@@ -147,55 +147,53 @@ class SettingsRepositoryImpl(
 
     private suspend fun performRecovery(
         identity: Identity,
-    ): ResultWithError<Settings, GetSettingsRepositoryError> =
-        remoteDataSource.getSettings(identity).fold(
-            onSuccess = { remoteSettings ->
-                val currentLocal = localDataSource.observeSettings(identity.userId).first()
-                    .fold(
-                        onSuccess = { it },
-                        onFailure = { null },
-                    )
+    ): ResultWithError<Settings, GetSettingsRepositoryError> = remoteDataSource.get(identity).fold(
+        onSuccess = { remoteSettings ->
+            val currentLocal = localDataSource.observe(identity.userId).first().fold(
+                onSuccess = { it },
+                onFailure = { null },
+            )
 
-                val lastSyncedAt = currentLocal?.metadata?.lastSyncedAt
-                    ?: Instant.fromEpochMilliseconds(0)
+            val lastSyncedAt = currentLocal?.metadata?.lastSyncedAt
+                ?: Instant.fromEpochMilliseconds(0)
 
-                if (currentLocal != null &&
-                    currentLocal.metadata.state == SettingsState.MODIFIED &&
-                    remoteSettings.metadata.lastModifiedAt > lastSyncedAt
-                ) {
-                    // TODO We can try to resolve conflict here:
-                    //  - are differences affect each others?
-                    //  - are touched settings global for the user or device-level and remote is just a backup?
-                    //  If conflict can't be resolved propagate it to Use Case level with or without merge
-                    Failure(
-                        GetSettingsRepositoryError.SettingsConflict(
-                            localSettings = currentLocal,
-                            remoteSettings = remoteSettings,
-                        ),
-                    )
-                } else {
-                    localDataSource.insertSettings(
-                        userId = identity.userId,
-                        settings = remoteSettings,
-                    ).foldWithErrorMapping(
-                        onSuccess = { Success(remoteSettings) },
-                        onFailure = { GetSettingsRepositoryError.SettingsEmpty },
-                    )
-                }
-            },
-            onFailure = {
-                localDataSource.resetSettings(identity.userId).fold(
-                    onSuccess = { Failure(GetSettingsRepositoryError.SettingsResetToDefaults) },
-                    onFailure = { Failure(GetSettingsRepositoryError.SettingsEmpty) },
+            if (currentLocal != null &&
+                currentLocal.metadata.state == SettingsState.MODIFIED &&
+                remoteSettings.metadata.lastModifiedAt > lastSyncedAt
+            ) {
+                // TODO We can try to resolve conflict here:
+                //  - are differences affect each others?
+                //  - are touched settings global for the user or device-level and remote is just a backup?
+                //  If conflict can't be resolved propagate it to Use Case level with or without merge
+                Failure(
+                    GetSettingsRepositoryError.SettingsConflict(
+                        localSettings = currentLocal,
+                        remoteSettings = remoteSettings,
+                    ),
                 )
-            },
-        )
+            } else {
+                localDataSource.put(
+                    userId = identity.userId,
+                    settings = remoteSettings,
+                ).foldWithErrorMapping(
+                    onSuccess = { Success(remoteSettings) },
+                    onFailure = { GetSettingsRepositoryError.SettingsEmpty },
+                )
+            }
+        },
+        onFailure = {
+            localDataSource.reset(identity.userId).fold(
+                onSuccess = { Failure(GetSettingsRepositoryError.SettingsResetToDefaults) },
+                onFailure = { Failure(GetSettingsRepositoryError.SettingsEmpty) },
+            )
+        },
+    )
 
     override suspend fun changeUiLanguage(
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> =
-        localDataSource.updateSettings(identity.userId) { settings ->
+        localDataSource.update(identity.userId) { settings ->
             settings.copy(uiLanguage = language)
         }.fold(
             onSuccess = {
@@ -261,7 +259,7 @@ class SettingsRepositoryImpl(
     override suspend fun applyRemoteSettings(
         identity: Identity,
         settings: Settings,
-    ): ResultWithError<Unit, ApplyRemoteSettingsRepositoryError> = localDataSource.insertSettings(
+    ): ResultWithError<Unit, ApplyRemoteSettingsRepositoryError> = localDataSource.put(
         userId = identity.userId,
         settings = settings,
     ).foldWithErrorMapping(
@@ -280,9 +278,9 @@ class SettingsRepositoryImpl(
         identity: Identity,
         settings: Settings,
     ): ResultWithError<Unit, SyncLocalToRemoteRepositoryError> =
-        remoteDataSource.updateSettings(identity, settings).bimap(
+        remoteDataSource.put(identity, settings).bimap(
             onSuccess = {
-                localDataSource.insertSettings(identity.userId, settings).fold(
+                localDataSource.put(identity.userId, settings).fold(
                     onSuccess = {},
                     onFailure = {},
                 )

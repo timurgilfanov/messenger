@@ -31,7 +31,7 @@ class LocalSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Setting
 
     private val settings = MutableStateFlow(initialSettings)
 
-    override fun observeSettings(
+    override fun observe(
         userId: UserId,
     ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = settings.map {
         val settings = it[userId]
@@ -42,7 +42,7 @@ class LocalSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Setting
         }
     }
 
-    override suspend fun updateSettings(
+    override suspend fun update(
         userId: UserId,
         transform: (Settings) -> Settings,
     ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> {
@@ -63,7 +63,7 @@ class LocalSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Setting
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun insertSettings(
+    override suspend fun put(
         userId: UserId,
         settings: Settings,
     ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> {
@@ -73,8 +73,7 @@ class LocalSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Setting
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun resetSettings(
+    override suspend fun reset(
         userId: UserId,
-    ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> =
-        insertSettings(userId, defaultSettings)
+    ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = put(userId, defaultSettings)
 }

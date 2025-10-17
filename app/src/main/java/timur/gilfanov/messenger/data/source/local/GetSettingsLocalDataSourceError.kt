@@ -3,7 +3,7 @@ package timur.gilfanov.messenger.data.source.local
 /**
  * Errors that can occur when observing settings.
  *
- * These errors are specific to the [LocalSettingsDataSource.observeSettings] operation.
+ * These errors are specific to the [LocalSettingsDataSource.observe] operation.
  */
 sealed interface GetSettingsLocalDataSourceError {
     /**

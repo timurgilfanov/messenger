@@ -40,7 +40,7 @@ class RemoteSettingsDataSourceFake(
             field.plus(TIME_STEP_SECONDS.seconds)
         }
 
-    override suspend fun getSettings(
+    override suspend fun get(
         identity: Identity,
     ): ResultWithError<Settings, RemoteUserDataSourceError> {
         val userSettings = settings.value[identity.userId]
@@ -80,7 +80,7 @@ class RemoteSettingsDataSourceFake(
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun updateSettings(
+    override suspend fun put(
         identity: Identity,
         settings: Settings,
     ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> {

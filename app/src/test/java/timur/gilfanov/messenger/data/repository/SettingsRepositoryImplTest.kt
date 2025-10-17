@@ -91,7 +91,7 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
-    fun `observeSettings triggers recovery when SettingsNotFound`() = runTest {
+    fun `observe triggers recovery when SettingsNotFound`() = runTest {
         val emptyLocalDataSource = LocalSettingsDataSourceFake(persistentMapOf())
         val remoteSettings = Settings(
             uiLanguage = UiLanguage.German,
@@ -120,9 +120,9 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
-    fun `observeSettings returns SettingsEmpty when LocalDataSource error occurs`() = runTest {
+    fun `observe returns SettingsEmpty when LocalDataSource error occurs`() = runTest {
         val localDataSourceWithError = object : LocalSettingsDataSource {
-            override fun observeSettings(
+            override fun observe(
                 userId: UserId,
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 Failure(
@@ -132,17 +132,17 @@ class SettingsRepositoryImplTest {
                 ),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun update(
                 userId: UserId,
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Success(Unit)
 
-            override suspend fun insertSettings(
+            override suspend fun put(
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
 
-            override suspend fun resetSettings(
+            override suspend fun reset(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
         }
@@ -164,27 +164,27 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
-    fun `observeSettings recovery returns SettingsEmpty when insert fails`() = runTest {
+    fun `observe recovery returns SettingsEmpty when insert fails`() = runTest {
         val localDataSourceWithInsertFailure = object : LocalSettingsDataSource {
-            override fun observeSettings(
+            override fun observe(
                 userId: UserId,
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 Failure(GetSettingsLocalDataSourceError.SettingsNotFound),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun update(
                 userId: UserId,
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Success(Unit)
 
-            override suspend fun insertSettings(
+            override suspend fun put(
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Failure(
                 LocalDataSourceErrorV2.WriteError(ErrorReason("Insert failed during recovery")),
             )
 
-            override suspend fun resetSettings(
+            override suspend fun reset(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
         }
@@ -211,7 +211,7 @@ class SettingsRepositoryImplTest {
     fun `performRecovery falls back to defaults when remote fetch fails`() = runTest {
         val emptyLocal = LocalSettingsDataSourceFake(persistentMapOf())
         val remoteWithError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> = Failure(
                 RemoteUserDataSourceError.RemoteDataSource(
@@ -228,7 +228,7 @@ class SettingsRepositoryImplTest {
                 ),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -287,31 +287,31 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncLocalToRemote ignores local insert failure after remote success`() = runTest {
         val localWithInsertFailure = object : LocalSettingsDataSource {
-            override fun observeSettings(
+            override fun observe(
                 userId: UserId,
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 Success(defaultSettings[userId]!!),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun update(
                 userId: UserId,
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Success(Unit)
 
-            override suspend fun insertSettings(
+            override suspend fun put(
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Failure(
                 LocalDataSourceErrorV2.WriteError(ErrorReason("Local mirror insert failed")),
             )
 
-            override suspend fun resetSettings(
+            override suspend fun reset(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
         }
 
         val remoteAlwaysSuccess = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -321,7 +321,7 @@ class SettingsRepositoryImplTest {
                 language: UiLanguage,
             ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -350,7 +350,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage returns Backup error when remote sync fails`() = runTest {
         val remoteWithError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -364,7 +364,7 @@ class SettingsRepositoryImplTest {
                 ),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -386,13 +386,13 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage returns transient LanguageNotChanged when local write fails`() = runTest {
         val localDataSourceWithError = object : LocalSettingsDataSource {
-            override fun observeSettings(
+            override fun observe(
                 userId: UserId,
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 Success(defaultSettings[userId]!!),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun update(
                 userId: UserId,
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
@@ -401,12 +401,12 @@ class SettingsRepositoryImplTest {
                 ),
             )
 
-            override suspend fun insertSettings(
+            override suspend fun put(
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
 
-            override suspend fun resetSettings(
+            override suspend fun reset(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
         }
@@ -428,13 +428,13 @@ class SettingsRepositoryImplTest {
     fun `changeUiLanguage returns non transient LanguageNotChanged when deserialization fails`() =
         runTest {
             val localDataSourceWithError = object : LocalSettingsDataSource {
-                override fun observeSettings(
+                override fun observe(
                     userId: UserId,
                 ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                     Success(defaultSettings[userId]!!),
                 )
 
-                override suspend fun updateSettings(
+                override suspend fun update(
                     userId: UserId,
                     transform: (Settings) -> Settings,
                 ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
@@ -445,12 +445,12 @@ class SettingsRepositoryImplTest {
                     ),
                 )
 
-                override suspend fun insertSettings(
+                override suspend fun put(
                     userId: UserId,
                     settings: Settings,
                 ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
 
-                override suspend fun resetSettings(
+                override suspend fun reset(
                     userId: UserId,
                 ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
             }
@@ -471,7 +471,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage returns Backup unauthenticated when remote session revoked`() = runTest {
         val remoteWithAuthError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -483,7 +483,7 @@ class SettingsRepositoryImplTest {
                 RemoteUserDataSourceError.Authentication.SessionRevoked,
             )
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -506,7 +506,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage returns Backup insufficient permissions when remote denies`() = runTest {
         val remoteWithPermissionError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -518,7 +518,7 @@ class SettingsRepositoryImplTest {
                 RemoteUserDataSourceError.InsufficientPermissions,
             )
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -541,7 +541,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage returns ChangeBackupTimeout when remote times out`() = runTest {
         val remoteWithTimeout = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -555,7 +555,7 @@ class SettingsRepositoryImplTest {
                 ),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -578,7 +578,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage returns Backup network not available when remote offline`() = runTest {
         val remoteWithNetworkError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -592,7 +592,7 @@ class SettingsRepositoryImplTest {
                 ),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -615,7 +615,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage returns Backup unknown error when remote unexpected`() = runTest {
         val remoteWithUnknownError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -629,7 +629,7 @@ class SettingsRepositoryImplTest {
                 ),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -652,13 +652,13 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage returns transient LanguageNotChanged when read fails`() = runTest {
         val localDataSourceWithError = object : LocalSettingsDataSource {
-            override fun observeSettings(
+            override fun observe(
                 userId: UserId,
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 Success(defaultSettings[userId]!!),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun update(
                 userId: UserId,
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
@@ -667,12 +667,12 @@ class SettingsRepositoryImplTest {
                 ),
             )
 
-            override suspend fun insertSettings(
+            override suspend fun put(
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
 
-            override suspend fun resetSettings(
+            override suspend fun reset(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
         }
@@ -694,13 +694,13 @@ class SettingsRepositoryImplTest {
     fun `changeUiLanguage returns non transient LanguageNotChanged when transform fails`() =
         runTest {
             val localDataSourceWithTransformError = object : LocalSettingsDataSource {
-                override fun observeSettings(
+                override fun observe(
                     userId: UserId,
                 ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                     Success(defaultSettings[userId]!!),
                 )
 
-                override suspend fun updateSettings(
+                override suspend fun update(
                     userId: UserId,
                     transform: (Settings) -> Settings,
                 ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
@@ -709,12 +709,12 @@ class SettingsRepositoryImplTest {
                     ),
                 )
 
-                override suspend fun insertSettings(
+                override suspend fun put(
                     userId: UserId,
                     settings: Settings,
                 ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
 
-                override suspend fun resetSettings(
+                override suspend fun reset(
                     userId: UserId,
                 ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
             }
@@ -735,25 +735,25 @@ class SettingsRepositoryImplTest {
     @Test
     fun `applyRemoteSettings fails when insert fails`() = runTest {
         val localDataSourceWithError = object : LocalSettingsDataSource {
-            override fun observeSettings(
+            override fun observe(
                 userId: UserId,
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 Success(defaultSettings[userId]!!),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun update(
                 userId: UserId,
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Success(Unit)
 
-            override suspend fun insertSettings(
+            override suspend fun put(
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Failure(
                 LocalDataSourceErrorV2.WriteError(ErrorReason("Insert failed")),
             )
 
-            override suspend fun resetSettings(
+            override suspend fun reset(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
         }
@@ -782,25 +782,25 @@ class SettingsRepositoryImplTest {
     @Test
     fun `applyRemoteSettings returns non transient error when serialization fails`() = runTest {
         val localDataSourceWithError = object : LocalSettingsDataSource {
-            override fun observeSettings(
+            override fun observe(
                 userId: UserId,
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 Success(defaultSettings[userId]!!),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun update(
                 userId: UserId,
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Success(Unit)
 
-            override suspend fun insertSettings(
+            override suspend fun put(
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Failure(
                 LocalDataSourceErrorV2.SerializationError(ErrorReason("Serialization failed")),
             )
 
-            override suspend fun resetSettings(
+            override suspend fun reset(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
         }
@@ -829,7 +829,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncLocalToRemote fails when remote update fails`() = runTest {
         val remoteWithError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -839,7 +839,7 @@ class SettingsRepositoryImplTest {
                 language: UiLanguage,
             ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
@@ -874,7 +874,7 @@ class SettingsRepositoryImplTest {
     fun `syncLocalToRemote returns cooldown when remote throttles`() = runTest {
         val cooldown = 5.seconds
         val remoteWithCooldown = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -884,7 +884,7 @@ class SettingsRepositoryImplTest {
                 language: UiLanguage,
             ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
@@ -920,7 +920,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncLocalToRemote returns unauthenticated when remote session revoked`() = runTest {
         val remoteWithAuthError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -930,7 +930,7 @@ class SettingsRepositoryImplTest {
                 language: UiLanguage,
             ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
@@ -962,7 +962,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncLocalToRemote returns timeout when remote status unknown`() = runTest {
         val remoteWithTimeout = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -972,7 +972,7 @@ class SettingsRepositoryImplTest {
                 language: UiLanguage,
             ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
@@ -1006,7 +1006,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncLocalToRemote returns insufficient permissions when remote denies`() = runTest {
         val remoteWithPermissionError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -1016,7 +1016,7 @@ class SettingsRepositoryImplTest {
                 language: UiLanguage,
             ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
@@ -1048,7 +1048,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncLocalToRemote returns network not available when offline`() = runTest {
         val remoteWithNetworkError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -1058,7 +1058,7 @@ class SettingsRepositoryImplTest {
                 language: UiLanguage,
             ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
@@ -1092,7 +1092,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncLocalToRemote returns unknown error when remote unexpected`() = runTest {
         val remoteWithUnknownError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> =
                 Success(defaultSettings[identity.userId]!!)
@@ -1102,7 +1102,7 @@ class SettingsRepositoryImplTest {
                 language: UiLanguage,
             ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Failure(
@@ -1138,14 +1138,14 @@ class SettingsRepositoryImplTest {
         val localDataSourceWithRecovery = object : LocalSettingsDataSource {
             private var currentSettings: Settings? = null
 
-            override fun observeSettings(
+            override fun observe(
                 userId: UserId,
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 currentSettings?.let { Success(it) }
                     ?: Success(defaultSettings[userId]!!),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun update(
                 userId: UserId,
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> =
@@ -1156,7 +1156,7 @@ class SettingsRepositoryImplTest {
                     Success(Unit)
                 }
 
-            override suspend fun insertSettings(
+            override suspend fun put(
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> {
@@ -1164,7 +1164,7 @@ class SettingsRepositoryImplTest {
                 return Success(Unit)
             }
 
-            override suspend fun resetSettings(
+            override suspend fun reset(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
         }
@@ -1195,25 +1195,25 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage returns SettingsEmpty when recovery fails completely`() = runTest {
         val localDataSourceWithFailures = object : LocalSettingsDataSource {
-            override fun observeSettings(
+            override fun observe(
                 userId: UserId,
             ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                 Success(defaultSettings[userId]!!),
             )
 
-            override suspend fun updateSettings(
+            override suspend fun update(
                 userId: UserId,
                 transform: (Settings) -> Settings,
             ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
                 UpdateSettingsLocalDataSourceError.SettingsNotFound,
             )
 
-            override suspend fun insertSettings(
+            override suspend fun put(
                 userId: UserId,
                 settings: Settings,
             ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
 
-            override suspend fun resetSettings(
+            override suspend fun reset(
                 userId: UserId,
             ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Failure(
                 LocalDataSourceErrorV2.WriteError(ErrorReason("Reset failed")),
@@ -1221,7 +1221,7 @@ class SettingsRepositoryImplTest {
         }
 
         val remoteWithError = object : RemoteSettingsDataSource {
-            override suspend fun getSettings(
+            override suspend fun get(
                 identity: Identity,
             ): ResultWithError<Settings, RemoteUserDataSourceError> = Failure(
                 RemoteUserDataSourceError.RemoteDataSource(
@@ -1234,7 +1234,7 @@ class SettingsRepositoryImplTest {
                 language: UiLanguage,
             ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-            override suspend fun updateSettings(
+            override suspend fun put(
                 identity: Identity,
                 settings: Settings,
             ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -1256,31 +1256,31 @@ class SettingsRepositoryImplTest {
     fun `changeUiLanguage returns SettingsResetToDefaults when recovery resets settings`() =
         runTest {
             val localDataSourceWithReset = object : LocalSettingsDataSource {
-                override fun observeSettings(
+                override fun observe(
                     userId: UserId,
                 ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                     Success(defaultSettings[userId]!!),
                 )
 
-                override suspend fun updateSettings(
+                override suspend fun update(
                     userId: UserId,
                     transform: (Settings) -> Settings,
                 ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
                     UpdateSettingsLocalDataSourceError.SettingsNotFound,
                 )
 
-                override suspend fun insertSettings(
+                override suspend fun put(
                     userId: UserId,
                     settings: Settings,
                 ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
 
-                override suspend fun resetSettings(
+                override suspend fun reset(
                     userId: UserId,
                 ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
             }
 
             val remoteWithTemporaryFailure = object : RemoteSettingsDataSource {
-                override suspend fun getSettings(
+                override suspend fun get(
                     identity: Identity,
                 ): ResultWithError<Settings, RemoteUserDataSourceError> = Failure(
                     RemoteUserDataSourceError.RemoteDataSource(
@@ -1293,7 +1293,7 @@ class SettingsRepositoryImplTest {
                     language: UiLanguage,
                 ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = Success(Unit)
 
-                override suspend fun updateSettings(
+                override suspend fun put(
                     identity: Identity,
                     settings: Settings,
                 ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = Success(Unit)
@@ -1333,25 +1333,25 @@ class SettingsRepositoryImplTest {
             )
 
             val localDataSourceWithConflict = object : LocalSettingsDataSource {
-                override fun observeSettings(
+                override fun observe(
                     userId: UserId,
                 ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = flowOf(
                     Success(localModifiedSettings),
                 )
 
-                override suspend fun updateSettings(
+                override suspend fun update(
                     userId: UserId,
                     transform: (Settings) -> Settings,
                 ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> = Failure(
                     UpdateSettingsLocalDataSourceError.SettingsNotFound,
                 )
 
-                override suspend fun insertSettings(
+                override suspend fun put(
                     userId: UserId,
                     settings: Settings,
                 ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> = Success(Unit)
 
-                override suspend fun resetSettings(
+                override suspend fun reset(
                     userId: UserId,
                 ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = Success(Unit)
             }

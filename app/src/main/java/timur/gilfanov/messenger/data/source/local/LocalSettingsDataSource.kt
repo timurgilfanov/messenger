@@ -19,9 +19,7 @@ interface LocalSettingsDataSource {
      * @param userId The unique identifier of the user to observe
      * @return Flow emitting settings updates or errors
      */
-    fun observeSettings(
-        userId: UserId,
-    ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>>
+    fun observe(userId: UserId): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>>
 
     /**
      * Updates settings using a transformation function.
@@ -33,13 +31,13 @@ interface LocalSettingsDataSource {
      * @param transform Function transforming the current settings to new settings
      * @return Success or failure with [LocalUserDataSourceError]
      */
-    suspend fun updateSettings(
+    suspend fun update(
         userId: UserId,
         transform: (Settings) -> Settings,
     ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError>
 
     /**
-     * Inserts settings for a user.
+     * Stores settings for a user.
      *
      * Creates new settings entry in local storage. Typically used when restoring
      * settings from remote or initializing settings for the first time.
@@ -48,7 +46,7 @@ interface LocalSettingsDataSource {
      * @param settings The settings to insert
      * @return Success or failure with [InsertSettingsLocalDataSourceError]
      */
-    suspend fun insertSettings(
+    suspend fun put(
         userId: UserId,
         settings: Settings,
     ): ResultWithError<Unit, InsertSettingsLocalDataSourceError>
@@ -62,7 +60,5 @@ interface LocalSettingsDataSource {
      * @param userId The unique identifier of the user
      * @return Success or failure with [ResetSettingsLocalDataSourceError]
      */
-    suspend fun resetSettings(
-        userId: UserId,
-    ): ResultWithError<Unit, ResetSettingsLocalDataSourceError>
+    suspend fun reset(userId: UserId): ResultWithError<Unit, ResetSettingsLocalDataSourceError>
 }

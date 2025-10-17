@@ -18,9 +18,7 @@ interface RemoteSettingsDataSource {
      * @param identity The user identity for which to retrieve settings
      * @return Success with [Settings] or failure with [RemoteUserDataSourceError]
      */
-    suspend fun getSettings(
-        identity: Identity,
-    ): ResultWithError<Settings, RemoteUserDataSourceError>
+    suspend fun get(identity: Identity): ResultWithError<Settings, RemoteUserDataSourceError>
 
     /**
      * Changes user's UI language preference on the remote server.
@@ -34,7 +32,14 @@ interface RemoteSettingsDataSource {
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError>
 
-    suspend fun updateSettings(
+    /**
+     * Pushes settings to the remote server.
+     *
+     * @param identity Identity whose settings should be updated
+     * @param settings Settings payload to send to remote
+     * @return Success or failure with [UpdateSettingsRemoteDataSourceError]
+     */
+    suspend fun put(
         identity: Identity,
         settings: Settings,
     ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError>

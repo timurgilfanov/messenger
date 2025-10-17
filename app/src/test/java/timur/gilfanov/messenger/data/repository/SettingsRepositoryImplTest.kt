@@ -26,6 +26,7 @@ import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceErrorV2
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteUserDataSourceError
+import timur.gilfanov.messenger.data.source.remote.TIME_STEP_SECONDS
 import timur.gilfanov.messenger.data.source.remote.UpdateSettingsRemoteDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
@@ -1327,7 +1328,7 @@ class SettingsRepositoryImplTest {
                 metadata = SettingsMetadata(
                     isDefault = false,
                     lastModifiedAt = Instant.fromEpochMilliseconds(200),
-                    lastSyncedAt = Instant.fromEpochMilliseconds(200),
+                    lastSyncedAt = null,
                 ),
             )
 
@@ -1366,10 +1367,15 @@ class SettingsRepositoryImplTest {
             )
 
             val result = repositoryWithConflict.changeUiLanguage(identity, UiLanguage.English)
+            val remoteSettingsFetched = remoteNewerSettings.copy(
+                metadata = remoteNewerSettings.metadata.copy(
+                    lastSyncedAt = Instant.fromEpochSeconds(TIME_STEP_SECONDS),
+                ),
+            )
 
             assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
             assertIs<ChangeLanguageRepositoryError.SettingsConflict>(result.error)
             assertEquals(localModifiedSettings, result.error.localSettings)
-            assertEquals(remoteNewerSettings, result.error.remoteSettings)
+            assertEquals(remoteSettingsFetched, result.error.remoteSettings)
         }
 }

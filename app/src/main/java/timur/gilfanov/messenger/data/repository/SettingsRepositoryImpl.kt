@@ -199,7 +199,7 @@ class SettingsRepositoryImpl(
             onSuccess = {
                 remoteDataSource.changeUiLanguage(identity, language).bimap(
                     onSuccess = {
-                        logger.d(TAG, "Language change backed up successfully")
+                        logger.d(TAG, "UI language change backed up successfully")
                     },
                     onFailure = { remoteError ->
                         ChangeLanguageRepositoryError.Backup(

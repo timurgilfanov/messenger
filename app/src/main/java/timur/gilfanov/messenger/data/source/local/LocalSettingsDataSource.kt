@@ -29,7 +29,7 @@ interface LocalSettingsDataSource {
      *
      * @param userId The unique identifier of the user
      * @param transform Function transforming the current settings to new settings
-     * @return Success or failure with [LocalUserDataSourceError]
+     * @return Success or failure with [UpdateSettingsLocalDataSourceError]
      */
     suspend fun update(
         userId: UserId,

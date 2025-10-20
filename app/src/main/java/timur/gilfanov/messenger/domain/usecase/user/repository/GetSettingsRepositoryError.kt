@@ -26,8 +26,6 @@ sealed interface GetSettingsRepositoryError {
      * @property localSettings The current local settings with user modifications
      * @property remoteSettings The remote settings from backup
      */
-    data class SettingsConflict(
-        val localSettings: Settings,
-        val remoteSettings: Settings,
-    ) : GetSettingsRepositoryError
+    data class SettingsConflict(val localSettings: Settings, val remoteSettings: Settings) :
+        GetSettingsRepositoryError
 }

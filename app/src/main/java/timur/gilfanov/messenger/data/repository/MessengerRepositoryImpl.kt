@@ -3,6 +3,8 @@ package timur.gilfanov.messenger.data.repository
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -38,8 +40,6 @@ import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageEr
 import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 import timur.gilfanov.messenger.util.Logger
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Implementation of [ChatRepository] and [MessageRepository] that manages chats and messages

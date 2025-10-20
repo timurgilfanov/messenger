@@ -1,6 +1,10 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
 import app.cash.turbine.test
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -18,10 +22,6 @@ import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
-import java.util.UUID
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.time.Instant
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class ObserveUiLanguageUseCaseTest {
@@ -108,7 +108,7 @@ class ObserveUiLanguageUseCaseTest {
             flow {
                 emit(Failure(Unit))
                 emit(Success(testIdentity))
-            }
+            },
         )
         val settingsRepository = SettingsRepositoryFake(settingsFlow)
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)

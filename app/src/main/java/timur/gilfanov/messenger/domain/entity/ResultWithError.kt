@@ -117,13 +117,14 @@ inline fun <R1, E1, R2> ResultWithError<R1, E1>.fold(
  * Maps [Success]<[R1], [E1]> to [Success]<[R2], [E2]> and
  * [Failure]<[R1], [E1]> to [Failure]<[R2], [E2]>.
  *
- * Use this when you need to transform both types, such as converting domain types to DTOs.
+ * Use this when you need to transform both types within the same layer, or when an inner layer
+ * needs to adapt results from an outer layer.
  *
  * Example:
  * ```
- * val dtoResult: ResultWithError<UserDto, ApiError> = domainResult.bimap(
- *     onSuccess = { user -> user.toDto() },
- *     onFailure = { domainError -> domainError.toApiError() }
+ * val repositoryResult: ResultWithError<User, RepositoryError> = dataSourceResult.bimap(
+ *     onSuccess = { userEntity -> userEntity.toDomain() },
+ *     onFailure = { dataSourceError -> dataSourceError.toRepositoryError() }
  * )
  * ```
  *

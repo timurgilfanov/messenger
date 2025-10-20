@@ -1,10 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
 import app.cash.turbine.test
-import java.util.UUID
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -22,6 +18,10 @@ import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.time.Instant
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class ObserveUiLanguageUseCaseTest {
@@ -95,6 +95,33 @@ class ObserveUiLanguageUseCaseTest {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
             assertIs<ObserveUiLanguageError.Unauthorized>(result.error)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `continue flow when identity unauthorized recover`() = runTest {
+        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
+            emit(Success(Settings(UiLanguage.English, testMetadata)))
+        }
+        val identityRepository = IdentityRepositoryFake(
+            flow {
+                emit(Failure(Unit))
+                emit(Success(testIdentity))
+            }
+        )
+        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
+
+        useCase().test {
+            val firstResult = awaitItem()
+            assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(firstResult)
+            assertIs<ObserveUiLanguageError.Unauthorized>(firstResult.error)
+
+            val secondResult = awaitItem()
+            assertIs<Success<UiLanguage, ObserveUiLanguageError>>(secondResult)
+            assertEquals(UiLanguage.English, secondResult.data)
+
             awaitComplete()
         }
     }
@@ -219,10 +246,16 @@ class ObserveUiLanguageUseCaseTest {
     }
 }
 
-private class IdentityRepositoryFake(identityResult: ResultWithError<Identity, GetIdentityError>) :
+private class IdentityRepositoryFake(flow: Flow<ResultWithError<Identity, GetIdentityError>>) :
     IdentityRepository {
-    override val identity: Flow<ResultWithError<Identity, GetIdentityError>> =
-        flowOf(identityResult)
+
+    constructor(identityResult: ResultWithError<Identity, GetIdentityError>) : this(
+        flowOf(
+            identityResult,
+        ),
+    )
+
+    override val identity: Flow<ResultWithError<Identity, GetIdentityError>> = flow
 }
 
 private class SettingsRepositoryFake(

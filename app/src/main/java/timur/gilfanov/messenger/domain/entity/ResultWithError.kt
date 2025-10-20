@@ -117,8 +117,7 @@ inline fun <R1, E1, R2> ResultWithError<R1, E1>.fold(
  * Maps [Success]<[R1], [E1]> to [Success]<[R2], [E2]> and
  * [Failure]<[R1], [E1]> to [Failure]<[R2], [E2]>.
  *
- * Use this when you need to transform both types within the same layer, or when an inner layer
- * needs to adapt results from an outer layer.
+ * Use this when you need to transform both types between layers.
  *
  * Example:
  * ```

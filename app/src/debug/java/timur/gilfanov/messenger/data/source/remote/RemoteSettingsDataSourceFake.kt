@@ -33,11 +33,14 @@ class RemoteSettingsDataSourceFake(
 
     private val settings = MutableStateFlow(initialSettings)
 
-    private val now: Instant = Instant.fromEpochMilliseconds(0)
+    private var timeCounter: Instant = Instant.fromEpochMilliseconds(0)
+
+    private val now: Instant
         get() = if (useRealTime) {
             Clock.System.now()
         } else {
-            field.plus(TIME_STEP_SECONDS.seconds)
+            timeCounter = timeCounter.plus(TIME_STEP_SECONDS.seconds)
+            timeCounter
         }
 
     override suspend fun get(

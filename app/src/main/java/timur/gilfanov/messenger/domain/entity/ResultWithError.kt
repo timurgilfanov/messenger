@@ -36,7 +36,8 @@ val <R, E> ResultWithError<R, E>.isSuccess: Boolean get() = this is ResultWithEr
 val <R, E> ResultWithError<R, E>.isFailure: Boolean get() = this is ResultWithError.Failure
 
 /**
- * Performs the given [action] if this result is [Success], passing the success value.
+ * Performs the given [action] if this result is
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Success], passing the success value.
  * Returns this result unchanged for chaining.
  *
  * Use this for side effects like logging without transforming the result.
@@ -60,7 +61,8 @@ inline fun <R, E> ResultWithError<R, E>.onSuccess(action: (R) -> Unit): ResultWi
 }
 
 /**
- * Performs the given [action] if this result is [Failure], passing the error value.
+ * Performs the given [action] if this result is
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure], passing the error value.
  * Returns this result unchanged for chaining.
  *
  * Use this for side effects like logging without transforming the result.
@@ -92,8 +94,8 @@ inline fun <R, E> ResultWithError<R, E>.onFailure(action: (E) -> Unit): ResultWi
  * )
  * ```
  *
- * @param onSuccess Called with the success value if this is [Success]
- * @param onFailure Called with the error value if this is [Failure]
+ * @param onSuccess Called with the success value if this is [timur.gilfanov.messenger.domain.entity.ResultWithError.Success]
+ * @param onFailure Called with the error value if this is [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure]
  * @return The value returned by whichever handler was called
  */
 @OptIn(ExperimentalContracts::class)
@@ -114,8 +116,10 @@ inline fun <R1, E1, R2> ResultWithError<R1, E1>.fold(
 /**
  * Transforms both the success value and error value, returning a new [ResultWithError].
  *
- * Maps [Success]<[R1], [E1]> to [Success]<[R2], [E2]> and
- * [Failure]<[R1], [E1]> to [Failure]<[R2], [E2]>.
+ * Maps [timur.gilfanov.messenger.domain.entity.ResultWithError.Success]<[R1], [E1]> to
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Success]<[R2], [E2]> and
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure]<[R1], [E1]> to
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure]<[R2], [E2]>.
  *
  * Use this when you need to transform both types between layers.
  *
@@ -150,7 +154,8 @@ inline fun <R1, E1, R2, E2> ResultWithError<R1, E1>.bimap(
  * Chains operations on success while transforming error types on failure.
  *
  * On success, delegates to [onSuccess] which provides a new [ResultWithError].
- * On failure, transforms the error using [onFailure] and wraps it in a new [Failure].
+ * On failure, transforms the error using [onFailure] and wraps it in a new
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure].
  *
  * Use this for chaining operations that return [ResultWithError], where you also need
  * to adapt the error type between layers.
@@ -166,7 +171,9 @@ inline fun <R1, E1, R2, E2> ResultWithError<R1, E1>.bimap(
  *
  * @param onSuccess Called with the success value, must return a new [ResultWithError]
  * @param onFailure Transforms the error value from [E1] to [E2]
- * @return The result from [onSuccess] if this is [Success], or a new [Failure] with transformed error
+ * @return The result from [onSuccess] if this is
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Success], or a new
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure] with transformed error
  */
 @OptIn(ExperimentalContracts::class)
 inline fun <R1, E1, R2, E2> ResultWithError<R1, E1>.foldWithErrorMapping(
@@ -186,8 +193,9 @@ inline fun <R1, E1, R2, E2> ResultWithError<R1, E1>.foldWithErrorMapping(
 /**
  * Handles failures by providing an alternative [ResultWithError].
  *
- * If this is [Success], returns it unchanged. If this is [Failure], calls [action]
- * with the error to potentially recover or transform to a different error type.
+ * If this is [timur.gilfanov.messenger.domain.entity.ResultWithError.Success], returns it
+ * unchanged. If this is [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure], calls
+ * [action] with the error to potentially recover or transform to a different error type.
  *
  * Use this for error recovery scenarios or error type transformations.
  *
@@ -202,9 +210,12 @@ inline fun <R1, E1, R2, E2> ResultWithError<R1, E1>.foldWithErrorMapping(
  *     }
  * ```
  *
- * @param action Called with the error value if this is [Failure]
- * @return This result if [Success], or the result from [action] if [Failure]
+ * @param action Called with the error value if this is
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure]
+ * @return This result if [timur.gilfanov.messenger.domain.entity.ResultWithError.Success], or the
+ * result from [action] if [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure]
  */
+@Suppress("unused") // may be will be used in future
 @OptIn(ExperimentalContracts::class)
 inline fun <R, E1, E2> ResultWithError<R, E1>.foldError(
     action: (E1) -> ResultWithError<R, E2>,
@@ -221,7 +232,9 @@ inline fun <R, E1, E2> ResultWithError<R, E1>.foldError(
 /**
  * Transforms the error value while preserving the success value.
  *
- * Maps [Failure]<[R], [E1]> to [Failure]<[R], [E2]>, leaves [Success] unchanged.
+ * Maps [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure]<[R], [E1]> to
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Failure]<[R], [E2]>, leaves
+ * [timur.gilfanov.messenger.domain.entity.ResultWithError.Success] unchanged.
  *
  * Use this when you need to adapt error types between layers (e.g., data layer to domain layer).
  *

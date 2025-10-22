@@ -7,9 +7,6 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemote
 /**
  * Errors specific to remote user data operations.
  *
- * ## User-Specific Errors
- * - [UserNotFound] - User does not exist on the backend
- *
  * ## Authentication Errors (Who are you?)
  * - [Authentication] - Identity verification failures
  *
@@ -20,12 +17,6 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemote
  * - [RemoteDataSource] - Wraps common remote data source errors
  */
 sealed interface RemoteUserDataSourceError {
-    /**
-     * User does not exist on the backend.
-     *
-     * Indicates the requested user ID is not found in the system.
-     */
-    data object UserNotFound : RemoteUserDataSourceError
 
     /**
      * Authentication errors related to identity verification.
@@ -90,7 +81,6 @@ fun RemoteUserDataSourceError.toRepositoryError(): RepositoryError = when (this)
     RemoteUserDataSourceError.Authentication.TokenInvalid,
     RemoteUserDataSourceError.Authentication.TokenMissing,
     RemoteUserDataSourceError.Authentication.TokenExpired,
-    RemoteUserDataSourceError.UserNotFound,
     -> RepositoryError.Unauthenticated
 
     RemoteUserDataSourceError.InsufficientPermissions ->

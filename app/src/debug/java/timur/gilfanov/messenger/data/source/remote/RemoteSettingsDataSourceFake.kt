@@ -48,7 +48,7 @@ class RemoteSettingsDataSourceFake(
     ): ResultWithError<Settings, RemoteUserDataSourceError> {
         val userSettings = settings.value[identity.userId]
         return if (userSettings == null) {
-            ResultWithError.Failure(RemoteUserDataSourceError.UserNotFound)
+            ResultWithError.Failure(RemoteUserDataSourceError.Authentication.SessionRevoked)
         } else {
             ResultWithError.Success(
                 userSettings.copy(
@@ -66,7 +66,7 @@ class RemoteSettingsDataSourceFake(
     ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> {
         settings.update {
             val userSettings = it[identity.userId] ?: return ResultWithError.Failure(
-                RemoteUserDataSourceError.UserNotFound,
+                RemoteUserDataSourceError.Authentication.SessionRevoked,
             )
             it.put(
                 identity.userId,
@@ -89,7 +89,9 @@ class RemoteSettingsDataSourceFake(
     ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> {
         this.settings.update {
             if (!it.containsKey(identity.userId)) {
-                return ResultWithError.Failure(RemoteUserDataSourceError.UserNotFound)
+                return ResultWithError.Failure(
+                    RemoteUserDataSourceError.Authentication.SessionRevoked,
+                )
             }
             it.put(
                 identity.userId,

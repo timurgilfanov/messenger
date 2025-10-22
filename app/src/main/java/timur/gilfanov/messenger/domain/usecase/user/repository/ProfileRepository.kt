@@ -20,7 +20,7 @@ interface ProfileRepository {
      * @param userId The unique identifier of the user to observe
      * @return Flow emitting profile updates or errors
      */
-    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, UserRepositoryError>>
+    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, RepositoryError>>
 
     /**
      * Updates user's display name.

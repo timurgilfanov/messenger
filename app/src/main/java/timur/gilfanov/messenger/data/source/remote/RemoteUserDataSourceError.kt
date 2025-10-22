@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.data.source.remote
 
-import timur.gilfanov.messenger.domain.usecase.user.repository.CommonUserRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsChangeBackupError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
 
@@ -80,41 +80,40 @@ sealed interface RemoteUserDataSourceError {
 }
 
 fun RemoteUserDataSourceError.toSettingsChangeBackupError(): SettingsChangeBackupError =
-    this.toCommonUserRepositoryError()
+    this.toRepositoryError()
 
 fun RemoteUserDataSourceError.toSyncLocalToRemoteError(): SyncLocalToRemoteRepositoryError =
-    this.toCommonUserRepositoryError()
+    this.toRepositoryError()
 
-fun RemoteUserDataSourceError.toCommonUserRepositoryError(): CommonUserRepositoryError =
-    when (this) {
-        RemoteUserDataSourceError.Authentication.SessionRevoked,
-        RemoteUserDataSourceError.Authentication.TokenInvalid,
-        RemoteUserDataSourceError.Authentication.TokenMissing,
-        RemoteUserDataSourceError.Authentication.TokenExpired,
-        RemoteUserDataSourceError.UserNotFound,
-        -> CommonUserRepositoryError.Unauthenticated
+fun RemoteUserDataSourceError.toRepositoryError(): RepositoryError = when (this) {
+    RemoteUserDataSourceError.Authentication.SessionRevoked,
+    RemoteUserDataSourceError.Authentication.TokenInvalid,
+    RemoteUserDataSourceError.Authentication.TokenMissing,
+    RemoteUserDataSourceError.Authentication.TokenExpired,
+    RemoteUserDataSourceError.UserNotFound,
+    -> RepositoryError.Unauthenticated
 
-        RemoteUserDataSourceError.InsufficientPermissions ->
-            CommonUserRepositoryError.InsufficientPermissions
+    RemoteUserDataSourceError.InsufficientPermissions ->
+        RepositoryError.InsufficientPermissions
 
-        is RemoteUserDataSourceError.RemoteDataSource ->
-            when (error) {
-                is RemoteDataSourceErrorV2.CooldownActive ->
-                    CommonUserRepositoryError.Failed.Cooldown(error.remaining)
+    is RemoteUserDataSourceError.RemoteDataSource ->
+        when (error) {
+            is RemoteDataSourceErrorV2.CooldownActive ->
+                RepositoryError.Failed.Cooldown(error.remaining)
 
-                RemoteDataSourceErrorV2.RateLimitExceeded,
-                RemoteDataSourceErrorV2.ServerError,
-                RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
-                ->
-                    CommonUserRepositoryError.Failed.ServiceDown
+            RemoteDataSourceErrorV2.RateLimitExceeded,
+            RemoteDataSourceErrorV2.ServerError,
+            RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+            ->
+                RepositoryError.Failed.ServiceDown
 
-                RemoteDataSourceErrorV2.ServiceUnavailable.Timeout ->
-                    CommonUserRepositoryError.UnknownStatus.ServiceTimeout
+            RemoteDataSourceErrorV2.ServiceUnavailable.Timeout ->
+                RepositoryError.UnknownStatus.ServiceTimeout
 
-                RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable ->
-                    CommonUserRepositoryError.Failed.NetworkNotAvailable
+            RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable ->
+                RepositoryError.Failed.NetworkNotAvailable
 
-                is RemoteDataSourceErrorV2.UnknownServiceError ->
-                    CommonUserRepositoryError.Failed.UnknownServiceError
-            }
-    }
+            is RemoteDataSourceErrorV2.UnknownServiceError ->
+                RepositoryError.Failed.UnknownServiceError
+        }
+}

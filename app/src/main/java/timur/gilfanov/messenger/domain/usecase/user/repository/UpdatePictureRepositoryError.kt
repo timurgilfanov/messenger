@@ -59,5 +59,5 @@ sealed interface UpdatePictureRepositoryError {
      *
      * @property error The underlying user repository error
      */
-    data class UserRepository(val error: UserRepositoryError) : UpdatePictureRepositoryError
+    data class UserRepository(val error: RepositoryError) : UpdatePictureRepositoryError
 }

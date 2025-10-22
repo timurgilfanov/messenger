@@ -23,5 +23,5 @@ sealed interface RemovePictureRepositoryError {
      *
      * @property error The underlying user repository error
      */
-    data class UserRepository(val error: UserRepositoryError) : RemovePictureRepositoryError
+    data class UserRepository(val error: RepositoryError) : RemovePictureRepositoryError
 }

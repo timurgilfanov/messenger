@@ -4,4 +4,4 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
  *
  * When more specific errors or modifications are needed, use composition, not inheritance.
  */
-typealias SettingsChangeBackupError = CommonUserRepositoryError
+typealias SettingsChangeBackupError = RepositoryError

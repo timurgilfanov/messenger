@@ -51,5 +51,5 @@ sealed interface UpdateNameRepositoryError {
      *
      * @property error The underlying user repository error
      */
-    data class UserRepository(val error: UserRepositoryError) : UpdateNameRepositoryError
+    data class UserRepository(val error: RepositoryError) : UpdateNameRepositoryError
 }

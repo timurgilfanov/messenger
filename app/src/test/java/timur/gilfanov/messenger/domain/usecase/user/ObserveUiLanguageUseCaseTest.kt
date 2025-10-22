@@ -5,9 +5,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Instant
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -21,7 +19,6 @@ import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class ObserveUiLanguageUseCaseTest {
@@ -39,11 +36,10 @@ class ObserveUiLanguageUseCaseTest {
 
     @Test
     fun `emits UI language from settings`() = runTest {
-        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
-            emit(Success(Settings(UiLanguage.English, testMetadata)))
-        }
-        val identityRepository = IdentityRepositoryFake(Success(testIdentity))
-        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val settingsRepository = SettingsRepositoryStub(
+            settings = Success(Settings(UiLanguage.English, testMetadata)),
+        )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
         useCase().test {
@@ -56,13 +52,14 @@ class ObserveUiLanguageUseCaseTest {
 
     @Test
     fun `emits multiple UI language updates`() = runTest {
-        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
-            emit(Success(Settings(UiLanguage.English, testMetadata)))
-            emit(Success(Settings(UiLanguage.German, testMetadata)))
-            emit(Success(Settings(UiLanguage.English, testMetadata)))
-        }
-        val identityRepository = IdentityRepositoryFake(Success(testIdentity))
-        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val settingsRepository = SettingsRepositoryStub(
+            settingsFlow = flow {
+                emit(Success(Settings(UiLanguage.English, testMetadata)))
+                emit(Success(Settings(UiLanguage.German, testMetadata)))
+                emit(Success(Settings(UiLanguage.English, testMetadata)))
+            },
+        )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
         useCase().test {
@@ -84,11 +81,12 @@ class ObserveUiLanguageUseCaseTest {
 
     @Test
     fun `emits unauthorized when identity repository fails`() = runTest {
-        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
-            emit(Success(Settings(UiLanguage.English, testMetadata)))
-        }
-        val identityRepository = IdentityRepositoryFake(Failure(Unit))
-        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val identityRepository = IdentityRepositoryStub(Failure(Unit))
+        val settingsRepository = SettingsRepositoryStub(
+            settingsFlow = flow {
+                emit(Success(Settings(UiLanguage.English, testMetadata)))
+            },
+        )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
         useCase().test {
@@ -101,16 +99,17 @@ class ObserveUiLanguageUseCaseTest {
 
     @Test
     fun `continue flow when identity unauthorized recover`() = runTest {
-        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
-            emit(Success(Settings(UiLanguage.English, testMetadata)))
-        }
-        val identityRepository = IdentityRepositoryFake(
+        val identityRepository = IdentityRepositoryStub(
             flow {
                 emit(Failure(Unit))
                 emit(Success(testIdentity))
             },
         )
-        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val settingsRepository = SettingsRepositoryStub(
+            settingsFlow = flow {
+                emit(Success(Settings(UiLanguage.English, testMetadata)))
+            },
+        )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
         useCase().test {
@@ -128,11 +127,12 @@ class ObserveUiLanguageUseCaseTest {
 
     @Test
     fun `emits repository error when settings reset to defaults`() = runTest {
-        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
-            emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
-        }
-        val identityRepository = IdentityRepositoryFake(Success(testIdentity))
-        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val settingsRepository = SettingsRepositoryStub(
+            settingsFlow = flow {
+                emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
+            },
+        )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
         useCase().test {
@@ -146,11 +146,12 @@ class ObserveUiLanguageUseCaseTest {
 
     @Test
     fun `emits repository error when settings empty`() = runTest {
-        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
-            emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
-        }
-        val identityRepository = IdentityRepositoryFake(Success(testIdentity))
-        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val settingsRepository = SettingsRepositoryStub(
+            settingsFlow = flow {
+                emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
+            },
+        )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
         useCase().test {
@@ -176,8 +177,8 @@ class ObserveUiLanguageUseCaseTest {
                 ),
             )
         }
-        val identityRepository = IdentityRepositoryFake(Success(testIdentity))
-        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val settingsRepository = SettingsRepositoryStub(settingsFlow)
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
         useCase().test {
@@ -194,13 +195,14 @@ class ObserveUiLanguageUseCaseTest {
 
     @Test
     fun `handles mixed success and errors in flow`() = runTest {
-        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
-            emit(Success(Settings(UiLanguage.English, testMetadata)))
-            emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
-            emit(Success(Settings(UiLanguage.German, testMetadata)))
-        }
-        val identityRepository = IdentityRepositoryFake(Success(testIdentity))
-        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val settingsRepository = SettingsRepositoryStub(
+            settingsFlow = flow {
+                emit(Success(Settings(UiLanguage.English, testMetadata)))
+                emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
+                emit(Success(Settings(UiLanguage.German, testMetadata)))
+            },
+        )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
         useCase().test {
@@ -222,12 +224,13 @@ class ObserveUiLanguageUseCaseTest {
 
     @Test
     fun `handles multiple repository errors in flow`() = runTest {
-        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
-            emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
-            emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
-        }
-        val identityRepository = IdentityRepositoryFake(Success(testIdentity))
-        val settingsRepository = SettingsRepositoryFake(settingsFlow)
+        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val settingsRepository = SettingsRepositoryStub(
+            settingsFlow = flow {
+                emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
+                emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
+            },
+        )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
         useCase().test {
@@ -244,33 +247,4 @@ class ObserveUiLanguageUseCaseTest {
             awaitComplete()
         }
     }
-}
-
-private class IdentityRepositoryFake(flow: Flow<ResultWithError<Identity, GetIdentityError>>) :
-    IdentityRepository {
-
-    constructor(identityResult: ResultWithError<Identity, GetIdentityError>) : this(
-        flowOf(
-            identityResult,
-        ),
-    )
-
-    override val identity: Flow<ResultWithError<Identity, GetIdentityError>> = flow
-}
-
-private class SettingsRepositoryFake(
-    private val settingsFlow: Flow<ResultWithError<Settings, GetSettingsRepositoryError>>,
-) : SettingsRepository {
-    override fun observeSettings(
-        identity: Identity,
-    ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> = settingsFlow
-
-    override suspend fun changeUiLanguage(identity: Identity, language: UiLanguage): Nothing =
-        error("Not implemented for this test")
-
-    override suspend fun applyRemoteSettings(identity: Identity, settings: Settings): Nothing =
-        error("Not implemented for this test")
-
-    override suspend fun syncLocalToRemote(identity: Identity, settings: Settings): Nothing =
-        error("Not implemented for this test")
 }

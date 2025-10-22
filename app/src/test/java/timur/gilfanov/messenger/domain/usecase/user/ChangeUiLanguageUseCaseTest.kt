@@ -16,7 +16,7 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRep
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class ChangeUiLanguageUseCaseTest {
-    val identity = Identity(
+    private val identity = Identity(
         userId = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
         deviceId = DeviceId(
             UUID.fromString("550e8400-e29b-41d4-a716-446655440001"),

@@ -8,10 +8,13 @@ import org.junit.experimental.categories.Category
 class ErrorReasonTest {
 
     @Test
-    fun `two ErrorReason are equal`() {
+    fun `ErrorReason equality is based on wrapped string value`() {
         val errorReason1 = ErrorReason("Disk is full")
         val errorReason2 = ErrorReason("Disk is full")
+        val errorReason3 = ErrorReason("Different error")
 
         assertTrue(errorReason1 == errorReason2)
+        assertTrue(errorReason1 != errorReason3)
+        assertTrue(errorReason1.hashCode() == errorReason2.hashCode())
     }
 }

@@ -40,8 +40,8 @@ import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.ApplyRemoteSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.CommonUserRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsChangeBackupError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
@@ -380,7 +380,7 @@ class SettingsRepositoryImplTest {
 
         assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
         assertIs<ChangeLanguageRepositoryError.Backup>(result.error)
-        assertIs<SettingsChangeBackupError.ChangeNotBackedUp.ServiceDown>(result.error.error)
+        assertIs<CommonUserRepositoryError.Failed.ServiceDown>(result.error.error)
     }
 
     @Test
@@ -500,7 +500,7 @@ class SettingsRepositoryImplTest {
         assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
         val error = result.error
         assertIs<ChangeLanguageRepositoryError.Backup>(error)
-        assertIs<SettingsChangeBackupError.Unauthenticated>(error.error)
+        assertIs<CommonUserRepositoryError.Unauthenticated>(error.error)
     }
 
     @Test
@@ -535,7 +535,7 @@ class SettingsRepositoryImplTest {
         assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
         val error = result.error
         assertIs<ChangeLanguageRepositoryError.Backup>(error)
-        assertIs<SettingsChangeBackupError.InsufficientPermissions>(error.error)
+        assertIs<CommonUserRepositoryError.InsufficientPermissions>(error.error)
     }
 
     @Test
@@ -572,7 +572,7 @@ class SettingsRepositoryImplTest {
         assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
         val error = result.error
         assertIs<ChangeLanguageRepositoryError.Backup>(error)
-        assertIs<SettingsChangeBackupError.ChangeBackupTimeout>(error.error)
+        assertIs<CommonUserRepositoryError.UnknownStatus.ServiceTimeout>(error.error)
     }
 
     @Test
@@ -609,7 +609,7 @@ class SettingsRepositoryImplTest {
         assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
         val error = result.error
         assertIs<ChangeLanguageRepositoryError.Backup>(error)
-        assertIs<SettingsChangeBackupError.ChangeNotBackedUp.NetworkNotAvailable>(error.error)
+        assertIs<CommonUserRepositoryError.Failed.NetworkNotAvailable>(error.error)
     }
 
     @Test
@@ -646,7 +646,7 @@ class SettingsRepositoryImplTest {
         assertIs<Failure<*, ChangeLanguageRepositoryError>>(result)
         val error = result.error
         assertIs<ChangeLanguageRepositoryError.Backup>(error)
-        assertIs<SettingsChangeBackupError.ChangeNotBackedUp.UnknownError>(error.error)
+        assertIs<CommonUserRepositoryError.Failed.UnknownServiceError>(error.error)
     }
 
     @Test
@@ -867,7 +867,7 @@ class SettingsRepositoryImplTest {
         val result = repositoryWithError.syncLocalToRemote(identity, settingsToSync)
 
         assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
-        assertIs<SyncLocalToRemoteRepositoryError.Failed.ServiceDown>(result.error)
+        assertIs<CommonUserRepositoryError.Failed.ServiceDown>(result.error)
     }
 
     @Test
@@ -913,7 +913,7 @@ class SettingsRepositoryImplTest {
 
         assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
         val error = result.error
-        assertIs<SyncLocalToRemoteRepositoryError.Failed.Cooldown>(error)
+        assertIs<CommonUserRepositoryError.Failed.Cooldown>(error)
         assertEquals(cooldown, error.remaining)
     }
 
@@ -956,7 +956,7 @@ class SettingsRepositoryImplTest {
         val result = repositoryWithAuthError.syncLocalToRemote(identity, settingsToSync)
 
         assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
-        assertIs<SyncLocalToRemoteRepositoryError.Unauthenticated>(result.error)
+        assertIs<CommonUserRepositoryError.Unauthenticated>(result.error)
     }
 
     @Test
@@ -1000,7 +1000,7 @@ class SettingsRepositoryImplTest {
         val result = repositoryWithTimeout.syncLocalToRemote(identity, settingsToSync)
 
         assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
-        assertIs<SyncLocalToRemoteRepositoryError.StatusUnknown.ServiceTimeout>(result.error)
+        assertIs<CommonUserRepositoryError.UnknownStatus.ServiceTimeout>(result.error)
     }
 
     @Test
@@ -1042,7 +1042,7 @@ class SettingsRepositoryImplTest {
         val result = repositoryWithPermissionError.syncLocalToRemote(identity, settingsToSync)
 
         assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
-        assertIs<SyncLocalToRemoteRepositoryError.InsufficientPermissions>(result.error)
+        assertIs<CommonUserRepositoryError.InsufficientPermissions>(result.error)
     }
 
     @Test
@@ -1086,7 +1086,7 @@ class SettingsRepositoryImplTest {
         val result = repositoryWithNetworkError.syncLocalToRemote(identity, settingsToSync)
 
         assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
-        assertIs<SyncLocalToRemoteRepositoryError.Failed.NetworkNotAvailable>(result.error)
+        assertIs<CommonUserRepositoryError.Failed.NetworkNotAvailable>(result.error)
     }
 
     @Test
@@ -1130,7 +1130,7 @@ class SettingsRepositoryImplTest {
         val result = repositoryWithUnknownError.syncLocalToRemote(identity, settingsToSync)
 
         assertIs<Failure<*, SyncLocalToRemoteRepositoryError>>(result)
-        assertIs<SyncLocalToRemoteRepositoryError.Failed.UnknownError>(result.error)
+        assertIs<CommonUserRepositoryError.Failed.UnknownServiceError>(result.error)
     }
 
     @Test

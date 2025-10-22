@@ -21,16 +21,16 @@ class UserSettingsDataStoreManagerFake(private val context: Context) :
     }
 
     fun setReadError(userId: UserId, enabled: Boolean = true) {
-        getOrCreateFake(userId).readError = enabled
+        getOrPut(userId).readError = enabled
     }
 
     fun setWriteError(userId: UserId, enabled: Boolean = true) {
-        getOrCreateFake(userId).writeError = enabled
+        getOrPut(userId).writeError = enabled
     }
 
-    private fun getOrCreateFake(userId: UserId): DataStoreFake = dataStores.getOrPut(userId) {
+    private fun getOrPut(userId: UserId): DataStoreFake = dataStores.getOrPut(userId) {
         DataStoreFake(dataStore = realManager.getDataStore(userId))
     }
 
-    override fun getDataStore(userId: UserId): DataStore<Preferences> = getOrCreateFake(userId)
+    override fun getDataStore(userId: UserId): DataStore<Preferences> = getOrPut(userId)
 }

@@ -1,64 +1,44 @@
 package timur.gilfanov.messenger.data.source.local
 
 import kotlinx.coroutines.flow.Flow
-import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Settings
+import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
  * Local data source for user settings data.
  *
- * Provides access to locally cached settings. Acts as the single source
- * of truth for settings data in the app, with updates synchronized from
- * remote data source.
+ * Provides Room-based access to individual setting entities with sync metadata.
+ * The repository layer handles mapping between domain Settings and data SettingEntity.
  */
 interface LocalSettingsDataSource {
     /**
-     * Observes settings changes for a specific user.
-     *
-     * @param userId The unique identifier of the user to observe
-     * @return Flow emitting settings updates or errors
-     */
-    fun observe(userId: UserId): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>>
-
-    /**
-     * Updates settings using a transformation function.
-     *
-     * Atomically reads the current settings, applies the transformation,
-     * and writes the result back to local storage.
+     * Observes all settings entities for a specific user.
      *
      * @param userId The unique identifier of the user
-     * @param transform Function transforming the current settings to new settings
-     * @return Success or failure with [UpdateSettingsLocalDataSourceError]
+     * @return Flow emitting list of setting entities
      */
-    suspend fun update(
-        userId: UserId,
-        transform: (Settings) -> Settings,
-    ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError>
+    fun observeSettingEntities(userId: UserId): Flow<List<SettingEntity>>
 
     /**
-     * Stores settings for a user.
-     *
-     * Creates new settings entry in local storage. Typically used when restoring
-     * settings from remote or initializing settings for the first time.
+     * Retrieves a specific setting entity.
      *
      * @param userId The unique identifier of the user
-     * @param settings The settings to insert
-     * @return Success or failure with [InsertSettingsLocalDataSourceError]
+     * @param key The setting key
+     * @return Setting entity or null if not found
      */
-    suspend fun put(
-        userId: UserId,
-        settings: Settings,
-    ): ResultWithError<Unit, InsertSettingsLocalDataSourceError>
+    suspend fun getSetting(userId: UserId, key: String): SettingEntity?
 
     /**
-     * Resets settings to default values.
+     * Updates or inserts a setting entity.
      *
-     * Replaces current settings with default values. Used as a fallback when
-     * settings cannot be restored from remote or are corrupted.
-     *
-     * @param userId The unique identifier of the user
-     * @return Success or failure with [ResetSettingsLocalDataSourceError]
+     * @param entity The setting entity to update
      */
-    suspend fun reset(userId: UserId): ResultWithError<Unit, ResetSettingsLocalDataSourceError>
+    suspend fun updateSetting(entity: SettingEntity)
+
+    /**
+     * Retrieves all settings that need synchronization.
+     *
+     * @return List of setting entities where localVersion > syncedVersion
+     */
+    suspend fun getUnsyncedSettings(): List<SettingEntity>
 }

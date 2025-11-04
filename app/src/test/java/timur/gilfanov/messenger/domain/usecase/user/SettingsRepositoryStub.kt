@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
+import timur.gilfanov.messenger.domain.entity.user.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
@@ -30,6 +31,10 @@ class SettingsRepositoryStub(
     override fun observeSettings(
         identity: Identity,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> = settingsFlow
+
+    override fun observeConflicts(): Flow<SettingsConflictEvent> {
+        error("Not implemented for this test")
+    }
 
     override suspend fun changeUiLanguage(
         identity: Identity,

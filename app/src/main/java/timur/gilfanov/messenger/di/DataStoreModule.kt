@@ -10,8 +10,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsDataStoreManager
-import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsDataStoreManagerImpl
 
 /**
  * Hilt module that provides DataStore-related dependencies.
@@ -32,10 +30,4 @@ object DataStoreModule {
     @Singleton
     fun provideSyncDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
         context.syncDataStore
-
-    @Provides
-    @Singleton
-    fun provideUserSettingsDataStoreManager(
-        @ApplicationContext context: Context,
-    ): UserSettingsDataStoreManager = UserSettingsDataStoreManagerImpl(context)
 }

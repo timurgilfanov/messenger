@@ -106,4 +106,26 @@ class RemoteSettingsDataSourceFake(
         }
         return ResultWithError.Success(Unit)
     }
+
+    private var syncBehavior: (SettingSyncRequest) -> SyncResult = { request ->
+        SyncResult.Success(newVersion = request.clientVersion + 1)
+    }
+
+    override suspend fun syncSingleSetting(request: SettingSyncRequest): SyncResult =
+        syncBehavior(request)
+
+    override suspend fun syncBatch(requests: List<SettingSyncRequest>): Map<String, SyncResult> =
+        requests.associate { request ->
+            request.key to syncBehavior(request)
+        }
+
+    fun setSyncBehavior(behavior: (SettingSyncRequest) -> SyncResult) {
+        syncBehavior = behavior
+    }
+
+    fun resetSyncBehavior() {
+        syncBehavior = { request ->
+            SyncResult.Success(newVersion = request.clientVersion + 1)
+        }
+    }
 }

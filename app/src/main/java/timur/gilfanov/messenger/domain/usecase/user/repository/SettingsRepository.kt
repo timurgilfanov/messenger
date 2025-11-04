@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
+import timur.gilfanov.messenger.domain.entity.user.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 
 /**
@@ -22,6 +23,16 @@ interface SettingsRepository {
     fun observeSettings(
         identity: Identity,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>>
+
+    /**
+     * Observes settings conflicts that occur during synchronization.
+     *
+     * Conflicts are emitted when a local change is overridden by a more recent
+     * change from another device during the sync process.
+     *
+     * @return Flow emitting conflict events
+     */
+    fun observeConflicts(): Flow<SettingsConflictEvent>
 
     /**
      * Changes user's UI language preference.

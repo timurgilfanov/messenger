@@ -4,6 +4,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
  * Remote data source for user settings data.
@@ -43,4 +44,42 @@ interface RemoteSettingsDataSource {
         identity: Identity,
         settings: Settings,
     ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError>
+
+    /**
+     * Synchronizes a single setting with the remote server using Last Write Wins.
+     *
+     * @param request The sync request containing setting data and version information
+     * @return Sync result indicating success, conflict, or error
+     */
+    suspend fun syncSingleSetting(request: SettingSyncRequest): SyncResult
+
+    /**
+     * Synchronizes multiple settings in a batch request.
+     *
+     * @param requests List of sync requests for different settings
+     * @return Map of setting keys to their sync results
+     */
+    suspend fun syncBatch(requests: List<SettingSyncRequest>): Map<String, SyncResult>
+}
+
+data class SettingSyncRequest(
+    val userId: UserId,
+    val key: String,
+    val value: String,
+    val clientVersion: Int,
+    val lastKnownServerVersion: Int,
+    val modifiedAt: Long,
+)
+
+sealed class SyncResult {
+    data class Success(val newVersion: Int) : SyncResult()
+
+    data class Conflict(
+        val serverValue: String,
+        val serverVersion: Int,
+        val newVersion: Int,
+        val serverModifiedAt: Long,
+    ) : SyncResult()
+
+    data class Error(val message: String) : SyncResult()
 }

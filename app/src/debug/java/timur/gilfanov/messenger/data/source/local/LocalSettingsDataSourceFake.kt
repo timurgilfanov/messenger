@@ -1,79 +1,39 @@
 package timur.gilfanov.messenger.data.source.local
 
-import kotlin.time.Clock
-import kotlin.time.Instant
-import kotlinx.collections.immutable.PersistentMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
-class LocalSettingsDataSourceFake(initialSettings: PersistentMap<UserId, Settings>) :
-    LocalSettingsDataSource {
+class LocalSettingsDataSourceFake : LocalSettingsDataSource {
 
-    companion object {
-        private const val DEFAULT_LAST_MODIFICATION_TIMESTAMP = 1000L
-    }
+    private val settings = MutableStateFlow<Map<Pair<String, String>, SettingEntity>>(emptyMap())
 
-    private val defaultSettings = Settings(
-        metadata = SettingsMetadata(
-            isDefault = true,
-            lastModifiedAt = Instant.fromEpochMilliseconds(DEFAULT_LAST_MODIFICATION_TIMESTAMP),
-            lastSyncedAt = null,
-        ),
-        uiLanguage = UiLanguage.English,
-    )
-
-    private val settings = MutableStateFlow(initialSettings)
-
-    override fun observe(
-        userId: UserId,
-    ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> = settings.map {
-        val settings = it[userId]
-        if (settings == null) {
-            ResultWithError.Failure(GetSettingsLocalDataSourceError.SettingsNotFound)
-        } else {
-            ResultWithError.Success(settings)
+    override fun observeSettingEntities(userId: UserId): Flow<List<SettingEntity>> {
+        val userIdString = userId.id.toString()
+        return settings.map { map ->
+            map.values.filter { it.userId == userIdString }
         }
     }
 
-    override suspend fun update(
-        userId: UserId,
-        transform: (Settings) -> Settings,
-    ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> {
-        settings.update {
-            val userSettings = it[userId] ?: return ResultWithError.Failure(
-                UpdateSettingsLocalDataSourceError.SettingsNotFound,
-            )
-            val transformedSettings = transform(userSettings)
-            val newSettings = transformedSettings.copy(
-                metadata = SettingsMetadata(
-                    isDefault = userSettings.metadata.isDefault,
-                    lastModifiedAt = Clock.System.now(),
-                    lastSyncedAt = userSettings.metadata.lastSyncedAt,
-                ),
-            )
-            it.put(userId, newSettings)
-        }
-        return ResultWithError.Success(Unit)
+    override suspend fun getSetting(userId: UserId, key: String): SettingEntity? {
+        val userIdString = userId.id.toString()
+        return settings.value[Pair(userIdString, key)]
     }
 
-    override suspend fun put(
-        userId: UserId,
-        settings: Settings,
-    ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> {
-        this.settings.update {
-            it.put(userId, settings)
+    override suspend fun updateSetting(entity: SettingEntity) {
+        settings.update { map ->
+            map + (Pair(entity.userId, entity.key) to entity)
         }
-        return ResultWithError.Success(Unit)
     }
 
-    override suspend fun reset(
-        userId: UserId,
-    ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> = put(userId, defaultSettings)
+    override suspend fun getUnsyncedSettings(): List<SettingEntity> = settings.value.values.filter {
+        it.localVersion > it.syncedVersion
+    }
+
+    fun clear() {
+        settings.value = emptyMap()
+    }
 }

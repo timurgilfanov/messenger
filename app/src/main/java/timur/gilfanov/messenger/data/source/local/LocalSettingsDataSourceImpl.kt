@@ -1,229 +1,43 @@
 package timur.gilfanov.messenger.data.source.local
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import java.io.IOException
 import javax.inject.Inject
-import kotlin.time.Clock
-import kotlin.time.Instant
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import timur.gilfanov.messenger.data.source.errorReason
-import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsDataStoreManager
-import timur.gilfanov.messenger.data.source.local.datastore.UserSettingsPreferences
-import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
-import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
-import timur.gilfanov.messenger.domain.entity.bimap
-import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
-import timur.gilfanov.messenger.domain.entity.user.SettingsState
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDao
+import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.user.UserId
-import timur.gilfanov.messenger.util.Logger
 
-class LocalSettingsDataSourceImpl @Inject constructor(
-    private val dataStoreManager: UserSettingsDataStoreManager,
-    private val logger: Logger,
-) : LocalSettingsDataSource {
+class LocalSettingsDataSourceImpl @Inject constructor(private val settingsDao: SettingsDao) :
+    LocalSettingsDataSource {
+
+    override fun observeSettingEntities(userId: UserId): Flow<List<SettingEntity>> =
+        settingsDao.observeAllByUser(userId.id.toString())
+
+    override suspend fun getSetting(userId: UserId, key: String): SettingEntity? =
+        settingsDao.get(userId.id.toString(), key)
+
+    override suspend fun updateSetting(entity: SettingEntity) {
+        val existing = settingsDao.get(entity.userId, entity.key)
+        if (existing == null) {
+            settingsDao.insert(entity)
+        } else {
+            settingsDao.update(entity)
+        }
+    }
+
+    override suspend fun getUnsyncedSettings(): List<SettingEntity> = settingsDao.getUnsynced()
 
     companion object {
-        private const val TAG = "LocalSettingsDataSource"
-    }
-
-    private val emptySettings =
-        Settings(uiLanguage = UiLanguage.English, metadata = SettingsMetadata.EMPTY)
-
-    override fun observe(
-        userId: UserId,
-    ): Flow<ResultWithError<Settings, GetSettingsLocalDataSourceError>> =
-        dataStoreManager.getDataStore(userId).data
-            .map { pref ->
-                pref.toSettings().foldWithErrorMapping(
-                    onSuccess = { settings ->
-                        if (settings.metadata.state == SettingsState.EMPTY) {
-                            Failure(GetSettingsLocalDataSourceError.SettingsNotFound)
-                        } else {
-                            Success(settings)
-                        }
-                    },
-                    onFailure = { GetSettingsLocalDataSourceError.LocalDataSource(it) },
-                )
-            }
-            .catch { exception ->
-                logger.e(TAG, "Error observing settings for user $userId", exception)
-                emit(
-                    Failure(
-                        GetSettingsLocalDataSourceError.LocalDataSource(
-                            when (exception) {
-                                is IOException -> LocalDataSourceErrorV2.ReadError(
-                                    exception.errorReason,
-                                )
-
-                                else -> throw exception
-                            },
-                        ),
-                    ),
-                )
-            }
-
-    override suspend fun update(
-        userId: UserId,
-        transform: (Settings) -> Settings,
-    ): ResultWithError<Unit, UpdateSettingsLocalDataSourceError> {
-        val dataStore = dataStoreManager.getDataStore(userId)
-        return dataStore.get().foldWithErrorMapping(
-            onSuccess = { settings ->
-                if (settings.metadata.state == SettingsState.EMPTY) {
-                    return@foldWithErrorMapping Failure(
-                        UpdateSettingsLocalDataSourceError.SettingsNotFound,
-                    )
-                }
-
-                val transformedSettings = try {
-                    transform(settings)
-                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-                    logger.e(TAG, "Settings transformation failed", e)
-                    return@foldWithErrorMapping Failure(
-                        UpdateSettingsLocalDataSourceError.TransformError(e.errorReason),
-                    )
-                }
-                val newSettings = transformedSettings.copy(
-                    metadata = transformedSettings.metadata.copy(
-                        isDefault = false,
-                        lastModifiedAt = Clock.System.now(),
-                    ),
-                )
-                dataStore.put(newSettings).bimap(
-                    onSuccess = { },
-                    onFailure = { error ->
-                        UpdateSettingsLocalDataSourceError.UpdateSettingsLocalDataSource(error)
-                    },
-                )
-            },
-            onFailure = { error ->
-                UpdateSettingsLocalDataSourceError.GetSettingsLocalDataSource(error)
-            },
-        )
-    }
-
-    override suspend fun put(
-        userId: UserId,
-        settings: Settings,
-    ): ResultWithError<Unit, InsertSettingsLocalDataSourceError> {
-        val dataStore = dataStoreManager.getDataStore(userId)
-        val settingsWithMetadata = settings.copy(
-            metadata = settings.metadata.copy(
-                isDefault = false,
-                lastModifiedAt = Clock.System.now(),
-            ),
-        )
-        return dataStore.put(settingsWithMetadata)
-    }
-
-    override suspend fun reset(
-        userId: UserId,
-    ): ResultWithError<Unit, ResetSettingsLocalDataSourceError> {
-        val dataStore = dataStoreManager.getDataStore(userId)
-        val settingsWithMetadata = emptySettings.copy(
-            metadata = SettingsMetadata(
-                isDefault = true,
-                lastModifiedAt = Clock.System.now(),
-                lastSyncedAt = null,
-            ),
-        )
-        return dataStore.put(settingsWithMetadata)
-    }
-
-    private suspend fun DataStore<Preferences>.get(): ResultWithError<
-        Settings,
-        LocalDataSourceReadError,
-        > {
-        val preferences = try {
-            data.first()
-        } catch (exception: IOException) {
-            logger.e(TAG, "Storage read failed", exception)
-            return Failure(LocalDataSourceErrorV2.ReadError(exception.errorReason))
-        }
-        return preferences.toSettings()
-    }
-
-    private fun Preferences.toSettings(): ResultWithError<
-        Settings,
-        LocalDataSourceErrorV2.DeserializationError,
-        > =
-        try {
-            val uiLanguage = this[UserSettingsPreferences.UI_LANGUAGE]
-                ?.let { parseUiLanguage(it) }
-                ?: emptySettings.uiLanguage
-
-            val isDefault = this[UserSettingsPreferences.METADATA_DEFAULT]
-                ?: emptySettings.metadata.isDefault
-
-            val lastModifiedAt = this[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT]
-                ?.let { Instant.fromEpochMilliseconds(it) }
-                ?: emptySettings.metadata.lastModifiedAt
-
-            val lastSyncedAt = this[UserSettingsPreferences.METADATA_LAST_SYNCED_AT]
-                ?.let { Instant.fromEpochMilliseconds(it) }
-                ?: emptySettings.metadata.lastSyncedAt
-
-            Success(
-                Settings(
-                    uiLanguage = uiLanguage,
-                    metadata = SettingsMetadata(
-                        isDefault = isDefault,
-                        lastModifiedAt = lastModifiedAt,
-                        lastSyncedAt = lastSyncedAt,
-                    ),
-                ),
+        fun createDefaultEntity(userId: UserId, key: String, defaultValue: String): SettingEntity =
+            SettingEntity(
+                userId = userId.id.toString(),
+                key = key,
+                value = defaultValue,
+                localVersion = 0,
+                syncedVersion = 0,
+                serverVersion = 0,
+                modifiedAt = System.currentTimeMillis(),
+                syncStatus = SyncStatus.PENDING,
             )
-        } catch (
-            @Suppress("TooGenericExceptionCaught") exception: Exception,
-        ) {
-            logger.e(TAG, "Settings deserialization failed", exception)
-            Failure(LocalDataSourceErrorV2.DeserializationError(exception.errorReason))
-        }
-
-    private suspend fun DataStore<Preferences>.put(
-        settings: Settings,
-    ): ResultWithError<Unit, LocalDataSourceWriteError> = try {
-        this.edit { prefs ->
-            prefs[UserSettingsPreferences.UI_LANGUAGE] = serializeUiLanguage(settings.uiLanguage)
-            prefs[UserSettingsPreferences.METADATA_DEFAULT] = settings.metadata.isDefault
-            prefs[UserSettingsPreferences.METADATA_LAST_MODIFIED_AT] =
-                settings.metadata.lastModifiedAt.toEpochMilliseconds()
-            settings.metadata.lastSyncedAt?.let { syncedAt ->
-                prefs[UserSettingsPreferences.METADATA_LAST_SYNCED_AT] =
-                    syncedAt.toEpochMilliseconds()
-            } ?: prefs.remove(UserSettingsPreferences.METADATA_LAST_SYNCED_AT)
-        }
-        Success(Unit)
-    } catch (exception: IOException) {
-        logger.e(TAG, "Update settings failed", exception)
-        Failure(LocalDataSourceErrorV2.WriteError(exception.errorReason))
-    } catch (e: CancellationException) {
-        throw e
-    } catch (
-        @Suppress("TooGenericExceptionCaught") exception: Exception,
-    ) {
-        logger.e(TAG, "Settings transformation failed", exception)
-        Failure(LocalDataSourceErrorV2.SerializationError(exception.errorReason))
-    }
-
-    private fun parseUiLanguage(value: String): UiLanguage = when (value) {
-        "en" -> UiLanguage.English
-        "de" -> UiLanguage.German
-        else -> UiLanguage.English
-    }
-
-    private fun serializeUiLanguage(language: UiLanguage): String = when (language) {
-        UiLanguage.English -> "en"
-        UiLanguage.German -> "de"
     }
 }

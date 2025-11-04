@@ -13,6 +13,8 @@ import timur.gilfanov.messenger.data.source.local.LocalChatDataSource
 import timur.gilfanov.messenger.data.source.local.LocalChatDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalMessageDataSource
 import timur.gilfanov.messenger.data.source.local.LocalMessageDataSourceImpl
+import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
+import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalSyncDataSource
 import timur.gilfanov.messenger.data.source.local.LocalSyncDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSource
@@ -58,6 +60,12 @@ abstract class DataSourceModule {
     abstract fun bindLocalSyncDataSource(
         localSyncDataSourceImpl: LocalSyncDataSourceImpl,
     ): LocalSyncDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindLocalSettingsDataSource(
+        localSettingsDataSourceImpl: LocalSettingsDataSourceImpl,
+    ): LocalSettingsDataSource
 
     // Real remote data source bindings
     @Binds

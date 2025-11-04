@@ -116,10 +116,11 @@ class SettingsRepositoryImplTest {
         assertIs<ResultWithError.Success<Unit, *>>(result)
 
         val savedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertEquals("German", savedEntity?.value)
-        assertEquals(1, savedEntity?.localVersion)
-        assertEquals(0, savedEntity?.syncedVersion)
-        assertEquals(SyncStatus.PENDING, savedEntity?.syncStatus)
+        assertIs<ResultWithError.Success<SettingEntity, *>>(savedEntity)
+        assertEquals("German", savedEntity.data.value)
+        assertEquals(1, savedEntity.data.localVersion)
+        assertEquals(0, savedEntity.data.syncedVersion)
+        assertEquals(SyncStatus.PENDING, savedEntity.data.syncStatus)
     }
 
     @Test
@@ -141,10 +142,11 @@ class SettingsRepositoryImplTest {
         assertIs<ResultWithError.Success<Unit, *>>(result)
 
         val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertEquals("German", updatedEntity?.value)
-        assertEquals(2, updatedEntity?.localVersion)
-        assertEquals(1, updatedEntity?.syncedVersion)
-        assertEquals(SyncStatus.PENDING, updatedEntity?.syncStatus)
+        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
+        assertEquals("German", updatedEntity.data.value)
+        assertEquals(2, updatedEntity.data.localVersion)
+        assertEquals(1, updatedEntity.data.syncedVersion)
+        assertEquals(SyncStatus.PENDING, updatedEntity.data.syncStatus)
     }
 
     @Test
@@ -187,9 +189,10 @@ class SettingsRepositoryImplTest {
         assertEquals(SyncOutcome.Success, outcome)
 
         val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertEquals(2, updatedEntity?.syncedVersion)
-        assertEquals(2, updatedEntity?.serverVersion)
-        assertEquals(SyncStatus.SYNCED, updatedEntity?.syncStatus)
+        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
+        assertEquals(2, updatedEntity.data.syncedVersion)
+        assertEquals(2, updatedEntity.data.serverVersion)
+        assertEquals(SyncStatus.SYNCED, updatedEntity.data.syncStatus)
     }
 
     @Test
@@ -220,11 +223,12 @@ class SettingsRepositoryImplTest {
         assertEquals(SyncOutcome.Success, outcome)
 
         val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertEquals("German", updatedEntity?.value)
-        assertEquals(2, updatedEntity?.localVersion)
-        assertEquals(2, updatedEntity?.syncedVersion)
-        assertEquals(3, updatedEntity?.serverVersion)
-        assertEquals(SyncStatus.SYNCED, updatedEntity?.syncStatus)
+        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
+        assertEquals("German", updatedEntity.data.value)
+        assertEquals(2, updatedEntity.data.localVersion)
+        assertEquals(2, updatedEntity.data.syncedVersion)
+        assertEquals(3, updatedEntity.data.serverVersion)
+        assertEquals(SyncStatus.SYNCED, updatedEntity.data.syncStatus)
     }
 
     @Test
@@ -262,12 +266,13 @@ class SettingsRepositoryImplTest {
             assertEquals(Instant.fromEpochMilliseconds(3000L), conflict.conflictedAt)
 
             val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-            assertEquals("English", updatedEntity?.value)
-            assertEquals(3, updatedEntity?.localVersion)
-            assertEquals(3, updatedEntity?.syncedVersion)
-            assertEquals(3, updatedEntity?.serverVersion)
-            assertEquals(3000L, updatedEntity?.modifiedAt)
-            assertEquals(SyncStatus.SYNCED, updatedEntity?.syncStatus)
+            assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
+            assertEquals("English", updatedEntity.data.value)
+            assertEquals(3, updatedEntity.data.localVersion)
+            assertEquals(3, updatedEntity.data.syncedVersion)
+            assertEquals(3, updatedEntity.data.serverVersion)
+            assertEquals(3000L, updatedEntity.data.modifiedAt)
+            assertEquals(SyncStatus.SYNCED, updatedEntity.data.syncStatus)
         }
     }
 
@@ -292,7 +297,8 @@ class SettingsRepositoryImplTest {
         assertEquals(SyncOutcome.Retry, outcome)
 
         val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertEquals(SyncStatus.FAILED, updatedEntity?.syncStatus)
+        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
+        assertEquals(SyncStatus.FAILED, updatedEntity.data.syncStatus)
     }
 
     @Test
@@ -336,12 +342,14 @@ class SettingsRepositoryImplTest {
         assertEquals(SyncOutcome.Success, outcome)
 
         val updatedEntity1 = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertEquals(2, updatedEntity1?.syncedVersion)
-        assertEquals(SyncStatus.SYNCED, updatedEntity1?.syncStatus)
+        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity1)
+        assertEquals(2, updatedEntity1.data.syncedVersion)
+        assertEquals(SyncStatus.SYNCED, updatedEntity1.data.syncStatus)
 
         val updatedEntity2 = localDataSource.getSetting(testUserId, SettingKey.THEME.key)
-        assertEquals(1, updatedEntity2?.syncedVersion)
-        assertEquals(SyncStatus.SYNCED, updatedEntity2?.syncStatus)
+        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity2)
+        assertEquals(1, updatedEntity2.data.syncedVersion)
+        assertEquals(SyncStatus.SYNCED, updatedEntity2.data.syncStatus)
     }
 
     @Test
@@ -382,10 +390,12 @@ class SettingsRepositoryImplTest {
         assertEquals(SyncOutcome.Retry, outcome)
 
         val updatedEntity1 = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertEquals(SyncStatus.SYNCED, updatedEntity1?.syncStatus)
+        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity1)
+        assertEquals(SyncStatus.SYNCED, updatedEntity1.data.syncStatus)
 
         val updatedEntity2 = localDataSource.getSetting(testUserId, SettingKey.THEME.key)
-        assertEquals(SyncStatus.FAILED, updatedEntity2?.syncStatus)
+        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity2)
+        assertEquals(SyncStatus.FAILED, updatedEntity2.data.syncStatus)
     }
 
     @Test

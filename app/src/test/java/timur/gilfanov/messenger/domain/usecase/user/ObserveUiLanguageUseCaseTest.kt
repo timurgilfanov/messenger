@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.user.DeviceId
@@ -159,36 +158,6 @@ class ObserveUiLanguageUseCaseTest {
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
             assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(result.error)
             assertIs<GetSettingsRepositoryError.SettingsEmpty>(result.error.error)
-            awaitComplete()
-        }
-    }
-
-    @Test
-    fun `emits repository error when settings conflict`() = runTest {
-        val localSettings = Settings(UiLanguage.English, testMetadata)
-        val remoteSettings = Settings(UiLanguage.German, testMetadata)
-        val settingsFlow = flow<ResultWithError<Settings, GetSettingsRepositoryError>> {
-            emit(
-                Failure(
-                    GetSettingsRepositoryError.SettingsConflict(
-                        localSettings,
-                        remoteSettings,
-                    ),
-                ),
-            )
-        }
-        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
-        val settingsRepository = SettingsRepositoryStub(settingsFlow)
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
-
-        useCase().test {
-            val result = awaitItem()
-            assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(result.error)
-            val conflict = result.error.error
-            assertIs<GetSettingsRepositoryError.SettingsConflict>(conflict)
-            assertEquals(localSettings, conflict.localSettings)
-            assertEquals(remoteSettings, conflict.remoteSettings)
             awaitComplete()
         }
     }

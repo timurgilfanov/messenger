@@ -1,5 +1,9 @@
+@file:Suppress("ForbiddenComment")
+
 package timur.gilfanov.messenger.data.repository
 
+import android.database.sqlite.SQLiteDatabaseCorruptException
+import android.database.sqlite.SQLiteFullException
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
@@ -15,7 +19,9 @@ import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import timur.gilfanov.messenger.data.source.local.GetSettingError
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
@@ -39,6 +45,7 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsReposi
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
 
+// TODO: Perform recovery for empty settings from local data source
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
     private val localDataSource: LocalSettingsDataSource,
@@ -46,6 +53,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private val workManager: WorkManager,
 ) : SettingsRepository {
 
+    // TODO: Why we need extra buffer capacity?
     private val conflictEvents = MutableSharedFlow<SettingsConflictEvent>(
         extraBufferCapacity = CONFLICT_EVENT_BUFFER_CAPACITY,
     )
@@ -62,11 +70,19 @@ class SettingsRepositoryImpl @Inject constructor(
         identity: Identity,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
         localDataSource.observeSettingEntities(identity.userId)
-            .map { entities ->
+            .map<
+                List<SettingEntity>,
+                ResultWithError<Settings, GetSettingsRepositoryError>,
+                > { entities ->
+                // TODO: Should mapping be done in data layer?
                 val settings = mapEntitiesToDomain(entities)
                 ResultWithError.Success(settings)
             }
+            .catch { exception ->
+                emit(ResultWithError.Failure(mapToPermanentError(exception)))
+            }
 
+    @Suppress("ReturnCount")
     override suspend fun changeUiLanguage(
         identity: Identity,
         language: UiLanguage,
@@ -74,12 +90,21 @@ class SettingsRepositoryImpl @Inject constructor(
         val userId = identity.userId
         val key = SettingKey.UI_LANGUAGE.key
 
-        val entity = localDataSource.getSetting(userId, key)
-            ?: LocalSettingsDataSourceImpl.createDefaultEntity(
-                userId = userId,
-                key = key,
-                defaultValue = UiLanguage.English::class.simpleName ?: "English",
-            )
+        val entity = when (val result = localDataSource.getSetting(userId, key)) {
+            is ResultWithError.Success -> result.data
+            is ResultWithError.Failure -> {
+                when (result.error) {
+                    GetSettingError.SettingNotFound ->
+                        LocalSettingsDataSourceImpl.createDefaultEntity(
+                            userId = userId,
+                            key = key,
+                            defaultValue = UiLanguage.English::class.simpleName ?: "English",
+                        )
+                    // TODO: Why StorageUnavailable is success?
+                    else -> return ResultWithError.Success(Unit)
+                }
+            }
+        }
 
         val newValue = when (language) {
             is UiLanguage.English -> "English"
@@ -93,10 +118,14 @@ class SettingsRepositoryImpl @Inject constructor(
             syncStatus = SyncStatus.PENDING,
         )
 
-        localDataSource.updateSetting(updated)
-        scheduleWorkManagerSync(userId, key)
+        when (localDataSource.updateSetting(updated)) {
+            is ResultWithError.Success -> {
+                scheduleWorkManagerSync(userId, key)
+                return ResultWithError.Success(Unit)
+            }
 
-        return ResultWithError.Success(Unit)
+            is ResultWithError.Failure -> return ResultWithError.Success(Unit)
+        }
     }
 
     override suspend fun applyRemoteSettings(
@@ -138,9 +167,12 @@ class SettingsRepositoryImpl @Inject constructor(
         )
     }
 
-    @Suppress("LongMethod", "ReturnCount")
+    @Suppress("LongMethod", "ReturnCount", "ComplexMethod", "NestedBlockDepth")
     suspend fun syncSetting(userId: UserId, key: String): SyncOutcome {
-        val entity = localDataSource.getSetting(userId, key) ?: return SyncOutcome.Failure
+        val entity = when (val result = localDataSource.getSetting(userId, key)) {
+            is ResultWithError.Success -> result.data
+            is ResultWithError.Failure -> return SyncOutcome.Failure
+        }
 
         if (entity.localVersion == entity.syncedVersion) {
             return SyncOutcome.Success
@@ -157,18 +189,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
         return when (val result = remoteDataSource.syncSingleSetting(request)) {
             is SyncResult.Success -> {
-                localDataSource.updateSetting(
-                    entity.copy(
-                        syncedVersion = entity.localVersion,
-                        serverVersion = result.newVersion,
-                        syncStatus = SyncStatus.SYNCED,
-                    ),
-                )
-                SyncOutcome.Success
-            }
-
-            is SyncResult.Conflict -> {
-                if (entity.modifiedAt >= result.serverModifiedAt) {
+                when (
                     localDataSource.updateSetting(
                         entity.copy(
                             syncedVersion = entity.localVersion,
@@ -176,47 +197,87 @@ class SettingsRepositoryImpl @Inject constructor(
                             syncStatus = SyncStatus.SYNCED,
                         ),
                     )
-                } else {
-                    localDataSource.updateSetting(
-                        entity.copy(
-                            value = result.serverValue,
-                            localVersion = result.newVersion,
-                            syncedVersion = result.newVersion,
-                            serverVersion = result.newVersion,
-                            modifiedAt = result.serverModifiedAt,
-                            syncStatus = SyncStatus.SYNCED,
-                        ),
-                    )
+                ) {
+                    is ResultWithError.Success -> SyncOutcome.Success
+                    is ResultWithError.Failure -> SyncOutcome.Retry
+                }
+            }
 
-                    val settingKey = SettingKey.fromKey(key)
-                    if (settingKey != null) {
-                        conflictEvents.emit(
-                            SettingsConflictEvent(
-                                settingKey = settingKey,
-                                yourValue = entity.value,
-                                acceptedValue = result.serverValue,
-                                conflictedAt = Instant.fromEpochMilliseconds(
-                                    result.serverModifiedAt,
-                                ),
+            is SyncResult.Conflict -> {
+                if (entity.modifiedAt >= result.serverModifiedAt) {
+                    when (
+                        localDataSource.updateSetting(
+                            entity.copy(
+                                syncedVersion = entity.localVersion,
+                                serverVersion = result.newVersion,
+                                syncStatus = SyncStatus.SYNCED,
                             ),
                         )
+                    ) {
+                        is ResultWithError.Success -> SyncOutcome.Success
+                        is ResultWithError.Failure -> SyncOutcome.Retry
+                    }
+                } else {
+                    when (
+                        localDataSource.updateSetting(
+                            entity.copy(
+                                value = result.serverValue,
+                                localVersion = result.newVersion,
+                                syncedVersion = result.newVersion,
+                                serverVersion = result.newVersion,
+                                modifiedAt = result.serverModifiedAt,
+                                syncStatus = SyncStatus.SYNCED,
+                            ),
+                        )
+                    ) {
+                        is ResultWithError.Success -> {
+                            val settingKey = SettingKey.fromKey(key)
+                            if (settingKey != null) {
+                                conflictEvents.emit(
+                                    SettingsConflictEvent(
+                                        settingKey = settingKey,
+                                        yourValue = entity.value,
+                                        acceptedValue = result.serverValue,
+                                        conflictedAt = Instant.fromEpochMilliseconds(
+                                            result.serverModifiedAt,
+                                        ),
+                                    ),
+                                )
+                            }
+                            SyncOutcome.Success
+                        }
+
+                        is ResultWithError.Failure -> SyncOutcome.Retry
                     }
                 }
-                SyncOutcome.Success
             }
 
             is SyncResult.Error -> {
-                localDataSource.updateSetting(
-                    entity.copy(syncStatus = SyncStatus.FAILED),
-                )
-                SyncOutcome.Retry
+                when (
+                    localDataSource.updateSetting(
+                        entity.copy(syncStatus = SyncStatus.FAILED),
+                    )
+                ) {
+                    is ResultWithError.Success -> SyncOutcome.Retry
+                    is ResultWithError.Failure -> SyncOutcome.Retry
+                }
             }
         }
     }
 
-    @Suppress("LongMethod", "NestedBlockDepth", "TooGenericExceptionCaught", "SwallowedException")
+    @Suppress(
+        "LongMethod",
+        "NestedBlockDepth",
+        "TooGenericExceptionCaught",
+        "SwallowedException",
+        "ReturnCount",
+        "CyclomaticComplexMethod",
+    )
     suspend fun syncAllPendingSettings(): SyncOutcome {
-        val unsyncedSettings = localDataSource.getUnsyncedSettings()
+        val unsyncedSettings = when (val result = localDataSource.getUnsyncedSettings()) {
+            is ResultWithError.Success -> result.data
+            is ResultWithError.Failure -> return SyncOutcome.Retry
+        }
 
         if (unsyncedSettings.isEmpty()) {
             return SyncOutcome.Success
@@ -242,17 +303,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
                 when (result) {
                     is SyncResult.Success -> {
-                        localDataSource.updateSetting(
-                            entity.copy(
-                                syncedVersion = entity.localVersion,
-                                serverVersion = result.newVersion,
-                                syncStatus = SyncStatus.SYNCED,
-                            ),
-                        )
-                    }
-
-                    is SyncResult.Conflict -> {
-                        if (entity.modifiedAt >= result.serverModifiedAt) {
+                        when (
                             localDataSource.updateSetting(
                                 entity.copy(
                                     syncedVersion = entity.localVersion,
@@ -260,38 +311,69 @@ class SettingsRepositoryImpl @Inject constructor(
                                     syncStatus = SyncStatus.SYNCED,
                                 ),
                             )
-                        } else {
-                            localDataSource.updateSetting(
-                                entity.copy(
-                                    value = result.serverValue,
-                                    localVersion = result.newVersion,
-                                    syncedVersion = result.newVersion,
-                                    serverVersion = result.newVersion,
-                                    modifiedAt = result.serverModifiedAt,
-                                    syncStatus = SyncStatus.SYNCED,
-                                ),
-                            )
+                        ) {
+                            is ResultWithError.Success -> Unit
+                            is ResultWithError.Failure -> hasFailures = true
+                        }
+                    }
 
-                            val settingKey = SettingKey.fromKey(key)
-                            if (settingKey != null) {
-                                conflictEvents.emit(
-                                    SettingsConflictEvent(
-                                        settingKey = settingKey,
-                                        yourValue = entity.value,
-                                        acceptedValue = result.serverValue,
-                                        conflictedAt = Instant.fromEpochMilliseconds(
-                                            result.serverModifiedAt,
-                                        ),
+                    is SyncResult.Conflict -> {
+                        if (entity.modifiedAt >= result.serverModifiedAt) {
+                            when (
+                                localDataSource.updateSetting(
+                                    entity.copy(
+                                        syncedVersion = entity.localVersion,
+                                        serverVersion = result.newVersion,
+                                        syncStatus = SyncStatus.SYNCED,
                                     ),
                                 )
+                            ) {
+                                is ResultWithError.Success -> Unit
+                                is ResultWithError.Failure -> hasFailures = true
+                            }
+                        } else {
+                            when (
+                                localDataSource.updateSetting(
+                                    entity.copy(
+                                        value = result.serverValue,
+                                        localVersion = result.newVersion,
+                                        syncedVersion = result.newVersion,
+                                        serverVersion = result.newVersion,
+                                        modifiedAt = result.serverModifiedAt,
+                                        syncStatus = SyncStatus.SYNCED,
+                                    ),
+                                )
+                            ) {
+                                is ResultWithError.Success -> {
+                                    val settingKey = SettingKey.fromKey(key)
+                                    if (settingKey != null) {
+                                        conflictEvents.emit(
+                                            SettingsConflictEvent(
+                                                settingKey = settingKey,
+                                                yourValue = entity.value,
+                                                acceptedValue = result.serverValue,
+                                                conflictedAt = Instant.fromEpochMilliseconds(
+                                                    result.serverModifiedAt,
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                }
+
+                                is ResultWithError.Failure -> hasFailures = true
                             }
                         }
                     }
 
                     is SyncResult.Error -> {
-                        localDataSource.updateSetting(
-                            entity.copy(syncStatus = SyncStatus.FAILED),
-                        )
+                        when (
+                            localDataSource.updateSetting(
+                                entity.copy(syncStatus = SyncStatus.FAILED),
+                            )
+                        ) {
+                            is ResultWithError.Success -> Unit
+                            is ResultWithError.Failure -> Unit
+                        }
                         hasFailures = true
                     }
                 }
@@ -329,4 +411,14 @@ class SettingsRepositoryImpl @Inject constructor(
             metadata = metadata,
         )
     }
+
+    private fun mapToPermanentError(exception: Throwable): GetSettingsRepositoryError =
+        when (exception) {
+            is SQLiteFullException -> GetSettingsRepositoryError.Recoverable.InsufficientStorage
+            is SQLiteDatabaseCorruptException,
+            is IllegalStateException,
+            -> GetSettingsRepositoryError.Recoverable.DataCorruption
+            // TODO: Why data corruption?
+            else -> GetSettingsRepositoryError.Recoverable.DataCorruption
+        }
 }

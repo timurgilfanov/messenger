@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.data.source.local
 
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
@@ -14,6 +15,9 @@ interface LocalSettingsDataSource {
     /**
      * Observes all settings entities for a specific user.
      *
+     * Handles transient errors internally with retry logic. Permanent errors propagate
+     * to repository layer for error mapping.
+     *
      * @param userId The unique identifier of the user
      * @return Flow emitting list of setting entities
      */
@@ -24,21 +28,29 @@ interface LocalSettingsDataSource {
      *
      * @param userId The unique identifier of the user
      * @param key The setting key
-     * @return Setting entity or null if not found
+     * @return Success with setting entity, or failure with SettingNotFound if not exists,
+     *         or failure with infrastructure error
      */
-    suspend fun getSetting(userId: UserId, key: String): SettingEntity?
+    suspend fun getSetting(
+        userId: UserId,
+        key: String,
+    ): ResultWithError<SettingEntity, GetSettingError>
 
     /**
      * Updates or inserts a setting entity.
      *
      * @param entity The setting entity to update
+     * @return Success or failure with error
      */
-    suspend fun updateSetting(entity: SettingEntity)
+    suspend fun updateSetting(entity: SettingEntity): ResultWithError<Unit, UpdateSettingError>
 
     /**
      * Retrieves all settings that need synchronization.
      *
-     * @return List of setting entities where localVersion > syncedVersion
+     * @return Success with list of setting entities or failure with error
      */
-    suspend fun getUnsyncedSettings(): List<SettingEntity>
+    suspend fun getUnsyncedSettings(): ResultWithError<
+        List<SettingEntity>,
+        GetUnsyncedSettingsError,
+        >
 }

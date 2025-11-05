@@ -2,8 +2,12 @@
 
 package timur.gilfanov.messenger.data.repository
 
+import android.database.sqlite.SQLiteAccessPermException
 import android.database.sqlite.SQLiteDatabaseCorruptException
+import android.database.sqlite.SQLiteDatabaseLockedException
+import android.database.sqlite.SQLiteDiskIOException
 import android.database.sqlite.SQLiteFullException
+import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
@@ -23,7 +27,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.GetSettingError
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
-import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceImpl
+import timur.gilfanov.messenger.data.source.local.UpdateSettingError
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
@@ -44,13 +48,16 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRep
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
+import timur.gilfanov.messenger.util.Logger
 
 // TODO: Perform recovery for empty settings from local data source
+@Suppress("TooManyFunctions")
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
     private val localDataSource: LocalSettingsDataSource,
     private val remoteDataSource: RemoteSettingsDataSource,
     private val workManager: WorkManager,
+    private val logger: Logger,
 ) : SettingsRepository {
 
     // TODO: Why we need extra buffer capacity?
@@ -59,6 +66,7 @@ class SettingsRepositoryImpl @Inject constructor(
     )
 
     companion object {
+        private const val TAG = "SettingsRepository"
         private const val CONFLICT_EVENT_BUFFER_CAPACITY = 10
         private const val DEBOUNCE_DELAY_MS = 500L
         private const val BACKOFF_DELAY_SECONDS = 15L
@@ -70,19 +78,57 @@ class SettingsRepositoryImpl @Inject constructor(
         identity: Identity,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
         localDataSource.observeSettingEntities(identity.userId)
-            .map<
-                List<SettingEntity>,
-                ResultWithError<Settings, GetSettingsRepositoryError>,
-                > { entities ->
-                // TODO: Should mapping be done in data layer?
-                val settings = mapEntitiesToDomain(entities)
-                ResultWithError.Success(settings)
+            .map { entities ->
+                if (entities.isEmpty()) {
+                    recoverSettings(identity)
+                } else {
+                    // TODO: Should mapping be done in data layer?
+                    val settings = mapEntitiesToDomain(entities)
+                    ResultWithError.Success(settings)
+                }
             }
             .catch { exception ->
-                emit(ResultWithError.Failure(mapToPermanentError(exception)))
+                val error = when (exception) {
+                    is SQLiteFullException -> {
+                        logger.e(TAG, "Insufficient storage while observing settings", exception)
+                        GetSettingsRepositoryError.Recoverable.InsufficientStorage
+                    }
+
+                    is SQLiteDatabaseCorruptException -> {
+                        logger.e(TAG, "Database corruption while observing settings", exception)
+                        GetSettingsRepositoryError.Recoverable.DataCorruption
+                    }
+
+                    is SQLiteAccessPermException -> {
+                        logger.e(TAG, "Access denied while observing settings", exception)
+                        GetSettingsRepositoryError.Recoverable.AccessDenied
+                    }
+
+                    is SQLiteReadOnlyDatabaseException -> {
+                        logger.e(TAG, "Read-only database while observing settings", exception)
+                        GetSettingsRepositoryError.Recoverable.ReadOnly
+                    }
+
+                    is SQLiteDatabaseLockedException,
+                    is SQLiteDiskIOException,
+                    -> {
+                        logger.e(
+                            TAG,
+                            "Transient error while observing settings after retries",
+                            exception,
+                        )
+                        GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable
+                    }
+
+                    else -> {
+                        logger.e(TAG, "Unknown error while observing settings", exception)
+                        GetSettingsRepositoryError.Unknown
+                    }
+                }
+                emit(ResultWithError.Failure(error))
             }
 
-    @Suppress("ReturnCount")
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "ReturnCount")
     override suspend fun changeUiLanguage(
         identity: Identity,
         language: UiLanguage,
@@ -90,18 +136,38 @@ class SettingsRepositoryImpl @Inject constructor(
         val userId = identity.userId
         val key = SettingKey.UI_LANGUAGE.key
 
+        // TODO add setting transformation function in local data source
         val entity = when (val result = localDataSource.getSetting(userId, key)) {
             is ResultWithError.Success -> result.data
             is ResultWithError.Failure -> {
                 when (result.error) {
                     GetSettingError.SettingNotFound ->
-                        LocalSettingsDataSourceImpl.createDefaultEntity(
+                        // TODO Check all settings are empty. Recover if they are.
+                        createDefaultEntity(
                             userId = userId,
                             key = key,
-                            defaultValue = UiLanguage.English::class.simpleName ?: "English",
+                            defaultValue = UiLanguage.English.toString(),
                         )
-                    // TODO: Why StorageUnavailable is success?
-                    else -> return ResultWithError.Success(Unit)
+
+                    GetSettingError.ConcurrentModificationError,
+                    GetSettingError.DiskIOError,
+                    is GetSettingError.UnknownError,
+                    -> return ResultWithError.Failure(
+                        ChangeLanguageRepositoryError.Transient,
+                    )
+
+                    GetSettingError.DatabaseCorrupted -> return ResultWithError.Failure(
+                        ChangeLanguageRepositoryError.Transient,
+                    )
+
+                    GetSettingError.AccessDenied ->
+                        return ResultWithError.Failure(
+                            ChangeLanguageRepositoryError.Transient,
+                        )
+
+                    GetSettingError.ReadOnlyDatabase -> return ResultWithError.Failure(
+                        ChangeLanguageRepositoryError.Transient,
+                    )
                 }
             }
         }
@@ -114,25 +180,45 @@ class SettingsRepositoryImpl @Inject constructor(
         val updated = entity.copy(
             value = newValue,
             localVersion = entity.localVersion + 1,
-            modifiedAt = System.currentTimeMillis(),
+            modifiedAt = System.currentTimeMillis(), // TODO Why not kotlin.time?
             syncStatus = SyncStatus.PENDING,
         )
 
-        when (localDataSource.updateSetting(updated)) {
+        return when (val updateResult = localDataSource.updateSetting(updated)) {
             is ResultWithError.Success -> {
                 scheduleWorkManagerSync(userId, key)
-                return ResultWithError.Success(Unit)
+                ResultWithError.Success(Unit)
             }
 
-            is ResultWithError.Failure -> return ResultWithError.Success(Unit)
+            is ResultWithError.Failure -> when (updateResult.error) {
+                UpdateSettingError.ConcurrentModificationError,
+                UpdateSettingError.DiskIOError,
+                is UpdateSettingError.UnknownError,
+                -> ResultWithError.Failure(
+                    ChangeLanguageRepositoryError.Transient,
+                )
+
+                UpdateSettingError.StorageFull -> ResultWithError.Failure(
+                    ChangeLanguageRepositoryError.InsufficientStorage,
+                )
+
+                UpdateSettingError.DatabaseCorrupted,
+                UpdateSettingError.AccessDenied,
+                UpdateSettingError.ReadOnlyDatabase,
+                -> ResultWithError.Failure(
+                    ChangeLanguageRepositoryError.Transient,
+                )
+            }
         }
     }
 
+    // TODO Do we need this?
     override suspend fun applyRemoteSettings(
         identity: Identity,
         settings: Settings,
     ): ResultWithError<Unit, ApplyRemoteSettingsRepositoryError> = ResultWithError.Success(Unit)
 
+    // TODO Do we need this?
     override suspend fun syncLocalToRemote(
         identity: Identity,
         settings: Settings,
@@ -412,13 +498,79 @@ class SettingsRepositoryImpl @Inject constructor(
         )
     }
 
-    private fun mapToPermanentError(exception: Throwable): GetSettingsRepositoryError =
-        when (exception) {
-            is SQLiteFullException -> GetSettingsRepositoryError.Recoverable.InsufficientStorage
-            is SQLiteDatabaseCorruptException,
-            is IllegalStateException,
-            -> GetSettingsRepositoryError.Recoverable.DataCorruption
-            // TODO: Why data corruption?
-            else -> GetSettingsRepositoryError.Recoverable.DataCorruption
+    private suspend fun recoverSettings(
+        identity: Identity,
+    ): ResultWithError<Settings, GetSettingsRepositoryError> =
+        when (val result = remoteDataSource.get(identity)) {
+            is ResultWithError.Success -> {
+                val entities = convertSettingsToEntities(identity.userId, result.data)
+                entities.forEach { entity ->
+                    when (localDataSource.updateSetting(entity)) {
+                        is ResultWithError.Failure ->
+                            return ResultWithError.Failure(GetSettingsRepositoryError.SettingsEmpty)
+
+                        is ResultWithError.Success -> Unit
+                    }
+                }
+                ResultWithError.Success(result.data)
+            }
+
+            is ResultWithError.Failure -> createDefaultSettings(identity.userId)
         }
+
+    private suspend fun createDefaultSettings(
+        userId: UserId,
+    ): ResultWithError<Settings, GetSettingsRepositoryError> {
+        val defaultEntity = createDefaultEntity(
+            userId = userId,
+            key = SettingKey.UI_LANGUAGE.key,
+            defaultValue = UiLanguage.English::class.simpleName ?: "English",
+        )
+        return when (localDataSource.updateSetting(defaultEntity)) {
+            is ResultWithError.Success -> {
+                ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
+            }
+
+            is ResultWithError.Failure ->
+                ResultWithError.Failure(GetSettingsRepositoryError.SettingsEmpty)
+        }
+    }
+
+    private fun convertSettingsToEntities(
+        userId: UserId,
+        settings: Settings,
+    ): List<SettingEntity> {
+        val userIdString = userId.id.toString()
+        val timestamp = System.currentTimeMillis()
+
+        val uiLanguageValue = when (settings.uiLanguage) {
+            is UiLanguage.English -> "English"
+            is UiLanguage.German -> "German"
+        }
+
+        return listOf(
+            SettingEntity(
+                userId = userIdString,
+                key = SettingKey.UI_LANGUAGE.key,
+                value = uiLanguageValue,
+                localVersion = 1,
+                syncedVersion = 1,
+                serverVersion = 1,
+                modifiedAt = timestamp,
+                syncStatus = SyncStatus.SYNCED,
+            ),
+        )
+    }
 }
+
+private fun createDefaultEntity(userId: UserId, key: String, defaultValue: String): SettingEntity =
+    SettingEntity(
+        userId = userId.id.toString(),
+        key = key,
+        value = defaultValue,
+        localVersion = 0,
+        syncedVersion = 0,
+        serverVersion = 0,
+        modifiedAt = System.currentTimeMillis(),
+        syncStatus = SyncStatus.PENDING,
+    )

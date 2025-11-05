@@ -42,14 +42,14 @@ class ChangeUiLanguageUseCaseTest {
     fun `when repository failed then use case failed`() = runTest {
         val settingsRepository = SettingsRepositoryStub(
             changeLanguage = Failure(
-                ChangeLanguageRepositoryError.LanguageNotChanged(transient = false),
+                ChangeLanguageRepositoryError.Transient,
             ),
         )
         val useCase = ChangeUiLanguageUseCase(identityRepository, settingsRepository)
         val result = useCase(UiLanguage.English)
         assertIs<Failure<*, ChangeUiLanguageError>>(result)
         assertIs<ChangeUiLanguageError.ChangeLanguageRepository>(result.error)
-        assertIs<ChangeLanguageRepositoryError.LanguageNotChanged>(result.error.error)
+        assertIs<ChangeLanguageRepositoryError.Transient>(result.error.error)
     }
 
     @Test

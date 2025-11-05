@@ -1,41 +1,80 @@
 package timur.gilfanov.messenger.domain.usecase.user.repository
 
+/**
+ * Errors that can occur while retrieving user settings.
+ *
+ * Represents failures at the repository layer that prevent settings
+ * from being loaded or observed.
+ */
 sealed interface GetSettingsRepositoryError {
     /**
      * Settings were not found and were reset to default values.
+     *
+     * Occurs when settings cannot be loaded from any available source
+     * and the system automatically created default settings.
      */
     data object SettingsResetToDefaults : GetSettingsRepositoryError
 
     /**
-     * Settings could not be created or initialized.
+     * Settings could not be loaded or initialized.
      *
-     * Occurs when settings are missing and cannot be restored from any source.
+     * Represents a critical failure where settings are unavailable
+     * and defaults could not be created.
      */
     data object SettingsEmpty : GetSettingsRepositoryError
 
     /**
      * Recoverable errors that can be resolved by user action.
+     *
+     * These errors indicate specific issues that the user can address
+     * to restore settings functionality.
      */
     sealed interface Recoverable : GetSettingsRepositoryError {
         /**
-         * Insufficient storage space available.
+         * Insufficient storage space available on the device.
          *
-         * User can recover by freeing up storage space.
+         * The system cannot save or update settings due to lack of storage.
+         * User should free up storage space and try again.
          */
         data object InsufficientStorage : Recoverable
 
         /**
-         * Data corruption detected in local storage.
+         * Settings data is corrupted and cannot be read.
          *
-         * User can recover by clearing app data.
+         * The stored settings have become corrupted or unreadable.
+         * User should clear app data to rebuild settings from defaults or remote.
          */
         data object DataCorruption : Recoverable
 
         /**
-         * Settings temporarily unavailable due to transient error.
+         * Access to settings storage is denied.
          *
-         * User can recover by trying again later.
+         * The app does not have necessary permissions to access settings storage.
+         * User should verify app permissions or reinstall the app.
+         */
+        data object AccessDenied : Recoverable
+
+        /**
+         * Settings storage is read-only and cannot be modified.
+         *
+         * The system cannot save setting changes due to storage restrictions.
+         * User should check storage permissions and available space.
+         */
+        data object ReadOnly : Recoverable
+
+        /**
+         * Settings are temporarily unavailable.
+         *
+         * A transient condition is preventing access to settings.
+         * User should try again in a few moments.
          */
         data object TemporarilyUnavailable : Recoverable
     }
+
+    /**
+     * An unexpected error occurred while accessing settings.
+     *
+     * Represents errors that don't fit known failure categories.
+     */
+    data object Unknown : GetSettingsRepositoryError
 }

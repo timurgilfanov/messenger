@@ -14,6 +14,8 @@ sealed interface GetSettingError {
 }
 
 sealed interface UpdateSettingError {
+    data object SettingsNotFound : UpdateSettingError
+
     data object ConcurrentModificationError : UpdateSettingError
     data object DiskIOError : UpdateSettingError
 

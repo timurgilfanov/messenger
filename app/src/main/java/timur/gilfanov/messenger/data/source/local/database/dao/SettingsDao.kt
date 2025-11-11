@@ -8,11 +8,15 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 
 @Dao
 interface SettingsDao {
+
     @Query("SELECT * FROM settings WHERE userId = :userId")
     fun observeAllByUser(userId: String): Flow<List<SettingEntity>>
 
     @Query("SELECT * FROM settings WHERE userId = :userId AND key = :key")
     suspend fun get(userId: String, key: String): SettingEntity?
+
+    @Query("SELECT * FROM settings WHERE userId = :userId")
+    suspend fun getAll(userId: String): List<SettingEntity>
 
     @Query("SELECT * FROM settings WHERE localVersion > syncedVersion")
     suspend fun getUnsynced(): List<SettingEntity>

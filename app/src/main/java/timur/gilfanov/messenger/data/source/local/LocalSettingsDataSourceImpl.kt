@@ -7,20 +7,30 @@ import android.database.sqlite.SQLiteDiskIOException
 import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteFullException
 import android.database.sqlite.SQLiteReadOnlyDatabaseException
+import androidx.room.withTransaction
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.retryWhen
+import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDao
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
+import timur.gilfanov.messenger.domain.entity.user.SettingKey
+import timur.gilfanov.messenger.domain.entity.user.Settings
+import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
+import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
-class LocalSettingsDataSourceImpl @Inject constructor(private val settingsDao: SettingsDao) :
-    LocalSettingsDataSource {
+class LocalSettingsDataSourceImpl @Inject constructor(
+    private val database: MessengerDatabase,
+    private val settingsDao: SettingsDao,
+) : LocalSettingsDataSource {
 
     override fun observeSettingEntities(userId: UserId): Flow<List<SettingEntity>> =
         settingsDao.observeAllByUser(userId.id.toString())
@@ -86,9 +96,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(private val settingsDao: S
     }
 
     @Suppress("NestedBlockDepth", "ReturnCount")
-    override suspend fun updateSetting(
-        entity: SettingEntity,
-    ): ResultWithError<Unit, UpdateSettingError> {
+    override suspend fun update(entity: SettingEntity): ResultWithError<Unit, UpdateSettingError> {
         var attempt = 0L
         while (true) {
             try {
@@ -130,6 +138,52 @@ class LocalSettingsDataSourceImpl @Inject constructor(private val settingsDao: S
                 }
             }
         }
+    }
+
+    override suspend fun update(
+        userId: UserId,
+        transform: (Settings) -> Settings,
+    ): ResultWithError<Unit, UpdateSettingError> = try {
+        database.withTransaction {
+            val entities = settingsDao.getAll(userId = userId.id.toString())
+            if (entities.isEmpty()) {
+                return@withTransaction Failure(UpdateSettingError.SettingsNotFound)
+            }
+
+            val settings = entities.toSettings()
+            val transformedSettings = transform(settings)
+            val transformedEntities = transformedSettings.toSettingEntities(userId)
+
+            val now = System.currentTimeMillis()
+            transformedEntities.forEach { updated ->
+                val initial = entities.find { it.key == updated.key }
+                if (initial != null && updated.value != initial.value) {
+                    val modified = updated.copy(
+                        localVersion = initial.localVersion + 1,
+                        modifiedAt = now,
+                        serverVersion = initial.serverVersion,
+                        syncedVersion = initial.syncedVersion,
+                        syncStatus = SyncStatus.PENDING,
+                    )
+                    settingsDao.upsert(modified)
+                } else if (initial == null) {
+                    settingsDao.upsert(updated)
+                }
+            }
+
+            Success(Unit)
+        }
+    } catch (e: SQLiteException) {
+        val error = when (e) {
+            is SQLiteFullException -> UpdateSettingError.StorageFull
+            is SQLiteDatabaseCorruptException -> UpdateSettingError.DatabaseCorrupted
+            is SQLiteAccessPermException -> UpdateSettingError.AccessDenied
+            is SQLiteReadOnlyDatabaseException -> UpdateSettingError.ReadOnlyDatabase
+            is SQLiteDatabaseLockedException -> UpdateSettingError.ConcurrentModificationError
+            is SQLiteDiskIOException -> UpdateSettingError.DiskIOError
+            else -> UpdateSettingError.UnknownError(e)
+        }
+        Failure(error)
     }
 
     @Suppress("NestedBlockDepth", "ReturnCount")
@@ -187,4 +241,51 @@ class LocalSettingsDataSourceImpl @Inject constructor(private val settingsDao: S
         private const val INITIAL_BACKOFF_MS = 100L
         private const val MAX_BACKOFF_MS = 2000L
     }
+}
+
+private fun List<SettingEntity>.toSettings(): Settings {
+    val uiLanguageEntity = find { it.key == SettingKey.UI_LANGUAGE.key }
+    val uiLanguage = when (uiLanguageEntity?.value) {
+        "German" -> UiLanguage.German
+        else -> UiLanguage.English
+    }
+
+    val lastModifiedAt = maxOfOrNull { it.modifiedAt } ?: 0L
+    val allSynced = all { it.localVersion == it.syncedVersion }
+    val lastSyncedAt = if (allSynced && isNotEmpty()) {
+        lastModifiedAt
+    } else {
+        null
+    }
+
+    val metadata = SettingsMetadata(
+        isDefault = isEmpty(),
+        lastModifiedAt = Instant.fromEpochMilliseconds(lastModifiedAt),
+        lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },
+    )
+
+    return Settings(
+        uiLanguage = uiLanguage,
+        metadata = metadata,
+    )
+}
+
+private fun Settings.toSettingEntities(userId: UserId): List<SettingEntity> {
+    val uiLanguageValue = when (uiLanguage) {
+        UiLanguage.English -> "English"
+        UiLanguage.German -> "German"
+    }
+
+    return listOf(
+        SettingEntity(
+            userId = userId.id.toString(),
+            key = SettingKey.UI_LANGUAGE.key,
+            value = uiLanguageValue,
+            localVersion = 1,
+            syncedVersion = 0,
+            serverVersion = 0,
+            modifiedAt = System.currentTimeMillis(),
+            syncStatus = SyncStatus.PENDING,
+        ),
+    )
 }

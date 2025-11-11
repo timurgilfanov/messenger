@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.data.source.local
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
@@ -42,7 +43,24 @@ interface LocalSettingsDataSource {
      * @param entity The setting entity to update
      * @return Success or failure with error
      */
-    suspend fun updateSetting(entity: SettingEntity): ResultWithError<Unit, UpdateSettingError>
+    suspend fun update(entity: SettingEntity): ResultWithError<Unit, UpdateSettingError>
+
+    /**
+     * Atomically reads, transforms, and updates a setting entity.
+     *
+     * Provides atomic read-modify-write semantics using database transactions.
+     * The transform function receives the current setting entity and returns
+     * the updated entity. If the setting doesn't exist, returns SettingNotFound error.
+     *
+     * @param userId The unique identifier of the user
+     * @param key The setting key
+     * @param transform Function to transform the current setting entity
+     * @return Success or failure with error
+     */
+    suspend fun update(
+        userId: UserId,
+        transform: (Settings) -> Settings,
+    ): ResultWithError<Unit, UpdateSettingError>
 
     /**
      * Retrieves all settings that need synchronization.

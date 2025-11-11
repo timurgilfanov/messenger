@@ -4,7 +4,6 @@ import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.time.Instant
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -14,7 +13,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.user.DeviceId
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
@@ -27,17 +25,11 @@ class ObserveUiLanguageUseCaseTest {
         deviceId = DeviceId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001")),
     )
 
-    private val testMetadata = SettingsMetadata(
-        isDefault = false,
-        lastModifiedAt = Instant.fromEpochMilliseconds(1000),
-        lastSyncedAt = Instant.fromEpochMilliseconds(1000),
-    )
-
     @Test
     fun `emits UI language from settings`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
-            settings = Success(Settings(UiLanguage.English, testMetadata)),
+            settings = Success(Settings(UiLanguage.English)),
         )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
 
@@ -54,9 +46,9 @@ class ObserveUiLanguageUseCaseTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Success(Settings(UiLanguage.English, testMetadata)))
-                emit(Success(Settings(UiLanguage.German, testMetadata)))
-                emit(Success(Settings(UiLanguage.English, testMetadata)))
+                emit(Success(Settings(UiLanguage.English)))
+                emit(Success(Settings(UiLanguage.German)))
+                emit(Success(Settings(UiLanguage.English)))
             },
         )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
@@ -83,7 +75,7 @@ class ObserveUiLanguageUseCaseTest {
         val identityRepository = IdentityRepositoryStub(Failure(Unit))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Success(Settings(UiLanguage.English, testMetadata)))
+                emit(Success(Settings(UiLanguage.English)))
             },
         )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
@@ -106,7 +98,7 @@ class ObserveUiLanguageUseCaseTest {
         )
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Success(Settings(UiLanguage.English, testMetadata)))
+                emit(Success(Settings(UiLanguage.English)))
             },
         )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
@@ -167,9 +159,9 @@ class ObserveUiLanguageUseCaseTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Success(Settings(UiLanguage.English, testMetadata)))
+                emit(Success(Settings(UiLanguage.English)))
                 emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
-                emit(Success(Settings(UiLanguage.German, testMetadata)))
+                emit(Success(Settings(UiLanguage.German)))
             },
         )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)

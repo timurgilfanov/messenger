@@ -41,7 +41,6 @@ import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsConflictEvent
-import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.ApplyRemoteSettingsRepositoryError
@@ -535,24 +534,7 @@ class SettingsRepositoryImpl @Inject constructor(
             else -> UiLanguage.English
         }
 
-        val lastModifiedAt = entities.maxOfOrNull { it.modifiedAt } ?: 0L
-        val allSynced = entities.all { it.localVersion == it.syncedVersion }
-        val lastSyncedAt = if (allSynced && entities.isNotEmpty()) {
-            lastModifiedAt
-        } else {
-            null
-        }
-
-        val metadata = SettingsMetadata(
-            isDefault = entities.isEmpty(),
-            lastModifiedAt = Instant.fromEpochMilliseconds(lastModifiedAt),
-            lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },
-        )
-
-        return Settings(
-            uiLanguage = uiLanguage,
-            metadata = metadata,
-        )
+        return Settings(uiLanguage = uiLanguage)
     }
 
     private suspend fun recoverSettings(

@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.data.source.local
 
-import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -10,7 +9,6 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
@@ -106,24 +104,7 @@ private fun List<SettingEntity>.toSettings(): Settings {
         else -> UiLanguage.English
     }
 
-    val lastModifiedAt = maxOfOrNull { it.modifiedAt } ?: 0L
-    val allSynced = all { it.localVersion == it.syncedVersion }
-    val lastSyncedAt = if (allSynced && isNotEmpty()) {
-        lastModifiedAt
-    } else {
-        null
-    }
-
-    val metadata = SettingsMetadata(
-        isDefault = isEmpty(),
-        lastModifiedAt = Instant.fromEpochMilliseconds(lastModifiedAt),
-        lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },
-    )
-
-    return Settings(
-        uiLanguage = uiLanguage,
-        metadata = metadata,
-    )
+    return Settings(uiLanguage = uiLanguage)
 }
 
 // TODO Reuse this function from production code

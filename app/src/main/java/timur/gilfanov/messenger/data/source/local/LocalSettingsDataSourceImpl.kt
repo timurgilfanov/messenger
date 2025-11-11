@@ -10,7 +10,6 @@ import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.room.withTransaction
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.retryWhen
@@ -23,7 +22,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
@@ -250,24 +248,7 @@ private fun List<SettingEntity>.toSettings(): Settings {
         else -> UiLanguage.English
     }
 
-    val lastModifiedAt = maxOfOrNull { it.modifiedAt } ?: 0L
-    val allSynced = all { it.localVersion == it.syncedVersion }
-    val lastSyncedAt = if (allSynced && isNotEmpty()) {
-        lastModifiedAt
-    } else {
-        null
-    }
-
-    val metadata = SettingsMetadata(
-        isDefault = isEmpty(),
-        lastModifiedAt = Instant.fromEpochMilliseconds(lastModifiedAt),
-        lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },
-    )
-
-    return Settings(
-        uiLanguage = uiLanguage,
-        metadata = metadata,
-    )
+    return Settings(uiLanguage = uiLanguage)
 }
 
 private fun Settings.toSettingEntities(userId: UserId): List<SettingEntity> {

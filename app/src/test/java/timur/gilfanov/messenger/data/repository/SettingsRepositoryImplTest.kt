@@ -110,9 +110,6 @@ class SettingsRepositoryImplTest {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
             assertEquals(UiLanguage.German, result.data.uiLanguage)
-            assertEquals(false, result.data.metadata.isDefault)
-            assertEquals(Instant.fromEpochMilliseconds(1000L), result.data.metadata.lastModifiedAt)
-            assertEquals(Instant.fromEpochMilliseconds(1000L), result.data.metadata.lastSyncedAt)
         }
     }
 
@@ -410,11 +407,6 @@ class SettingsRepositoryImplTest {
     fun `applyRemoteSettings returns Success`() = runTest {
         val settings = Settings(
             uiLanguage = UiLanguage.German,
-            metadata = timur.gilfanov.messenger.domain.entity.user.SettingsMetadata(
-                isDefault = false,
-                lastModifiedAt = Instant.fromEpochMilliseconds(1000L),
-                lastSyncedAt = Instant.fromEpochMilliseconds(1000L),
-            ),
         )
 
         val result = repository.applyRemoteSettings(identity, settings)
@@ -426,11 +418,6 @@ class SettingsRepositoryImplTest {
     fun `syncLocalToRemote returns Success`() = runTest {
         val settings = Settings(
             uiLanguage = UiLanguage.German,
-            metadata = timur.gilfanov.messenger.domain.entity.user.SettingsMetadata(
-                isDefault = false,
-                lastModifiedAt = Instant.fromEpochMilliseconds(1000L),
-                lastSyncedAt = Instant.fromEpochMilliseconds(1000L),
-            ),
         )
 
         val result = repository.syncLocalToRemote(identity, settings)

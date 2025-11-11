@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.SettingsMetadata
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
@@ -50,13 +49,7 @@ class RemoteSettingsDataSourceFake(
         return if (userSettings == null) {
             ResultWithError.Failure(RemoteUserDataSourceError.Authentication.SessionRevoked)
         } else {
-            ResultWithError.Success(
-                userSettings.copy(
-                    metadata = userSettings.metadata.copy(
-                        lastSyncedAt = now,
-                    ),
-                ),
-            )
+            ResultWithError.Success(userSettings)
         }
     }
 
@@ -70,14 +63,7 @@ class RemoteSettingsDataSourceFake(
             )
             it.put(
                 identity.userId,
-                userSettings.copy(
-                    uiLanguage = language,
-                    metadata = SettingsMetadata(
-                        isDefault = false,
-                        lastModifiedAt = now,
-                        lastSyncedAt = null,
-                    ),
-                ),
+                userSettings.copy(uiLanguage = language),
             )
         }
         return ResultWithError.Success(Unit)
@@ -93,16 +79,7 @@ class RemoteSettingsDataSourceFake(
                     RemoteUserDataSourceError.Authentication.SessionRevoked,
                 )
             }
-            it.put(
-                identity.userId,
-                settings.copy(
-                    metadata = SettingsMetadata(
-                        isDefault = settings.metadata.isDefault,
-                        lastModifiedAt = now,
-                        lastSyncedAt = null,
-                    ),
-                ),
-            )
+            it.put(identity.userId, settings)
         }
         return ResultWithError.Success(Unit)
     }

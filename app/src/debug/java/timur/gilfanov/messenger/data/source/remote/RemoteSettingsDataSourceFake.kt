@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
+import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
@@ -44,13 +45,29 @@ class RemoteSettingsDataSourceFake(
 
     override suspend fun get(
         identity: Identity,
-    ): ResultWithError<Settings, RemoteUserDataSourceError> {
+    ): ResultWithError<List<RemoteSettingItem>, RemoteUserDataSourceError> {
         val userSettings = settings.value[identity.userId]
         return if (userSettings == null) {
             ResultWithError.Failure(RemoteUserDataSourceError.Authentication.SessionRevoked)
         } else {
-            ResultWithError.Success(userSettings)
+            val items = convertSettingsToItems(userSettings)
+            ResultWithError.Success(items)
         }
+    }
+
+    private fun convertSettingsToItems(settings: Settings): List<RemoteSettingItem> {
+        val uiLanguageValue = when (settings.uiLanguage) {
+            UiLanguage.English -> "English"
+            UiLanguage.German -> "German"
+        }
+
+        return listOf(
+            RemoteSettingItem(
+                key = SettingKey.UI_LANGUAGE.key,
+                value = uiLanguageValue,
+                version = 1,
+            ),
+        )
     }
 
     override suspend fun changeUiLanguage(

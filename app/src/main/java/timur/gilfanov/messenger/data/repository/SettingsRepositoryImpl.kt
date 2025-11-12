@@ -29,6 +29,7 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.UpdateSettingError
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
+import timur.gilfanov.messenger.data.source.remote.RemoteSettingItem
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.SyncResult
@@ -542,7 +543,7 @@ class SettingsRepositoryImpl @Inject constructor(
     ): ResultWithError<Settings, GetSettingsRepositoryError> =
         when (val result = remoteDataSource.get(identity)) {
             is ResultWithError.Success -> {
-                val entities = convertSettingsToEntities(identity.userId, result.data)
+                val entities = convertItemsToEntities(identity.userId, result.data)
                 entities.forEach { entity ->
                     when (localDataSource.update(entity)) {
                         is ResultWithError.Failure ->
@@ -551,7 +552,8 @@ class SettingsRepositoryImpl @Inject constructor(
                         is ResultWithError.Success -> Unit
                     }
                 }
-                ResultWithError.Success(result.data)
+                val settings = mapItemsToSettings(result.data)
+                ResultWithError.Success(settings)
             }
 
             is ResultWithError.Failure -> createDefaultSettings(identity.userId)
@@ -575,30 +577,35 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun convertSettingsToEntities(
+    private fun convertItemsToEntities(
         userId: UserId,
-        settings: Settings,
+        items: List<RemoteSettingItem>,
     ): List<SettingEntity> {
         val userIdString = userId.id.toString()
         val timestamp = System.currentTimeMillis()
 
-        val uiLanguageValue = when (settings.uiLanguage) {
-            is UiLanguage.English -> "English"
-            is UiLanguage.German -> "German"
-        }
-
-        return listOf(
+        return items.map { item ->
             SettingEntity(
                 userId = userIdString,
-                key = SettingKey.UI_LANGUAGE.key,
-                value = uiLanguageValue,
-                localVersion = 1,
-                syncedVersion = 1,
-                serverVersion = 1,
+                key = item.key,
+                value = item.value,
+                localVersion = item.version,
+                syncedVersion = item.version,
+                serverVersion = item.version,
                 modifiedAt = timestamp,
                 syncStatus = SyncStatus.SYNCED,
-            ),
-        )
+            )
+        }
+    }
+
+    private fun mapItemsToSettings(items: List<RemoteSettingItem>): Settings {
+        val uiLanguageItem = items.find { it.key == SettingKey.UI_LANGUAGE.key }
+        val uiLanguage = when (uiLanguageItem?.value) {
+            "German" -> UiLanguage.German
+            else -> UiLanguage.English
+        }
+
+        return Settings(uiLanguage = uiLanguage)
     }
 }
 

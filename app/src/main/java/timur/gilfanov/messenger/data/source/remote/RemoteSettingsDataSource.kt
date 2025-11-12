@@ -14,12 +14,14 @@ import timur.gilfanov.messenger.domain.entity.user.UserId
  */
 interface RemoteSettingsDataSource {
     /**
-     * Retrieves settings from the remote server.
+     * Retrieves settings from the remote server as individual items with versions.
      *
      * @param identity The user identity for which to retrieve settings
-     * @return Success with [Settings] or failure with [RemoteUserDataSourceError]
+     * @return Success with [List] of [RemoteSettingItem] or failure with [RemoteUserDataSourceError]
      */
-    suspend fun get(identity: Identity): ResultWithError<Settings, RemoteUserDataSourceError>
+    suspend fun get(
+        identity: Identity,
+    ): ResultWithError<List<RemoteSettingItem>, RemoteUserDataSourceError>
 
     /**
      * Changes user's UI language preference on the remote server.
@@ -61,6 +63,8 @@ interface RemoteSettingsDataSource {
      */
     suspend fun syncBatch(requests: List<SettingSyncRequest>): Map<String, SyncResult>
 }
+
+data class RemoteSettingItem(val key: String, val value: String, val version: Int)
 
 data class SettingSyncRequest(
     val userId: UserId,

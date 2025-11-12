@@ -9,19 +9,18 @@ import timur.gilfanov.messenger.domain.entity.user.UserId
 /**
  * Remote data source for user settings data.
  *
- * Provides access to settings data and operations on the backend service.
+ * Provides access to typed settings data and operations on the backend service.
  * Handles network communication for settings synchronization across devices.
+ * Encapsulates all parsing logic between network DTOs and typed RemoteSettings.
  */
 interface RemoteSettingsDataSource {
     /**
-     * Retrieves settings from the remote server as individual items with versions.
+     * Retrieves settings from the remote server as a typed RemoteSettings object.
      *
      * @param identity The user identity for which to retrieve settings
-     * @return Success with [List] of [RemoteSettingItem] or failure with [RemoteUserDataSourceError]
+     * @return Success with [RemoteSettings] or failure with [RemoteUserDataSourceError]
      */
-    suspend fun get(
-        identity: Identity,
-    ): ResultWithError<List<RemoteSettingItem>, RemoteUserDataSourceError>
+    suspend fun get(identity: Identity): ResultWithError<RemoteSettings, RemoteUserDataSourceError>
 
     /**
      * Changes user's UI language preference on the remote server.

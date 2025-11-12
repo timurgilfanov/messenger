@@ -25,11 +25,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import timur.gilfanov.messenger.data.source.local.LocalSetting
+import timur.gilfanov.messenger.data.source.local.LocalSettings
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.UpdateSettingError
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
-import timur.gilfanov.messenger.data.source.remote.RemoteSettingItem
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.SyncResult
@@ -161,14 +162,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override fun observeSettings(
         identity: Identity,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
-        localDataSource.observeSettingEntities(identity.userId)
-            .map { entities ->
-                if (entities.isEmpty()) {
+        localDataSource.observe(identity.userId)
+            .map { localSettings ->
+                if (localSettings == null) {
                     recoverSettings(identity)
                 } else {
-                    // TODO: Should mapping be done in data layer?
-                    val settings = mapEntitiesToDomain(entities)
-                    ResultWithError.Success(settings)
+                    ResultWithError.Success(localSettings.toDomain())
                 }
             }
             .catch { exception ->
@@ -220,8 +219,10 @@ class SettingsRepositoryImpl @Inject constructor(
         val userId = identity.userId
         val key = SettingKey.UI_LANGUAGE.key
 
-        return localDataSource.update(userId) { settings ->
-            settings.copy(uiLanguage = language)
+        return localDataSource.update(userId) { localSettings ->
+            localSettings.copy(
+                uiLanguage = localSettings.uiLanguage.copy(value = language),
+            )
         }.fold(
             onSuccess = {
                 scheduleWorkManagerSync(userId, key)
@@ -528,22 +529,23 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun mapEntitiesToDomain(entities: List<SettingEntity>): Settings {
-        val uiLanguageEntity = entities.find { it.key == SettingKey.UI_LANGUAGE.key }
-        val uiLanguage = when (uiLanguageEntity?.value) {
-            "German" -> UiLanguage.German
-            else -> UiLanguage.English
-        }
-
-        return Settings(uiLanguage = uiLanguage)
-    }
-
     private suspend fun recoverSettings(
         identity: Identity,
     ): ResultWithError<Settings, GetSettingsRepositoryError> =
         when (val result = remoteDataSource.get(identity)) {
             is ResultWithError.Success -> {
-                val entities = convertItemsToEntities(identity.userId, result.data)
+                val remoteSettings = result.data
+                val localSettings = LocalSettings(
+                    uiLanguage = LocalSetting(
+                        value = remoteSettings.uiLanguage.value,
+                        localVersion = remoteSettings.uiLanguage.serverVersion,
+                        syncedVersion = remoteSettings.uiLanguage.serverVersion,
+                        serverVersion = remoteSettings.uiLanguage.serverVersion,
+                        modifiedAt = System.currentTimeMillis(),
+                        syncStatus = SyncStatus.SYNCED,
+                    ),
+                )
+                val entities = localSettings.toSettingEntities(identity.userId)
                 entities.forEach { entity ->
                     when (localDataSource.update(entity)) {
                         is ResultWithError.Failure ->
@@ -552,8 +554,7 @@ class SettingsRepositoryImpl @Inject constructor(
                         is ResultWithError.Success -> Unit
                     }
                 }
-                val settings = mapItemsToSettings(result.data)
-                ResultWithError.Success(settings)
+                ResultWithError.Success(remoteSettings.toDomain())
             }
 
             is ResultWithError.Failure -> createDefaultSettings(identity.userId)
@@ -575,37 +576,6 @@ class SettingsRepositoryImpl @Inject constructor(
             is ResultWithError.Failure ->
                 ResultWithError.Failure(GetSettingsRepositoryError.SettingsEmpty)
         }
-    }
-
-    private fun convertItemsToEntities(
-        userId: UserId,
-        items: List<RemoteSettingItem>,
-    ): List<SettingEntity> {
-        val userIdString = userId.id.toString()
-        val timestamp = System.currentTimeMillis()
-
-        return items.map { item ->
-            SettingEntity(
-                userId = userIdString,
-                key = item.key,
-                value = item.value,
-                localVersion = item.version,
-                syncedVersion = item.version,
-                serverVersion = item.version,
-                modifiedAt = timestamp,
-                syncStatus = SyncStatus.SYNCED,
-            )
-        }
-    }
-
-    private fun mapItemsToSettings(items: List<RemoteSettingItem>): Settings {
-        val uiLanguageItem = items.find { it.key == SettingKey.UI_LANGUAGE.key }
-        val uiLanguage = when (uiLanguageItem?.value) {
-            "German" -> UiLanguage.German
-            else -> UiLanguage.English
-        }
-
-        return Settings(uiLanguage = uiLanguage)
     }
 }
 

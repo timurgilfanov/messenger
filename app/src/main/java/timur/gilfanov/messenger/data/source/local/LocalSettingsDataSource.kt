@@ -3,26 +3,25 @@ package timur.gilfanov.messenger.data.source.local
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
  * Local data source for user settings data.
  *
- * Provides Room-based access to individual setting entities with sync metadata.
- * The repository layer handles mapping between domain Settings and data SettingEntity.
+ * Provides Room-based access to typed settings with sync metadata.
+ * Encapsulates all mapping logic between database entities and typed LocalSettings.
  */
 interface LocalSettingsDataSource {
     /**
-     * Observes all settings entities for a specific user.
+     * Observes all settings for a specific user as a typed LocalSettings object.
      *
      * Handles transient errors internally with retry logic. Permanent errors propagate
      * to repository layer for error mapping.
      *
      * @param userId The unique identifier of the user
-     * @return Flow emitting list of setting entities
+     * @return Flow emitting typed LocalSettings, or null if settings are not initialized
      */
-    fun observeSettingEntities(userId: UserId): Flow<List<SettingEntity>>
+    fun observe(userId: UserId): Flow<LocalSettings?>
 
     /**
      * Retrieves a specific setting entity.
@@ -46,20 +45,19 @@ interface LocalSettingsDataSource {
     suspend fun update(entity: SettingEntity): ResultWithError<Unit, UpdateSettingError>
 
     /**
-     * Atomically reads, transforms, and updates a setting entity.
+     * Atomically reads, transforms, and updates settings.
      *
      * Provides atomic read-modify-write semantics using database transactions.
-     * The transform function receives the current setting entity and returns
-     * the updated entity. If the setting doesn't exist, returns SettingNotFound error.
+     * The transform function receives the current LocalSettings and returns
+     * the updated LocalSettings. If settings don't exist, returns SettingsNotFound error.
      *
      * @param userId The unique identifier of the user
-     * @param key The setting key
-     * @param transform Function to transform the current setting entity
+     * @param transform Function to transform the current LocalSettings
      * @return Success or failure with error
      */
     suspend fun update(
         userId: UserId,
-        transform: (Settings) -> Settings,
+        transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, UpdateSettingError>
 
     /**

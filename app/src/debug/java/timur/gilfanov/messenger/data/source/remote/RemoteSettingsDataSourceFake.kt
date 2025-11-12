@@ -6,6 +6,7 @@ import kotlin.time.Instant
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import timur.gilfanov.messenger.data.source.ErrorReason
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
@@ -45,13 +46,22 @@ class RemoteSettingsDataSourceFake(
 
     override suspend fun get(
         identity: Identity,
-    ): ResultWithError<List<RemoteSettingItem>, RemoteUserDataSourceError> {
+    ): ResultWithError<RemoteSettings, RemoteUserDataSourceError> {
         val userSettings = settings.value[identity.userId]
         return if (userSettings == null) {
             ResultWithError.Failure(RemoteUserDataSourceError.Authentication.SessionRevoked)
         } else {
             val items = convertSettingsToItems(userSettings)
-            ResultWithError.Success(items)
+            when (val parseResult = RemoteSettings.fromItems(items)) {
+                is ResultWithError.Success -> ResultWithError.Success(parseResult.data)
+                is ResultWithError.Failure -> ResultWithError.Failure(
+                    RemoteUserDataSourceError.RemoteDataSource(
+                        RemoteDataSourceErrorV2.UnknownServiceError(
+                            reason = ErrorReason("Failed to parse settings: ${parseResult.error}"),
+                        ),
+                    ),
+                )
+            }
         }
     }
 

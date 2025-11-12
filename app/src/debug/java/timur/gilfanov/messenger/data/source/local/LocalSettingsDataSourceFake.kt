@@ -7,19 +7,21 @@ import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 class LocalSettingsDataSourceFake : LocalSettingsDataSource {
 
     private val settings = MutableStateFlow<Map<Pair<String, String>, SettingEntity>>(emptyMap())
 
-    override fun observeSettingEntities(userId: UserId): Flow<List<SettingEntity>> {
+    override fun observe(userId: UserId): Flow<LocalSettings?> {
         val userIdString = userId.id.toString()
         return settings.map { map ->
-            map.values.filter { it.userId == userIdString }
+            val entities = map.values.filter { it.userId == userIdString }
+            if (entities.isEmpty()) {
+                null
+            } else {
+                LocalSettings.fromEntities(entities)
+            }
         }
     }
 
@@ -45,7 +47,7 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
 
     override suspend fun update(
         userId: UserId,
-        transform: (Settings) -> Settings,
+        transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, UpdateSettingError> {
         val userIdString = userId.id.toString()
         val entities = settings.value.values.filter { it.userId == userIdString }
@@ -54,9 +56,9 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
             return ResultWithError.Failure(UpdateSettingError.SettingsNotFound)
         }
 
-        val domainSettings = entities.toSettings()
-        val transformedSettings = transform(domainSettings)
-        val transformedEntities = transformedSettings.toSettingEntities(userId)
+        val localSettings = LocalSettings.fromEntities(entities)
+        val transformedLocalSettings = transform(localSettings)
+        val transformedEntities = transformedLocalSettings.toSettingEntities(userId)
 
         val now = System.currentTimeMillis()
         settings.update { map ->
@@ -95,35 +97,4 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
     fun clear() {
         settings.value = emptyMap()
     }
-}
-
-private fun List<SettingEntity>.toSettings(): Settings {
-    val uiLanguageEntity = find { it.key == SettingKey.UI_LANGUAGE.key }
-    val uiLanguage = when (uiLanguageEntity?.value) {
-        "German" -> UiLanguage.German
-        else -> UiLanguage.English
-    }
-
-    return Settings(uiLanguage = uiLanguage)
-}
-
-// TODO Reuse this function from production code
-private fun Settings.toSettingEntities(userId: UserId): List<SettingEntity> {
-    val uiLanguageValue = when (uiLanguage) {
-        UiLanguage.English -> "English"
-        UiLanguage.German -> "German"
-    }
-
-    return listOf(
-        SettingEntity(
-            userId = userId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = uiLanguageValue,
-            localVersion = 1,
-            syncedVersion = 0,
-            serverVersion = 0,
-            modifiedAt = System.currentTimeMillis(),
-            syncStatus = SyncStatus.PENDING,
-        ),
-    )
 }

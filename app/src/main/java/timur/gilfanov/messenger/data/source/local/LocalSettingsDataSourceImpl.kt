@@ -12,6 +12,7 @@ import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDao
@@ -20,9 +21,6 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 class LocalSettingsDataSourceImpl @Inject constructor(
@@ -30,7 +28,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     private val settingsDao: SettingsDao,
 ) : LocalSettingsDataSource {
 
-    override fun observeSettingEntities(userId: UserId): Flow<List<SettingEntity>> =
+    override fun observe(userId: UserId): Flow<LocalSettings?> =
         settingsDao.observeAllByUser(userId.id.toString())
             .retryWhen { cause, attempt ->
                 when {
@@ -41,6 +39,13 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                     }
 
                     else -> false
+                }
+            }
+            .map { entities ->
+                if (entities.isEmpty()) {
+                    null
+                } else {
+                    LocalSettings.fromEntities(entities)
                 }
             }
 
@@ -140,7 +145,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
 
     override suspend fun update(
         userId: UserId,
-        transform: (Settings) -> Settings,
+        transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, UpdateSettingError> = try {
         database.withTransaction {
             val entities = settingsDao.getAll(userId = userId.id.toString())
@@ -148,9 +153,9 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 return@withTransaction Failure(UpdateSettingError.SettingsNotFound)
             }
 
-            val settings = entities.toSettings()
-            val transformedSettings = transform(settings)
-            val transformedEntities = transformedSettings.toSettingEntities(userId)
+            val localSettings = LocalSettings.fromEntities(entities)
+            val transformedLocalSettings = transform(localSettings)
+            val transformedEntities = transformedLocalSettings.toSettingEntities(userId)
 
             val now = System.currentTimeMillis()
             transformedEntities.forEach { updated ->
@@ -239,34 +244,4 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         private const val INITIAL_BACKOFF_MS = 100L
         private const val MAX_BACKOFF_MS = 2000L
     }
-}
-
-private fun List<SettingEntity>.toSettings(): Settings {
-    val uiLanguageEntity = find { it.key == SettingKey.UI_LANGUAGE.key }
-    val uiLanguage = when (uiLanguageEntity?.value) {
-        "German" -> UiLanguage.German
-        else -> UiLanguage.English
-    }
-
-    return Settings(uiLanguage = uiLanguage)
-}
-
-private fun Settings.toSettingEntities(userId: UserId): List<SettingEntity> {
-    val uiLanguageValue = when (uiLanguage) {
-        UiLanguage.English -> "English"
-        UiLanguage.German -> "German"
-    }
-
-    return listOf(
-        SettingEntity(
-            userId = userId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = uiLanguageValue,
-            localVersion = 1,
-            syncedVersion = 0,
-            serverVersion = 0,
-            modifiedAt = System.currentTimeMillis(),
-            syncStatus = SyncStatus.PENDING,
-        ),
-    )
 }

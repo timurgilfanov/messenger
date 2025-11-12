@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.remote
 
+import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
@@ -21,16 +22,13 @@ data class RemoteSettings(val uiLanguage: RemoteSetting<UiLanguage>) {
                 )
             }
 
-            val uiLanguage = when (uiLanguageItem.value) {
-                "German" -> UiLanguage.German
-                "English" -> UiLanguage.English
-                else -> return ResultWithError.Failure(
+            val uiLanguage = uiLanguageItem.value.toUiLanguageOrNull()
+                ?: return ResultWithError.Failure(
                     ParseError.InvalidValue(
                         key = SettingKey.UI_LANGUAGE.key,
                         value = uiLanguageItem.value,
                     ),
                 )
-            }
 
             val remoteSettings = RemoteSettings(
                 uiLanguage = RemoteSetting(

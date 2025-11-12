@@ -10,37 +10,26 @@ import timur.gilfanov.messenger.domain.entity.user.UserId
 data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
     fun toDomain(): Settings = Settings(uiLanguage = uiLanguage.value)
 
-    fun toSettingEntities(userId: UserId): List<SettingEntity> {
-        val uiLanguageValue = when (uiLanguage.value) {
-            UiLanguage.English -> "English"
-            UiLanguage.German -> "German"
-        }
-
-        return listOf(
-            SettingEntity(
-                userId = userId.id.toString(),
-                key = SettingKey.UI_LANGUAGE.key,
-                value = uiLanguageValue,
-                localVersion = uiLanguage.localVersion,
-                syncedVersion = uiLanguage.syncedVersion,
-                serverVersion = uiLanguage.serverVersion,
-                modifiedAt = uiLanguage.modifiedAt,
-                syncStatus = uiLanguage.syncStatus,
-            ),
-        )
-    }
+    fun toSettingEntities(userId: UserId): List<SettingEntity> = listOf(
+        SettingEntity(
+            userId = userId.id.toString(),
+            key = SettingKey.UI_LANGUAGE.key,
+            value = uiLanguage.value.toStorageValue(),
+            localVersion = uiLanguage.localVersion,
+            syncedVersion = uiLanguage.syncedVersion,
+            serverVersion = uiLanguage.serverVersion,
+            modifiedAt = uiLanguage.modifiedAt,
+            syncStatus = uiLanguage.syncStatus,
+        ),
+    )
 
     companion object {
         fun fromEntities(entities: List<SettingEntity>): LocalSettings {
             val uiLanguageEntity = entities.find { it.key == SettingKey.UI_LANGUAGE.key }
 
             val uiLanguage: LocalSetting<UiLanguage> = if (uiLanguageEntity != null) {
-                val language = when (uiLanguageEntity.value) {
-                    "German" -> UiLanguage.German
-                    else -> UiLanguage.English
-                }
                 LocalSetting(
-                    value = language,
+                    value = uiLanguageEntity.value.toUiLanguageOrDefault(UiLanguage.English),
                     localVersion = uiLanguageEntity.localVersion,
                     syncedVersion = uiLanguageEntity.syncedVersion,
                     serverVersion = uiLanguageEntity.serverVersion,

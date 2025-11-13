@@ -31,6 +31,7 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.UpdateSettingError
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
+import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.SyncResult
@@ -248,6 +249,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
                                     GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable ->
                                         TODO()
+
                                     GetSettingsRepositoryError.SettingsEmpty -> TODO()
                                     GetSettingsRepositoryError.SettingsResetToDefaults -> TODO()
                                     GetSettingsRepositoryError.Unknown -> TODO()
@@ -535,26 +537,50 @@ class SettingsRepositoryImpl @Inject constructor(
         when (val result = remoteDataSource.get(identity)) {
             is ResultWithError.Success -> {
                 val remoteSettings = result.data
+                val uiLanguageSetting: LocalSetting<UiLanguage> =
+                    when (val setting = remoteSettings.uiLanguage) {
+                        is RemoteSetting.Valid -> LocalSetting(
+                            value = setting.value,
+                            localVersion = setting.serverVersion,
+                            syncedVersion = setting.serverVersion,
+                            serverVersion = setting.serverVersion,
+                            modifiedAt = System.currentTimeMillis(),
+                            syncStatus = SyncStatus.SYNCED,
+                        )
+
+                        is RemoteSetting.Missing -> LocalSetting(
+                            value = UiLanguage.English,
+                            localVersion = 1,
+                            syncedVersion = 0,
+                            serverVersion = 0,
+                            modifiedAt = System.currentTimeMillis(),
+                            syncStatus = SyncStatus.PENDING,
+                        )
+
+                        is RemoteSetting.InvalidValue -> LocalSetting(
+                            value = UiLanguage.English,
+                            localVersion = 1,
+                            syncedVersion = 0,
+                            serverVersion = setting.serverVersion,
+                            modifiedAt = System.currentTimeMillis(),
+                            syncStatus = SyncStatus.FAILED,
+                        )
+                    }
                 val localSettings = LocalSettings(
-                    uiLanguage = LocalSetting(
-                        value = remoteSettings.uiLanguage.value,
-                        localVersion = remoteSettings.uiLanguage.serverVersion,
-                        syncedVersion = remoteSettings.uiLanguage.serverVersion,
-                        serverVersion = remoteSettings.uiLanguage.serverVersion,
-                        modifiedAt = System.currentTimeMillis(),
-                        syncStatus = SyncStatus.SYNCED,
-                    ),
+                    uiLanguage = uiLanguageSetting,
                 )
                 val entities = localSettings.toSettingEntities(identity.userId)
                 entities.forEach { entity ->
                     when (localDataSource.update(entity)) {
-                        is ResultWithError.Failure ->
+                        is ResultWithError.Failure -> {
+                            // todo it's not a transaction, some settings can be updated
                             return ResultWithError.Failure(GetSettingsRepositoryError.SettingsEmpty)
+                        }
 
                         is ResultWithError.Success -> Unit
                     }
                 }
-                ResultWithError.Success(remoteSettings.toDomain())
+                ResultWithError.Success(localSettings.toDomain())
             }
 
             is ResultWithError.Failure -> createDefaultSettings(identity.userId)

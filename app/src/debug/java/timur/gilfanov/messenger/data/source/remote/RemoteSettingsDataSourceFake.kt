@@ -6,13 +6,14 @@ import kotlin.time.Instant
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import timur.gilfanov.messenger.data.source.ErrorReason
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.util.Logger
 
 const val TIME_STEP_SECONDS = 1L
 
@@ -30,6 +31,7 @@ const val TIME_STEP_SECONDS = 1L
 class RemoteSettingsDataSourceFake(
     initialSettings: PersistentMap<UserId, Settings>,
     val useRealTime: Boolean = false,
+    val logger: Logger = NoOpLogger(),
 ) : RemoteSettingsDataSource {
 
     private val settings = MutableStateFlow(initialSettings)
@@ -52,16 +54,8 @@ class RemoteSettingsDataSourceFake(
             ResultWithError.Failure(RemoteUserDataSourceError.Authentication.SessionRevoked)
         } else {
             val items = convertSettingsToItems(userSettings)
-            when (val parseResult = RemoteSettings.fromItems(items)) {
-                is ResultWithError.Success -> ResultWithError.Success(parseResult.data)
-                is ResultWithError.Failure -> ResultWithError.Failure(
-                    RemoteUserDataSourceError.RemoteDataSource(
-                        RemoteDataSourceErrorV2.UnknownServiceError(
-                            reason = ErrorReason("Failed to parse settings: ${parseResult.error}"),
-                        ),
-                    ),
-                )
-            }
+            val remoteSettings = RemoteSettings.fromItems(logger, items)
+            ResultWithError.Success(remoteSettings)
         }
     }
 

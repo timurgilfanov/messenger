@@ -31,7 +31,8 @@ object DatabaseModule {
             MessengerDatabase::class.java,
             MessengerDatabase.DATABASE_NAME,
         )
-            .fallbackToDestructiveMigration(dropAllTables = true) // todo remove before first release
+            // todo remove before first release
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 
     @Provides

@@ -168,7 +168,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.update(entity)
 
-        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
         assertEquals(SyncOutcome.Success, outcome)
     }
@@ -189,7 +189,7 @@ class SettingsRepositoryImplTest {
 
         remoteDataSource.setSyncBehavior { SyncResult.Success(newVersion = 2) }
 
-        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
         assertEquals(SyncOutcome.Success, outcome)
 
@@ -223,7 +223,7 @@ class SettingsRepositoryImplTest {
             )
         }
 
-        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
         assertEquals(SyncOutcome.Success, outcome)
 
@@ -260,7 +260,7 @@ class SettingsRepositoryImplTest {
         }
 
         repository.observeConflicts().test {
-            val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+            val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
             assertEquals(SyncOutcome.Success, outcome)
 
@@ -297,7 +297,7 @@ class SettingsRepositoryImplTest {
 
         remoteDataSource.setSyncBehavior { SyncResult.Error("Network error") }
 
-        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
         assertEquals(SyncOutcome.Retry, outcome)
 

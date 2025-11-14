@@ -31,6 +31,8 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.UpdateSettingError
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
+import timur.gilfanov.messenger.data.source.local.toStorageValue
+import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
@@ -314,8 +316,8 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     @Suppress("LongMethod", "ReturnCount", "ComplexMethod", "NestedBlockDepth")
-    suspend fun syncSetting(userId: UserId, key: String): SyncOutcome {
-        val entity = when (val result = localDataSource.getSetting(userId, key)) {
+    suspend fun syncSetting(userId: UserId, key: SettingKey): SyncOutcome {
+        val entity = when (val result = localDataSource.getSetting(userId, key.key)) {
             is ResultWithError.Success -> result.data
             is ResultWithError.Failure -> return SyncOutcome.Failure
         }
@@ -326,7 +328,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
         val request = SettingSyncRequest(
             userId = userId,
-            key = key,
+            key = key.key,
             value = entity.value,
             clientVersion = entity.localVersion,
             lastKnownServerVersion = entity.serverVersion,
@@ -364,10 +366,16 @@ class SettingsRepositoryImpl @Inject constructor(
                         is ResultWithError.Failure -> SyncOutcome.Retry
                     }
                 } else {
+                    val validatedValue = mapServerValueToLocalValue(
+                        settingKey = key,
+                        serverValue = result.serverValue,
+                        fallbackValue = entity.value,
+                    )
+
                     when (
                         localDataSource.update(
                             entity.copy(
-                                value = result.serverValue,
+                                value = validatedValue,
                                 localVersion = result.newVersion,
                                 syncedVersion = result.newVersion,
                                 serverVersion = result.newVersion,
@@ -377,19 +385,16 @@ class SettingsRepositoryImpl @Inject constructor(
                         )
                     ) {
                         is ResultWithError.Success -> {
-                            val settingKey = SettingKey.fromKey(key)
-                            if (settingKey != null) {
-                                conflictEvents.emit(
-                                    SettingsConflictEvent(
-                                        settingKey = settingKey,
-                                        yourValue = entity.value,
-                                        acceptedValue = result.serverValue,
-                                        conflictedAt = Instant.fromEpochMilliseconds(
-                                            result.serverModifiedAt,
-                                        ),
+                            conflictEvents.emit(
+                                SettingsConflictEvent(
+                                    settingKey = key,
+                                    yourValue = entity.value,
+                                    acceptedValue = validatedValue,
+                                    conflictedAt = Instant.fromEpochMilliseconds(
+                                        result.serverModifiedAt,
                                     ),
-                                )
-                            }
+                                ),
+                            )
                             SyncOutcome.Success
                         }
 
@@ -478,10 +483,22 @@ class SettingsRepositoryImpl @Inject constructor(
                                 is ResultWithError.Failure -> hasFailures = true
                             }
                         } else {
+                            val settingKey = SettingKey.fromKey(key)
+                            if (settingKey == null) {
+                                logger.w(TAG, "Unknown setting key during batch sync: $key")
+                                return@forEach
+                            }
+
+                            val validatedValue = mapServerValueToLocalValue(
+                                settingKey = settingKey,
+                                serverValue = result.serverValue,
+                                fallbackValue = entity.value,
+                            )
+
                             when (
                                 localDataSource.update(
                                     entity.copy(
-                                        value = result.serverValue,
+                                        value = validatedValue,
                                         localVersion = result.newVersion,
                                         syncedVersion = result.newVersion,
                                         serverVersion = result.newVersion,
@@ -491,19 +508,16 @@ class SettingsRepositoryImpl @Inject constructor(
                                 )
                             ) {
                                 is ResultWithError.Success -> {
-                                    val settingKey = SettingKey.fromKey(key)
-                                    if (settingKey != null) {
-                                        conflictEvents.emit(
-                                            SettingsConflictEvent(
-                                                settingKey = settingKey,
-                                                yourValue = entity.value,
-                                                acceptedValue = result.serverValue,
-                                                conflictedAt = Instant.fromEpochMilliseconds(
-                                                    result.serverModifiedAt,
-                                                ),
+                                    conflictEvents.emit(
+                                        SettingsConflictEvent(
+                                            settingKey = settingKey,
+                                            yourValue = entity.value,
+                                            acceptedValue = validatedValue,
+                                            conflictedAt = Instant.fromEpochMilliseconds(
+                                                result.serverModifiedAt,
                                             ),
-                                        )
-                                    }
+                                        ),
+                                    )
                                 }
 
                                 is ResultWithError.Failure -> hasFailures = true
@@ -559,11 +573,11 @@ class SettingsRepositoryImpl @Inject constructor(
 
                         is RemoteSetting.InvalidValue -> LocalSetting(
                             value = UiLanguage.English,
-                            localVersion = 1,
-                            syncedVersion = 0,
+                            localVersion = setting.serverVersion,
+                            syncedVersion = setting.serverVersion,
                             serverVersion = setting.serverVersion,
                             modifiedAt = System.currentTimeMillis(),
-                            syncStatus = SyncStatus.FAILED,
+                            syncStatus = SyncStatus.SYNCED,
                         )
                     }
                 val localSettings = LocalSettings(
@@ -604,6 +618,17 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 }
+
+private fun mapServerValueToLocalValue(
+    settingKey: SettingKey,
+    serverValue: String,
+    fallbackValue: String,
+): String = when (settingKey) {
+    SettingKey.UI_LANGUAGE -> serverValue.toUiLanguageOrNull()?.toStorageValue()
+    SettingKey.THEME,
+    SettingKey.NOTIFICATIONS,
+    -> error("Setting with key $settingKey validation is not implemented")
+} ?: fallbackValue
 
 private fun createDefaultEntity(userId: UserId, key: String, defaultValue: String): SettingEntity =
     SettingEntity(

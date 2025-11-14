@@ -30,7 +30,9 @@ object DatabaseModule {
             context,
             MessengerDatabase::class.java,
             MessengerDatabase.DATABASE_NAME,
-        ).build()
+        )
+            .fallbackToDestructiveMigration(dropAllTables = true) // todo remove before first release
+            .build()
 
     @Provides
     @Singleton

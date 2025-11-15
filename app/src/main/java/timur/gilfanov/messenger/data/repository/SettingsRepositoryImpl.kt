@@ -446,15 +446,30 @@ class SettingsRepositoryImpl @Inject constructor(
             )
         }
 
-        return try {
-            val results = remoteDataSource.syncBatch(requests)
+        val results = remoteDataSource.syncBatch(requests)
 
-            var hasFailures = false
-            results.forEach { (key, result) ->
-                val entity = unsyncedSettings.find { it.key == key } ?: return@forEach
+        var hasFailures = false
+        results.forEach { (key, result) ->
+            val entity = unsyncedSettings.find { it.key == key } ?: return@forEach
 
-                when (result) {
-                    is SyncResult.Success -> {
+            when (result) {
+                is SyncResult.Success -> {
+                    when (
+                        localDataSource.update(
+                            entity.copy(
+                                syncedVersion = entity.localVersion,
+                                serverVersion = result.newVersion,
+                                syncStatus = SyncStatus.SYNCED,
+                            ),
+                        )
+                    ) {
+                        is ResultWithError.Success -> Unit
+                        is ResultWithError.Failure -> hasFailures = true
+                    }
+                }
+
+                is SyncResult.Conflict -> {
+                    if (entity.modifiedAt >= result.serverModifiedAt) {
                         when (
                             localDataSource.update(
                                 entity.copy(
@@ -467,84 +482,65 @@ class SettingsRepositoryImpl @Inject constructor(
                             is ResultWithError.Success -> Unit
                             is ResultWithError.Failure -> hasFailures = true
                         }
-                    }
-
-                    is SyncResult.Conflict -> {
-                        if (entity.modifiedAt >= result.serverModifiedAt) {
-                            when (
-                                localDataSource.update(
-                                    entity.copy(
-                                        syncedVersion = entity.localVersion,
-                                        serverVersion = result.newVersion,
-                                        syncStatus = SyncStatus.SYNCED,
-                                    ),
-                                )
-                            ) {
-                                is ResultWithError.Success -> Unit
-                                is ResultWithError.Failure -> hasFailures = true
-                            }
-                        } else {
-                            val settingKey = SettingKey.fromKey(key)
-                            if (settingKey == null) {
-                                logger.w(TAG, "Unknown setting key during batch sync: $key")
-                                return@forEach
-                            }
-
-                            val validatedValue = mapServerValueToLocalValue(
-                                settingKey = settingKey,
-                                serverValue = result.serverValue,
-                                fallbackValue = entity.value,
-                            )
-
-                            when (
-                                localDataSource.update(
-                                    entity.copy(
-                                        value = validatedValue,
-                                        localVersion = result.newVersion,
-                                        syncedVersion = result.newVersion,
-                                        serverVersion = result.newVersion,
-                                        modifiedAt = result.serverModifiedAt,
-                                        syncStatus = SyncStatus.SYNCED,
-                                    ),
-                                )
-                            ) {
-                                is ResultWithError.Success -> {
-                                    conflictEvents.emit(
-                                        SettingsConflictEvent(
-                                            settingKey = settingKey,
-                                            localValue = entity.value,
-                                            serverValue = result.serverValue,
-                                            acceptedValue = validatedValue,
-                                            conflictedAt = Instant.fromEpochMilliseconds(
-                                                result.serverModifiedAt,
-                                            ),
-                                        ),
-                                    )
-                                }
-
-                                is ResultWithError.Failure -> hasFailures = true
-                            }
+                    } else {
+                        val settingKey = SettingKey.fromKey(key)
+                        if (settingKey == null) {
+                            logger.w(TAG, "Unknown setting key during batch sync: $key")
+                            return@forEach
                         }
-                    }
 
-                    is SyncResult.Error -> {
+                        val validatedValue = mapServerValueToLocalValue(
+                            settingKey = settingKey,
+                            serverValue = result.serverValue,
+                            fallbackValue = entity.value,
+                        )
+
                         when (
                             localDataSource.update(
-                                entity.copy(syncStatus = SyncStatus.FAILED),
+                                entity.copy(
+                                    value = validatedValue,
+                                    localVersion = result.newVersion,
+                                    syncedVersion = result.newVersion,
+                                    serverVersion = result.newVersion,
+                                    modifiedAt = result.serverModifiedAt,
+                                    syncStatus = SyncStatus.SYNCED,
+                                ),
                             )
                         ) {
-                            is ResultWithError.Success -> Unit
-                            is ResultWithError.Failure -> Unit
+                            is ResultWithError.Success -> {
+                                conflictEvents.emit(
+                                    SettingsConflictEvent(
+                                        settingKey = settingKey,
+                                        localValue = entity.value,
+                                        serverValue = result.serverValue,
+                                        acceptedValue = validatedValue,
+                                        conflictedAt = Instant.fromEpochMilliseconds(
+                                            result.serverModifiedAt,
+                                        ),
+                                    ),
+                                )
+                            }
+
+                            is ResultWithError.Failure -> hasFailures = true
                         }
-                        hasFailures = true
                     }
                 }
-            }
 
-            if (hasFailures) SyncOutcome.Retry else SyncOutcome.Success
-        } catch (e: Exception) {
-            SyncOutcome.Retry
+                is SyncResult.Error -> {
+                    when (
+                        localDataSource.update(
+                            entity.copy(syncStatus = SyncStatus.FAILED),
+                        )
+                    ) {
+                        is ResultWithError.Success -> Unit
+                        is ResultWithError.Failure -> Unit
+                    }
+                    hasFailures = true
+                }
+            }
         }
+
+        return if (hasFailures) SyncOutcome.Retry else SyncOutcome.Success
     }
 
     private suspend fun recoverSettings(

@@ -32,6 +32,12 @@ data class LocalSetting<T>(
     val modifiedAt: Long,
     val syncStatus: SyncStatus,
 ) {
+    init {
+        require(localVersion >= 1) {
+            "localVersion must be >= 1 (starts at 1), got: $localVersion"
+        }
+    }
+
     val isDirty: Boolean
         get() = localVersion > syncedVersion
 

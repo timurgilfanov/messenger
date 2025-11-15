@@ -42,7 +42,15 @@ interface LocalSettingsDataSource {
      * @param entity The setting entity to update
      * @return Success or failure with error
      */
-    suspend fun update(entity: SettingEntity): ResultWithError<Unit, UpdateSettingError>
+    suspend fun upsert(entity: SettingEntity): ResultWithError<Unit, UpsertSettingError>
+
+    /**
+     * Updates or inserts multiple setting entities in a single transaction.
+     *
+     * @param entities The setting entities to update
+     * @return Success or failure with error
+     */
+    suspend fun upsert(entities: List<SettingEntity>): ResultWithError<Unit, UpsertSettingError>
 
     /**
      * Atomically reads, transforms, and updates settings.
@@ -55,10 +63,10 @@ interface LocalSettingsDataSource {
      * @param transform Function to transform the current LocalSettings
      * @return Success or failure with error
      */
-    suspend fun update(
+    suspend fun upsert(
         userId: UserId,
         transform: (LocalSettings) -> LocalSettings,
-    ): ResultWithError<Unit, UpdateSettingError>
+    ): ResultWithError<Unit, UpsertSettingError>
 
     /**
      * Retrieves all settings that need synchronization.
@@ -69,12 +77,4 @@ interface LocalSettingsDataSource {
         List<SettingEntity>,
         GetUnsyncedSettingsError,
         >
-
-    /**
-     * Updates or inserts multiple setting entities in a single transaction.
-     *
-     * @param entities The setting entities to update
-     * @return Success or failure with error
-     */
-    suspend fun upsertAll(entities: List<SettingEntity>): ResultWithError<Unit, UpdateSettingError>
 }

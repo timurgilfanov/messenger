@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.LocalSetting
 import timur.gilfanov.messenger.data.source.local.LocalSettings
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
-import timur.gilfanov.messenger.data.source.local.UpdateSettingError
+import timur.gilfanov.messenger.data.source.local.UpsertSettingError
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
@@ -222,7 +222,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val userId = identity.userId
         val key = SettingKey.UI_LANGUAGE.key
 
-        return localDataSource.update(userId) { localSettings ->
+        return localDataSource.upsert(userId) { localSettings ->
             localSettings.copy(
                 uiLanguage = localSettings.uiLanguage.copy(value = language),
             )
@@ -234,7 +234,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
             onFailure = { error ->
                 when (error) {
-                    UpdateSettingError.SettingsNotFound -> {
+                    UpsertSettingError.SettingsNotFound -> {
                         recoverSettings(identity).foldWithErrorMapping(
                             onSuccess = {
                                 changeUiLanguage(identity, language)
@@ -260,14 +260,14 @@ class SettingsRepositoryImpl @Inject constructor(
                         )
                     }
 
-                    UpdateSettingError.ConcurrentModificationError -> TODO()
-                    UpdateSettingError.DiskIOError -> TODO()
-                    UpdateSettingError.DatabaseCorrupted -> TODO()
-                    UpdateSettingError.AccessDenied -> TODO()
-                    UpdateSettingError.ReadOnlyDatabase -> TODO()
-                    is UpdateSettingError.UnknownError -> TODO()
+                    UpsertSettingError.ConcurrentModificationError -> TODO()
+                    UpsertSettingError.DiskIOError -> TODO()
+                    UpsertSettingError.DatabaseCorrupted -> TODO()
+                    UpsertSettingError.AccessDenied -> TODO()
+                    UpsertSettingError.ReadOnlyDatabase -> TODO()
+                    is UpsertSettingError.UnknownError -> TODO()
 
-                    UpdateSettingError.StorageFull ->
+                    UpsertSettingError.StorageFull ->
                         ResultWithError.Failure(ChangeLanguageRepositoryError.InsufficientStorage)
                 }
             },
@@ -338,7 +338,7 @@ class SettingsRepositoryImpl @Inject constructor(
         return when (val result = remoteDataSource.syncSingleSetting(request)) {
             is SyncResult.Success -> {
                 when (
-                    localDataSource.update(
+                    localDataSource.upsert(
                         entity.copy(
                             syncedVersion = entity.localVersion,
                             serverVersion = result.newVersion,
@@ -354,7 +354,7 @@ class SettingsRepositoryImpl @Inject constructor(
             is SyncResult.Conflict -> {
                 if (entity.modifiedAt >= result.serverModifiedAt) {
                     when (
-                        localDataSource.update(
+                        localDataSource.upsert(
                             entity.copy(
                                 syncedVersion = entity.localVersion,
                                 serverVersion = result.newVersion,
@@ -373,7 +373,7 @@ class SettingsRepositoryImpl @Inject constructor(
                     )
 
                     when (
-                        localDataSource.update(
+                        localDataSource.upsert(
                             entity.copy(
                                 value = validatedValue,
                                 localVersion = result.newVersion,
@@ -406,7 +406,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
             is SyncResult.Error -> {
                 when (
-                    localDataSource.update(
+                    localDataSource.upsert(
                         entity.copy(syncStatus = SyncStatus.FAILED),
                     )
                 ) {
@@ -455,7 +455,7 @@ class SettingsRepositoryImpl @Inject constructor(
             when (result) {
                 is SyncResult.Success -> {
                     when (
-                        localDataSource.update(
+                        localDataSource.upsert(
                             entity.copy(
                                 syncedVersion = entity.localVersion,
                                 serverVersion = result.newVersion,
@@ -471,7 +471,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 is SyncResult.Conflict -> {
                     if (entity.modifiedAt >= result.serverModifiedAt) {
                         when (
-                            localDataSource.update(
+                            localDataSource.upsert(
                                 entity.copy(
                                     syncedVersion = entity.localVersion,
                                     serverVersion = result.newVersion,
@@ -496,7 +496,7 @@ class SettingsRepositoryImpl @Inject constructor(
                         )
 
                         when (
-                            localDataSource.update(
+                            localDataSource.upsert(
                                 entity.copy(
                                     value = validatedValue,
                                     localVersion = result.newVersion,
@@ -528,7 +528,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
                 is SyncResult.Error -> {
                     when (
-                        localDataSource.update(
+                        localDataSource.upsert(
                             entity.copy(syncStatus = SyncStatus.FAILED),
                         )
                     ) {
@@ -582,7 +582,7 @@ class SettingsRepositoryImpl @Inject constructor(
                     uiLanguage = uiLanguageSetting,
                 )
                 val entities = localSettings.toSettingEntities(identity.userId)
-                localDataSource.upsertAll(entities).foldWithErrorMapping(
+                localDataSource.upsert(entities).foldWithErrorMapping(
                     onSuccess = { ResultWithError.Success(localSettings.toDomain()) },
                     onFailure = { GetSettingsRepositoryError.SettingsEmpty },
                 )
@@ -599,7 +599,7 @@ class SettingsRepositoryImpl @Inject constructor(
             uiLanguage = defaultLocalSetting(UiLanguage.English, now),
         )
         val entities = defaultLocalSettings.toSettingEntities(userId)
-        return localDataSource.upsertAll(entities).fold(
+        return localDataSource.upsert(entities).fold(
             onSuccess = {
                 ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
             },

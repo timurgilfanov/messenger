@@ -13,18 +13,18 @@ sealed interface GetSettingError {
     data class UnknownError(val cause: Throwable) : GetSettingError
 }
 
-sealed interface UpdateSettingError {
-    data object SettingsNotFound : UpdateSettingError
+sealed interface UpsertSettingError {
+    data object SettingsNotFound : UpsertSettingError
 
-    data object ConcurrentModificationError : UpdateSettingError
-    data object DiskIOError : UpdateSettingError
+    data object ConcurrentModificationError : UpsertSettingError
+    data object DiskIOError : UpsertSettingError
 
-    data object StorageFull : UpdateSettingError
-    data object DatabaseCorrupted : UpdateSettingError
-    data object AccessDenied : UpdateSettingError
-    data object ReadOnlyDatabase : UpdateSettingError
+    data object StorageFull : UpsertSettingError
+    data object DatabaseCorrupted : UpsertSettingError
+    data object AccessDenied : UpsertSettingError
+    data object ReadOnlyDatabase : UpsertSettingError
 
-    data class UnknownError(val cause: Throwable) : UpdateSettingError
+    data class UnknownError(val cause: Throwable) : UpsertSettingError
 }
 
 sealed interface GetUnsyncedSettingsError {

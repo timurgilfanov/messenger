@@ -99,7 +99,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     }
 
     @Suppress("NestedBlockDepth", "ReturnCount")
-    override suspend fun update(entity: SettingEntity): ResultWithError<Unit, UpdateSettingError> {
+    override suspend fun upsert(entity: SettingEntity): ResultWithError<Unit, UpsertSettingError> {
         var attempt = 0L
         while (true) {
             try {
@@ -116,8 +116,8 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                         } else {
                             val error = when (e) {
                                 is SQLiteDatabaseLockedException ->
-                                    UpdateSettingError.ConcurrentModificationError
-                                is SQLiteDiskIOException -> UpdateSettingError.DiskIOError
+                                    UpsertSettingError.ConcurrentModificationError
+                                is SQLiteDiskIOException -> UpsertSettingError.DiskIOError
                                 else -> error("Unreachable")
                             }
                             return Failure(error)
@@ -125,32 +125,32 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                     }
 
                     is SQLiteFullException ->
-                        return Failure(UpdateSettingError.StorageFull)
+                        return Failure(UpsertSettingError.StorageFull)
 
                     is SQLiteDatabaseCorruptException ->
-                        return Failure(UpdateSettingError.DatabaseCorrupted)
+                        return Failure(UpsertSettingError.DatabaseCorrupted)
 
                     is SQLiteAccessPermException ->
-                        return Failure(UpdateSettingError.AccessDenied)
+                        return Failure(UpsertSettingError.AccessDenied)
 
                     is SQLiteReadOnlyDatabaseException ->
-                        return Failure(UpdateSettingError.ReadOnlyDatabase)
+                        return Failure(UpsertSettingError.ReadOnlyDatabase)
 
                     else ->
-                        return Failure(UpdateSettingError.UnknownError(e))
+                        return Failure(UpsertSettingError.UnknownError(e))
                 }
             }
         }
     }
 
-    override suspend fun update(
+    override suspend fun upsert(
         userId: UserId,
         transform: (LocalSettings) -> LocalSettings,
-    ): ResultWithError<Unit, UpdateSettingError> = try {
+    ): ResultWithError<Unit, UpsertSettingError> = try {
         database.withTransaction {
             val entities = settingsDao.getAll(userId = userId.id.toString())
             if (entities.isEmpty()) {
-                return@withTransaction Failure(UpdateSettingError.SettingsNotFound)
+                return@withTransaction Failure(UpsertSettingError.SettingsNotFound)
             }
 
             val localSettings = LocalSettings.fromEntities(entities)
@@ -178,31 +178,31 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         }
     } catch (e: SQLiteException) {
         val error = when (e) {
-            is SQLiteFullException -> UpdateSettingError.StorageFull
-            is SQLiteDatabaseCorruptException -> UpdateSettingError.DatabaseCorrupted
-            is SQLiteAccessPermException -> UpdateSettingError.AccessDenied
-            is SQLiteReadOnlyDatabaseException -> UpdateSettingError.ReadOnlyDatabase
-            is SQLiteDatabaseLockedException -> UpdateSettingError.ConcurrentModificationError
-            is SQLiteDiskIOException -> UpdateSettingError.DiskIOError
-            else -> UpdateSettingError.UnknownError(e)
+            is SQLiteFullException -> UpsertSettingError.StorageFull
+            is SQLiteDatabaseCorruptException -> UpsertSettingError.DatabaseCorrupted
+            is SQLiteAccessPermException -> UpsertSettingError.AccessDenied
+            is SQLiteReadOnlyDatabaseException -> UpsertSettingError.ReadOnlyDatabase
+            is SQLiteDatabaseLockedException -> UpsertSettingError.ConcurrentModificationError
+            is SQLiteDiskIOException -> UpsertSettingError.DiskIOError
+            else -> UpsertSettingError.UnknownError(e)
         }
         Failure(error)
     }
 
-    override suspend fun upsertAll(
+    override suspend fun upsert(
         entities: List<SettingEntity>,
-    ): ResultWithError<Unit, UpdateSettingError> = try {
+    ): ResultWithError<Unit, UpsertSettingError> = try {
         settingsDao.upsert(entities)
         Success(Unit)
     } catch (e: SQLiteException) {
         val error = when (e) {
-            is SQLiteFullException -> UpdateSettingError.StorageFull
-            is SQLiteDatabaseCorruptException -> UpdateSettingError.DatabaseCorrupted
-            is SQLiteAccessPermException -> UpdateSettingError.AccessDenied
-            is SQLiteReadOnlyDatabaseException -> UpdateSettingError.ReadOnlyDatabase
-            is SQLiteDatabaseLockedException -> UpdateSettingError.ConcurrentModificationError
-            is SQLiteDiskIOException -> UpdateSettingError.DiskIOError
-            else -> UpdateSettingError.UnknownError(e)
+            is SQLiteFullException -> UpsertSettingError.StorageFull
+            is SQLiteDatabaseCorruptException -> UpsertSettingError.DatabaseCorrupted
+            is SQLiteAccessPermException -> UpsertSettingError.AccessDenied
+            is SQLiteReadOnlyDatabaseException -> UpsertSettingError.ReadOnlyDatabase
+            is SQLiteDatabaseLockedException -> UpsertSettingError.ConcurrentModificationError
+            is SQLiteDiskIOException -> UpsertSettingError.DiskIOError
+            else -> UpsertSettingError.UnknownError(e)
         }
         Failure(error)
     }

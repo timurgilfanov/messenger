@@ -38,22 +38,22 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
         }
     }
 
-    override suspend fun update(entity: SettingEntity): ResultWithError<Unit, UpdateSettingError> {
+    override suspend fun upsert(entity: SettingEntity): ResultWithError<Unit, UpsertSettingError> {
         settings.update { map ->
             map + (Pair(entity.userId, entity.key) to entity)
         }
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun update(
+    override suspend fun upsert(
         userId: UserId,
         transform: (LocalSettings) -> LocalSettings,
-    ): ResultWithError<Unit, UpdateSettingError> {
+    ): ResultWithError<Unit, UpsertSettingError> {
         val userIdString = userId.id.toString()
         val entities = settings.value.values.filter { it.userId == userIdString }
 
         if (entities.isEmpty()) {
-            return ResultWithError.Failure(UpdateSettingError.SettingsNotFound)
+            return ResultWithError.Failure(UpsertSettingError.SettingsNotFound)
         }
 
         val localSettings = LocalSettings.fromEntities(entities)
@@ -94,9 +94,9 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
         return ResultWithError.Success(unsyncedSettings)
     }
 
-    override suspend fun upsertAll(
+    override suspend fun upsert(
         entities: List<SettingEntity>,
-    ): ResultWithError<Unit, UpdateSettingError> {
+    ): ResultWithError<Unit, UpsertSettingError> {
         settings.update { map ->
             var updatedMap = map
             entities.forEach { entity ->

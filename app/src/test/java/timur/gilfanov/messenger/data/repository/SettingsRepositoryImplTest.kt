@@ -104,7 +104,7 @@ class SettingsRepositoryImplTest {
             modifiedAt = 1000L,
             syncStatus = SyncStatus.SYNCED,
         )
-        localDataSource.update(entity)
+        localDataSource.upsert(entity)
 
         repository.observeSettings(identity).test {
             val result = awaitItem()
@@ -140,7 +140,7 @@ class SettingsRepositoryImplTest {
             modifiedAt = 1000L,
             syncStatus = SyncStatus.SYNCED,
         )
-        localDataSource.update(existingEntity)
+        localDataSource.upsert(existingEntity)
 
         val result = repository.changeUiLanguage(identity, UiLanguage.German)
 
@@ -166,7 +166,7 @@ class SettingsRepositoryImplTest {
             modifiedAt = 1000L,
             syncStatus = SyncStatus.SYNCED,
         )
-        localDataSource.update(entity)
+        localDataSource.upsert(entity)
 
         val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
@@ -185,7 +185,7 @@ class SettingsRepositoryImplTest {
             modifiedAt = 2000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.update(entity)
+        localDataSource.upsert(entity)
 
         remoteDataSource.setSyncBehavior { SyncResult.Success(newVersion = 2) }
 
@@ -212,7 +212,7 @@ class SettingsRepositoryImplTest {
             modifiedAt = 3000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.update(entity)
+        localDataSource.upsert(entity)
 
         remoteDataSource.setSyncBehavior {
             SyncResult.Conflict(
@@ -248,7 +248,7 @@ class SettingsRepositoryImplTest {
             modifiedAt = 1000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.update(entity)
+        localDataSource.upsert(entity)
 
         remoteDataSource.setSyncBehavior {
             SyncResult.Conflict(
@@ -293,7 +293,7 @@ class SettingsRepositoryImplTest {
             modifiedAt = 2000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.update(entity)
+        localDataSource.upsert(entity)
 
         remoteDataSource.setSyncBehavior { SyncResult.Error("Network error") }
 
@@ -335,8 +335,8 @@ class SettingsRepositoryImplTest {
             modifiedAt = 1000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.update(entity1)
-        localDataSource.update(entity2)
+        localDataSource.upsert(entity1)
+        localDataSource.upsert(entity2)
 
         remoteDataSource.setSyncBehavior { request ->
             SyncResult.Success(newVersion = request.clientVersion + 1)
@@ -379,8 +379,8 @@ class SettingsRepositoryImplTest {
             modifiedAt = 1000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.update(entity1)
-        localDataSource.update(entity2)
+        localDataSource.upsert(entity1)
+        localDataSource.upsert(entity2)
 
         remoteDataSource.setSyncBehavior { request ->
             if (request.key == SettingKey.THEME.key) {

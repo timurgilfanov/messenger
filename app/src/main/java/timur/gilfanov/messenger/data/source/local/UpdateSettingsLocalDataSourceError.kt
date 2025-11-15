@@ -5,7 +5,7 @@ import timur.gilfanov.messenger.data.source.ErrorReason
 /**
  * Errors that can occur during settings update operations.
  *
- * These errors are specific to the [LocalSettingsDataSource.update] operation,
+ * These errors are specific to the [LocalSettingsDataSource.upsert] operation,
  * which atomically reads, transforms, and writes settings.
  */
 sealed interface UpdateSettingsLocalDataSourceError {

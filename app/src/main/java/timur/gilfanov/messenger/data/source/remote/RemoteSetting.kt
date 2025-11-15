@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.data.source.remote
 
+import androidx.annotation.IntRange
+
 /**
  * Represents the result of parsing a setting from the remote server.
  *
@@ -11,7 +13,8 @@ package timur.gilfanov.messenger.data.source.remote
  * @see timur.gilfanov.messenger.data.source.local.LocalSetting for version semantics
  */
 sealed interface RemoteSetting<out T> {
-    data class Valid<T>(val value: T, val serverVersion: Int) : RemoteSetting<T> {
+    data class Valid<T>(val value: T, @param:IntRange(from = 1) val serverVersion: Int) :
+        RemoteSetting<T> {
         init {
             require(serverVersion >= 1) {
                 "serverVersion must be >= 1 (got $serverVersion). Server violated version contract."
@@ -21,7 +24,10 @@ sealed interface RemoteSetting<out T> {
 
     data object Missing : RemoteSetting<Nothing>
 
-    data class InvalidValue<T>(val rawValue: String, val serverVersion: Int) : RemoteSetting<T> {
+    data class InvalidValue<T>(
+        val rawValue: String,
+        @param:IntRange(from = 1) val serverVersion: Int,
+    ) : RemoteSetting<T> {
         init {
             require(serverVersion >= 1) {
                 "serverVersion must be >= 1 (got $serverVersion). Server violated version contract."

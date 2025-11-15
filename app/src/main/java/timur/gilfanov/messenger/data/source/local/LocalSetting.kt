@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.local
 
+import androidx.annotation.IntRange
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 
 /**
@@ -26,15 +27,21 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
  */
 data class LocalSetting<T>(
     val value: T,
-    val localVersion: Int,
-    val syncedVersion: Int,
-    val serverVersion: Int,
+    @param:IntRange(from = 1) val localVersion: Int,
+    @param:IntRange(from = 0) val syncedVersion: Int,
+    @param:IntRange(from = 0) val serverVersion: Int,
     val modifiedAt: Long,
     val syncStatus: SyncStatus,
 ) {
     init {
         require(localVersion >= 1) {
             "localVersion must be >= 1 (starts at 1), got: $localVersion"
+        }
+        require(syncedVersion >= 0) {
+            "syncedVersion must be >= 0 (0 = never synced), got: $syncedVersion"
+        }
+        require(serverVersion >= 0) {
+            "serverVersion must be >= 0 (0 = unknown/never synced), got: $serverVersion"
         }
     }
 

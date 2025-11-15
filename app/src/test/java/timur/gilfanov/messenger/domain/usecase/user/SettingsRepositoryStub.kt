@@ -40,10 +40,4 @@ class SettingsRepositoryStub(
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = changeLanguage
-
-    override suspend fun applyRemoteSettings(identity: Identity, settings: Settings): Nothing =
-        error("Not implemented for this test")
-
-    override suspend fun syncLocalToRemote(identity: Identity, settings: Settings): Nothing =
-        error("Not implemented for this test")
 }

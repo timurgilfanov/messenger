@@ -403,27 +403,5 @@ class SettingsRepositoryImplTest {
         assertEquals(SyncStatus.FAILED, updatedEntity2.data.syncStatus)
     }
 
-    @Test
-    fun `applyRemoteSettings returns Success`() = runTest {
-        val settings = Settings(
-            uiLanguage = UiLanguage.German,
-        )
-
-        val result = repository.applyRemoteSettings(identity, settings)
-
-        assertIs<ResultWithError.Success<Unit, *>>(result)
-    }
-
-    @Test
-    fun `syncLocalToRemote returns Success`() = runTest {
-        val settings = Settings(
-            uiLanguage = UiLanguage.German,
-        )
-
-        val result = repository.syncLocalToRemote(identity, settings)
-
-        assertIs<ResultWithError.Success<Unit, *>>(result)
-    }
-
     // TODO Test changing absent setting and then sync it with the remote
 }

@@ -45,28 +45,4 @@ interface SettingsRepository {
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError>
-
-    /**
-     * Applies a snapshot received from remote to the local cache.
-     *
-     * @param identity Identity whose settings should be replaced
-     * @param settings Snapshot fetched from remote storage
-     * @return Success or failure with [ApplyRemoteSettingsRepositoryError]
-     */
-    suspend fun applyRemoteSettings(
-        identity: Identity,
-        settings: Settings,
-    ): ResultWithError<Unit, ApplyRemoteSettingsRepositoryError>
-
-    /**
-     * Pushes locally modified settings to remote storage.
-     *
-     * @param identity Identity whose settings should be synced
-     * @param settings Settings payload to send to remote
-     * @return Success or failure with [SyncLocalToRemoteRepositoryError]
-     */
-    suspend fun syncLocalToRemote(
-        identity: Identity,
-        settings: Settings,
-    ): ResultWithError<Unit, SyncLocalToRemoteRepositoryError>
 }

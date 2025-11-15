@@ -48,11 +48,9 @@ import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
-import timur.gilfanov.messenger.domain.usecase.user.repository.ApplyRemoteSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
-import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 // TODO Update KDoc
@@ -273,18 +271,6 @@ class SettingsRepositoryImpl @Inject constructor(
             },
         )
     }
-
-    // TODO Do we need this?
-    override suspend fun applyRemoteSettings(
-        identity: Identity,
-        settings: Settings,
-    ): ResultWithError<Unit, ApplyRemoteSettingsRepositoryError> = ResultWithError.Success(Unit)
-
-    // TODO Do we need this?
-    override suspend fun syncLocalToRemote(
-        identity: Identity,
-        settings: Settings,
-    ): ResultWithError<Unit, SyncLocalToRemoteRepositoryError> = ResultWithError.Success(Unit)
 
     private fun scheduleWorkManagerSync(userId: UserId, key: String) {
         val userIdString = userId.id.toString()

@@ -584,17 +584,10 @@ class SettingsRepositoryImpl @Inject constructor(
                     uiLanguage = uiLanguageSetting,
                 )
                 val entities = localSettings.toSettingEntities(identity.userId)
-                entities.forEach { entity ->
-                    when (localDataSource.update(entity)) {
-                        is ResultWithError.Failure -> {
-                            // todo it's not a transaction, some settings can be updated
-                            return ResultWithError.Failure(GetSettingsRepositoryError.SettingsEmpty)
-                        }
-
-                        is ResultWithError.Success -> Unit
-                    }
-                }
-                ResultWithError.Success(localSettings.toDomain())
+                localDataSource.upsertAll(entities).foldWithErrorMapping(
+                    onSuccess = { ResultWithError.Success(localSettings.toDomain()) },
+                    onFailure = { GetSettingsRepositoryError.SettingsEmpty },
+                )
             }
 
             is ResultWithError.Failure -> createDefaultSettings(identity.userId)

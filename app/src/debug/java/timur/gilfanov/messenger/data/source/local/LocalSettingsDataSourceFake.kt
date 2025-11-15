@@ -94,6 +94,19 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
         return ResultWithError.Success(unsyncedSettings)
     }
 
+    override suspend fun upsertAll(
+        entities: List<SettingEntity>,
+    ): ResultWithError<Unit, UpdateSettingError> {
+        settings.update { map ->
+            var updatedMap = map
+            entities.forEach { entity ->
+                updatedMap = updatedMap + (Pair(entity.userId, entity.key) to entity)
+            }
+            updatedMap
+        }
+        return ResultWithError.Success(Unit)
+    }
+
     fun clear() {
         settings.value = emptyMap()
     }

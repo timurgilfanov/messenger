@@ -69,4 +69,12 @@ interface LocalSettingsDataSource {
         List<SettingEntity>,
         GetUnsyncedSettingsError,
         >
+
+    /**
+     * Updates or inserts multiple setting entities in a single transaction.
+     *
+     * @param entities The setting entities to update
+     * @return Success or failure with error
+     */
+    suspend fun upsertAll(entities: List<SettingEntity>): ResultWithError<Unit, UpdateSettingError>
 }

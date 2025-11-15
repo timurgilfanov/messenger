@@ -189,6 +189,24 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         Failure(error)
     }
 
+    override suspend fun upsertAll(
+        entities: List<SettingEntity>,
+    ): ResultWithError<Unit, UpdateSettingError> = try {
+        settingsDao.upsert(entities)
+        Success(Unit)
+    } catch (e: SQLiteException) {
+        val error = when (e) {
+            is SQLiteFullException -> UpdateSettingError.StorageFull
+            is SQLiteDatabaseCorruptException -> UpdateSettingError.DatabaseCorrupted
+            is SQLiteAccessPermException -> UpdateSettingError.AccessDenied
+            is SQLiteReadOnlyDatabaseException -> UpdateSettingError.ReadOnlyDatabase
+            is SQLiteDatabaseLockedException -> UpdateSettingError.ConcurrentModificationError
+            is SQLiteDiskIOException -> UpdateSettingError.DiskIOError
+            else -> UpdateSettingError.UnknownError(e)
+        }
+        Failure(error)
+    }
+
     @Suppress("NestedBlockDepth", "ReturnCount")
     override suspend fun getUnsyncedSettings(): ResultWithError<
         List<SettingEntity>,

@@ -605,8 +605,8 @@ class SettingsRepositoryImpl @Inject constructor(
     ): ResultWithError<Settings, GetSettingsRepositoryError> {
         val defaultEntity = createDefaultEntity(
             userId = userId,
-            key = SettingKey.UI_LANGUAGE.key,
-            defaultValue = UiLanguage.English::class.simpleName ?: "English",
+            key = SettingKey.UI_LANGUAGE,
+            defaultValue = UiLanguage.English.toStorageValue(),
         )
         return when (localDataSource.update(defaultEntity)) {
             is ResultWithError.Success -> {
@@ -630,14 +630,17 @@ private fun mapServerValueToLocalValue(
     -> error("Setting with key $settingKey validation is not implemented")
 } ?: fallbackValue
 
-private fun createDefaultEntity(userId: UserId, key: String, defaultValue: String): SettingEntity =
-    SettingEntity(
-        userId = userId.id.toString(),
-        key = key,
-        value = defaultValue,
-        localVersion = 0,
-        syncedVersion = 0,
-        serverVersion = 0,
-        modifiedAt = System.currentTimeMillis(),
-        syncStatus = SyncStatus.PENDING,
-    )
+private fun createDefaultEntity(
+    userId: UserId,
+    key: SettingKey,
+    defaultValue: String,
+): SettingEntity = SettingEntity(
+    userId = userId.id.toString(),
+    key = key.key,
+    value = defaultValue,
+    localVersion = 1,
+    syncedVersion = 0,
+    serverVersion = 0,
+    modifiedAt = System.currentTimeMillis(),
+    syncStatus = SyncStatus.PENDING,
+)

@@ -1,11 +1,27 @@
 package timur.gilfanov.messenger.domain.usecase.user.repository
 
 /**
- * Errors that can occur during language change repository operations.
+ * Errors that can occur while retrieving user settings.
  *
- * Represents failures when changing user language preferences at the repository layer.
+ * Represents failures at the repository layer that prevent settings
+ * from being loaded or observed.
  */
-sealed interface ChangeLanguageRepositoryError {
+sealed interface RecoverSettingsRepositoryError {
+    /**
+     * Settings were not found and were reset to default values.
+     *
+     * Occurs when settings cannot be loaded from any available source
+     * and the system automatically created default settings.
+     */
+    data object SettingsResetToDefaults : RecoverSettingsRepositoryError
+
+    /**
+     * Settings could not be loaded or initialized.
+     *
+     * Represents a critical failure where settings are unavailable
+     * and defaults could not be created.
+     */
+    data object SettingsEmpty : RecoverSettingsRepositoryError
 
     /**
      * Recoverable errors that can be resolved by user action.
@@ -13,7 +29,7 @@ sealed interface ChangeLanguageRepositoryError {
      * These errors indicate specific issues that the user can address
      * to restore settings functionality.
      */
-    sealed interface Recoverable : ChangeLanguageRepositoryError {
+    sealed interface Recoverable : RecoverSettingsRepositoryError {
         /**
          * Insufficient storage space available on the device.
          *
@@ -60,5 +76,5 @@ sealed interface ChangeLanguageRepositoryError {
      *
      * Represents errors that don't fit known failure categories.
      */
-    data object Unknown : ChangeLanguageRepositoryError
+    data object Unknown : RecoverSettingsRepositoryError
 }

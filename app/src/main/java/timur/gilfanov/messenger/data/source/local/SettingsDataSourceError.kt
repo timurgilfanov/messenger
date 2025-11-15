@@ -13,9 +13,21 @@ sealed interface GetSettingError {
     data class UnknownError(val cause: Throwable) : GetSettingError
 }
 
-sealed interface UpsertSettingError {
-    data object SettingsNotFound : UpsertSettingError
+sealed interface TransformSettingError {
+    data object SettingsNotFound : TransformSettingError
 
+    data object ConcurrentModificationError : TransformSettingError
+    data object DiskIOError : TransformSettingError
+
+    data object StorageFull : TransformSettingError
+    data object DatabaseCorrupted : TransformSettingError
+    data object AccessDenied : TransformSettingError
+    data object ReadOnlyDatabase : TransformSettingError
+
+    data class UnknownError(val cause: Throwable) : TransformSettingError
+}
+
+sealed interface UpsertSettingError {
     data object ConcurrentModificationError : UpsertSettingError
     data object DiskIOError : UpsertSettingError
 

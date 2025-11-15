@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.LocalSetting
 import timur.gilfanov.messenger.data.source.local.LocalSettings
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
+import timur.gilfanov.messenger.data.source.local.TransformSettingError
 import timur.gilfanov.messenger.data.source.local.UpsertSettingError
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.data.source.local.toStorageValue
@@ -136,7 +137,6 @@ import timur.gilfanov.messenger.util.Logger
  * @see timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource for unified sync channel details
  * @see MessengerRepositoryImpl for chat sync implementation
  */
-// TODO: Perform recovery for empty settings from local data source
 @Suppress("TooManyFunctions")
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
@@ -212,7 +212,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 emit(ResultWithError.Failure(error))
             }
 
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     override suspend fun changeUiLanguage(
         identity: Identity,
         language: UiLanguage,
@@ -220,7 +220,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val userId = identity.userId
         val key = SettingKey.UI_LANGUAGE.key
 
-        return localDataSource.upsert(userId) { localSettings ->
+        return localDataSource.transform(userId) { localSettings ->
             localSettings.copy(
                 uiLanguage = localSettings.uiLanguage.copy(value = language),
             )
@@ -232,41 +232,70 @@ class SettingsRepositoryImpl @Inject constructor(
 
             onFailure = { error ->
                 when (error) {
-                    UpsertSettingError.SettingsNotFound -> {
-                        recoverSettings(identity).foldWithErrorMapping(
+                    TransformSettingError.SettingsNotFound -> {
+                        recoverSettings(identity).fold(
                             onSuccess = {
                                 changeUiLanguage(identity, language)
                             },
                             onFailure = { error ->
                                 when (error) {
-                                    GetSettingsRepositoryError.Recoverable.AccessDenied -> TODO()
-                                    GetSettingsRepositoryError.Recoverable.DataCorruption -> TODO()
+                                    GetSettingsRepositoryError.Recoverable.AccessDenied ->
+                                        ResultWithError.Failure(
+                                            ChangeLanguageRepositoryError.Recoverable.AccessDenied,
+                                        )
+                                    GetSettingsRepositoryError.Recoverable.DataCorruption ->
+                                        ResultWithError.Failure(
+                                            ChangeLanguageRepositoryError.Recoverable
+                                                .DataCorruption,
+                                        )
                                     GetSettingsRepositoryError.Recoverable.InsufficientStorage ->
-                                        ChangeLanguageRepositoryError.InsufficientStorage
+                                        ResultWithError.Failure(
+                                            ChangeLanguageRepositoryError.Recoverable
+                                                .InsufficientStorage,
+                                        )
 
                                     GetSettingsRepositoryError.Recoverable.ReadOnly,
-                                    -> TODO()
+                                    -> ResultWithError.Failure(
+                                        ChangeLanguageRepositoryError.Recoverable.ReadOnly,
+                                    )
 
                                     GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable ->
-                                        TODO()
+                                        ResultWithError.Failure(
+                                            ChangeLanguageRepositoryError.Recoverable
+                                                .TemporarilyUnavailable,
+                                        )
 
-                                    GetSettingsRepositoryError.SettingsEmpty -> TODO()
-                                    GetSettingsRepositoryError.SettingsResetToDefaults -> TODO()
-                                    GetSettingsRepositoryError.Unknown -> TODO()
+                                    GetSettingsRepositoryError.SettingsResetToDefaults ->
+                                        changeUiLanguage(identity, language)
+                                    GetSettingsRepositoryError.Unknown -> ResultWithError.Failure(
+                                        ChangeLanguageRepositoryError.Unknown,
+                                    )
                                 }
                             },
                         )
                     }
 
-                    UpsertSettingError.ConcurrentModificationError -> TODO()
-                    UpsertSettingError.DiskIOError -> TODO()
-                    UpsertSettingError.DatabaseCorrupted -> TODO()
-                    UpsertSettingError.AccessDenied -> TODO()
-                    UpsertSettingError.ReadOnlyDatabase -> TODO()
-                    is UpsertSettingError.UnknownError -> TODO()
-
-                    UpsertSettingError.StorageFull ->
-                        ResultWithError.Failure(ChangeLanguageRepositoryError.InsufficientStorage)
+                    TransformSettingError.ConcurrentModificationError,
+                    TransformSettingError.DiskIOError,
+                    -> ResultWithError.Failure(
+                        ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable,
+                    )
+                    TransformSettingError.DatabaseCorrupted -> ResultWithError.Failure(
+                        ChangeLanguageRepositoryError.Recoverable.DataCorruption,
+                    )
+                    TransformSettingError.AccessDenied -> ResultWithError.Failure(
+                        ChangeLanguageRepositoryError.Recoverable.AccessDenied,
+                    )
+                    TransformSettingError.ReadOnlyDatabase -> ResultWithError.Failure(
+                        ChangeLanguageRepositoryError.Recoverable.ReadOnly,
+                    )
+                    TransformSettingError.StorageFull -> ResultWithError.Failure(
+                        ChangeLanguageRepositoryError.Recoverable.InsufficientStorage,
+                    )
+                    is TransformSettingError.UnknownError -> {
+                        logger.e(TAG, "Unknown error while changing UI language", error.cause)
+                        ResultWithError.Failure(ChangeLanguageRepositoryError.Unknown)
+                    }
                 }
             },
         )
@@ -570,14 +599,31 @@ class SettingsRepositoryImpl @Inject constructor(
                 val entities = localSettings.toSettingEntities(identity.userId)
                 localDataSource.upsert(entities).foldWithErrorMapping(
                     onSuccess = { ResultWithError.Success(localSettings.toDomain()) },
-                    onFailure = { GetSettingsRepositoryError.SettingsEmpty },
+                    onFailure = { error -> error.toGetSettingsRepositoryError() },
                 )
             }
 
-            is ResultWithError.Failure -> createDefaultSettings(identity.userId)
+            is ResultWithError.Failure -> upsertDefaultSettings(identity.userId)
         }
 
-    private suspend fun createDefaultSettings(
+    private fun UpsertSettingError.toGetSettingsRepositoryError(): GetSettingsRepositoryError =
+        when (this) {
+            UpsertSettingError.AccessDenied -> GetSettingsRepositoryError.Recoverable.AccessDenied
+            UpsertSettingError.ConcurrentModificationError,
+            UpsertSettingError.DiskIOError,
+            -> GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable
+            UpsertSettingError.DatabaseCorrupted ->
+                GetSettingsRepositoryError.Recoverable.DataCorruption
+            UpsertSettingError.ReadOnlyDatabase -> GetSettingsRepositoryError.Recoverable.ReadOnly
+            UpsertSettingError.StorageFull ->
+                GetSettingsRepositoryError.Recoverable.InsufficientStorage
+            is UpsertSettingError.UnknownError -> {
+                logger.e(TAG, "Unknown error while recovering settings", this.cause)
+                GetSettingsRepositoryError.Unknown
+            }
+        }
+
+    private suspend fun upsertDefaultSettings(
         userId: UserId,
     ): ResultWithError<Settings, GetSettingsRepositoryError> {
         val now = Clock.System.now()
@@ -590,7 +636,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
             },
             onFailure = {
-                ResultWithError.Failure(GetSettingsRepositoryError.SettingsEmpty)
+                ResultWithError.Failure(it.toGetSettingsRepositoryError())
             },
         )
     }

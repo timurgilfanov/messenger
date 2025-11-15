@@ -136,11 +136,11 @@ class ObserveUiLanguageUseCaseTest {
     }
 
     @Test
-    fun `emits repository error when settings empty`() = runTest {
+    fun `emits repository error`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
+                emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
             },
         )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
@@ -149,7 +149,9 @@ class ObserveUiLanguageUseCaseTest {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
             assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(result.error)
-            assertIs<GetSettingsRepositoryError.SettingsEmpty>(result.error.error)
+            assertIs<GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable>(
+                result.error.error,
+            )
             awaitComplete()
         }
     }
@@ -160,7 +162,7 @@ class ObserveUiLanguageUseCaseTest {
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(Success(Settings(UiLanguage.English)))
-                emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
+                emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
                 emit(Success(Settings(UiLanguage.German)))
             },
         )
@@ -188,7 +190,7 @@ class ObserveUiLanguageUseCaseTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Failure(GetSettingsRepositoryError.SettingsEmpty))
+                emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
                 emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
             },
         )
@@ -198,7 +200,9 @@ class ObserveUiLanguageUseCaseTest {
             val first = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(first)
             assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(first.error)
-            assertIs<GetSettingsRepositoryError.SettingsEmpty>(first.error.error)
+            assertIs<GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable>(
+                first.error.error,
+            )
 
             val second = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(second)

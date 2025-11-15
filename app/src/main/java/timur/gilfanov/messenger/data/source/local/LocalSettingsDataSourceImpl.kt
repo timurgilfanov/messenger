@@ -22,10 +22,12 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.util.Logger
 
 class LocalSettingsDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
     private val settingsDao: SettingsDao,
+    private val logger: Logger,
 ) : LocalSettingsDataSource {
 
     override fun observe(userId: UserId): Flow<LocalSettings?> =
@@ -75,6 +77,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                             val error = when (e) {
                                 is SQLiteDatabaseLockedException ->
                                     GetSettingError.ConcurrentModificationError
+
                                 is SQLiteDiskIOException -> GetSettingError.DiskIOError
                                 else -> error("Unreachable")
                             }
@@ -117,6 +120,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                             val error = when (e) {
                                 is SQLiteDatabaseLockedException ->
                                     UpsertSettingError.ConcurrentModificationError
+
                                 is SQLiteDiskIOException -> UpsertSettingError.DiskIOError
                                 else -> error("Unreachable")
                             }
@@ -143,14 +147,14 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         }
     }
 
-    override suspend fun upsert(
+    override suspend fun transform(
         userId: UserId,
         transform: (LocalSettings) -> LocalSettings,
-    ): ResultWithError<Unit, UpsertSettingError> = try {
+    ): ResultWithError<Unit, TransformSettingError> = try {
         database.withTransaction {
             val entities = settingsDao.getAll(userId = userId.id.toString())
             if (entities.isEmpty()) {
-                return@withTransaction Failure(UpsertSettingError.SettingsNotFound)
+                return@withTransaction Failure(TransformSettingError.SettingsNotFound)
             }
 
             val localSettings = LocalSettings.fromEntities(entities)
@@ -178,13 +182,16 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         }
     } catch (e: SQLiteException) {
         val error = when (e) {
-            is SQLiteFullException -> UpsertSettingError.StorageFull
-            is SQLiteDatabaseCorruptException -> UpsertSettingError.DatabaseCorrupted
-            is SQLiteAccessPermException -> UpsertSettingError.AccessDenied
-            is SQLiteReadOnlyDatabaseException -> UpsertSettingError.ReadOnlyDatabase
-            is SQLiteDatabaseLockedException -> UpsertSettingError.ConcurrentModificationError
-            is SQLiteDiskIOException -> UpsertSettingError.DiskIOError
-            else -> UpsertSettingError.UnknownError(e)
+            is SQLiteFullException -> TransformSettingError.StorageFull
+            is SQLiteDatabaseCorruptException -> TransformSettingError.DatabaseCorrupted
+            is SQLiteAccessPermException -> TransformSettingError.AccessDenied
+            is SQLiteReadOnlyDatabaseException -> TransformSettingError.ReadOnlyDatabase
+            is SQLiteDatabaseLockedException -> TransformSettingError.ConcurrentModificationError
+            is SQLiteDiskIOException -> TransformSettingError.DiskIOError
+            else -> {
+                logger.e(TAG, "Unknown error on setting upsert in database", e)
+                TransformSettingError.UnknownError(e)
+            }
         }
         Failure(error)
     }
@@ -229,6 +236,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                             val error = when (e) {
                                 is SQLiteDatabaseLockedException ->
                                     GetUnsyncedSettingsError.ConcurrentModificationError
+
                                 is SQLiteDiskIOException -> GetUnsyncedSettingsError.DiskIOError
                                 else -> error("Unreachable")
                             }
@@ -258,6 +266,8 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         ).milliseconds.inWholeMilliseconds
 
     companion object {
+
+        private const val TAG = "LocalSettingsDataSource"
         private const val MAX_RETRIES = 3L
         private const val INITIAL_BACKOFF_MS = 100L
         private const val MAX_BACKOFF_MS = 2000L

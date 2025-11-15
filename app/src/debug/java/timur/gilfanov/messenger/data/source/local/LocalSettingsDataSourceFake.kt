@@ -45,15 +45,15 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun upsert(
+    override suspend fun transform(
         userId: UserId,
         transform: (LocalSettings) -> LocalSettings,
-    ): ResultWithError<Unit, UpsertSettingError> {
+    ): ResultWithError<Unit, TransformSettingError> {
         val userIdString = userId.id.toString()
         val entities = settings.value.values.filter { it.userId == userIdString }
 
         if (entities.isEmpty()) {
-            return ResultWithError.Failure(UpsertSettingError.SettingsNotFound)
+            return ResultWithError.Failure(TransformSettingError.SettingsNotFound)
         }
 
         val localSettings = LocalSettings.fromEntities(entities)

@@ -16,14 +16,6 @@ sealed interface GetSettingsRepositoryError {
     data object SettingsResetToDefaults : GetSettingsRepositoryError
 
     /**
-     * Settings could not be loaded or initialized.
-     *
-     * Represents a critical failure where settings are unavailable
-     * and defaults could not be created.
-     */
-    data object SettingsEmpty : GetSettingsRepositoryError
-
-    /**
      * Recoverable errors that can be resolved by user action.
      *
      * These errors indicate specific issues that the user can address

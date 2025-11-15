@@ -63,10 +63,10 @@ interface LocalSettingsDataSource {
      * @param transform Function to transform the current LocalSettings
      * @return Success or failure with error
      */
-    suspend fun upsert(
+    suspend fun transform(
         userId: UserId,
         transform: (LocalSettings) -> LocalSettings,
-    ): ResultWithError<Unit, UpsertSettingError>
+    ): ResultWithError<Unit, TransformSettingError>
 
     /**
      * Retrieves all settings that need synchronization.

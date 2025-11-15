@@ -388,7 +388,8 @@ class SettingsRepositoryImpl @Inject constructor(
                             conflictEvents.emit(
                                 SettingsConflictEvent(
                                     settingKey = key,
-                                    yourValue = entity.value,
+                                    localValue = entity.value,
+                                    serverValue = result.serverValue,
                                     acceptedValue = validatedValue,
                                     conflictedAt = Instant.fromEpochMilliseconds(
                                         result.serverModifiedAt,
@@ -511,7 +512,8 @@ class SettingsRepositoryImpl @Inject constructor(
                                     conflictEvents.emit(
                                         SettingsConflictEvent(
                                             settingKey = settingKey,
-                                            yourValue = entity.value,
+                                            localValue = entity.value,
+                                            serverValue = result.serverValue,
                                             acceptedValue = validatedValue,
                                             conflictedAt = Instant.fromEpochMilliseconds(
                                                 result.serverModifiedAt,

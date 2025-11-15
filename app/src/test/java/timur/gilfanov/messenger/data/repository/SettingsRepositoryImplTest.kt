@@ -266,7 +266,7 @@ class SettingsRepositoryImplTest {
 
             val conflict = awaitItem()
             assertEquals(SettingKey.UI_LANGUAGE, conflict.settingKey)
-            assertEquals("German", conflict.yourValue)
+            assertEquals("German", conflict.localValue)
             assertEquals("English", conflict.acceptedValue)
             assertEquals(Instant.fromEpochMilliseconds(3000L), conflict.conflictedAt)
 

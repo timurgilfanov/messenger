@@ -19,6 +19,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,7 +30,6 @@ import timur.gilfanov.messenger.data.source.local.LocalSetting
 import timur.gilfanov.messenger.data.source.local.LocalSettings
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.UpdateSettingError
-import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
@@ -596,21 +596,30 @@ class SettingsRepositoryImpl @Inject constructor(
     private suspend fun createDefaultSettings(
         userId: UserId,
     ): ResultWithError<Settings, GetSettingsRepositoryError> {
-        val defaultEntity = createDefaultEntity(
-            userId = userId,
-            key = SettingKey.UI_LANGUAGE,
-            defaultValue = UiLanguage.English.toStorageValue(),
+        val now = Clock.System.now()
+        val defaultLocalSettings = LocalSettings(
+            uiLanguage = defaultLocalSetting(UiLanguage.English, now),
         )
-        return when (localDataSource.update(defaultEntity)) {
-            is ResultWithError.Success -> {
+        val entities = defaultLocalSettings.toSettingEntities(userId)
+        return localDataSource.upsertAll(entities).fold(
+            onSuccess = {
                 ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
-            }
-
-            is ResultWithError.Failure ->
+            },
+            onFailure = {
                 ResultWithError.Failure(GetSettingsRepositoryError.SettingsEmpty)
-        }
+            },
+        )
     }
 }
+
+private fun <T> defaultLocalSetting(value: T, modifiedAt: Instant): LocalSetting<T> = LocalSetting(
+    value = value,
+    localVersion = 1,
+    syncedVersion = 0,
+    serverVersion = 0,
+    modifiedAt = modifiedAt.toEpochMilliseconds(),
+    syncStatus = SyncStatus.PENDING,
+)
 
 private fun mapServerValueToLocalValue(
     settingKey: SettingKey,
@@ -622,18 +631,3 @@ private fun mapServerValueToLocalValue(
     SettingKey.NOTIFICATIONS,
     -> error("Setting with key $settingKey validation is not implemented")
 } ?: fallbackValue
-
-private fun createDefaultEntity(
-    userId: UserId,
-    key: SettingKey,
-    defaultValue: String,
-): SettingEntity = SettingEntity(
-    userId = userId.id.toString(),
-    key = key.key,
-    value = defaultValue,
-    localVersion = 1,
-    syncedVersion = 0,
-    serverVersion = 0,
-    modifiedAt = System.currentTimeMillis(),
-    syncStatus = SyncStatus.PENDING,
-)

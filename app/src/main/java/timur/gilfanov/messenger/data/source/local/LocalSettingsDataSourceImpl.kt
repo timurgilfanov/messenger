@@ -12,6 +12,7 @@ import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
@@ -30,7 +31,12 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     private val logger: Logger,
 ) : LocalSettingsDataSource {
 
-    override fun observe(userId: UserId): Flow<LocalSettings?> =
+    /**
+     * All errors, except NoSettings, will complete the flow and consumer need to resubscribe
+     */
+    override fun observe(
+        userId: UserId,
+    ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>> =
         settingsDao.observeAllByUser(userId.id.toString())
             .retryWhen { cause, attempt ->
                 when {
@@ -45,10 +51,55 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             }
             .map { entities ->
                 if (entities.isEmpty()) {
-                    null
+                    Failure<LocalSettings, GetSettingsLocalDataSourceError>(
+                        GetSettingsLocalDataSourceError.NoSettings,
+                    )
                 } else {
-                    LocalSettings.fromEntities(entities)
+                    Success(LocalSettings.fromEntities(entities))
                 }
+            }.catch { exception ->
+                val error = when (exception) {
+                    is SQLiteFullException -> {
+                        // Can occur during observation due to WAL checkpoints, temp file creation,
+                        // or statement compilation
+                        logger.e(TAG, "Insufficient storage while observing settings", exception)
+                        GetSettingsLocalDataSourceError.Recoverable.InsufficientStorage
+                    }
+
+                    is SQLiteDatabaseCorruptException -> {
+                        logger.e(TAG, "Database corruption while observing settings", exception)
+                        GetSettingsLocalDataSourceError.Recoverable.DataCorruption
+                    }
+
+                    is SQLiteAccessPermException -> {
+                        logger.e(TAG, "Access denied while observing settings", exception)
+                        GetSettingsLocalDataSourceError.Recoverable.AccessDenied
+                    }
+
+                    is SQLiteReadOnlyDatabaseException -> {
+                        // Room's WAL mode requires write access even for reads (checkpoints).
+                        // Can also occur when storage becomes read-only
+                        logger.e(TAG, "Read-only database while observing settings", exception)
+                        GetSettingsLocalDataSourceError.Recoverable.ReadOnly
+                    }
+
+                    is SQLiteDatabaseLockedException,
+                    is SQLiteDiskIOException,
+                    -> {
+                        logger.e(
+                            TAG,
+                            "Transient error while observing settings after retries",
+                            exception,
+                        )
+                        GetSettingsLocalDataSourceError.Recoverable.TemporarilyUnavailable
+                    }
+
+                    else -> {
+                        logger.e(TAG, "Unknown error while observing settings", exception)
+                        GetSettingsLocalDataSourceError.Unknown
+                    }
+                }
+                emit(Failure(error))
             }
 
     @Suppress("NestedBlockDepth", "ReturnCount")

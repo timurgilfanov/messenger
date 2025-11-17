@@ -6,23 +6,61 @@ package timur.gilfanov.messenger.data.source.local
  * These errors are specific to the [LocalSettingsDataSource.observe] operation.
  */
 sealed interface GetSettingsLocalDataSourceError {
-    /**
-     * Settings not found in local storage.
-     *
-     * Indicates that no settings exist for the requested user. This typically occurs when:
-     * - User has never had settings created
-     * - Settings metadata indicates EMPTY state (lastModifiedAt == 0)
-     *
-     * This error triggers recovery flow to fetch settings from remote or initialize defaults.
-     */
-    data object SettingsNotFound : GetSettingsLocalDataSourceError
+
+    data object NoSettings : GetSettingsLocalDataSourceError
 
     /**
-     * Low-level data source error.
+     * Recoverable errors that can be resolved by user action.
      *
-     * Wraps underlying storage errors such as I/O failures or deserialization errors.
-     *
-     * @property error The underlying data source error
+     * These errors indicate specific issues that the user can address
+     * to restore settings functionality.
      */
-    data class LocalDataSource(val error: LocalDataSourceErrorV2) : GetSettingsLocalDataSourceError
+    sealed interface Recoverable : GetSettingsLocalDataSourceError {
+        /**
+         * Insufficient storage space available on the device.
+         *
+         * The system cannot save or update settings due to lack of storage.
+         * User should free up storage space and try again.
+         */
+        data object InsufficientStorage : Recoverable
+
+        /**
+         * Settings data is corrupted and cannot be read.
+         *
+         * The stored settings have become corrupted or unreadable.
+         * User should clear app data to rebuild settings from defaults or remote.
+         */
+        data object DataCorruption : Recoverable
+
+        /**
+         * Access to settings storage is denied.
+         *
+         * The app does not have necessary permissions to access settings storage.
+         * User should verify app permissions or reinstall the app.
+         */
+        data object AccessDenied : Recoverable
+
+        /**
+         * Settings storage is read-only and cannot be modified.
+         *
+         * The system cannot save setting changes due to storage restrictions.
+         * User should check storage permissions and available space.
+         */
+        data object ReadOnly : Recoverable
+
+        /**
+         * Settings are temporarily unavailable.
+         *
+         * A transient condition is preventing access to settings.
+         * User should try again in a few moments.
+         */
+        data object TemporarilyUnavailable : Recoverable
+    }
+
+    /**
+     * An unexpected error occurred while accessing settings.
+     *
+     * Represents errors that don't fit known failure categories.
+     */
+    data object Unknown : GetSettingsLocalDataSourceError
 }

@@ -21,7 +21,9 @@ interface LocalSettingsDataSource {
      * @param userId The unique identifier of the user
      * @return Flow emitting typed LocalSettings, or null if settings are not initialized
      */
-    fun observe(userId: UserId): Flow<LocalSettings?>
+    fun observe(
+        userId: UserId,
+    ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>>
 
     /**
      * Retrieves a specific setting entity.

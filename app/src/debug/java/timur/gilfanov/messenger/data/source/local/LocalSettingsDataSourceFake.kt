@@ -13,14 +13,16 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
 
     private val settings = MutableStateFlow<Map<Pair<String, String>, SettingEntity>>(emptyMap())
 
-    override fun observe(userId: UserId): Flow<LocalSettings?> {
+    override fun observe(
+        userId: UserId,
+    ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>> {
         val userIdString = userId.id.toString()
         return settings.map { map ->
             val entities = map.values.filter { it.userId == userIdString }
             if (entities.isEmpty()) {
-                null
+                ResultWithError.Failure(GetSettingsLocalDataSourceError.NoSettings)
             } else {
-                LocalSettings.fromEntities(entities)
+                ResultWithError.Success(LocalSettings.fromEntities(entities))
             }
         }
     }

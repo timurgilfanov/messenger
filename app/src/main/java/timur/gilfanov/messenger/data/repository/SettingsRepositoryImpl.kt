@@ -2,12 +2,6 @@
 
 package timur.gilfanov.messenger.data.repository
 
-import android.database.sqlite.SQLiteAccessPermException
-import android.database.sqlite.SQLiteDatabaseCorruptException
-import android.database.sqlite.SQLiteDatabaseLockedException
-import android.database.sqlite.SQLiteDiskIOException
-import android.database.sqlite.SQLiteFullException
-import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
@@ -24,8 +18,8 @@ import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalSetting
 import timur.gilfanov.messenger.data.source.local.LocalSettings
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
@@ -164,52 +158,54 @@ class SettingsRepositoryImpl @Inject constructor(
         identity: Identity,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
         localDataSource.observe(identity.userId)
-            .map { localSettings ->
-                if (localSettings == null) {
-                    recoverSettings(identity)
-                } else {
-                    ResultWithError.Success(localSettings.toDomain())
-                }
-            }
-            .catch { exception ->
-                val error = when (exception) {
-                    is SQLiteFullException -> {
-                        logger.e(TAG, "Insufficient storage while observing settings", exception)
-                        GetSettingsRepositoryError.Recoverable.InsufficientStorage
-                    }
-
-                    is SQLiteDatabaseCorruptException -> {
-                        logger.e(TAG, "Database corruption while observing settings", exception)
-                        GetSettingsRepositoryError.Recoverable.DataCorruption
-                    }
-
-                    is SQLiteAccessPermException -> {
-                        logger.e(TAG, "Access denied while observing settings", exception)
-                        GetSettingsRepositoryError.Recoverable.AccessDenied
-                    }
-
-                    is SQLiteReadOnlyDatabaseException -> {
-                        logger.e(TAG, "Read-only database while observing settings", exception)
-                        GetSettingsRepositoryError.Recoverable.ReadOnly
-                    }
-
-                    is SQLiteDatabaseLockedException,
-                    is SQLiteDiskIOException,
-                    -> {
-                        logger.e(
-                            TAG,
-                            "Transient error while observing settings after retries",
-                            exception,
-                        )
-                        GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable
-                    }
-
-                    else -> {
-                        logger.e(TAG, "Unknown error while observing settings", exception)
-                        GetSettingsRepositoryError.Unknown
-                    }
-                }
-                emit(ResultWithError.Failure(error))
+            .map { result ->
+                result.fold(
+                    onSuccess = {
+                        ResultWithError.Success(it.toDomain())
+                    },
+                    onFailure = { error ->
+                        when (error) {
+                            GetSettingsLocalDataSourceError.NoSettings -> recoverSettings(identity)
+                            GetSettingsLocalDataSourceError.Recoverable.AccessDenied -> {
+                                logger.e(TAG, "Access denied while observing settings")
+                                ResultWithError.Failure(
+                                    GetSettingsRepositoryError.Recoverable.AccessDenied,
+                                )
+                            }
+                            GetSettingsLocalDataSourceError.Recoverable.DataCorruption -> {
+                                logger.e(TAG, "Database corruption while observing settings")
+                                ResultWithError.Failure(
+                                    GetSettingsRepositoryError.Recoverable.DataCorruption,
+                                )
+                            }
+                            GetSettingsLocalDataSourceError.Recoverable.InsufficientStorage -> {
+                                logger.e(TAG, "Insufficient storage while observing settings")
+                                ResultWithError.Failure(
+                                    GetSettingsRepositoryError.Recoverable.InsufficientStorage,
+                                )
+                            }
+                            GetSettingsLocalDataSourceError.Recoverable.ReadOnly -> {
+                                logger.e(TAG, "Read-only database while observing settings")
+                                ResultWithError.Failure(
+                                    GetSettingsRepositoryError.Recoverable.ReadOnly,
+                                )
+                            }
+                            GetSettingsLocalDataSourceError.Recoverable.TemporarilyUnavailable -> {
+                                logger.e(
+                                    TAG,
+                                    "Transient error while observing settings after retries",
+                                )
+                                ResultWithError.Failure(
+                                    GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable,
+                                )
+                            }
+                            GetSettingsLocalDataSourceError.Unknown -> {
+                                logger.e(TAG, "Unknown error while observing settings")
+                                ResultWithError.Failure(GetSettingsRepositoryError.Unknown)
+                            }
+                        }
+                    },
+                )
             }
 
     @Suppress("CyclomaticComplexMethod", "LongMethod")

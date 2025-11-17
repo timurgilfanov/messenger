@@ -3,12 +3,15 @@ package timur.gilfanov.messenger.data.repository
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
+import androidx.work.NetworkType
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
 import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,6 +26,7 @@ import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
+import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.SyncResult
 import timur.gilfanov.messenger.data.worker.SyncOutcome
@@ -401,6 +405,168 @@ class SettingsRepositoryImplTest {
         val updatedEntity2 = localDataSource.getSetting(testUserId, SettingKey.THEME.key)
         assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity2)
         assertEquals(SyncStatus.FAILED, updatedEntity2.data.syncStatus)
+    }
+
+    @Test
+    fun `observeSettings triggers recovery with valid remote settings`() = runTest {
+        val remoteWithData = RemoteSettingsDataSourceFake(
+            initialSettings = kotlinx.collections.immutable.persistentMapOf(
+                testUserId to Settings(uiLanguage = UiLanguage.German),
+            ),
+            useRealTime = false,
+        )
+        val repoWithRemote = SettingsRepositoryImpl(
+            localDataSource = localDataSource,
+            remoteDataSource = remoteWithData,
+            workManager = workManager,
+            logger = NoOpLogger(),
+        )
+
+        repoWithRemote.observeSettings(identity).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
+            assertEquals(UiLanguage.German, result.data.uiLanguage)
+
+            val savedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+            assertIs<ResultWithError.Success<SettingEntity, *>>(savedEntity)
+            assertEquals("German", savedEntity.data.value)
+            assertEquals(1, savedEntity.data.localVersion)
+            assertEquals(1, savedEntity.data.syncedVersion)
+            assertEquals(1, savedEntity.data.serverVersion)
+            assertEquals(SyncStatus.SYNCED, savedEntity.data.syncStatus)
+        }
+    }
+
+    @Test
+    fun `changeUiLanguage with no local settings triggers recovery then applies change`() =
+        runTest {
+            val remoteWithData = RemoteSettingsDataSourceFake(
+                initialSettings = kotlinx.collections.immutable.persistentMapOf(
+                    testUserId to Settings(uiLanguage = UiLanguage.English),
+                ),
+                useRealTime = false,
+            )
+            val repoWithRemote = SettingsRepositoryImpl(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteWithData,
+                workManager = workManager,
+                logger = NoOpLogger(),
+            )
+
+            val result = repoWithRemote.changeUiLanguage(identity, UiLanguage.German)
+
+            assertIs<ResultWithError.Success<Unit, *>>(result)
+
+            val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+            assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
+            assertEquals("German", updatedEntity.data.value)
+            assertEquals(2, updatedEntity.data.localVersion)
+            assertEquals(1, updatedEntity.data.syncedVersion)
+            assertEquals(SyncStatus.PENDING, updatedEntity.data.syncStatus)
+        }
+
+    @Test
+    fun `changeUiLanguage with no local and no remote creates default then applies change`() =
+        runTest {
+            val result = repository.changeUiLanguage(identity, UiLanguage.German)
+
+            assertIs<ResultWithError.Success<Unit, *>>(result)
+
+            val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+            assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
+            assertEquals("German", updatedEntity.data.value)
+            assertEquals(2, updatedEntity.data.localVersion)
+            assertEquals(0, updatedEntity.data.syncedVersion)
+            assertEquals(SyncStatus.PENDING, updatedEntity.data.syncStatus)
+        }
+
+    @Test
+    fun `WorkManager sync has network constraint`() = runTest {
+        val existingEntity = SettingEntity(
+            userId = testUserId.id.toString(),
+            key = SettingKey.UI_LANGUAGE.key,
+            value = UiLanguage.English.toStorageValue(),
+            localVersion = 1,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1000L,
+            syncStatus = SyncStatus.SYNCED,
+        )
+        localDataSource.upsert(existingEntity)
+
+        repository.changeUiLanguage(identity, UiLanguage.German)
+
+        val workInfos = workManager.getWorkInfosForUniqueWork(
+            "sync_setting_${testUserId.id}_${SettingKey.UI_LANGUAGE.key}",
+        ).get()
+
+        val workSpec = workInfos[0]
+        assertEquals(
+            NetworkType.CONNECTED,
+            workSpec.constraints.requiredNetworkType,
+            "Work should require network connectivity",
+        )
+    }
+
+    @Test
+    fun `WorkManager sync has debounce delay`() = runTest {
+        val existingEntity = SettingEntity(
+            userId = testUserId.id.toString(),
+            key = SettingKey.UI_LANGUAGE.key,
+            value = UiLanguage.English.toStorageValue(),
+            localVersion = 1,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1000L,
+            syncStatus = SyncStatus.SYNCED,
+        )
+        localDataSource.upsert(existingEntity)
+
+        repository.changeUiLanguage(identity, UiLanguage.German)
+
+        val workInfos = workManager.getWorkInfosForUniqueWork(
+            "sync_setting_${testUserId.id}_${SettingKey.UI_LANGUAGE.key}",
+        ).get()
+
+        val workSpec = workInfos[0]
+        assertEquals(
+            workSpec.state,
+            WorkInfo.State.ENQUEUED,
+            "Work should be enqueued (not running yet due to delay)",
+        )
+    }
+
+    @Test
+    fun `WorkManager sync uses REPLACE policy for debouncing`() = runTest {
+        val existingEntity = SettingEntity(
+            userId = testUserId.id.toString(),
+            key = SettingKey.UI_LANGUAGE.key,
+            value = UiLanguage.English.toStorageValue(),
+            localVersion = 1,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1000L,
+            syncStatus = SyncStatus.SYNCED,
+        )
+        localDataSource.upsert(existingEntity)
+
+        repository.changeUiLanguage(identity, UiLanguage.German)
+        val workInfos1 = workManager.getWorkInfosForUniqueWork(
+            "sync_setting_${testUserId.id}_${SettingKey.UI_LANGUAGE.key}",
+        ).get()
+        val firstWorkId = workInfos1[0].id
+
+        repository.changeUiLanguage(identity, UiLanguage.English)
+        val workInfos2 = workManager.getWorkInfosForUniqueWork(
+            "sync_setting_${testUserId.id}_${SettingKey.UI_LANGUAGE.key}",
+        ).get()
+
+        assertEquals(1, workInfos2.size, "Should only have one work request (replaced)")
+        val secondWorkId = workInfos2[0].id
+        assertTrue(
+            firstWorkId != secondWorkId,
+            "Second work should replace first (different IDs)",
+        )
     }
 
     // TODO Test changing absent setting and then sync it with the remote

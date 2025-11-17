@@ -27,8 +27,15 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.data.source.local.toStorageValue
+import timur.gilfanov.messenger.data.source.remote.ChangeUiLanguageRemoteDataSourceError
+import timur.gilfanov.messenger.data.source.remote.RemoteSetting
+import timur.gilfanov.messenger.data.source.remote.RemoteSettings
+import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
+import timur.gilfanov.messenger.data.source.remote.RemoteUserDataSourceError
+import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.SyncResult
+import timur.gilfanov.messenger.data.source.remote.UpdateSettingsRemoteDataSourceError
 import timur.gilfanov.messenger.data.worker.SyncOutcome
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
@@ -36,7 +43,10 @@ import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
+
+private const val INVALID_UI_LANGUAGE = "abc"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -569,5 +579,129 @@ class SettingsRepositoryImplTest {
         )
     }
 
-    // TODO Test changing absent setting and then sync it with the remote
+    @Test
+    fun `observeSettings triggers recovery with invalid server value falls back to English`() =
+        runTest {
+            val remoteWithInvalidValue = object : RemoteSettingsDataSource {
+                override suspend fun get(
+                    identity: Identity,
+                ): ResultWithError<RemoteSettings, RemoteUserDataSourceError> {
+                    val remoteSettings = RemoteSettings(
+                        uiLanguage = RemoteSetting.InvalidValue(
+                            rawValue = INVALID_UI_LANGUAGE,
+                            serverVersion = 5,
+                        ),
+                    )
+                    return ResultWithError.Success(remoteSettings)
+                }
+
+                override suspend fun changeUiLanguage(
+                    identity: Identity,
+                    language: UiLanguage,
+                ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> =
+                    ResultWithError.Success(Unit)
+
+                override suspend fun put(
+                    identity: Identity,
+                    settings: Settings,
+                ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> =
+                    ResultWithError.Success(Unit)
+
+                override suspend fun syncSingleSetting(request: SettingSyncRequest): SyncResult =
+                    SyncResult.Success(newVersion = request.clientVersion + 1)
+
+                override suspend fun syncBatch(
+                    requests: List<SettingSyncRequest>,
+                ): Map<String, SyncResult> = emptyMap()
+            }
+            val repoWithInvalidRemote = SettingsRepositoryImpl(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteWithInvalidValue,
+                workManager = workManager,
+                logger = NoOpLogger(),
+            )
+
+            repoWithInvalidRemote.observeSettings(identity).test {
+                val result = awaitItem()
+                assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
+                assertEquals(
+                    UiLanguage.English,
+                    result.data.uiLanguage,
+                    "Should fall back to English for invalid server value",
+                )
+
+                val savedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+                assertIs<ResultWithError.Success<SettingEntity, *>>(savedEntity)
+                assertEquals(UiLanguage.English.toStorageValue(), savedEntity.data.value)
+                assertEquals(5, savedEntity.data.localVersion, "Should use server version")
+                assertEquals(5, savedEntity.data.syncedVersion, "Should mark as synced")
+                assertEquals(5, savedEntity.data.serverVersion)
+                assertEquals(
+                    SyncStatus.SYNCED,
+                    savedEntity.data.syncStatus,
+                    "Should be SYNCED to acknowledge server version",
+                )
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `changeUiLanguage with invalid remote value recovers with fallback then applies change`() =
+        runTest {
+            val remoteWithInvalidValue = object : RemoteSettingsDataSource {
+                override suspend fun get(
+                    identity: Identity,
+                ): ResultWithError<RemoteSettings, RemoteUserDataSourceError> {
+                    val remoteSettings = RemoteSettings(
+                        uiLanguage = RemoteSetting.InvalidValue(
+                            rawValue = INVALID_UI_LANGUAGE,
+                            serverVersion = 3,
+                        ),
+                    )
+                    return ResultWithError.Success(remoteSettings)
+                }
+
+                override suspend fun changeUiLanguage(
+                    identity: Identity,
+                    language: UiLanguage,
+                ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> =
+                    ResultWithError.Success(Unit)
+
+                override suspend fun put(
+                    identity: Identity,
+                    settings: Settings,
+                ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> =
+                    ResultWithError.Success(Unit)
+
+                override suspend fun syncSingleSetting(request: SettingSyncRequest): SyncResult =
+                    SyncResult.Success(newVersion = request.clientVersion + 1)
+
+                override suspend fun syncBatch(
+                    requests: List<SettingSyncRequest>,
+                ): Map<String, SyncResult> = emptyMap()
+            }
+            val repoWithInvalidRemote = SettingsRepositoryImpl(
+                localDataSource = localDataSource,
+                remoteDataSource = remoteWithInvalidValue,
+                workManager = workManager,
+                logger = NoOpLogger(),
+            )
+
+            val result = repoWithInvalidRemote.changeUiLanguage(identity, UiLanguage.German)
+
+            assertIs<ResultWithError.Success<Unit, ChangeLanguageRepositoryError>>(result)
+
+            val savedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+            assertIs<ResultWithError.Success<SettingEntity, *>>(savedEntity)
+            assertEquals(UiLanguage.German.toStorageValue(), savedEntity.data.value)
+            assertEquals(
+                4,
+                savedEntity.data.localVersion,
+                "Should increment from recovered version 3",
+            )
+            assertEquals(3, savedEntity.data.syncedVersion, "Should still reference recovery sync")
+            assertEquals(3, savedEntity.data.serverVersion)
+            assertEquals(SyncStatus.PENDING, savedEntity.data.syncStatus)
+        }
 }

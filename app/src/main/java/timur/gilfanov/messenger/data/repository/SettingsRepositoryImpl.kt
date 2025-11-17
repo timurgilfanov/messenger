@@ -18,6 +18,7 @@ import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalSetting
@@ -207,6 +208,7 @@ class SettingsRepositoryImpl @Inject constructor(
                     },
                 )
             }
+            .distinctUntilChanged()
 
     @Suppress("CyclomaticComplexMethod", "LongMethod")
     override suspend fun changeUiLanguage(

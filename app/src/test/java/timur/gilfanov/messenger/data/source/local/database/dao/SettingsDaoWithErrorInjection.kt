@@ -7,9 +7,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 
-class SettingsDaoWithErrorInjection(
-    private val realDao: SettingsDao,
-) : SettingsDao {
+class SettingsDaoWithErrorInjection(private val realDao: SettingsDao) : SettingsDao {
 
     var simulateDatabaseError: SQLiteException? = null
 

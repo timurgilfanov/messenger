@@ -26,7 +26,6 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 
@@ -234,19 +233,20 @@ class LocalSettingsDataSourceImplExceptionTest {
     }
 
     @Test
-    fun `upsert batch returns DatabaseCorrupted on SQLiteDatabaseCorruptException without retry`() = runTest {
-        // Given
-        wrappedDao.simulateDatabaseError = SQLiteDatabaseCorruptException("corrupted")
-        val entities = listOf(createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en"))
+    fun `upsert batch returns DatabaseCorrupted on SQLiteDatabaseCorruptException without retry`() =
+        runTest {
+            // Given
+            wrappedDao.simulateDatabaseError = SQLiteDatabaseCorruptException("corrupted")
+            val entities = listOf(createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en"))
 
-        // When
-        val result = dataSource.upsert(entities)
+            // When
+            val result = dataSource.upsert(entities)
 
-        // Then
-        assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
-        assertEquals(UpsertSettingError.DatabaseCorrupted, result.error)
-        assertEquals(1, wrappedDao.callCount)
-    }
+            // Then
+            assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
+            assertEquals(UpsertSettingError.DatabaseCorrupted, result.error)
+            assertEquals(1, wrappedDao.callCount)
+        }
 
     @Test
     fun `upsert batch returns ConcurrentModificationError on lock without retry`() = runTest {
@@ -344,20 +344,21 @@ class LocalSettingsDataSourceImplExceptionTest {
     }
 
     @Test
-    fun `transform returns ConcurrentModificationError on SQLiteDatabaseLockedException`() = runTest {
-        // Given
-        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
-        databaseRule.database.settingsDao().upsert(entity)
+    fun `transform returns ConcurrentModificationError on SQLiteDatabaseLockedException`() =
+        runTest {
+            // Given
+            val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+            databaseRule.database.settingsDao().upsert(entity)
 
-        wrappedDao.simulateDatabaseError = SQLiteDatabaseLockedException("locked")
+            wrappedDao.simulateDatabaseError = SQLiteDatabaseLockedException("locked")
 
-        // When
-        val result = dataSource.transform(testUserId) { it }
+            // When
+            val result = dataSource.transform(testUserId) { it }
 
-        // Then
-        assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
-        assertEquals(TransformSettingError.ConcurrentModificationError, result.error)
-    }
+            // Then
+            assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
+            assertEquals(TransformSettingError.ConcurrentModificationError, result.error)
+        }
 
     @Test
     fun `transform returns DiskIOError on SQLiteDiskIOException`() = runTest {
@@ -377,18 +378,19 @@ class LocalSettingsDataSourceImplExceptionTest {
 
     // getUnsyncedSettings() exception tests
     @Test
-    fun `getUnsyncedSettings returns DatabaseCorrupted on SQLiteDatabaseCorruptException`() = runTest {
-        // Given
-        wrappedDao.simulateDatabaseError = SQLiteDatabaseCorruptException("corrupted")
+    fun `getUnsyncedSettings returns DatabaseCorrupted on SQLiteDatabaseCorruptException`() =
+        runTest {
+            // Given
+            wrappedDao.simulateDatabaseError = SQLiteDatabaseCorruptException("corrupted")
 
-        // When
-        val result = dataSource.getUnsyncedSettings()
+            // When
+            val result = dataSource.getUnsyncedSettings()
 
-        // Then
-        assertIs<ResultWithError.Failure<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
-        assertEquals(GetUnsyncedSettingsError.DatabaseCorrupted, result.error)
-        assertEquals(1, wrappedDao.callCount) // No retry
-    }
+            // Then
+            assertIs<ResultWithError.Failure<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
+            assertEquals(GetUnsyncedSettingsError.DatabaseCorrupted, result.error)
+            assertEquals(1, wrappedDao.callCount) // No retry
+        }
 
     @Test
     fun `getUnsyncedSettings returns AccessDenied on SQLiteAccessPermException`() = runTest {
@@ -405,18 +407,19 @@ class LocalSettingsDataSourceImplExceptionTest {
     }
 
     @Test
-    fun `getUnsyncedSettings returns ReadOnlyDatabase on SQLiteReadOnlyDatabaseException`() = runTest {
-        // Given
-        wrappedDao.simulateDatabaseError = SQLiteReadOnlyDatabaseException("read only")
+    fun `getUnsyncedSettings returns ReadOnlyDatabase on SQLiteReadOnlyDatabaseException`() =
+        runTest {
+            // Given
+            wrappedDao.simulateDatabaseError = SQLiteReadOnlyDatabaseException("read only")
 
-        // When
-        val result = dataSource.getUnsyncedSettings()
+            // When
+            val result = dataSource.getUnsyncedSettings()
 
-        // Then
-        assertIs<ResultWithError.Failure<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
-        assertEquals(GetUnsyncedSettingsError.ReadOnlyDatabase, result.error)
-        assertEquals(1, wrappedDao.callCount)
-    }
+            // Then
+            assertIs<ResultWithError.Failure<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
+            assertEquals(GetUnsyncedSettingsError.ReadOnlyDatabase, result.error)
+            assertEquals(1, wrappedDao.callCount)
+        }
 
     @Test
     fun `getUnsyncedSettings returns ConcurrentModificationError after 3 retries`() = runTest {
@@ -463,7 +466,9 @@ class LocalSettingsDataSourceImplExceptionTest {
         // When/Then
         dataSource.observe(testUserId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(result)
+            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
+                result,
+            )
             assertEquals(
                 GetSettingsLocalDataSourceError.Recoverable.InsufficientStorage,
                 result.error,
@@ -480,7 +485,9 @@ class LocalSettingsDataSourceImplExceptionTest {
         // When/Then
         dataSource.observe(testUserId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(result)
+            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
+                result,
+            )
             assertEquals(
                 GetSettingsLocalDataSourceError.Recoverable.DataCorruption,
                 result.error,
@@ -497,7 +504,9 @@ class LocalSettingsDataSourceImplExceptionTest {
         // When/Then
         dataSource.observe(testUserId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(result)
+            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
+                result,
+            )
             assertEquals(
                 GetSettingsLocalDataSourceError.Recoverable.AccessDenied,
                 result.error,
@@ -514,7 +523,9 @@ class LocalSettingsDataSourceImplExceptionTest {
         // When/Then
         dataSource.observe(testUserId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(result)
+            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
+                result,
+            )
             assertEquals(
                 GetSettingsLocalDataSourceError.Recoverable.ReadOnly,
                 result.error,
@@ -531,7 +542,9 @@ class LocalSettingsDataSourceImplExceptionTest {
         // When/Then
         dataSource.observe(testUserId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(result)
+            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
+                result,
+            )
             assertEquals(
                 GetSettingsLocalDataSourceError.Recoverable.TemporarilyUnavailable,
                 result.error,

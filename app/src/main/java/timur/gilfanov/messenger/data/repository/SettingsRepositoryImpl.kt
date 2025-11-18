@@ -49,88 +49,32 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsReposi
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
 
-// TODO Update KDoc
 /**
  * Implementation of [SettingsRepository] that manages user settings with local caching,
- * remote backup, and conflict resolution.
+ * remote synchronization, and conflict resolution.
  *
- * ## Current Architecture (On-Demand Recovery):
- * - Settings are fetched on-demand when [observeSettings] is called or operations fail
- * - Recovery triggered when settings are in EMPTY state
- * - Conflicts detected during recovery and propagated to use case layer
+ * ## Architecture:
  *
- * ## Planned Architecture (Unified Sync Channel):
- * Settings will be synchronized in real-time through a unified sync channel shared with
- * [MessengerRepositoryImpl]. This provides proactive updates instead of reactive recovery.
+ * **On-Demand Recovery:**
+ * - Settings are automatically recovered from the server when local data is missing
+ * - Recovery is triggered when [observeSettings] emits NoSettings error
+ * - Recovery is also triggered before [changeUiLanguage] if local settings are not found
+ * - Falls back to default settings if remote fetch fails
  *
- * ### Implementation Plan:
+ * **Synchronization:**
+ * - Local changes are queued for background sync via WorkManager
+ * - Sync uses Last Write Wins (LWW) conflict resolution based on modification timestamps
+ * - Conflicts are detected when both local and remote modified the same setting since last sync
+ * - Resolved conflicts emit [SettingsConflictEvent] via [observeConflicts]
  *
- * 1. **Subscribe to Unified Sync Stream** (in init block):
- * ```kotlin
- * init {
- *     syncDataSource.deltaUpdates(identity, lastSync)
- *         .mapNotNull { result -> result.getOrNull()?.settingsChange }
- *         .onEach { remoteSettings -> applySyncUpdate(remoteSettings) }
- *         .launchIn(repositoryScope)
- * }
- * ```
+ * **Error Handling:**
+ * - Permanent errors (corruption, permissions) propagate to use case layer
+ * - Network failures during sync are handled by WorkManager retry policies
  *
- * 2. **Add applySyncUpdate() Method**:
- * ```kotlin
- * private suspend fun applySyncUpdate(remoteSettings: Settings) {
- *     val currentLocal = localDataSource.observeSettings(userId).first().getOrNull()
- *         ?: return  // No local settings, apply remote directly
- *
- *     when {
- *         // Remote is stale, ignore
- *         remoteSettings.metadata.lastModifiedAt <= currentLocal.metadata.lastSyncedAt -> {
- *             logger.d(TAG, "Ignoring stale sync update")
- *         }
- *
- *         // Local has unsaved changes + remote is newer = conflict
- *         currentLocal.metadata.state == SettingsState.MODIFIED &&
- *         remoteSettings.metadata.lastModifiedAt > currentLocal.metadata.lastSyncedAt -> {
- *             // Emit conflict event for UI to resolve
- *             _settingsConflicts.emit(SettingsConflict(currentLocal, remoteSettings))
- *         }
- *
- *         // Remote is newer and no local changes, apply directly
- *         else -> {
- *             localDataSource.insertSettings(userId, remoteSettings)
- *         }
- *     }
- * }
- * ```
- *
- * 3. **Add Conflict Events Flow**:
- * ```kotlin
- * private val _settingsConflicts = MutableSharedFlow<SettingsConflict>(
- *     replay = 0,
- *     extraBufferCapacity = 1
- * )
- * val settingsConflicts: SharedFlow<SettingsConflict> = _settingsConflicts.asSharedFlow()
- * ```
- *
- * 4. **Keep Current Recovery Flow**:
- * - Maintain [performRecovery] for reliability when sync is unavailable
- * - Recovery acts as fallback when sync channel hasn't started yet
- * - Ensures settings available even without active sync
- *
- * ### Conflict Resolution Strategy:
- * - **Last-write-wins with user intervention**: If both local and remote modified since last sync,
- *   emit conflict event and let UI show dialog for user to choose
- * - **Local wins temporarily**: User sees their change immediately, conflict resolved async
- * - **Timestamp-based ordering**: Use lastSyncedAt to detect truly conflicting changes
- *
- * ### Benefits of Unified Sync:
- * - Real-time updates from other devices
- * - Single network connection shared with messenger sync
- * - Consistent timestamps across all entity types
- * - Reduced recovery overhead
- * - Better UX with proactive sync
- *
- * @see timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource for unified sync channel details
- * @see MessengerRepositoryImpl for chat sync implementation
+ * @property localDataSource Provides local storage
+ * @property remoteDataSource Provides network-based server communication
+ * @property workManager Schedules background sync tasks with backoff and constraints
+ * @property logger Diagnostic logging for debugging and monitoring
  */
 @Suppress("TooManyFunctions")
 @Singleton

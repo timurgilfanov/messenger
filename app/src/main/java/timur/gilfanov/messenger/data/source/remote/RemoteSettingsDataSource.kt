@@ -63,8 +63,27 @@ interface RemoteSettingsDataSource {
     suspend fun syncBatch(requests: List<SettingSyncRequest>): Map<String, SyncResult>
 }
 
+/**
+ * A single setting item from remote server response.
+ *
+ * @property key Setting identifier (e.g., "ui_language")
+ * @property value Raw string value from server
+ * @property version Server's version number for this setting
+ */
 data class RemoteSettingItem(val key: String, val value: String, val version: Int)
 
+/**
+ * Request payload for synchronizing a setting with the server.
+ *
+ * Includes version information needed for Last Write Wins conflict detection.
+ *
+ * @property userId User who owns this setting
+ * @property key Setting identifier
+ * @property value New value to sync
+ * @property clientVersion Current local version number
+ * @property lastKnownServerVersion Last server version known to client (0 if never synced)
+ * @property modifiedAt Timestamp of local modification
+ */
 data class SettingSyncRequest(
     val userId: UserId,
     val key: String,
@@ -74,9 +93,30 @@ data class SettingSyncRequest(
     val modifiedAt: Long,
 )
 
+/**
+ * Result of a setting synchronization operation using Last Write Wins strategy.
+ *
+ * The server compares modification timestamps and version numbers to detect conflicts.
+ * When both client and server modified the same setting, the newer timestamp wins.
+ */
 sealed class SyncResult {
+    /**
+     * Sync succeeded without conflict - client's value accepted by server.
+     *
+     * @property newVersion The new version number assigned by server
+     */
     data class Success(val newVersion: Int) : SyncResult()
 
+    /**
+     * Conflict detected - server has a newer modification that overwrites client's change.
+     *
+     * Client should accept the server value and notify user if appropriate.
+     *
+     * @property serverValue The winning value from server
+     * @property serverVersion Server's version number before this sync
+     * @property newVersion New version number after conflict resolution
+     * @property serverModifiedAt Timestamp of server's modification (newer than client's)
+     */
     data class Conflict(
         val serverValue: String,
         val serverVersion: Int,
@@ -84,5 +124,9 @@ sealed class SyncResult {
         val serverModifiedAt: Long,
     ) : SyncResult()
 
-    data class Error(val message: String) : SyncResult()
+    /**
+     * Sync failed due to network or server error.
+     */
+    // todo separate error types, auth should handle different from timeout
+    data object Error : SyncResult()
 }

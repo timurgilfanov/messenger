@@ -25,6 +25,33 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.util.Logger
 
+/**
+ * Room-based implementation of [LocalSettingsDataSource] with automatic retry logic.
+ *
+ * ## Error Handling Strategy:
+ *
+ * **Transient Errors (Automatic Retry):**
+ * - Database locks ([SQLiteDatabaseLockedException])
+ * - Disk I/O errors ([SQLiteDiskIOException])
+ * - Retry up to 3 times with exponential backoff (100ms → 200ms → 400ms, max 2s)
+ *
+ * **Permanent Errors (Immediate Failure):**
+ * - Storage full ([SQLiteFullException])
+ * - Database corruption ([SQLiteDatabaseCorruptException])
+ * - Access denied ([SQLiteAccessPermException])
+ * - Read-only database ([SQLiteReadOnlyDatabaseException])
+ *
+ * ## Method-Specific Behavior:
+ * - [observe]: Retries transient errors in Flow, completes Flow on permanent errors
+ * - [getSetting], [getUnsyncedSettings]: Retry transient errors, propagate permanent errors
+ * - [upsert] (single): Retries transient errors with exponential backoff
+ * - [upsert] (batch): **NO RETRY** - fails immediately on any error
+ * - [transform]: **NO RETRY** - transaction semantics prevent retry
+ *
+ * @property database MessengerDatabase instance for transaction support
+ * @property settingsDao Room DAO for settings table operations
+ * @property logger Diagnostic logger for error tracking
+ */
 class LocalSettingsDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
     private val settingsDao: SettingsDao,
@@ -214,6 +241,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
 
             val now = System.currentTimeMillis()
             transformedEntities.forEach { updated ->
+                // todo can use batch upsert
                 val initial = entities.find { it.key == updated.key }
                 if (initial != null && updated.value != initial.value) {
                     val modified = updated.copy(
@@ -237,7 +265,9 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             is SQLiteDatabaseCorruptException -> TransformSettingError.DatabaseCorrupted
             is SQLiteAccessPermException -> TransformSettingError.AccessDenied
             is SQLiteReadOnlyDatabaseException -> TransformSettingError.ReadOnlyDatabase
+            // todo can retry
             is SQLiteDatabaseLockedException -> TransformSettingError.ConcurrentModificationError
+            // todo can retry
             is SQLiteDiskIOException -> TransformSettingError.DiskIOError
             else -> {
                 logger.e(TAG, "Unknown error on setting upsert in database", e)

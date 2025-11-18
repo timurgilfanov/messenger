@@ -309,7 +309,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(entity)
 
-        remoteDataSource.setSyncBehavior { SyncResult.Error("Network error") }
+        remoteDataSource.setSyncBehavior { SyncResult.Error }
 
         val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
@@ -398,7 +398,7 @@ class SettingsRepositoryImplTest {
 
         remoteDataSource.setSyncBehavior { request ->
             if (request.key == SettingKey.THEME.key) {
-                SyncResult.Error("Network error")
+                SyncResult.Error
             } else {
                 SyncResult.Success(newVersion = request.clientVersion + 1)
             }

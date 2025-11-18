@@ -15,6 +15,7 @@ class SyncAllSettingsWorker @AssistedInject constructor(
     private val repository: SettingsRepositoryImpl,
 ) : CoroutineWorker(context, params) {
 
+    // todo use use case to handle auth errors? how to handle auth errors sync jobs?
     override suspend fun doWork(): Result = when (repository.syncAllPendingSettings()) {
         is SyncOutcome.Success -> Result.success()
         is SyncOutcome.Retry -> Result.retry()

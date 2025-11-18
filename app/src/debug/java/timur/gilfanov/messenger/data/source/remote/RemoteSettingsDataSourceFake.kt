@@ -36,6 +36,12 @@ class RemoteSettingsDataSourceFake(
 
     private val settings = MutableStateFlow(initialSettings)
 
+    private val settingVersions = MutableStateFlow(
+        initialSettings.keys.associateWith {
+            mapOf(SettingKey.UI_LANGUAGE.key to 1)
+        },
+    )
+
     private var timeCounter: Instant = Instant.fromEpochMilliseconds(0)
 
     private val now: Instant
@@ -53,13 +59,17 @@ class RemoteSettingsDataSourceFake(
         return if (userSettings == null) {
             ResultWithError.Failure(RemoteUserDataSourceError.Authentication.SessionRevoked)
         } else {
-            val items = convertSettingsToItems(userSettings)
+            val items = convertSettingsToItems(userSettings, identity.userId)
             val remoteSettings = RemoteSettings.fromItems(logger, items)
             ResultWithError.Success(remoteSettings)
         }
     }
 
-    private fun convertSettingsToItems(settings: Settings): List<RemoteSettingItem> {
+    private fun convertSettingsToItems(
+        settings: Settings,
+        userId: UserId,
+    ): List<RemoteSettingItem> {
+        val versionMap = settingVersions.value[userId] ?: emptyMap()
         val uiLanguageValue = when (settings.uiLanguage) {
             UiLanguage.English -> "English"
             UiLanguage.German -> "German"
@@ -69,7 +79,7 @@ class RemoteSettingsDataSourceFake(
             RemoteSettingItem(
                 key = SettingKey.UI_LANGUAGE.key,
                 value = uiLanguageValue,
-                version = 1,
+                version = versionMap[SettingKey.UI_LANGUAGE.key] ?: 1,
             ),
         )
     }
@@ -87,6 +97,14 @@ class RemoteSettingsDataSourceFake(
                 userSettings.copy(uiLanguage = language),
             )
         }
+
+        settingVersions.update { versionMap ->
+            val userVersions = versionMap[identity.userId] ?: emptyMap()
+            val newVersion = (userVersions[SettingKey.UI_LANGUAGE.key] ?: 0) + 1
+            versionMap +
+                (identity.userId to (userVersions + (SettingKey.UI_LANGUAGE.key to newVersion)))
+        }
+
         return ResultWithError.Success(Unit)
     }
 
@@ -94,6 +112,8 @@ class RemoteSettingsDataSourceFake(
         identity: Identity,
         settings: Settings,
     ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> {
+        val oldSettings = this.settings.value[identity.userId]
+
         this.settings.update {
             if (!it.containsKey(identity.userId)) {
                 return ResultWithError.Failure(
@@ -102,6 +122,21 @@ class RemoteSettingsDataSourceFake(
             }
             it.put(identity.userId, settings)
         }
+
+        if (oldSettings != null) {
+            settingVersions.update { versionMap ->
+                val userVersions = versionMap[identity.userId] ?: emptyMap()
+                val updatedVersions = userVersions.toMutableMap()
+
+                if (oldSettings.uiLanguage != settings.uiLanguage) {
+                    val newVersion = (userVersions[SettingKey.UI_LANGUAGE.key] ?: 0) + 1
+                    updatedVersions[SettingKey.UI_LANGUAGE.key] = newVersion
+                }
+
+                versionMap + (identity.userId to updatedVersions)
+            }
+        }
+
         return ResultWithError.Success(Unit)
     }
 

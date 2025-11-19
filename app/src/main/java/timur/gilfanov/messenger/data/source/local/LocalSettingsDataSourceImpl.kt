@@ -240,22 +240,26 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             val transformedEntities = transformedLocalSettings.toSettingEntities(userId)
 
             val now = System.currentTimeMillis()
-            transformedEntities.forEach { updated ->
-                // todo can use batch upsert
-                val initial = entities.find { it.key == updated.key }
-                if (initial != null && updated.value != initial.value) {
-                    val modified = updated.copy(
-                        localVersion = initial.localVersion + 1,
-                        modifiedAt = now,
-                        serverVersion = initial.serverVersion,
-                        syncedVersion = initial.syncedVersion,
-                        syncStatus = SyncStatus.PENDING,
-                    )
-                    settingsDao.upsert(modified)
-                } else if (initial == null) {
-                    settingsDao.upsert(updated)
+            val entitiesToUpsert = buildList {
+                transformedEntities.forEach { updated ->
+                    val initial = entities.find { it.key == updated.key }
+                    if (initial != null && updated.value != initial.value) {
+                        add(
+                            updated.copy(
+                                localVersion = initial.localVersion + 1,
+                                modifiedAt = now,
+                                serverVersion = initial.serverVersion,
+                                syncedVersion = initial.syncedVersion,
+                                syncStatus = SyncStatus.PENDING,
+                            ),
+                        )
+                    } else if (initial == null) {
+                        add(updated)
+                    }
                 }
             }
+
+            settingsDao.upsert(entitiesToUpsert)
 
             Success(Unit)
         }

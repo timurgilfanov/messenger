@@ -7,10 +7,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Named
 import javax.inject.Singleton
-import timur.gilfanov.messenger.data.source.local.LocalDataSourceFake
+import kotlinx.collections.immutable.persistentMapOf
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
+import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
+import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
 
 /**
@@ -43,6 +45,12 @@ abstract class DebugDataSourceModule {
     abstract fun bindFakeRemoteSyncDataSource(
         remoteDataSourceFake: RemoteDataSourceFake,
     ): RemoteSyncDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindFakeRemoteSettingsDataSource(
+        remoteSettingsDataSourceFake: RemoteSettingsDataSourceFake,
+    ): RemoteSettingsDataSource
 }
 
 /**
@@ -75,4 +83,9 @@ object DebugRemoteDataSourceProviders {
         @Named("real") realDataSource: RemoteSyncDataSource,
         @Named("useRealRemoteDataSources") useReal: Boolean,
     ): RemoteSyncDataSource = if (useReal) realDataSource else fakeDataSource
+
+    @Provides
+    @Singleton
+    fun provideRemoteSettingsDataSourceFake(): RemoteSettingsDataSourceFake =
+        RemoteSettingsDataSourceFake(persistentMapOf())
 }

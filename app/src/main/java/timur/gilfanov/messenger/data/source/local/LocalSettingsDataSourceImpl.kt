@@ -230,7 +230,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, TransformSettingError> = try {
         database.withTransaction {
-            val entities = settingsDao.getAll(userId = userId.id.toString())
+            val entities = getSettingsWithRetry(userId)
             if (entities.isEmpty()) {
                 return@withTransaction Failure(TransformSettingError.SettingsNotFound)
             }
@@ -269,9 +269,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             is SQLiteDatabaseCorruptException -> TransformSettingError.DatabaseCorrupted
             is SQLiteAccessPermException -> TransformSettingError.AccessDenied
             is SQLiteReadOnlyDatabaseException -> TransformSettingError.ReadOnlyDatabase
-            // todo can retry
             is SQLiteDatabaseLockedException -> TransformSettingError.ConcurrentModificationError
-            // todo can retry
             is SQLiteDiskIOException -> TransformSettingError.DiskIOError
             else -> {
                 logger.e(TAG, "Unknown error on setting upsert in database", e)
@@ -340,6 +338,31 @@ class LocalSettingsDataSourceImpl @Inject constructor(
 
                     else ->
                         return Failure(GetUnsyncedSettingsError.UnknownError(e))
+                }
+            }
+        }
+    }
+
+    @Suppress("NestedBlockDepth", "ReturnCount")
+    private suspend fun getSettingsWithRetry(userId: UserId): List<SettingEntity> {
+        var attempt = 0L
+        while (true) {
+            try {
+                return settingsDao.getAll(userId.id.toString())
+            } catch (e: SQLiteException) {
+                when (e) {
+                    is SQLiteDatabaseLockedException,
+                    is SQLiteDiskIOException,
+                    -> {
+                        if (attempt < MAX_RETRIES) {
+                            delay(calculateBackoff(attempt))
+                            attempt++
+                        } else {
+                            throw e
+                        }
+                    }
+
+                    else -> throw e
                 }
             }
         }

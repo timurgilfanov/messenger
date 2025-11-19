@@ -50,18 +50,39 @@ interface RemoteSettingsDataSource {
      * Synchronizes a single setting with the remote server using Last Write Wins.
      *
      * @param request The sync request containing setting data and version information
-     * @return Sync result indicating success, conflict, or error
+     * @return Success with sync result (Success/Conflict) or failure with error
      */
-    suspend fun syncSingleSetting(request: SettingSyncRequest): SyncResult
+    suspend fun syncSingleSetting(
+        request: SettingSyncRequest,
+    ): ResultWithError<SyncResult, SyncSingleSettingError>
 
     /**
      * Synchronizes multiple settings in a batch request.
      *
      * @param requests List of sync requests for different settings
-     * @return Map of setting keys to their sync results
+     * @return Success with map of setting keys to sync results (Success/Conflict), or failure with batch-level error
      */
-    suspend fun syncBatch(requests: List<SettingSyncRequest>): Map<String, SyncResult>
+    suspend fun syncBatch(
+        requests: List<SettingSyncRequest>,
+    ): ResultWithError<Map<String, SyncResult>, SyncBatchError>
 }
+
+/**
+ * Error taxonomy for the "sync single setting" remote data source method.
+ *
+ * Sync operations can fail due to authentication or infrastructure errors.
+ * When more specific errors or modifications are needed, use composition, not inheritance.
+ */
+typealias SyncSingleSettingError = RemoteUserDataSourceError
+
+/**
+ * Error taxonomy for the "sync batch" remote data source method.
+ *
+ * Batch-level errors affect all settings in the request (e.g., network down, authentication failed).
+ * Per-setting results (Success/Conflict) are returned in the success map.
+ * When more specific errors or modifications are needed, use composition, not inheritance.
+ */
+typealias SyncBatchError = RemoteUserDataSourceError
 
 /**
  * A single setting item from remote server response.
@@ -123,10 +144,4 @@ sealed class SyncResult {
         val newVersion: Int,
         val serverModifiedAt: Long,
     ) : SyncResult()
-
-    /**
-     * Sync failed due to network or server error.
-     */
-    // todo separate error types, auth should handle different from timeout
-    data object Error : SyncResult()
 }

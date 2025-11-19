@@ -33,9 +33,8 @@ class SyncSettingWorker @AssistedInject constructor(
         }
 
         return when (repository.syncSetting(userId, settingKey)) {
-            is SyncOutcome.Success -> Result.success()
-            is SyncOutcome.Retry -> Result.retry()
-            is SyncOutcome.Failure -> Result.failure()
+            is timur.gilfanov.messenger.domain.entity.ResultWithError.Success -> Result.success()
+            is timur.gilfanov.messenger.domain.entity.ResultWithError.Failure -> Result.retry()
         }
     }
 
@@ -44,10 +43,4 @@ class SyncSettingWorker @AssistedInject constructor(
         const val KEY_USER_ID = "user_id"
         const val KEY_SETTING_KEY = "setting_key"
     }
-}
-
-sealed class SyncOutcome {
-    data object Success : SyncOutcome()
-    data object Retry : SyncOutcome()
-    data object Failure : SyncOutcome()
 }

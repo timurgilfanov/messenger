@@ -28,15 +28,17 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.remote.ChangeUiLanguageRemoteDataSourceError
+import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceErrorV2
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettings
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteUserDataSourceError
 import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
+import timur.gilfanov.messenger.data.source.remote.SyncBatchError
 import timur.gilfanov.messenger.data.source.remote.SyncResult
+import timur.gilfanov.messenger.data.source.remote.SyncSingleSettingError
 import timur.gilfanov.messenger.data.source.remote.UpdateSettingsRemoteDataSourceError
-import timur.gilfanov.messenger.data.worker.SyncOutcome
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
@@ -185,7 +187,7 @@ class SettingsRepositoryImplTest {
 
         val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
-        assertEquals(SyncOutcome.Success, outcome)
+        assertIs<ResultWithError.Success<Unit, *>>(outcome)
     }
 
     @Test
@@ -202,11 +204,13 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(entity)
 
-        remoteDataSource.setSyncBehavior { SyncResult.Success(newVersion = 2) }
+        remoteDataSource.setSyncBehavior {
+            ResultWithError.Success(SyncResult.Success(newVersion = 2))
+        }
 
         val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
-        assertEquals(SyncOutcome.Success, outcome)
+        assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
         val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
         assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
@@ -230,17 +234,19 @@ class SettingsRepositoryImplTest {
         localDataSource.upsert(entity)
 
         remoteDataSource.setSyncBehavior {
-            SyncResult.Conflict(
-                serverValue = "English",
-                serverVersion = 1,
-                newVersion = 3,
-                serverModifiedAt = 2000L,
+            ResultWithError.Success(
+                SyncResult.Conflict(
+                    serverValue = "English",
+                    serverVersion = 1,
+                    newVersion = 3,
+                    serverModifiedAt = 2000L,
+                ),
             )
         }
 
         val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
-        assertEquals(SyncOutcome.Success, outcome)
+        assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
         val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
         assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
@@ -266,18 +272,20 @@ class SettingsRepositoryImplTest {
         localDataSource.upsert(entity)
 
         remoteDataSource.setSyncBehavior {
-            SyncResult.Conflict(
-                serverValue = "English",
-                serverVersion = 1,
-                newVersion = 3,
-                serverModifiedAt = 3000L,
+            ResultWithError.Success(
+                SyncResult.Conflict(
+                    serverValue = "English",
+                    serverVersion = 1,
+                    newVersion = 3,
+                    serverModifiedAt = 3000L,
+                ),
             )
         }
 
         repository.observeConflicts().test {
             val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
-            assertEquals(SyncOutcome.Success, outcome)
+            assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
             val conflict = awaitItem()
             assertEquals(SettingKey.UI_LANGUAGE, conflict.settingKey)
@@ -310,11 +318,17 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(entity)
 
-        remoteDataSource.setSyncBehavior { SyncResult.Error }
+        remoteDataSource.setSyncBehavior {
+            ResultWithError.Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServerError,
+                ),
+            )
+        }
 
         val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
 
-        assertEquals(SyncOutcome.Retry, outcome)
+        assertIs<ResultWithError.Failure<Unit, *>>(outcome)
 
         val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
         assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
@@ -325,7 +339,7 @@ class SettingsRepositoryImplTest {
     fun `syncAllPendingSettings returns Success when no unsynced settings`() = runTest {
         val outcome = repository.syncAllPendingSettings()
 
-        assertEquals(SyncOutcome.Success, outcome)
+        assertIs<ResultWithError.Success<Unit, *>>(outcome)
     }
 
     @Test
@@ -354,12 +368,12 @@ class SettingsRepositoryImplTest {
         localDataSource.upsert(entity2)
 
         remoteDataSource.setSyncBehavior { request ->
-            SyncResult.Success(newVersion = request.clientVersion + 1)
+            ResultWithError.Success(SyncResult.Success(newVersion = request.clientVersion + 1))
         }
 
         val outcome = repository.syncAllPendingSettings()
 
-        assertEquals(SyncOutcome.Success, outcome)
+        assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
         val updatedEntity1 = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
         assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity1)
@@ -399,19 +413,23 @@ class SettingsRepositoryImplTest {
 
         remoteDataSource.setSyncBehavior { request ->
             if (request.key == SettingKey.THEME.key) {
-                SyncResult.Error
+                ResultWithError.Failure(
+                    RemoteUserDataSourceError.RemoteDataSource(
+                        RemoteDataSourceErrorV2.ServerError,
+                    ),
+                )
             } else {
-                SyncResult.Success(newVersion = request.clientVersion + 1)
+                ResultWithError.Success(SyncResult.Success(newVersion = request.clientVersion + 1))
             }
         }
 
         val outcome = repository.syncAllPendingSettings()
 
-        assertEquals(SyncOutcome.Retry, outcome)
+        assertIs<ResultWithError.Failure<Unit, *>>(outcome)
 
         val updatedEntity1 = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
         assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity1)
-        assertEquals(SyncStatus.SYNCED, updatedEntity1.data.syncStatus)
+        assertEquals(SyncStatus.FAILED, updatedEntity1.data.syncStatus)
 
         val updatedEntity2 = localDataSource.getSetting(testUserId, SettingKey.THEME.key)
         assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity2)
@@ -610,12 +628,19 @@ class SettingsRepositoryImplTest {
                 ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> =
                     ResultWithError.Success(Unit)
 
-                override suspend fun syncSingleSetting(request: SettingSyncRequest): SyncResult =
-                    SyncResult.Success(newVersion = request.clientVersion + 1)
+                override suspend fun syncSingleSetting(
+                    request: SettingSyncRequest,
+                ): ResultWithError<SyncResult, SyncSingleSettingError> = ResultWithError.Success(
+                    SyncResult.Success(
+                        newVersion =
+                        request.clientVersion + 1,
+                    ),
+                )
 
                 override suspend fun syncBatch(
                     requests: List<SettingSyncRequest>,
-                ): Map<String, SyncResult> = emptyMap()
+                ): ResultWithError<Map<String, SyncResult>, SyncBatchError> =
+                    ResultWithError.Success(emptyMap())
             }
             val repoWithInvalidRemote = SettingsRepositoryImpl(
                 localDataSource = localDataSource,
@@ -678,12 +703,19 @@ class SettingsRepositoryImplTest {
                 ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> =
                     ResultWithError.Success(Unit)
 
-                override suspend fun syncSingleSetting(request: SettingSyncRequest): SyncResult =
-                    SyncResult.Success(newVersion = request.clientVersion + 1)
+                override suspend fun syncSingleSetting(
+                    request: SettingSyncRequest,
+                ): ResultWithError<SyncResult, SyncSingleSettingError> = ResultWithError.Success(
+                    SyncResult.Success(
+                        newVersion =
+                        request.clientVersion + 1,
+                    ),
+                )
 
                 override suspend fun syncBatch(
                     requests: List<SettingSyncRequest>,
-                ): Map<String, SyncResult> = emptyMap()
+                ): ResultWithError<Map<String, SyncResult>, SyncBatchError> =
+                    ResultWithError.Success(emptyMap())
             }
             val repoWithInvalidRemote = SettingsRepositoryImpl(
                 localDataSource = localDataSource,

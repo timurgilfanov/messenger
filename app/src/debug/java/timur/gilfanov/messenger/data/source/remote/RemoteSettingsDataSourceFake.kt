@@ -140,25 +140,36 @@ class RemoteSettingsDataSourceFake(
         return ResultWithError.Success(Unit)
     }
 
-    private var syncBehavior: (SettingSyncRequest) -> SyncResult = { request ->
-        SyncResult.Success(newVersion = request.clientVersion + 1)
-    }
-
-    override suspend fun syncSingleSetting(request: SettingSyncRequest): SyncResult =
-        syncBehavior(request)
-
-    override suspend fun syncBatch(requests: List<SettingSyncRequest>): Map<String, SyncResult> =
-        requests.associate { request ->
-            request.key to syncBehavior(request)
+    private var syncBehavior:
+        (SettingSyncRequest) -> ResultWithError<SyncResult, SyncSingleSettingError> =
+        { request ->
+            ResultWithError.Success(SyncResult.Success(newVersion = request.clientVersion + 1))
         }
 
-    fun setSyncBehavior(behavior: (SettingSyncRequest) -> SyncResult) {
+    override suspend fun syncSingleSetting(
+        request: SettingSyncRequest,
+    ): ResultWithError<SyncResult, SyncSingleSettingError> = syncBehavior(request)
+
+    override suspend fun syncBatch(
+        requests: List<SettingSyncRequest>,
+    ): ResultWithError<Map<String, SyncResult>, SyncBatchError> = ResultWithError.Success(
+        requests.associate { request ->
+            when (val result = syncBehavior(request)) {
+                is ResultWithError.Success -> request.key to result.data
+                is ResultWithError.Failure -> return ResultWithError.Failure(result.error)
+            }
+        },
+    )
+
+    fun setSyncBehavior(
+        behavior: (SettingSyncRequest) -> ResultWithError<SyncResult, SyncSingleSettingError>,
+    ) {
         syncBehavior = behavior
     }
 
     fun resetSyncBehavior() {
         syncBehavior = { request ->
-            SyncResult.Success(newVersion = request.clientVersion + 1)
+            ResultWithError.Success(SyncResult.Success(newVersion = request.clientVersion + 1))
         }
     }
 }

@@ -1,23 +1,28 @@
-package timur.gilfanov.messenger.data.repository
-
-import timur.gilfanov.messenger.data.source.remote.RemoteUserDataSourceError
+package timur.gilfanov.messenger.domain.usecase.user.repository
 
 /**
- * Error taxonomy for the "sync all settings" repository method.
+ * Error taxonomy for the "sync setting" repository method.
  *
- * Distinguishes between local storage issues and remote batch sync failures,
+ * Distinguishes between local storage issues (get/upsert failures) and remote sync failures,
  * while abstracting implementation details into repository-level error categories.
  *
  * When more specific errors or modifications are needed, use composition, not inheritance.
  */
-sealed interface SyncAllSettingsRepositoryError {
+sealed interface SyncSettingRepositoryError {
     /**
-     * Local storage operation failed during batch sync.
+     * Setting was not found in local storage during sync preparation.
      *
-     * These errors can occur during getUnsyncedSettings() or upsert() operations
-     * and are handled uniformly by use cases regardless of which operation failed.
+     * This is the only operation-specific error - occurs only during getSetting().
      */
-    sealed interface LocalStorageError : SyncAllSettingsRepositoryError {
+    data object SettingNotFound : SyncSettingRepositoryError
+
+    /**
+     * Local storage operation failed during sync.
+     *
+     * These errors can occur during either get or upsert operations and are handled
+     * uniformly by use cases regardless of which operation failed.
+     */
+    sealed interface LocalStorageError : SyncSettingRepositoryError {
         /**
          * Transient local storage issue that may resolve on retry.
          *
@@ -62,12 +67,10 @@ sealed interface SyncAllSettingsRepositoryError {
     }
 
     /**
-     * Remote batch sync operation failed.
+     * Remote sync operation failed.
      *
-     * This represents a batch-level failure (e.g., network down, authentication failed).
-     * Per-setting results (Success/Conflict) are returned in the success case.
+     * Includes authentication failures, network issues, server errors, and rate limiting.
      * Wraps the full remote data source error for detailed handling.
      */
-    data class RemoteSyncFailed(val error: RemoteUserDataSourceError) :
-        SyncAllSettingsRepositoryError
+    data class RemoteSyncFailed(val error: RepositoryError) : SyncSettingRepositoryError
 }

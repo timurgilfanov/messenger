@@ -3,9 +3,11 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
+import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
  * Repository for managing user settings.
@@ -45,4 +47,20 @@ interface SettingsRepository {
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError>
+
+    /**
+     * Syncs a specific user setting with the remote backend.
+     *
+     * @param userId Identifier of the user whose setting is being synced
+     * @param key The concrete setting to sync
+     */
+    suspend fun syncSetting(
+        userId: UserId,
+        key: SettingKey,
+    ): ResultWithError<Unit, SyncSettingRepositoryError>
+
+    /**
+     * Syncs all pending settings changes for all users.
+     */
+    suspend fun syncAllPendingSettings(): ResultWithError<Unit, SyncAllSettingsRepositoryError>
 }

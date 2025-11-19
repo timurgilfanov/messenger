@@ -7,16 +7,17 @@ import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.UUID
-import timur.gilfanov.messenger.data.repository.SettingsRepositoryImpl
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.usecase.user.SettingsSyncOutcome
+import timur.gilfanov.messenger.domain.usecase.user.SyncSettingUseCase
 import timur.gilfanov.messenger.util.Logger
 
 @HiltWorker
 class SyncSettingWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val repository: SettingsRepositoryImpl,
+    private val syncSetting: SyncSettingUseCase,
     private val logger: Logger,
 ) : CoroutineWorker(context, params) {
 
@@ -32,9 +33,10 @@ class SyncSettingWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        return when (repository.syncSetting(userId, settingKey)) {
-            is timur.gilfanov.messenger.domain.entity.ResultWithError.Success -> Result.success()
-            is timur.gilfanov.messenger.domain.entity.ResultWithError.Failure -> Result.retry()
+        return when (syncSetting(userId, settingKey)) {
+            SettingsSyncOutcome.Success -> Result.success()
+            SettingsSyncOutcome.Retry -> Result.retry()
+            SettingsSyncOutcome.Failure -> Result.failure()
         }
     }
 

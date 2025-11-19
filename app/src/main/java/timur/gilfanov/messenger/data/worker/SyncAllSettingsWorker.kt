@@ -6,17 +6,19 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import timur.gilfanov.messenger.data.repository.SettingsRepositoryImpl
+import timur.gilfanov.messenger.domain.usecase.user.SettingsSyncOutcome
+import timur.gilfanov.messenger.domain.usecase.user.SyncAllPendingSettingsUseCase
 
 @HiltWorker
 class SyncAllSettingsWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val repository: SettingsRepositoryImpl,
+    private val syncAllPendingSettings: SyncAllPendingSettingsUseCase,
 ) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result = when (repository.syncAllPendingSettings()) {
-        is timur.gilfanov.messenger.domain.entity.ResultWithError.Success -> Result.success()
-        is timur.gilfanov.messenger.domain.entity.ResultWithError.Failure -> Result.retry()
+    override suspend fun doWork(): Result = when (syncAllPendingSettings()) {
+        SettingsSyncOutcome.Success -> Result.success()
+        SettingsSyncOutcome.Retry -> Result.retry()
+        SettingsSyncOutcome.Failure -> Result.failure()
     }
 }

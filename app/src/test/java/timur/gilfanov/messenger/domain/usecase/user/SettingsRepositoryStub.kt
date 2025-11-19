@@ -5,12 +5,16 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
+import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncAllSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncSettingRepositoryError
 
 class SettingsRepositoryStub(
     private val settingsFlow: Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
@@ -40,4 +44,18 @@ class SettingsRepositoryStub(
         identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = changeLanguage
+
+    override suspend fun syncSetting(
+        userId: UserId,
+        key: SettingKey,
+    ): ResultWithError<Unit, SyncSettingRepositoryError> {
+        error("Not implemented for this test")
+    }
+
+    override suspend fun syncAllPendingSettings(): ResultWithError<
+        Unit,
+        SyncAllSettingsRepositoryError,
+        > {
+        error("Not implemented for this test")
+    }
 }

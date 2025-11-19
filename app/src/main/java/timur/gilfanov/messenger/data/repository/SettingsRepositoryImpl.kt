@@ -36,6 +36,7 @@ import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.SyncResult
+import timur.gilfanov.messenger.data.source.remote.toRepositoryError
 import timur.gilfanov.messenger.data.worker.SyncSettingWorker
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.fold
@@ -49,6 +50,8 @@ import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncAllSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncSettingRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 /**
@@ -285,7 +288,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     @Suppress("LongMethod", "ReturnCount", "ComplexMethod", "NestedBlockDepth")
-    suspend fun syncSetting(
+    override suspend fun syncSetting(
         userId: UserId,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError> {
@@ -390,7 +393,9 @@ class SettingsRepositoryImpl @Inject constructor(
                 localDataSource.upsert(
                     entity.copy(syncStatus = SyncStatus.FAILED),
                 )
-                ResultWithError.Failure(SyncSettingRepositoryError.RemoteSyncFailed(error))
+                ResultWithError.Failure(
+                    SyncSettingRepositoryError.RemoteSyncFailed(error.toRepositoryError()),
+                )
             },
         )
     }
@@ -398,12 +403,13 @@ class SettingsRepositoryImpl @Inject constructor(
     @Suppress(
         "LongMethod",
         "NestedBlockDepth",
-        "TooGenericExceptionCaught",
-        "SwallowedException",
         "ReturnCount",
         "CyclomaticComplexMethod",
     )
-    suspend fun syncAllPendingSettings(): ResultWithError<Unit, SyncAllSettingsRepositoryError> {
+    override suspend fun syncAllPendingSettings(): ResultWithError<
+        Unit,
+        SyncAllSettingsRepositoryError,
+        > {
         val unsyncedSettings = localDataSource.getUnsyncedSettings().fold(
             onSuccess = { it },
             onFailure = { error ->
@@ -533,7 +539,7 @@ class SettingsRepositoryImpl @Inject constructor(
                     )
                 }
                 ResultWithError.Failure(
-                    SyncAllSettingsRepositoryError.RemoteSyncFailed(error),
+                    SyncAllSettingsRepositoryError.RemoteSyncFailed(error.toRepositoryError()),
                 )
             },
         )

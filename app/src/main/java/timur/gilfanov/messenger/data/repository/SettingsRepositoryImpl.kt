@@ -85,7 +85,16 @@ class SettingsRepositoryImpl @Inject constructor(
     private val logger: Logger,
 ) : SettingsRepository {
 
-    // TODO: Why we need extra buffer capacity?
+    /**
+     * SharedFlow for conflict events emitted during sync operations.
+     *
+     * Buffer capacity prevents event loss when conflicts occur during WorkManager sync
+     * while no collectors are active (e.g., app backgrounded). Buffered events are
+     * delivered when collectors start observing, ensuring users see conflicts that
+     * occurred while the app was in background.
+     *
+     * Buffer size of 10 balances memory usage with preserving recent conflict history.
+     */
     private val conflictEvents = MutableSharedFlow<SettingsConflictEvent>(
         extraBufferCapacity = CONFLICT_EVENT_BUFFER_CAPACITY,
     )

@@ -88,6 +88,7 @@ class SettingsRepositoryImplTest {
             remoteDataSource = remoteDataSource,
             workManager = workManager,
             logger = NoOpLogger(),
+            defaultSettings = Settings(uiLanguage = UiLanguage.English),
         )
     }
 
@@ -430,6 +431,7 @@ class SettingsRepositoryImplTest {
             remoteDataSource = remoteWithData,
             workManager = workManager,
             logger = NoOpLogger(),
+            defaultSettings = Settings(uiLanguage = UiLanguage.English),
         )
 
         repoWithRemote.observeSettings(identity).test {
@@ -461,6 +463,7 @@ class SettingsRepositoryImplTest {
                 remoteDataSource = remoteWithData,
                 workManager = workManager,
                 logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
             )
 
             val result = repoWithRemote.changeUiLanguage(identity, UiLanguage.German)
@@ -619,6 +622,7 @@ class SettingsRepositoryImplTest {
                 remoteDataSource = remoteWithInvalidValue,
                 workManager = workManager,
                 logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
             )
 
             repoWithInvalidRemote.observeSettings(identity).test {
@@ -686,6 +690,7 @@ class SettingsRepositoryImplTest {
                 remoteDataSource = remoteWithInvalidValue,
                 workManager = workManager,
                 logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
             )
 
             val result = repoWithInvalidRemote.changeUiLanguage(identity, UiLanguage.German)

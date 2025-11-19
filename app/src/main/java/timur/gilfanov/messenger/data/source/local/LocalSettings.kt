@@ -6,6 +6,8 @@ import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Type-safe wrapper for user settings stored locally with synchronization metadata.
@@ -58,19 +60,23 @@ data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
          *
          * **Validation Behavior:**
          * - Parses stored string values into typed domain objects
-         * - Falls back to English for invalid UI language values
-         * - Creates default settings (English, version 1, PENDING) when entity is missing
+         * - Falls back to default values for invalid or missing settings
+         * - Creates settings with version 1 and PENDING sync status when entity is missing
          * - Ignores unrecognized setting keys
          *
          * @param entities List of setting entities from database query
+         * @param defaults Default values for settings (injected from repository layer)
          * @return Typed LocalSettings with all required settings populated
          */
-        fun fromEntities(entities: List<SettingEntity>): LocalSettings {
+        fun fromEntities(entities: List<SettingEntity>, defaults: Settings): LocalSettings {
+            val now = Clock.System.now()
+
             val uiLanguageEntity = entities.find { it.key == SettingKey.UI_LANGUAGE.key }
 
             val uiLanguage: LocalSetting<UiLanguage> = if (uiLanguageEntity != null) {
                 LocalSetting(
-                    value = uiLanguageEntity.value.toUiLanguageOrDefault(UiLanguage.English),
+                    value = uiLanguageEntity.value.toUiLanguageOrDefault(defaults.uiLanguage),
+                    defaultValue = defaults.uiLanguage,
                     localVersion = uiLanguageEntity.localVersion,
                     syncedVersion = uiLanguageEntity.syncedVersion,
                     serverVersion = uiLanguageEntity.serverVersion,
@@ -78,17 +84,20 @@ data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
                     syncStatus = uiLanguageEntity.syncStatus,
                 )
             } else {
-                LocalSetting(
-                    value = UiLanguage.English, // todo should defaults be determined by repository?
-                    localVersion = 1,
-                    syncedVersion = 0,
-                    serverVersion = 0,
-                    modifiedAt = System.currentTimeMillis(),
-                    syncStatus = SyncStatus.PENDING,
-                )
+                defaultLocalSetting(value = defaults.uiLanguage, modifiedAt = now)
             }
 
             return LocalSettings(uiLanguage = uiLanguage)
         }
     }
 }
+
+internal fun <T> defaultLocalSetting(value: T, modifiedAt: Instant): LocalSetting<T> = LocalSetting(
+    value = value,
+    defaultValue = value,
+    localVersion = 1,
+    syncedVersion = 0,
+    serverVersion = 0,
+    modifiedAt = modifiedAt.toEpochMilliseconds(),
+    syncStatus = SyncStatus.PENDING,
+)

@@ -19,6 +19,7 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
  * - Dirty: [localVersion] > [syncedVersion] (local changes not yet synced)
  *
  * @property value The setting value
+ * @property defaultValue The default value for this setting
  * @property localVersion Version counter incremented on each local modification
  * @property syncedVersion Last successfully synced [localVersion]
  * @property serverVersion Server's version for this setting (0 = unknown/never synced)
@@ -27,6 +28,7 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
  */
 data class LocalSetting<T>(
     val value: T,
+    val defaultValue: T,
     @param:IntRange(from = 1) val localVersion: Int,
     @param:IntRange(from = 0) val syncedVersion: Int,
     @param:IntRange(from = 0) val serverVersion: Int,

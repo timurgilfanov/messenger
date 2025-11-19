@@ -18,6 +18,7 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
+import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
@@ -35,6 +36,7 @@ class LocalSettingsDataSourceImplTest {
             database = databaseRule.database,
             settingsDao = databaseRule.database.settingsDao(),
             logger = NoOpLogger(),
+            defaultSettings = Settings(uiLanguage = UiLanguage.English),
         )
     }
 

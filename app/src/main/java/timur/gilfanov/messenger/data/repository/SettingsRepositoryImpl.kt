@@ -27,6 +27,7 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.TransformSettingError
 import timur.gilfanov.messenger.data.source.local.UpsertSettingError
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
+import timur.gilfanov.messenger.data.source.local.defaultLocalSetting
 import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
@@ -83,6 +84,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private val remoteDataSource: RemoteSettingsDataSource,
     private val workManager: WorkManager,
     private val logger: Logger,
+    private val defaultSettings: Settings,
 ) : SettingsRepository {
 
     /**
@@ -519,6 +521,7 @@ class SettingsRepositoryImpl @Inject constructor(
                     when (val setting = remoteSettings.uiLanguage) {
                         is RemoteSetting.Valid -> LocalSetting(
                             value = setting.value,
+                            defaultValue = defaultSettings.uiLanguage,
                             localVersion = setting.serverVersion,
                             syncedVersion = setting.serverVersion,
                             serverVersion = setting.serverVersion,
@@ -527,7 +530,8 @@ class SettingsRepositoryImpl @Inject constructor(
                         )
 
                         is RemoteSetting.Missing -> LocalSetting(
-                            value = UiLanguage.English,
+                            value = defaultSettings.uiLanguage,
+                            defaultValue = defaultSettings.uiLanguage,
                             localVersion = 1,
                             syncedVersion = 0,
                             serverVersion = 0,
@@ -536,7 +540,8 @@ class SettingsRepositoryImpl @Inject constructor(
                         )
 
                         is RemoteSetting.InvalidValue -> LocalSetting(
-                            value = UiLanguage.English,
+                            value = defaultSettings.uiLanguage,
+                            defaultValue = defaultSettings.uiLanguage,
                             localVersion = setting.serverVersion,
                             syncedVersion = setting.serverVersion,
                             serverVersion = setting.serverVersion,
@@ -579,7 +584,7 @@ class SettingsRepositoryImpl @Inject constructor(
     ): ResultWithError<Settings, GetSettingsRepositoryError> {
         val now = Clock.System.now()
         val defaultLocalSettings = LocalSettings(
-            uiLanguage = defaultLocalSetting(UiLanguage.English, now),
+            uiLanguage = defaultLocalSetting(defaultSettings.uiLanguage, now),
         )
         val entities = defaultLocalSettings.toSettingEntities(userId)
         return localDataSource.upsert(entities).fold(
@@ -592,15 +597,6 @@ class SettingsRepositoryImpl @Inject constructor(
         )
     }
 }
-
-private fun <T> defaultLocalSetting(value: T, modifiedAt: Instant): LocalSetting<T> = LocalSetting(
-    value = value,
-    localVersion = 1,
-    syncedVersion = 0,
-    serverVersion = 0,
-    modifiedAt = modifiedAt.toEpochMilliseconds(),
-    syncStatus = SyncStatus.PENDING,
-)
 
 private fun mapServerValueToLocalValue(
     settingKey: SettingKey,

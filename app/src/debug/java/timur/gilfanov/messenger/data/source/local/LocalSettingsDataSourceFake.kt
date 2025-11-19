@@ -7,9 +7,13 @@ import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.user.Settings
+import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
-class LocalSettingsDataSourceFake : LocalSettingsDataSource {
+class LocalSettingsDataSourceFake(
+    private val defaultSettings: Settings = Settings(uiLanguage = UiLanguage.English),
+) : LocalSettingsDataSource {
 
     private val settings = MutableStateFlow<Map<Pair<String, String>, SettingEntity>>(emptyMap())
 
@@ -22,7 +26,7 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
             if (entities.isEmpty()) {
                 ResultWithError.Failure(GetSettingsLocalDataSourceError.NoSettings)
             } else {
-                ResultWithError.Success(LocalSettings.fromEntities(entities))
+                ResultWithError.Success(LocalSettings.fromEntities(entities, defaultSettings))
             }
         }
     }
@@ -58,7 +62,7 @@ class LocalSettingsDataSourceFake : LocalSettingsDataSource {
             return ResultWithError.Failure(TransformSettingError.SettingsNotFound)
         }
 
-        val localSettings = LocalSettings.fromEntities(entities)
+        val localSettings = LocalSettings.fromEntities(entities, defaultSettings)
         val transformedLocalSettings = transform(localSettings)
         val transformedEntities = transformedLocalSettings.toSettingEntities(userId)
 

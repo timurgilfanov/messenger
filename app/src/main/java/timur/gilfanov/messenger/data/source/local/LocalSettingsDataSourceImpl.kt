@@ -22,6 +22,7 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
+import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.util.Logger
 
@@ -56,6 +57,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
     private val settingsDao: SettingsDao,
     private val logger: Logger,
+    private val defaultSettings: Settings,
 ) : LocalSettingsDataSource {
 
     /**
@@ -82,7 +84,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                         GetSettingsLocalDataSourceError.NoSettings,
                     )
                 } else {
-                    Success(LocalSettings.fromEntities(entities))
+                    Success(LocalSettings.fromEntities(entities, defaultSettings))
                 }
             }.catch { exception ->
                 val error = when (exception) {
@@ -235,7 +237,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 return@withTransaction Failure(TransformSettingError.SettingsNotFound)
             }
 
-            val localSettings = LocalSettings.fromEntities(entities)
+            val localSettings = LocalSettings.fromEntities(entities, defaultSettings)
             val transformedLocalSettings = transform(localSettings)
             val transformedEntities = transformedLocalSettings.toSettingEntities(userId)
 

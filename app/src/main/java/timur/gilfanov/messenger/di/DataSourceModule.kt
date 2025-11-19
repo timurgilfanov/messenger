@@ -23,6 +23,8 @@ import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSourceImpl
+import timur.gilfanov.messenger.domain.entity.user.Settings
+import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 
 /**
  * Feature flag for using real remote data sources.
@@ -36,6 +38,12 @@ object DataSourceFeatureFlags {
     @Singleton
     @Named("useRealRemoteDataSources")
     fun provideUseRealRemoteDataSources(): Boolean = BuildConfig.USE_REAL_REMOTE_DATA_SOURCES
+
+    @Provides
+    @Singleton
+    fun provideDefaultSettings(): Settings = Settings(
+        uiLanguage = UiLanguage.English,
+    )
 }
 
 @Module

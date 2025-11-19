@@ -8,6 +8,7 @@ import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
+import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
@@ -31,7 +32,10 @@ class LocalSettingsTest {
         )
 
         // When
-        val result = LocalSettings.fromEntities(listOf(entity))
+        val result = LocalSettings.fromEntities(
+            listOf(entity),
+            defaults = Settings(uiLanguage = UiLanguage.English),
+        )
 
         // Then
         assertEquals(UiLanguage.German, result.uiLanguage.value)
@@ -48,7 +52,10 @@ class LocalSettingsTest {
         val entities = emptyList<SettingEntity>()
 
         // When
-        val result = LocalSettings.fromEntities(entities)
+        val result = LocalSettings.fromEntities(
+            entities,
+            defaults = Settings(uiLanguage = UiLanguage.English),
+        )
 
         // Then
         assertEquals(UiLanguage.English, result.uiLanguage.value)
@@ -73,7 +80,10 @@ class LocalSettingsTest {
         )
 
         // When
-        val result = LocalSettings.fromEntities(listOf(entity))
+        val result = LocalSettings.fromEntities(
+            listOf(entity),
+            defaults = Settings(uiLanguage = UiLanguage.English),
+        )
 
         // Then
         assertEquals(UiLanguage.English, result.uiLanguage.value, "Should fall back to English")
@@ -96,7 +106,10 @@ class LocalSettingsTest {
         )
 
         // When
-        val result = LocalSettings.fromEntities(listOf(themeEntity))
+        val result = LocalSettings.fromEntities(
+            listOf(themeEntity),
+            defaults = Settings(uiLanguage = UiLanguage.English),
+        )
 
         // Then - should use default English since UI_LANGUAGE not present
         assertEquals(UiLanguage.English, result.uiLanguage.value)
@@ -127,7 +140,10 @@ class LocalSettingsTest {
         )
 
         // When
-        val result = LocalSettings.fromEntities(listOf(uiLanguageEntity, themeEntity))
+        val result = LocalSettings.fromEntities(
+            listOf(uiLanguageEntity, themeEntity),
+            defaults = Settings(uiLanguage = UiLanguage.English),
+        )
 
         // Then - should use the UI_LANGUAGE entity
         assertEquals(UiLanguage.German, result.uiLanguage.value)
@@ -140,6 +156,7 @@ class LocalSettingsTest {
         val localSettings = LocalSettings(
             uiLanguage = LocalSetting(
                 value = UiLanguage.German,
+                defaultValue = UiLanguage.English,
                 localVersion = 5,
                 syncedVersion = 3,
                 serverVersion = 2,
@@ -170,6 +187,7 @@ class LocalSettingsTest {
         val localSettings = LocalSettings(
             uiLanguage = LocalSetting(
                 value = UiLanguage.German,
+                defaultValue = UiLanguage.English,
                 localVersion = 5,
                 syncedVersion = 3,
                 serverVersion = 2,
@@ -200,7 +218,10 @@ class LocalSettingsTest {
         )
 
         // When - convert entity -> LocalSettings -> entity
-        val localSettings = LocalSettings.fromEntities(listOf(originalEntity))
+        val localSettings = LocalSettings.fromEntities(
+            listOf(originalEntity),
+            defaults = Settings(uiLanguage = UiLanguage.English),
+        )
         val roundTripEntities = localSettings.toSettingEntities(testUserId)
 
         // Then

@@ -23,9 +23,24 @@ class SyncSettingWorker @AssistedInject constructor(
 
     @Suppress("ReturnCount")
     override suspend fun doWork(): Result {
-        val userId =
-            UserId(UUID.fromString(inputData.getString(KEY_USER_ID) ?: return Result.failure()))
-        val settingKeyString = inputData.getString(KEY_SETTING_KEY) ?: return Result.failure()
+        val userIdString = inputData.getString(KEY_USER_ID)
+        if (userIdString == null) {
+            logger.w(TAG, "Missing user_id in WorkManager input data")
+            return Result.failure()
+        }
+
+        val userId = try {
+            UserId(UUID.fromString(userIdString))
+        } catch (_: IllegalArgumentException) {
+            logger.w(TAG, "Invalid user_id format: $userIdString")
+            return Result.failure()
+        }
+
+        val settingKeyString = inputData.getString(KEY_SETTING_KEY)
+        if (settingKeyString == null) {
+            logger.w(TAG, "Missing setting_key in WorkManager input data")
+            return Result.failure()
+        }
 
         val settingKey = SettingKey.fromKey(settingKeyString)
         if (settingKey == null) {

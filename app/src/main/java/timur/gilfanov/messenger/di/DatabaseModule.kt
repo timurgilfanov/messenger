@@ -8,6 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
@@ -25,15 +26,19 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideMessengerDatabase(@ApplicationContext context: Context): MessengerDatabase =
-        Room.databaseBuilder(
+    fun provideMessengerDatabase(@ApplicationContext context: Context): MessengerDatabase {
+        val builder = Room.databaseBuilder(
             context,
             MessengerDatabase::class.java,
             MessengerDatabase.DATABASE_NAME,
         )
-            // todo remove before first release
-            .fallbackToDestructiveMigration(dropAllTables = true)
-            .build()
+
+        if (BuildConfig.DEBUG) {
+            builder.fallbackToDestructiveMigration(dropAllTables = true)
+        }
+
+        return builder.build()
+    }
 
     @Provides
     @Singleton

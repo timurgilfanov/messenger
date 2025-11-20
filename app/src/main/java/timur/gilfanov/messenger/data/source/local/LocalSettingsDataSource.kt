@@ -19,7 +19,9 @@ interface LocalSettingsDataSource {
      * to repository layer for error mapping.
      *
      * @param userId The unique identifier of the user
-     * @return Flow emitting typed LocalSettings, or null if settings are not initialized
+     * @return Flow emitting Success with LocalSettings when initialized, or Failure with
+     *         NoSettings error when not initialized, or Failure with other errors for
+     *         infrastructure issues
      */
     fun observe(
         userId: UserId,

@@ -110,7 +110,7 @@ class SettingsRepositoryImpl @Inject constructor(
         private const val TAG = "SettingsRepository"
         private const val CONFLICT_EVENT_REPLAY = 10
         private const val DEBOUNCE_DELAY_MS = 500L
-        private const val BACKOFF_DELAY_SECONDS = 15L
+        private const val BACKOFF_DELAY_SECONDS = 5L
     }
 
     override fun observeConflicts(): Flow<SettingsConflictEvent> = conflictEvents.asSharedFlow()

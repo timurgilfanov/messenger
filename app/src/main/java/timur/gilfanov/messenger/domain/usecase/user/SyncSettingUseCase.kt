@@ -22,23 +22,41 @@ class SyncSettingUseCase(private val settingsRepository: SettingsRepository) {
 
     private fun SyncSettingRepositoryError.toSyncOutcome(): SettingsSyncOutcome = when (this) {
         SyncSettingRepositoryError.SettingNotFound -> SettingsSyncOutcome.Failure
+
         is SyncSettingRepositoryError.LocalStorageError -> when (this) {
-            SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable,
+            SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable ->
+                SettingsSyncOutcome.Retry
+
             SyncSettingRepositoryError.LocalStorageError.StorageFull,
             SyncSettingRepositoryError.LocalStorageError.AccessDenied,
             SyncSettingRepositoryError.LocalStorageError.ReadOnly,
-            is SyncSettingRepositoryError.LocalStorageError.UnknownError,
-            -> SettingsSyncOutcome.Retry
             SyncSettingRepositoryError.LocalStorageError.Corrupted,
-            -> SettingsSyncOutcome.Failure
+            is SyncSettingRepositoryError.LocalStorageError.UnknownError,
+            ->
+                SettingsSyncOutcome.Failure
         }
-        is SyncSettingRepositoryError.RemoteSyncFailed -> when (error) {
+
+        is SyncSettingRepositoryError.RemoteSyncFailed -> when (val err = error) {
             RepositoryError.Unauthenticated,
             RepositoryError.InsufficientPermissions,
-            -> SettingsSyncOutcome.Failure
-            is RepositoryError.Failed,
-            is RepositoryError.UnknownStatus,
-            -> SettingsSyncOutcome.Retry
+            ->
+                SettingsSyncOutcome.Failure
+
+            is RepositoryError.Failed -> when (err) {
+                RepositoryError.Failed.NetworkNotAvailable,
+                RepositoryError.Failed.ServiceDown,
+                ->
+                    SettingsSyncOutcome.Retry
+
+                is RepositoryError.Failed.Cooldown,
+                RepositoryError.Failed.UnknownServiceError,
+                ->
+                    SettingsSyncOutcome.Failure
+            }
+
+            is RepositoryError.UnknownStatus -> when (err) {
+                RepositoryError.UnknownStatus.ServiceTimeout -> SettingsSyncOutcome.Retry
+            }
         }
     }
 }

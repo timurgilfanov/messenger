@@ -41,6 +41,7 @@ import timur.gilfanov.messenger.data.worker.SyncSettingWorker
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
+import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
@@ -393,7 +394,12 @@ class SettingsRepositoryImpl @Inject constructor(
 
                 localDataSource.upsert(
                     entity.copy(syncStatus = SyncStatus.FAILED),
-                )
+                ).onFailure { error1 ->
+                    logger.e(
+                        TAG,
+                        "Failed to mark setting ${entity.key} sync as FAILED caused by $error1",
+                    )
+                }
                 ResultWithError.Failure(
                     SyncSettingRepositoryError.RemoteSyncFailed(error.toRepositoryError()),
                 )
@@ -534,10 +540,10 @@ class SettingsRepositoryImpl @Inject constructor(
             },
 
             onFailure = { error ->
-                unsyncedSettings.forEach { entity ->
-                    localDataSource.upsert(
-                        entity.copy(syncStatus = SyncStatus.FAILED),
-                    )
+                localDataSource.upsert(
+                    unsyncedSettings.map { it.copy(syncStatus = SyncStatus.FAILED) },
+                ).onFailure { error1 ->
+                    logger.e(TAG, "Failed to mark settings sync as FAILED caused by $error1")
                 }
                 ResultWithError.Failure(
                     SyncAllSettingsRepositoryError.RemoteSyncFailed(error.toRepositoryError()),

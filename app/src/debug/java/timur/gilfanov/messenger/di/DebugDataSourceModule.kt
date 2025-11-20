@@ -48,6 +48,7 @@ abstract class DebugDataSourceModule {
 
     @Binds
     @Singleton
+    @Named("fake")
     abstract fun bindFakeRemoteSettingsDataSource(
         remoteSettingsDataSourceFake: RemoteSettingsDataSourceFake,
     ): RemoteSettingsDataSource

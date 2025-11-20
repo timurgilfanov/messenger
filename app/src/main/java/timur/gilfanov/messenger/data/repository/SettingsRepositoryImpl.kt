@@ -94,20 +94,21 @@ class SettingsRepositoryImpl @Inject constructor(
     /**
      * SharedFlow for conflict events emitted during sync operations.
      *
-     * Buffer capacity prevents event loss when conflicts occur during WorkManager sync
-     * while no collectors are active (e.g., app backgrounded). Buffered events are
-     * delivered when collectors start observing, ensuring users see conflicts that
-     * occurred while the app was in background.
+     * Replay cache prevents event loss when conflicts occur during WorkManager sync
+     * while no collectors are active (e.g., app backgrounded) and prevents the syncing
+     * process from suspending while waiting for collectors. Replayed events are delivered
+     * when collectors start observing, ensuring users see conflicts that occurred while
+     * the app was in background.
      *
-     * Buffer size of 10 balances memory usage with preserving recent conflict history.
+     * Replay cache size of 10 balances memory usage with preserving recent conflict history.
      */
     private val conflictEvents = MutableSharedFlow<SettingsConflictEvent>(
-        extraBufferCapacity = CONFLICT_EVENT_BUFFER_CAPACITY,
+        replay = CONFLICT_EVENT_REPLAY,
     )
 
     companion object {
         private const val TAG = "SettingsRepository"
-        private const val CONFLICT_EVENT_BUFFER_CAPACITY = 10
+        private const val CONFLICT_EVENT_REPLAY = 10
         private const val DEBOUNCE_DELAY_MS = 500L
         private const val BACKOFF_DELAY_SECONDS = 15L
     }

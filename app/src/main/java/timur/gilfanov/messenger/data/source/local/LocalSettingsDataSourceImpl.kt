@@ -8,8 +8,6 @@ import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteFullException
 import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.room.withTransaction
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -26,6 +24,8 @@ import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.util.Logger
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Room-based implementation of [LocalSettingsDataSource] with automatic retry logic.
@@ -54,6 +54,7 @@ import timur.gilfanov.messenger.util.Logger
  * @property settingsDao Room DAO for settings table operations
  * @property logger Diagnostic logger for error tracking
  */
+@Suppress("TooManyFunctions")
 class LocalSettingsDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
     private val settingsDao: SettingsDao,
@@ -132,7 +133,6 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 emit(Failure(error))
             }
 
-    @Suppress("NestedBlockDepth", "ReturnCount", "LongMethod")
     override suspend fun getSetting(
         userId: UserId,
         key: SettingKey,
@@ -151,75 +151,18 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                     Failure(GetSettingError.SettingNotFound)
                 }
             } catch (e: SQLiteException) {
-                when (e) {
-                    is SQLiteDatabaseLockedException,
-                    is SQLiteDiskIOException,
-                    -> {
-                        if (attempt < MAX_RETRIES) {
-                            delay(calculateBackoff(attempt))
-                            attempt++
-                        } else {
-                            val error = when (e) {
-                                is SQLiteDatabaseLockedException ->
-                                    GetSettingError.ConcurrentModificationError
-
-                                is SQLiteDiskIOException -> GetSettingError.DiskIOError
-                                else -> error("Unreachable")
-                            }
-                            logger.e(
-                                TAG,
-                                "Failed to get setting ${key.key} for user ${userId.id} after " +
-                                    "$MAX_RETRIES retries due to $error",
-                                e,
-                            )
-                            return Failure(error)
-                        }
+                when (val action = handleGetSettingException(e, userId, key, attempt)) {
+                    is RetryDecision.Retry -> {
+                        delay(action.delayMs)
+                        attempt++
                     }
 
-                    is SQLiteDatabaseCorruptException -> {
-                        logger.e(
-                            TAG,
-                            "Database corrupted while getting setting ${key.key} for user " +
-                                userId.id,
-                            e,
-                        )
-                        return Failure(GetSettingError.DatabaseCorrupted)
-                    }
-
-                    is SQLiteAccessPermException -> {
-                        logger.e(
-                            TAG,
-                            "Access denied while getting setting ${key.key} for user ${userId.id}",
-                            e,
-                        )
-                        return Failure(GetSettingError.AccessDenied)
-                    }
-
-                    is SQLiteReadOnlyDatabaseException -> {
-                        logger.e(
-                            TAG,
-                            "Read-only database while getting setting ${key.key} for user " +
-                                userId.id,
-                            e,
-                        )
-                        return Failure(GetSettingError.ReadOnlyDatabase)
-                    }
-
-                    else -> {
-                        logger.e(
-                            TAG,
-                            "Unknown database error while getting setting ${key.key} for user " +
-                                userId.id,
-                            e,
-                        )
-                        return Failure(GetSettingError.UnknownError(e))
-                    }
+                    is RetryDecision.Fail -> return Failure(action.error)
                 }
             }
         }
     }
 
-    @Suppress("NestedBlockDepth", "ReturnCount", "LongMethod")
     override suspend fun upsert(
         userId: UserId,
         setting: TypedLocalSetting,
@@ -231,86 +174,18 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 settingsDao.upsert(entity)
                 return Success(Unit)
             } catch (e: SQLiteException) {
-                when (e) {
-                    is SQLiteDatabaseLockedException,
-                    is SQLiteDiskIOException,
-                    -> {
-                        if (attempt < MAX_RETRIES) {
-                            delay(calculateBackoff(attempt))
-                            attempt++
-                        } else {
-                            val error = when (e) {
-                                is SQLiteDatabaseLockedException ->
-                                    UpsertSettingError.ConcurrentModificationError
-
-                                is SQLiteDiskIOException -> UpsertSettingError.DiskIOError
-                                else -> error("Unreachable")
-                            }
-                            logger.e(
-                                TAG,
-                                "Failed to upsert setting ${setting.key.key} for user " +
-                                    "${userId.id} after $MAX_RETRIES retries due to $error",
-                                e,
-                            )
-                            return Failure(error)
-                        }
+                when (val action = handleSingleUpsertException(e, userId, setting, attempt)) {
+                    is RetryDecision.Retry -> {
+                        delay(action.delayMs)
+                        attempt++
                     }
 
-                    is SQLiteFullException -> {
-                        logger.e(
-                            TAG,
-                            "Storage full while upserting setting ${setting.key.key} for user " +
-                                userId.id,
-                            e,
-                        )
-                        return Failure(UpsertSettingError.StorageFull)
-                    }
-
-                    is SQLiteDatabaseCorruptException -> {
-                        logger.e(
-                            TAG,
-                            "Database corrupted while upserting setting ${setting.key.key} " +
-                                "for user ${userId.id}",
-                            e,
-                        )
-                        return Failure(UpsertSettingError.DatabaseCorrupted)
-                    }
-
-                    is SQLiteAccessPermException -> {
-                        logger.e(
-                            TAG,
-                            "Access denied while upserting setting ${setting.key.key} for user " +
-                                userId.id,
-                            e,
-                        )
-                        return Failure(UpsertSettingError.AccessDenied)
-                    }
-
-                    is SQLiteReadOnlyDatabaseException -> {
-                        logger.e(
-                            TAG,
-                            "Read-only database while upserting setting ${setting.key.key} " +
-                                "for user ${userId.id}",
-                            e,
-                        )
-                        return Failure(UpsertSettingError.ReadOnlyDatabase)
-                    }
-
-                    else -> {
-                        logger.e(
-                            TAG,
-                            "Unknown database error while upserting setting ${setting.key.key} " +
-                                "for user ${userId.id}",
-                            e,
-                        )
-                        return Failure(UpsertSettingError.UnknownError(e))
-                    }
+                    is RetryDecision.Fail -> return Failure(action.error)
                 }
             }
         }
     }
 
-    @Suppress("LongMethod")
     override suspend fun transform(
         userId: UserId,
         transform: (LocalSettings) -> LocalSettings,
@@ -324,82 +199,16 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             val localSettings = LocalSettings.fromEntities(entities, defaultSettings)
             val transformedLocalSettings = transform(localSettings)
             val transformedEntities = transformedLocalSettings.toSettingEntities(userId)
-
-            val now = System.currentTimeMillis()
-            val entitiesToUpsert = buildList {
-                transformedEntities.forEach { updated ->
-                    val initial = entities.find { it.key == updated.key }
-                    if (initial != null && updated.value != initial.value) {
-                        add(
-                            updated.copy(
-                                localVersion = initial.localVersion + 1,
-                                modifiedAt = now,
-                                serverVersion = initial.serverVersion,
-                                syncedVersion = initial.syncedVersion,
-                                syncStatus = SyncStatus.PENDING,
-                            ),
-                        )
-                    } else if (initial == null) {
-                        add(updated)
-                    }
-                }
-            }
+            val entitiesToUpsert = buildEntitiesToUpsert(entities, transformedEntities)
 
             settingsDao.upsert(entitiesToUpsert)
 
             Success(Unit)
         }
     } catch (e: SQLiteException) {
-        val error = when (e) {
-            is SQLiteFullException -> {
-                logger.e(TAG, "Storage full while transforming settings for user ${userId.id}", e)
-                TransformSettingError.StorageFull
-            }
-            is SQLiteDatabaseCorruptException -> {
-                logger.e(
-                    TAG,
-                    "Database corrupted while transforming settings for user ${userId.id}",
-                    e,
-                )
-                TransformSettingError.DatabaseCorrupted
-            }
-            is SQLiteAccessPermException -> {
-                logger.e(TAG, "Access denied while transforming settings for user ${userId.id}", e)
-                TransformSettingError.AccessDenied
-            }
-            is SQLiteReadOnlyDatabaseException -> {
-                logger.e(
-                    TAG,
-                    "Read-only database while transforming settings for user ${userId.id}",
-                    e,
-                )
-                TransformSettingError.ReadOnlyDatabase
-            }
-            is SQLiteDatabaseLockedException -> {
-                logger.e(
-                    TAG,
-                    "Concurrent modification error while transforming settings for user ${userId.id}",
-                    e,
-                )
-                TransformSettingError.ConcurrentModificationError
-            }
-            is SQLiteDiskIOException -> {
-                logger.e(TAG, "Disk IO error while transforming settings for user ${userId.id}", e)
-                TransformSettingError.DiskIOError
-            }
-            else -> {
-                logger.e(
-                    TAG,
-                    "Unknown error on setting transform in database for user ${userId.id}",
-                    e,
-                )
-                TransformSettingError.UnknownError(e)
-            }
-        }
-        Failure(error)
+        Failure(mapTransformException(userId, e))
     }
 
-    @Suppress("LongMethod")
     override suspend fun upsert(
         userId: UserId,
         settings: List<TypedLocalSetting>,
@@ -408,76 +217,12 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         settingsDao.upsert(entities)
         Success(Unit)
     } catch (e: SQLiteException) {
-        val keys = settings.joinToString { it.key.key }
-        val error = when (e) {
-            is SQLiteFullException -> {
-                logger.e(
-                    TAG,
-                    "Storage full while bulk upserting settings [$keys] for ${userId.id}",
-                    e,
-                )
-                UpsertSettingError.StorageFull
-            }
-            is SQLiteDatabaseCorruptException -> {
-                logger.e(
-                    TAG,
-                    "Database corrupted while bulk upserting settings [$keys] for ${userId.id}",
-                    e,
-                )
-                UpsertSettingError.DatabaseCorrupted
-            }
-            is SQLiteAccessPermException -> {
-                logger.e(
-                    TAG,
-                    "Access denied while bulk upserting settings [$keys] for ${userId.id}",
-                    e,
-                )
-                UpsertSettingError.AccessDenied
-            }
-            is SQLiteReadOnlyDatabaseException -> {
-                logger.e(
-                    TAG,
-                    "Read-only database while bulk upserting settings [$keys] for ${userId.id}",
-                    e,
-                )
-                UpsertSettingError.ReadOnlyDatabase
-            }
-            is SQLiteDatabaseLockedException -> {
-                logger.e(
-                    TAG,
-                    "Concurrent modification error while bulk upserting settings [$keys] " +
-                        "for ${userId.id}",
-                    e,
-                )
-                UpsertSettingError.ConcurrentModificationError
-            }
-            is SQLiteDiskIOException -> {
-                logger.e(
-                    TAG,
-                    "Disk IO error while bulk upserting settings [$keys] for ${userId.id}",
-                    e,
-                )
-                UpsertSettingError.DiskIOError
-            }
-            else -> {
-                logger.e(
-                    TAG,
-                    "Unknown database error while bulk upserting settings [$keys] for ${userId.id}",
-                    e,
-                )
-                UpsertSettingError.UnknownError(e)
-            }
-        }
-        Failure(error)
+        Failure(mapBatchUpsertException(e, userId))
     }
 
-    @Suppress("NestedBlockDepth", "ReturnCount", "LongMethod")
     override suspend fun getUnsyncedSettings(
         userId: UserId,
-    ): ResultWithError<
-        List<TypedLocalSetting>,
-        GetUnsyncedSettingsError,
-        > {
+    ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError> {
         var attempt = 0L
         while (true) {
             try {
@@ -485,108 +230,430 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 val typedSettings = entities.map { it.toTypedLocalSetting(defaultSettings) }
                 return Success(typedSettings)
             } catch (e: SQLiteException) {
-                when (e) {
-                    is SQLiteDatabaseLockedException,
-                    is SQLiteDiskIOException,
-                    -> {
-                        if (attempt < MAX_RETRIES) {
-                            delay(calculateBackoff(attempt))
-                            attempt++
-                        } else {
-                            val error = when (e) {
-                                is SQLiteDatabaseLockedException ->
-                                    GetUnsyncedSettingsError.ConcurrentModificationError
-
-                                is SQLiteDiskIOException -> GetUnsyncedSettingsError.DiskIOError
-                                else -> error("Unreachable")
-                            }
-                            logger.e(
-                                TAG,
-                                "Failed to fetch unsynced settings for ${userId.id} after " +
-                                    "$MAX_RETRIES retries due to $error",
-                                e,
-                            )
-                            return Failure(error)
-                        }
+                when (val action = handleGetUnsyncedException(e, userId, attempt)) {
+                    is RetryDecision.Retry -> {
+                        delay(action.delayMs)
+                        attempt++
                     }
 
-                    is SQLiteDatabaseCorruptException -> {
-                        logger.e(
-                            TAG,
-                            "Database corrupted while fetching unsynced settings for ${userId.id}",
-                            e,
-                        )
-                        return Failure(GetUnsyncedSettingsError.DatabaseCorrupted)
-                    }
-
-                    is SQLiteAccessPermException -> {
-                        logger.e(
-                            TAG,
-                            "Access denied while fetching unsynced settings for ${userId.id}",
-                            e,
-                        )
-                        return Failure(GetUnsyncedSettingsError.AccessDenied)
-                    }
-
-                    is SQLiteReadOnlyDatabaseException -> {
-                        logger.e(
-                            TAG,
-                            "Read-only database while fetching unsynced settings for ${userId.id}",
-                            e,
-                        )
-                        return Failure(GetUnsyncedSettingsError.ReadOnlyDatabase)
-                    }
-
-                    else -> {
-                        logger.e(
-                            TAG,
-                            "Unknown error while fetching unsynced settings for ${userId.id}",
-                            e,
-                        )
-                        return Failure(GetUnsyncedSettingsError.UnknownError(e))
-                    }
+                    is RetryDecision.Fail -> return Failure(action.error)
                 }
             }
         }
     }
 
-    @Suppress("NestedBlockDepth", "ReturnCount")
     private suspend fun getSettingsWithRetry(userId: UserId): List<SettingEntity> {
         var attempt = 0L
         while (true) {
             try {
                 return settingsDao.getAll(userId.id.toString())
             } catch (e: SQLiteException) {
-                when (e) {
-                    is SQLiteDatabaseLockedException,
-                    is SQLiteDiskIOException,
-                    -> {
-                        if (attempt < MAX_RETRIES) {
-                            delay(calculateBackoff(attempt))
-                            attempt++
-                        } else {
-                            logger.e(
-                                TAG,
-                                "Failed to load settings for user ${userId.id} after " +
-                                    "$MAX_RETRIES retries due to database lock/disk error",
-                                e,
-                            )
-                            throw e
-                        }
-                    }
-
-                    else -> {
-                        logger.e(
-                            TAG,
-                            "Unexpected error while loading settings for user ${userId.id}",
-                            e,
-                        )
-                        throw e
-                    }
+                if (handleSettingsLoadException(e, userId, attempt)) {
+                    delay(calculateBackoff(attempt))
+                    attempt++
+                } else {
+                    throw e
                 }
             }
         }
     }
+
+    private fun handleGetSettingException(
+        exception: SQLiteException,
+        userId: UserId,
+        key: SettingKey,
+        attempt: Long,
+    ): RetryDecision<GetSettingError> =
+        when (exception) {
+            is SQLiteDatabaseLockedException ->
+                retryOrFail(
+                    attempt = attempt,
+                    error = GetSettingError.ConcurrentModificationError,
+                    message = "Failed to get setting ${key.key} for user ${userId.id}",
+                    exception = exception,
+                )
+
+            is SQLiteDiskIOException ->
+                retryOrFail(
+                    attempt = attempt,
+                    error = GetSettingError.DiskIOError,
+                    message = "Failed to get setting ${key.key} for user ${userId.id}",
+                    exception = exception,
+                )
+
+            is SQLiteDatabaseCorruptException -> {
+                logger.e(
+                    TAG,
+                    "Database corrupted while getting setting ${key.key} for user ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(GetSettingError.DatabaseCorrupted)
+            }
+
+            is SQLiteAccessPermException -> {
+                logger.e(
+                    TAG,
+                    "Access denied while getting setting ${key.key} for user ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(GetSettingError.AccessDenied)
+            }
+
+            is SQLiteReadOnlyDatabaseException -> {
+                logger.e(
+                    TAG,
+                    "Read-only database while getting setting ${key.key} for user ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(GetSettingError.ReadOnlyDatabase)
+            }
+
+            else -> {
+                logger.e(
+                    TAG,
+                    "Unknown database error while getting setting ${key.key} for user ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(GetSettingError.UnknownError(exception))
+            }
+        }
+
+    private fun handleSingleUpsertException(
+        exception: SQLiteException,
+        userId: UserId,
+        setting: TypedLocalSetting,
+        attempt: Long,
+    ): RetryDecision<UpsertSettingError> =
+        when (exception) {
+            is SQLiteDatabaseLockedException ->
+                retryOrFail(
+                    attempt = attempt,
+                    error = UpsertSettingError.ConcurrentModificationError,
+                    message = "Failed to upsert setting ${setting.key.key} for user ${userId.id}",
+                    exception = exception,
+                )
+
+            is SQLiteDiskIOException ->
+                retryOrFail(
+                    attempt = attempt,
+                    error = UpsertSettingError.DiskIOError,
+                    message = "Failed to upsert setting ${setting.key.key} for user ${userId.id}",
+                    exception = exception,
+                )
+
+            is SQLiteFullException -> {
+                logger.e(
+                    TAG,
+                    "Storage full while upserting setting ${setting.key.key} for user ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(UpsertSettingError.StorageFull)
+            }
+
+            is SQLiteDatabaseCorruptException -> {
+                logger.e(
+                    TAG,
+                    "Database corrupted while upserting setting ${setting.key.key} for user ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(UpsertSettingError.DatabaseCorrupted)
+            }
+
+            is SQLiteAccessPermException -> {
+                logger.e(
+                    TAG,
+                    "Access denied while upserting setting ${setting.key.key} for user ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(UpsertSettingError.AccessDenied)
+            }
+
+            is SQLiteReadOnlyDatabaseException -> {
+                logger.e(
+                    TAG,
+                    "Read-only database while upserting setting ${setting.key.key} for user ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(UpsertSettingError.ReadOnlyDatabase)
+            }
+
+            else -> {
+                logger.e(
+                    TAG,
+                    "Unknown database error while upserting setting ${setting.key.key} for user ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(UpsertSettingError.UnknownError(exception))
+            }
+        }
+
+    private fun handleGetUnsyncedException(
+        exception: SQLiteException,
+        userId: UserId,
+        attempt: Long,
+    ): RetryDecision<GetUnsyncedSettingsError> =
+        when (exception) {
+            is SQLiteDatabaseLockedException ->
+                retryOrFail(
+                    attempt = attempt,
+                    error = GetUnsyncedSettingsError.ConcurrentModificationError,
+                    message = "Failed to fetch unsynced settings for ${userId.id}",
+                    exception = exception,
+                )
+
+            is SQLiteDiskIOException ->
+                retryOrFail(
+                    attempt = attempt,
+                    error = GetUnsyncedSettingsError.DiskIOError,
+                    message = "Failed to fetch unsynced settings for ${userId.id}",
+                    exception = exception,
+                )
+
+            is SQLiteDatabaseCorruptException -> {
+                logger.e(
+                    TAG,
+                    "Database corrupted while fetching unsynced settings for ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(GetUnsyncedSettingsError.DatabaseCorrupted)
+            }
+
+            is SQLiteAccessPermException -> {
+                logger.e(
+                    TAG,
+                    "Access denied while fetching unsynced settings for ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(GetUnsyncedSettingsError.AccessDenied)
+            }
+
+            is SQLiteReadOnlyDatabaseException -> {
+                logger.e(
+                    TAG,
+                    "Read-only database while fetching unsynced settings for ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(GetUnsyncedSettingsError.ReadOnlyDatabase)
+            }
+
+            else -> {
+                logger.e(
+                    TAG,
+                    "Unknown error while fetching unsynced settings for ${userId.id}",
+                    exception,
+                )
+                RetryDecision.Fail(GetUnsyncedSettingsError.UnknownError(exception))
+            }
+        }
+
+    private fun <E> retryOrFail(
+        attempt: Long,
+        error: E,
+        message: String,
+        exception: SQLiteException,
+    ): RetryDecision<E> =
+        if (attempt < MAX_RETRIES) {
+            RetryDecision.Retry(calculateBackoff(attempt))
+        } else {
+            logger.e(
+                TAG,
+                "$message after $MAX_RETRIES retries due to $error",
+                exception,
+            )
+            RetryDecision.Fail(error)
+        }
+
+    private fun buildEntitiesToUpsert(
+        existing: List<SettingEntity>,
+        transformed: List<SettingEntity>,
+    ): List<SettingEntity> {
+        val now = System.currentTimeMillis()
+        return buildList {
+            transformed.forEach { updated ->
+                val initial = existing.find { it.key == updated.key }
+                when {
+                    initial == null -> add(updated)
+                    updated.value != initial.value -> add(
+                        updated.copy(
+                            localVersion = initial.localVersion + 1,
+                            modifiedAt = now,
+                            serverVersion = initial.serverVersion,
+                            syncedVersion = initial.syncedVersion,
+                            syncStatus = SyncStatus.PENDING,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun mapTransformException(
+        userId: UserId,
+        exception: SQLiteException,
+    ): TransformSettingError = when (exception) {
+        is SQLiteFullException -> {
+            logger.e(
+                TAG,
+                "Storage full while transforming settings for user ${userId.id}",
+                exception,
+            )
+            TransformSettingError.StorageFull
+        }
+
+        is SQLiteDatabaseCorruptException -> {
+            logger.e(
+                TAG,
+                "Database corrupted while transforming settings for user ${userId.id}",
+                exception,
+            )
+            TransformSettingError.DatabaseCorrupted
+        }
+
+        is SQLiteAccessPermException -> {
+            logger.e(
+                TAG,
+                "Access denied while transforming settings for user ${userId.id}",
+                exception,
+            )
+            TransformSettingError.AccessDenied
+        }
+
+        is SQLiteReadOnlyDatabaseException -> {
+            logger.e(
+                TAG,
+                "Read-only database while transforming settings for user ${userId.id}",
+                exception,
+            )
+            TransformSettingError.ReadOnlyDatabase
+        }
+
+        is SQLiteDatabaseLockedException -> {
+            logger.e(
+                TAG,
+                "Concurrent modification error while transforming settings for user ${userId.id}",
+                exception,
+            )
+            TransformSettingError.ConcurrentModificationError
+        }
+
+        is SQLiteDiskIOException -> {
+            logger.e(
+                TAG,
+                "Disk IO error while transforming settings for user ${userId.id}",
+                exception,
+            )
+            TransformSettingError.DiskIOError
+        }
+
+        else -> {
+            logger.e(
+                TAG,
+                "Unknown error on setting transform in database for user ${userId.id}",
+                exception,
+            )
+            TransformSettingError.UnknownError(exception)
+        }
+    }
+
+    private fun mapBatchUpsertException(
+        exception: SQLiteException,
+        userId: UserId,
+    ): UpsertSettingError = when (exception) {
+        is SQLiteFullException -> {
+            logger.e(
+                TAG,
+                "Storage full while bulk upserting settings for ${userId.id}",
+                exception,
+            )
+            UpsertSettingError.StorageFull
+        }
+
+        is SQLiteDatabaseCorruptException -> {
+            logger.e(
+                TAG,
+                "Database corrupted while bulk upserting settings for ${userId.id}",
+                exception,
+            )
+            UpsertSettingError.DatabaseCorrupted
+        }
+
+        is SQLiteAccessPermException -> {
+            logger.e(
+                TAG,
+                "Access denied while bulk upserting settings for ${userId.id}",
+                exception,
+            )
+            UpsertSettingError.AccessDenied
+        }
+
+        is SQLiteReadOnlyDatabaseException -> {
+            logger.e(
+                TAG,
+                "Read-only database while bulk upserting settings for ${userId.id}",
+                exception,
+            )
+            UpsertSettingError.ReadOnlyDatabase
+        }
+
+        is SQLiteDatabaseLockedException -> {
+            logger.e(
+                TAG,
+                "Concurrent modification error while bulk upserting settings for ${userId.id}",
+                exception,
+            )
+            UpsertSettingError.ConcurrentModificationError
+        }
+
+        is SQLiteDiskIOException -> {
+            logger.e(
+                TAG,
+                "Disk IO error while bulk upserting settings for ${userId.id}",
+                exception,
+            )
+            UpsertSettingError.DiskIOError
+        }
+
+        else -> {
+            logger.e(
+                TAG,
+                "Unknown database error while bulk upserting settings for ${userId.id}",
+                exception,
+            )
+            UpsertSettingError.UnknownError(exception)
+        }
+    }
+
+    private fun handleSettingsLoadException(
+        exception: SQLiteException,
+        userId: UserId,
+        attempt: Long,
+    ): Boolean =
+        when (exception) {
+            is SQLiteDatabaseLockedException,
+            is SQLiteDiskIOException,
+            -> {
+                if (attempt < MAX_RETRIES) {
+                    true
+                } else {
+                    logger.e(
+                        TAG,
+                        "Failed to load settings for user ${userId.id} after $MAX_RETRIES retries " +
+                            "due to database lock/disk error",
+                        exception,
+                    )
+                    false
+                }
+            }
+
+            else -> {
+                logger.e(
+                    TAG,
+                    "Unexpected error while loading settings for user ${userId.id}",
+                    exception,
+                )
+                false
+            }
+        }
 
     private fun calculateBackoff(attempt: Long): Long =
         (INITIAL_BACKOFF_MS * (1 shl attempt.toInt())).coerceAtMost(
@@ -600,6 +667,11 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         private const val INITIAL_BACKOFF_MS = 100L
         private const val MAX_BACKOFF_MS = 2000L
     }
+}
+
+private sealed interface RetryDecision<out E> {
+    data class Retry(val delayMs: Long) : RetryDecision<Nothing>
+    data class Fail<E>(val error: E) : RetryDecision<E>
 }
 
 /**
@@ -625,6 +697,7 @@ private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSet
                 ),
             )
         }
+
         SettingKey.THEME -> throw NotImplementedError("${this.key} is not supported")
         SettingKey.NOTIFICATIONS -> throw NotImplementedError("${this.key} is not supported")
         null -> error("Unknown setting key: ${this.key}")

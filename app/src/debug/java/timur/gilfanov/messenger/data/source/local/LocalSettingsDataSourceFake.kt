@@ -129,8 +129,8 @@ class LocalSettingsDataSourceFake(
 }
 
 private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSetting =
-    when (this.key) {
-        timur.gilfanov.messenger.domain.entity.user.SettingKey.UI_LANGUAGE.key -> {
+    when (SettingKey.fromKey(this.key)) {
+        SettingKey.UI_LANGUAGE -> {
             TypedLocalSetting.UiLanguage(
                 setting = LocalSetting(
                     value = this.value.toUiLanguageOrDefault(defaults.uiLanguage),
@@ -142,7 +142,9 @@ private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSet
                 ),
             )
         }
-        else -> error("Unknown setting key: ${this.key}")
+        SettingKey.THEME -> throw NotImplementedError("${this.key} is not supported")
+        SettingKey.NOTIFICATIONS -> throw NotImplementedError("${this.key} is not supported")
+        null -> error("Unknown setting key: ${this.key}")
     }
 
 private fun TypedLocalSetting.toSettingEntity(userId: UserId): SettingEntity = when (this) {

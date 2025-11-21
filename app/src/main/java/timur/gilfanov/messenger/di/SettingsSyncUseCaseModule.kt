@@ -9,6 +9,7 @@ import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.user.SyncAllPendingSettingsUseCase
 import timur.gilfanov.messenger.domain.usecase.user.SyncSettingUseCase
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import timur.gilfanov.messenger.util.Logger
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -19,15 +20,18 @@ object SettingsSyncUseCaseModule {
     fun provideSyncSettingUseCase(
         identityRepository: IdentityRepository,
         settingsRepository: SettingsRepository,
-    ): SyncSettingUseCase = SyncSettingUseCase(identityRepository, settingsRepository)
+        logger: Logger,
+    ): SyncSettingUseCase = SyncSettingUseCase(identityRepository, settingsRepository, logger)
 
     @Provides
     @Singleton
     fun provideSyncAllPendingSettingsUseCase(
         identityRepository: IdentityRepository,
         settingsRepository: SettingsRepository,
+        logger: Logger,
     ): SyncAllPendingSettingsUseCase = SyncAllPendingSettingsUseCase(
         identityRepository,
         settingsRepository,
+        logger,
     )
 }

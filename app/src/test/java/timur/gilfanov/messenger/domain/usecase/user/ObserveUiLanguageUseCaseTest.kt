@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.user.DeviceId
@@ -24,6 +25,7 @@ class ObserveUiLanguageUseCaseTest {
         userId = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
         deviceId = DeviceId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001")),
     )
+    private val logger = NoOpLogger()
 
     @Test
     fun `emits UI language from settings`() = runTest {
@@ -31,7 +33,7 @@ class ObserveUiLanguageUseCaseTest {
         val settingsRepository = SettingsRepositoryStub(
             settings = Success(Settings(UiLanguage.English)),
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
 
         useCase().test {
             val result = awaitItem()
@@ -51,7 +53,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Success(Settings(UiLanguage.English)))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
 
         useCase().test {
             val first = awaitItem()
@@ -78,7 +80,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Success(Settings(UiLanguage.English)))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
 
         useCase().test {
             val result = awaitItem()
@@ -101,7 +103,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Success(Settings(UiLanguage.English)))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
 
         useCase().test {
             val firstResult = awaitItem()
@@ -124,7 +126,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
 
         useCase().test {
             val result = awaitItem()
@@ -143,7 +145,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
 
         useCase().test {
             val result = awaitItem()
@@ -166,7 +168,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Success(Settings(UiLanguage.German)))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
 
         useCase().test {
             val first = awaitItem()
@@ -194,7 +196,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
 
         useCase().test {
             val first = awaitItem()

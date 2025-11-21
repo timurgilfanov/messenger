@@ -1,5 +1,3 @@
-@file:Suppress("ForbiddenComment")
-
 package timur.gilfanov.messenger.data.repository
 
 import androidx.work.BackoffPolicy
@@ -81,7 +79,7 @@ import timur.gilfanov.messenger.util.Logger
  * @property workManager Schedules background sync tasks with backoff and constraints
  * @property logger Diagnostic logging for debugging and monitoring
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
     private val localDataSource: LocalSettingsDataSource,
@@ -125,52 +123,12 @@ class SettingsRepositoryImpl @Inject constructor(
                         ResultWithError.Success(it.toDomain())
                     },
                     onFailure = { error ->
-                        when (error) {
-                            GetSettingsLocalDataSourceError.NoSettings -> recoverSettings(identity)
-                            GetSettingsLocalDataSourceError.Recoverable.AccessDenied -> {
-                                logger.e(TAG, "Access denied while observing settings")
-                                ResultWithError.Failure(
-                                    GetSettingsRepositoryError.Recoverable.AccessDenied,
-                                )
-                            }
-                            GetSettingsLocalDataSourceError.Recoverable.DataCorruption -> {
-                                logger.e(TAG, "Database corruption while observing settings")
-                                ResultWithError.Failure(
-                                    GetSettingsRepositoryError.Recoverable.DataCorruption,
-                                )
-                            }
-                            GetSettingsLocalDataSourceError.Recoverable.InsufficientStorage -> {
-                                logger.e(TAG, "Insufficient storage while observing settings")
-                                ResultWithError.Failure(
-                                    GetSettingsRepositoryError.Recoverable.InsufficientStorage,
-                                )
-                            }
-                            GetSettingsLocalDataSourceError.Recoverable.ReadOnly -> {
-                                logger.e(TAG, "Read-only database while observing settings")
-                                ResultWithError.Failure(
-                                    GetSettingsRepositoryError.Recoverable.ReadOnly,
-                                )
-                            }
-                            GetSettingsLocalDataSourceError.Recoverable.TemporarilyUnavailable -> {
-                                logger.e(
-                                    TAG,
-                                    "Transient error while observing settings after retries",
-                                )
-                                ResultWithError.Failure(
-                                    GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable,
-                                )
-                            }
-                            GetSettingsLocalDataSourceError.Unknown -> {
-                                logger.e(TAG, "Unknown error while observing settings")
-                                ResultWithError.Failure(GetSettingsRepositoryError.Unknown)
-                            }
-                        }
+                        handleObserveFailure(identity, error)
                     },
                 )
             }
             .distinctUntilChanged()
 
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
     override suspend fun changeUiLanguage(
         identity: Identity,
         language: UiLanguage,
@@ -189,74 +147,128 @@ class SettingsRepositoryImpl @Inject constructor(
             },
 
             onFailure = { error ->
-                when (error) {
-                    TransformSettingError.SettingsNotFound -> {
-                        recoverSettings(identity).fold(
-                            onSuccess = {
-                                changeUiLanguage(identity, language)
-                            },
-                            onFailure = { error ->
-                                when (error) {
-                                    GetSettingsRepositoryError.Recoverable.AccessDenied ->
-                                        ResultWithError.Failure(
-                                            ChangeLanguageRepositoryError.Recoverable.AccessDenied,
-                                        )
-                                    GetSettingsRepositoryError.Recoverable.DataCorruption ->
-                                        ResultWithError.Failure(
-                                            ChangeLanguageRepositoryError.Recoverable
-                                                .DataCorruption,
-                                        )
-                                    GetSettingsRepositoryError.Recoverable.InsufficientStorage ->
-                                        ResultWithError.Failure(
-                                            ChangeLanguageRepositoryError.Recoverable
-                                                .InsufficientStorage,
-                                        )
-
-                                    GetSettingsRepositoryError.Recoverable.ReadOnly,
-                                    -> ResultWithError.Failure(
-                                        ChangeLanguageRepositoryError.Recoverable.ReadOnly,
-                                    )
-
-                                    GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable ->
-                                        ResultWithError.Failure(
-                                            ChangeLanguageRepositoryError.Recoverable
-                                                .TemporarilyUnavailable,
-                                        )
-
-                                    GetSettingsRepositoryError.SettingsResetToDefaults ->
-                                        changeUiLanguage(identity, language)
-                                    GetSettingsRepositoryError.Unknown -> ResultWithError.Failure(
-                                        ChangeLanguageRepositoryError.Unknown,
-                                    )
-                                }
-                            },
-                        )
-                    }
-
-                    TransformSettingError.ConcurrentModificationError,
-                    TransformSettingError.DiskIOError,
-                    -> ResultWithError.Failure(
-                        ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable,
-                    )
-                    TransformSettingError.DatabaseCorrupted -> ResultWithError.Failure(
-                        ChangeLanguageRepositoryError.Recoverable.DataCorruption,
-                    )
-                    TransformSettingError.AccessDenied -> ResultWithError.Failure(
-                        ChangeLanguageRepositoryError.Recoverable.AccessDenied,
-                    )
-                    TransformSettingError.ReadOnlyDatabase -> ResultWithError.Failure(
-                        ChangeLanguageRepositoryError.Recoverable.ReadOnly,
-                    )
-                    TransformSettingError.StorageFull -> ResultWithError.Failure(
-                        ChangeLanguageRepositoryError.Recoverable.InsufficientStorage,
-                    )
-                    is TransformSettingError.UnknownError -> {
-                        logger.e(TAG, "Unknown error while changing UI language", error.cause)
-                        ResultWithError.Failure(ChangeLanguageRepositoryError.Unknown)
-                    }
-                }
+                handleLanguageTransformError(identity, language, error)
             },
         )
+    }
+
+    private suspend fun handleLanguageTransformError(
+        identity: Identity,
+        language: UiLanguage,
+        error: TransformSettingError,
+    ): ResultWithError<Unit, ChangeLanguageRepositoryError> = when (error) {
+        TransformSettingError.SettingsNotFound -> {
+            logger.w(
+                TAG,
+                "Settings not found locally while changing UI language for user " +
+                    identity.userId,
+            )
+            recoverAndRetryLanguageChange(identity, language)
+        }
+
+        is TransformSettingError.UnknownError -> {
+            logger.e(TAG, "Unknown error while changing UI language", error.cause)
+            ResultWithError.Failure(ChangeLanguageRepositoryError.Unknown)
+        }
+
+        else -> {
+            val mapped = error.toChangeLanguageError("changeUiLanguage:transform")
+            ResultWithError.Failure(mapped)
+        }
+    }
+
+    private suspend fun recoverAndRetryLanguageChange(
+        identity: Identity,
+        language: UiLanguage,
+    ): ResultWithError<Unit, ChangeLanguageRepositoryError> = recoverSettings(identity).fold(
+        onSuccess = {
+            changeUiLanguage(identity, language)
+        },
+        onFailure = { recoverError ->
+            handleRecoverSettingsError(identity, language, recoverError)
+        },
+    )
+
+    private suspend fun handleRecoverSettingsError(
+        identity: Identity,
+        language: UiLanguage,
+        error: GetSettingsRepositoryError,
+    ): ResultWithError<Unit, ChangeLanguageRepositoryError> = when (error) {
+        GetSettingsRepositoryError.SettingsResetToDefaults -> {
+            logger.w(
+                TAG,
+                "Settings reset to defaults during language change, " +
+                    "retrying for user ${identity.userId}",
+            )
+            changeUiLanguage(identity, language)
+        }
+
+        else -> {
+            val mapped = error.toChangeLanguageError("changeUiLanguage:recoverSettings")
+            ResultWithError.Failure(mapped)
+        }
+    }
+
+    private fun TransformSettingError.toChangeLanguageError(
+        context: String,
+    ): ChangeLanguageRepositoryError {
+        val mapped =
+            when (this) {
+                TransformSettingError.AccessDenied ->
+                    ChangeLanguageRepositoryError.Recoverable.AccessDenied
+
+                TransformSettingError.ConcurrentModificationError,
+                TransformSettingError.DiskIOError,
+                ->
+                    ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable
+
+                TransformSettingError.DatabaseCorrupted ->
+                    ChangeLanguageRepositoryError.Recoverable.DataCorruption
+
+                TransformSettingError.ReadOnlyDatabase ->
+                    ChangeLanguageRepositoryError.Recoverable.ReadOnly
+
+                TransformSettingError.StorageFull ->
+                    ChangeLanguageRepositoryError.Recoverable.InsufficientStorage
+
+                TransformSettingError.SettingsNotFound ->
+                    ChangeLanguageRepositoryError.Unknown
+
+                is TransformSettingError.UnknownError ->
+                    ChangeLanguageRepositoryError.Unknown
+            }
+        logErrorMapping(context, this, mapped)
+        return mapped
+    }
+
+    private fun GetSettingsRepositoryError.toChangeLanguageError(
+        context: String,
+    ): ChangeLanguageRepositoryError {
+        val mapped =
+            when (this) {
+                GetSettingsRepositoryError.Recoverable.AccessDenied ->
+                    ChangeLanguageRepositoryError.Recoverable.AccessDenied
+
+                GetSettingsRepositoryError.Recoverable.DataCorruption ->
+                    ChangeLanguageRepositoryError.Recoverable.DataCorruption
+
+                GetSettingsRepositoryError.Recoverable.InsufficientStorage ->
+                    ChangeLanguageRepositoryError.Recoverable.InsufficientStorage
+
+                GetSettingsRepositoryError.Recoverable.ReadOnly ->
+                    ChangeLanguageRepositoryError.Recoverable.ReadOnly
+
+                GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable ->
+                    ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable
+
+                GetSettingsRepositoryError.SettingsResetToDefaults ->
+                    ChangeLanguageRepositoryError.Unknown
+
+                GetSettingsRepositoryError.Unknown ->
+                    ChangeLanguageRepositoryError.Unknown
+            }
+        logErrorMapping(context, this, mapped)
+        return mapped
     }
 
     private fun scheduleWorkManagerSync(userId: UserId, key: String) {
@@ -288,17 +300,85 @@ class SettingsRepositoryImpl @Inject constructor(
         )
     }
 
-    @Suppress("LongMethod", "ReturnCount", "ComplexMethod", "NestedBlockDepth")
+    private fun logErrorMapping(context: String, source: Any, mapped: Any) {
+        logger.e(
+            TAG,
+            "Error mapped at $context: source=$source mapped=$mapped",
+        )
+    }
+
+    private suspend fun handleObserveFailure(
+        identity: Identity,
+        error: GetSettingsLocalDataSourceError,
+    ): ResultWithError<Settings, GetSettingsRepositoryError> = when (error) {
+        GetSettingsLocalDataSourceError.NoSettings -> recoverSettings(identity)
+
+        GetSettingsLocalDataSourceError.Recoverable.AccessDenied ->
+            logObserveFailure(
+                "Access denied while observing settings",
+                error,
+                GetSettingsRepositoryError.Recoverable.AccessDenied,
+            )
+
+        GetSettingsLocalDataSourceError.Recoverable.DataCorruption ->
+            logObserveFailure(
+                "Database corruption while observing settings",
+                error,
+                GetSettingsRepositoryError.Recoverable.DataCorruption,
+            )
+
+        GetSettingsLocalDataSourceError.Recoverable.InsufficientStorage ->
+            logObserveFailure(
+                "Insufficient storage while observing settings",
+                error,
+                GetSettingsRepositoryError.Recoverable.InsufficientStorage,
+            )
+
+        GetSettingsLocalDataSourceError.Recoverable.ReadOnly ->
+            logObserveFailure(
+                "Read-only database while observing settings",
+                error,
+                GetSettingsRepositoryError.Recoverable.ReadOnly,
+            )
+
+        GetSettingsLocalDataSourceError.Recoverable.TemporarilyUnavailable ->
+            logObserveFailure(
+                "Transient error while observing settings after retries",
+                error,
+                GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable,
+            )
+
+        GetSettingsLocalDataSourceError.Unknown ->
+            logObserveFailure(
+                "Unknown error while observing settings",
+                error,
+                GetSettingsRepositoryError.Unknown,
+            )
+    }
+
+    private fun logObserveFailure(
+        message: String,
+        error: GetSettingsLocalDataSourceError,
+        mapped: GetSettingsRepositoryError,
+    ): ResultWithError<Settings, GetSettingsRepositoryError> {
+        logger.e(TAG, "$message: $error")
+        return ResultWithError.Failure(mapped)
+    }
+
+    @Suppress("ReturnCount")
     override suspend fun syncSetting(
         identity: Identity,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError> {
         val typedSetting = localDataSource.getSetting(identity.userId, key).fold(
             onSuccess = { it },
-            onFailure = { error -> return ResultWithError.Failure(error.toSyncError()) },
+            onFailure = { error ->
+                val mapped = error.toSyncError(logger, TAG, "syncSetting:getSetting")
+                return ResultWithError.Failure(mapped)
+            },
         )
 
-        if (typedSetting.setting.localVersion == typedSetting.setting.syncedVersion) {
+        if (!typedSetting.requiresSync()) {
             return ResultWithError.Success(Unit)
         }
 
@@ -306,146 +386,112 @@ class SettingsRepositoryImpl @Inject constructor(
 
         return remoteDataSource.syncSingleSetting(request).fold(
             onSuccess = { syncResult ->
-                when (syncResult) {
-                    is SyncResult.Success -> {
-                        val updatedTypedSetting = when (typedSetting) {
-                            is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
-                                setting = typedSetting.setting.copy(
-                                    syncedVersion = typedSetting.setting.localVersion,
-                                    serverVersion = syncResult.newVersion,
-                                    syncStatus = SyncStatus.SYNCED,
-                                ),
-                            )
-                        }
-                        when (
-                            val upsertResult = localDataSource.upsert(
-                                identity.userId,
-                                updatedTypedSetting,
-                            )
-                        ) {
-                            is ResultWithError.Success -> ResultWithError.Success(Unit)
-                            is ResultWithError.Failure -> ResultWithError.Failure(
-                                upsertResult.error.toSyncError(),
-                            )
-                        }
-                    }
-
-                    is SyncResult.Conflict -> {
-                        if (typedSetting.setting.modifiedAt >= syncResult.serverModifiedAt) {
-                            val updatedTypedSetting = when (typedSetting) {
-                                is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
-                                    setting = typedSetting.setting.copy(
-                                        syncedVersion = typedSetting.setting.localVersion,
-                                        serverVersion = syncResult.newVersion,
-                                        syncStatus = SyncStatus.SYNCED,
-                                    ),
-                                )
-                            }
-                            when (
-                                val upsertResult = localDataSource.upsert(
-                                    identity.userId,
-                                    updatedTypedSetting,
-                                )
-                            ) {
-                                is ResultWithError.Success -> ResultWithError.Success(Unit)
-                                is ResultWithError.Failure -> ResultWithError.Failure(
-                                    upsertResult.error.toSyncError(),
-                                )
-                            }
-                        } else {
-                            val (updatedTypedSetting, localValueStr, acceptedValueStr) =
-                                when (typedSetting) {
-                                    is TypedLocalSetting.UiLanguage -> {
-                                        val localValueStr =
-                                            typedSetting.setting.value.toStorageValue()
-                                        val validatedValue =
-                                            syncResult.serverValue.toUiLanguageOrNull()
-                                                ?: typedSetting.setting.value
-                                        val acceptedValueStr = validatedValue.toStorageValue()
-                                        Triple(
-                                            TypedLocalSetting.UiLanguage(
-                                                setting = typedSetting.setting.copy(
-                                                    value = validatedValue,
-                                                    localVersion = syncResult.newVersion,
-                                                    syncedVersion = syncResult.newVersion,
-                                                    serverVersion = syncResult.newVersion,
-                                                    modifiedAt = syncResult.serverModifiedAt,
-                                                    syncStatus = SyncStatus.SYNCED,
-                                                ),
-                                            ),
-                                            localValueStr,
-                                            acceptedValueStr,
-                                        )
-                                    }
-                                }
-
-                            when (
-                                val upsertResult = localDataSource.upsert(
-                                    identity.userId,
-                                    updatedTypedSetting,
-                                )
-                            ) {
-                                is ResultWithError.Success -> {
-                                    conflictEvents.emit(
-                                        SettingsConflictEvent(
-                                            settingKey = key,
-                                            localValue = localValueStr,
-                                            serverValue = syncResult.serverValue,
-                                            acceptedValue = acceptedValueStr,
-                                            conflictedAt = Instant.fromEpochMilliseconds(
-                                                syncResult.serverModifiedAt,
-                                            ),
-                                        ),
-                                    )
-                                    ResultWithError.Success(Unit)
-                                }
-
-                                is ResultWithError.Failure -> ResultWithError.Failure(
-                                    upsertResult.error.toSyncError(),
-                                )
-                            }
-                        }
-                    }
-                }
+                handleSingleSyncResult(identity, key, typedSetting, syncResult)
             },
             onFailure = { error ->
-                val failedTypedSetting = when (typedSetting) {
-                    is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
-                        setting = typedSetting.setting.copy(syncStatus = SyncStatus.FAILED),
-                    )
-                }
-                localDataSource.upsert(
+                markSyncFailed(
                     identity.userId,
-                    failedTypedSetting,
-                ).onFailure { error1 ->
-                    logger.e(
-                        TAG,
-                        "Failed to mark setting ${typedSetting.key.key} sync as FAILED caused by $error1",
-                    )
-                }
+                    listOf(typedSetting.markFailed()),
+                    "Failed to mark setting ${typedSetting.key.key} sync as FAILED",
+                )
+                val mappedRemoteError = error.toRepositoryError()
+                logErrorMapping("syncSetting:remote", error, mappedRemoteError)
                 ResultWithError.Failure(
-                    SyncSettingRepositoryError.RemoteSyncFailed(error.toRepositoryError()),
+                    SyncSettingRepositoryError.RemoteSyncFailed(mappedRemoteError),
                 )
             },
         )
     }
 
-    @Suppress(
-        "LongMethod",
-        "NestedBlockDepth",
-        "ReturnCount",
-        "CyclomaticComplexMethod",
-    )
+    private suspend fun handleSingleSyncResult(
+        identity: Identity,
+        key: SettingKey,
+        typedSetting: TypedLocalSetting,
+        syncResult: SyncResult,
+    ): ResultWithError<Unit, SyncSettingRepositoryError> = when (syncResult) {
+        is SyncResult.Success -> upsertSingleSyncResult(
+            identity.userId,
+            typedSetting.markLocalSync(syncResult.newVersion),
+            "syncSetting:upsertSuccess",
+        )
+
+        is SyncResult.Conflict -> handleSingleSyncConflict(
+            identity,
+            key,
+            typedSetting,
+            syncResult,
+        )
+    }
+
+    private suspend fun handleSingleSyncConflict(
+        identity: Identity,
+        key: SettingKey,
+        typedSetting: TypedLocalSetting,
+        syncResult: SyncResult.Conflict,
+    ): ResultWithError<Unit, SyncSettingRepositoryError> {
+        if (typedSetting.setting.modifiedAt >= syncResult.serverModifiedAt) {
+            return upsertSingleSyncResult(
+                identity.userId,
+                typedSetting.markLocalSync(syncResult.newVersion),
+                "syncSetting:upsertConflictLocalNewer",
+            )
+        }
+
+        val resolution = typedSetting.acceptServerState(syncResult)
+        return when (
+            val upsertResult = localDataSource.upsert(
+                identity.userId,
+                resolution.updatedSetting,
+            )
+        ) {
+            is ResultWithError.Success -> {
+                conflictEvents.emit(
+                    resolution.toConflictEvent(
+                        key = key,
+                        serverValue = syncResult.serverValue,
+                        serverModifiedAt = syncResult.serverModifiedAt,
+                    ),
+                )
+                ResultWithError.Success(Unit)
+            }
+
+            is ResultWithError.Failure -> {
+                val mapped = upsertResult.error.toSyncError(
+                    logger,
+                    TAG,
+                    "syncSetting:upsertConflictServerNewer",
+                )
+                ResultWithError.Failure(mapped)
+            }
+        }
+    }
+
+    private suspend fun upsertSingleSyncResult(
+        userId: UserId,
+        updatedSetting: TypedLocalSetting,
+        context: String,
+    ): ResultWithError<Unit, SyncSettingRepositoryError> =
+        when (val upsertResult = localDataSource.upsert(userId, updatedSetting)) {
+            is ResultWithError.Success -> ResultWithError.Success(Unit)
+            is ResultWithError.Failure -> {
+                val mapped = upsertResult.error.toSyncError(logger, TAG, context)
+                ResultWithError.Failure(mapped)
+            }
+        }
+
+    @Suppress("ReturnCount")
     override suspend fun syncAllPendingSettings(
         identity: Identity,
-    ): ResultWithError<
-        Unit,
-        SyncAllSettingsRepositoryError,
-        > {
+    ): ResultWithError<Unit, SyncAllSettingsRepositoryError> {
         val unsyncedSettings = localDataSource.getUnsyncedSettings(identity.userId).fold(
             onSuccess = { it },
             onFailure = { error ->
-                return ResultWithError.Failure(error.toBatchSyncError())
+                val mapped = error.toBatchSyncError(
+                    logger,
+                    TAG,
+                    "syncAllPending:getUnsynced",
+                )
+                return ResultWithError.Failure(mapped)
             },
         )
 
@@ -459,149 +505,109 @@ class SettingsRepositoryImpl @Inject constructor(
 
         return remoteDataSource.syncBatch(requests).fold(
             onSuccess = { results ->
-                var firstUpsertError: SyncAllSettingsRepositoryError.LocalStorageError? = null
-                results.forEach { (key, result) ->
-                    val typedSetting = unsyncedSettings.find { it.key.key == key } ?: return@forEach
-
-                    when (result) {
-                        is SyncResult.Success -> {
-                            val updatedTypedSetting = when (typedSetting) {
-                                is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
-                                    setting = typedSetting.setting.copy(
-                                        syncedVersion = typedSetting.setting.localVersion,
-                                        serverVersion = result.newVersion,
-                                        syncStatus = SyncStatus.SYNCED,
-                                    ),
-                                )
-                            }
-                            when (
-                                val upsertResult = localDataSource.upsert(
-                                    identity.userId,
-                                    updatedTypedSetting,
-                                )
-                            ) {
-                                is ResultWithError.Success -> Unit
-                                is ResultWithError.Failure -> {
-                                    if (firstUpsertError == null) {
-                                        firstUpsertError = upsertResult.error.toBatchSyncError()
-                                    }
-                                }
-                            }
-                        }
-
-                        is SyncResult.Conflict -> {
-                            if (typedSetting.setting.modifiedAt >= result.serverModifiedAt) {
-                                val updatedTypedSetting = when (typedSetting) {
-                                    is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
-                                        setting = typedSetting.setting.copy(
-                                            syncedVersion = typedSetting.setting.localVersion,
-                                            serverVersion = result.newVersion,
-                                            syncStatus = SyncStatus.SYNCED,
-                                        ),
-                                    )
-                                }
-                                when (
-                                    val upsertResult = localDataSource.upsert(
-                                        identity.userId,
-                                        updatedTypedSetting,
-                                    )
-                                ) {
-                                    is ResultWithError.Success -> Unit
-                                    is ResultWithError.Failure -> {
-                                        if (firstUpsertError == null) {
-                                            firstUpsertError = upsertResult.error.toBatchSyncError()
-                                        }
-                                    }
-                                }
-                            } else {
-                                val settingKey = SettingKey.fromKey(key)
-                                if (settingKey == null) {
-                                    logger.w(TAG, "Unknown setting key during batch sync: $key")
-                                    return@forEach
-                                }
-
-                                val (updatedTypedSetting, localValueStr, acceptedValueStr) =
-                                    when (typedSetting) {
-                                        is TypedLocalSetting.UiLanguage -> {
-                                            val localValueStr =
-                                                typedSetting.setting.value.toStorageValue()
-                                            val validatedValue =
-                                                result.serverValue.toUiLanguageOrNull()
-                                                    ?: typedSetting.setting.value
-                                            val acceptedValueStr = validatedValue.toStorageValue()
-                                            Triple(
-                                                TypedLocalSetting.UiLanguage(
-                                                    setting = typedSetting.setting.copy(
-                                                        value = validatedValue,
-                                                        localVersion = result.newVersion,
-                                                        syncedVersion = result.newVersion,
-                                                        serverVersion = result.newVersion,
-                                                        modifiedAt = result.serverModifiedAt,
-                                                        syncStatus = SyncStatus.SYNCED,
-                                                    ),
-                                                ),
-                                                localValueStr,
-                                                acceptedValueStr,
-                                            )
-                                        }
-                                    }
-
-                                when (
-                                    val upsertResult = localDataSource.upsert(
-                                        identity.userId,
-                                        updatedTypedSetting,
-                                    )
-                                ) {
-                                    is ResultWithError.Success -> {
-                                        conflictEvents.emit(
-                                            SettingsConflictEvent(
-                                                settingKey = settingKey,
-                                                localValue = localValueStr,
-                                                serverValue = result.serverValue,
-                                                acceptedValue = acceptedValueStr,
-                                                conflictedAt = Instant.fromEpochMilliseconds(
-                                                    result.serverModifiedAt,
-                                                ),
-                                            ),
-                                        )
-                                    }
-
-                                    is ResultWithError.Failure -> {
-                                        if (firstUpsertError == null) {
-                                            firstUpsertError = upsertResult.error.toBatchSyncError()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                if (firstUpsertError != null) {
-                    ResultWithError.Failure(firstUpsertError)
-                } else {
-                    ResultWithError.Success(Unit)
-                }
+                handleBatchSyncResults(identity, unsyncedSettings, results)
             },
-
             onFailure = { error ->
-                val failedSettings = unsyncedSettings.map { typedSetting ->
-                    when (typedSetting) {
-                        is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
-                            setting = typedSetting.setting.copy(syncStatus = SyncStatus.FAILED),
-                        )
-                    }
-                }
-                localDataSource.upsert(
+                markSyncFailed(
                     identity.userId,
-                    failedSettings,
-                ).onFailure { error1 ->
-                    logger.e(TAG, "Failed to mark settings sync as FAILED caused by $error1")
-                }
+                    unsyncedSettings.map { it.markFailed() },
+                    "Failed to mark settings sync as FAILED",
+                )
+                val mappedRemoteError = error.toRepositoryError()
+                logErrorMapping("syncAllPending:remote", error, mappedRemoteError)
                 ResultWithError.Failure(
-                    SyncAllSettingsRepositoryError.RemoteSyncFailed(error.toRepositoryError()),
+                    SyncAllSettingsRepositoryError.RemoteSyncFailed(mappedRemoteError),
                 )
             },
         )
+    }
+
+    private suspend fun handleBatchSyncResults(
+        identity: Identity,
+        unsyncedSettings: List<TypedLocalSetting>,
+        results: Map<String, SyncResult>,
+    ): ResultWithError<Unit, SyncAllSettingsRepositoryError> {
+        var firstUpsertError: SyncAllSettingsRepositoryError.LocalStorageError? = null
+        results.forEach { (key, result) ->
+            val typedSetting = unsyncedSettings.firstOrNull { it.key.key == key }
+            if (typedSetting == null) {
+                logger.w(TAG, "Unknown setting key during batch sync: $key")
+                return@forEach
+            }
+            val error = when (result) {
+                is SyncResult.Success -> upsertBatchSynced(
+                    identity.userId,
+                    typedSetting.markLocalSync(result.newVersion),
+                    "syncAllPending:upsertSuccess",
+                )
+
+                is SyncResult.Conflict -> handleBatchConflict(identity, typedSetting, result)
+            }
+            if (firstUpsertError == null) {
+                firstUpsertError = error
+            }
+        }
+        return firstUpsertError?.let { ResultWithError.Failure(it) }
+            ?: ResultWithError.Success(Unit)
+    }
+
+    private suspend fun handleBatchConflict(
+        identity: Identity,
+        typedSetting: TypedLocalSetting,
+        syncResult: SyncResult.Conflict,
+    ): SyncAllSettingsRepositoryError.LocalStorageError? {
+        if (typedSetting.setting.modifiedAt >= syncResult.serverModifiedAt) {
+            return upsertBatchSynced(
+                identity.userId,
+                typedSetting.markLocalSync(syncResult.newVersion),
+                "syncAllPending:upsertConflictLocalNewer",
+            )
+        }
+
+        val resolution = typedSetting.acceptServerState(syncResult)
+        return when (
+            val upsertResult = localDataSource.upsert(
+                identity.userId,
+                resolution.updatedSetting,
+            )
+        ) {
+            is ResultWithError.Success -> {
+                conflictEvents.emit(
+                    resolution.toConflictEvent(
+                        key = typedSetting.key,
+                        serverValue = syncResult.serverValue,
+                        serverModifiedAt = syncResult.serverModifiedAt,
+                    ),
+                )
+                null
+            }
+
+            is ResultWithError.Failure -> upsertResult.error.toBatchSyncError(
+                logger,
+                TAG,
+                "syncAllPending:upsertConflictServerNewer",
+            )
+        }
+    }
+
+    private suspend fun upsertBatchSynced(
+        userId: UserId,
+        updatedSetting: TypedLocalSetting,
+        context: String,
+    ): SyncAllSettingsRepositoryError.LocalStorageError? =
+        when (val upsertResult = localDataSource.upsert(userId, updatedSetting)) {
+            is ResultWithError.Success -> null
+            is ResultWithError.Failure -> upsertResult.error.toBatchSyncError(logger, TAG, context)
+        }
+
+    private suspend fun markSyncFailed(
+        userId: UserId,
+        settings: List<TypedLocalSetting>,
+        failureMessage: String,
+    ) {
+        localDataSource.upsert(userId, settings).onFailure { error ->
+            logger.e(TAG, "$failureMessage caused by $error")
+        }
     }
 
     private suspend fun recoverSettings(
@@ -645,29 +651,48 @@ class SettingsRepositoryImpl @Inject constructor(
             )
             localDataSource.upsert(identity.userId, typedSettings).foldWithErrorMapping(
                 onSuccess = { ResultWithError.Success(localSettings.toDomain()) },
-                onFailure = { error -> error.toGetSettingsRepositoryError() },
+                onFailure = { error ->
+                    error.toGetSettingsRepositoryError("recoverSettings:upsertLocal")
+                },
             )
         },
 
-        onFailure = { _ -> upsertDefaultSettings(identity.userId) },
+        onFailure = { remoteError ->
+            logger.e(TAG, "Remote recovery failed, falling back to defaults: $remoteError")
+            upsertDefaultSettings(identity.userId)
+        },
     )
 
-    private fun UpsertSettingError.toGetSettingsRepositoryError(): GetSettingsRepositoryError =
-        when (this) {
-            UpsertSettingError.AccessDenied -> GetSettingsRepositoryError.Recoverable.AccessDenied
-            UpsertSettingError.ConcurrentModificationError,
-            UpsertSettingError.DiskIOError,
-            -> GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable
-            UpsertSettingError.DatabaseCorrupted ->
-                GetSettingsRepositoryError.Recoverable.DataCorruption
-            UpsertSettingError.ReadOnlyDatabase -> GetSettingsRepositoryError.Recoverable.ReadOnly
-            UpsertSettingError.StorageFull ->
-                GetSettingsRepositoryError.Recoverable.InsufficientStorage
-            is UpsertSettingError.UnknownError -> {
-                logger.e(TAG, "Unknown error while recovering settings", this.cause)
-                GetSettingsRepositoryError.Unknown
+    private fun UpsertSettingError.toGetSettingsRepositoryError(
+        context: String,
+    ): GetSettingsRepositoryError {
+        val mapped =
+            when (this) {
+                UpsertSettingError.AccessDenied ->
+                    GetSettingsRepositoryError.Recoverable.AccessDenied
+
+                UpsertSettingError.ConcurrentModificationError,
+                UpsertSettingError.DiskIOError,
+                ->
+                    GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable
+
+                UpsertSettingError.DatabaseCorrupted ->
+                    GetSettingsRepositoryError.Recoverable.DataCorruption
+
+                UpsertSettingError.ReadOnlyDatabase ->
+                    GetSettingsRepositoryError.Recoverable.ReadOnly
+
+                UpsertSettingError.StorageFull ->
+                    GetSettingsRepositoryError.Recoverable.InsufficientStorage
+
+                is UpsertSettingError.UnknownError -> {
+                    logger.e(TAG, "Unknown error while recovering settings", this.cause)
+                    GetSettingsRepositoryError.Unknown
+                }
             }
-        }
+        logErrorMapping(context, this, mapped)
+        return mapped
+    }
 
     private suspend fun upsertDefaultSettings(
         userId: UserId,
@@ -684,65 +709,164 @@ class SettingsRepositoryImpl @Inject constructor(
                 ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
             },
             onFailure = {
-                ResultWithError.Failure(it.toGetSettingsRepositoryError())
+                ResultWithError.Failure(
+                    it.toGetSettingsRepositoryError("upsertDefaultSettings"),
+                )
             },
         )
     }
 }
 
-private fun GetSettingError.toSyncError(): SyncSettingRepositoryError = when (this) {
-    GetSettingError.SettingNotFound -> SyncSettingRepositoryError.SettingNotFound
-    GetSettingError.ConcurrentModificationError,
-    GetSettingError.DiskIOError,
-    -> SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable
-    GetSettingError.DatabaseCorrupted -> SyncSettingRepositoryError.LocalStorageError.Corrupted
-    GetSettingError.AccessDenied -> SyncSettingRepositoryError.LocalStorageError.AccessDenied
-    GetSettingError.ReadOnlyDatabase -> SyncSettingRepositoryError.LocalStorageError.ReadOnly
-    is GetSettingError.UnknownError -> SyncSettingRepositoryError.LocalStorageError.UnknownError(
-        this.cause,
+private fun TypedLocalSetting.requiresSync(): Boolean =
+    setting.localVersion != setting.syncedVersion
+
+private fun TypedLocalSetting.markLocalSync(newServerVersion: Int): TypedLocalSetting =
+    when (this) {
+        is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
+            setting = setting.copy(
+                syncedVersion = setting.localVersion,
+                serverVersion = newServerVersion,
+                syncStatus = SyncStatus.SYNCED,
+            ),
+        )
+    }
+
+private fun TypedLocalSetting.markFailed(): TypedLocalSetting = when (this) {
+    is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
+        setting = setting.copy(syncStatus = SyncStatus.FAILED),
     )
 }
 
-private fun UpsertSettingError.toSyncError(): SyncSettingRepositoryError.LocalStorageError =
-    when (this) {
-        UpsertSettingError.ConcurrentModificationError,
-        UpsertSettingError.DiskIOError,
-        -> SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable
-        UpsertSettingError.StorageFull -> SyncSettingRepositoryError.LocalStorageError.StorageFull
-        UpsertSettingError.DatabaseCorrupted ->
-            SyncSettingRepositoryError.LocalStorageError.Corrupted
-        UpsertSettingError.AccessDenied -> SyncSettingRepositoryError.LocalStorageError.AccessDenied
-        UpsertSettingError.ReadOnlyDatabase -> SyncSettingRepositoryError.LocalStorageError.ReadOnly
-        is UpsertSettingError.UnknownError ->
-            SyncSettingRepositoryError.LocalStorageError.UnknownError(this.cause)
+private fun TypedLocalSetting.acceptServerState(
+    conflict: SyncResult.Conflict,
+): ConflictResolution = when (this) {
+    is TypedLocalSetting.UiLanguage -> {
+        val localValue = setting.value.toStorageValue()
+        val validatedValue = conflict.serverValue.toUiLanguageOrNull() ?: setting.value
+        val acceptedValue = validatedValue.toStorageValue()
+        ConflictResolution(
+            updatedSetting = TypedLocalSetting.UiLanguage(
+                setting = setting.copy(
+                    value = validatedValue,
+                    localVersion = conflict.newVersion,
+                    syncedVersion = conflict.newVersion,
+                    serverVersion = conflict.newVersion,
+                    modifiedAt = conflict.serverModifiedAt,
+                    syncStatus = SyncStatus.SYNCED,
+                ),
+            ),
+            localValue = localValue,
+            acceptedValue = acceptedValue,
+        )
     }
-
-private fun GetUnsyncedSettingsError.toBatchSyncError() = when (this) {
-    GetUnsyncedSettingsError.ConcurrentModificationError,
-    GetUnsyncedSettingsError.DiskIOError,
-    -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
-    GetUnsyncedSettingsError.DatabaseCorrupted ->
-        SyncAllSettingsRepositoryError.LocalStorageError.Corrupted
-    GetUnsyncedSettingsError.AccessDenied ->
-        SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied
-    GetUnsyncedSettingsError.ReadOnlyDatabase ->
-        SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly
-    is GetUnsyncedSettingsError.UnknownError ->
-        SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(this.cause)
 }
 
-private fun UpsertSettingError.toBatchSyncError() = when (this) {
-    UpsertSettingError.ConcurrentModificationError,
-    UpsertSettingError.DiskIOError,
-    -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
-    UpsertSettingError.StorageFull ->
-        SyncAllSettingsRepositoryError.LocalStorageError.StorageFull
-    UpsertSettingError.DatabaseCorrupted ->
-        SyncAllSettingsRepositoryError.LocalStorageError.Corrupted
-    UpsertSettingError.AccessDenied ->
-        SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied
-    UpsertSettingError.ReadOnlyDatabase ->
-        SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly
-    is UpsertSettingError.UnknownError ->
-        SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(this.cause)
+private data class ConflictResolution(
+    val updatedSetting: TypedLocalSetting,
+    val localValue: String,
+    val acceptedValue: String,
+)
+
+private fun ConflictResolution.toConflictEvent(
+    key: SettingKey,
+    serverValue: String,
+    serverModifiedAt: Long,
+): SettingsConflictEvent = SettingsConflictEvent(
+    settingKey = key,
+    localValue = localValue,
+    serverValue = serverValue,
+    acceptedValue = acceptedValue,
+    conflictedAt = Instant.fromEpochMilliseconds(serverModifiedAt),
+)
+
+private fun GetSettingError.toSyncError(
+    logger: Logger,
+    tag: String,
+    context: String,
+): SyncSettingRepositoryError {
+    val mapped = when (this) {
+        GetSettingError.SettingNotFound -> SyncSettingRepositoryError.SettingNotFound
+        GetSettingError.ConcurrentModificationError,
+        GetSettingError.DiskIOError,
+        -> SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable
+        GetSettingError.DatabaseCorrupted -> SyncSettingRepositoryError.LocalStorageError.Corrupted
+        GetSettingError.AccessDenied -> SyncSettingRepositoryError.LocalStorageError.AccessDenied
+        GetSettingError.ReadOnlyDatabase -> SyncSettingRepositoryError.LocalStorageError.ReadOnly
+        is GetSettingError.UnknownError ->
+            SyncSettingRepositoryError.LocalStorageError.UnknownError(this.cause)
+    }
+    logger.e(tag, "Error mapped at $context: source=$this mapped=$mapped")
+    return mapped
+}
+
+private fun UpsertSettingError.toSyncError(
+    logger: Logger,
+    tag: String,
+    context: String,
+): SyncSettingRepositoryError.LocalStorageError {
+    val mapped =
+        when (this) {
+            UpsertSettingError.ConcurrentModificationError,
+            UpsertSettingError.DiskIOError,
+            -> SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable
+            UpsertSettingError.StorageFull ->
+                SyncSettingRepositoryError.LocalStorageError.StorageFull
+            UpsertSettingError.DatabaseCorrupted ->
+                SyncSettingRepositoryError.LocalStorageError.Corrupted
+            UpsertSettingError.AccessDenied ->
+                SyncSettingRepositoryError.LocalStorageError.AccessDenied
+            UpsertSettingError.ReadOnlyDatabase ->
+                SyncSettingRepositoryError.LocalStorageError.ReadOnly
+            is UpsertSettingError.UnknownError ->
+                SyncSettingRepositoryError.LocalStorageError.UnknownError(this.cause)
+        }
+    logger.e(tag, "Error mapped at $context: source=$this mapped=$mapped")
+    return mapped
+}
+
+private fun GetUnsyncedSettingsError.toBatchSyncError(
+    logger: Logger,
+    tag: String,
+    context: String,
+): SyncAllSettingsRepositoryError.LocalStorageError {
+    val mapped =
+        when (this) {
+            GetUnsyncedSettingsError.ConcurrentModificationError,
+            GetUnsyncedSettingsError.DiskIOError,
+            -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
+            GetUnsyncedSettingsError.DatabaseCorrupted ->
+                SyncAllSettingsRepositoryError.LocalStorageError.Corrupted
+            GetUnsyncedSettingsError.AccessDenied ->
+                SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied
+            GetUnsyncedSettingsError.ReadOnlyDatabase ->
+                SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly
+            is GetUnsyncedSettingsError.UnknownError ->
+                SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(this.cause)
+        }
+    logger.e(tag, "Error mapped at $context: source=$this mapped=$mapped")
+    return mapped
+}
+
+private fun UpsertSettingError.toBatchSyncError(
+    logger: Logger,
+    tag: String,
+    context: String,
+): SyncAllSettingsRepositoryError.LocalStorageError {
+    val mapped = when (this) {
+        UpsertSettingError.ConcurrentModificationError,
+        UpsertSettingError.DiskIOError,
+        -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
+        UpsertSettingError.StorageFull ->
+            SyncAllSettingsRepositoryError.LocalStorageError.StorageFull
+        UpsertSettingError.DatabaseCorrupted ->
+            SyncAllSettingsRepositoryError.LocalStorageError.Corrupted
+        UpsertSettingError.AccessDenied ->
+            SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied
+        UpsertSettingError.ReadOnlyDatabase ->
+            SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly
+        is UpsertSettingError.UnknownError ->
+            SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(this.cause)
+    }
+    logger.e(tag, "Error mapped at $context: source=$this mapped=$mapped")
+    return mapped
 }

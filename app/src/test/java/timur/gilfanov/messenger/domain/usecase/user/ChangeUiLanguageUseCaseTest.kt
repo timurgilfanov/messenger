@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.user.DeviceId
@@ -29,11 +30,12 @@ class ChangeUiLanguageUseCaseTest {
             ),
         ),
     )
+    private val logger = NoOpLogger()
 
     @Test
     fun `when repository succeed then use case succeed`() = runTest {
         val settingsRepository = SettingsRepositoryStub(changeLanguage = Success(Unit))
-        val useCase = ChangeUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ChangeUiLanguageUseCase(identityRepository, settingsRepository, logger)
         val result = useCase(UiLanguage.English)
         assertIs<Success<Unit, *>>(result)
     }
@@ -45,7 +47,7 @@ class ChangeUiLanguageUseCaseTest {
                 ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable,
             ),
         )
-        val useCase = ChangeUiLanguageUseCase(identityRepository, settingsRepository)
+        val useCase = ChangeUiLanguageUseCase(identityRepository, settingsRepository, logger)
         val result = useCase(UiLanguage.English)
         assertIs<Failure<*, ChangeUiLanguageError>>(result)
         assertIs<ChangeUiLanguageError.ChangeLanguageRepository>(result.error)
@@ -62,7 +64,7 @@ class ChangeUiLanguageUseCaseTest {
             ),
         )
         val settingsRepository = SettingsRepositoryStub(changeLanguage = Success(Unit))
-        val useCase = ChangeUiLanguageUseCase(failingIdentityRepository, settingsRepository)
+        val useCase = ChangeUiLanguageUseCase(failingIdentityRepository, settingsRepository, logger)
 
         val result = useCase(UiLanguage.German)
 

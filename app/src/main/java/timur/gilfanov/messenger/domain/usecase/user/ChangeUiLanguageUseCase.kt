@@ -6,6 +6,7 @@ import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
 import timur.gilfanov.messenger.domain.entity.mapError
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import timur.gilfanov.messenger.util.Logger
 
 /**
  * Changes user's UI language preference.
@@ -24,7 +25,12 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepositor
 class ChangeUiLanguageUseCase(
     private val identityRepository: IdentityRepository,
     private val settingsRepository: SettingsRepository,
+    private val logger: Logger,
 ) {
+    companion object {
+        private const val TAG = "ChangeUiLanguageUseCase"
+    }
+
     suspend operator fun invoke(
         newUiLanguage: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageError> =
@@ -32,10 +38,15 @@ class ChangeUiLanguageUseCase(
             onSuccess = { identity ->
                 settingsRepository.changeUiLanguage(identity, newUiLanguage)
                     .mapError { error ->
+                        logger.e(
+                            TAG,
+                            "Repository changeUiLanguage failed: $error",
+                        )
                         ChangeUiLanguageError.ChangeLanguageRepository(error)
                     }
             },
             onFailure = {
+                logger.e(TAG, "Unable to resolve identity while changing UI language")
                 ChangeUiLanguageError.Unauthorized
             },
         )

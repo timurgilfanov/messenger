@@ -7,6 +7,7 @@ import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.domain.usecase.user.repository.SyncSettingRepositoryError
+import timur.gilfanov.messenger.util.Logger
 
 /**
  * Synchronizes a single user setting with the remote backend.
@@ -17,16 +18,33 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SyncSettingReposi
 class SyncSettingUseCase(
     private val identityRepository: IdentityRepository,
     private val settingsRepository: SettingsRepository,
+    private val logger: Logger,
 ) {
+    companion object {
+        private const val TAG = "SyncSettingUseCase"
+    }
+
     suspend operator fun invoke(userId: UserId, key: SettingKey): SettingsSyncOutcome =
         identityRepository.getIdentity(userId).fold(
             onSuccess = { identity ->
                 when (val result = settingsRepository.syncSetting(identity, key)) {
                     is ResultWithError.Success -> SettingsSyncOutcome.Success
-                    is ResultWithError.Failure -> result.error.toSyncOutcome()
+                    is ResultWithError.Failure -> {
+                        val outcome = result.error.toSyncOutcome()
+                        logger.e(
+                            TAG,
+                            "Repository syncSetting failed for user ${userId.id} key ${key.key}: " +
+                                "${result.error} -> $outcome",
+                        )
+                        outcome
+                    }
                 }
             },
             onFailure = {
+                logger.e(
+                    TAG,
+                    "Unable to resolve identity for syncSetting user ${userId.id}",
+                )
                 SettingsSyncOutcome.Failure
             },
         )

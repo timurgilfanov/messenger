@@ -6,6 +6,7 @@ import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.domain.usecase.user.repository.SyncAllSettingsRepositoryError
+import timur.gilfanov.messenger.util.Logger
 
 /**
  * Synchronizes all pending setting updates queued locally.
@@ -16,15 +17,30 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SyncAllSettingsRe
 class SyncAllPendingSettingsUseCase(
     private val identityRepository: IdentityRepository,
     private val settingsRepository: SettingsRepository,
+    private val logger: Logger,
 ) {
+    companion object {
+        private const val TAG = "SyncAllSettingsUseCase"
+    }
+
     suspend operator fun invoke(): SettingsSyncOutcome = identityRepository.identity.first().fold(
         onSuccess = { identity ->
             when (val result = settingsRepository.syncAllPendingSettings(identity)) {
                 is ResultWithError.Success -> SettingsSyncOutcome.Success
-                is ResultWithError.Failure -> result.error.toSyncOutcome()
+                is ResultWithError.Failure -> {
+                    val outcome = result.error.toSyncOutcome()
+                    logger.e(
+                        TAG,
+                        "Repository syncAllPendingSettings failed: ${result.error} -> $outcome",
+                    )
+                    outcome
+                }
             }
         },
-        onFailure = { SettingsSyncOutcome.Failure },
+        onFailure = {
+            logger.e(TAG, "Unable to resolve identity for syncAllPending")
+            SettingsSyncOutcome.Failure
+        },
     )
 
     private fun SyncAllSettingsRepositoryError.toSyncOutcome(): SettingsSyncOutcome = when (this) {

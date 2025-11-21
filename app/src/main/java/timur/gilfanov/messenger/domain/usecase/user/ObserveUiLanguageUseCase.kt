@@ -10,6 +10,7 @@ import timur.gilfanov.messenger.domain.entity.bimap
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import timur.gilfanov.messenger.util.Logger
 
 /**
  * Observes the current user's UI language preference.
@@ -27,7 +28,12 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepositor
 class ObserveUiLanguageUseCase(
     private val identityRepository: IdentityRepository,
     private val settingsRepository: SettingsRepository,
+    private val logger: Logger,
 ) {
+    companion object {
+        private const val TAG = "ObserveUiLanguageUseCase"
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(): Flow<ResultWithError<UiLanguage, ObserveUiLanguageError>> =
         identityRepository.identity.flatMapLatest { identityResult ->
@@ -40,12 +46,17 @@ class ObserveUiLanguageUseCase(
                                     settings.uiLanguage
                                 },
                                 onFailure = { error ->
+                                    logger.e(
+                                        TAG,
+                                        "Settings observation failed: $error",
+                                    )
                                     ObserveUiLanguageError.ObserveLanguageRepository(error)
                                 },
                             )
                         }
                 },
                 onFailure = {
+                    logger.e(TAG, "Unable to resolve identity while observing UI language")
                     flowOf(
                         ResultWithError.Failure<UiLanguage, ObserveUiLanguageError>(
                             ObserveUiLanguageError.Unauthorized,

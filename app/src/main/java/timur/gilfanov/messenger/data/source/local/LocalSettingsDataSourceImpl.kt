@@ -132,7 +132,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 emit(Failure(error))
             }
 
-    @Suppress("NestedBlockDepth", "ReturnCount")
+    @Suppress("NestedBlockDepth", "ReturnCount", "LongMethod")
     override suspend fun getSetting(
         userId: UserId,
         key: SettingKey,
@@ -144,6 +144,10 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 return if (entity != null) {
                     Success(entity.toTypedLocalSetting(defaultSettings))
                 } else {
+                    logger.w(
+                        TAG,
+                        "Setting ${key.key} not found for user ${userId.id}",
+                    )
                     Failure(GetSettingError.SettingNotFound)
                 }
             } catch (e: SQLiteException) {
@@ -162,27 +166,60 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                                 is SQLiteDiskIOException -> GetSettingError.DiskIOError
                                 else -> error("Unreachable")
                             }
+                            logger.e(
+                                TAG,
+                                "Failed to get setting ${key.key} for user ${userId.id} after " +
+                                    "$MAX_RETRIES retries due to $error",
+                                e,
+                            )
                             return Failure(error)
                         }
                     }
 
-                    is SQLiteDatabaseCorruptException ->
+                    is SQLiteDatabaseCorruptException -> {
+                        logger.e(
+                            TAG,
+                            "Database corrupted while getting setting ${key.key} for user " +
+                                userId.id,
+                            e,
+                        )
                         return Failure(GetSettingError.DatabaseCorrupted)
+                    }
 
-                    is SQLiteAccessPermException ->
+                    is SQLiteAccessPermException -> {
+                        logger.e(
+                            TAG,
+                            "Access denied while getting setting ${key.key} for user ${userId.id}",
+                            e,
+                        )
                         return Failure(GetSettingError.AccessDenied)
+                    }
 
-                    is SQLiteReadOnlyDatabaseException ->
+                    is SQLiteReadOnlyDatabaseException -> {
+                        logger.e(
+                            TAG,
+                            "Read-only database while getting setting ${key.key} for user " +
+                                userId.id,
+                            e,
+                        )
                         return Failure(GetSettingError.ReadOnlyDatabase)
+                    }
 
-                    else ->
+                    else -> {
+                        logger.e(
+                            TAG,
+                            "Unknown database error while getting setting ${key.key} for user " +
+                                userId.id,
+                            e,
+                        )
                         return Failure(GetSettingError.UnknownError(e))
+                    }
                 }
             }
         }
     }
 
-    @Suppress("NestedBlockDepth", "ReturnCount")
+    @Suppress("NestedBlockDepth", "ReturnCount", "LongMethod")
     override suspend fun upsert(
         userId: UserId,
         setting: TypedLocalSetting,
@@ -209,29 +246,71 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                                 is SQLiteDiskIOException -> UpsertSettingError.DiskIOError
                                 else -> error("Unreachable")
                             }
+                            logger.e(
+                                TAG,
+                                "Failed to upsert setting ${setting.key.key} for user " +
+                                    "${userId.id} after $MAX_RETRIES retries due to $error",
+                                e,
+                            )
                             return Failure(error)
                         }
                     }
 
-                    is SQLiteFullException ->
+                    is SQLiteFullException -> {
+                        logger.e(
+                            TAG,
+                            "Storage full while upserting setting ${setting.key.key} for user " +
+                                userId.id,
+                            e,
+                        )
                         return Failure(UpsertSettingError.StorageFull)
+                    }
 
-                    is SQLiteDatabaseCorruptException ->
+                    is SQLiteDatabaseCorruptException -> {
+                        logger.e(
+                            TAG,
+                            "Database corrupted while upserting setting ${setting.key.key} " +
+                                "for user ${userId.id}",
+                            e,
+                        )
                         return Failure(UpsertSettingError.DatabaseCorrupted)
+                    }
 
-                    is SQLiteAccessPermException ->
+                    is SQLiteAccessPermException -> {
+                        logger.e(
+                            TAG,
+                            "Access denied while upserting setting ${setting.key.key} for user " +
+                                userId.id,
+                            e,
+                        )
                         return Failure(UpsertSettingError.AccessDenied)
+                    }
 
-                    is SQLiteReadOnlyDatabaseException ->
+                    is SQLiteReadOnlyDatabaseException -> {
+                        logger.e(
+                            TAG,
+                            "Read-only database while upserting setting ${setting.key.key} " +
+                                "for user ${userId.id}",
+                            e,
+                        )
                         return Failure(UpsertSettingError.ReadOnlyDatabase)
+                    }
 
-                    else ->
+                    else -> {
+                        logger.e(
+                            TAG,
+                            "Unknown database error while upserting setting ${setting.key.key} " +
+                                "for user ${userId.id}",
+                            e,
+                        )
                         return Failure(UpsertSettingError.UnknownError(e))
+                    }
                 }
             }
         }
     }
 
+    @Suppress("LongMethod")
     override suspend fun transform(
         userId: UserId,
         transform: (LocalSettings) -> LocalSettings,
@@ -272,20 +351,55 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         }
     } catch (e: SQLiteException) {
         val error = when (e) {
-            is SQLiteFullException -> TransformSettingError.StorageFull
-            is SQLiteDatabaseCorruptException -> TransformSettingError.DatabaseCorrupted
-            is SQLiteAccessPermException -> TransformSettingError.AccessDenied
-            is SQLiteReadOnlyDatabaseException -> TransformSettingError.ReadOnlyDatabase
-            is SQLiteDatabaseLockedException -> TransformSettingError.ConcurrentModificationError
-            is SQLiteDiskIOException -> TransformSettingError.DiskIOError
+            is SQLiteFullException -> {
+                logger.e(TAG, "Storage full while transforming settings for user ${userId.id}", e)
+                TransformSettingError.StorageFull
+            }
+            is SQLiteDatabaseCorruptException -> {
+                logger.e(
+                    TAG,
+                    "Database corrupted while transforming settings for user ${userId.id}",
+                    e,
+                )
+                TransformSettingError.DatabaseCorrupted
+            }
+            is SQLiteAccessPermException -> {
+                logger.e(TAG, "Access denied while transforming settings for user ${userId.id}", e)
+                TransformSettingError.AccessDenied
+            }
+            is SQLiteReadOnlyDatabaseException -> {
+                logger.e(
+                    TAG,
+                    "Read-only database while transforming settings for user ${userId.id}",
+                    e,
+                )
+                TransformSettingError.ReadOnlyDatabase
+            }
+            is SQLiteDatabaseLockedException -> {
+                logger.e(
+                    TAG,
+                    "Concurrent modification error while transforming settings for user ${userId.id}",
+                    e,
+                )
+                TransformSettingError.ConcurrentModificationError
+            }
+            is SQLiteDiskIOException -> {
+                logger.e(TAG, "Disk IO error while transforming settings for user ${userId.id}", e)
+                TransformSettingError.DiskIOError
+            }
             else -> {
-                logger.e(TAG, "Unknown error on setting upsert in database", e)
+                logger.e(
+                    TAG,
+                    "Unknown error on setting transform in database for user ${userId.id}",
+                    e,
+                )
                 TransformSettingError.UnknownError(e)
             }
         }
         Failure(error)
     }
 
+    @Suppress("LongMethod")
     override suspend fun upsert(
         userId: UserId,
         settings: List<TypedLocalSetting>,
@@ -294,19 +408,70 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         settingsDao.upsert(entities)
         Success(Unit)
     } catch (e: SQLiteException) {
+        val keys = settings.joinToString { it.key.key }
         val error = when (e) {
-            is SQLiteFullException -> UpsertSettingError.StorageFull
-            is SQLiteDatabaseCorruptException -> UpsertSettingError.DatabaseCorrupted
-            is SQLiteAccessPermException -> UpsertSettingError.AccessDenied
-            is SQLiteReadOnlyDatabaseException -> UpsertSettingError.ReadOnlyDatabase
-            is SQLiteDatabaseLockedException -> UpsertSettingError.ConcurrentModificationError
-            is SQLiteDiskIOException -> UpsertSettingError.DiskIOError
-            else -> UpsertSettingError.UnknownError(e)
+            is SQLiteFullException -> {
+                logger.e(
+                    TAG,
+                    "Storage full while bulk upserting settings [$keys] for ${userId.id}",
+                    e,
+                )
+                UpsertSettingError.StorageFull
+            }
+            is SQLiteDatabaseCorruptException -> {
+                logger.e(
+                    TAG,
+                    "Database corrupted while bulk upserting settings [$keys] for ${userId.id}",
+                    e,
+                )
+                UpsertSettingError.DatabaseCorrupted
+            }
+            is SQLiteAccessPermException -> {
+                logger.e(
+                    TAG,
+                    "Access denied while bulk upserting settings [$keys] for ${userId.id}",
+                    e,
+                )
+                UpsertSettingError.AccessDenied
+            }
+            is SQLiteReadOnlyDatabaseException -> {
+                logger.e(
+                    TAG,
+                    "Read-only database while bulk upserting settings [$keys] for ${userId.id}",
+                    e,
+                )
+                UpsertSettingError.ReadOnlyDatabase
+            }
+            is SQLiteDatabaseLockedException -> {
+                logger.e(
+                    TAG,
+                    "Concurrent modification error while bulk upserting settings [$keys] " +
+                        "for ${userId.id}",
+                    e,
+                )
+                UpsertSettingError.ConcurrentModificationError
+            }
+            is SQLiteDiskIOException -> {
+                logger.e(
+                    TAG,
+                    "Disk IO error while bulk upserting settings [$keys] for ${userId.id}",
+                    e,
+                )
+                UpsertSettingError.DiskIOError
+            }
+            else -> {
+                logger.e(
+                    TAG,
+                    "Unknown database error while bulk upserting settings [$keys] for ${userId.id}",
+                    e,
+                )
+                UpsertSettingError.UnknownError(e)
+            }
         }
         Failure(error)
     }
 
-    @Suppress("NestedBlockDepth", "ReturnCount")
+    @Suppress("NestedBlockDepth", "ReturnCount", "LongMethod")
     override suspend fun getUnsyncedSettings(
         userId: UserId,
     ): ResultWithError<
@@ -335,21 +500,51 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                                 is SQLiteDiskIOException -> GetUnsyncedSettingsError.DiskIOError
                                 else -> error("Unreachable")
                             }
+                            logger.e(
+                                TAG,
+                                "Failed to fetch unsynced settings for ${userId.id} after " +
+                                    "$MAX_RETRIES retries due to $error",
+                                e,
+                            )
                             return Failure(error)
                         }
                     }
 
-                    is SQLiteDatabaseCorruptException ->
+                    is SQLiteDatabaseCorruptException -> {
+                        logger.e(
+                            TAG,
+                            "Database corrupted while fetching unsynced settings for ${userId.id}",
+                            e,
+                        )
                         return Failure(GetUnsyncedSettingsError.DatabaseCorrupted)
+                    }
 
-                    is SQLiteAccessPermException ->
+                    is SQLiteAccessPermException -> {
+                        logger.e(
+                            TAG,
+                            "Access denied while fetching unsynced settings for ${userId.id}",
+                            e,
+                        )
                         return Failure(GetUnsyncedSettingsError.AccessDenied)
+                    }
 
-                    is SQLiteReadOnlyDatabaseException ->
+                    is SQLiteReadOnlyDatabaseException -> {
+                        logger.e(
+                            TAG,
+                            "Read-only database while fetching unsynced settings for ${userId.id}",
+                            e,
+                        )
                         return Failure(GetUnsyncedSettingsError.ReadOnlyDatabase)
+                    }
 
-                    else ->
+                    else -> {
+                        logger.e(
+                            TAG,
+                            "Unknown error while fetching unsynced settings for ${userId.id}",
+                            e,
+                        )
                         return Failure(GetUnsyncedSettingsError.UnknownError(e))
+                    }
                 }
             }
         }
@@ -370,11 +565,24 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                             delay(calculateBackoff(attempt))
                             attempt++
                         } else {
+                            logger.e(
+                                TAG,
+                                "Failed to load settings for user ${userId.id} after " +
+                                    "$MAX_RETRIES retries due to database lock/disk error",
+                                e,
+                            )
                             throw e
                         }
                     }
 
-                    else -> throw e
+                    else -> {
+                        logger.e(
+                            TAG,
+                            "Unexpected error while loading settings for user ${userId.id}",
+                            e,
+                        )
+                        throw e
+                    }
                 }
             }
         }

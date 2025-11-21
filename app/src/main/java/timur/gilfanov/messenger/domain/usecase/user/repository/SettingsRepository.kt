@@ -7,7 +7,6 @@ import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
  * Repository for managing user settings.
@@ -55,12 +54,14 @@ interface SettingsRepository {
      * @param key The concrete setting to sync
      */
     suspend fun syncSetting(
-        userId: UserId,
+        identity: Identity,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError>
 
     /**
      * Syncs all pending settings changes for all users.
      */
-    suspend fun syncAllPendingSettings(): ResultWithError<Unit, SyncAllSettingsRepositoryError>
+    suspend fun syncAllPendingSettings(
+        identity: Identity,
+    ): ResultWithError<Unit, SyncAllSettingsRepositoryError>
 }

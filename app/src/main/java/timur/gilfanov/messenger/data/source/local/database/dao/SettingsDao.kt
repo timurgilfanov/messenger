@@ -46,15 +46,16 @@ interface SettingsDao {
     suspend fun getAll(userId: String): List<SettingEntity>
 
     /**
-     * Retrieves all settings that need synchronization across all users.
+     * Retrieves all settings that need synchronization for a specific user.
      *
      * Returns settings where localVersion > syncedVersion, indicating
      * local modifications that haven't been synced to the server yet.
      *
-     * @return List of unsynced setting entities
+     * @param userId User identifier
+     * @return List of unsynced setting entities for the specified user
      */
-    @Query("SELECT * FROM settings WHERE localVersion > syncedVersion")
-    suspend fun getUnsynced(): List<SettingEntity>
+    @Query("SELECT * FROM settings WHERE userId = :userId AND localVersion > syncedVersion")
+    suspend fun getUnsynced(userId: String): List<SettingEntity>
 
     /**
      * Updates or inserts a single setting atomically.

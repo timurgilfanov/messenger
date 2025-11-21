@@ -92,10 +92,12 @@ class LocalSettingsDataSourceFake(
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun getUnsyncedSettings():
-        ResultWithError<List<SettingEntity>, GetUnsyncedSettingsError> {
+    override suspend fun getUnsyncedSettings(
+        userId: UserId,
+    ): ResultWithError<List<SettingEntity>, GetUnsyncedSettingsError> {
+        val userIdString = userId.id.toString()
         val unsyncedSettings = settings.value.values.filter {
-            it.localVersion > it.syncedVersion
+            it.userId == userIdString && it.localVersion > it.syncedVersion
         }
         return ResultWithError.Success(unsyncedSettings)
     }

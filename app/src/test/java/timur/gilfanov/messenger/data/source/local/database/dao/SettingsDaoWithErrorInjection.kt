@@ -39,9 +39,9 @@ class SettingsDaoWithErrorInjection(private val realDao: SettingsDao) : Settings
         return realDao.getAll(userId)
     }
 
-    override suspend fun getUnsynced(): List<SettingEntity> {
+    override suspend fun getUnsynced(userId: String): List<SettingEntity> {
         checkDatabaseHealth()
-        return realDao.getUnsynced()
+        return realDao.getUnsynced(userId)
     }
 
     override suspend fun upsert(setting: SettingEntity) {

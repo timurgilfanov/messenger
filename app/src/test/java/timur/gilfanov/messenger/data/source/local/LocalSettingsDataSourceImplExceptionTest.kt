@@ -387,7 +387,7 @@ class LocalSettingsDataSourceImplExceptionTest {
             wrappedDao.simulateDatabaseError = SQLiteDatabaseCorruptException("corrupted")
 
             // When
-            val result = dataSource.getUnsyncedSettings()
+            val result = dataSource.getUnsyncedSettings(testUserId)
 
             // Then
             assertIs<ResultWithError.Failure<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
@@ -401,7 +401,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteAccessPermException("access denied")
 
         // When
-        val result = dataSource.getUnsyncedSettings()
+        val result = dataSource.getUnsyncedSettings(testUserId)
 
         // Then
         assertIs<ResultWithError.Failure<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
@@ -416,7 +416,7 @@ class LocalSettingsDataSourceImplExceptionTest {
             wrappedDao.simulateDatabaseError = SQLiteReadOnlyDatabaseException("read only")
 
             // When
-            val result = dataSource.getUnsyncedSettings()
+            val result = dataSource.getUnsyncedSettings(testUserId)
 
             // Then
             assertIs<ResultWithError.Failure<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
@@ -430,7 +430,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.failNextNCalls = 4
 
         // When
-        val result = dataSource.getUnsyncedSettings()
+        val result = dataSource.getUnsyncedSettings(testUserId)
 
         // Then
         assertIs<ResultWithError.Failure<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
@@ -452,7 +452,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         databaseRule.database.settingsDao().upsert(entity)
 
         // When
-        val result = dataSource.getUnsyncedSettings()
+        val result = dataSource.getUnsyncedSettings(testUserId)
 
         // Then
         assertIs<ResultWithError.Success<List<SettingEntity>, GetUnsyncedSettingsError>>(result)

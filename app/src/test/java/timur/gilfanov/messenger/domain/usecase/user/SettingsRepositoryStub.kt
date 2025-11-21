@@ -9,7 +9,6 @@ import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
@@ -46,13 +45,15 @@ class SettingsRepositoryStub(
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = changeLanguage
 
     override suspend fun syncSetting(
-        userId: UserId,
+        identity: Identity,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError> {
         error("Not implemented for this test")
     }
 
-    override suspend fun syncAllPendingSettings(): ResultWithError<
+    override suspend fun syncAllPendingSettings(
+        identity: Identity,
+    ): ResultWithError<
         Unit,
         SyncAllSettingsRepositoryError,
         > {

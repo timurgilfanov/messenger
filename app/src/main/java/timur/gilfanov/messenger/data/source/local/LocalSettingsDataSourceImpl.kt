@@ -300,14 +300,16 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     }
 
     @Suppress("NestedBlockDepth", "ReturnCount")
-    override suspend fun getUnsyncedSettings(): ResultWithError<
+    override suspend fun getUnsyncedSettings(
+        userId: UserId,
+    ): ResultWithError<
         List<SettingEntity>,
         GetUnsyncedSettingsError,
         > {
         var attempt = 0L
         while (true) {
             try {
-                val settings = settingsDao.getUnsynced()
+                val settings = settingsDao.getUnsynced(userId.id.toString())
                 return Success(settings)
             } catch (e: SQLiteException) {
                 when (e) {

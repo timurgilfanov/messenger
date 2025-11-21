@@ -9,7 +9,6 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -291,10 +290,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     @Suppress("LongMethod", "ReturnCount", "ComplexMethod", "NestedBlockDepth")
     override suspend fun syncSetting(
-        userId: UserId,
+        identity: Identity,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError> {
-        val entity = localDataSource.getSetting(userId, key.key).fold(
+        val entity = localDataSource.getSetting(identity.userId, key.key).fold(
             onSuccess = { it },
             onFailure = { error -> return ResultWithError.Failure(error.toSyncError()) },
         )
@@ -304,7 +303,7 @@ class SettingsRepositoryImpl @Inject constructor(
         }
 
         val request = SettingSyncRequest(
-            userId = userId,
+            identity = identity,
             key = key.key,
             value = entity.value,
             clientVersion = entity.localVersion,
@@ -413,11 +412,13 @@ class SettingsRepositoryImpl @Inject constructor(
         "ReturnCount",
         "CyclomaticComplexMethod",
     )
-    override suspend fun syncAllPendingSettings(): ResultWithError<
+    override suspend fun syncAllPendingSettings(
+        identity: Identity,
+    ): ResultWithError<
         Unit,
         SyncAllSettingsRepositoryError,
         > {
-        val unsyncedSettings = localDataSource.getUnsyncedSettings().fold(
+        val unsyncedSettings = localDataSource.getUnsyncedSettings(identity.userId).fold(
             onSuccess = { it },
             onFailure = { error ->
                 return ResultWithError.Failure(error.toBatchSyncError())
@@ -430,7 +431,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
         val requests = unsyncedSettings.map { entity ->
             SettingSyncRequest(
-                userId = UserId(UUID.fromString((entity.userId))),
+                identity = identity,
                 key = entity.key,
                 value = entity.value,
                 clientVersion = entity.localVersion,

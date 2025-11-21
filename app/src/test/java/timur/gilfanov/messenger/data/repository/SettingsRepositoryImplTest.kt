@@ -185,7 +185,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(entity)
 
-        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val outcome = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
     }
@@ -208,7 +208,7 @@ class SettingsRepositoryImplTest {
             ResultWithError.Success(SyncResult.Success(newVersion = 2))
         }
 
-        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val outcome = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
@@ -244,7 +244,7 @@ class SettingsRepositoryImplTest {
             )
         }
 
-        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val outcome = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
@@ -283,7 +283,7 @@ class SettingsRepositoryImplTest {
         }
 
         repository.observeConflicts().test {
-            val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
+            val outcome = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
 
             assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
@@ -326,7 +326,7 @@ class SettingsRepositoryImplTest {
             )
         }
 
-        val outcome = repository.syncSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val outcome = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<Unit, *>>(outcome)
 
@@ -337,7 +337,7 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncAllPendingSettings returns Success when no unsynced settings`() = runTest {
-        val outcome = repository.syncAllPendingSettings()
+        val outcome = repository.syncAllPendingSettings(identity)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
     }
@@ -371,7 +371,7 @@ class SettingsRepositoryImplTest {
             ResultWithError.Success(SyncResult.Success(newVersion = request.clientVersion + 1))
         }
 
-        val outcome = repository.syncAllPendingSettings()
+        val outcome = repository.syncAllPendingSettings(identity)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
@@ -423,7 +423,7 @@ class SettingsRepositoryImplTest {
             }
         }
 
-        val outcome = repository.syncAllPendingSettings()
+        val outcome = repository.syncAllPendingSettings(identity)
 
         assertIs<ResultWithError.Failure<Unit, *>>(outcome)
 

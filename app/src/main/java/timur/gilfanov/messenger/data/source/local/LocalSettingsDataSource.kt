@@ -75,9 +75,12 @@ interface LocalSettingsDataSource {
     /**
      * Retrieves all settings that need synchronization.
      *
+     * @param userId The unique identifier of the user
      * @return Success with list of setting entities or failure with error
      */
-    suspend fun getUnsyncedSettings(): ResultWithError<
+    suspend fun getUnsyncedSettings(
+        userId: UserId,
+    ): ResultWithError<
         List<SettingEntity>,
         GetUnsyncedSettingsError,
         >

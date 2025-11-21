@@ -281,7 +281,7 @@ class LocalSettingsDataSourceImplTest {
             syncedVersion = 2, // Synced
         )
         val unsyncedEntity = createSettingEntity(
-            userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000002")),
+            userId = testUserId,
             key = SettingKey.THEME,
             value = "DARK",
             localVersion = 3,
@@ -291,7 +291,7 @@ class LocalSettingsDataSourceImplTest {
         databaseRule.database.settingsDao().upsert(unsyncedEntity)
 
         // When
-        val result = localSettingsDataSource.getUnsyncedSettings()
+        val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
 
         // Then
         assertIs<ResultWithError.Success<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
@@ -312,7 +312,7 @@ class LocalSettingsDataSourceImplTest {
         databaseRule.database.settingsDao().upsert(syncedEntity)
 
         // When
-        val result = localSettingsDataSource.getUnsyncedSettings()
+        val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
 
         // Then
         assertIs<ResultWithError.Success<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
@@ -322,12 +322,43 @@ class LocalSettingsDataSourceImplTest {
     @Test
     fun `getUnsyncedSettings returns empty list when no settings exist`() = runTest {
         // When
-        val result = localSettingsDataSource.getUnsyncedSettings()
+        val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
 
         // Then
         assertIs<ResultWithError.Success<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
         assertTrue(result.data.isEmpty())
     }
+
+    @Test
+    fun `getUnsyncedSettings filters by userId and does not return other users settings`() =
+        runTest {
+            // Given
+            val user1Unsynced = createSettingEntity(
+                userId = testUserId,
+                key = SettingKey.UI_LANGUAGE,
+                value = UiLanguage.English.toStorageValue(),
+                localVersion = 2,
+                syncedVersion = 1,
+            )
+            val user2Unsynced = createSettingEntity(
+                userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000002")),
+                key = SettingKey.THEME,
+                value = "DARK",
+                localVersion = 3,
+                syncedVersion = 1,
+            )
+            databaseRule.database.settingsDao().upsert(user1Unsynced)
+            databaseRule.database.settingsDao().upsert(user2Unsynced)
+
+            // When
+            val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
+
+            // Then
+            assertIs<ResultWithError.Success<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
+            assertEquals(1, result.data.size)
+            assertEquals(SettingKey.UI_LANGUAGE.key, result.data[0].key)
+            assertEquals(testUserId.id.toString(), result.data[0].userId)
+        }
 
     @Suppress("LongParameterList")
     private fun createSettingEntity(

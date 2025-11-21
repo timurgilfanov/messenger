@@ -4,7 +4,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
  * Remote data source for user settings data.
@@ -98,7 +97,7 @@ data class RemoteSettingItem(val key: String, val value: String, val version: In
  *
  * Includes version information needed for Last Write Wins conflict detection.
  *
- * @property userId User who owns this setting
+ * @property identity Identity whose setting should be synchronized
  * @property key Setting identifier
  * @property value New value to sync
  * @property clientVersion Current local version number
@@ -106,7 +105,7 @@ data class RemoteSettingItem(val key: String, val value: String, val version: In
  * @property modifiedAt Timestamp of local modification
  */
 data class SettingSyncRequest(
-    val userId: UserId,
+    val identity: Identity,
     val key: String,
     val value: String,
     val clientVersion: Int,

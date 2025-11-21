@@ -56,7 +56,7 @@ class SettingsDaoTest {
         settingsDao.upsert(unsyncedSetting)
 
         // When
-        val unsynced = settingsDao.getUnsynced()
+        val unsynced = settingsDao.getUnsynced(testUserId)
 
         // Then
         assertEquals(1, unsynced.size)

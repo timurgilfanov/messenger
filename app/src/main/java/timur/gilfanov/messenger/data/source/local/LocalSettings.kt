@@ -76,7 +76,6 @@ data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
             val uiLanguage: LocalSetting<UiLanguage> = if (uiLanguageEntity != null) {
                 LocalSetting(
                     value = uiLanguageEntity.value.toUiLanguageOrDefault(defaults.uiLanguage),
-                    defaultValue = defaults.uiLanguage,
                     localVersion = uiLanguageEntity.localVersion,
                     syncedVersion = uiLanguageEntity.syncedVersion,
                     serverVersion = uiLanguageEntity.serverVersion,
@@ -94,7 +93,6 @@ data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
 
 internal fun <T> defaultLocalSetting(value: T, modifiedAt: Instant): LocalSetting<T> = LocalSetting(
     value = value,
-    defaultValue = value,
     localVersion = 1,
     syncedVersion = 0,
     serverVersion = 0,

@@ -612,7 +612,6 @@ class SettingsRepositoryImpl @Inject constructor(
                 when (val setting = remoteSettings.uiLanguage) {
                     is RemoteSetting.Valid -> LocalSetting(
                         value = setting.value,
-                        defaultValue = defaultSettings.uiLanguage,
                         localVersion = setting.serverVersion,
                         syncedVersion = setting.serverVersion,
                         serverVersion = setting.serverVersion,
@@ -622,7 +621,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
                     is RemoteSetting.Missing -> LocalSetting(
                         value = defaultSettings.uiLanguage,
-                        defaultValue = defaultSettings.uiLanguage,
                         localVersion = 1,
                         syncedVersion = 0,
                         serverVersion = 0,
@@ -632,7 +630,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
                     is RemoteSetting.InvalidValue -> LocalSetting(
                         value = defaultSettings.uiLanguage,
-                        defaultValue = defaultSettings.uiLanguage,
                         localVersion = setting.serverVersion,
                         syncedVersion = setting.serverVersion,
                         serverVersion = setting.serverVersion,

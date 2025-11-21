@@ -134,7 +134,6 @@ private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSet
             TypedLocalSetting.UiLanguage(
                 setting = LocalSetting(
                     value = this.value.toUiLanguageOrDefault(defaults.uiLanguage),
-                    defaultValue = defaults.uiLanguage,
                     localVersion = this.localVersion,
                     syncedVersion = this.syncedVersion,
                     serverVersion = this.serverVersion,

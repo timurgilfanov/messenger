@@ -714,7 +714,6 @@ class SettingsRepositoryImplTest {
     ): TypedLocalSetting.UiLanguage = TypedLocalSetting.UiLanguage(
         setting = timur.gilfanov.messenger.data.source.local.LocalSetting(
             value = value,
-            defaultValue = UiLanguage.English,
             localVersion = localVersion,
             syncedVersion = syncedVersion,
             serverVersion = serverVersion,

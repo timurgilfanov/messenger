@@ -156,7 +156,6 @@ class LocalSettingsTest {
         val localSettings = LocalSettings(
             uiLanguage = LocalSetting(
                 value = UiLanguage.German,
-                defaultValue = UiLanguage.English,
                 localVersion = 5,
                 syncedVersion = 3,
                 serverVersion = 2,
@@ -187,7 +186,6 @@ class LocalSettingsTest {
         val localSettings = LocalSettings(
             uiLanguage = LocalSetting(
                 value = UiLanguage.German,
-                defaultValue = UiLanguage.English,
                 localVersion = 5,
                 syncedVersion = 3,
                 serverVersion = 2,

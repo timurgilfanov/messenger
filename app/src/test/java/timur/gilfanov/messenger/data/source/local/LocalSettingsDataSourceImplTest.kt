@@ -380,7 +380,6 @@ class LocalSettingsDataSourceImplTest {
         SettingKey.UI_LANGUAGE -> TypedLocalSetting.UiLanguage(
             setting = LocalSetting(
                 value = value,
-                defaultValue = UiLanguage.English,
                 localVersion = localVersion,
                 syncedVersion = syncedVersion,
                 serverVersion = serverVersion,

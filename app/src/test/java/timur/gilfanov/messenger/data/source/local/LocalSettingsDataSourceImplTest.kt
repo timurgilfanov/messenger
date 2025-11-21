@@ -54,22 +54,21 @@ class LocalSettingsDataSourceImplTest {
         databaseRule.database.settingsDao().upsert(entity)
 
         // When
-        val result = localSettingsDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+        val result = localSettingsDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
 
         // Then
-        assertIs<ResultWithError.Success<SettingEntity, GetSettingError>>(result)
-        assertEquals(testUserId.id.toString(), result.data.userId)
-        assertEquals(SettingKey.UI_LANGUAGE.key, result.data.key)
-        assertEquals(UiLanguage.English.toStorageValue(), result.data.value)
+        assertIs<ResultWithError.Success<TypedLocalSetting, GetSettingError>>(result)
+        assertIs<TypedLocalSetting.UiLanguage>(result.data)
+        assertEquals(UiLanguage.English, result.data.setting.value)
     }
 
     @Test
     fun `getSetting returns SettingNotFound when setting does not exist`() = runTest {
         // When
-        val result = localSettingsDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
+        val result = localSettingsDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
 
         // Then
-        assertIs<ResultWithError.Failure<SettingEntity, GetSettingError>>(result)
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(result)
         assertEquals(GetSettingError.SettingNotFound, result.error)
     }
 
@@ -77,14 +76,13 @@ class LocalSettingsDataSourceImplTest {
     @Test
     fun `upsert inserts new setting successfully`() = runTest {
         // Given
-        val entity = createSettingEntity(
-            userId = testUserId,
+        val typedSetting = createTypedLocalSetting(
             key = SettingKey.UI_LANGUAGE,
-            value = UiLanguage.German.toStorageValue(),
+            value = UiLanguage.German,
         )
 
         // When
-        val result = localSettingsDataSource.upsert(entity)
+        val result = localSettingsDataSource.upsert(testUserId, typedSetting)
 
         // Then
         assertIs<ResultWithError.Success<Unit, UpsertSettingError>>(result)
@@ -109,13 +107,14 @@ class LocalSettingsDataSourceImplTest {
         )
         databaseRule.database.settingsDao().upsert(originalEntity)
 
-        val updatedEntity = originalEntity.copy(
-            value = UiLanguage.German.toStorageValue(),
+        val updatedSetting = createTypedLocalSetting(
+            key = SettingKey.UI_LANGUAGE,
+            value = UiLanguage.German,
             localVersion = 2,
         )
 
         // When
-        val result = localSettingsDataSource.upsert(updatedEntity)
+        val result = localSettingsDataSource.upsert(testUserId, updatedSetting)
 
         // Then
         assertIs<ResultWithError.Success<Unit, UpsertSettingError>>(result)
@@ -134,28 +133,22 @@ class LocalSettingsDataSourceImplTest {
     @Test
     fun `upsert batch inserts multiple settings successfully`() = runTest {
         // Given
-        val entities = listOf(
-            createSettingEntity(
-                userId = testUserId,
+        val settings = listOf(
+            createTypedLocalSetting(
                 key = SettingKey.UI_LANGUAGE,
-                value = UiLanguage.English.toStorageValue(),
-            ),
-            createSettingEntity(
-                userId = testUserId,
-                key = SettingKey.THEME,
-                value = "DARK",
+                value = UiLanguage.English,
             ),
         )
 
         // When
-        val result = localSettingsDataSource.upsert(entities)
+        val result = localSettingsDataSource.upsert(testUserId, settings)
 
         // Then
         assertIs<ResultWithError.Success<Unit, UpsertSettingError>>(result)
 
         // Verify all entities in database
         val allSettings = databaseRule.database.settingsDao().getAll(testUserId.id.toString())
-        assertEquals(2, allSettings.size)
+        assertEquals(1, allSettings.size)
     }
 
     // transform() tests
@@ -280,23 +273,14 @@ class LocalSettingsDataSourceImplTest {
             localVersion = 2,
             syncedVersion = 2, // Synced
         )
-        val unsyncedEntity = createSettingEntity(
-            userId = testUserId,
-            key = SettingKey.THEME,
-            value = "DARK",
-            localVersion = 3,
-            syncedVersion = 1, // Not synced
-        )
         databaseRule.database.settingsDao().upsert(syncedEntity)
-        databaseRule.database.settingsDao().upsert(unsyncedEntity)
 
         // When
         val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
 
         // Then
-        assertIs<ResultWithError.Success<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
-        assertEquals(1, result.data.size)
-        assertEquals(SettingKey.THEME.key, result.data[0].key)
+        assertIs<ResultWithError.Success<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
+        assertEquals(0, result.data.size)
     }
 
     @Test
@@ -315,7 +299,7 @@ class LocalSettingsDataSourceImplTest {
         val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
 
         // Then
-        assertIs<ResultWithError.Success<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
+        assertIs<ResultWithError.Success<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
         assertTrue(result.data.isEmpty())
     }
 
@@ -325,7 +309,7 @@ class LocalSettingsDataSourceImplTest {
         val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
 
         // Then
-        assertIs<ResultWithError.Success<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
+        assertIs<ResultWithError.Success<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
         assertTrue(result.data.isEmpty())
     }
 
@@ -342,8 +326,8 @@ class LocalSettingsDataSourceImplTest {
             )
             val user2Unsynced = createSettingEntity(
                 userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000002")),
-                key = SettingKey.THEME,
-                value = "DARK",
+                key = SettingKey.UI_LANGUAGE,
+                value = UiLanguage.German.toStorageValue(),
                 localVersion = 3,
                 syncedVersion = 1,
             )
@@ -354,10 +338,12 @@ class LocalSettingsDataSourceImplTest {
             val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
 
             // Then
-            assertIs<ResultWithError.Success<List<SettingEntity>, GetUnsyncedSettingsError>>(result)
+            assertIs<ResultWithError.Success<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(
+                result,
+            )
             assertEquals(1, result.data.size)
-            assertEquals(SettingKey.UI_LANGUAGE.key, result.data[0].key)
-            assertEquals(testUserId.id.toString(), result.data[0].userId)
+            assertIs<TypedLocalSetting.UiLanguage>(result.data[0])
+            assertEquals(UiLanguage.English, result.data[0].setting.value)
         }
 
     @Suppress("LongParameterList")
@@ -380,4 +366,28 @@ class LocalSettingsDataSourceImplTest {
         modifiedAt = modifiedAt,
         syncStatus = syncStatus,
     )
+
+    @Suppress("LongParameterList")
+    private fun createTypedLocalSetting(
+        key: SettingKey,
+        value: UiLanguage,
+        localVersion: Int = 1,
+        syncedVersion: Int = 0,
+        serverVersion: Int = 0,
+        modifiedAt: Long = 0L,
+        syncStatus: SyncStatus = SyncStatus.SYNCED,
+    ): TypedLocalSetting = when (key) {
+        SettingKey.UI_LANGUAGE -> TypedLocalSetting.UiLanguage(
+            setting = LocalSetting(
+                value = value,
+                defaultValue = UiLanguage.English,
+                localVersion = localVersion,
+                syncedVersion = syncedVersion,
+                serverVersion = serverVersion,
+                modifiedAt = modifiedAt,
+                syncStatus = syncStatus,
+            ),
+        )
+        else -> error("Unknown setting key: $key")
+    }
 }

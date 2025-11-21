@@ -22,6 +22,7 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
+import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.util.Logger
@@ -134,14 +135,14 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     @Suppress("NestedBlockDepth", "ReturnCount")
     override suspend fun getSetting(
         userId: UserId,
-        key: String,
-    ): ResultWithError<SettingEntity, GetSettingError> {
+        key: SettingKey,
+    ): ResultWithError<TypedLocalSetting, GetSettingError> {
         var attempt = 0L
         while (true) {
             try {
-                val entity = settingsDao.get(userId.id.toString(), key)
+                val entity = settingsDao.get(userId.id.toString(), key.key)
                 return if (entity != null) {
-                    Success(entity)
+                    Success(entity.toTypedLocalSetting(defaultSettings))
                 } else {
                     Failure(GetSettingError.SettingNotFound)
                 }
@@ -182,10 +183,14 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     }
 
     @Suppress("NestedBlockDepth", "ReturnCount")
-    override suspend fun upsert(entity: SettingEntity): ResultWithError<Unit, UpsertSettingError> {
+    override suspend fun upsert(
+        userId: UserId,
+        setting: TypedLocalSetting,
+    ): ResultWithError<Unit, UpsertSettingError> {
         var attempt = 0L
         while (true) {
             try {
+                val entity = setting.toSettingEntity(userId)
                 settingsDao.upsert(entity)
                 return Success(Unit)
             } catch (e: SQLiteException) {
@@ -282,8 +287,10 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     }
 
     override suspend fun upsert(
-        entities: List<SettingEntity>,
+        userId: UserId,
+        settings: List<TypedLocalSetting>,
     ): ResultWithError<Unit, UpsertSettingError> = try {
+        val entities = settings.map { it.toSettingEntity(userId) }
         settingsDao.upsert(entities)
         Success(Unit)
     } catch (e: SQLiteException) {
@@ -303,14 +310,15 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     override suspend fun getUnsyncedSettings(
         userId: UserId,
     ): ResultWithError<
-        List<SettingEntity>,
+        List<TypedLocalSetting>,
         GetUnsyncedSettingsError,
         > {
         var attempt = 0L
         while (true) {
             try {
-                val settings = settingsDao.getUnsynced(userId.id.toString())
-                return Success(settings)
+                val entities = settingsDao.getUnsynced(userId.id.toString())
+                val typedSettings = entities.map { it.toTypedLocalSetting(defaultSettings) }
+                return Success(typedSettings)
             } catch (e: SQLiteException) {
                 when (e) {
                     is SQLiteDatabaseLockedException,
@@ -384,4 +392,52 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         private const val INITIAL_BACKOFF_MS = 100L
         private const val MAX_BACKOFF_MS = 2000L
     }
+}
+
+/**
+ * Converts [SettingEntity] to [TypedLocalSetting] with validation.
+ *
+ * Maps database string value to typed domain value, applying validation during conversion.
+ * Falls back to default value if validation fails.
+ *
+ * @param defaults Default settings to use for validation fallback
+ * @return Typed local setting with validated domain value
+ */
+private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSetting =
+    when (this.key) {
+        timur.gilfanov.messenger.domain.entity.user.SettingKey.UI_LANGUAGE.key -> {
+            TypedLocalSetting.UiLanguage(
+                setting = LocalSetting(
+                    value = this.value.toUiLanguageOrDefault(defaults.uiLanguage),
+                    defaultValue = defaults.uiLanguage,
+                    localVersion = this.localVersion,
+                    syncedVersion = this.syncedVersion,
+                    serverVersion = this.serverVersion,
+                    modifiedAt = this.modifiedAt,
+                    syncStatus = this.syncStatus,
+                ),
+            )
+        }
+        else -> error("Unknown setting key: ${this.key}")
+    }
+
+/**
+ * Converts [TypedLocalSetting] to [SettingEntity] for database persistence.
+ *
+ * Maps typed domain value to database string representation.
+ *
+ * @param userId The user ID to associate with this setting entity
+ * @return Setting entity ready for Room database upsert
+ */
+private fun TypedLocalSetting.toSettingEntity(userId: UserId): SettingEntity = when (this) {
+    is TypedLocalSetting.UiLanguage -> SettingEntity(
+        userId = userId.id.toString(),
+        key = this.key.key,
+        value = this.setting.value.toStorageValue(),
+        localVersion = this.setting.localVersion,
+        syncedVersion = this.setting.syncedVersion,
+        serverVersion = this.setting.serverVersion,
+        modifiedAt = this.setting.modifiedAt,
+        syncStatus = this.setting.syncStatus,
+    )
 }

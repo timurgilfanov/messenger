@@ -26,6 +26,7 @@ import timur.gilfanov.messenger.data.source.local.LocalSetting
 import timur.gilfanov.messenger.data.source.local.LocalSettings
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.TransformSettingError
+import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.local.UpsertSettingError
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.data.source.local.defaultLocalSetting
@@ -33,7 +34,6 @@ import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
-import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.SyncResult
 import timur.gilfanov.messenger.data.source.remote.toRepositoryError
 import timur.gilfanov.messenger.data.worker.SyncSettingWorker
@@ -293,35 +293,34 @@ class SettingsRepositoryImpl @Inject constructor(
         identity: Identity,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError> {
-        val entity = localDataSource.getSetting(identity.userId, key.key).fold(
+        val typedSetting = localDataSource.getSetting(identity.userId, key).fold(
             onSuccess = { it },
             onFailure = { error -> return ResultWithError.Failure(error.toSyncError()) },
         )
 
-        if (entity.localVersion == entity.syncedVersion) {
+        if (typedSetting.setting.localVersion == typedSetting.setting.syncedVersion) {
             return ResultWithError.Success(Unit)
         }
 
-        val request = SettingSyncRequest(
-            identity = identity,
-            key = key.key,
-            value = entity.value,
-            clientVersion = entity.localVersion,
-            lastKnownServerVersion = entity.serverVersion,
-            modifiedAt = entity.modifiedAt,
-        )
+        val request = typedSetting.toSyncRequest(identity)
 
         return remoteDataSource.syncSingleSetting(request).fold(
             onSuccess = { syncResult ->
                 when (syncResult) {
                     is SyncResult.Success -> {
-                        when (
-                            val upsertResult = localDataSource.upsert(
-                                entity.copy(
-                                    syncedVersion = entity.localVersion,
+                        val updatedTypedSetting = when (typedSetting) {
+                            is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
+                                setting = typedSetting.setting.copy(
+                                    syncedVersion = typedSetting.setting.localVersion,
                                     serverVersion = syncResult.newVersion,
                                     syncStatus = SyncStatus.SYNCED,
                                 ),
+                            )
+                        }
+                        when (
+                            val upsertResult = localDataSource.upsert(
+                                identity.userId,
+                                updatedTypedSetting,
                             )
                         ) {
                             is ResultWithError.Success -> ResultWithError.Success(Unit)
@@ -332,14 +331,20 @@ class SettingsRepositoryImpl @Inject constructor(
                     }
 
                     is SyncResult.Conflict -> {
-                        if (entity.modifiedAt >= syncResult.serverModifiedAt) {
-                            when (
-                                val upsertResult = localDataSource.upsert(
-                                    entity.copy(
-                                        syncedVersion = entity.localVersion,
+                        if (typedSetting.setting.modifiedAt >= syncResult.serverModifiedAt) {
+                            val updatedTypedSetting = when (typedSetting) {
+                                is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
+                                    setting = typedSetting.setting.copy(
+                                        syncedVersion = typedSetting.setting.localVersion,
                                         serverVersion = syncResult.newVersion,
                                         syncStatus = SyncStatus.SYNCED,
                                     ),
+                                )
+                            }
+                            when (
+                                val upsertResult = localDataSource.upsert(
+                                    identity.userId,
+                                    updatedTypedSetting,
                                 )
                             ) {
                                 is ResultWithError.Success -> ResultWithError.Success(Unit)
@@ -348,31 +353,45 @@ class SettingsRepositoryImpl @Inject constructor(
                                 )
                             }
                         } else {
-                            val validatedValue = mapServerValueToLocalValue(
-                                settingKey = key,
-                                serverValue = syncResult.serverValue,
-                                fallbackValue = entity.value,
-                            )
+                            val (updatedTypedSetting, localValueStr, acceptedValueStr) =
+                                when (typedSetting) {
+                                    is TypedLocalSetting.UiLanguage -> {
+                                        val localValueStr =
+                                            typedSetting.setting.value.toStorageValue()
+                                        val validatedValue =
+                                            syncResult.serverValue.toUiLanguageOrNull()
+                                                ?: typedSetting.setting.value
+                                        val acceptedValueStr = validatedValue.toStorageValue()
+                                        Triple(
+                                            TypedLocalSetting.UiLanguage(
+                                                setting = typedSetting.setting.copy(
+                                                    value = validatedValue,
+                                                    localVersion = syncResult.newVersion,
+                                                    syncedVersion = syncResult.newVersion,
+                                                    serverVersion = syncResult.newVersion,
+                                                    modifiedAt = syncResult.serverModifiedAt,
+                                                    syncStatus = SyncStatus.SYNCED,
+                                                ),
+                                            ),
+                                            localValueStr,
+                                            acceptedValueStr,
+                                        )
+                                    }
+                                }
 
                             when (
                                 val upsertResult = localDataSource.upsert(
-                                    entity.copy(
-                                        value = validatedValue,
-                                        localVersion = syncResult.newVersion,
-                                        syncedVersion = syncResult.newVersion,
-                                        serverVersion = syncResult.newVersion,
-                                        modifiedAt = syncResult.serverModifiedAt,
-                                        syncStatus = SyncStatus.SYNCED,
-                                    ),
+                                    identity.userId,
+                                    updatedTypedSetting,
                                 )
                             ) {
                                 is ResultWithError.Success -> {
                                     conflictEvents.emit(
                                         SettingsConflictEvent(
                                             settingKey = key,
-                                            localValue = entity.value,
+                                            localValue = localValueStr,
                                             serverValue = syncResult.serverValue,
-                                            acceptedValue = validatedValue,
+                                            acceptedValue = acceptedValueStr,
                                             conflictedAt = Instant.fromEpochMilliseconds(
                                                 syncResult.serverModifiedAt,
                                             ),
@@ -390,13 +409,18 @@ class SettingsRepositoryImpl @Inject constructor(
                 }
             },
             onFailure = { error ->
-
+                val failedTypedSetting = when (typedSetting) {
+                    is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
+                        setting = typedSetting.setting.copy(syncStatus = SyncStatus.FAILED),
+                    )
+                }
                 localDataSource.upsert(
-                    entity.copy(syncStatus = SyncStatus.FAILED),
+                    identity.userId,
+                    failedTypedSetting,
                 ).onFailure { error1 ->
                     logger.e(
                         TAG,
-                        "Failed to mark setting ${entity.key} sync as FAILED caused by $error1",
+                        "Failed to mark setting ${typedSetting.key.key} sync as FAILED caused by $error1",
                     )
                 }
                 ResultWithError.Failure(
@@ -429,32 +453,31 @@ class SettingsRepositoryImpl @Inject constructor(
             return ResultWithError.Success(Unit)
         }
 
-        val requests = unsyncedSettings.map { entity ->
-            SettingSyncRequest(
-                identity = identity,
-                key = entity.key,
-                value = entity.value,
-                clientVersion = entity.localVersion,
-                lastKnownServerVersion = entity.serverVersion,
-                modifiedAt = entity.modifiedAt,
-            )
+        val requests = unsyncedSettings.map { typedSetting ->
+            typedSetting.toSyncRequest(identity)
         }
 
         return remoteDataSource.syncBatch(requests).fold(
             onSuccess = { results ->
                 var firstUpsertError: SyncAllSettingsRepositoryError.LocalStorageError? = null
                 results.forEach { (key, result) ->
-                    val entity = unsyncedSettings.find { it.key == key } ?: return@forEach
+                    val typedSetting = unsyncedSettings.find { it.key.key == key } ?: return@forEach
 
                     when (result) {
                         is SyncResult.Success -> {
-                            when (
-                                val upsertResult = localDataSource.upsert(
-                                    entity.copy(
-                                        syncedVersion = entity.localVersion,
+                            val updatedTypedSetting = when (typedSetting) {
+                                is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
+                                    setting = typedSetting.setting.copy(
+                                        syncedVersion = typedSetting.setting.localVersion,
                                         serverVersion = result.newVersion,
                                         syncStatus = SyncStatus.SYNCED,
                                     ),
+                                )
+                            }
+                            when (
+                                val upsertResult = localDataSource.upsert(
+                                    identity.userId,
+                                    updatedTypedSetting,
                                 )
                             ) {
                                 is ResultWithError.Success -> Unit
@@ -467,14 +490,20 @@ class SettingsRepositoryImpl @Inject constructor(
                         }
 
                         is SyncResult.Conflict -> {
-                            if (entity.modifiedAt >= result.serverModifiedAt) {
-                                when (
-                                    val upsertResult = localDataSource.upsert(
-                                        entity.copy(
-                                            syncedVersion = entity.localVersion,
+                            if (typedSetting.setting.modifiedAt >= result.serverModifiedAt) {
+                                val updatedTypedSetting = when (typedSetting) {
+                                    is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
+                                        setting = typedSetting.setting.copy(
+                                            syncedVersion = typedSetting.setting.localVersion,
                                             serverVersion = result.newVersion,
                                             syncStatus = SyncStatus.SYNCED,
                                         ),
+                                    )
+                                }
+                                when (
+                                    val upsertResult = localDataSource.upsert(
+                                        identity.userId,
+                                        updatedTypedSetting,
                                     )
                                 ) {
                                     is ResultWithError.Success -> Unit
@@ -491,31 +520,45 @@ class SettingsRepositoryImpl @Inject constructor(
                                     return@forEach
                                 }
 
-                                val validatedValue = mapServerValueToLocalValue(
-                                    settingKey = settingKey,
-                                    serverValue = result.serverValue,
-                                    fallbackValue = entity.value,
-                                )
+                                val (updatedTypedSetting, localValueStr, acceptedValueStr) =
+                                    when (typedSetting) {
+                                        is TypedLocalSetting.UiLanguage -> {
+                                            val localValueStr =
+                                                typedSetting.setting.value.toStorageValue()
+                                            val validatedValue =
+                                                result.serverValue.toUiLanguageOrNull()
+                                                    ?: typedSetting.setting.value
+                                            val acceptedValueStr = validatedValue.toStorageValue()
+                                            Triple(
+                                                TypedLocalSetting.UiLanguage(
+                                                    setting = typedSetting.setting.copy(
+                                                        value = validatedValue,
+                                                        localVersion = result.newVersion,
+                                                        syncedVersion = result.newVersion,
+                                                        serverVersion = result.newVersion,
+                                                        modifiedAt = result.serverModifiedAt,
+                                                        syncStatus = SyncStatus.SYNCED,
+                                                    ),
+                                                ),
+                                                localValueStr,
+                                                acceptedValueStr,
+                                            )
+                                        }
+                                    }
 
                                 when (
                                     val upsertResult = localDataSource.upsert(
-                                        entity.copy(
-                                            value = validatedValue,
-                                            localVersion = result.newVersion,
-                                            syncedVersion = result.newVersion,
-                                            serverVersion = result.newVersion,
-                                            modifiedAt = result.serverModifiedAt,
-                                            syncStatus = SyncStatus.SYNCED,
-                                        ),
+                                        identity.userId,
+                                        updatedTypedSetting,
                                     )
                                 ) {
                                     is ResultWithError.Success -> {
                                         conflictEvents.emit(
                                             SettingsConflictEvent(
                                                 settingKey = settingKey,
-                                                localValue = entity.value,
+                                                localValue = localValueStr,
                                                 serverValue = result.serverValue,
-                                                acceptedValue = validatedValue,
+                                                acceptedValue = acceptedValueStr,
                                                 conflictedAt = Instant.fromEpochMilliseconds(
                                                     result.serverModifiedAt,
                                                 ),
@@ -541,8 +584,16 @@ class SettingsRepositoryImpl @Inject constructor(
             },
 
             onFailure = { error ->
+                val failedSettings = unsyncedSettings.map { typedSetting ->
+                    when (typedSetting) {
+                        is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
+                            setting = typedSetting.setting.copy(syncStatus = SyncStatus.FAILED),
+                        )
+                    }
+                }
                 localDataSource.upsert(
-                    unsyncedSettings.map { it.copy(syncStatus = SyncStatus.FAILED) },
+                    identity.userId,
+                    failedSettings,
                 ).onFailure { error1 ->
                     logger.e(TAG, "Failed to mark settings sync as FAILED caused by $error1")
                 }
@@ -592,8 +643,10 @@ class SettingsRepositoryImpl @Inject constructor(
             val localSettings = LocalSettings(
                 uiLanguage = uiLanguageSetting,
             )
-            val entities = localSettings.toSettingEntities(identity.userId)
-            localDataSource.upsert(entities).foldWithErrorMapping(
+            val typedSettings = listOf(
+                TypedLocalSetting.UiLanguage(setting = uiLanguageSetting),
+            )
+            localDataSource.upsert(identity.userId, typedSettings).foldWithErrorMapping(
                 onSuccess = { ResultWithError.Success(localSettings.toDomain()) },
                 onFailure = { error -> error.toGetSettingsRepositoryError() },
             )
@@ -626,8 +679,10 @@ class SettingsRepositoryImpl @Inject constructor(
         val defaultLocalSettings = LocalSettings(
             uiLanguage = defaultLocalSetting(defaultSettings.uiLanguage, now),
         )
-        val entities = defaultLocalSettings.toSettingEntities(userId)
-        return localDataSource.upsert(entities).fold(
+        val typedSettings = listOf(
+            TypedLocalSetting.UiLanguage(setting = defaultLocalSettings.uiLanguage),
+        )
+        return localDataSource.upsert(userId, typedSettings).fold(
             onSuccess = {
                 ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
             },
@@ -637,17 +692,6 @@ class SettingsRepositoryImpl @Inject constructor(
         )
     }
 }
-
-private fun mapServerValueToLocalValue(
-    settingKey: SettingKey,
-    serverValue: String,
-    fallbackValue: String,
-): String = when (settingKey) {
-    SettingKey.UI_LANGUAGE -> serverValue.toUiLanguageOrNull()?.toStorageValue()
-    SettingKey.THEME,
-    SettingKey.NOTIFICATIONS,
-    -> error("Setting with key $settingKey validation is not implemented")
-} ?: fallbackValue
 
 private fun GetSettingError.toSyncError(): SyncSettingRepositoryError = when (this) {
     GetSettingError.SettingNotFound -> SyncSettingRepositoryError.SettingNotFound

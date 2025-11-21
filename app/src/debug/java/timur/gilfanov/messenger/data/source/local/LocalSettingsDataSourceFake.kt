@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
@@ -33,18 +34,22 @@ class LocalSettingsDataSourceFake(
 
     override suspend fun getSetting(
         userId: UserId,
-        key: String,
-    ): ResultWithError<SettingEntity, GetSettingError> {
+        key: SettingKey,
+    ): ResultWithError<TypedLocalSetting, GetSettingError> {
         val userIdString = userId.id.toString()
-        val entity = settings.value[Pair(userIdString, key)]
+        val entity = settings.value[Pair(userIdString, key.key)]
         return if (entity != null) {
-            ResultWithError.Success(entity)
+            ResultWithError.Success(entity.toTypedLocalSetting(defaultSettings))
         } else {
             ResultWithError.Failure(GetSettingError.SettingNotFound)
         }
     }
 
-    override suspend fun upsert(entity: SettingEntity): ResultWithError<Unit, UpsertSettingError> {
+    override suspend fun upsert(
+        userId: UserId,
+        setting: TypedLocalSetting,
+    ): ResultWithError<Unit, UpsertSettingError> {
+        val entity = setting.toSettingEntity(userId)
         settings.update { map ->
             map + (Pair(entity.userId, entity.key) to entity)
         }
@@ -94,18 +99,21 @@ class LocalSettingsDataSourceFake(
 
     override suspend fun getUnsyncedSettings(
         userId: UserId,
-    ): ResultWithError<List<SettingEntity>, GetUnsyncedSettingsError> {
+    ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError> {
         val userIdString = userId.id.toString()
-        val unsyncedSettings = settings.value.values.filter {
+        val unsyncedEntities = settings.value.values.filter {
             it.userId == userIdString && it.localVersion > it.syncedVersion
         }
-        return ResultWithError.Success(unsyncedSettings)
+        val typedSettings = unsyncedEntities.map { it.toTypedLocalSetting(defaultSettings) }
+        return ResultWithError.Success(typedSettings)
     }
 
     override suspend fun upsert(
-        entities: List<SettingEntity>,
+        userId: UserId,
+        settings: List<TypedLocalSetting>,
     ): ResultWithError<Unit, UpsertSettingError> {
-        settings.update { map ->
+        val entities = settings.map { it.toSettingEntity(userId) }
+        this.settings.update { map ->
             var updatedMap = map
             entities.forEach { entity ->
                 updatedMap = updatedMap + (Pair(entity.userId, entity.key) to entity)
@@ -118,4 +126,35 @@ class LocalSettingsDataSourceFake(
     fun clear() {
         settings.value = emptyMap()
     }
+}
+
+private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSetting =
+    when (this.key) {
+        timur.gilfanov.messenger.domain.entity.user.SettingKey.UI_LANGUAGE.key -> {
+            TypedLocalSetting.UiLanguage(
+                setting = LocalSetting(
+                    value = this.value.toUiLanguageOrDefault(defaults.uiLanguage),
+                    defaultValue = defaults.uiLanguage,
+                    localVersion = this.localVersion,
+                    syncedVersion = this.syncedVersion,
+                    serverVersion = this.serverVersion,
+                    modifiedAt = this.modifiedAt,
+                    syncStatus = this.syncStatus,
+                ),
+            )
+        }
+        else -> error("Unknown setting key: ${this.key}")
+    }
+
+private fun TypedLocalSetting.toSettingEntity(userId: UserId): SettingEntity = when (this) {
+    is TypedLocalSetting.UiLanguage -> SettingEntity(
+        userId = userId.id.toString(),
+        key = this.key.key,
+        value = this.setting.value.toStorageValue(),
+        localVersion = this.setting.localVersion,
+        syncedVersion = this.setting.syncedVersion,
+        serverVersion = this.setting.serverVersion,
+        modifiedAt = this.setting.modifiedAt,
+        syncStatus = this.setting.syncStatus,
+    )
 }

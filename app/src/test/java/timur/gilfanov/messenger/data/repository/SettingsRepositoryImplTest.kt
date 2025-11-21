@@ -24,9 +24,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceFake
-import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
-import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.remote.ChangeUiLanguageRemoteDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceErrorV2
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
@@ -34,10 +33,10 @@ import timur.gilfanov.messenger.data.source.remote.RemoteSettings
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteUserDataSourceError
-import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.SyncBatchError
 import timur.gilfanov.messenger.data.source.remote.SyncResult
 import timur.gilfanov.messenger.data.source.remote.SyncSingleSettingError
+import timur.gilfanov.messenger.data.source.remote.TypedSettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.UpdateSettingsRemoteDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
@@ -111,17 +110,15 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `observeSettings maps entities to domain settings`() = runTest {
-        val entity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = "German",
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.German,
             localVersion = 1,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
             syncStatus = SyncStatus.SYNCED,
         )
-        localDataSource.upsert(entity)
+        localDataSource.upsert(testUserId, setting)
 
         repository.observeSettings(identity).test {
             val result = awaitItem()
@@ -147,43 +144,40 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `changeUiLanguage updates existing entity`() = runTest {
-        val existingEntity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = "English",
+        val existingSetting = createTypedLocalSetting(
+            value = UiLanguage.English,
             localVersion = 1,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
             syncStatus = SyncStatus.SYNCED,
         )
-        localDataSource.upsert(existingEntity)
+        localDataSource.upsert(testUserId, existingSetting)
 
         val result = repository.changeUiLanguage(identity, UiLanguage.German)
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
 
-        val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
-        assertEquals("German", updatedEntity.data.value)
-        assertEquals(2, updatedEntity.data.localVersion)
-        assertEquals(1, updatedEntity.data.syncedVersion)
-        assertEquals(SyncStatus.PENDING, updatedEntity.data.syncStatus)
+        val updatedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
+        assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
+        assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
+        assertEquals(2, updatedSetting.data.setting.localVersion)
+        assertEquals(1, updatedSetting.data.setting.syncedVersion)
+        assertEquals(SyncStatus.PENDING, updatedSetting.data.setting.syncStatus)
     }
 
     @Test
     fun `syncSetting returns Success when already synced`() = runTest {
-        val entity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = "English",
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.English,
             localVersion = 1,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
             syncStatus = SyncStatus.SYNCED,
         )
-        localDataSource.upsert(entity)
+        localDataSource.upsert(testUserId, setting)
 
         val outcome = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
 
@@ -192,17 +186,15 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncSetting handles successful remote sync`() = runTest {
-        val entity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = "German",
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.German,
             localVersion = 2,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.upsert(entity)
+        localDataSource.upsert(testUserId, setting)
 
         remoteDataSource.setSyncBehavior {
             ResultWithError.Success(SyncResult.Success(newVersion = 2))
@@ -212,26 +204,25 @@ class SettingsRepositoryImplTest {
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
-        val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
-        assertEquals(2, updatedEntity.data.syncedVersion)
-        assertEquals(2, updatedEntity.data.serverVersion)
-        assertEquals(SyncStatus.SYNCED, updatedEntity.data.syncStatus)
+        val updatedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
+        assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
+        assertEquals(2, updatedSetting.data.setting.syncedVersion)
+        assertEquals(2, updatedSetting.data.setting.serverVersion)
+        assertEquals(SyncStatus.SYNCED, updatedSetting.data.setting.syncStatus)
     }
 
     @Test
     fun `syncSetting handles conflict with client wins`() = runTest {
-        val entity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = "German",
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.German,
             localVersion = 2,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 3000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.upsert(entity)
+        localDataSource.upsert(testUserId, setting)
 
         remoteDataSource.setSyncBehavior {
             ResultWithError.Success(
@@ -248,28 +239,27 @@ class SettingsRepositoryImplTest {
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
-        val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
-        assertEquals("German", updatedEntity.data.value)
-        assertEquals(2, updatedEntity.data.localVersion)
-        assertEquals(2, updatedEntity.data.syncedVersion)
-        assertEquals(3, updatedEntity.data.serverVersion)
-        assertEquals(SyncStatus.SYNCED, updatedEntity.data.syncStatus)
+        val updatedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
+        assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
+        assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
+        assertEquals(2, updatedSetting.data.setting.localVersion)
+        assertEquals(2, updatedSetting.data.setting.syncedVersion)
+        assertEquals(3, updatedSetting.data.setting.serverVersion)
+        assertEquals(SyncStatus.SYNCED, updatedSetting.data.setting.syncStatus)
     }
 
     @Test
     fun `syncSetting handles conflict with server wins and emits event`() = runTest {
-        val entity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = "German",
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.German,
             localVersion = 2,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.upsert(entity)
+        localDataSource.upsert(testUserId, setting)
 
         remoteDataSource.setSyncBehavior {
             ResultWithError.Success(
@@ -293,30 +283,29 @@ class SettingsRepositoryImplTest {
             assertEquals("English", conflict.acceptedValue)
             assertEquals(Instant.fromEpochMilliseconds(3000L), conflict.conflictedAt)
 
-            val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-            assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
-            assertEquals("English", updatedEntity.data.value)
-            assertEquals(3, updatedEntity.data.localVersion)
-            assertEquals(3, updatedEntity.data.syncedVersion)
-            assertEquals(3, updatedEntity.data.serverVersion)
-            assertEquals(3000L, updatedEntity.data.modifiedAt)
-            assertEquals(SyncStatus.SYNCED, updatedEntity.data.syncStatus)
+            val updatedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+            assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
+            assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
+            assertEquals(UiLanguage.English, updatedSetting.data.setting.value)
+            assertEquals(3, updatedSetting.data.setting.localVersion)
+            assertEquals(3, updatedSetting.data.setting.syncedVersion)
+            assertEquals(3, updatedSetting.data.setting.serverVersion)
+            assertEquals(3000L, updatedSetting.data.setting.modifiedAt)
+            assertEquals(SyncStatus.SYNCED, updatedSetting.data.setting.syncStatus)
         }
     }
 
     @Test
     fun `syncSetting handles error from remote`() = runTest {
-        val entity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = "German",
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.German,
             localVersion = 2,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
             syncStatus = SyncStatus.PENDING,
         )
-        localDataSource.upsert(entity)
+        localDataSource.upsert(testUserId, setting)
 
         remoteDataSource.setSyncBehavior {
             ResultWithError.Failure(
@@ -330,9 +319,10 @@ class SettingsRepositoryImplTest {
 
         assertIs<ResultWithError.Failure<Unit, *>>(outcome)
 
-        val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
-        assertEquals(SyncStatus.FAILED, updatedEntity.data.syncStatus)
+        val updatedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
+        assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
+        assertEquals(SyncStatus.FAILED, updatedSetting.data.setting.syncStatus)
     }
 
     @Test
@@ -344,96 +334,64 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncAllPendingSettings syncs multiple settings`() = runTest {
-        val entity1 = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = "German",
+        val setting1 = createTypedLocalSetting(
+            value = UiLanguage.German,
             localVersion = 2,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
             syncStatus = SyncStatus.PENDING,
         )
-        val entity2 = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.THEME.key,
-            value = "Dark",
-            localVersion = 1,
-            syncedVersion = 0,
-            serverVersion = 0,
-            modifiedAt = 1000L,
-            syncStatus = SyncStatus.PENDING,
-        )
-        localDataSource.upsert(entity1)
-        localDataSource.upsert(entity2)
+        localDataSource.upsert(testUserId, setting1)
 
         remoteDataSource.setSyncBehavior { request ->
-            ResultWithError.Success(SyncResult.Success(newVersion = request.clientVersion + 1))
+            ResultWithError.Success(
+                SyncResult.Success(
+                    newVersion =
+                    request.request.clientVersion + 1,
+                ),
+            )
         }
 
         val outcome = repository.syncAllPendingSettings(identity)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
-        val updatedEntity1 = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity1)
-        assertEquals(2, updatedEntity1.data.syncedVersion)
-        assertEquals(SyncStatus.SYNCED, updatedEntity1.data.syncStatus)
-
-        val updatedEntity2 = localDataSource.getSetting(testUserId, SettingKey.THEME.key)
-        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity2)
-        assertEquals(1, updatedEntity2.data.syncedVersion)
-        assertEquals(SyncStatus.SYNCED, updatedEntity2.data.syncStatus)
+        val updatedSetting1 = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting1)
+        assertIs<TypedLocalSetting.UiLanguage>(updatedSetting1.data)
+        assertEquals(2, updatedSetting1.data.setting.syncedVersion)
+        assertEquals(SyncStatus.SYNCED, updatedSetting1.data.setting.syncStatus)
     }
 
     @Test
     fun `syncAllPendingSettings returns Retry when any setting fails`() = runTest {
-        val entity1 = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = "German",
+        val setting1 = createTypedLocalSetting(
+            value = UiLanguage.German,
             localVersion = 2,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
             syncStatus = SyncStatus.PENDING,
         )
-        val entity2 = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.THEME.key,
-            value = "Dark",
-            localVersion = 1,
-            syncedVersion = 0,
-            serverVersion = 0,
-            modifiedAt = 1000L,
-            syncStatus = SyncStatus.PENDING,
-        )
-        localDataSource.upsert(entity1)
-        localDataSource.upsert(entity2)
+        localDataSource.upsert(testUserId, setting1)
 
         remoteDataSource.setSyncBehavior { request ->
-            if (request.key == SettingKey.THEME.key) {
-                ResultWithError.Failure(
-                    RemoteUserDataSourceError.RemoteDataSource(
-                        RemoteDataSourceErrorV2.ServerError,
-                    ),
-                )
-            } else {
-                ResultWithError.Success(SyncResult.Success(newVersion = request.clientVersion + 1))
-            }
+            ResultWithError.Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServerError,
+                ),
+            )
         }
 
         val outcome = repository.syncAllPendingSettings(identity)
 
         assertIs<ResultWithError.Failure<Unit, *>>(outcome)
 
-        val updatedEntity1 = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity1)
-        assertEquals(SyncStatus.FAILED, updatedEntity1.data.syncStatus)
-
-        val updatedEntity2 = localDataSource.getSetting(testUserId, SettingKey.THEME.key)
-        assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity2)
-        assertEquals(SyncStatus.FAILED, updatedEntity2.data.syncStatus)
+        val updatedSetting1 = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting1)
+        assertIs<TypedLocalSetting.UiLanguage>(updatedSetting1.data)
+        assertEquals(SyncStatus.FAILED, updatedSetting1.data.setting.syncStatus)
     }
 
     @Test
@@ -457,13 +415,14 @@ class SettingsRepositoryImplTest {
             assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
             assertEquals(UiLanguage.German, result.data.uiLanguage)
 
-            val savedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-            assertIs<ResultWithError.Success<SettingEntity, *>>(savedEntity)
-            assertEquals("German", savedEntity.data.value)
-            assertEquals(1, savedEntity.data.localVersion)
-            assertEquals(1, savedEntity.data.syncedVersion)
-            assertEquals(1, savedEntity.data.serverVersion)
-            assertEquals(SyncStatus.SYNCED, savedEntity.data.syncStatus)
+            val savedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+            assertIs<ResultWithError.Success<TypedLocalSetting, *>>(savedSetting)
+            assertIs<TypedLocalSetting.UiLanguage>(savedSetting.data)
+            assertEquals(UiLanguage.German, savedSetting.data.setting.value)
+            assertEquals(1, savedSetting.data.setting.localVersion)
+            assertEquals(1, savedSetting.data.setting.syncedVersion)
+            assertEquals(1, savedSetting.data.setting.serverVersion)
+            assertEquals(SyncStatus.SYNCED, savedSetting.data.setting.syncStatus)
         }
     }
 
@@ -488,12 +447,13 @@ class SettingsRepositoryImplTest {
 
             assertIs<ResultWithError.Success<Unit, *>>(result)
 
-            val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-            assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
-            assertEquals("German", updatedEntity.data.value)
-            assertEquals(2, updatedEntity.data.localVersion)
-            assertEquals(1, updatedEntity.data.syncedVersion)
-            assertEquals(SyncStatus.PENDING, updatedEntity.data.syncStatus)
+            val updatedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+            assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
+            assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
+            assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
+            assertEquals(2, updatedSetting.data.setting.localVersion)
+            assertEquals(1, updatedSetting.data.setting.syncedVersion)
+            assertEquals(SyncStatus.PENDING, updatedSetting.data.setting.syncStatus)
         }
 
     @Test
@@ -503,27 +463,26 @@ class SettingsRepositoryImplTest {
 
             assertIs<ResultWithError.Success<Unit, *>>(result)
 
-            val updatedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-            assertIs<ResultWithError.Success<SettingEntity, *>>(updatedEntity)
-            assertEquals("German", updatedEntity.data.value)
-            assertEquals(2, updatedEntity.data.localVersion)
-            assertEquals(0, updatedEntity.data.syncedVersion)
-            assertEquals(SyncStatus.PENDING, updatedEntity.data.syncStatus)
+            val updatedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+            assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
+            assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
+            assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
+            assertEquals(2, updatedSetting.data.setting.localVersion)
+            assertEquals(0, updatedSetting.data.setting.syncedVersion)
+            assertEquals(SyncStatus.PENDING, updatedSetting.data.setting.syncStatus)
         }
 
     @Test
     fun `WorkManager sync has network constraint`() = runTest {
-        val existingEntity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = UiLanguage.English.toStorageValue(),
+        val existingSetting = createTypedLocalSetting(
+            value = UiLanguage.English,
             localVersion = 1,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
             syncStatus = SyncStatus.SYNCED,
         )
-        localDataSource.upsert(existingEntity)
+        localDataSource.upsert(testUserId, existingSetting)
 
         repository.changeUiLanguage(identity, UiLanguage.German)
 
@@ -541,17 +500,15 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `WorkManager sync has debounce delay`() = runTest {
-        val existingEntity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = UiLanguage.English.toStorageValue(),
+        val existingSetting = createTypedLocalSetting(
+            value = UiLanguage.English,
             localVersion = 1,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
             syncStatus = SyncStatus.SYNCED,
         )
-        localDataSource.upsert(existingEntity)
+        localDataSource.upsert(testUserId, existingSetting)
 
         repository.changeUiLanguage(identity, UiLanguage.German)
 
@@ -569,17 +526,15 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `WorkManager sync uses REPLACE policy for debouncing`() = runTest {
-        val existingEntity = SettingEntity(
-            userId = testUserId.id.toString(),
-            key = SettingKey.UI_LANGUAGE.key,
-            value = UiLanguage.English.toStorageValue(),
+        val existingSetting = createTypedLocalSetting(
+            value = UiLanguage.English,
             localVersion = 1,
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
             syncStatus = SyncStatus.SYNCED,
         )
-        localDataSource.upsert(existingEntity)
+        localDataSource.upsert(testUserId, existingSetting)
 
         repository.changeUiLanguage(identity, UiLanguage.German)
         val workInfos1 = workManager.getWorkInfosForUniqueWork(
@@ -629,16 +584,16 @@ class SettingsRepositoryImplTest {
                     ResultWithError.Success(Unit)
 
                 override suspend fun syncSingleSetting(
-                    request: SettingSyncRequest,
+                    request: TypedSettingSyncRequest,
                 ): ResultWithError<SyncResult, SyncSingleSettingError> = ResultWithError.Success(
                     SyncResult.Success(
                         newVersion =
-                        request.clientVersion + 1,
+                        request.request.clientVersion + 1,
                     ),
                 )
 
                 override suspend fun syncBatch(
-                    requests: List<SettingSyncRequest>,
+                    requests: List<TypedSettingSyncRequest>,
                 ): ResultWithError<Map<String, SyncResult>, SyncBatchError> =
                     ResultWithError.Success(emptyMap())
             }
@@ -659,15 +614,16 @@ class SettingsRepositoryImplTest {
                     "Should fall back to English for invalid server value",
                 )
 
-                val savedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-                assertIs<ResultWithError.Success<SettingEntity, *>>(savedEntity)
-                assertEquals(UiLanguage.English.toStorageValue(), savedEntity.data.value)
-                assertEquals(5, savedEntity.data.localVersion, "Should use server version")
-                assertEquals(5, savedEntity.data.syncedVersion, "Should mark as synced")
-                assertEquals(5, savedEntity.data.serverVersion)
+                val savedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+                assertIs<ResultWithError.Success<TypedLocalSetting, *>>(savedSetting)
+                assertIs<TypedLocalSetting.UiLanguage>(savedSetting.data)
+                assertEquals(UiLanguage.English, savedSetting.data.setting.value)
+                assertEquals(5, savedSetting.data.setting.localVersion, "Should use server version")
+                assertEquals(5, savedSetting.data.setting.syncedVersion, "Should mark as synced")
+                assertEquals(5, savedSetting.data.setting.serverVersion)
                 assertEquals(
                     SyncStatus.SYNCED,
-                    savedEntity.data.syncStatus,
+                    savedSetting.data.setting.syncStatus,
                     "Should be SYNCED to acknowledge server version",
                 )
 
@@ -704,16 +660,16 @@ class SettingsRepositoryImplTest {
                     ResultWithError.Success(Unit)
 
                 override suspend fun syncSingleSetting(
-                    request: SettingSyncRequest,
+                    request: TypedSettingSyncRequest,
                 ): ResultWithError<SyncResult, SyncSingleSettingError> = ResultWithError.Success(
                     SyncResult.Success(
                         newVersion =
-                        request.clientVersion + 1,
+                        request.request.clientVersion + 1,
                     ),
                 )
 
                 override suspend fun syncBatch(
-                    requests: List<SettingSyncRequest>,
+                    requests: List<TypedSettingSyncRequest>,
                 ): ResultWithError<Map<String, SyncResult>, SyncBatchError> =
                     ResultWithError.Success(emptyMap())
             }
@@ -729,16 +685,41 @@ class SettingsRepositoryImplTest {
 
             assertIs<ResultWithError.Success<Unit, ChangeLanguageRepositoryError>>(result)
 
-            val savedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-            assertIs<ResultWithError.Success<SettingEntity, *>>(savedEntity)
-            assertEquals(UiLanguage.German.toStorageValue(), savedEntity.data.value)
+            val savedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+            assertIs<ResultWithError.Success<TypedLocalSetting, *>>(savedSetting)
+            assertIs<TypedLocalSetting.UiLanguage>(savedSetting.data)
+            assertEquals(UiLanguage.German, savedSetting.data.setting.value)
             assertEquals(
                 4,
-                savedEntity.data.localVersion,
+                savedSetting.data.setting.localVersion,
                 "Should increment from recovered version 3",
             )
-            assertEquals(3, savedEntity.data.syncedVersion, "Should still reference recovery sync")
-            assertEquals(3, savedEntity.data.serverVersion)
-            assertEquals(SyncStatus.PENDING, savedEntity.data.syncStatus)
+            assertEquals(
+                3,
+                savedSetting.data.setting.syncedVersion,
+                "Should still reference recovery sync",
+            )
+            assertEquals(3, savedSetting.data.setting.serverVersion)
+            assertEquals(SyncStatus.PENDING, savedSetting.data.setting.syncStatus)
         }
+
+    @Suppress("LongParameterList")
+    private fun createTypedLocalSetting(
+        value: UiLanguage,
+        localVersion: Int = 1,
+        syncedVersion: Int = 0,
+        serverVersion: Int = 0,
+        modifiedAt: Long = 0L,
+        syncStatus: SyncStatus = SyncStatus.SYNCED,
+    ): TypedLocalSetting.UiLanguage = TypedLocalSetting.UiLanguage(
+        setting = timur.gilfanov.messenger.data.source.local.LocalSetting(
+            value = value,
+            defaultValue = UiLanguage.English,
+            localVersion = localVersion,
+            syncedVersion = syncedVersion,
+            serverVersion = serverVersion,
+            modifiedAt = modifiedAt,
+            syncStatus = syncStatus,
+        ),
+    )
 }

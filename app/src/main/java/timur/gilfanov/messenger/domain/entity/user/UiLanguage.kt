@@ -6,7 +6,7 @@ package timur.gilfanov.messenger.domain.entity.user
  * Represents available language options that users can select.
  * Changing the language affects all UI text and system messages.
  */
-sealed interface UiLanguage {
+sealed interface UiLanguage : Setting {
     /** English language (en) */
     data object English : UiLanguage
 

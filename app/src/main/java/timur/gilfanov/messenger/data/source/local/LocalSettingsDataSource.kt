@@ -1,15 +1,18 @@
 package timur.gilfanov.messenger.data.source.local
 
 import kotlinx.coroutines.flow.Flow
-import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
 /**
  * Local data source for user settings data.
  *
  * Provides Room-based access to typed settings with sync metadata.
- * Encapsulates all mapping logic between database entities and typed LocalSettings.
+ * Encapsulates all mapping logic between database entities and typed domain values.
+ *
+ * Uses [TypedLocalSetting] at the boundary to hide Room implementation details
+ * and enforce validation when converting from database to domain types.
  */
 interface LocalSettingsDataSource {
     /**
@@ -28,33 +31,47 @@ interface LocalSettingsDataSource {
     ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>>
 
     /**
-     * Retrieves a specific setting entity.
+     * Retrieves a specific typed setting with sync metadata.
+     *
+     * Validates database string value to domain type during retrieval.
      *
      * @param userId The unique identifier of the user
-     * @param key The setting key
-     * @return Success with setting entity, or failure with SettingNotFound if not exists,
+     * @param key The setting key (domain type)
+     * @return Success with typed setting, or failure with SettingNotFound if not exists,
      *         or failure with infrastructure error
      */
     suspend fun getSetting(
         userId: UserId,
-        key: String,
-    ): ResultWithError<SettingEntity, GetSettingError>
+        key: SettingKey,
+    ): ResultWithError<TypedLocalSetting, GetSettingError>
 
     /**
-     * Updates or inserts a setting entity.
+     * Updates or inserts a typed setting.
      *
-     * @param entity The setting entity to update
+     * Converts typed domain value to database entity for persistence.
+     *
+     * @param userId The user ID that owns this setting
+     * @param setting The typed setting to update
      * @return Success or failure with error
      */
-    suspend fun upsert(entity: SettingEntity): ResultWithError<Unit, UpsertSettingError>
+    suspend fun upsert(
+        userId: UserId,
+        setting: TypedLocalSetting,
+    ): ResultWithError<Unit, UpsertSettingError>
 
     /**
-     * Updates or inserts multiple setting entities in a single transaction.
+     * Updates or inserts multiple typed settings in a single transaction.
      *
-     * @param entities The setting entities to update
+     * Converts typed domain values to database entities for persistence.
+     *
+     * @param userId The user ID that owns these settings
+     * @param settings The typed settings to update
      * @return Success or failure with error
      */
-    suspend fun upsert(entities: List<SettingEntity>): ResultWithError<Unit, UpsertSettingError>
+    suspend fun upsert(
+        userId: UserId,
+        settings: List<TypedLocalSetting>,
+    ): ResultWithError<Unit, UpsertSettingError>
 
     /**
      * Atomically reads, transforms, and updates settings.
@@ -73,15 +90,17 @@ interface LocalSettingsDataSource {
     ): ResultWithError<Unit, TransformSettingError>
 
     /**
-     * Retrieves all settings that need synchronization.
+     * Retrieves all settings that need synchronization as typed settings.
+     *
+     * Validates database string values to domain types during retrieval.
      *
      * @param userId The unique identifier of the user
-     * @return Success with list of setting entities or failure with error
+     * @return Success with list of typed settings or failure with error
      */
     suspend fun getUnsyncedSettings(
         userId: UserId,
     ): ResultWithError<
-        List<SettingEntity>,
+        List<TypedLocalSetting>,
         GetUnsyncedSettingsError,
         >
 }

@@ -48,21 +48,27 @@ interface RemoteSettingsDataSource {
     /**
      * Synchronizes a single setting with the remote server using Last Write Wins.
      *
-     * @param request The sync request containing setting data and version information
+     * Uses typed domain request for type safety. Remote data source validates and
+     * converts domain types to wire format.
+     *
+     * @param request The typed sync request containing domain value and version information
      * @return Success with sync result (Success/Conflict) or failure with error
      */
     suspend fun syncSingleSetting(
-        request: SettingSyncRequest,
+        request: TypedSettingSyncRequest,
     ): ResultWithError<SyncResult, SyncSingleSettingError>
 
     /**
      * Synchronizes multiple settings in a batch request.
      *
-     * @param requests List of sync requests for different settings
+     * Uses typed domain requests for type safety. Remote data source validates and
+     * converts domain types to wire format.
+     *
+     * @param requests List of typed sync requests for different settings
      * @return Success with map of setting keys to sync results (Success/Conflict), or failure with batch-level error
      */
     suspend fun syncBatch(
-        requests: List<SettingSyncRequest>,
+        requests: List<TypedSettingSyncRequest>,
     ): ResultWithError<Map<String, SyncResult>, SyncBatchError>
 }
 
@@ -93,21 +99,21 @@ typealias SyncBatchError = RemoteUserDataSourceError
 data class RemoteSettingItem(val key: String, val value: String, val version: Int)
 
 /**
- * Request payload for synchronizing a setting with the server.
+ * Generic setting synchronization request with typed domain value.
  *
- * Includes version information needed for Last Write Wins conflict detection.
+ * Contains the domain value and metadata needed for Last Write Wins conflict resolution.
+ * Wrapped by [TypedSettingSyncRequest] sealed interface for type safety.
  *
- * @property identity Identity whose setting should be synchronized
- * @property key Setting identifier
- * @property value New value to sync
+ * @param T The type of the setting value (e.g., UiLanguage)
+ * @property identity The user identity for which to sync the setting
+ * @property value The typed domain value to sync
  * @property clientVersion Current local version number
  * @property lastKnownServerVersion Last server version known to client (0 if never synced)
- * @property modifiedAt Timestamp of local modification
+ * @property modifiedAt Timestamp of local modification (for conflict resolution)
  */
-data class SettingSyncRequest(
+data class SettingSyncRequest<T>(
     val identity: Identity,
-    val key: String,
-    val value: String,
+    val value: T,
     val clientVersion: Int,
     val lastKnownServerVersion: Int,
     val modifiedAt: Long,

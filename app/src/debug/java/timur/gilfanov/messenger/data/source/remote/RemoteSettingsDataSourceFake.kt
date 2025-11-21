@@ -141,35 +141,40 @@ class RemoteSettingsDataSourceFake(
     }
 
     private var syncBehavior:
-        (SettingSyncRequest) -> ResultWithError<SyncResult, SyncSingleSettingError> =
+        (TypedSettingSyncRequest) -> ResultWithError<SyncResult, SyncSingleSettingError> =
         { request ->
-            ResultWithError.Success(SyncResult.Success(newVersion = request.clientVersion + 1))
+            val clientVersion = request.request.clientVersion
+            ResultWithError.Success(SyncResult.Success(newVersion = clientVersion + 1))
         }
 
     override suspend fun syncSingleSetting(
-        request: SettingSyncRequest,
+        request: TypedSettingSyncRequest,
     ): ResultWithError<SyncResult, SyncSingleSettingError> = syncBehavior(request)
 
     override suspend fun syncBatch(
-        requests: List<SettingSyncRequest>,
+        requests: List<TypedSettingSyncRequest>,
     ): ResultWithError<Map<String, SyncResult>, SyncBatchError> = ResultWithError.Success(
         requests.associate { request ->
+            val key = when (request) {
+                is TypedSettingSyncRequest.UiLanguage -> SettingKey.UI_LANGUAGE.key
+            }
             when (val result = syncBehavior(request)) {
-                is ResultWithError.Success -> request.key to result.data
+                is ResultWithError.Success -> key to result.data
                 is ResultWithError.Failure -> return ResultWithError.Failure(result.error)
             }
         },
     )
 
     fun setSyncBehavior(
-        behavior: (SettingSyncRequest) -> ResultWithError<SyncResult, SyncSingleSettingError>,
+        behavior: (TypedSettingSyncRequest) -> ResultWithError<SyncResult, SyncSingleSettingError>,
     ) {
         syncBehavior = behavior
     }
 
     fun resetSyncBehavior() {
         syncBehavior = { request ->
-            ResultWithError.Success(SyncResult.Success(newVersion = request.clientVersion + 1))
+            val clientVersion = request.request.clientVersion
+            ResultWithError.Success(SyncResult.Success(newVersion = clientVersion + 1))
         }
     }
 }

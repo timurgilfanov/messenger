@@ -438,13 +438,11 @@ class SettingsRepositoryImpl @Inject constructor(
         }
 
         val resolution = typedSetting.acceptServerState(syncResult)
-        return when (
-            val upsertResult = localDataSource.upsert(
-                identity.userId,
-                resolution.updatedSetting,
-            )
-        ) {
-            is ResultWithError.Success -> {
+        return localDataSource.upsert(
+            identity.userId,
+            resolution.updatedSetting,
+        ).foldWithErrorMapping(
+            onSuccess = {
                 conflictEvents.emit(
                     resolution.toConflictEvent(
                         key = key,
@@ -453,17 +451,11 @@ class SettingsRepositoryImpl @Inject constructor(
                     ),
                 )
                 ResultWithError.Success(Unit)
-            }
-
-            is ResultWithError.Failure -> {
-                val mapped = upsertResult.error.toSyncError(
-                    logger,
-                    TAG,
-                    "syncSetting:upsertConflictServerNewer",
-                )
-                ResultWithError.Failure(mapped)
-            }
-        }
+            },
+            onFailure = { error ->
+                error.toSyncError(logger, TAG, "syncSetting:upsertConflictServerNewer")
+            },
+        )
     }
 
     private suspend fun upsertSingleSyncResult(
@@ -566,13 +558,11 @@ class SettingsRepositoryImpl @Inject constructor(
         }
 
         val resolution = typedSetting.acceptServerState(syncResult)
-        return when (
-            val upsertResult = localDataSource.upsert(
-                identity.userId,
-                resolution.updatedSetting,
-            )
-        ) {
-            is ResultWithError.Success -> {
+        return localDataSource.upsert(
+            identity.userId,
+            resolution.updatedSetting,
+        ).fold(
+            onSuccess = {
                 conflictEvents.emit(
                     resolution.toConflictEvent(
                         key = typedSetting.key,
@@ -581,14 +571,12 @@ class SettingsRepositoryImpl @Inject constructor(
                     ),
                 )
                 null
-            }
+            },
 
-            is ResultWithError.Failure -> upsertResult.error.toBatchSyncError(
-                logger,
-                TAG,
-                "syncAllPending:upsertConflictServerNewer",
-            )
-        }
+            onFailure = { error ->
+                error.toBatchSyncError(logger, TAG, "syncAllPending:upsertConflictServerNewer")
+            },
+        )
     }
 
     private suspend fun upsertBatchSynced(
@@ -596,10 +584,10 @@ class SettingsRepositoryImpl @Inject constructor(
         updatedSetting: TypedLocalSetting,
         context: String,
     ): SyncAllSettingsRepositoryError.LocalStorageError? =
-        when (val upsertResult = localDataSource.upsert(userId, updatedSetting)) {
-            is ResultWithError.Success -> null
-            is ResultWithError.Failure -> upsertResult.error.toBatchSyncError(logger, TAG, context)
-        }
+        localDataSource.upsert(userId, updatedSetting).fold(
+            onSuccess = { null },
+            onFailure = { error -> error.toBatchSyncError(logger, TAG, context) },
+        )
 
     private suspend fun markSyncFailed(
         userId: UserId,

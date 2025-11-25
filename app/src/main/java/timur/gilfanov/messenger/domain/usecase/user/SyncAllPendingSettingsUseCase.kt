@@ -9,10 +9,10 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SyncAllSettingsRe
 import timur.gilfanov.messenger.util.Logger
 
 /**
- * Synchronizes all pending setting updates queued locally.
+ * Synchronizes all pending setting updates for the active user.
  *
- * Acts as a bridge between the repository and WorkManager by collapsing repository
- * errors into [SettingsSyncOutcome] so the worker can decide whether to retry or fail.
+ * Collapses repository errors into [SettingsSyncOutcome] to indicate whether
+ * the operation succeeded, failed permanently, or should be retried.
  */
 class SyncAllPendingSettingsUseCase(
     private val identityRepository: IdentityRepository,

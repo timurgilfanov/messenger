@@ -12,8 +12,8 @@ import timur.gilfanov.messenger.util.Logger
 /**
  * Synchronizes a single user setting with the remote backend.
  *
- * Exposes a WorkManager-friendly contract via [SettingsSyncOutcome] that hides
- * repository error taxonomies and centralizes the retry/failure strategy.
+ * Collapses repository errors into [SettingsSyncOutcome] to indicate whether
+ * the operation succeeded, failed permanently, or should be retried.
  */
 class SyncSettingUseCase(
     private val identityRepository: IdentityRepository,

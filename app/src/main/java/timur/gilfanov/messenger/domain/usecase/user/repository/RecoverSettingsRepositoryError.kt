@@ -1,10 +1,10 @@
 package timur.gilfanov.messenger.domain.usecase.user.repository
 
 /**
- * Errors that can occur while retrieving user settings.
+ * Errors that can occur while recovering user settings.
  *
- * Represents failures at the repository layer that prevent settings
- * from being loaded or observed.
+ * Represents failures at the repository layer during settings recovery
+ * operations, such as restoring from defaults or remote backup.
  */
 sealed interface RecoverSettingsRepositoryError {
     /**

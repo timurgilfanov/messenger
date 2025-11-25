@@ -730,7 +730,7 @@ private inline fun <reified T : TypedLocalSetting> T.copy(
 ): T {
     val updatedSetting = transform(setting)
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST") // Worth the simplification and safe enough
     return when (this) {
         is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
             setting = updatedSetting as LocalSetting<UiLanguage>,

@@ -67,6 +67,11 @@ sealed interface GetSettingsRepositoryError {
      * An unexpected error occurred while accessing settings.
      *
      * Represents errors that don't fit known failure categories.
+     * The cause is always preserved for diagnostics and logging, but should not
+     * be used for control flow decisions. Use error type hierarchy for
+     * decision making instead.
+     *
+     * @param cause The underlying exception that caused this error.
      */
-    data object Unknown : GetSettingsRepositoryError
+    data class UnknownError(val cause: Throwable) : GetSettingsRepositoryError
 }

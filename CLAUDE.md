@@ -144,6 +144,12 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 - **Use Case Pattern**: Each business operation is encapsulated in a dedicated use case class
 - **Validation Pattern**: Separate validator classes with specific error types
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
+- **Error Handling Pattern**: Repository errors follow a consistent cause preservation contract:
+  - All `Unknown` error cases are `data class UnknownError(val cause: Throwable)` with non-nullable cause, never `data object`
+  - Data source errors with `cause: Throwable` preserve it when mapping to repository errors
+  - Use cases make decisions based on sealed interface hierarchy, not cause inspection
+  - Causes are extracted ONLY for logging and diagnostics
+  - See `SyncAllPendingSettingsUseCase.kt` for reference implementation pattern
 
 ### Testing
 Full strategy in `docs/Testing Strategy.md`.

@@ -167,12 +167,40 @@ class SettingsRepositoryImpl @Inject constructor(
         }
 
         is TransformSettingError.UnknownError -> {
-            logger.e(TAG, "Unknown error while changing UI language", error.cause)
-            ResultWithError.Failure(ChangeLanguageRepositoryError.Unknown)
+            val mapped = ChangeLanguageRepositoryError.UnknownError(error.cause)
+            logErrorMapping("changeUiLanguage:transform", error, mapped, error.cause)
+            ResultWithError.Failure(mapped)
         }
 
-        else -> {
-            val mapped = error.toChangeLanguageError("changeUiLanguage:transform")
+        TransformSettingError.AccessDenied -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.AccessDenied
+            logErrorMapping("changeUiLanguage:transform", error, mapped)
+            ResultWithError.Failure(mapped)
+        }
+
+        TransformSettingError.ConcurrentModificationError,
+        TransformSettingError.DiskIOError,
+        -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable
+            logErrorMapping("changeUiLanguage:transform", error, mapped)
+            ResultWithError.Failure(mapped)
+        }
+
+        TransformSettingError.DatabaseCorrupted -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.DataCorruption
+            logErrorMapping("changeUiLanguage:transform", error, mapped)
+            ResultWithError.Failure(mapped)
+        }
+
+        TransformSettingError.ReadOnlyDatabase -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.ReadOnly
+            logErrorMapping("changeUiLanguage:transform", error, mapped)
+            ResultWithError.Failure(mapped)
+        }
+
+        TransformSettingError.StorageFull -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.InsufficientStorage
+            logErrorMapping("changeUiLanguage:transform", error, mapped)
             ResultWithError.Failure(mapped)
         }
     }
@@ -203,72 +231,41 @@ class SettingsRepositoryImpl @Inject constructor(
             changeUiLanguage(identity, language)
         }
 
-        else -> {
-            val mapped = error.toChangeLanguageError("changeUiLanguage:recoverSettings")
+        is GetSettingsRepositoryError.UnknownError -> {
+            val mapped = ChangeLanguageRepositoryError.UnknownError(error.cause)
+            logErrorMapping("changeUiLanguage:recoverSettings", error, mapped, error.cause)
             ResultWithError.Failure(mapped)
         }
-    }
 
-    private fun TransformSettingError.toChangeLanguageError(
-        context: String,
-    ): ChangeLanguageRepositoryError {
-        val mapped =
-            when (this) {
-                TransformSettingError.AccessDenied ->
-                    ChangeLanguageRepositoryError.Recoverable.AccessDenied
+        GetSettingsRepositoryError.Recoverable.AccessDenied -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.AccessDenied
+            logErrorMapping("changeUiLanguage:recoverSettings", error, mapped)
+            ResultWithError.Failure(mapped)
+        }
 
-                TransformSettingError.ConcurrentModificationError,
-                TransformSettingError.DiskIOError,
-                ->
-                    ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable
+        GetSettingsRepositoryError.Recoverable.DataCorruption -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.DataCorruption
+            logErrorMapping("changeUiLanguage:recoverSettings", error, mapped)
+            ResultWithError.Failure(mapped)
+        }
 
-                TransformSettingError.DatabaseCorrupted ->
-                    ChangeLanguageRepositoryError.Recoverable.DataCorruption
+        GetSettingsRepositoryError.Recoverable.InsufficientStorage -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.InsufficientStorage
+            logErrorMapping("changeUiLanguage:recoverSettings", error, mapped)
+            ResultWithError.Failure(mapped)
+        }
 
-                TransformSettingError.ReadOnlyDatabase ->
-                    ChangeLanguageRepositoryError.Recoverable.ReadOnly
+        GetSettingsRepositoryError.Recoverable.ReadOnly -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.ReadOnly
+            logErrorMapping("changeUiLanguage:recoverSettings", error, mapped)
+            ResultWithError.Failure(mapped)
+        }
 
-                TransformSettingError.StorageFull ->
-                    ChangeLanguageRepositoryError.Recoverable.InsufficientStorage
-
-                TransformSettingError.SettingsNotFound ->
-                    ChangeLanguageRepositoryError.Unknown
-
-                is TransformSettingError.UnknownError ->
-                    ChangeLanguageRepositoryError.Unknown
-            }
-        logErrorMapping(context, this, mapped)
-        return mapped
-    }
-
-    private fun GetSettingsRepositoryError.toChangeLanguageError(
-        context: String,
-    ): ChangeLanguageRepositoryError {
-        val mapped =
-            when (this) {
-                GetSettingsRepositoryError.Recoverable.AccessDenied ->
-                    ChangeLanguageRepositoryError.Recoverable.AccessDenied
-
-                GetSettingsRepositoryError.Recoverable.DataCorruption ->
-                    ChangeLanguageRepositoryError.Recoverable.DataCorruption
-
-                GetSettingsRepositoryError.Recoverable.InsufficientStorage ->
-                    ChangeLanguageRepositoryError.Recoverable.InsufficientStorage
-
-                GetSettingsRepositoryError.Recoverable.ReadOnly ->
-                    ChangeLanguageRepositoryError.Recoverable.ReadOnly
-
-                GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable ->
-                    ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable
-
-                GetSettingsRepositoryError.SettingsResetToDefaults ->
-                    ChangeLanguageRepositoryError.Unknown
-
-                GetSettingsRepositoryError.Unknown ->
-                    ChangeLanguageRepositoryError.Unknown
-            }
-        logErrorMapping(context, this, mapped)
-        return mapped
+        GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable -> {
+            val mapped = ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable
+            logErrorMapping("changeUiLanguage:recoverSettings", error, mapped)
+            ResultWithError.Failure(mapped)
+        }
     }
 
     private fun scheduleWorkManagerSync(userId: UserId, key: String) {
@@ -300,11 +297,24 @@ class SettingsRepositoryImpl @Inject constructor(
         )
     }
 
-    private fun logErrorMapping(context: String, source: Any, mapped: Any) {
-        logger.e(
-            TAG,
-            "Error mapped at $context: source=$source mapped=$mapped",
-        )
+    private fun logErrorMapping(
+        context: String,
+        source: Any,
+        mapped: Any,
+        cause: Throwable? = null,
+    ) {
+        if (cause != null) {
+            logger.e(
+                TAG,
+                "Error mapped at $context: source=$source mapped=$mapped",
+                cause,
+            )
+        } else {
+            logger.e(
+                TAG,
+                "Error mapped at $context: source=$source mapped=$mapped",
+            )
+        }
     }
 
     private suspend fun handleObserveFailure(
@@ -348,11 +358,12 @@ class SettingsRepositoryImpl @Inject constructor(
                 GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable,
             )
 
-        GetSettingsLocalDataSourceError.Unknown ->
+        is GetSettingsLocalDataSourceError.UnknownError ->
             logObserveFailure(
                 "Unknown error while observing settings",
                 error,
-                GetSettingsRepositoryError.Unknown,
+                GetSettingsRepositoryError.UnknownError(error.cause),
+                error.cause,
             )
     }
 
@@ -360,8 +371,13 @@ class SettingsRepositoryImpl @Inject constructor(
         message: String,
         error: GetSettingsLocalDataSourceError,
         mapped: GetSettingsRepositoryError,
+        cause: Throwable? = null,
     ): ResultWithError<Settings, GetSettingsRepositoryError> {
-        logger.e(TAG, "$message: $error")
+        if (cause != null) {
+            logger.e(TAG, "$message: $error", cause)
+        } else {
+            logger.e(TAG, "$message: $error")
+        }
         return ResultWithError.Failure(mapped)
     }
 
@@ -676,7 +692,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
                 is UpsertSettingError.UnknownError -> {
                     logger.e(TAG, "Unknown error while recovering settings", this.cause)
-                    GetSettingsRepositoryError.Unknown
+                    GetSettingsRepositoryError.UnknownError(this.cause)
                 }
             }
         logErrorMapping(context, this, mapped)

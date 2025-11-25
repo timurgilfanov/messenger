@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
 import kotlinx.coroutines.flow.first
-import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
@@ -25,17 +24,10 @@ class SyncAllPendingSettingsUseCase(
 
     suspend operator fun invoke(): SettingsSyncOutcome = identityRepository.identity.first().fold(
         onSuccess = { identity ->
-            when (val result = settingsRepository.syncAllPendingSettings(identity)) {
-                is ResultWithError.Success -> SettingsSyncOutcome.Success
-                is ResultWithError.Failure -> {
-                    val outcome = result.error.toSyncOutcome()
-                    logger.e(
-                        TAG,
-                        "Repository syncAllPendingSettings failed: ${result.error} -> $outcome",
-                    )
-                    outcome
-                }
-            }
+            settingsRepository.syncAllPendingSettings(identity).fold(
+                onSuccess = { SettingsSyncOutcome.Success },
+                onFailure = { error -> error.toSyncOutcome() },
+            )
         },
         onFailure = {
             logger.e(TAG, "Unable to resolve identity for syncAllPending")
@@ -43,40 +35,50 @@ class SyncAllPendingSettingsUseCase(
         },
     )
 
-    private fun SyncAllSettingsRepositoryError.toSyncOutcome(): SettingsSyncOutcome = when (this) {
-        is SyncAllSettingsRepositoryError.LocalStorageError -> when (this) {
-            SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable ->
-                SettingsSyncOutcome.Retry
-
-            SyncAllSettingsRepositoryError.LocalStorageError.StorageFull,
-            SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied,
-            SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly,
-            SyncAllSettingsRepositoryError.LocalStorageError.Corrupted,
-            is SyncAllSettingsRepositoryError.LocalStorageError.UnknownError,
-            ->
-                SettingsSyncOutcome.Failure
-        }
-
-        is SyncAllSettingsRepositoryError.RemoteSyncFailed -> when (val err = error) {
-            RepositoryError.Unauthenticated,
-            RepositoryError.InsufficientPermissions,
-            ->
-                SettingsSyncOutcome.Failure
-
-            is RepositoryError.Failed -> when (err) {
-                RepositoryError.Failed.NetworkNotAvailable,
-                RepositoryError.Failed.ServiceDown,
-                ->
+    private fun SyncAllSettingsRepositoryError.toSyncOutcome(): SettingsSyncOutcome {
+        var cause: Throwable? = null
+        return when (this) {
+            is SyncAllSettingsRepositoryError.LocalStorageError -> when (this) {
+                SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable ->
                     SettingsSyncOutcome.Retry
 
-                is RepositoryError.Failed.Cooldown,
-                RepositoryError.Failed.UnknownServiceError,
-                ->
+                SyncAllSettingsRepositoryError.LocalStorageError.StorageFull,
+                SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied,
+                SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly,
+                SyncAllSettingsRepositoryError.LocalStorageError.Corrupted,
+                -> SettingsSyncOutcome.Failure
+                is SyncAllSettingsRepositoryError.LocalStorageError.UnknownError,
+                -> {
+                    cause = this.cause
                     SettingsSyncOutcome.Failure
+                }
             }
 
-            is RepositoryError.UnknownStatus -> when (err) {
-                RepositoryError.UnknownStatus.ServiceTimeout -> SettingsSyncOutcome.Retry
+            is SyncAllSettingsRepositoryError.RemoteSyncFailed -> when (val err = error) {
+                RepositoryError.Unauthenticated,
+                RepositoryError.InsufficientPermissions,
+                -> SettingsSyncOutcome.Failure
+
+                is RepositoryError.Failed -> when (err) {
+                    RepositoryError.Failed.NetworkNotAvailable,
+                    RepositoryError.Failed.ServiceDown,
+                    -> SettingsSyncOutcome.Retry
+
+                    is RepositoryError.Failed.Cooldown,
+                    RepositoryError.Failed.UnknownServiceError,
+                    -> SettingsSyncOutcome.Failure
+                }
+
+                is RepositoryError.UnknownStatus -> when (err) {
+                    RepositoryError.UnknownStatus.ServiceTimeout -> SettingsSyncOutcome.Retry
+                }
+            }
+        }.also { outcome ->
+            val message = "Repository syncAllPendingSettings failed: $this -> $outcome"
+            if (cause != null) {
+                logger.e(TAG, message, cause)
+            } else {
+                logger.e(TAG, message)
             }
         }
     }

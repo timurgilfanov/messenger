@@ -127,7 +127,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
 
                     else -> {
                         logger.e(TAG, "Unknown error while observing settings", exception)
-                        GetSettingsLocalDataSourceError.Unknown
+                        GetSettingsLocalDataSourceError.UnknownError(exception)
                     }
                 }
                 emit(Failure(error))

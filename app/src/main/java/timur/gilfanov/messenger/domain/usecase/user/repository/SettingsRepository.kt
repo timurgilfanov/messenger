@@ -50,7 +50,7 @@ interface SettingsRepository {
     /**
      * Syncs a specific user setting with the remote backend.
      *
-     * @param userId Identifier of the user whose setting is being synced
+     * @param identity Identity whose setting is being synced
      * @param key The concrete setting to sync
      */
     suspend fun syncSetting(
@@ -59,7 +59,9 @@ interface SettingsRepository {
     ): ResultWithError<Unit, SyncSettingRepositoryError>
 
     /**
-     * Syncs all pending settings changes for all users.
+     * Syncs all pending settings changes for specific users.
+     *
+     * @param identity Identity whose setting is being synced
      */
     suspend fun syncAllPendingSettings(
         identity: Identity,

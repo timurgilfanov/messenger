@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteFullException
 import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.room.withTransaction
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -24,8 +26,6 @@ import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.util.Logger
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Room-based implementation of [LocalSettingsDataSource] with automatic retry logic.

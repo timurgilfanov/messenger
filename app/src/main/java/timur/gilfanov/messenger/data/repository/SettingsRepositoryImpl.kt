@@ -709,21 +709,30 @@ class SettingsRepositoryImpl @Inject constructor(
 private fun TypedLocalSetting.requiresSync(): Boolean =
     setting.localVersion != setting.syncedVersion
 
-private fun TypedLocalSetting.markLocalSync(newServerVersion: Int): TypedLocalSetting =
-    when (this) {
+private inline fun <reified T : TypedLocalSetting> T.copy(
+    transform: (LocalSetting<*>) -> LocalSetting<*>,
+): T {
+    val updatedSetting = transform(setting)
+
+    @Suppress("UNCHECKED_CAST")
+    return when (this) {
         is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
-            setting = setting.copy(
-                syncedVersion = setting.localVersion,
-                serverVersion = newServerVersion,
-                syncStatus = SyncStatus.SYNCED,
-            ),
+            setting = updatedSetting as LocalSetting<UiLanguage>,
+        ) as T
+    }
+}
+
+private fun TypedLocalSetting.markLocalSync(newServerVersion: Int): TypedLocalSetting =
+    copy { setting ->
+        setting.copy(
+            syncedVersion = setting.localVersion,
+            serverVersion = newServerVersion,
+            syncStatus = SyncStatus.SYNCED,
         )
     }
 
-private fun TypedLocalSetting.markFailed(): TypedLocalSetting = when (this) {
-    is TypedLocalSetting.UiLanguage -> TypedLocalSetting.UiLanguage(
-        setting = setting.copy(syncStatus = SyncStatus.FAILED),
-    )
+private fun TypedLocalSetting.markFailed(): TypedLocalSetting = copy { setting ->
+    setting.copy(syncStatus = SyncStatus.FAILED)
 }
 
 private fun TypedLocalSetting.acceptServerState(
@@ -778,6 +787,7 @@ private fun GetSettingError.toSyncError(
         GetSettingError.ConcurrentModificationError,
         GetSettingError.DiskIOError,
         -> SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable
+
         GetSettingError.DatabaseCorrupted -> SyncSettingRepositoryError.LocalStorageError.Corrupted
         GetSettingError.AccessDenied -> SyncSettingRepositoryError.LocalStorageError.AccessDenied
         GetSettingError.ReadOnlyDatabase -> SyncSettingRepositoryError.LocalStorageError.ReadOnly
@@ -798,14 +808,19 @@ private fun UpsertSettingError.toSyncError(
             UpsertSettingError.ConcurrentModificationError,
             UpsertSettingError.DiskIOError,
             -> SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable
+
             UpsertSettingError.StorageFull ->
                 SyncSettingRepositoryError.LocalStorageError.StorageFull
+
             UpsertSettingError.DatabaseCorrupted ->
                 SyncSettingRepositoryError.LocalStorageError.Corrupted
+
             UpsertSettingError.AccessDenied ->
                 SyncSettingRepositoryError.LocalStorageError.AccessDenied
+
             UpsertSettingError.ReadOnlyDatabase ->
                 SyncSettingRepositoryError.LocalStorageError.ReadOnly
+
             is UpsertSettingError.UnknownError ->
                 SyncSettingRepositoryError.LocalStorageError.UnknownError(this.cause)
         }
@@ -823,12 +838,16 @@ private fun GetUnsyncedSettingsError.toBatchSyncError(
             GetUnsyncedSettingsError.ConcurrentModificationError,
             GetUnsyncedSettingsError.DiskIOError,
             -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
+
             GetUnsyncedSettingsError.DatabaseCorrupted ->
                 SyncAllSettingsRepositoryError.LocalStorageError.Corrupted
+
             GetUnsyncedSettingsError.AccessDenied ->
                 SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied
+
             GetUnsyncedSettingsError.ReadOnlyDatabase ->
                 SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly
+
             is GetUnsyncedSettingsError.UnknownError ->
                 SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(this.cause)
         }
@@ -845,14 +864,19 @@ private fun UpsertSettingError.toBatchSyncError(
         UpsertSettingError.ConcurrentModificationError,
         UpsertSettingError.DiskIOError,
         -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
+
         UpsertSettingError.StorageFull ->
             SyncAllSettingsRepositoryError.LocalStorageError.StorageFull
+
         UpsertSettingError.DatabaseCorrupted ->
             SyncAllSettingsRepositoryError.LocalStorageError.Corrupted
+
         UpsertSettingError.AccessDenied ->
             SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied
+
         UpsertSettingError.ReadOnlyDatabase ->
             SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly
+
         is UpsertSettingError.UnknownError ->
             SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(this.cause)
     }

@@ -263,205 +263,201 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         userId: UserId,
         key: SettingKey,
         attempt: Long,
-    ): RetryDecision<GetSettingError> =
-        when (exception) {
-            is SQLiteDatabaseLockedException ->
-                retryOrFail(
-                    attempt = attempt,
-                    error = GetSettingError.ConcurrentModificationError,
-                    message = "Failed to get setting ${key.key} for user ${userId.id}",
-                    exception = exception,
-                )
+    ): RetryDecision<GetSettingError> = when (exception) {
+        is SQLiteDatabaseLockedException ->
+            retryOrFail(
+                attempt = attempt,
+                error = GetSettingError.ConcurrentModificationError,
+                message = "Failed to get setting ${key.key} for user ${userId.id}",
+                exception = exception,
+            )
 
-            is SQLiteDiskIOException ->
-                retryOrFail(
-                    attempt = attempt,
-                    error = GetSettingError.DiskIOError,
-                    message = "Failed to get setting ${key.key} for user ${userId.id}",
-                    exception = exception,
-                )
+        is SQLiteDiskIOException ->
+            retryOrFail(
+                attempt = attempt,
+                error = GetSettingError.DiskIOError,
+                message = "Failed to get setting ${key.key} for user ${userId.id}",
+                exception = exception,
+            )
 
-            is SQLiteDatabaseCorruptException -> {
-                logger.e(
-                    TAG,
-                    "Database corrupted while getting setting ${key.key} for user ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(GetSettingError.DatabaseCorrupted)
-            }
-
-            is SQLiteAccessPermException -> {
-                logger.e(
-                    TAG,
-                    "Access denied while getting setting ${key.key} for user ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(GetSettingError.AccessDenied)
-            }
-
-            is SQLiteReadOnlyDatabaseException -> {
-                logger.e(
-                    TAG,
-                    "Read-only database while getting setting ${key.key} for user ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(GetSettingError.ReadOnlyDatabase)
-            }
-
-            else -> {
-                logger.e(
-                    TAG,
-                    "Unknown database error while getting setting ${key.key} for user ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(GetSettingError.UnknownError(exception))
-            }
+        is SQLiteDatabaseCorruptException -> {
+            logger.e(
+                TAG,
+                "Database corrupted while getting setting ${key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetSettingError.DatabaseCorrupted)
         }
+
+        is SQLiteAccessPermException -> {
+            logger.e(
+                TAG,
+                "Access denied while getting setting ${key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetSettingError.AccessDenied)
+        }
+
+        is SQLiteReadOnlyDatabaseException -> {
+            logger.e(
+                TAG,
+                "Read-only database while getting setting ${key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetSettingError.ReadOnlyDatabase)
+        }
+
+        else -> {
+            logger.e(
+                TAG,
+                "Unknown database error while getting setting ${key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetSettingError.UnknownError(exception))
+        }
+    }
 
     private fun handleSingleUpsertException(
         exception: SQLiteException,
         userId: UserId,
         setting: TypedLocalSetting,
         attempt: Long,
-    ): RetryDecision<UpsertSettingError> =
-        when (exception) {
-            is SQLiteDatabaseLockedException ->
-                retryOrFail(
-                    attempt = attempt,
-                    error = UpsertSettingError.ConcurrentModificationError,
-                    message = "Failed to upsert setting ${setting.key.key} for user ${userId.id}",
-                    exception = exception,
-                )
+    ): RetryDecision<UpsertSettingError> = when (exception) {
+        is SQLiteDatabaseLockedException ->
+            retryOrFail(
+                attempt = attempt,
+                error = UpsertSettingError.ConcurrentModificationError,
+                message = "Failed to upsert setting ${setting.key.key} for user ${userId.id}",
+                exception = exception,
+            )
 
-            is SQLiteDiskIOException ->
-                retryOrFail(
-                    attempt = attempt,
-                    error = UpsertSettingError.DiskIOError,
-                    message = "Failed to upsert setting ${setting.key.key} for user ${userId.id}",
-                    exception = exception,
-                )
+        is SQLiteDiskIOException ->
+            retryOrFail(
+                attempt = attempt,
+                error = UpsertSettingError.DiskIOError,
+                message = "Failed to upsert setting ${setting.key.key} for user ${userId.id}",
+                exception = exception,
+            )
 
-            is SQLiteFullException -> {
-                logger.e(
-                    TAG,
-                    "Storage full while upserting setting ${setting.key.key} for user ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(UpsertSettingError.StorageFull)
-            }
-
-            is SQLiteDatabaseCorruptException -> {
-                logger.e(
-                    TAG,
-                    "Database corrupted while upserting setting ${setting.key.key} for user ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(UpsertSettingError.DatabaseCorrupted)
-            }
-
-            is SQLiteAccessPermException -> {
-                logger.e(
-                    TAG,
-                    "Access denied while upserting setting ${setting.key.key} for user ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(UpsertSettingError.AccessDenied)
-            }
-
-            is SQLiteReadOnlyDatabaseException -> {
-                logger.e(
-                    TAG,
-                    "Read-only database while upserting setting ${setting.key.key} for user ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(UpsertSettingError.ReadOnlyDatabase)
-            }
-
-            else -> {
-                logger.e(
-                    TAG,
-                    "Unknown database error while upserting setting ${setting.key.key} for user ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(UpsertSettingError.UnknownError(exception))
-            }
+        is SQLiteFullException -> {
+            logger.e(
+                TAG,
+                "Storage full while upserting setting ${setting.key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(UpsertSettingError.StorageFull)
         }
+
+        is SQLiteDatabaseCorruptException -> {
+            logger.e(
+                TAG,
+                "Database corrupted while upserting setting ${setting.key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(UpsertSettingError.DatabaseCorrupted)
+        }
+
+        is SQLiteAccessPermException -> {
+            logger.e(
+                TAG,
+                "Access denied while upserting setting ${setting.key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(UpsertSettingError.AccessDenied)
+        }
+
+        is SQLiteReadOnlyDatabaseException -> {
+            logger.e(
+                TAG,
+                "Read-only database while upserting setting ${setting.key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(UpsertSettingError.ReadOnlyDatabase)
+        }
+
+        else -> {
+            logger.e(
+                TAG,
+                "Unknown database error while upserting setting ${setting.key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(UpsertSettingError.UnknownError(exception))
+        }
+    }
 
     private fun handleGetUnsyncedException(
         exception: SQLiteException,
         userId: UserId,
         attempt: Long,
-    ): RetryDecision<GetUnsyncedSettingsError> =
-        when (exception) {
-            is SQLiteDatabaseLockedException ->
-                retryOrFail(
-                    attempt = attempt,
-                    error = GetUnsyncedSettingsError.ConcurrentModificationError,
-                    message = "Failed to fetch unsynced settings for ${userId.id}",
-                    exception = exception,
-                )
+    ): RetryDecision<GetUnsyncedSettingsError> = when (exception) {
+        is SQLiteDatabaseLockedException ->
+            retryOrFail(
+                attempt = attempt,
+                error = GetUnsyncedSettingsError.ConcurrentModificationError,
+                message = "Failed to fetch unsynced settings for ${userId.id}",
+                exception = exception,
+            )
 
-            is SQLiteDiskIOException ->
-                retryOrFail(
-                    attempt = attempt,
-                    error = GetUnsyncedSettingsError.DiskIOError,
-                    message = "Failed to fetch unsynced settings for ${userId.id}",
-                    exception = exception,
-                )
+        is SQLiteDiskIOException ->
+            retryOrFail(
+                attempt = attempt,
+                error = GetUnsyncedSettingsError.DiskIOError,
+                message = "Failed to fetch unsynced settings for ${userId.id}",
+                exception = exception,
+            )
 
-            is SQLiteDatabaseCorruptException -> {
-                logger.e(
-                    TAG,
-                    "Database corrupted while fetching unsynced settings for ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(GetUnsyncedSettingsError.DatabaseCorrupted)
-            }
-
-            is SQLiteAccessPermException -> {
-                logger.e(
-                    TAG,
-                    "Access denied while fetching unsynced settings for ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(GetUnsyncedSettingsError.AccessDenied)
-            }
-
-            is SQLiteReadOnlyDatabaseException -> {
-                logger.e(
-                    TAG,
-                    "Read-only database while fetching unsynced settings for ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(GetUnsyncedSettingsError.ReadOnlyDatabase)
-            }
-
-            else -> {
-                logger.e(
-                    TAG,
-                    "Unknown error while fetching unsynced settings for ${userId.id}",
-                    exception,
-                )
-                RetryDecision.Fail(GetUnsyncedSettingsError.UnknownError(exception))
-            }
+        is SQLiteDatabaseCorruptException -> {
+            logger.e(
+                TAG,
+                "Database corrupted while fetching unsynced settings for ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetUnsyncedSettingsError.DatabaseCorrupted)
         }
+
+        is SQLiteAccessPermException -> {
+            logger.e(
+                TAG,
+                "Access denied while fetching unsynced settings for ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetUnsyncedSettingsError.AccessDenied)
+        }
+
+        is SQLiteReadOnlyDatabaseException -> {
+            logger.e(
+                TAG,
+                "Read-only database while fetching unsynced settings for ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetUnsyncedSettingsError.ReadOnlyDatabase)
+        }
+
+        else -> {
+            logger.e(
+                TAG,
+                "Unknown error while fetching unsynced settings for ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetUnsyncedSettingsError.UnknownError(exception))
+        }
+    }
 
     private fun <E> retryOrFail(
         attempt: Long,
         error: E,
         message: String,
         exception: SQLiteException,
-    ): RetryDecision<E> =
-        if (attempt < MAX_RETRIES) {
-            RetryDecision.Retry(calculateBackoff(attempt))
-        } else {
-            logger.e(
-                TAG,
-                "$message after $MAX_RETRIES retries due to $error",
-                exception,
-            )
-            RetryDecision.Fail(error)
-        }
+    ): RetryDecision<E> = if (attempt < MAX_RETRIES) {
+        RetryDecision.Retry(calculateBackoff(attempt))
+    } else {
+        logger.e(
+            TAG,
+            "$message after $MAX_RETRIES retries due to $error",
+            exception,
+        )
+        RetryDecision.Fail(error)
+    }
 
     private fun buildEntitiesToUpsert(
         existing: List<SettingEntity>,
@@ -627,33 +623,32 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         exception: SQLiteException,
         userId: UserId,
         attempt: Long,
-    ): Boolean =
-        when (exception) {
-            is SQLiteDatabaseLockedException,
-            is SQLiteDiskIOException,
-            -> {
-                if (attempt < MAX_RETRIES) {
-                    true
-                } else {
-                    logger.e(
-                        TAG,
-                        "Failed to load settings for user ${userId.id} after $MAX_RETRIES retries " +
-                            "due to database lock/disk error",
-                        exception,
-                    )
-                    false
-                }
-            }
-
-            else -> {
+    ): Boolean = when (exception) {
+        is SQLiteDatabaseLockedException,
+        is SQLiteDiskIOException,
+        -> {
+            if (attempt < MAX_RETRIES) {
+                true
+            } else {
                 logger.e(
                     TAG,
-                    "Unexpected error while loading settings for user ${userId.id}",
+                    "Failed to load settings for user ${userId.id} after $MAX_RETRIES retries " +
+                        "due to database lock/disk error",
                     exception,
                 )
                 false
             }
         }
+
+        else -> {
+            logger.e(
+                TAG,
+                "Unexpected error while loading settings for user ${userId.id}",
+                exception,
+            )
+            false
+        }
+    }
 
     private fun calculateBackoff(attempt: Long): Long =
         (INITIAL_BACKOFF_MS * (1 shl attempt.toInt())).coerceAtMost(

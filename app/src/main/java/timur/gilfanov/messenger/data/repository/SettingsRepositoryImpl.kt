@@ -304,16 +304,9 @@ class SettingsRepositoryImpl @Inject constructor(
         cause: Throwable? = null,
     ) {
         if (cause != null) {
-            logger.e(
-                TAG,
-                "Error mapped at $context: source=$source mapped=$mapped",
-                cause,
-            )
+            logger.e(TAG, "Error mapped at $context: source=$source mapped=$mapped", cause)
         } else {
-            logger.e(
-                TAG,
-                "Error mapped at $context: source=$source mapped=$mapped",
-            )
+            logger.e(TAG, "Error mapped at $context: source=$source mapped=$mapped")
         }
     }
 

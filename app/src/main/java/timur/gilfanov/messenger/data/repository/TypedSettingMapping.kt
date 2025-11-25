@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.repository
 
+import timur.gilfanov.messenger.data.source.local.LocalSetting
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.TypedSettingSyncRequest
@@ -19,12 +20,15 @@ import timur.gilfanov.messenger.domain.entity.user.Identity
  */
 fun TypedLocalSetting.toSyncRequest(identity: Identity): TypedSettingSyncRequest = when (this) {
     is TypedLocalSetting.UiLanguage -> TypedSettingSyncRequest.UiLanguage(
-        request = SettingSyncRequest(
-            identity = identity,
-            value = this.setting.value,
-            clientVersion = this.setting.localVersion,
-            lastKnownServerVersion = this.setting.serverVersion,
-            modifiedAt = this.setting.modifiedAt,
-        ),
+        setting.toSyncRequest(identity),
     )
 }
+
+private fun <T> LocalSetting<T>.toSyncRequest(identity: Identity): SettingSyncRequest<T> =
+    SettingSyncRequest(
+        identity = identity,
+        value = this.value,
+        clientVersion = this.localVersion,
+        lastKnownServerVersion = this.serverVersion,
+        modifiedAt = this.modifiedAt,
+    )

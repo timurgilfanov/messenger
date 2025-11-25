@@ -471,13 +471,14 @@ class SettingsRepositoryImpl @Inject constructor(
         updatedSetting: TypedLocalSetting,
         context: String,
     ): ResultWithError<Unit, SyncSettingRepositoryError> =
-        when (val upsertResult = localDataSource.upsert(userId, updatedSetting)) {
-            is ResultWithError.Success -> ResultWithError.Success(Unit)
-            is ResultWithError.Failure -> {
-                val mapped = upsertResult.error.toSyncError(logger, TAG, context)
-                ResultWithError.Failure(mapped)
-            }
-        }
+        localDataSource.upsert(userId, updatedSetting).foldWithErrorMapping(
+            onSuccess = {
+                ResultWithError.Success(Unit)
+            },
+            onFailure = { error ->
+                error.toSyncError(logger, TAG, context)
+            },
+        )
 
     @Suppress("ReturnCount")
     override suspend fun syncAllPendingSettings(

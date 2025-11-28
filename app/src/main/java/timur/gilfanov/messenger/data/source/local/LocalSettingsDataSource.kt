@@ -8,11 +8,11 @@ import timur.gilfanov.messenger.domain.entity.user.UserId
 /**
  * Local data source for user settings data.
  *
- * Provides Room-based access to typed settings with sync metadata.
- * Encapsulates all mapping logic between database entities and typed domain values.
+ * Provides persistent access to typed settings with sync metadata.
+ * Encapsulates all mapping logic between storage entities and typed domain values.
  *
- * Uses [TypedLocalSetting] at the boundary to hide Room implementation details
- * and enforce validation when converting from database to domain types.
+ * Uses [TypedLocalSetting] at the boundary to hide storage implementation details
+ * and enforce validation when converting from storage to domain types.
  */
 interface LocalSettingsDataSource {
     /**
@@ -33,8 +33,6 @@ interface LocalSettingsDataSource {
     /**
      * Retrieves a specific typed setting with sync metadata.
      *
-     * Validates database string value to domain type during retrieval.
-     *
      * @param userId The unique identifier of the user
      * @param key The setting key (domain type)
      * @return Success with typed setting, or failure with SettingNotFound if not exists,
@@ -48,8 +46,6 @@ interface LocalSettingsDataSource {
     /**
      * Updates or inserts a typed setting.
      *
-     * Converts typed domain value to database entity for persistence.
-     *
      * @param userId The user ID that owns this setting
      * @param setting The typed setting to update
      * @return Success or failure with error
@@ -61,8 +57,6 @@ interface LocalSettingsDataSource {
 
     /**
      * Updates or inserts multiple typed settings in a single transaction.
-     *
-     * Converts typed domain values to database entities for persistence.
      *
      * @param userId The user ID that owns these settings
      * @param settings The typed settings to update
@@ -76,9 +70,9 @@ interface LocalSettingsDataSource {
     /**
      * Atomically reads, transforms, and updates settings.
      *
-     * Provides atomic read-modify-write semantics using database transactions.
-     * The transform function receives the current LocalSettings and returns
-     * the updated LocalSettings. If settings don't exist, returns SettingsNotFound error.
+     * Provides atomic read-modify-write semantics. The transform function receives the current
+     * LocalSettings and returns the updated LocalSettings. If settings don't exist, returns
+     * SettingsNotFound error.
      *
      * @param userId The unique identifier of the user
      * @param transform Function to transform the current LocalSettings
@@ -92,15 +86,10 @@ interface LocalSettingsDataSource {
     /**
      * Retrieves all settings that need synchronization as typed settings.
      *
-     * Validates database string values to domain types during retrieval.
-     *
      * @param userId The unique identifier of the user
      * @return Success with list of typed settings or failure with error
      */
     suspend fun getUnsyncedSettings(
         userId: UserId,
-    ): ResultWithError<
-        List<TypedLocalSetting>,
-        GetUnsyncedSettingsError,
-        >
+    ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError>
 }

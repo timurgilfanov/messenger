@@ -6,13 +6,12 @@ import timur.gilfanov.messenger.domain.entity.user.SettingKey
 /**
  * Typed wrapper for individual settings from local storage.
  *
- * Provides type-safe access to settings with sync metadata while hiding
- * Room's [timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity] implementation
+ * Provides type-safe access to settings with sync metadata while hiding storage implementation
  * details from the data source contract.
  *
  * Each sealed subclass wraps a [LocalSetting] of specific domain type (e.g., UiLanguage).
- * This ensures validation happens at the data source boundary when converting from
- * database entities to typed domain values.
+ * This ensures validation happens at the data source boundary when converting from storage entities
+ * to typed domain values.
  *
  * ## Usage:
  * ```kotlin

@@ -20,7 +20,7 @@ import timur.gilfanov.messenger.domain.entity.user.Setting
  *         value = UiLanguage.ENGLISH,
  *         clientVersion = 2,
  *         lastKnownServerVersion = 1,
- *         modifiedAt = System.currentTimeMillis()
+ *         modifiedAt = Clock.System.now()
  *     )
  * )
  * remoteDataSource.syncSingleSetting(request)

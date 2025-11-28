@@ -230,7 +230,7 @@ class SettingsRepositoryImplTest {
                     serverValue = "English",
                     serverVersion = 1,
                     newVersion = 3,
-                    serverModifiedAt = 2000L,
+                    serverModifiedAt = Instant.fromEpochMilliseconds(2000L),
                 ),
             )
         }
@@ -267,7 +267,7 @@ class SettingsRepositoryImplTest {
                     serverValue = "English",
                     serverVersion = 1,
                     newVersion = 3,
-                    serverModifiedAt = 3000L,
+                    serverModifiedAt = Instant.fromEpochMilliseconds(3000L),
                 ),
             )
         }
@@ -290,7 +290,10 @@ class SettingsRepositoryImplTest {
             assertEquals(3, updatedSetting.data.setting.localVersion)
             assertEquals(3, updatedSetting.data.setting.syncedVersion)
             assertEquals(3, updatedSetting.data.setting.serverVersion)
-            assertEquals(3000L, updatedSetting.data.setting.modifiedAt)
+            assertEquals(
+                Instant.fromEpochMilliseconds(3000L),
+                updatedSetting.data.setting.modifiedAt,
+            )
             assertEquals(SyncStatus.SYNCED, updatedSetting.data.setting.syncStatus)
         }
     }
@@ -717,7 +720,7 @@ class SettingsRepositoryImplTest {
             localVersion = localVersion,
             syncedVersion = syncedVersion,
             serverVersion = serverVersion,
-            modifiedAt = modifiedAt,
+            modifiedAt = Instant.fromEpochMilliseconds(modifiedAt),
             syncStatus = syncStatus,
         ),
     )

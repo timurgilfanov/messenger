@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.remote
 
+import kotlin.time.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.Settings
@@ -116,7 +117,7 @@ data class SettingSyncRequest<T>(
     val value: T,
     val clientVersion: Int,
     val lastKnownServerVersion: Int,
-    val modifiedAt: Long,
+    val modifiedAt: Instant,
 )
 
 /**
@@ -141,12 +142,12 @@ sealed class SyncResult {
      * @property serverValue The winning value from server
      * @property serverVersion Server's version number before this sync
      * @property newVersion New version number after conflict resolution
-     * @property serverModifiedAt Timestamp of server's modification (newer than client's)
+     * @property serverModifiedAt Timestamp of server's modification
      */
     data class Conflict(
         val serverValue: String,
         val serverVersion: Int,
         val newVersion: Int,
-        val serverModifiedAt: Long,
+        val serverModifiedAt: Instant,
     ) : SyncResult()
 }

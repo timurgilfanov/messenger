@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Clock
+import kotlin.time.Clock.System.now
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -619,7 +620,7 @@ class SettingsRepositoryImpl @Inject constructor(
                         localVersion = setting.serverVersion,
                         syncedVersion = setting.serverVersion,
                         serverVersion = setting.serverVersion,
-                        modifiedAt = System.currentTimeMillis(),
+                        modifiedAt = now(),
                         syncStatus = SyncStatus.SYNCED,
                     )
 
@@ -628,7 +629,7 @@ class SettingsRepositoryImpl @Inject constructor(
                         localVersion = 1,
                         syncedVersion = 0,
                         serverVersion = 0,
-                        modifiedAt = System.currentTimeMillis(),
+                        modifiedAt = now(),
                         syncStatus = SyncStatus.PENDING,
                     )
 
@@ -637,7 +638,7 @@ class SettingsRepositoryImpl @Inject constructor(
                         localVersion = setting.serverVersion,
                         syncedVersion = setting.serverVersion,
                         serverVersion = setting.serverVersion,
-                        modifiedAt = System.currentTimeMillis(),
+                        modifiedAt = now(),
                         syncStatus = SyncStatus.SYNCED,
                     )
                 }
@@ -777,13 +778,13 @@ private data class ConflictResolution(
 private fun ConflictResolution.toConflictEvent(
     key: SettingKey,
     serverValue: String,
-    serverModifiedAt: Long,
+    serverModifiedAt: Instant,
 ): SettingsConflictEvent = SettingsConflictEvent(
     settingKey = key,
     localValue = localValue,
     serverValue = serverValue,
     acceptedValue = acceptedValue,
-    conflictedAt = Instant.fromEpochMilliseconds(serverModifiedAt),
+    conflictedAt = serverModifiedAt,
 )
 
 private fun GetSettingError.toSyncError(

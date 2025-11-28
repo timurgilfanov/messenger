@@ -49,7 +49,7 @@ data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
             localVersion = uiLanguage.localVersion,
             syncedVersion = uiLanguage.syncedVersion,
             serverVersion = uiLanguage.serverVersion,
-            modifiedAt = uiLanguage.modifiedAt,
+            modifiedAt = uiLanguage.modifiedAt.toEpochMilliseconds(),
             syncStatus = uiLanguage.syncStatus,
         ),
     )
@@ -79,7 +79,7 @@ data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
                     localVersion = uiLanguageEntity.localVersion,
                     syncedVersion = uiLanguageEntity.syncedVersion,
                     serverVersion = uiLanguageEntity.serverVersion,
-                    modifiedAt = uiLanguageEntity.modifiedAt,
+                    modifiedAt = Instant.fromEpochMilliseconds(uiLanguageEntity.modifiedAt),
                     syncStatus = uiLanguageEntity.syncStatus,
                 )
             } else {
@@ -96,6 +96,6 @@ internal fun <T> defaultLocalSetting(value: T, modifiedAt: Instant): LocalSettin
     localVersion = 1,
     syncedVersion = 0,
     serverVersion = 0,
-    modifiedAt = modifiedAt.toEpochMilliseconds(),
+    modifiedAt = modifiedAt,
     syncStatus = SyncStatus.PENDING,
 )

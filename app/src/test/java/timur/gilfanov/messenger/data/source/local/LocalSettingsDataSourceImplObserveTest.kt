@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -103,7 +104,10 @@ class LocalSettingsDataSourceImplObserveTest {
             assertEquals(5, localSettings.uiLanguage.localVersion)
             assertEquals(3, localSettings.uiLanguage.syncedVersion)
             assertEquals(3, localSettings.uiLanguage.serverVersion)
-            assertEquals(1234567890L, localSettings.uiLanguage.modifiedAt)
+            assertEquals(
+                Instant.fromEpochMilliseconds(1234567890L),
+                localSettings.uiLanguage.modifiedAt,
+            )
             assertEquals(SyncStatus.PENDING, localSettings.uiLanguage.syncStatus)
         }
     }

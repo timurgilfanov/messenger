@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.data.source.local
 
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.time.Instant
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Unit
@@ -42,7 +43,7 @@ class LocalSettingsTest {
         assertEquals(5, result.uiLanguage.localVersion)
         assertEquals(3, result.uiLanguage.syncedVersion)
         assertEquals(2, result.uiLanguage.serverVersion)
-        assertEquals(1234567890L, result.uiLanguage.modifiedAt)
+        assertEquals(Instant.fromEpochMilliseconds(1234567890L), result.uiLanguage.modifiedAt)
         assertEquals(SyncStatus.PENDING, result.uiLanguage.syncStatus)
     }
 
@@ -159,7 +160,7 @@ class LocalSettingsTest {
                 localVersion = 5,
                 syncedVersion = 3,
                 serverVersion = 2,
-                modifiedAt = 1234567890L,
+                modifiedAt = Instant.fromEpochMilliseconds(1234567890L),
                 syncStatus = SyncStatus.PENDING,
             ),
         )
@@ -189,7 +190,7 @@ class LocalSettingsTest {
                 localVersion = 5,
                 syncedVersion = 3,
                 serverVersion = 2,
-                modifiedAt = 1234567890L,
+                modifiedAt = Instant.fromEpochMilliseconds(1234567890L),
                 syncStatus = SyncStatus.PENDING,
             ),
         )

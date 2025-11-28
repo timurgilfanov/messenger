@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.data.source.local
 
 import androidx.annotation.IntRange
+import kotlin.time.Instant
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 
 /**
@@ -30,7 +31,7 @@ data class LocalSetting<T>(
     @param:IntRange(from = 1) val localVersion: Int,
     @param:IntRange(from = 0) val syncedVersion: Int,
     @param:IntRange(from = 0) val serverVersion: Int,
-    val modifiedAt: Long,
+    val modifiedAt: Instant,
     val syncStatus: SyncStatus,
 ) {
     init {

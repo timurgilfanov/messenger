@@ -12,6 +12,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -599,7 +600,7 @@ class LocalSettingsDataSourceImplExceptionTest {
                 localVersion = localVersion,
                 syncedVersion = syncedVersion,
                 serverVersion = serverVersion,
-                modifiedAt = modifiedAt,
+                modifiedAt = Instant.fromEpochMilliseconds(modifiedAt),
                 syncStatus = syncStatus,
             ),
         )

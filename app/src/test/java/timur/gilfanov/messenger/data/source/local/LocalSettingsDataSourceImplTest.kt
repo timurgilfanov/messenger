@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -383,7 +384,7 @@ class LocalSettingsDataSourceImplTest {
                 localVersion = localVersion,
                 syncedVersion = syncedVersion,
                 serverVersion = serverVersion,
-                modifiedAt = modifiedAt,
+                modifiedAt = Instant.fromEpochMilliseconds(modifiedAt),
                 syncStatus = syncStatus,
             ),
         )

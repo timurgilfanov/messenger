@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.room.withTransaction
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -687,7 +688,7 @@ private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSet
                     localVersion = this.localVersion,
                     syncedVersion = this.syncedVersion,
                     serverVersion = this.serverVersion,
-                    modifiedAt = this.modifiedAt,
+                    modifiedAt = Instant.fromEpochMilliseconds(this.modifiedAt),
                     syncStatus = this.syncStatus,
                 ),
             )
@@ -714,7 +715,7 @@ private fun TypedLocalSetting.toSettingEntity(userId: UserId): SettingEntity = w
         localVersion = this.setting.localVersion,
         syncedVersion = this.setting.syncedVersion,
         serverVersion = this.setting.serverVersion,
-        modifiedAt = this.setting.modifiedAt,
+        modifiedAt = this.setting.modifiedAt.toEpochMilliseconds(),
         syncStatus = this.setting.syncStatus,
     )
 }

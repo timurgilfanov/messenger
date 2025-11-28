@@ -6,6 +6,7 @@ sealed interface GetSettingError {
     data object ConcurrentModificationError : GetSettingError
     data object DiskIOError : GetSettingError
 
+    data object StorageFull : GetSettingError
     data object DatabaseCorrupted : GetSettingError
     data object AccessDenied : GetSettingError
     data object ReadOnlyDatabase : GetSettingError
@@ -43,6 +44,7 @@ sealed interface GetUnsyncedSettingsError {
     data object ConcurrentModificationError : GetUnsyncedSettingsError
     data object DiskIOError : GetUnsyncedSettingsError
 
+    data object StorageFull : GetUnsyncedSettingsError
     data object DatabaseCorrupted : GetUnsyncedSettingsError
     data object AccessDenied : GetUnsyncedSettingsError
     data object ReadOnlyDatabase : GetUnsyncedSettingsError

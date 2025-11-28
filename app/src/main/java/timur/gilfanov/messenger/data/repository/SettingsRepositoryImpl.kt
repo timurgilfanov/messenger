@@ -798,6 +798,7 @@ private fun GetSettingError.toSyncError(
         GetSettingError.DiskIOError,
         -> SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable
 
+        GetSettingError.StorageFull -> SyncSettingRepositoryError.LocalStorageError.StorageFull
         GetSettingError.DatabaseCorrupted -> SyncSettingRepositoryError.LocalStorageError.Corrupted
         GetSettingError.AccessDenied -> SyncSettingRepositoryError.LocalStorageError.AccessDenied
         GetSettingError.ReadOnlyDatabase -> SyncSettingRepositoryError.LocalStorageError.ReadOnly
@@ -848,6 +849,9 @@ private fun GetUnsyncedSettingsError.toBatchSyncError(
             GetUnsyncedSettingsError.ConcurrentModificationError,
             GetUnsyncedSettingsError.DiskIOError,
             -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
+
+            GetUnsyncedSettingsError.StorageFull ->
+                SyncAllSettingsRepositoryError.LocalStorageError.StorageFull
 
             GetUnsyncedSettingsError.DatabaseCorrupted ->
                 SyncAllSettingsRepositoryError.LocalStorageError.Corrupted

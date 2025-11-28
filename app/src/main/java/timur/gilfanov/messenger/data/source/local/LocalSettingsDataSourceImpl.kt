@@ -281,6 +281,15 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 exception = exception,
             )
 
+        is SQLiteFullException -> {
+            logger.e(
+                TAG,
+                "Storage full while getting setting ${key.key} for user ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetSettingError.StorageFull)
+        }
+
         is SQLiteDatabaseCorruptException -> {
             logger.e(
                 TAG,
@@ -406,6 +415,15 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 message = "Failed to fetch unsynced settings for ${userId.id}",
                 exception = exception,
             )
+
+        is SQLiteFullException -> {
+            logger.e(
+                TAG,
+                "Storage full while fetching unsynced settings for ${userId.id}",
+                exception,
+            )
+            RetryDecision.Fail(GetUnsyncedSettingsError.StorageFull)
+        }
 
         is SQLiteDatabaseCorruptException -> {
             logger.e(

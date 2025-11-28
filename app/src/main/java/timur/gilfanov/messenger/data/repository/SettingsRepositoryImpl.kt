@@ -10,7 +10,6 @@ import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.time.Clock
 import kotlin.time.Clock.System.now
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
@@ -696,9 +695,8 @@ class SettingsRepositoryImpl @Inject constructor(
     private suspend fun upsertDefaultSettings(
         userId: UserId,
     ): ResultWithError<Settings, GetSettingsRepositoryError> {
-        val now = Clock.System.now()
         val defaultLocalSettings = LocalSettings(
-            uiLanguage = defaultLocalSetting(defaultSettings.uiLanguage, now),
+            uiLanguage = defaultLocalSetting(defaultSettings.uiLanguage, now()),
         )
         val typedSettings = listOf(
             TypedLocalSetting.UiLanguage(setting = defaultLocalSettings.uiLanguage),

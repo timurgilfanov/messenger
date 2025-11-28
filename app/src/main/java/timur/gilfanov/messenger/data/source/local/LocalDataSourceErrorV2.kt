@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.data.source.local
 
-import timur.gilfanov.messenger.data.source.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.user.repository.ErrorReason
 
 /**
  * Common errors for local data source operations.

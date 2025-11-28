@@ -125,10 +125,12 @@ class SyncSettingWorker @AssistedInject constructor(
                 logger.w(TAG, "Transient remote error: $error")
                 Result.retry()
             }
-            is RepositoryError.Failed.Cooldown,
-            RepositoryError.Failed.UnknownServiceError,
-            -> {
-                logger.e(TAG, "Remote error: $error")
+            is RepositoryError.Failed.Cooldown -> {
+                logger.e(TAG, "Remote error - cooldown: ${error.remaining}")
+                Result.failure()
+            }
+            is RepositoryError.Failed.UnknownServiceError -> {
+                logger.e(TAG, "Remote error - unknown service error: ${error.cause}")
                 Result.failure()
             }
         }

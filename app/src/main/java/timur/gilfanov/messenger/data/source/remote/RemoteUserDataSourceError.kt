@@ -104,6 +104,6 @@ fun RemoteUserDataSourceError.toRepositoryError(): RepositoryError = when (this)
                 RepositoryError.Failed.NetworkNotAvailable
 
             is RemoteDataSourceErrorV2.UnknownServiceError ->
-                RepositoryError.Failed.UnknownServiceError
+                RepositoryError.Failed.UnknownServiceError(cause = error.reason)
         }
 }

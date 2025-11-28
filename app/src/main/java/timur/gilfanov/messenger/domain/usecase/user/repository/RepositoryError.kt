@@ -39,8 +39,12 @@ sealed interface RepositoryError {
         /** Remote service returned a cooldown/too-many-requests window; includes remaining wait. */
         data class Cooldown(val remaining: Duration) : Failed
 
-        /** An unclassified infrastructure error occurred. */
-        data object UnknownServiceError : Failed
+        /**
+         * An unclassified infrastructure error occurred.
+         *
+         * @property cause Reason for the error
+         */
+        data class UnknownServiceError(val cause: ErrorReason) : Failed
     }
 
     /**

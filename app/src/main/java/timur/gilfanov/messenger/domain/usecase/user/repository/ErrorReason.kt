@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.data.source
+package timur.gilfanov.messenger.domain.usecase.user.repository
 
 /**
  * A wrapper for error reason messages from data source operations.
@@ -19,23 +19,3 @@ package timur.gilfanov.messenger.data.source
  */
 @JvmInline
 value class ErrorReason(val value: String)
-
-/**
- * Extracts an [ErrorReason] from a [Throwable] for logging purposes.
- *
- * Converts the exception to a human-readable reason by extracting:
- * 1. The exception's message if available
- * 2. The exception's class name if message is null
- * 3. "Unnamed exception" as a fallback
- *
- * Example:
- * ```
- * try {
- *     dataSource.fetchData()
- * } catch (e: IOException) {
- *     return Failure(DataSourceError(e.errorReason))
- * }
- * ```
- */
-val Throwable.errorReason: ErrorReason
-    get() = ErrorReason(this.message ?: this::class.simpleName ?: "Unnamed exception")

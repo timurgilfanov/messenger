@@ -1,8 +1,6 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsChangeBackupError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SyncLocalToRemoteRepositoryError
 
 /**
  * Errors specific to remote user data operations.
@@ -69,12 +67,6 @@ sealed interface RemoteUserDataSourceError {
      */
     data class RemoteDataSource(val error: RemoteDataSourceErrorV2) : RemoteUserDataSourceError
 }
-
-fun RemoteUserDataSourceError.toSettingsChangeBackupError(): SettingsChangeBackupError =
-    this.toRepositoryError()
-
-fun RemoteUserDataSourceError.toSyncLocalToRemoteError(): SyncLocalToRemoteRepositoryError =
-    this.toRepositoryError()
 
 fun RemoteUserDataSourceError.toRepositoryError(): RepositoryError = when (this) {
     RemoteUserDataSourceError.Authentication.SessionRevoked,

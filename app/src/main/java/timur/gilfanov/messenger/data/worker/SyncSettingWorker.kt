@@ -7,10 +7,13 @@ import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.UUID
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.UserId
-import timur.gilfanov.messenger.domain.usecase.user.SettingsSyncOutcome
+import timur.gilfanov.messenger.domain.usecase.user.SyncSettingError
 import timur.gilfanov.messenger.domain.usecase.user.SyncSettingUseCase
+import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncSettingRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 @HiltWorker
@@ -57,21 +60,83 @@ class SyncSettingWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        return when (syncSetting(userId, settingKey)) {
-            SettingsSyncOutcome.Success -> {
+        return when (val outcome = syncSetting(userId, settingKey)) {
+            is ResultWithError.Success -> {
                 if (runAttemptCount > 0) {
                     logger.i(TAG, "Setting sync succeeded after $runAttemptCount retries")
                 }
                 Result.success()
             }
-            SettingsSyncOutcome.Retry -> {
-                logger.w(
-                    TAG,
-                    "Setting sync failed (attempt ${runAttemptCount + 1}/$MAX_RETRY_ATTEMPTS)",
-                )
+            is ResultWithError.Failure -> {
+                when (val error = outcome.error) {
+                    SyncSettingError.IdentityNotAvailable -> {
+                        logger.e(TAG, "Identity not available for user ${userId.id}")
+                        Result.retry()
+                    }
+                    is SyncSettingError.SyncFailed -> {
+                        handleSyncError(error.error)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleSyncError(error: SyncSettingRepositoryError): Result = when (error) {
+        is SyncSettingRepositoryError.LocalStorageError -> {
+            when (error) {
+                SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable -> {
+                    logger.w(TAG, "Local storage temporarily unavailable")
+                    Result.retry()
+                }
+                SyncSettingRepositoryError.LocalStorageError.StorageFull,
+                SyncSettingRepositoryError.LocalStorageError.AccessDenied,
+                SyncSettingRepositoryError.LocalStorageError.ReadOnly,
+                SyncSettingRepositoryError.LocalStorageError.Corrupted,
+                -> {
+                    logger.e(TAG, "Permanent local storage error: $error")
+                    Result.failure()
+                }
+                is SyncSettingRepositoryError.LocalStorageError.UnknownError -> {
+                    logger.e(TAG, "Unknown local storage error", error.cause)
+                    Result.failure()
+                }
+            }
+        }
+        is SyncSettingRepositoryError.RemoteSyncFailed -> {
+            handleRemoteError(error.error)
+        }
+        SyncSettingRepositoryError.SettingNotFound -> {
+            logger.e(TAG, "Setting not found")
+            Result.failure()
+        }
+    }
+
+    private fun handleRemoteError(error: RepositoryError): Result = when (error) {
+        RepositoryError.Unauthenticated,
+        RepositoryError.InsufficientPermissions,
+        -> {
+            logger.e(TAG, "Authentication error: $error")
+            Result.failure()
+        }
+        is RepositoryError.Failed -> when (error) {
+            RepositoryError.Failed.NetworkNotAvailable,
+            RepositoryError.Failed.ServiceDown,
+            -> {
+                logger.w(TAG, "Transient remote error: $error")
                 Result.retry()
             }
-            SettingsSyncOutcome.Failure -> Result.failure()
+            is RepositoryError.Failed.Cooldown,
+            RepositoryError.Failed.UnknownServiceError,
+            -> {
+                logger.e(TAG, "Remote error: $error")
+                Result.failure()
+            }
+        }
+        is RepositoryError.UnknownStatus -> when (error) {
+            is RepositoryError.UnknownStatus.ServiceTimeout -> {
+                logger.w(TAG, "Service timeout")
+                Result.retry()
+            }
         }
     }
 

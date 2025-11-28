@@ -63,7 +63,7 @@ sealed interface SyncSettingRepositoryError {
          *
          * Maps from data source error: UnknownError. Contains the original cause for diagnostics.
          */
-        data class UnknownError(val cause: Throwable?) : LocalStorageError
+        data class UnknownError(val cause: Throwable) : LocalStorageError
     }
 
     /**

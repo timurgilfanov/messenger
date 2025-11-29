@@ -67,6 +67,7 @@ class SettingsRepositoryImplTest {
     private lateinit var workManager: WorkManager
     private lateinit var repository: SettingsRepositoryImpl
     private lateinit var testScope: CoroutineScope
+    private val defaultSettings = Settings(uiLanguage = UiLanguage.English)
 
     @Before
     fun setup() {
@@ -89,7 +90,7 @@ class SettingsRepositoryImplTest {
             remoteDataSource = remoteDataSource,
             workManager = workManager,
             logger = NoOpLogger(),
-            defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            defaultSettings = defaultSettings,
         )
     }
 
@@ -102,9 +103,7 @@ class SettingsRepositoryImplTest {
 
             val result = awaitItem()
             assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
-            assertEquals(UiLanguage.English, result.data.uiLanguage)
-            // TODO Check settings is default. What we need to do with default status?
-            // assertEquals(true, result.data.metadata.isDefault)
+            assertEquals(defaultSettings.uiLanguage, result.data.uiLanguage)
         }
     }
 

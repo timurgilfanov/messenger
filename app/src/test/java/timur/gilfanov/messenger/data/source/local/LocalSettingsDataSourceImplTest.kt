@@ -265,14 +265,14 @@ class LocalSettingsDataSourceImplTest {
 
     // getUnsyncedSettings() tests
     @Test
-    fun `getUnsyncedSettings returns only unsynced settings`() = runTest {
+    fun `getUnsyncedSettings returns unsynced settings`() = runTest {
         // Given
         val syncedEntity = createSettingEntity(
             userId = testUserId,
             key = SettingKey.UI_LANGUAGE,
-            value = UiLanguage.English.toStorageValue(),
+            value = UiLanguage.German.toStorageValue(),
             localVersion = 2,
-            syncedVersion = 2, // Synced
+            syncedVersion = 1, // Unsynced
         )
         databaseRule.database.settingsDao().upsert(syncedEntity)
 
@@ -280,8 +280,10 @@ class LocalSettingsDataSourceImplTest {
         val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
 
         // Then
-        assertIs<ResultWithError.Success<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
-        assertEquals(0, result.data.size)
+        assertIs<ResultWithError.Success<List<TypedLocalSetting>, *>>(result)
+        assertEquals(1, result.data.size)
+        assertIs<TypedLocalSetting.UiLanguage>(result.data[0])
+        assertEquals(UiLanguage.German, result.data[0].setting.value)
     }
 
     @Test

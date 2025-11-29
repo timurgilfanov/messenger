@@ -37,6 +37,7 @@ class RemoteSettingsDataSourceFakeTest {
         val remoteSettings = result.data
         val uiLanguageItem = remoteSettings.uiLanguage
         assertIs<RemoteSetting.Valid<UiLanguage>>(uiLanguageItem)
+        assertEquals(UiLanguage.English, uiLanguageItem.value)
         assertEquals(1, uiLanguageItem.serverVersion)
     }
 
@@ -51,6 +52,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, *>>(getResultBefore)
         val remoteSettingsBefore = getResultBefore.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettingsBefore.uiLanguage)
+        assertEquals(UiLanguage.English, remoteSettingsBefore.uiLanguage.value)
         assertEquals(1, remoteSettingsBefore.uiLanguage.serverVersion)
 
         dataSource.changeUiLanguage(testIdentity, UiLanguage.German)
@@ -59,6 +61,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, RemoteUserDataSourceError>>(getResultAfter)
         val remoteSettingsAfter = getResultAfter.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettingsAfter.uiLanguage)
+        assertEquals(UiLanguage.German, remoteSettingsAfter.uiLanguage.value)
         assertEquals(2, remoteSettingsAfter.uiLanguage.serverVersion)
     }
 
@@ -73,6 +76,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, *>>(getResultBefore)
         val remoteSettingsBefore = getResultBefore.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettingsBefore.uiLanguage)
+        assertEquals(UiLanguage.English, remoteSettingsBefore.uiLanguage.value)
         assertEquals(1, remoteSettingsBefore.uiLanguage.serverVersion)
 
         val newSettings = Settings(uiLanguage = UiLanguage.German)
@@ -82,6 +86,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, *>>(getResultAfter)
         val remoteSettingsAfter = getResultAfter.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettingsAfter.uiLanguage)
+        assertEquals(UiLanguage.German, remoteSettingsAfter.uiLanguage.value)
         assertEquals(2, remoteSettingsAfter.uiLanguage.serverVersion)
     }
 
@@ -96,6 +101,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, *>>(getResultBefore)
         val remoteSettingsBefore = getResultBefore.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettingsBefore.uiLanguage)
+        assertEquals(UiLanguage.English, remoteSettingsBefore.uiLanguage.value)
         assertEquals(1, remoteSettingsBefore.uiLanguage.serverVersion)
 
         val sameSettings = Settings(uiLanguage = UiLanguage.English)
@@ -105,6 +111,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, RemoteUserDataSourceError>>(getResultAfter)
         val remoteSettingsAfter = getResultAfter.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettingsAfter.uiLanguage)
+        assertEquals(UiLanguage.English, remoteSettingsAfter.uiLanguage.value)
         assertEquals(1, remoteSettingsAfter.uiLanguage.serverVersion)
     }
 
@@ -119,6 +126,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, RemoteUserDataSourceError>>(getResult1)
         val remoteSettings1 = getResult1.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettings1.uiLanguage)
+        assertEquals(UiLanguage.English, remoteSettings1.uiLanguage.value)
         assertEquals(1, remoteSettings1.uiLanguage.serverVersion)
 
         dataSource.changeUiLanguage(testIdentity, UiLanguage.German)
@@ -127,6 +135,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, RemoteUserDataSourceError>>(getResult2)
         val remoteSettings2 = getResult2.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettings2.uiLanguage)
+        assertEquals(UiLanguage.German, remoteSettings2.uiLanguage.value)
         assertEquals(2, remoteSettings2.uiLanguage.serverVersion)
 
         dataSource.changeUiLanguage(testIdentity, UiLanguage.English)
@@ -135,6 +144,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, RemoteUserDataSourceError>>(getResult3)
         val remoteSettings3 = getResult3.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettings3.uiLanguage)
+        assertEquals(UiLanguage.English, remoteSettings3.uiLanguage.value)
         assertEquals(3, remoteSettings3.uiLanguage.serverVersion)
     }
 
@@ -151,6 +161,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, RemoteUserDataSourceError>>(getResult1)
         val remoteSettings1 = getResult1.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettings1.uiLanguage)
+        assertEquals(UiLanguage.German, remoteSettings1.uiLanguage.value)
         assertEquals(2, remoteSettings1.uiLanguage.serverVersion)
 
         dataSource.put(testIdentity, Settings(uiLanguage = UiLanguage.English))
@@ -159,6 +170,7 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, RemoteUserDataSourceError>>(getResult2)
         val remoteSettings2 = getResult2.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(remoteSettings2.uiLanguage)
+        assertEquals(UiLanguage.English, remoteSettings2.uiLanguage.value)
         assertEquals(3, remoteSettings2.uiLanguage.serverVersion)
     }
 
@@ -188,12 +200,14 @@ class RemoteSettingsDataSourceFakeTest {
         assertIs<ResultWithError.Success<RemoteSettings, RemoteUserDataSourceError>>(result1)
         val settings1 = result1.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(settings1.uiLanguage)
+        assertEquals(UiLanguage.German, settings1.uiLanguage.value)
         assertEquals(2, settings1.uiLanguage.serverVersion)
 
         val result2 = dataSource.get(identity2)
         assertIs<ResultWithError.Success<RemoteSettings, RemoteUserDataSourceError>>(result2)
         val settings2 = result2.data
         assertIs<RemoteSetting.Valid<UiLanguage>>(settings2.uiLanguage)
+        assertEquals(UiLanguage.English, settings2.uiLanguage.value)
         assertEquals(1, settings2.uiLanguage.serverVersion)
     }
 }

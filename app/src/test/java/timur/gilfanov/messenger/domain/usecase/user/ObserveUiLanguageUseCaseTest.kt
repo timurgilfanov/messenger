@@ -188,12 +188,13 @@ class ObserveUiLanguageUseCaseTest {
     }
 
     @Test
-    fun `handles multiple repository errors in flow`() = runTest {
+    fun `handles multiple repository errors and recovery in flow`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
                 emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
+                emit(Success(Settings(UiLanguage.English)))
             },
         )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
@@ -210,6 +211,10 @@ class ObserveUiLanguageUseCaseTest {
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(second)
             assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(second.error)
             assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(second.error.error)
+
+            val third = awaitItem()
+            assertIs<Success<UiLanguage, ObserveUiLanguageError>>(third)
+            assertEquals(UiLanguage.English, third.data)
 
             awaitComplete()
         }

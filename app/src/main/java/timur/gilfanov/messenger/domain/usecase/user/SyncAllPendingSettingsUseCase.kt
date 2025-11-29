@@ -15,7 +15,7 @@ class SyncAllPendingSettingsUseCase(
     private val logger: Logger,
 ) {
     companion object {
-        private const val TAG = "SyncAllSettingsUseCase"
+        private const val TAG = "SyncAllPendingSettingsUseCase"
     }
 
     suspend operator fun invoke(): ResultWithError<Unit, SyncAllPendingSettingsError> =

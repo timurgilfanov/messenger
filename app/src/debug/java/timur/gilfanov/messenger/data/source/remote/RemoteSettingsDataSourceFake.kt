@@ -65,10 +65,7 @@ class RemoteSettingsDataSourceFake(
         }
     }
 
-    private fun convertSettingsToDTOs(
-        settings: Settings,
-        userId: UserId,
-    ): List<RemoteSettingDto> {
+    private fun convertSettingsToDTOs(settings: Settings, userId: UserId): List<RemoteSettingDto> {
         val versionMap = settingVersions.value[userId] ?: emptyMap()
         val uiLanguageValue = when (settings.uiLanguage) {
             UiLanguage.English -> "English"

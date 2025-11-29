@@ -7,7 +7,7 @@ import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.UUID
-import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.SyncSettingError
@@ -60,15 +60,15 @@ class SyncSettingWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        return when (val outcome = syncSetting(userId, settingKey)) {
-            is ResultWithError.Success -> {
+        return syncSetting(userId, settingKey).fold(
+            onSuccess = {
                 if (runAttemptCount > 0) {
                     logger.i(TAG, "Setting sync succeeded after $runAttemptCount retries")
                 }
                 Result.success()
-            }
-            is ResultWithError.Failure -> {
-                when (val error = outcome.error) {
+            },
+            onFailure = { error ->
+                when (error) {
                     SyncSettingError.IdentityNotAvailable -> {
                         logger.e(TAG, "Identity not available for user ${userId.id}")
                         Result.retry()
@@ -77,8 +77,8 @@ class SyncSettingWorker @AssistedInject constructor(
                         handleSyncError(error.error)
                     }
                 }
-            }
-        }
+            },
+        )
     }
 
     private fun handleSyncError(error: SyncSettingRepositoryError): Result = when (error) {

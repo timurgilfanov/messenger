@@ -6,7 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.usecase.user.SyncAllPendingSettingsError
 import timur.gilfanov.messenger.domain.usecase.user.SyncAllPendingSettingsUseCase
 import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
@@ -25,12 +25,10 @@ class SyncAllSettingsWorker @AssistedInject constructor(
         private const val TAG = "SyncAllSettingsWorker"
     }
 
-    override suspend fun doWork(): Result = when (val outcome = syncAllPendingSettings()) {
-        is ResultWithError.Success -> {
-            Result.success()
-        }
-        is ResultWithError.Failure -> {
-            when (val error = outcome.error) {
+    override suspend fun doWork(): Result = syncAllPendingSettings().fold(
+        onSuccess = { Result.success() },
+        onFailure = { error ->
+            when (error) {
                 SyncAllPendingSettingsError.IdentityNotAvailable -> {
                     logger.e(TAG, "Identity not available for sync")
                     Result.retry()
@@ -39,8 +37,8 @@ class SyncAllSettingsWorker @AssistedInject constructor(
                     handleSyncError(error.error)
                 }
             }
-        }
-    }
+        },
+    )
 
     private fun handleSyncError(error: SyncAllSettingsRepositoryError): Result = when (error) {
         is SyncAllSettingsRepositoryError.LocalStorageError -> {

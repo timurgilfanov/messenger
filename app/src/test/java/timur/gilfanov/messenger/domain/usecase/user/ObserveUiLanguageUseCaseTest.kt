@@ -138,7 +138,7 @@ class ObserveUiLanguageUseCaseTest {
     }
 
     @Test
-    fun `emits repository error`() = runTest {
+    fun `emits repository error on temporary errors`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {

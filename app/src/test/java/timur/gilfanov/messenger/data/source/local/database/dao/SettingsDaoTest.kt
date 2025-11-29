@@ -126,7 +126,14 @@ class SettingsDaoTest {
         // Then
         val retrieved = settingsDao.get(testUserId, "ui_language")
         assertNotNull(retrieved)
+        assertEquals(testUserId, retrieved.userId)
+        assertEquals("ui_language", retrieved.key)
         assertEquals("English", retrieved.value)
+        assertEquals(1, retrieved.localVersion)
+        assertEquals(0, retrieved.syncedVersion)
+        assertEquals(0, retrieved.serverVersion)
+        assertEquals(1000L, retrieved.modifiedAt)
+        assertEquals(SyncStatus.SYNCED, retrieved.syncStatus)
     }
 
     @Test

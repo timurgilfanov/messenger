@@ -97,7 +97,7 @@ typealias SyncBatchError = RemoteUserDataSourceError
  * @property value Raw string value from server
  * @property version Server's version number for this setting
  */
-data class RemoteSettingItem(val key: String, val value: String, val version: Int)
+data class RemoteSettingDto(val key: String, val value: String, val version: Int)
 
 /**
  * Generic setting synchronization request with typed domain value.

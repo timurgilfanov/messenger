@@ -59,16 +59,16 @@ class RemoteSettingsDataSourceFake(
         return if (userSettings == null) {
             ResultWithError.Failure(RemoteUserDataSourceError.Authentication.SessionRevoked)
         } else {
-            val items = convertSettingsToItems(userSettings, identity.userId)
+            val items = convertSettingsToDTOs(userSettings, identity.userId)
             val remoteSettings = RemoteSettings.fromItems(logger, items)
             ResultWithError.Success(remoteSettings)
         }
     }
 
-    private fun convertSettingsToItems(
+    private fun convertSettingsToDTOs(
         settings: Settings,
         userId: UserId,
-    ): List<RemoteSettingItem> {
+    ): List<RemoteSettingDto> {
         val versionMap = settingVersions.value[userId] ?: emptyMap()
         val uiLanguageValue = when (settings.uiLanguage) {
             UiLanguage.English -> "English"
@@ -76,7 +76,7 @@ class RemoteSettingsDataSourceFake(
         }
 
         return listOf(
-            RemoteSettingItem(
+            RemoteSettingDto(
                 key = SettingKey.UI_LANGUAGE.key,
                 value = uiLanguageValue,
                 version = versionMap[SettingKey.UI_LANGUAGE.key] ?: 1,

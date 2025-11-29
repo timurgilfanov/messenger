@@ -8,7 +8,7 @@ import timur.gilfanov.messenger.util.Logger
 /**
  * Type-safe wrapper for user settings retrieved from remote server.
  *
- * Provides a typed alternative to working directly with [RemoteSettingItem] flat DTOs.
+ * Provides a typed alternative to working directly with [RemoteSettingDto] flat DTOs.
  * Each setting property is wrapped in [RemoteSetting] to handle parsing failures
  * and missing values from server gracefully.
  *
@@ -30,7 +30,7 @@ data class RemoteSettings(val uiLanguage: RemoteSetting<UiLanguage>) {
          * @param items List of setting items from server
          * @return Typed RemoteSettings with all settings populated (using appropriate states)
          */
-        fun fromItems(logger: Logger, items: List<RemoteSettingItem>): RemoteSettings {
+        fun fromItems(logger: Logger, items: List<RemoteSettingDto>): RemoteSettings {
             val uiLanguage = items.mapToRemoteSetting(
                 key = SettingKey.UI_LANGUAGE,
                 mapToDomainOrNull = String::toUiLanguageOrNull,
@@ -51,7 +51,7 @@ private const val TAG = "RemoteSettings"
  * @param logger Logger for diagnostic warnings
  * @return RemoteSetting in appropriate state (Valid, InvalidValue, or Missing)
  */
-private fun <T> List<RemoteSettingItem>.mapToRemoteSetting(
+private fun <T> List<RemoteSettingDto>.mapToRemoteSetting(
     key: SettingKey,
     mapToDomainOrNull: String.() -> T?,
     logger: Logger,

@@ -174,7 +174,7 @@ class RemoteSettingsDataSourceFakeTest {
     }
 
     @Test
-    fun `changing setting for one user do not affect other user`() = runTest {
+    fun `changing setting for one user does not affect other user`() = runTest {
         val user1 = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
         val user2 = UserId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
         val identity1 = Identity(

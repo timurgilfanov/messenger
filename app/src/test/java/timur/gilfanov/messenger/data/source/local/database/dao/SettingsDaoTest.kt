@@ -160,7 +160,7 @@ class SettingsDaoTest {
     }
 
     @Test
-    fun `observeAllByUser returns only settings for specified user`() = runTest {
+    fun `getAll returns only settings for specified user`() = runTest {
         // Given
         val user1Id = UUID.fromString("00000000-0000-0000-0000-000000000001").toString()
         val user2Id = UUID.fromString("00000000-0000-0000-0000-000000000002").toString()

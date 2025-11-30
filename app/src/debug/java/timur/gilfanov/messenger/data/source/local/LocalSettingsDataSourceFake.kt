@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.data.source.local
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
@@ -21,6 +22,8 @@ class LocalSettingsDataSourceFake(
     private var getSettingError: GetSettingError? = null
     private var getUnsyncedError: GetUnsyncedSettingsError? = null
     private var upsertError: UpsertSettingError? = null
+    private var transformError: TransformSettingError? = null
+    private var observeError: GetSettingsLocalDataSourceError? = null
 
     fun setGetSettingBehavior(error: GetSettingError?) {
         getSettingError = error
@@ -34,9 +37,19 @@ class LocalSettingsDataSourceFake(
         upsertError = error
     }
 
+    fun setTransformBehavior(error: TransformSettingError?) {
+        transformError = error
+    }
+
+    fun setObserveBehavior(error: GetSettingsLocalDataSourceError?) {
+        observeError = error
+    }
+
     override fun observe(
         userId: UserId,
     ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>> {
+        observeError?.let { return flowOf(ResultWithError.Failure(it)) }
+
         val userIdString = userId.id.toString()
         return settings.map { map ->
             val entities = map.values.filter { it.userId == userIdString }
@@ -80,6 +93,8 @@ class LocalSettingsDataSourceFake(
         userId: UserId,
         transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, TransformSettingError> {
+        transformError?.let { return ResultWithError.Failure(it) }
+
         val userIdString = userId.id.toString()
         val entities = settings.value.values.filter { it.userId == userIdString }
 

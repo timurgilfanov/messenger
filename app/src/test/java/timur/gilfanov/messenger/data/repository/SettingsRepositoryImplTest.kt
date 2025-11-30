@@ -18,6 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.data.source.local.GetSettingError
+import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.GetUnsyncedSettingsError
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
@@ -589,6 +590,73 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
+    fun `syncAllPendingSettings keeps newer local value when setting changes mid-sync`() = runTest {
+        val initial = createTypedLocalSetting(
+            value = UiLanguage.German,
+            localVersion = 2,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 2000L,
+        )
+        localDataSource.upsert(testUserId, initial)
+
+        remoteDataSource.setSyncBehavior { request ->
+            val updated = createTypedLocalSetting(
+                value = UiLanguage.English,
+                localVersion = 3,
+                syncedVersion = 1,
+                serverVersion = 1,
+                modifiedAt = 3000L,
+            )
+            runBlocking { localDataSource.upsert(testUserId, updated) }
+            ResultWithError.Success(
+                SyncResult.Success(newVersion = request.request.clientVersion + 1),
+            )
+        }
+
+        val result = repository.syncAllPendingSettings(identity)
+
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+        val setting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(setting)
+        assertIs<TypedLocalSetting.UiLanguage>(setting.data)
+        assertEquals(UiLanguage.English, setting.data.setting.value)
+        assertEquals(3, setting.data.setting.localVersion)
+        assertEquals(2, setting.data.setting.syncedVersion)
+        assertEquals(3, setting.data.setting.serverVersion)
+    }
+
+    @Test
+    fun `syncAllPendingSettings returns StorageFull when conflict resolution cannot be saved`() =
+        runTest {
+            val setting = createTypedLocalSetting(
+                value = UiLanguage.German,
+                localVersion = 2,
+                syncedVersion = 1,
+                serverVersion = 1,
+                modifiedAt = 2000L,
+            )
+            localDataSource.upsert(testUserId, setting)
+
+            remoteDataSource.setSyncBehavior {
+                ResultWithError.Success(
+                    SyncResult.Conflict(
+                        serverValue = "English",
+                        serverVersion = 2,
+                        newVersion = 3,
+                        serverModifiedAt = Instant.fromEpochMilliseconds(4000L),
+                    ),
+                )
+            }
+            localDataSource.setUpsertBehavior(UpsertSettingError.StorageFull)
+
+            val result = repository.syncAllPendingSettings(identity)
+
+            assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
+            assertIs<SyncAllSettingsRepositoryError.LocalStorageError.StorageFull>(result.error)
+        }
+
+    @Test
     fun `syncAllPendingSettings returns ReadOnly when database is read-only`() = runTest {
         localDataSource.setGetUnsyncedBehavior(GetUnsyncedSettingsError.ReadOnlyDatabase)
 
@@ -696,6 +764,65 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
+    fun `observeSettings maps local AccessDenied errors`() = runTest {
+        val failingLocal = LocalSettingsDataSourceFake().apply {
+            setObserveBehavior(GetSettingsLocalDataSourceError.Recoverable.AccessDenied)
+        }
+        val repo = SettingsRepositoryImpl(
+            localDataSource = failingLocal,
+            remoteDataSource = RemoteSettingsDataSourceStub().apply {
+                setGetResponse(
+                    ResultWithError.Failure(
+                        RemoteUserDataSourceError.Authentication.SessionRevoked,
+                    ),
+                )
+            },
+            syncScheduler = syncSchedulerStub,
+            logger = NoOpLogger(),
+            defaultSettings = defaultSettings,
+        )
+
+        repo.observeSettings(identity).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(result)
+            assertIs<GetSettingsRepositoryError.Recoverable.AccessDenied>(result.error)
+
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `observeSettings maps local unknown errors`() = runTest {
+        val cause = IllegalStateException("observe failed")
+        val failingLocal = LocalSettingsDataSourceFake().apply {
+            setObserveBehavior(GetSettingsLocalDataSourceError.UnknownError(cause))
+        }
+        val repo = SettingsRepositoryImpl(
+            localDataSource = failingLocal,
+            remoteDataSource = RemoteSettingsDataSourceStub().apply {
+                setGetResponse(
+                    ResultWithError.Failure(
+                        RemoteUserDataSourceError.Authentication.SessionRevoked,
+                    ),
+                )
+            },
+            syncScheduler = syncSchedulerStub,
+            logger = NoOpLogger(),
+            defaultSettings = defaultSettings,
+        )
+
+        repo.observeSettings(identity).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(result)
+            val error = result.error
+            assertIs<GetSettingsRepositoryError.UnknownError>(error)
+            assertEquals(cause, error.cause)
+
+            awaitComplete()
+        }
+    }
+
+    @Test
     fun `changeUiLanguage with no local settings triggers recovery then applies change`() =
         runTest {
             val stub = RemoteSettingsDataSourceStub()
@@ -728,6 +855,33 @@ class SettingsRepositoryImplTest {
             assertEquals(2, updatedSetting.data.setting.localVersion)
             assertEquals(1, updatedSetting.data.setting.syncedVersion)
         }
+
+    @Test
+    fun `changeUiLanguage maps transform AccessDenied`() = runTest {
+        localDataSource.setTransformBehavior(
+            timur.gilfanov.messenger.data.source.local.TransformSettingError.AccessDenied,
+        )
+
+        val result = repository.changeUiLanguage(identity, UiLanguage.German)
+
+        assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
+        assertIs<ChangeLanguageRepositoryError.Recoverable.AccessDenied>(result.error)
+    }
+
+    @Test
+    fun `changeUiLanguage maps transform unknown error`() = runTest {
+        val cause = IllegalStateException("boom")
+        localDataSource.setTransformBehavior(
+            timur.gilfanov.messenger.data.source.local.TransformSettingError.UnknownError(cause),
+        )
+
+        val result = repository.changeUiLanguage(identity, UiLanguage.German)
+
+        assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
+        val error = result.error
+        assertIs<ChangeLanguageRepositoryError.UnknownError>(error)
+        assertEquals(cause, error.cause)
+    }
 
     @Test
     fun `changeUiLanguage returns AccessDenied when recovery upsert is denied`() = runTest {
@@ -787,6 +941,32 @@ class SettingsRepositoryImplTest {
             val error = result.error
             assertIs<ChangeLanguageRepositoryError.UnknownError>(error)
             assertEquals(cause, error.cause)
+        }
+
+    @Test
+    fun `changeUiLanguage returns InsufficientStorage when recovery defaults fail to upsert`() =
+        runTest {
+            val stub = RemoteSettingsDataSourceStub()
+            stub.setGetResponse(
+                ResultWithError.Failure(
+                    RemoteUserDataSourceError.RemoteDataSource(
+                        RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
+                    ),
+                ),
+            )
+            localDataSource.setUpsertBehavior(UpsertSettingError.StorageFull)
+            val repoWithRemote = SettingsRepositoryImpl(
+                localDataSource = localDataSource,
+                remoteDataSource = stub,
+                syncScheduler = syncSchedulerStub,
+                logger = NoOpLogger(),
+                defaultSettings = defaultSettings,
+            )
+
+            val result = repoWithRemote.changeUiLanguage(identity, UiLanguage.German)
+
+            assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
+            assertIs<ChangeLanguageRepositoryError.Recoverable.InsufficientStorage>(result.error)
         }
 
     @Test

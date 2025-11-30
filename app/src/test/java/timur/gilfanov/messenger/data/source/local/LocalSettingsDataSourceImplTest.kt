@@ -129,6 +129,34 @@ class LocalSettingsDataSourceImplTest {
         assertEquals(2, storedEntity.localVersion)
     }
 
+    @Test
+    fun `transform increments localVersion when value changes`() = runTest {
+        val initial = createSettingEntity(
+            userId = testUserId,
+            key = SettingKey.UI_LANGUAGE,
+            value = UiLanguage.English.toStorageValue(),
+            localVersion = 2,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1_000L,
+        )
+        databaseRule.database.settingsDao().upsert(initial)
+
+        val result = localSettingsDataSource.transform(testUserId) { settings ->
+            settings.copy(uiLanguage = settings.uiLanguage.copy(value = UiLanguage.German))
+        }
+
+        assertIs<ResultWithError.Success<Unit, TransformSettingError>>(result)
+        val stored = databaseRule.database.settingsDao()
+            .get(testUserId.id.toString(), SettingKey.UI_LANGUAGE.key)
+        assertNotNull(stored)
+        assertEquals(3, stored.localVersion)
+        assertEquals(1, stored.syncedVersion)
+        assertEquals(1, stored.serverVersion)
+        assertTrue(stored.modifiedAt > initial.modifiedAt)
+        assertEquals(UiLanguage.German.toStorageValue(), stored.value)
+    }
+
     // upsert(batch) tests
     @Test
     fun `upsert batch inserts multiple settings successfully`() = runTest {

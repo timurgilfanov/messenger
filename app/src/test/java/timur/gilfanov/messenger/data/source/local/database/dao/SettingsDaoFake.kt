@@ -7,17 +7,26 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 
-class SettingsDaoWithErrorInjection(private val realDao: SettingsDao) : SettingsDao {
+class SettingsDaoFake(private val realDao: SettingsDao) : SettingsDao {
 
     var simulateDatabaseError: SQLiteException? = null
 
     var failNextNCalls: Int = 0
+    private val queuedErrors = ArrayDeque<SQLiteException>()
 
     var callCount: Int = 0
         private set
 
+    fun enqueueErrors(vararg errors: SQLiteException) {
+        queuedErrors.addAll(errors.toList())
+    }
+
+    @Suppress("ThrowsCount") // ok for test fake
     private fun checkDatabaseHealth() {
         callCount++
+        if (queuedErrors.isNotEmpty()) {
+            throw queuedErrors.removeFirst()
+        }
         if (failNextNCalls > 0 && callCount <= failNextNCalls) {
             throw SQLiteDatabaseLockedException("database is locked")
         }

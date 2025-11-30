@@ -4,6 +4,7 @@ import android.database.sqlite.SQLiteAccessPermException
 import android.database.sqlite.SQLiteDatabaseCorruptException
 import android.database.sqlite.SQLiteDatabaseLockedException
 import android.database.sqlite.SQLiteDiskIOException
+import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteFullException
 import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -22,7 +23,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Component
-import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDaoWithErrorInjection
+import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDaoFake
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
@@ -39,7 +40,7 @@ class LocalSettingsDataSourceImplExceptionTest {
     @get:Rule
     val databaseRule = InMemoryDatabaseRule()
 
-    private lateinit var wrappedDao: SettingsDaoWithErrorInjection
+    private lateinit var wrappedDao: SettingsDaoFake
     private lateinit var dataSource: LocalSettingsDataSource
 
     private val testUserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
@@ -47,7 +48,7 @@ class LocalSettingsDataSourceImplExceptionTest {
     @Before
     fun setup() {
         val realDao = databaseRule.database.settingsDao()
-        wrappedDao = SettingsDaoWithErrorInjection(realDao)
+        wrappedDao = SettingsDaoFake(realDao)
         dataSource = LocalSettingsDataSourceImpl(
             database = databaseRule.database,
             settingsDao = wrappedDao,
@@ -111,6 +112,17 @@ class LocalSettingsDataSourceImplExceptionTest {
         assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(result)
         assertEquals(GetSettingError.ConcurrentModificationError, result.error)
         assertEquals(4, wrappedDao.callCount) // Initial + 3 retries
+    }
+
+    @Test
+    fun `getSetting returns UnknownError on unmapped SQLiteException`() = runTest {
+        wrappedDao.simulateDatabaseError = SQLiteException("unknown")
+
+        val result = dataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(result)
+        assertIs<GetSettingError.UnknownError>(result.error)
+        assertEquals(1, wrappedDao.callCount)
     }
 
     @Test
@@ -207,6 +219,18 @@ class LocalSettingsDataSourceImplExceptionTest {
     }
 
     @Test
+    fun `upsert single returns UnknownError on unmapped SQLiteException`() = runTest {
+        wrappedDao.simulateDatabaseError = SQLiteException("unknown")
+        val setting = createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English)
+
+        val result = dataSource.upsert(testUserId, setting)
+
+        assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
+        assertIs<UpsertSettingError.UnknownError>(result.error)
+        assertEquals(1, wrappedDao.callCount)
+    }
+
+    @Test
     fun `upsert single succeeds after 2 retries`() = runTest {
         // Given
         wrappedDao.failNextNCalls = 2
@@ -280,6 +304,18 @@ class LocalSettingsDataSourceImplExceptionTest {
         // Then
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
         assertEquals(UpsertSettingError.DiskIOError, result.error)
+        assertEquals(1, wrappedDao.callCount)
+    }
+
+    @Test
+    fun `upsert batch returns UnknownError on unmapped SQLiteException`() = runTest {
+        wrappedDao.simulateDatabaseError = SQLiteException("unknown")
+        val settings = listOf(createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English))
+
+        val result = dataSource.upsert(testUserId, settings)
+
+        assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
+        assertIs<UpsertSettingError.UnknownError>(result.error)
         assertEquals(1, wrappedDao.callCount)
     }
 
@@ -381,6 +417,33 @@ class LocalSettingsDataSourceImplExceptionTest {
         assertEquals(TransformSettingError.DiskIOError, result.error)
     }
 
+    @Test
+    fun `transform returns UnknownError on unmapped SQLiteException`() = runTest {
+        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        databaseRule.database.settingsDao().upsert(entity)
+        wrappedDao.simulateDatabaseError = SQLiteException("unknown")
+
+        val result = dataSource.transform(testUserId) { it }
+
+        assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
+        assertIs<TransformSettingError.UnknownError>(result.error)
+    }
+
+    @Test
+    fun `transform retries load on lock and succeeds`() = runTest {
+        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        databaseRule.database.settingsDao().upsert(entity)
+        wrappedDao.enqueueErrors(
+            SQLiteDatabaseLockedException("locked"),
+            SQLiteDatabaseLockedException("locked"),
+        )
+
+        val result = dataSource.transform(testUserId) { it }
+
+        assertIs<ResultWithError.Success<Unit, TransformSettingError>>(result)
+        assertTrue(wrappedDao.callCount >= 3) // two failures + success + upsert call
+    }
+
     // getUnsyncedSettings() exception tests
     @Test
     fun `getUnsyncedSettings returns DatabaseCorrupted on SQLiteDatabaseCorruptException`() =
@@ -442,6 +505,17 @@ class LocalSettingsDataSourceImplExceptionTest {
         assertIs<ResultWithError.Failure<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
         assertEquals(GetUnsyncedSettingsError.ConcurrentModificationError, result.error)
         assertEquals(4, wrappedDao.callCount)
+    }
+
+    @Test
+    fun `getUnsyncedSettings returns UnknownError on unmapped SQLiteException`() = runTest {
+        wrappedDao.simulateDatabaseError = SQLiteException("unknown")
+
+        val result = dataSource.getUnsyncedSettings(testUserId)
+
+        assertIs<ResultWithError.Failure<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
+        assertIs<GetUnsyncedSettingsError.UnknownError>(result.error)
+        assertEquals(1, wrappedDao.callCount)
     }
 
     @Test
@@ -562,6 +636,37 @@ class LocalSettingsDataSourceImplExceptionTest {
         }
     }
 
+    @Test
+    fun `observe emits UnknownError on unmapped SQLiteException`() = runTest {
+        wrappedDao.simulateDatabaseError = SQLiteException("unknown")
+
+        dataSource.observe(testUserId).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
+                result,
+            )
+            assertIs<GetSettingsLocalDataSourceError.UnknownError>(result.error)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `observe retries after disk error and emits success`() = runTest {
+        val entity = createSettingEntity(
+            userId = testUserId,
+            key = SettingKey.UI_LANGUAGE,
+            value = UiLanguage.German.toStorageValue(),
+        )
+        databaseRule.database.settingsDao().upsert(entity)
+        wrappedDao.enqueueErrors(SQLiteDiskIOException("disk error"))
+
+        dataSource.observe(testUserId).test {
+            val emission = awaitItem()
+            assertIs<ResultWithError.Success<LocalSettings, *>>(emission)
+            assertEquals(UiLanguage.German, emission.data.uiLanguage.value)
+        }
+    }
+
     @Suppress("LongParameterList")
     private fun createSettingEntity(
         userId: UserId,
@@ -599,6 +704,7 @@ class LocalSettingsDataSourceImplExceptionTest {
                 modifiedAt = Instant.fromEpochMilliseconds(modifiedAt),
             ),
         )
+
         else -> error("Unknown setting key: $key")
     }
 }

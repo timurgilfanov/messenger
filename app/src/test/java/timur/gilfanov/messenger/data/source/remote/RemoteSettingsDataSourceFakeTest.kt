@@ -7,7 +7,6 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.DeviceId
 import timur.gilfanov.messenger.domain.entity.user.Identity
@@ -15,7 +14,7 @@ import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 
-@Category(Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class RemoteSettingsDataSourceFakeTest {
 
     private val testUserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))

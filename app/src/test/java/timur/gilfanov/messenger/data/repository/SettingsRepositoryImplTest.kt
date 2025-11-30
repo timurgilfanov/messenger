@@ -505,21 +505,6 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
-    fun `syncAllPendingSettings returns TemporarilyUnavailable when storage transiently fails`() =
-        runTest {
-            localDataSource.setGetUnsyncedBehavior(
-                GetUnsyncedSettingsError.ConcurrentModificationError,
-            )
-
-            val result = repository.syncAllPendingSettings(identity)
-
-            assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
-            assertIs<SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable>(
-                result.error,
-            )
-        }
-
-    @Test
     fun `syncAllPendingSettings maps getUnsynced errors`() = runTest {
         val cause = RuntimeException("Test database error")
         val cases = listOf(

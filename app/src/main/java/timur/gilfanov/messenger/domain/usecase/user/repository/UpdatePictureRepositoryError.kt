@@ -12,7 +12,7 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
  * - [PlatformPolicyViolation] - Image violates content policy
  *
  * ## Common Errors
- * - [UserRepository] - Wraps user-related repository errors
+ * - [Repository] - Wraps common failures defined in [RepositoryError]
  */
 sealed interface UpdatePictureRepositoryError {
     /**
@@ -55,9 +55,9 @@ sealed interface UpdatePictureRepositoryError {
     }
 
     /**
-     * Common user repository errors.
+     * Common repository errors expressed in the shared taxonomy.
      *
-     * @property error The underlying user repository error
+     * @property error The underlying [RepositoryError] instance
      */
-    data class UserRepository(val error: UserRepositoryError) : UpdatePictureRepositoryError
+    data class Repository(val error: RepositoryError) : UpdatePictureRepositoryError
 }

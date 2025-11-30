@@ -10,7 +10,7 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
  * - [PictureNotFound] - Picture doesn't exist or was already removed
  *
  * ## Common Errors
- * - [UserRepository] - Wraps user-related repository errors
+ * - [Repository] - Wraps common failures defined in [RepositoryError]
  */
 sealed interface RemovePictureRepositoryError {
     /**
@@ -19,9 +19,9 @@ sealed interface RemovePictureRepositoryError {
     data object PictureNotFound : RemovePictureRepositoryError
 
     /**
-     * Common user repository errors.
+     * Common repository errors expressed in the shared taxonomy.
      *
-     * @property error The underlying user repository error
+     * @property error The underlying [RepositoryError] instance
      */
-    data class UserRepository(val error: UserRepositoryError) : RemovePictureRepositoryError
+    data class Repository(val error: RepositoryError) : RemovePictureRepositoryError
 }

@@ -1,29 +1,69 @@
 package timur.gilfanov.messenger.domain.usecase.user.repository
 
 /**
- * Errors specific to language change repository operations.
+ * Errors that can occur during language change repository operations.
  *
- * Defines operation-specific errors returned by the repository layer
- * when changing language preferences.
- *
- * ## Operation-Specific Errors
- * - [LanguageNotChangedForAllDevices] - Partial synchronization failure
- *
- * ## Common Errors
- * - [UserRepository] - Wraps user-related repository errors
+ * Represents failures when changing user language preferences at the repository layer.
  */
 sealed interface ChangeLanguageRepositoryError {
-    /**
-     * Language preference was updated on some devices but not all.
-     *
-     * Indicates partial success where synchronization failed for some devices.
-     */
-    data object LanguageNotChangedForAllDevices : ChangeLanguageRepositoryError
 
     /**
-     * Common user repository errors.
+     * Recoverable errors that can be resolved by user action.
      *
-     * @property error The underlying user repository error
+     * These errors indicate specific issues that the user can address
+     * to restore settings functionality.
      */
-    data class UserRepository(val error: UserRepositoryError) : ChangeLanguageRepositoryError
+    sealed interface Recoverable : ChangeLanguageRepositoryError {
+        /**
+         * Insufficient storage space available on the device.
+         *
+         * The system cannot save or update settings due to lack of storage.
+         * User should free up storage space and try again.
+         */
+        data object InsufficientStorage : Recoverable
+
+        /**
+         * Settings data is corrupted and cannot be read.
+         *
+         * The stored settings have become corrupted or unreadable.
+         * User should clear app data to rebuild settings from defaults or remote.
+         */
+        data object DataCorruption : Recoverable
+
+        /**
+         * Access to settings storage is denied.
+         *
+         * The app does not have necessary permissions to access settings storage.
+         * User should verify app permissions or reinstall the app.
+         */
+        data object AccessDenied : Recoverable
+
+        /**
+         * Settings storage is read-only and cannot be modified.
+         *
+         * The system cannot save setting changes due to storage restrictions.
+         * User should check storage permissions and available space.
+         */
+        data object ReadOnly : Recoverable
+
+        /**
+         * Settings are temporarily unavailable.
+         *
+         * A transient condition is preventing access to settings.
+         * User should try again in a few moments.
+         */
+        data object TemporarilyUnavailable : Recoverable
+    }
+
+    /**
+     * An unexpected error occurred while accessing settings.
+     *
+     * Represents errors that don't fit known failure categories.
+     * The cause is always preserved for diagnostics and logging, but should not
+     * be used for control flow decisions. Use error type hierarchy for
+     * decision making instead.
+     *
+     * @param cause The underlying exception that caused this error.
+     */
+    data class UnknownError(val cause: Throwable) : ChangeLanguageRepositoryError
 }

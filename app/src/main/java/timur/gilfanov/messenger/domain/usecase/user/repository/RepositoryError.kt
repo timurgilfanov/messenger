@@ -3,68 +3,56 @@ package timur.gilfanov.messenger.domain.usecase.user.repository
 import kotlin.time.Duration
 
 /**
- * Base error interface for repository layer operations.
+ * Common error taxonomy for user repository operations involving remote data.
  *
- * Provides common error cases that can occur across different repository operations.
- * These errors represent infrastructure concerns (network, storage, service availability)
- * rather than domain validation or business rule violations.
+ * Introduced to remove duplication across multiple use cases that share similar error modes.
  *
- * ## Error Categories
+ * ## Authentication Errors (Who are you?)
+ * - [Unauthenticated] - Caller is not authenticated or session expired
  *
- * **Network/Service Errors:**
- * - [ServiceUnavailable] - Transient connectivity or service issues
- * - [UnknownServiceError] - Unrecognized backend error for forward compatibility
+ * ## Authorization Errors (What can you do?)
+ * - [InsufficientPermissions] - Caller lacks permission for the operation
  *
- * **Access Control:**
- * - [AccessDenied] - Authentication failure or insufficient permissions
- * - [CooldownActive] - User-specific rate limiting with remaining time
- *
- * **Data Integrity:**
- * - [LocalDataCorrupted] - Local storage integrity compromised
+ * ## Operation Outcome Errors
+ * - [Failed] - Operation definitely failed with a known error
+ * - [UnknownStatus] - Operation outcome is unknown
  */
 sealed interface RepositoryError {
+    /** Caller is unauthenticated or the session expired. */
+    data object Unauthenticated : RepositoryError
+
+    /** Caller lacks permission to perform the operation for the current identity. */
+    data object InsufficientPermissions : RepositoryError
+
     /**
-     * Service is temporarily unavailable.
-     *
-     * Transient errors that may resolve with retry logic.
+     * Operation definitely failed. Each subtype captures a concrete failure mode reported by lower
+     * layers, such as network connectivity, service throttling, or unexpected infrastructure
+     * issues.
      */
-    sealed interface ServiceUnavailable : RepositoryError {
-        /** No network connectivity available */
-        data object NoConnectivity : ServiceUnavailable
+    sealed interface Failed : RepositoryError {
+        /** No network connectivity at the moment of the operation attempt. */
+        data object NetworkNotAvailable : Failed
 
-        /** Backend service is down or unreachable */
-        data object ServiceDown : ServiceUnavailable
+        /** Remote service rejected the request because it is unavailable or overloaded. */
+        data object ServiceDown : Failed
 
-        /** Request timed out */
-        data object Timeout : ServiceUnavailable
+        /** Remote service returned a cooldown/too-many-requests window; includes remaining wait. */
+        data class Cooldown(val remaining: Duration) : Failed
+
+        /**
+         * An unclassified infrastructure error occurred.
+         *
+         * @property cause Reason for the error
+         */
+        data class UnknownServiceError(val cause: ErrorReason) : Failed
     }
 
     /**
-     * User-specific cooldown restriction with remaining time.
-     *
-     * Business rule enforcement preventing too frequent operations.
-     * Unlike service-wide rate limiting, this is specific to the user
-     * and includes precise remaining time for countdown display.
-     *
-     * @property remaining Time remaining until operation can be retried
+     * The operation outcome is unknown (e.g., request timed out after being sent). Callers may need
+     * to query status or re-attempt once the underlying condition clears.
      */
-    data class CooldownActive(val remaining: Duration) : RepositoryError
-
-    /**
-     * Backend returned unrecognized error code.
-     *
-     * Forward compatibility mechanism for handling new backend errors
-     * introduced after app release, preventing crashes and allowing
-     * graceful degradation.
-     *
-     * @property reason Description of the unknown error
-     */
-    data class UnknownServiceError(val reason: String) : RepositoryError
-
-    /**
-     * Local data storage is corrupted.
-     *
-     * Indicates integrity issues with cached or persisted data.
-     */
-    data object LocalDataCorrupted : RepositoryError
+    sealed interface UnknownStatus : RepositoryError {
+        /** Request timed out before the service confirmed success or failure. */
+        data object ServiceTimeout : UnknownStatus
+    }
 }

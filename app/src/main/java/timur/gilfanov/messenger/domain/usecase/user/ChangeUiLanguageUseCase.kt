@@ -1,29 +1,53 @@
 package timur.gilfanov.messenger.domain.usecase.user
 
+import kotlinx.coroutines.flow.first
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
+import timur.gilfanov.messenger.domain.entity.mapError
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import timur.gilfanov.messenger.util.Logger
 
 /**
  * Changes user's UI language preference.
  *
- * Updates the user's preferred language for the application interface. The setting
- * is synchronized across all user's devices. If synchronization partially fails,
- * [ChangeUiLanguageError.LanguageNotChangedForAllDevices] is returned.
+ * Updates the user's preferred language for the application interface. The operation
+ * requires the current user's identity which is obtained from [IdentityRepository].
  *
- * @param userId The unique identifier of the user changing their language
  * @param newUiLanguage The new language preference to set
  * @return Success or failure with [ChangeUiLanguageError]
  *
  * ## Error Handling
- * Returns [ChangeUiLanguageError.LanguageNotChangedForAllDevices] if synchronization
- * fails for some devices, and inherits common errors from [UserOperationError].
+ * - [ChangeUiLanguageError.Unauthorized]: Current user identity cannot be retrieved
+ * - [ChangeUiLanguageError.ChangeLanguageRepository]: Language change operation failed
  */
-class ChangeUiLanguageUseCase {
-    operator fun invoke(
-        userId: UserId,
-        newUiLanguage: UiLanguage,
-    ): ResultWithError<Unit, ChangeUiLanguageError> {
-        TODO("Not implemented yet")
+@Suppress("KDocUnresolvedReference")
+class ChangeUiLanguageUseCase(
+    private val identityRepository: IdentityRepository,
+    private val settingsRepository: SettingsRepository,
+    private val logger: Logger,
+) {
+    companion object {
+        private const val TAG = "ChangeUiLanguageUseCase"
     }
+
+    suspend operator fun invoke(
+        newUiLanguage: UiLanguage,
+    ): ResultWithError<Unit, ChangeUiLanguageError> =
+        identityRepository.identity.first().foldWithErrorMapping(
+            onSuccess = { identity ->
+                settingsRepository.changeUiLanguage(identity, newUiLanguage)
+                    .mapError { error ->
+                        logger.e(
+                            TAG,
+                            "Repository changeUiLanguage failed: $error",
+                        )
+                        ChangeUiLanguageError.ChangeLanguageRepository(error)
+                    }
+            },
+            onFailure = {
+                logger.e(TAG, "Unable to resolve identity while changing UI language")
+                ChangeUiLanguageError.Unauthorized
+            },
+        )
 }

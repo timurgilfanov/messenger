@@ -4,7 +4,7 @@ package timur.gilfanov.messenger.data.source.local
  * Errors specific to local user data operations.
  *
  * ## User-Specific Errors
- * - [UserNotFound] - User data not found in local storage
+ * - [UserDataNotFound] - User data not found in local storage
  *
  * ## Common Errors
  * - [LocalDataSource] - Wraps common local data source errors
@@ -15,7 +15,7 @@ sealed interface LocalUserDataSourceError {
      *
      * Indicates the requested user does not exist in the local cache.
      */
-    data object UserNotFound : LocalUserDataSourceError
+    data object UserDataNotFound : LocalUserDataSourceError
 
     /**
      * Common local data source errors.

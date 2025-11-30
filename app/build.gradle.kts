@@ -259,10 +259,14 @@ dependencies {
     implementation(libs.androidx.room.paging)
     ksp(libs.androidx.room.compiler)
 
+    // Background Work
+    implementation(libs.androidx.work.runtime.ktx)
+
     // ========== Third-party Runtime Libraries ==========
     // Dependency Injection
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.work)
     ksp(libs.hilt.compiler)
 
     // Networking
@@ -311,6 +315,7 @@ dependencies {
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.androidx.paging.testing)
+    testImplementation(libs.androidx.work.testing)
 
     // ========== Android Test Dependencies ==========
     androidTestImplementation(libs.androidx.junit)

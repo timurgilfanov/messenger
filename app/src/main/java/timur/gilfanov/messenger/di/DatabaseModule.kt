@@ -1,9 +1,6 @@
 package timur.gilfanov.messenger.di
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -11,34 +8,37 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
+import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDao
 
 /**
- * Hilt module that provides database-related dependencies.
+ * Hilt module that provides Room database dependencies.
+ *
+ * Provides MessengerDatabase and its DAOs for local data persistence.
  */
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
-    /**
-     * Extension property for Context to get DataStore instance.
-     * Creates a singleton DataStore for sync preferences.
-     */
-    private val Context.syncDataStore: DataStore<Preferences> by preferencesDataStore(
-        name = "sync_preferences",
-    )
-
     @Provides
     @Singleton
-    fun provideMessengerDatabase(@ApplicationContext context: Context): MessengerDatabase =
-        Room.databaseBuilder(
+    fun provideMessengerDatabase(@ApplicationContext context: Context): MessengerDatabase {
+        val builder = Room.databaseBuilder(
             context,
             MessengerDatabase::class.java,
             MessengerDatabase.DATABASE_NAME,
-        ).build()
+        )
+
+        if (BuildConfig.DEBUG) {
+            builder.fallbackToDestructiveMigration(dropAllTables = true)
+        }
+
+        return builder.build()
+    }
 
     @Provides
     @Singleton
@@ -55,6 +55,5 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideSyncDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
-        context.syncDataStore
+    fun provideSettingsDao(database: MessengerDatabase): SettingsDao = database.settingsDao()
 }

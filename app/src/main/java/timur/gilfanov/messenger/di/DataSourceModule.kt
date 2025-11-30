@@ -13,6 +13,8 @@ import timur.gilfanov.messenger.data.source.local.LocalChatDataSource
 import timur.gilfanov.messenger.data.source.local.LocalChatDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalMessageDataSource
 import timur.gilfanov.messenger.data.source.local.LocalMessageDataSourceImpl
+import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
+import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalSyncDataSource
 import timur.gilfanov.messenger.data.source.local.LocalSyncDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSource
@@ -21,6 +23,8 @@ import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSourceImpl
+import timur.gilfanov.messenger.domain.entity.user.Settings
+import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 
 /**
  * Feature flag for using real remote data sources.
@@ -34,6 +38,12 @@ object DataSourceFeatureFlags {
     @Singleton
     @Named("useRealRemoteDataSources")
     fun provideUseRealRemoteDataSources(): Boolean = BuildConfig.USE_REAL_REMOTE_DATA_SOURCES
+
+    @Provides
+    @Singleton
+    fun provideDefaultSettings(): Settings = Settings(
+        uiLanguage = UiLanguage.English,
+    )
 }
 
 @Module
@@ -58,6 +68,12 @@ abstract class DataSourceModule {
     abstract fun bindLocalSyncDataSource(
         localSyncDataSourceImpl: LocalSyncDataSourceImpl,
     ): LocalSyncDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindLocalSettingsDataSource(
+        localSettingsDataSourceImpl: LocalSettingsDataSourceImpl,
+    ): LocalSettingsDataSource
 
     // Real remote data source bindings
     @Binds

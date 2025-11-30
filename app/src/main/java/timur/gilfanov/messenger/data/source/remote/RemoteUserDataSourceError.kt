@@ -1,10 +1,9 @@
 package timur.gilfanov.messenger.data.source.remote
 
+import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
+
 /**
  * Errors specific to remote user data operations.
- *
- * ## User-Specific Errors
- * - [UserNotFound] - User does not exist on the backend
  *
  * ## Authentication Errors (Who are you?)
  * - [Authentication] - Identity verification failures
@@ -16,12 +15,6 @@ package timur.gilfanov.messenger.data.source.remote
  * - [RemoteDataSource] - Wraps common remote data source errors
  */
 sealed interface RemoteUserDataSourceError {
-    /**
-     * User does not exist on the backend.
-     *
-     * Indicates the requested user ID is not found in the system.
-     */
-    data object UserNotFound : RemoteUserDataSourceError
 
     /**
      * Authentication errors related to identity verification.
@@ -73,4 +66,36 @@ sealed interface RemoteUserDataSourceError {
      * @property error The underlying remote data source error
      */
     data class RemoteDataSource(val error: RemoteDataSourceErrorV2) : RemoteUserDataSourceError
+}
+
+fun RemoteUserDataSourceError.toRepositoryError(): RepositoryError = when (this) {
+    RemoteUserDataSourceError.Authentication.SessionRevoked,
+    RemoteUserDataSourceError.Authentication.TokenInvalid,
+    RemoteUserDataSourceError.Authentication.TokenMissing,
+    RemoteUserDataSourceError.Authentication.TokenExpired,
+    -> RepositoryError.Unauthenticated
+
+    RemoteUserDataSourceError.InsufficientPermissions ->
+        RepositoryError.InsufficientPermissions
+
+    is RemoteUserDataSourceError.RemoteDataSource ->
+        when (error) {
+            is RemoteDataSourceErrorV2.CooldownActive ->
+                RepositoryError.Failed.Cooldown(error.remaining)
+
+            RemoteDataSourceErrorV2.RateLimitExceeded,
+            RemoteDataSourceErrorV2.ServerError,
+            RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+            ->
+                RepositoryError.Failed.ServiceDown
+
+            RemoteDataSourceErrorV2.ServiceUnavailable.Timeout ->
+                RepositoryError.UnknownStatus.ServiceTimeout
+
+            RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable ->
+                RepositoryError.Failed.NetworkNotAvailable
+
+            is RemoteDataSourceErrorV2.UnknownServiceError ->
+                RepositoryError.Failed.UnknownServiceError(cause = error.reason)
+        }
 }

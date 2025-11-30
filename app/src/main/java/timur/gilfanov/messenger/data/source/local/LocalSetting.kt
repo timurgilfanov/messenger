@@ -1,0 +1,41 @@
+package timur.gilfanov.messenger.data.source.local
+
+import androidx.annotation.IntRange
+import kotlin.time.Instant
+
+/**
+ * A setting value with synchronization metadata for conflict-free replication.
+ *
+ * Version Semantics:
+ * - [localVersion]: Starts at 1, increments on each local change
+ * - [syncedVersion]: The [localVersion] value when last successfully synced to server
+ * - [serverVersion]: The version number from the server for this setting
+ *   - **0 means "no server version known"** (never synced or server doesn't have this setting)
+ *   - Server MUST use versions starting from 1
+ *   - Used for conflict detection during synchronization
+ *
+ * @property value The setting value
+ * @property localVersion Version counter incremented on each local modification
+ * @property syncedVersion Last successfully synced [localVersion]
+ * @property serverVersion Server's version for this setting (0 = unknown/never synced)
+ * @property modifiedAt Timestamp of last local modification
+ */
+data class LocalSetting<T>(
+    val value: T,
+    @param:IntRange(from = 1) val localVersion: Int,
+    @param:IntRange(from = 0) val syncedVersion: Int,
+    @param:IntRange(from = 0) val serverVersion: Int,
+    val modifiedAt: Instant,
+) {
+    init {
+        require(localVersion >= 1) {
+            "localVersion must be >= 1 (starts at 1), got: $localVersion"
+        }
+        require(syncedVersion >= 0) {
+            "syncedVersion must be >= 0 (0 = never synced), got: $syncedVersion"
+        }
+        require(serverVersion >= 0) {
+            "serverVersion must be >= 0 (0 = unknown/never synced), got: $serverVersion"
+        }
+    }
+}

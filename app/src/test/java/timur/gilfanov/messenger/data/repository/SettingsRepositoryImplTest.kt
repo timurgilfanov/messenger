@@ -24,6 +24,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.data.source.local.GetSettingError
+import timur.gilfanov.messenger.data.source.local.GetUnsyncedSettingsError
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
@@ -56,6 +57,7 @@ private const val INVALID_UI_LANGUAGE = "abc"
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
+@Suppress("LargeClass")
 class SettingsRepositoryImplTest {
 
     private val testUserId = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
@@ -369,6 +371,71 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
+    fun `syncSetting returns TemporarilyUnavailable when local storage transiently fails`() =
+        runTest {
+            localDataSource.setGetSettingBehavior(GetSettingError.ConcurrentModificationError)
+
+            val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
+
+            assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
+            assertIs<SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable>(
+                result.error,
+            )
+        }
+
+    @Test
+    fun `syncSetting returns StorageFull when storage is full`() = runTest {
+        localDataSource.setGetSettingBehavior(GetSettingError.StorageFull)
+
+        val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
+
+        assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
+        assertIs<SyncSettingRepositoryError.LocalStorageError.StorageFull>(result.error)
+    }
+
+    @Test
+    fun `syncSetting returns Corrupted when database is corrupted`() = runTest {
+        localDataSource.setGetSettingBehavior(GetSettingError.DatabaseCorrupted)
+
+        val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
+
+        assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
+        assertIs<SyncSettingRepositoryError.LocalStorageError.Corrupted>(result.error)
+    }
+
+    @Test
+    fun `syncSetting returns AccessDenied when permissions denied`() = runTest {
+        localDataSource.setGetSettingBehavior(GetSettingError.AccessDenied)
+
+        val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
+
+        assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
+        assertIs<SyncSettingRepositoryError.LocalStorageError.AccessDenied>(result.error)
+    }
+
+    @Test
+    fun `syncSetting returns ReadOnly when database is read-only`() = runTest {
+        localDataSource.setGetSettingBehavior(GetSettingError.ReadOnlyDatabase)
+
+        val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
+
+        assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
+        assertIs<SyncSettingRepositoryError.LocalStorageError.ReadOnly>(result.error)
+    }
+
+    @Test
+    fun `syncSetting returns UnknownError with cause when unknown error occurs`() = runTest {
+        val testCause = RuntimeException("Test database error")
+        localDataSource.setGetSettingBehavior(GetSettingError.UnknownError(testCause))
+
+        val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
+
+        assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
+        assertIs<SyncSettingRepositoryError.LocalStorageError.UnknownError>(result.error)
+        assertEquals(testCause, result.error.cause)
+    }
+
+    @Test
     fun `syncAllPendingSettings returns Success when no unsynced settings`() = runTest {
         val outcome = repository.syncAllPendingSettings(identity)
 
@@ -508,6 +575,74 @@ class SettingsRepositoryImplTest {
             assertEquals(SyncStatus.SYNCED, updatedSetting.data.setting.syncStatus)
         }
     }
+
+    @Test
+    fun `syncAllPendingSettings returns TemporarilyUnavailable when storage transiently fails`() =
+        runTest {
+            localDataSource.setGetUnsyncedBehavior(
+                GetUnsyncedSettingsError.ConcurrentModificationError,
+            )
+
+            val result = repository.syncAllPendingSettings(identity)
+
+            assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
+            assertIs<SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable>(
+                result.error,
+            )
+        }
+
+    @Test
+    fun `syncAllPendingSettings returns StorageFull when storage is full`() = runTest {
+        localDataSource.setGetUnsyncedBehavior(GetUnsyncedSettingsError.StorageFull)
+
+        val result = repository.syncAllPendingSettings(identity)
+
+        assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
+        assertIs<SyncAllSettingsRepositoryError.LocalStorageError.StorageFull>(result.error)
+    }
+
+    @Test
+    fun `syncAllPendingSettings returns Corrupted when database is corrupted`() = runTest {
+        localDataSource.setGetUnsyncedBehavior(GetUnsyncedSettingsError.DatabaseCorrupted)
+
+        val result = repository.syncAllPendingSettings(identity)
+
+        assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
+        assertIs<SyncAllSettingsRepositoryError.LocalStorageError.Corrupted>(result.error)
+    }
+
+    @Test
+    fun `syncAllPendingSettings returns AccessDenied when permissions denied`() = runTest {
+        localDataSource.setGetUnsyncedBehavior(GetUnsyncedSettingsError.AccessDenied)
+
+        val result = repository.syncAllPendingSettings(identity)
+
+        assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
+        assertIs<SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied>(result.error)
+    }
+
+    @Test
+    fun `syncAllPendingSettings returns ReadOnly when database is read-only`() = runTest {
+        localDataSource.setGetUnsyncedBehavior(GetUnsyncedSettingsError.ReadOnlyDatabase)
+
+        val result = repository.syncAllPendingSettings(identity)
+
+        assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
+        assertIs<SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly>(result.error)
+    }
+
+    @Test
+    fun `syncAllPendingSettings returns UnknownError with cause when unknown error occurs`() =
+        runTest {
+            val testCause = RuntimeException("Test database error")
+            localDataSource.setGetUnsyncedBehavior(GetUnsyncedSettingsError.UnknownError(testCause))
+
+            val result = repository.syncAllPendingSettings(identity)
+
+            assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
+            assertIs<SyncAllSettingsRepositoryError.LocalStorageError.UnknownError>(result.error)
+            assertEquals(testCause, result.error.cause)
+        }
 
     @Test
     fun `observeSettings triggers recovery with valid remote settings`() = runTest {

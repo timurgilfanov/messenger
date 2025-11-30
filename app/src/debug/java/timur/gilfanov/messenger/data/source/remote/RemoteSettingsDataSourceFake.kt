@@ -34,6 +34,12 @@ class RemoteSettingsDataSourceFake(
     val logger: Logger = NoOpLogger(),
 ) : RemoteSettingsDataSource {
 
+    private data class ServerSettingState(
+        val value: String,
+        val version: Int,
+        val modifiedAt: Instant,
+    )
+
     private val settings = MutableStateFlow(initialSettings)
 
     private val settingVersions = MutableStateFlow(
@@ -51,6 +57,21 @@ class RemoteSettingsDataSourceFake(
             timeCounter = timeCounter.plus(TIME_STEP_SECONDS.seconds)
             timeCounter
         }
+
+    private val serverState = MutableStateFlow(
+        initialSettings.entries.associate { (userId, settings) ->
+            userId to mapOf(
+                SettingKey.UI_LANGUAGE to ServerSettingState(
+                    value = when (settings.uiLanguage) {
+                        UiLanguage.English -> "English"
+                        UiLanguage.German -> "German"
+                    },
+                    version = 1,
+                    modifiedAt = now,
+                ),
+            )
+        },
+    )
 
     override suspend fun get(
         identity: Identity,
@@ -137,16 +158,79 @@ class RemoteSettingsDataSourceFake(
         return ResultWithError.Success(Unit)
     }
 
-    private var syncBehavior:
-        (TypedSettingSyncRequest) -> ResultWithError<SyncResult, SyncSingleSettingError> =
-        { request ->
-            val clientVersion = request.request.clientVersion
-            ResultWithError.Success(SyncResult.Success(newVersion = clientVersion + 1))
-        }
+    private var customSyncBehavior:
+        ((TypedSettingSyncRequest) -> ResultWithError<SyncResult, SyncSingleSettingError>)? = null
+
+    private var perSettingSyncResults:
+        Map<SettingKey, ResultWithError<SyncResult, SyncSingleSettingError>>? = null
 
     override suspend fun syncSingleSetting(
         request: TypedSettingSyncRequest,
-    ): ResultWithError<SyncResult, SyncSingleSettingError> = syncBehavior(request)
+    ): ResultWithError<SyncResult, SyncSingleSettingError> {
+        val key = when (request) {
+            is TypedSettingSyncRequest.UiLanguage -> SettingKey.UI_LANGUAGE
+        }
+
+        perSettingSyncResults?.get(key)?.let { return it }
+
+        customSyncBehavior?.let { return it(request) }
+
+        val userId = request.request.identity.userId
+        val value = when (request) {
+            is TypedSettingSyncRequest.UiLanguage -> when (request.request.value) {
+                UiLanguage.English -> "English"
+                UiLanguage.German -> "German"
+            }
+        }
+
+        val serverSetting = serverState.value[userId]?.get(key)
+        if (serverSetting == null) {
+            val newVersion = 1
+            serverState.update { state ->
+                val userState = state[userId] ?: emptyMap()
+                state + (
+                    userId to (
+                        userState + (
+                            key to ServerSettingState(
+                                value = value,
+                                version = newVersion,
+                                modifiedAt = request.request.modifiedAt,
+                            )
+                            )
+                        )
+                    )
+            }
+            return ResultWithError.Success(SyncResult.Success(newVersion = newVersion))
+        }
+
+        if (request.request.modifiedAt >= serverSetting.modifiedAt) {
+            val newVersion = serverSetting.version + 1
+            serverState.update { state ->
+                val userState = state[userId] ?: emptyMap()
+                state + (
+                    userId to (
+                        userState + (
+                            key to ServerSettingState(
+                                value = value,
+                                version = newVersion,
+                                modifiedAt = request.request.modifiedAt,
+                            )
+                            )
+                        )
+                    )
+            }
+            return ResultWithError.Success(SyncResult.Success(newVersion = newVersion))
+        } else {
+            return ResultWithError.Success(
+                SyncResult.Conflict(
+                    serverValue = serverSetting.value,
+                    serverVersion = serverSetting.version,
+                    newVersion = serverSetting.version,
+                    serverModifiedAt = serverSetting.modifiedAt,
+                ),
+            )
+        }
+    }
 
     override suspend fun syncBatch(
         requests: List<TypedSettingSyncRequest>,
@@ -155,7 +239,7 @@ class RemoteSettingsDataSourceFake(
             val key = when (request) {
                 is TypedSettingSyncRequest.UiLanguage -> SettingKey.UI_LANGUAGE.key
             }
-            when (val result = syncBehavior(request)) {
+            when (val result = syncSingleSetting(request)) {
                 is ResultWithError.Success -> key to result.data
                 is ResultWithError.Failure -> return ResultWithError.Failure(result.error)
             }
@@ -165,13 +249,18 @@ class RemoteSettingsDataSourceFake(
     fun setSyncBehavior(
         behavior: (TypedSettingSyncRequest) -> ResultWithError<SyncResult, SyncSingleSettingError>,
     ) {
-        syncBehavior = behavior
+        customSyncBehavior = behavior
+        perSettingSyncResults = null
+    }
+
+    fun setPerSettingSyncResults(
+        results: Map<SettingKey, ResultWithError<SyncResult, SyncSingleSettingError>>,
+    ) {
+        perSettingSyncResults = results
     }
 
     fun resetSyncBehavior() {
-        syncBehavior = { request ->
-            val clientVersion = request.request.clientVersion
-            ResultWithError.Success(SyncResult.Success(newVersion = clientVersion + 1))
-        }
+        customSyncBehavior = null
+        perSettingSyncResults = null
     }
 }

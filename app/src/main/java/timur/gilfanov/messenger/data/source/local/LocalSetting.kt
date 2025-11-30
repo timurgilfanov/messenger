@@ -15,10 +15,6 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
  *   - Server MUST use versions starting from 1
  *   - Used for conflict detection during synchronization
  *
- * Synchronization States:
- * - Clean: [localVersion] == [syncedVersion] (no pending local changes)
- * - Dirty: [localVersion] > [syncedVersion] (local changes not yet synced)
- *
  * @property value The setting value
  * @property localVersion Version counter incremented on each local modification
  * @property syncedVersion Last successfully synced [localVersion]
@@ -45,10 +41,4 @@ data class LocalSetting<T>(
             "serverVersion must be >= 0 (0 = unknown/never synced), got: $serverVersion"
         }
     }
-
-    val isDirty: Boolean
-        get() = localVersion > syncedVersion
-
-    val needsSync: Boolean
-        get() = syncStatus == SyncStatus.PENDING || syncStatus == SyncStatus.FAILED
 }

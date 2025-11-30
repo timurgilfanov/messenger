@@ -19,6 +19,22 @@ class LocalSettingsDataSourceFake(
 
     private val settings = MutableStateFlow<Map<Pair<String, String>, SettingEntity>>(emptyMap())
 
+    private var getSettingError: GetSettingError? = null
+    private var getUnsyncedError: GetUnsyncedSettingsError? = null
+    private var upsertError: UpsertSettingError? = null
+
+    fun setGetSettingBehavior(error: GetSettingError?) {
+        getSettingError = error
+    }
+
+    fun setGetUnsyncedBehavior(error: GetUnsyncedSettingsError?) {
+        getUnsyncedError = error
+    }
+
+    fun setUpsertBehavior(error: UpsertSettingError?) {
+        upsertError = error
+    }
+
     override fun observe(
         userId: UserId,
     ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>> {
@@ -37,6 +53,8 @@ class LocalSettingsDataSourceFake(
         userId: UserId,
         key: SettingKey,
     ): ResultWithError<TypedLocalSetting, GetSettingError> {
+        getSettingError?.let { return ResultWithError.Failure(it) }
+
         val userIdString = userId.id.toString()
         val entity = settings.value[Pair(userIdString, key.key)]
         return if (entity != null) {
@@ -50,6 +68,8 @@ class LocalSettingsDataSourceFake(
         userId: UserId,
         setting: TypedLocalSetting,
     ): ResultWithError<Unit, UpsertSettingError> {
+        upsertError?.let { return ResultWithError.Failure(it) }
+
         val entity = setting.toSettingEntity(userId)
         settings.update { map ->
             map + (Pair(entity.userId, entity.key) to entity)
@@ -101,6 +121,8 @@ class LocalSettingsDataSourceFake(
     override suspend fun getUnsyncedSettings(
         userId: UserId,
     ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError> {
+        getUnsyncedError?.let { return ResultWithError.Failure(it) }
+
         val userIdString = userId.id.toString()
         val unsyncedEntities = settings.value.values.filter {
             it.userId == userIdString && it.localVersion > it.syncedVersion
@@ -113,6 +135,8 @@ class LocalSettingsDataSourceFake(
         userId: UserId,
         settings: List<TypedLocalSetting>,
     ): ResultWithError<Unit, UpsertSettingError> {
+        upsertError?.let { return ResultWithError.Failure(it) }
+
         val entities = settings.map { it.toSettingEntity(userId) }
         this.settings.update { map ->
             var updatedMap = map

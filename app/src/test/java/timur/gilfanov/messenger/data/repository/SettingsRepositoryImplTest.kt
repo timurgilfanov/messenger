@@ -23,6 +23,7 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import timur.gilfanov.messenger.NoOpLogger
+import timur.gilfanov.messenger.data.source.local.GetSettingError
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
@@ -46,6 +47,9 @@ import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncAllSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SyncSettingRepositoryError
 
 private const val INVALID_UI_LANGUAGE = "abc"
 
@@ -328,6 +332,43 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
+    fun `syncSetting returns SettingNotFound when setting does not exist`() = runTest {
+        localDataSource.setGetSettingBehavior(GetSettingError.SettingNotFound)
+
+        val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
+
+        assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
+        assertIs<SyncSettingRepositoryError.SettingNotFound>(result.error)
+    }
+
+    @Test
+    fun `syncSetting returns RemoteSyncFailed when remote sync fails`() = runTest {
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.German,
+            localVersion = 2,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 2000L,
+            syncStatus = SyncStatus.PENDING,
+        )
+        localDataSource.upsert(testUserId, setting)
+
+        remoteDataSource.setSyncBehavior {
+            ResultWithError.Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
+                ),
+            )
+        }
+
+        val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
+
+        assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
+        assertIs<SyncSettingRepositoryError.RemoteSyncFailed>(result.error)
+        assertIs<RepositoryError.Failed.NetworkNotAvailable>(result.error.error)
+    }
+
+    @Test
     fun `syncAllPendingSettings returns Success when no unsynced settings`() = runTest {
         val outcome = repository.syncAllPendingSettings(identity)
 
@@ -394,6 +435,78 @@ class SettingsRepositoryImplTest {
         assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting1)
         assertIs<TypedLocalSetting.UiLanguage>(updatedSetting1.data)
         assertEquals(SyncStatus.FAILED, updatedSetting1.data.setting.syncStatus)
+    }
+
+    @Test
+    fun `syncAllPendingSettings returns RemoteSyncFailed when sync fails`() = runTest {
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.German,
+            localVersion = 2,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 2000L,
+            syncStatus = SyncStatus.PENDING,
+        )
+        localDataSource.upsert(testUserId, setting)
+
+        remoteDataSource.setSyncBehavior {
+            ResultWithError.Failure(
+                RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServerError,
+                ),
+            )
+        }
+
+        val result = repository.syncAllPendingSettings(identity)
+
+        assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
+        assertIs<SyncAllSettingsRepositoryError.RemoteSyncFailed>(result.error)
+        assertIs<RepositoryError.Failed.ServiceDown>(result.error.error)
+    }
+
+    @Test
+    fun `syncAllPendingSettings emits conflict event when server wins`() = runTest {
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.German,
+            localVersion = 2,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1000L,
+            syncStatus = SyncStatus.PENDING,
+        )
+        localDataSource.upsert(testUserId, setting)
+
+        remoteDataSource.setSyncBehavior {
+            ResultWithError.Success(
+                SyncResult.Conflict(
+                    serverValue = "English",
+                    serverVersion = 2,
+                    newVersion = 3,
+                    serverModifiedAt = Instant.fromEpochMilliseconds(3000L),
+                ),
+            )
+        }
+
+        repository.observeConflicts().test {
+            val result = repository.syncAllPendingSettings(identity)
+
+            assertIs<ResultWithError.Success<Unit, *>>(result)
+
+            val conflict = awaitItem()
+            assertEquals(SettingKey.UI_LANGUAGE, conflict.settingKey)
+            assertEquals("German", conflict.localValue)
+            assertEquals("English", conflict.acceptedValue)
+            assertEquals(Instant.fromEpochMilliseconds(3000L), conflict.conflictedAt)
+
+            val updatedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+            assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
+            assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
+            assertEquals(UiLanguage.English, updatedSetting.data.setting.value)
+            assertEquals(3, updatedSetting.data.setting.localVersion)
+            assertEquals(3, updatedSetting.data.setting.syncedVersion)
+            assertEquals(3, updatedSetting.data.setting.serverVersion)
+            assertEquals(SyncStatus.SYNCED, updatedSetting.data.setting.syncStatus)
+        }
     }
 
     @Test

@@ -20,15 +20,21 @@ class SettingsRepositoryStub(
         emptyFlow(),
     private val changeLanguage: ResultWithError<Unit, ChangeLanguageRepositoryError> =
         ResultWithError.Success(Unit),
+    private val syncSettingResult: ResultWithError<Unit, SyncSettingRepositoryError>? = null,
+    private val syncAllResult: ResultWithError<Unit, SyncAllSettingsRepositoryError>? = null,
 ) : SettingsRepository {
 
     constructor(
         settings: ResultWithError<Settings, GetSettingsRepositoryError>,
         changeLanguageResult: ResultWithError<Unit, ChangeLanguageRepositoryError> =
             ResultWithError.Success(Unit),
+        syncSettingResult: ResultWithError<Unit, SyncSettingRepositoryError>? = null,
+        syncAllResult: ResultWithError<Unit, SyncAllSettingsRepositoryError>? = null,
     ) : this(
         settingsFlow = flowOf(settings),
         changeLanguage = changeLanguageResult,
+        syncSettingResult = syncSettingResult,
+        syncAllResult = syncAllResult,
     )
 
     override fun observeSettings(
@@ -47,16 +53,11 @@ class SettingsRepositoryStub(
     override suspend fun syncSetting(
         identity: Identity,
         key: SettingKey,
-    ): ResultWithError<Unit, SyncSettingRepositoryError> {
-        error("Not implemented for this test")
-    }
+    ): ResultWithError<Unit, SyncSettingRepositoryError> =
+        syncSettingResult ?: error("syncSetting not configured for this test")
 
     override suspend fun syncAllPendingSettings(
         identity: Identity,
-    ): ResultWithError<
-        Unit,
-        SyncAllSettingsRepositoryError,
-        > {
-        error("Not implemented for this test")
-    }
+    ): ResultWithError<Unit, SyncAllSettingsRepositoryError> =
+        syncAllResult ?: error("syncAllPendingSettings not configured for this test")
 }

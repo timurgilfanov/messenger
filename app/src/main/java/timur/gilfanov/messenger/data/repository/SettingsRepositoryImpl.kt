@@ -1,5 +1,3 @@
-@file:Suppress("TooManyFunctions") // complex class
-
 package timur.gilfanov.messenger.data.repository
 
 import javax.inject.Inject

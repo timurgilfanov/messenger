@@ -122,20 +122,6 @@ class SettingsRepositoryImplTest {
         }
     }
 
-    // TODO Review this test when error handling in repository will be implemented
-//    @Test
-//    fun `changeUiLanguage creates new entity when none exists`() = runTest {
-//        val result = repository.changeUiLanguage(identity, UiLanguage.German)
-//
-//        assertIs<ResultWithError.Success<Unit, *>>(result)
-//
-//        val savedEntity = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE.key)
-//        assertIs<ResultWithError.Success<SettingEntity, *>>(savedEntity)
-//        assertEquals("German", savedEntity.data.value)
-//        assertEquals(1, savedEntity.data.localVersion)
-//        assertEquals(0, savedEntity.data.syncedVersion)
-//    }
-
     @Test
     fun `changeUiLanguage updates existing entity`() = runTest {
         val existingSetting = createTypedLocalSetting(

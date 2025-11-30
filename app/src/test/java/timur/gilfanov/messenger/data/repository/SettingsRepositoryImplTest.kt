@@ -21,7 +21,6 @@ import timur.gilfanov.messenger.data.source.local.GetSettingError
 import timur.gilfanov.messenger.data.source.local.GetUnsyncedSettingsError
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.data.source.remote.ChangeUiLanguageRemoteDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceErrorV2
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
@@ -113,7 +112,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -136,7 +134,6 @@ class SettingsRepositoryImplTest {
 //        assertEquals("German", savedEntity.data.value)
 //        assertEquals(1, savedEntity.data.localVersion)
 //        assertEquals(0, savedEntity.data.syncedVersion)
-//        assertEquals(SyncStatus.PENDING, savedEntity.data.syncStatus)
 //    }
 
     @Test
@@ -147,7 +144,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
         localDataSource.upsert(testUserId, existingSetting)
 
@@ -161,7 +157,6 @@ class SettingsRepositoryImplTest {
         assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
         assertEquals(2, updatedSetting.data.setting.localVersion)
         assertEquals(1, updatedSetting.data.setting.syncedVersion)
-        assertEquals(SyncStatus.PENDING, updatedSetting.data.setting.syncStatus)
     }
 
     @Test
@@ -172,7 +167,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -198,7 +192,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -215,7 +208,6 @@ class SettingsRepositoryImplTest {
         assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
         assertEquals(2, updatedSetting.data.setting.syncedVersion)
         assertEquals(2, updatedSetting.data.setting.serverVersion)
-        assertEquals(SyncStatus.SYNCED, updatedSetting.data.setting.syncStatus)
     }
 
     @Test
@@ -226,7 +218,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -263,7 +254,6 @@ class SettingsRepositoryImplTest {
                 Instant.fromEpochMilliseconds(3000L),
                 updatedSetting.data.setting.modifiedAt,
             )
-            assertEquals(SyncStatus.SYNCED, updatedSetting.data.setting.syncStatus)
         }
     }
 
@@ -284,7 +274,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -303,7 +292,6 @@ class SettingsRepositoryImplTest {
         val updatedSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
         assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
         assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
-        assertEquals(SyncStatus.FAILED, updatedSetting.data.setting.syncStatus)
     }
 
     @Test
@@ -333,7 +321,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -432,7 +419,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting1)
 
@@ -453,7 +439,6 @@ class SettingsRepositoryImplTest {
         assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting1)
         assertIs<TypedLocalSetting.UiLanguage>(updatedSetting1.data)
         assertEquals(2, updatedSetting1.data.setting.syncedVersion)
-        assertEquals(SyncStatus.SYNCED, updatedSetting1.data.setting.syncStatus)
     }
 
     @Test
@@ -473,7 +458,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting1)
 
@@ -492,7 +476,6 @@ class SettingsRepositoryImplTest {
         val updatedSetting1 = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
         assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting1)
         assertIs<TypedLocalSetting.UiLanguage>(updatedSetting1.data)
-        assertEquals(SyncStatus.FAILED, updatedSetting1.data.setting.syncStatus)
     }
 
     @Test
@@ -512,7 +495,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -539,7 +521,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -572,7 +553,6 @@ class SettingsRepositoryImplTest {
             assertEquals(3, updatedSetting.data.setting.localVersion)
             assertEquals(3, updatedSetting.data.setting.syncedVersion)
             assertEquals(3, updatedSetting.data.setting.serverVersion)
-            assertEquals(SyncStatus.SYNCED, updatedSetting.data.setting.syncStatus)
         }
     }
 
@@ -677,7 +657,6 @@ class SettingsRepositoryImplTest {
             assertEquals(1, savedSetting.data.setting.localVersion)
             assertEquals(1, savedSetting.data.setting.syncedVersion)
             assertEquals(1, savedSetting.data.setting.serverVersion)
-            assertEquals(SyncStatus.SYNCED, savedSetting.data.setting.syncStatus)
         }
     }
 
@@ -713,7 +692,6 @@ class SettingsRepositoryImplTest {
             assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
             assertEquals(2, updatedSetting.data.setting.localVersion)
             assertEquals(1, updatedSetting.data.setting.syncedVersion)
-            assertEquals(SyncStatus.PENDING, updatedSetting.data.setting.syncStatus)
         }
 
     @Test
@@ -729,7 +707,6 @@ class SettingsRepositoryImplTest {
             assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
             assertEquals(2, updatedSetting.data.setting.localVersion)
             assertEquals(0, updatedSetting.data.setting.syncedVersion)
-            assertEquals(SyncStatus.PENDING, updatedSetting.data.setting.syncStatus)
         }
 
     @Test
@@ -798,11 +775,6 @@ class SettingsRepositoryImplTest {
                 assertEquals(5, savedSetting.data.setting.localVersion, "Should use server version")
                 assertEquals(5, savedSetting.data.setting.syncedVersion, "Should mark as synced")
                 assertEquals(5, savedSetting.data.setting.serverVersion)
-                assertEquals(
-                    SyncStatus.SYNCED,
-                    savedSetting.data.setting.syncStatus,
-                    "Should be SYNCED to acknowledge server version",
-                )
 
                 cancelAndIgnoreRemainingEvents()
             }
@@ -877,7 +849,6 @@ class SettingsRepositoryImplTest {
                 "Should still reference recovery sync",
             )
             assertEquals(3, savedSetting.data.setting.serverVersion)
-            assertEquals(SyncStatus.PENDING, savedSetting.data.setting.syncStatus)
         }
 
     @Test
@@ -890,7 +861,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = currentTime.toEpochMilliseconds(),
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -924,7 +894,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = timestamp.toEpochMilliseconds(),
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, originalSetting)
 
@@ -935,7 +904,6 @@ class SettingsRepositoryImplTest {
                 syncedVersion = 1,
                 serverVersion = 1,
                 modifiedAt = timestamp.plus(1.seconds).toEpochMilliseconds(),
-                syncStatus = SyncStatus.PENDING,
             )
             runBlocking { localDataSource.upsert(testUserId, modifiedSetting) }
             ResultWithError.Success(SyncResult.Success(newVersion = 2))
@@ -951,7 +919,6 @@ class SettingsRepositoryImplTest {
         assertEquals(3, localSetting.data.setting.localVersion)
         assertEquals(2, localSetting.data.setting.syncedVersion)
         assertEquals(2, localSetting.data.setting.serverVersion)
-        assertEquals(SyncStatus.PENDING, localSetting.data.setting.syncStatus)
     }
 
     @Test
@@ -963,7 +930,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = timestamp.toEpochMilliseconds(),
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, originalSetting)
 
@@ -974,7 +940,6 @@ class SettingsRepositoryImplTest {
                 syncedVersion = 1,
                 serverVersion = 1,
                 modifiedAt = timestamp.plus(1.seconds).toEpochMilliseconds(),
-                syncStatus = SyncStatus.PENDING,
             )
             runBlocking { localDataSource.upsert(testUserId, modifiedSetting) }
             ResultWithError.Success(
@@ -997,7 +962,6 @@ class SettingsRepositoryImplTest {
         assertEquals(3, localSetting.data.setting.localVersion)
         assertEquals(2, localSetting.data.setting.syncedVersion)
         assertEquals(3, localSetting.data.setting.serverVersion)
-        assertEquals(SyncStatus.PENDING, localSetting.data.setting.syncStatus)
     }
 
     // todo one more setting need to be added for this test to make sense
@@ -1011,7 +975,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = timestamp.toEpochMilliseconds(),
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -1034,10 +997,10 @@ class SettingsRepositoryImplTest {
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
         val langSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
-        assertEquals(
-            SyncStatus.SYNCED,
-            (langSetting as ResultWithError.Success).data.setting.syncStatus,
-        )
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(langSetting)
+        assertIs<TypedLocalSetting.UiLanguage>(langSetting.data)
+        assertEquals(2, langSetting.data.setting.localVersion)
+        assertEquals(2, langSetting.data.setting.syncedVersion)
     }
 
     // todo one more setting need to be added for this test to make sense
@@ -1052,7 +1015,6 @@ class SettingsRepositoryImplTest {
                 syncedVersion = 1,
                 serverVersion = 1,
                 modifiedAt = timestamp.toEpochMilliseconds(),
-                syncStatus = SyncStatus.PENDING,
             )
             localDataSource.upsert(testUserId, setting)
 
@@ -1074,10 +1036,10 @@ class SettingsRepositoryImplTest {
 
             assertIs<ResultWithError.Success<Unit, *>>(result)
             val firstSetting = localDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
-            assertEquals(
-                SyncStatus.SYNCED,
-                (firstSetting as ResultWithError.Success).data.setting.syncStatus,
-            )
+            assertIs<ResultWithError.Success<TypedLocalSetting, *>>(firstSetting)
+            assertIs<TypedLocalSetting.UiLanguage>(firstSetting.data)
+            assertEquals(2, firstSetting.data.setting.localVersion)
+            assertEquals(2, firstSetting.data.setting.syncedVersion)
         }
 
     @Test
@@ -1089,7 +1051,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = timestamp.toEpochMilliseconds(),
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -1117,7 +1078,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = localTimestamp.toEpochMilliseconds(),
-            syncStatus = SyncStatus.PENDING,
         )
         localDataSource.upsert(testUserId, setting)
 
@@ -1149,7 +1109,6 @@ class SettingsRepositoryImplTest {
         syncedVersion: Int = 0,
         serverVersion: Int = 0,
         modifiedAt: Long = 0L,
-        syncStatus: SyncStatus = SyncStatus.SYNCED,
     ): TypedLocalSetting.UiLanguage = TypedLocalSetting.UiLanguage(
         setting = timur.gilfanov.messenger.data.source.local.LocalSetting(
             value = value,
@@ -1157,7 +1116,6 @@ class SettingsRepositoryImplTest {
             syncedVersion = syncedVersion,
             serverVersion = serverVersion,
             modifiedAt = Instant.fromEpochMilliseconds(modifiedAt),
-            syncStatus = syncStatus,
         ),
     )
 }

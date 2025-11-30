@@ -19,12 +19,4 @@ data class SettingEntity(
     val syncedVersion: Int,
     val serverVersion: Int,
     val modifiedAt: Long,
-    val syncStatus: SyncStatus,
 )
-
-enum class SyncStatus {
-    SYNCED,
-    PENDING,
-    SYNCING,
-    FAILED,
-}

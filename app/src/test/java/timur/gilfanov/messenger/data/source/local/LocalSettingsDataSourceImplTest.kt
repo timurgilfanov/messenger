@@ -16,7 +16,6 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
@@ -162,7 +161,6 @@ class LocalSettingsDataSourceImplTest {
             value = UiLanguage.English.toStorageValue(),
             localVersion = 1,
             syncedVersion = 1,
-            syncStatus = SyncStatus.SYNCED,
         )
         databaseRule.database.settingsDao().upsert(originalEntity)
 
@@ -185,7 +183,6 @@ class LocalSettingsDataSourceImplTest {
         assertEquals(UiLanguage.German.toStorageValue(), updatedEntity.value)
         assertEquals(2, updatedEntity.localVersion) // Incremented
         assertEquals(1, updatedEntity.syncedVersion) // Unchanged
-        assertEquals(SyncStatus.PENDING, updatedEntity.syncStatus) // Changed to PENDING
     }
 
     @Test
@@ -197,7 +194,6 @@ class LocalSettingsDataSourceImplTest {
             value = UiLanguage.English.toStorageValue(),
             localVersion = 3,
             syncedVersion = 3,
-            syncStatus = SyncStatus.SYNCED,
         )
         databaseRule.database.settingsDao().upsert(originalEntity)
 
@@ -216,7 +212,6 @@ class LocalSettingsDataSourceImplTest {
         )
         assertNotNull(updatedEntity)
         assertEquals(3, updatedEntity.localVersion) // Not incremented
-        assertEquals(SyncStatus.SYNCED, updatedEntity.syncStatus) // Unchanged
     }
 
     @Test
@@ -358,7 +353,6 @@ class LocalSettingsDataSourceImplTest {
         syncedVersion: Int = 0,
         serverVersion: Int = 0,
         modifiedAt: Long = 0L,
-        syncStatus: SyncStatus = SyncStatus.SYNCED,
     ): SettingEntity = SettingEntity(
         userId = userId.id.toString(),
         key = key.key,
@@ -367,7 +361,6 @@ class LocalSettingsDataSourceImplTest {
         syncedVersion = syncedVersion,
         serverVersion = serverVersion,
         modifiedAt = modifiedAt,
-        syncStatus = syncStatus,
     )
 
     @Suppress("LongParameterList")
@@ -378,7 +371,6 @@ class LocalSettingsDataSourceImplTest {
         syncedVersion: Int = 0,
         serverVersion: Int = 0,
         modifiedAt: Long = 0L,
-        syncStatus: SyncStatus = SyncStatus.SYNCED,
     ): TypedLocalSetting = when (key) {
         SettingKey.UI_LANGUAGE -> TypedLocalSetting.UiLanguage(
             setting = LocalSetting(
@@ -387,7 +379,6 @@ class LocalSettingsDataSourceImplTest {
                 syncedVersion = syncedVersion,
                 serverVersion = serverVersion,
                 modifiedAt = Instant.fromEpochMilliseconds(modifiedAt),
-                syncStatus = syncStatus,
             ),
         )
         else -> error("Unknown setting key: $key")

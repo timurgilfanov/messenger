@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
@@ -103,7 +102,6 @@ class LocalSettingsDataSourceFake(
                         modifiedAt = now,
                         serverVersion = initial.serverVersion,
                         syncedVersion = initial.syncedVersion,
-                        syncStatus = SyncStatus.PENDING,
                     )
                 } else if (initial == null) {
                     updated
@@ -163,7 +161,6 @@ private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSet
                     syncedVersion = this.syncedVersion,
                     serverVersion = this.serverVersion,
                     modifiedAt = Instant.fromEpochMilliseconds(this.modifiedAt),
-                    syncStatus = this.syncStatus,
                 ),
             )
         }
@@ -181,6 +178,5 @@ private fun TypedLocalSetting.toSettingEntity(userId: UserId): SettingEntity = w
         syncedVersion = this.setting.syncedVersion,
         serverVersion = this.setting.serverVersion,
         modifiedAt = this.setting.modifiedAt.toEpochMilliseconds(),
-        syncStatus = this.setting.syncStatus,
     )
 }

@@ -24,7 +24,6 @@ import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDaoWithErrorInjection
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
@@ -572,7 +571,6 @@ class LocalSettingsDataSourceImplExceptionTest {
         syncedVersion: Int = 0,
         serverVersion: Int = 0,
         modifiedAt: Long = 0L,
-        syncStatus: SyncStatus = SyncStatus.SYNCED,
     ): SettingEntity = SettingEntity(
         userId = userId.id.toString(),
         key = key.key,
@@ -581,7 +579,6 @@ class LocalSettingsDataSourceImplExceptionTest {
         syncedVersion = syncedVersion,
         serverVersion = serverVersion,
         modifiedAt = modifiedAt,
-        syncStatus = syncStatus,
     )
 
     @Suppress("LongParameterList")
@@ -592,7 +589,6 @@ class LocalSettingsDataSourceImplExceptionTest {
         syncedVersion: Int = 0,
         serverVersion: Int = 0,
         modifiedAt: Long = 0L,
-        syncStatus: SyncStatus = SyncStatus.SYNCED,
     ): TypedLocalSetting = when (key) {
         SettingKey.UI_LANGUAGE -> TypedLocalSetting.UiLanguage(
             setting = LocalSetting(
@@ -601,7 +597,6 @@ class LocalSettingsDataSourceImplExceptionTest {
                 syncedVersion = syncedVersion,
                 serverVersion = serverVersion,
                 modifiedAt = Instant.fromEpochMilliseconds(modifiedAt),
-                syncStatus = syncStatus,
             ),
         )
         else -> error("Unknown setting key: $key")

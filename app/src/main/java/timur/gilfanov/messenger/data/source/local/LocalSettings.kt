@@ -3,7 +3,6 @@ package timur.gilfanov.messenger.data.source.local
 import kotlin.time.Clock
 import kotlin.time.Instant
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
@@ -14,8 +13,7 @@ import timur.gilfanov.messenger.domain.entity.user.UserId
  *
  * Provides a typed alternative to working directly with [SettingEntity] flat rows.
  * Each setting property (e.g., [uiLanguage]) is wrapped in [LocalSetting] which includes
- * version tracking and sync status for optimistic replication with Last Write Wins conflict
- * resolution.
+ * version tracking needed for optimistic replication with Last Write Wins conflict resolution.
  *
  * ## Conversion Methods:
  * - [toDomain]: Converts to domain [Settings] (strips sync metadata)
@@ -50,7 +48,6 @@ data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
             syncedVersion = uiLanguage.syncedVersion,
             serverVersion = uiLanguage.serverVersion,
             modifiedAt = uiLanguage.modifiedAt.toEpochMilliseconds(),
-            syncStatus = uiLanguage.syncStatus,
         ),
     )
 
@@ -80,7 +77,6 @@ data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
                     syncedVersion = uiLanguageEntity.syncedVersion,
                     serverVersion = uiLanguageEntity.serverVersion,
                     modifiedAt = Instant.fromEpochMilliseconds(uiLanguageEntity.modifiedAt),
-                    syncStatus = uiLanguageEntity.syncStatus,
                 )
             } else {
                 defaultLocalSetting(value = defaults.uiLanguage, modifiedAt = now)
@@ -97,5 +93,4 @@ internal fun <T> defaultLocalSetting(value: T, modifiedAt: Instant): LocalSettin
     syncedVersion = 0,
     serverVersion = 0,
     modifiedAt = modifiedAt,
-    syncStatus = SyncStatus.PENDING,
 )

@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.retryWhen
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDao
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -494,7 +493,6 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                             modifiedAt = now,
                             serverVersion = initial.serverVersion,
                             syncedVersion = initial.syncedVersion,
-                            syncStatus = SyncStatus.PENDING,
                         ),
                     )
                 }
@@ -707,7 +705,6 @@ private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSet
                     syncedVersion = this.syncedVersion,
                     serverVersion = this.serverVersion,
                     modifiedAt = Instant.fromEpochMilliseconds(this.modifiedAt),
-                    syncStatus = this.syncStatus,
                 ),
             )
         }
@@ -734,6 +731,5 @@ private fun TypedLocalSetting.toSettingEntity(userId: UserId): SettingEntity = w
         syncedVersion = this.setting.syncedVersion,
         serverVersion = this.setting.serverVersion,
         modifiedAt = this.setting.modifiedAt.toEpochMilliseconds(),
-        syncStatus = this.setting.syncStatus,
     )
 }

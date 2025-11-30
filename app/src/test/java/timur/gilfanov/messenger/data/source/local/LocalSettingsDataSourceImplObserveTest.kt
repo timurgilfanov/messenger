@@ -15,7 +15,6 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
@@ -87,7 +86,6 @@ class LocalSettingsDataSourceImplObserveTest {
             syncedVersion = 3,
             serverVersion = 3,
             modifiedAt = 1234567890L,
-            syncStatus = SyncStatus.PENDING,
         )
         databaseRule.database.settingsDao().upsert(entity)
 
@@ -108,7 +106,6 @@ class LocalSettingsDataSourceImplObserveTest {
                 Instant.fromEpochMilliseconds(1234567890L),
                 localSettings.uiLanguage.modifiedAt,
             )
-            assertEquals(SyncStatus.PENDING, localSettings.uiLanguage.syncStatus)
         }
     }
 
@@ -215,7 +212,6 @@ class LocalSettingsDataSourceImplObserveTest {
         syncedVersion: Int = 0,
         serverVersion: Int = 0,
         modifiedAt: Long = 0L,
-        syncStatus: SyncStatus = SyncStatus.SYNCED,
     ): SettingEntity = SettingEntity(
         userId = userId.id.toString(),
         key = key.key,
@@ -224,6 +220,5 @@ class LocalSettingsDataSourceImplObserveTest {
         syncedVersion = syncedVersion,
         serverVersion = serverVersion,
         modifiedAt = modifiedAt,
-        syncStatus = syncStatus,
     )
 }

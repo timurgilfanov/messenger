@@ -20,7 +20,6 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.TransformSettingError
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.local.UpsertSettingError
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.data.source.local.defaultLocalSetting
 import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
@@ -31,7 +30,6 @@ import timur.gilfanov.messenger.data.source.remote.toRepositoryError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
-import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.user.Identity
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
@@ -355,13 +353,12 @@ class SettingsRepositoryImpl @Inject constructor(
                 handleSingleSyncResult(identity, localSetting, syncResult)
             },
             onFailure = { error ->
-                markSyncFailed(
-                    identity.userId,
-                    listOf(localSetting.markFailed()),
-                    "Failed to mark setting ${localSetting.key.key} sync as FAILED",
-                )
                 val mappedRemoteError = error.toRepositoryError()
-                logErrorMapping("syncSetting:remote", error, mappedRemoteError)
+                logErrorMapping(
+                    "syncSetting:${localSetting.key.key}:remote",
+                    error,
+                    mappedRemoteError,
+                )
                 ResultWithError.Failure(
                     SyncSettingRepositoryError.RemoteSyncFailed(mappedRemoteError),
                 )
@@ -395,7 +392,6 @@ class SettingsRepositoryImpl @Inject constructor(
                         setting = currentSetting.setting.copy(
                             syncedVersion = localSetting.setting.localVersion,
                             serverVersion = syncResult.newVersion,
-                            syncStatus = SyncStatus.PENDING,
                         ),
                     )
                 }
@@ -447,7 +443,6 @@ class SettingsRepositoryImpl @Inject constructor(
                     setting = currentSetting.setting.copy(
                         syncedVersion = localSetting.setting.localVersion,
                         serverVersion = syncResult.newVersion,
-                        syncStatus = SyncStatus.PENDING,
                     ),
                 )
             }
@@ -524,11 +519,6 @@ class SettingsRepositoryImpl @Inject constructor(
                 handleBatchSyncResults(identity, unsyncedSettings, results)
             },
             onFailure = { error ->
-                markSyncFailed(
-                    identity.userId,
-                    unsyncedSettings.map { it.markFailed() },
-                    "Failed to mark settings sync as FAILED",
-                )
                 val mappedRemoteError = error.toRepositoryError()
                 logErrorMapping("syncAllPending:remote", error, mappedRemoteError)
                 ResultWithError.Failure(
@@ -584,7 +574,6 @@ class SettingsRepositoryImpl @Inject constructor(
                                 setting = currentSetting.setting.copy(
                                     syncedVersion = localSetting.setting.localVersion,
                                     serverVersion = result.newVersion,
-                                    syncStatus = SyncStatus.PENDING,
                                 ),
                             )
                         }
@@ -648,7 +637,6 @@ class SettingsRepositoryImpl @Inject constructor(
                     setting = currentSetting.setting.copy(
                         syncedVersion = localSetting.setting.localVersion,
                         serverVersion = syncResult.newVersion,
-                        syncStatus = SyncStatus.PENDING,
                     ),
                 )
             }
@@ -682,16 +670,6 @@ class SettingsRepositoryImpl @Inject constructor(
         )
     }
 
-    private suspend fun markSyncFailed(
-        userId: UserId,
-        settings: List<TypedLocalSetting>,
-        failureMessage: String,
-    ) {
-        localDataSource.upsert(userId, settings).onFailure { error ->
-            logger.e(TAG, "$failureMessage caused by $error")
-        }
-    }
-
     private suspend fun recoverSettings(
         identity: Identity,
     ): ResultWithError<Settings, GetSettingsRepositoryError> = remoteDataSource.get(identity).fold(
@@ -704,7 +682,6 @@ class SettingsRepositoryImpl @Inject constructor(
                         syncedVersion = setting.serverVersion,
                         serverVersion = setting.serverVersion,
                         modifiedAt = now(),
-                        syncStatus = SyncStatus.SYNCED,
                     )
 
                     is RemoteSetting.Missing -> LocalSetting(
@@ -713,7 +690,6 @@ class SettingsRepositoryImpl @Inject constructor(
                         syncedVersion = 0,
                         serverVersion = 0,
                         modifiedAt = now(),
-                        syncStatus = SyncStatus.PENDING,
                     )
 
                     is RemoteSetting.InvalidValue -> LocalSetting(
@@ -722,7 +698,6 @@ class SettingsRepositoryImpl @Inject constructor(
                         syncedVersion = setting.serverVersion,
                         serverVersion = setting.serverVersion,
                         modifiedAt = now(),
-                        syncStatus = SyncStatus.SYNCED,
                     )
                 }
             val localSettings = LocalSettings(
@@ -818,13 +793,8 @@ private fun TypedLocalSetting.markLocalSync(newServerVersion: Int): TypedLocalSe
         setting.copy(
             syncedVersion = setting.localVersion,
             serverVersion = newServerVersion,
-            syncStatus = SyncStatus.SYNCED,
         )
     }
-
-private fun TypedLocalSetting.markFailed(): TypedLocalSetting = copy { setting ->
-    setting.copy(syncStatus = SyncStatus.FAILED)
-}
 
 private fun TypedLocalSetting.acceptServerState(
     conflict: SyncResult.Conflict,
@@ -841,7 +811,6 @@ private fun TypedLocalSetting.acceptServerState(
                     syncedVersion = conflict.newVersion,
                     serverVersion = conflict.newVersion,
                     modifiedAt = conflict.serverModifiedAt,
-                    syncStatus = SyncStatus.SYNCED,
                 ),
             ),
             localValue = localValue,

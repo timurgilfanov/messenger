@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.data.source.local
 
 import androidx.annotation.IntRange
 import kotlin.time.Instant
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 
 /**
  * A setting value with synchronization metadata for conflict-free replication.
@@ -20,7 +19,6 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
  * @property syncedVersion Last successfully synced [localVersion]
  * @property serverVersion Server's version for this setting (0 = unknown/never synced)
  * @property modifiedAt Timestamp of last local modification
- * @property syncStatus Current sync state (SYNCED, PENDING, FAILED, SYNCING)
  */
 data class LocalSetting<T>(
     val value: T,
@@ -28,7 +26,6 @@ data class LocalSetting<T>(
     @param:IntRange(from = 0) val syncedVersion: Int,
     @param:IntRange(from = 0) val serverVersion: Int,
     val modifiedAt: Instant,
-    val syncStatus: SyncStatus,
 ) {
     init {
         require(localVersion >= 1) {

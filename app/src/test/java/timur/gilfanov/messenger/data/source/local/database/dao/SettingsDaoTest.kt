@@ -13,7 +13,6 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 
 @RunWith(AndroidJUnit4::class)
@@ -40,7 +39,6 @@ class SettingsDaoTest {
             syncedVersion = 2, // Same as local
             serverVersion = 2,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
         val unsyncedSetting = SettingEntity(
             userId = testUserId,
@@ -50,7 +48,6 @@ class SettingsDaoTest {
             syncedVersion = 1, // Less than local
             serverVersion = 1,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.PENDING,
         )
         settingsDao.upsert(syncedSetting)
         settingsDao.upsert(unsyncedSetting)
@@ -79,7 +76,6 @@ class SettingsDaoTest {
             syncedVersion = 0,
             serverVersion = 0,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
         val user2Setting = SettingEntity(
             userId = user2Id,
@@ -89,7 +85,6 @@ class SettingsDaoTest {
             syncedVersion = 0,
             serverVersion = 0,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.SYNCED,
         )
 
         // When
@@ -117,7 +112,6 @@ class SettingsDaoTest {
             syncedVersion = 0,
             serverVersion = 0,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
 
         // When
@@ -133,7 +127,6 @@ class SettingsDaoTest {
         assertEquals(0, retrieved.syncedVersion)
         assertEquals(0, retrieved.serverVersion)
         assertEquals(1000L, retrieved.modifiedAt)
-        assertEquals(SyncStatus.SYNCED, retrieved.syncStatus)
     }
 
     @Test
@@ -147,7 +140,6 @@ class SettingsDaoTest {
             syncedVersion = 0,
             serverVersion = 0,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
         settingsDao.upsert(originalSetting)
 
@@ -181,7 +173,6 @@ class SettingsDaoTest {
             syncedVersion = 0,
             serverVersion = 0,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
         val user2Setting = SettingEntity(
             userId = user2Id,
@@ -191,7 +182,6 @@ class SettingsDaoTest {
             syncedVersion = 0,
             serverVersion = 0,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.SYNCED,
         )
         settingsDao.upsert(user1Setting)
         settingsDao.upsert(user2Setting)

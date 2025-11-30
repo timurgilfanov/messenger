@@ -7,7 +7,6 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.data.source.local.database.entity.SyncStatus
 import timur.gilfanov.messenger.domain.entity.user.SettingKey
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
@@ -29,7 +28,6 @@ class LocalSettingsTest {
             syncedVersion = 3,
             serverVersion = 2,
             modifiedAt = 1234567890L,
-            syncStatus = SyncStatus.PENDING,
         )
 
         // When
@@ -44,7 +42,6 @@ class LocalSettingsTest {
         assertEquals(3, result.uiLanguage.syncedVersion)
         assertEquals(2, result.uiLanguage.serverVersion)
         assertEquals(Instant.fromEpochMilliseconds(1234567890L), result.uiLanguage.modifiedAt)
-        assertEquals(SyncStatus.PENDING, result.uiLanguage.syncStatus)
     }
 
     @Test
@@ -63,7 +60,6 @@ class LocalSettingsTest {
         assertEquals(1, result.uiLanguage.localVersion)
         assertEquals(0, result.uiLanguage.syncedVersion)
         assertEquals(0, result.uiLanguage.serverVersion)
-        assertEquals(SyncStatus.PENDING, result.uiLanguage.syncStatus)
     }
 
     @Test
@@ -77,7 +73,6 @@ class LocalSettingsTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
 
         // When
@@ -103,7 +98,6 @@ class LocalSettingsTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
 
         // When
@@ -127,7 +121,6 @@ class LocalSettingsTest {
             syncedVersion = 2,
             serverVersion = 2,
             modifiedAt = 2000L,
-            syncStatus = SyncStatus.SYNCED,
         )
         val themeEntity = SettingEntity(
             userId = testUserId.id.toString(),
@@ -137,7 +130,6 @@ class LocalSettingsTest {
             syncedVersion = 1,
             serverVersion = 1,
             modifiedAt = 1000L,
-            syncStatus = SyncStatus.SYNCED,
         )
 
         // When
@@ -161,7 +153,6 @@ class LocalSettingsTest {
                 syncedVersion = 3,
                 serverVersion = 2,
                 modifiedAt = Instant.fromEpochMilliseconds(1234567890L),
-                syncStatus = SyncStatus.PENDING,
             ),
         )
 
@@ -178,7 +169,6 @@ class LocalSettingsTest {
         assertEquals(3, entity.syncedVersion)
         assertEquals(2, entity.serverVersion)
         assertEquals(1234567890L, entity.modifiedAt)
-        assertEquals(SyncStatus.PENDING, entity.syncStatus)
     }
 
     @Test
@@ -191,7 +181,6 @@ class LocalSettingsTest {
                 syncedVersion = 3,
                 serverVersion = 2,
                 modifiedAt = Instant.fromEpochMilliseconds(1234567890L),
-                syncStatus = SyncStatus.PENDING,
             ),
         )
 
@@ -213,7 +202,6 @@ class LocalSettingsTest {
             syncedVersion = 3,
             serverVersion = 2,
             modifiedAt = 1234567890L,
-            syncStatus = SyncStatus.PENDING,
         )
 
         // When - convert entity -> LocalSettings -> entity
@@ -233,6 +221,5 @@ class LocalSettingsTest {
         assertEquals(originalEntity.syncedVersion, roundTripEntity.syncedVersion)
         assertEquals(originalEntity.serverVersion, roundTripEntity.serverVersion)
         assertEquals(originalEntity.modifiedAt, roundTripEntity.modifiedAt)
-        assertEquals(originalEntity.syncStatus, roundTripEntity.syncStatus)
     }
 }

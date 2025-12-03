@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.user
 
+import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
+
 /**
  * One-time side effects for the language selection screen.
  *
@@ -7,14 +9,8 @@ package timur.gilfanov.messenger.ui.screen.user
  * configuration changes, such as showing snackbars or toasts.
  */
 sealed interface LanguageSideEffects {
-    /**
-     * Language change partially failed.
-     *
-     * Indicates the language was changed on this device but could not be
-     * synchronized to all other devices. The user should be informed via
-     * a transient message (e.g., toast or snackbar).
-     *
-     * @property reason Human-readable description of why synchronization failed
-     */
-    data class LanguageNotChangedForAllDevices(val reason: String) : LanguageSideEffects
+
+    data object Unauthorized : LanguageSideEffects
+
+    data class ChangeFailed(val error: ChangeLanguageRepositoryError) : LanguageSideEffects
 }

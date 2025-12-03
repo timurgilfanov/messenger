@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.user
 
 import kotlinx.collections.immutable.ImmutableList
+import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 
 /**
  * UI state for the language selection screen.
@@ -11,6 +12,6 @@ import kotlinx.collections.immutable.ImmutableList
  * @property selectedLanguage The currently selected language
  */
 data class LanguageUiState(
-    val languages: ImmutableList<LanguageItem>,
-    val selectedLanguage: LanguageItem,
+    val languages: ImmutableList<UiLanguage>,
+    val selectedLanguage: UiLanguage?,
 )

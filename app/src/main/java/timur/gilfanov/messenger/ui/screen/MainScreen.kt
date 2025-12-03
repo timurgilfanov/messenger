@@ -24,7 +24,6 @@ import timur.gilfanov.messenger.navigation.Language
 import timur.gilfanov.messenger.navigation.ProfileEdit
 import timur.gilfanov.messenger.navigation.Settings
 import timur.gilfanov.messenger.ui.screen.user.LanguageScreen
-import timur.gilfanov.messenger.ui.screen.user.LanguageViewModel
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditScreen
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditViewModel
 import timur.gilfanov.messenger.ui.screen.user.UserScreen
@@ -85,7 +84,6 @@ fun MainScreen(
                     entry<Language> {
                         LanguageScreen(
                             modifier = defaultModifier,
-                            viewModel = LanguageViewModel(),
                         )
                     }
                 },

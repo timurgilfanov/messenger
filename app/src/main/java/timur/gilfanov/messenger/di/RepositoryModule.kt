@@ -8,10 +8,12 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
 import timur.gilfanov.messenger.data.repository.MessengerRepositoryImpl
 import timur.gilfanov.messenger.data.repository.SettingsRepositoryImpl
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 
 @Suppress("unused")
@@ -28,6 +30,12 @@ abstract class RepositoryModule {
     abstract fun bindMessageRepository(
         messengerRepositoryImpl: MessengerRepositoryImpl,
     ): MessageRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindIdentityRepository(
+        defaultIdentityRepository: DefaultIdentityRepository,
+    ): IdentityRepository
 
     @Binds
     @Singleton

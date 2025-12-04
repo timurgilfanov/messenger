@@ -40,4 +40,9 @@
     <string name="delivery_error_message_expired">Message expired</string>
     <string name="delivery_error_rate_limit_exceeded">Rate limit exceeded. Try again in %s</string>
     <string name="delivery_error_unknown">Failed to send message</string>
+
+    <!-- Settings -->
+    <string name="settings_language_screen_title">Language</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_german">German</string>
 </resources>

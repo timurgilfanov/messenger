@@ -19,9 +19,12 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsReposi
 
 object LanguageViewModelTestFixtures {
 
+    private val TEST_USER_ID = java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440001")
+    private val TEST_DEVICE_ID = java.util.UUID.fromString("00000000-0000-0000-0000-000000000002")
+
     fun createTestIdentity(): Identity = Identity(
-        userId = UserId(java.util.UUID.randomUUID()),
-        deviceId = DeviceId(java.util.UUID.randomUUID()),
+        userId = UserId(TEST_USER_ID),
+        deviceId = DeviceId(TEST_DEVICE_ID),
     )
 
     fun createTestSettings(language: UiLanguage = UiLanguage.English): Settings = Settings(

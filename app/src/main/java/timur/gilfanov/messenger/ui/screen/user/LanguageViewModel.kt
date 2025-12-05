@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.debounce
@@ -14,6 +13,7 @@ import org.orbitmvi.orbit.annotation.OrbitExperimental
 import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.user.uiLanguageList
 import timur.gilfanov.messenger.domain.usecase.user.ChangeUiLanguageError
 import timur.gilfanov.messenger.domain.usecase.user.ChangeUiLanguageUseCase
 import timur.gilfanov.messenger.domain.usecase.user.ObserveUiLanguageError
@@ -41,10 +41,7 @@ class LanguageViewModel @Inject constructor(
 
     override val container = container<LanguageUiState, LanguageSideEffects>(
         LanguageUiState(
-            languages = persistentListOf(
-                UiLanguage.English,
-                UiLanguage.German,
-            ),
+            languages = uiLanguageList,
             selectedLanguage = null,
         ),
     ) {

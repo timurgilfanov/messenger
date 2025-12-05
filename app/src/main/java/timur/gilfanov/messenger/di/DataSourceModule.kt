@@ -100,6 +100,7 @@ abstract class DataSourceModule {
     ): RemoteSyncDataSource
 
     @Binds
+    @Singleton
     @Named("real")
     abstract fun bindRealRemoteSettingsDataSource(
         remoteSettingsDataSourceNoop: RemoteSettingsDataSourceNoop,

@@ -33,15 +33,19 @@ import org.junit.runner.RunWith
 import timur.gilfanov.messenger.ChatScreenTestActivity
 import timur.gilfanov.messenger.annotations.FeatureTest
 import timur.gilfanov.messenger.annotations.ReleaseCandidateTest
+import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestChatModule
 import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 import timur.gilfanov.messenger.test.RepositoryCleanupRule
+import timur.gilfanov.messenger.test.SettingsRepositoryStub
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -74,6 +78,12 @@ class ChatMessageSendingFeatureTest {
         @Provides
         @Singleton
         fun provideMessageRepository(): MessageRepository = repository
+
+        @Provides
+        fun provideSettingsRepository(): SettingsRepository = SettingsRepositoryStub()
+
+        @Provides
+        fun provideIdentityRepository(): IdentityRepository = DefaultIdentityRepository()
     }
 
     @Module

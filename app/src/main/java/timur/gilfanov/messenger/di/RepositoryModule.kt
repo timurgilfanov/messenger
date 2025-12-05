@@ -32,13 +32,11 @@ abstract class RepositoryModule {
     ): MessageRepository
 
     @Binds
-    @Singleton
     abstract fun bindIdentityRepository(
         defaultIdentityRepository: DefaultIdentityRepository,
     ): IdentityRepository
 
     @Binds
-    @Singleton
     abstract fun bindSettingsRepository(
         settingsRepositoryImpl: SettingsRepositoryImpl,
     ): SettingsRepository

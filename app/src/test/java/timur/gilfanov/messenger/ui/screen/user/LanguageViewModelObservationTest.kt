@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.ui.screen.user
 
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -129,10 +128,7 @@ class LanguageViewModelObservationTest {
             }
 
             expectState {
-                LanguageUiState(
-                    languages = persistentListOf(UiLanguage.English, UiLanguage.German),
-                    selectedLanguage = UiLanguage.German,
-                )
+                copy(selectedLanguage = UiLanguage.German)
             }
 
             testScheduler.advanceTimeBy(300)

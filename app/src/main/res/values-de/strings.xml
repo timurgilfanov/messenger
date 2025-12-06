@@ -40,4 +40,13 @@
     <string name="delivery_error_message_expired">Nachricht abgelaufen</string>
     <string name="delivery_error_rate_limit_exceeded">Rate-Limit erreicht. Versuchen Sie es in %s erneut</string>
     <string name="delivery_error_unknown">Nachricht konnte nicht gesendet werden</string>
+
+    <!-- Settings -->
+    <string name="settings_language_screen_title">Sprache</string>
+    <string name="settings_language_english">Englisch</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_change_failed">Sprache kann nicht geändert werden</string>
+
+    <!-- Common content description -->
+    <string name="content_description_navigate_back">Zurück navigieren</string>
 </resources>

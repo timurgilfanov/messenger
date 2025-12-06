@@ -5,7 +5,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
-import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
@@ -14,7 +13,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createFailingIdentityRepository
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
@@ -24,9 +22,6 @@ import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.cre
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class LanguageViewModelObservationTest {
-
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
 
     @Test
     fun `Unauthorized error from observation posts Unauthorized side effect`() = runTest {
@@ -60,7 +55,6 @@ class LanguageViewModelObservationTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
-            testScheduler.runCurrent()
             testScheduler.advanceTimeBy(300)
             expectNoItems()
 
@@ -142,7 +136,6 @@ class LanguageViewModelObservationTest {
             }
 
             testScheduler.advanceTimeBy(300)
-            testScheduler.runCurrent()
             expectNoItems()
 
             job.cancelAndJoin()

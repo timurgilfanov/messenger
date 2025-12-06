@@ -6,7 +6,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
-import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
@@ -16,7 +15,6 @@ import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSettingsRepositoryWithChangeError
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
@@ -26,9 +24,6 @@ import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.cre
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class LanguageViewModelChangeLanguageTest {
-
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
 
     @Test
     fun `changeLanguage successfully completes without errors`() = runTest {
@@ -79,7 +74,6 @@ class LanguageViewModelChangeLanguageTest {
             }
 
             testScheduler.advanceTimeBy(300)
-            testScheduler.runCurrent()
             expectNoItems()
 
             job.cancelAndJoin()

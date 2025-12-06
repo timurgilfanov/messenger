@@ -8,7 +8,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
-import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
@@ -17,7 +16,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createTestSettings
@@ -26,9 +24,6 @@ import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.cre
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class LanguageViewModelStateTransitionsTest {
-
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
 
     /**
      * Verifies that the `languages` list property maintains referential equality across

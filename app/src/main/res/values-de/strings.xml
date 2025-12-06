@@ -45,4 +45,7 @@
     <string name="settings_language_screen_title">Sprache</string>
     <string name="settings_language_english">Englisch</string>
     <string name="settings_language_german">Deutsch</string>
+
+    <!-- Common content description -->
+    <string name="content_description_navigate_back">Zurück navigieren</string>
 </resources>

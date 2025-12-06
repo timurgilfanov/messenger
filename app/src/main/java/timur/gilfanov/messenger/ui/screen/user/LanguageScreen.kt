@@ -50,7 +50,12 @@ fun LanguageScreenContent(
     Column(modifier.background(MaterialTheme.colorScheme.background)) {
         MediumTopAppBar(
             title = { Text(stringResource(R.string.settings_language_screen_title)) },
-            navigationIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) },
+            navigationIcon = {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    stringResource(R.string.content_description_navigate_back),
+                )
+            },
         )
         uiState.languages.forEach { language ->
             Row(

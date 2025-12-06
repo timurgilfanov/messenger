@@ -139,7 +139,7 @@ class LanguageViewModelObservationTest {
     }
 
     @Test
-    fun `change failure does not break observation stream`() = runTest {
+    fun `failure does not break observation stream`() = runTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
             ResultWithError.Success(createTestSettings(UiLanguage.English)),
         )
@@ -153,6 +153,15 @@ class LanguageViewModelObservationTest {
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
+
+            settingsFlow.update {
+                ResultWithError.Failure(
+                    GetSettingsRepositoryError.UnknownError(Exception("Test error")),
+                )
+            }
+
+            testScheduler.advanceTimeBy(300)
+            expectNoItems()
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))

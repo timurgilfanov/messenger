@@ -7,9 +7,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -41,6 +43,7 @@ class LanguageScreenContentTest {
                 LanguageScreenContent(
                     uiState = state,
                     onSelectLanguage = { state = state.copy(selectedLanguage = it) },
+                    onBackClick = {},
                 )
             }
         }
@@ -69,6 +72,7 @@ class LanguageScreenContentTest {
                 LanguageScreenContent(
                     uiState = state,
                     onSelectLanguage = { state = state.copy(selectedLanguage = it) },
+                    onBackClick = {},
                 )
             }
         }
@@ -94,6 +98,7 @@ class LanguageScreenContentTest {
                 LanguageScreenContent(
                     uiState = initialState,
                     onSelectLanguage = { selectedLanguage = it },
+                    onBackClick = {},
                 )
             }
         }
@@ -115,6 +120,7 @@ class LanguageScreenContentTest {
                 LanguageScreenContent(
                     uiState = initialState,
                     onSelectLanguage = { selectedLanguage = it },
+                    onBackClick = {},
                 )
             }
         }
@@ -125,5 +131,25 @@ class LanguageScreenContentTest {
             .performClick()
 
         assertEquals(UiLanguage.German, selectedLanguage)
+    }
+
+    @Test
+    fun `clicking back button calls onBackClick callback`() {
+        var backClicked = false
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                LanguageScreenContent(
+                    uiState = initialState,
+                    onSelectLanguage = {},
+                    onBackClick = { backClicked = true },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Navigate back")
+            .performClick()
+
+        assertTrue(backClicked)
     }
 }

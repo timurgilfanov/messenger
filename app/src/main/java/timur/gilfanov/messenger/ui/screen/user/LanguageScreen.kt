@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.RadioButton
@@ -35,6 +36,7 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 fun LanguageScreen(
     onAuthFailure: () -> Unit,
     onShowSnackbar: (String) -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LanguageViewModel = hiltViewModel(),
 ) {
@@ -51,6 +53,7 @@ fun LanguageScreen(
     LanguageScreenContent(
         uiState = uiState,
         onSelectLanguage = viewModel::changeLanguage,
+        onBackClick = onBackClick,
         modifier = modifier,
     )
 }
@@ -60,16 +63,19 @@ fun LanguageScreen(
 fun LanguageScreenContent(
     uiState: LanguageUiState,
     onSelectLanguage: (UiLanguage) -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.background(MaterialTheme.colorScheme.background)) {
         MediumTopAppBar(
             title = { Text(stringResource(R.string.settings_language_screen_title)) },
             navigationIcon = {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    stringResource(R.string.content_description_navigate_back),
-                )
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        stringResource(R.string.content_description_navigate_back),
+                    )
+                }
             },
         )
         uiState.languages.forEach { language ->
@@ -131,6 +137,7 @@ private fun Content(darkTheme: Boolean) {
         LanguageScreenContent(
             uiState = uiState,
             onSelectLanguage = {},
+            onBackClick = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()

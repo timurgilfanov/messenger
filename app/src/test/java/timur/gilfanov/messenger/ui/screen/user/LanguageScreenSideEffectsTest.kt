@@ -38,6 +38,7 @@ class LanguageScreenSideEffectsTest {
                 LanguageScreen(
                     onAuthFailure = {},
                     onShowSnackbar = { snackbarMessage = it },
+                    onBackClick = {},
                     viewModel = viewModel,
                 )
             }
@@ -61,6 +62,7 @@ class LanguageScreenSideEffectsTest {
                 LanguageScreen(
                     onAuthFailure = { authFailureCalled = true },
                     onShowSnackbar = {},
+                    onBackClick = {},
                     viewModel = viewModel,
                 )
             }

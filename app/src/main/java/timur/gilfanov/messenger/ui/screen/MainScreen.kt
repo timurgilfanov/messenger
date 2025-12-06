@@ -94,6 +94,7 @@ fun MainScreen(
                             onShowSnackbar = { message ->
                                 scope.launch { snackbarHostState.showSnackbar(message) }
                             },
+                            onBackClick = { settingsBackStack.removeLastOrNull() },
                             modifier = defaultModifier,
                         )
                     }

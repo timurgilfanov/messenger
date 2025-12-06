@@ -142,6 +142,9 @@ class LanguageViewModelChangeLanguageTest {
                 sideEffect.error,
             )
 
+            testScheduler.advanceTimeBy(300)
+            expectNoItems()
+
             job.cancelAndJoin()
         }
     }
@@ -169,6 +172,9 @@ class LanguageViewModelChangeLanguageTest {
             val sideEffect = awaitSideEffect()
             assertIs<LanguageSideEffects.ChangeFailed>(sideEffect)
             assertIs<ChangeLanguageRepositoryError.Recoverable.DataCorruption>(sideEffect.error)
+
+            testScheduler.advanceTimeBy(300)
+            expectNoItems()
 
             job.cancelAndJoin()
         }
@@ -199,6 +205,9 @@ class LanguageViewModelChangeLanguageTest {
             assertIs<LanguageSideEffects.ChangeFailed>(sideEffect)
             assertIs<ChangeLanguageRepositoryError.UnknownError>(sideEffect.error)
             assertEquals(testException, sideEffect.error.cause)
+
+            testScheduler.advanceTimeBy(300)
+            expectNoItems()
 
             job.cancelAndJoin()
         }

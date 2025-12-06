@@ -26,22 +26,8 @@ import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.cre
 class LanguageViewModelStateTransitionsTest {
 
     /**
-     * Verifies that the `languages` list property maintains referential equality across
-     * state changes, ensuring only the `selectedLanguage` is updated while the list itself
-     * is reused.
-     *
-     * **Why this matters:**
-     * - **Performance**: Jetpack Compose uses referential equality for recomposition.
-     *   If `languages` never changes reference, UI elements depending on it won't recompose
-     *   unnecessarily
-     * - **Memory efficiency**: The immutable list is created once during initialization
-     *   and shared across all state instances
-     * - **Correctness**: Verifies proper state management where only changing data is updated
-     *   while static data remains constant
-     *
-     * **What would be wrong:**
-     * If each `state.copy(selectedLanguage = X)` created a new `languages` list,
-     * it would cause unnecessary recompositions and memory allocations.
+     * Verifies that the `languages` list maintains referential equality across state changes.
+     * This avoids unnecessary allocations and Compose recompositions.
      */
     @Test
     fun `languages list remains constant throughout lifecycle`() = runTest {
@@ -80,23 +66,8 @@ class LanguageViewModelStateTransitionsTest {
     }
 
     /**
-     * Verifies that each state update creates a new [LanguageUiState] instance,
-     * ensuring state objects are never mutated in place and previous state instances
-     * remain unchanged.
-     *
-     * **Why this matters:**
-     * - **Correctness**: MVI pattern requires immutable state for predictable behavior
-     *   and unidirectional data flow
-     * - **Thread safety**: Immutable state can be safely shared across coroutines
-     *   without synchronization
-     * - **Time travel debugging**: Previous state instances must remain unchanged
-     *   for debugging tools to work correctly
-     * - **Compose integration**: Compose snapshot system relies on new object instances
-     *   to detect state changes and trigger recomposition
-     *
-     * **What would be wrong:**
-     * If state were mutated in place (`state.selectedLanguage = X`), it would break
-     * MVI guarantees, cause race conditions, and prevent Compose from detecting changes.
+     * Verifies that state updates create new instances, preserving previous state values.
+     * This ensures MVI immutability: state1 remains unchanged after state2 is emitted.
      */
     @Test
     fun `state immutability preserved data class copy creates new instance`() = runTest {

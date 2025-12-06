@@ -9,17 +9,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.navigation.Language
 import timur.gilfanov.messenger.navigation.ProfileEdit
 import timur.gilfanov.messenger.navigation.Settings
@@ -37,8 +41,11 @@ fun MainScreen(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val settingsBackStack = rememberNavBackStack(Settings)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
@@ -83,6 +90,10 @@ fun MainScreen(
                     }
                     entry<Language> {
                         LanguageScreen(
+                            onAuthFailure = { error("Not implemented") },
+                            onShowSnackbar = { message ->
+                                scope.launch { snackbarHostState.showSnackbar(message) }
+                            },
                             modifier = defaultModifier,
                         )
                     }

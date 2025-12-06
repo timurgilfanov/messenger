@@ -45,6 +45,7 @@
     <string name="settings_language_screen_title">Language</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_german">German</string>
+    <string name="settings_language_change_failed">Cannot change language</string>
 
     <!-- Common content description -->
     <string name="content_description_navigate_back">Navigate back</string>

@@ -25,14 +25,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.entity.user.uiLanguageList
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
-fun LanguageScreen(modifier: Modifier = Modifier, viewModel: LanguageViewModel = hiltViewModel()) {
+fun LanguageScreen(
+    onAuthFailure: () -> Unit,
+    onShowSnackbar: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: LanguageViewModel = hiltViewModel(),
+) {
     val uiState by viewModel.collectAsState()
+    val errorMessage = stringResource(R.string.settings_language_change_failed)
+
+    viewModel.collectSideEffect {
+        when (it) {
+            is LanguageSideEffects.ChangeFailed -> onShowSnackbar(errorMessage)
+            LanguageSideEffects.Unauthorized -> onAuthFailure()
+        }
+    }
+
     LanguageScreenContent(
         uiState = uiState,
         onSelectLanguage = viewModel::changeLanguage,

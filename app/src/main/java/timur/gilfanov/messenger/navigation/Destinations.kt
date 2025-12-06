@@ -17,3 +17,6 @@ data object ProfileEdit : NavKey
 
 @Serializable
 data object Language : NavKey
+
+@Serializable
+data object Login : NavKey

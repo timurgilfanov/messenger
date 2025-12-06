@@ -25,9 +25,11 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.navigation.Language
+import timur.gilfanov.messenger.navigation.Login
 import timur.gilfanov.messenger.navigation.ProfileEdit
 import timur.gilfanov.messenger.navigation.Settings
 import timur.gilfanov.messenger.ui.screen.user.LanguageScreen
+import timur.gilfanov.messenger.ui.screen.user.LoginScreen
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditScreen
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditViewModel
 import timur.gilfanov.messenger.ui.screen.user.UserScreen
@@ -90,13 +92,19 @@ fun MainScreen(
                     }
                     entry<Language> {
                         LanguageScreen(
-                            onAuthFailure = { error("Not implemented") },
+                            onAuthFailure = {
+                                settingsBackStack.clear()
+                                settingsBackStack.add(Login)
+                            },
                             onShowSnackbar = { message ->
                                 scope.launch { snackbarHostState.showSnackbar(message) }
                             },
                             onBackClick = { settingsBackStack.removeLastOrNull() },
                             modifier = defaultModifier,
                         )
+                    }
+                    entry<Login> {
+                        LoginScreen()
                     }
                 },
             )

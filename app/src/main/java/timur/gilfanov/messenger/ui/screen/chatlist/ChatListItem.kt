@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Badge
@@ -47,6 +46,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.ui.component.ProfileImage
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 private const val DAYS_IN_WEEK = 7
@@ -166,13 +166,10 @@ private fun ChatAvatar(pictureUrl: String?, name: String, isOnline: Boolean) {
             contentAlignment = Alignment.Center,
         ) {
             if (pictureUrl != null) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = stringResource(
-                        R.string.chat_list_avatar_content_description,
-                    ),
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                ProfileImage(
+                    pictureUrl = pictureUrl,
+                    name = name,
+                    size = 56.dp,
                 )
             } else {
                 // Show first letter of name or group icon

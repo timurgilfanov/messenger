@@ -4,6 +4,7 @@ import org.junit.Test
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.ui.screenshot.ScreenshotTestBase
+import timur.gilfanov.messenger.util.generateProfileImageUrl
 
 class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
@@ -15,31 +16,26 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
         createdAt = "10:24",
         deliveryStatus = DeliveryStatus.Read,
         isFromCurrentUser = true,
+        senderPictureUrl = generateProfileImageUrl("Alice"),
     )
 
     @Test
     fun outgoing_read_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(message = baseMessage)
         }
     }
 
     @Test
     fun outgoing_read_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(message = baseMessage)
         }
     }
 
     @Test
     fun outgoing_delivered_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     deliveryStatus = DeliveryStatus.Delivered,
@@ -50,9 +46,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun outgoing_delivered_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = baseMessage.copy(
                     deliveryStatus = DeliveryStatus.Delivered,
@@ -63,9 +57,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun outgoing_sending_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     deliveryStatus = DeliveryStatus.Sending(50),
@@ -76,9 +68,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun outgoing_sending_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = baseMessage.copy(
                     deliveryStatus = DeliveryStatus.Sending(50),
@@ -89,9 +79,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun outgoing_failedNetwork_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
@@ -102,9 +90,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun outgoing_failedNetwork_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = baseMessage.copy(
                     deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
@@ -115,9 +101,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun outgoing_failedPermission_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     deliveryStatus = DeliveryStatus.Failed(DeliveryError.RecipientBlocked),
@@ -128,9 +112,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun outgoing_failedPermission_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = baseMessage.copy(
                     deliveryStatus = DeliveryStatus.Failed(DeliveryError.RecipientBlocked),
@@ -141,9 +123,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun incoming_basic_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     isFromCurrentUser = false,
@@ -155,9 +135,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun incoming_basic_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = baseMessage.copy(
                     isFromCurrentUser = false,
@@ -169,9 +147,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun incoming_failed_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = MessageUiModel(
                     id = "2",
@@ -182,6 +158,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
                     createdAt = "22:05",
                     deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
                     isFromCurrentUser = false,
+                    senderPictureUrl = generateProfileImageUrl("Alice"),
                 ),
             )
         }
@@ -189,9 +166,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun incoming_failed_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = MessageUiModel(
                     id = "2",
@@ -202,6 +177,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
                     createdAt = "22:05",
                     deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
                     isFromCurrentUser = false,
+                    senderPictureUrl = null,
                 ),
             )
         }
@@ -209,9 +185,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun longText_outgoing_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     text = "This is a very long message that should definitely wrap across " +
@@ -224,9 +198,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun longText_incoming_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = baseMessage.copy(
                     text = "This is a very long message that should definitely wrap across " +
@@ -241,9 +213,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun shortText_outgoing_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     text = "Hi!",
@@ -254,9 +224,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun shortText_incoming_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = baseMessage.copy(
                     text = "Hi!",
@@ -269,9 +237,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun longSenderName_incoming_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     text = "Message from user with long name",
@@ -284,9 +250,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun multilineText_outgoing_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = baseMessage.copy(
                     text = "Line one\nLine two\nLine three with some additional text",
@@ -298,7 +262,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
     @Test
     fun smallScreen_longText_light() {
         captureScreenshot(
-            configuration = TestConfiguration(
+            TestConfiguration(
                 screenSize = ScreenSize.SMALL,
                 theme = Theme.LIGHT,
             ),
@@ -314,7 +278,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
     @Test
     fun largeScreen_shortText_dark() {
         captureScreenshot(
-            configuration = TestConfiguration(
+            TestConfiguration(
                 screenSize = ScreenSize.LARGE,
                 theme = Theme.DARK,
             ),
@@ -332,7 +296,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
     @Test
     fun rtl_outgoing_light() {
         captureScreenshot(
-            configuration = TestConfiguration(
+            TestConfiguration(
                 theme = Theme.LIGHT,
                 layoutDirection = androidx.compose.ui.unit.LayoutDirection.Rtl,
             ),
@@ -350,7 +314,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
     @Test
     fun rtl_incoming_dark() {
         captureScreenshot(
-            configuration = TestConfiguration(
+            TestConfiguration(
                 theme = Theme.DARK,
                 layoutDirection = androidx.compose.ui.unit.LayoutDirection.Rtl,
             ),
@@ -369,7 +333,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
     @Test
     fun rtl_failed_outgoing_light() {
         captureScreenshot(
-            configuration = TestConfiguration(
+            TestConfiguration(
                 theme = Theme.LIGHT,
                 layoutDirection = androidx.compose.ui.unit.LayoutDirection.Rtl,
             ),
@@ -386,9 +350,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun emojiText_outgoing_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     text = "Hello! 👋 How are you? 😊🎉",
@@ -399,9 +361,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun numbersAndSymbols_incoming_dark() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.DARK),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.DARK)) {
             MessageBubble(
                 message = baseMessage.copy(
                     text = "Meeting at 3:30 PM. Address: 123-456-7890. Cost: $25.99!",
@@ -414,9 +374,7 @@ class MessageBubbleScreenshotTest : ScreenshotTestBase() {
 
     @Test
     fun longTimestamp_outgoing_light() {
-        captureScreenshot(
-            configuration = TestConfiguration(theme = Theme.LIGHT),
-        ) {
+        captureScreenshot(TestConfiguration(theme = Theme.LIGHT)) {
             MessageBubble(
                 message = baseMessage.copy(
                     text = "Message with long timestamp",

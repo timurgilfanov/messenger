@@ -13,9 +13,11 @@ import timur.gilfanov.messenger.domain.usecase.user.GetIdentityError
 import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.user.IdentityRepositoryStub
 import timur.gilfanov.messenger.domain.usecase.user.ObserveUiLanguageUseCase
+import timur.gilfanov.messenger.domain.usecase.user.SettingsRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.user.SettingsRepositoryStub
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 
 object LanguageViewModelTestFixtures {
 
@@ -33,16 +35,16 @@ object LanguageViewModelTestFixtures {
 
     fun createViewModel(
         identityRepository: IdentityRepository,
-        settingsRepositoryStub: SettingsRepositoryStub,
+        settingsRepository: SettingsRepository,
     ): LanguageViewModel {
         val observeUseCase = ObserveUiLanguageUseCase(
             identityRepository = identityRepository,
-            settingsRepository = settingsRepositoryStub,
+            settingsRepository = settingsRepository,
             logger = NoOpLogger(),
         )
         val changeUseCase = ChangeUiLanguageUseCase(
             identityRepository = identityRepository,
-            settingsRepository = settingsRepositoryStub,
+            settingsRepository = settingsRepository,
             logger = NoOpLogger(),
         )
         return LanguageViewModel(
@@ -74,5 +76,14 @@ object LanguageViewModelTestFixtures {
     ): SettingsRepositoryStub = SettingsRepositoryStub(
         settings = ResultWithError.Success(createTestSettings(currentLanguage)),
         changeLanguageResult = ResultWithError.Failure(changeError),
+    )
+
+    fun createSettingsRepositoryFake(
+        currentLanguage: UiLanguage = UiLanguage.English,
+        changeResult: ResultWithError<Unit, ChangeLanguageRepositoryError> =
+            ResultWithError.Success(Unit),
+    ): SettingsRepositoryFake = SettingsRepositoryFake(
+        initialSettings = createTestSettings(currentLanguage),
+        changeResult = changeResult,
     )
 }

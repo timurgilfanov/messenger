@@ -3,22 +3,16 @@ package timur.gilfanov.messenger.ui.screen.user
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSettingsRepositoryWithChangeError
-import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
+import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSettingsRepositoryFake
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
-import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createTestSettings
 import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createViewModel
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -27,11 +21,8 @@ class LanguageViewModelChangeLanguageTest {
 
     @Test
     fun `changeLanguage successfully completes without errors`() = runTest {
-        val settingsFlow = MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
-            ResultWithError.Success(createTestSettings(UiLanguage.English)),
-        )
         val identityRepository = createSuccessfulIdentityRepository()
-        val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
+        val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
         viewModel.test(this) {
@@ -42,9 +33,6 @@ class LanguageViewModelChangeLanguageTest {
             }
 
             viewModel.changeLanguage(UiLanguage.German)
-            settingsFlow.update {
-                ResultWithError.Success(createTestSettings(UiLanguage.German))
-            }
 
             expectState {
                 copy(selectedLanguage = UiLanguage.German)
@@ -56,11 +44,8 @@ class LanguageViewModelChangeLanguageTest {
 
     @Test
     fun `changing to same language does not update state`() = runTest {
-        val settingsFlow = MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
-            ResultWithError.Success(createTestSettings(UiLanguage.English)),
-        )
         val identityRepository = createSuccessfulIdentityRepository()
-        val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
+        val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
         viewModel.test(this) {
@@ -69,9 +54,6 @@ class LanguageViewModelChangeLanguageTest {
             assertEquals(UiLanguage.English, initialState.selectedLanguage)
 
             viewModel.changeLanguage(UiLanguage.English)
-            settingsFlow.update {
-                ResultWithError.Success(createTestSettings(UiLanguage.English))
-            }
 
             testScheduler.advanceTimeBy(300)
             expectNoItems()
@@ -82,11 +64,8 @@ class LanguageViewModelChangeLanguageTest {
 
     @Test
     fun `changing from German to English works`() = runTest {
-        val settingsFlow = MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
-            ResultWithError.Success(createTestSettings(UiLanguage.German)),
-        )
         val identityRepository = createSuccessfulIdentityRepository()
-        val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
+        val settingsRepository = createSettingsRepositoryFake(UiLanguage.German)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
         viewModel.test(this) {
@@ -97,9 +76,6 @@ class LanguageViewModelChangeLanguageTest {
             }
 
             viewModel.changeLanguage(UiLanguage.English)
-            settingsFlow.update {
-                ResultWithError.Success(createTestSettings(UiLanguage.English))
-            }
 
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
@@ -111,11 +87,8 @@ class LanguageViewModelChangeLanguageTest {
 
     @Test
     fun `multiple consecutive language changes process correctly`() = runTest {
-        val settingsFlow = MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
-            ResultWithError.Success(createTestSettings(UiLanguage.English)),
-        )
         val identityRepository = createSuccessfulIdentityRepository()
-        val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
+        val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
         viewModel.test(this) {
@@ -126,25 +99,16 @@ class LanguageViewModelChangeLanguageTest {
             }
 
             viewModel.changeLanguage(UiLanguage.German)
-            settingsFlow.update {
-                ResultWithError.Success(createTestSettings(UiLanguage.German))
-            }
             expectState {
                 copy(selectedLanguage = UiLanguage.German)
             }
 
             viewModel.changeLanguage(UiLanguage.English)
-            settingsFlow.update {
-                ResultWithError.Success(createTestSettings(UiLanguage.English))
-            }
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
 
             viewModel.changeLanguage(UiLanguage.German)
-            settingsFlow.update {
-                ResultWithError.Success(createTestSettings(UiLanguage.German))
-            }
             expectState {
                 copy(selectedLanguage = UiLanguage.German)
             }
@@ -156,9 +120,11 @@ class LanguageViewModelChangeLanguageTest {
     @Test
     fun `ChangeLanguageRepository InsufficientStorage posts ChangeFailed side effect`() = runTest {
         val identityRepository = createSuccessfulIdentityRepository()
-        val settingsRepository = createSettingsRepositoryWithChangeError(
+        val settingsRepository = createSettingsRepositoryFake(
             currentLanguage = UiLanguage.English,
-            changeError = ChangeLanguageRepositoryError.Recoverable.InsufficientStorage,
+            changeResult = ResultWithError.Failure(
+                ChangeLanguageRepositoryError.Recoverable.InsufficientStorage,
+            ),
         )
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
@@ -183,9 +149,11 @@ class LanguageViewModelChangeLanguageTest {
     @Test
     fun `ChangeLanguageRepository DataCorruption posts ChangeFailed side effect`() = runTest {
         val identityRepository = createSuccessfulIdentityRepository()
-        val settingsRepository = createSettingsRepositoryWithChangeError(
+        val settingsRepository = createSettingsRepositoryFake(
             currentLanguage = UiLanguage.English,
-            changeError = ChangeLanguageRepositoryError.Recoverable.DataCorruption,
+            changeResult = ResultWithError.Failure(
+                ChangeLanguageRepositoryError.Recoverable.DataCorruption,
+            ),
         )
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
@@ -210,9 +178,11 @@ class LanguageViewModelChangeLanguageTest {
     fun `ChangeLanguageRepository UnknownError posts ChangeFailed side effect`() = runTest {
         val testException = RuntimeException("Test exception")
         val identityRepository = createSuccessfulIdentityRepository()
-        val settingsRepository = createSettingsRepositoryWithChangeError(
+        val settingsRepository = createSettingsRepositoryFake(
             currentLanguage = UiLanguage.English,
-            changeError = ChangeLanguageRepositoryError.UnknownError(testException),
+            changeResult = ResultWithError.Failure(
+                ChangeLanguageRepositoryError.UnknownError(testException),
+            ),
         )
         val viewModel = createViewModel(identityRepository, settingsRepository)
 

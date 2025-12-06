@@ -89,4 +89,12 @@ object DebugRemoteDataSourceProviders {
     @Singleton
     fun provideRemoteSettingsDataSourceFake(): RemoteSettingsDataSourceFake =
         RemoteSettingsDataSourceFake(persistentMapOf())
+
+    @Provides
+    @Singleton
+    fun provideRemoteSettingsDataSource(
+        @Named("fake") fakeDataSource: RemoteSettingsDataSource,
+        @Named("real") realDataSource: RemoteSettingsDataSource,
+        @Named("useRealRemoteDataSources") useReal: Boolean,
+    ): RemoteSettingsDataSource = if (useReal) realDataSource else fakeDataSource
 }

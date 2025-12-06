@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.domain.entity.user
 
+import kotlinx.collections.immutable.persistentListOf
+
 /**
  * Supported UI languages for the application.
  *
@@ -13,3 +15,8 @@ sealed interface UiLanguage : Setting {
     /** German language (de) */
     data object German : UiLanguage
 }
+
+val uiLanguageList = persistentListOf(
+    UiLanguage.English,
+    UiLanguage.German,
+)

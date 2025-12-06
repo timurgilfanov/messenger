@@ -8,6 +8,7 @@ import javax.inject.Named
 import javax.inject.Singleton
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
+import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
 
 /**
@@ -34,4 +35,10 @@ object ReleaseDataSourceModule {
     fun provideRemoteSyncDataSource(
         @Named("real") realDataSource: RemoteSyncDataSource,
     ): RemoteSyncDataSource = realDataSource
+
+    @Provides
+    @Singleton
+    fun provideRemoteSettingsDataSource(
+        @Named("real") realDataSource: RemoteSettingsDataSource,
+    ): RemoteSettingsDataSource = realDataSource
 }

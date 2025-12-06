@@ -24,10 +24,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.messenger.MainActivity
 import timur.gilfanov.messenger.annotations.ApplicationTest
+import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
+import timur.gilfanov.messenger.data.repository.SettingsRepositoryImpl
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.ALICE_CHAT_ID
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.ALICE_TEXT_1
@@ -36,6 +40,7 @@ import timur.gilfanov.messenger.test.AndroidTestDataHelper.BOB_TEXT_1
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 import timur.gilfanov.messenger.test.RepositoryCleanupRule
+import timur.gilfanov.messenger.test.SettingsRepositoryStub
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -68,6 +73,12 @@ class NavigationApplicationTest {
         @Provides
         @Singleton
         fun provideMessageRepository(): MessageRepository = repository
+
+        @Provides
+        fun provideSettingsRepository(): SettingsRepository = SettingsRepositoryStub()
+
+        @Provides
+        fun provideIdentityRepository(): IdentityRepository = DefaultIdentityRepository()
     }
 
     @Module

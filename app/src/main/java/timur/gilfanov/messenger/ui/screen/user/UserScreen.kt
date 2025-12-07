@@ -11,5 +11,6 @@ fun UserScreen(
     onProfileEditClick: () -> Unit,
     onChangeLanguageClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: UserViewModel = hiltViewModel(),
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) = Unit

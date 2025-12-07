@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.user
 
+import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+
 /**
  * UI model for user settings display.
  *
@@ -8,4 +10,4 @@ package timur.gilfanov.messenger.ui.screen.user
  *
  * @property language Display name of the currently selected language
  */
-data class SettingsUi(val language: String)
+data class SettingsUi(val language: UiLanguage)

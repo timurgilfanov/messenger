@@ -33,7 +33,6 @@ import timur.gilfanov.messenger.ui.screen.user.LoginScreen
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditScreen
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditViewModel
 import timur.gilfanov.messenger.ui.screen.user.UserScreen
-import timur.gilfanov.messenger.ui.screen.user.UserViewModel
 
 @Suppress("LongMethod") // remove suppression on implementation stage
 @Composable
@@ -80,7 +79,6 @@ fun MainScreen(
                             onProfileEditClick = { settingsBackStack.add(ProfileEdit) },
                             onChangeLanguageClick = { settingsBackStack.add(Language) },
                             modifier = defaultModifier,
-                            viewModel = UserViewModel(),
                         )
                     }
                     entry<ProfileEdit> {

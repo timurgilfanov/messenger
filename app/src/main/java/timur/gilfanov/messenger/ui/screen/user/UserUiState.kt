@@ -9,4 +9,7 @@ package timur.gilfanov.messenger.ui.screen.user
  * @property profile User's profile data (name, picture)
  * @property settings User's preference settings (language)
  */
-data class UserUiState(val profile: ProfileUi, val settings: SettingsUi)
+sealed interface UserUiState {
+    data object Loading : UserUiState
+    data class Ready(val profile: ProfileUi, val settings: SettingsUi) : UserUiState
+}

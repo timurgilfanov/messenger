@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,7 +57,7 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsScreenContent(
+internal fun SettingsScreenContent(
     profileUiState: ProfileUiState,
     settingsUiState: SettingsUiState,
     onProfileEditClick: () -> Unit,
@@ -81,7 +82,7 @@ fun ProfileContent(
     onProfileEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxWidth()) {
+    Box(modifier = modifier.fillMaxWidth().testTag("profile_loading")) {
         Text(
             text = stringResource(R.string.settings_loading),
             style = MaterialTheme.typography.bodyMedium,
@@ -98,7 +99,7 @@ fun SettingsContent(
 ) {
     when (uiState) {
         is SettingsUiState.Loading -> {
-            Box(modifier = modifier.fillMaxWidth()) {
+            Box(modifier = modifier.fillMaxWidth().testTag("settings_loading")) {
                 Text(
                     text = stringResource(R.string.settings_loading),
                     style = MaterialTheme.typography.bodyMedium,
@@ -113,6 +114,7 @@ fun SettingsContent(
                     title = stringResource(R.string.settings_language_screen_title),
                     value = uiState.settings.language.toSettingsItem(),
                     action = onChangeLanguageClick,
+                    modifier = Modifier.testTag("settings_language_item"),
                 )
             }
         }

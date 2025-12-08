@@ -42,6 +42,10 @@
     <string name="delivery_error_unknown">Failed to send message</string>
 
     <!-- Settings -->
+    <string name="settings_loading">Loading...</string>
+    <string name="settings_get_settings_failed">Cannot read settings</string>
+
+    <!-- Language setting -->
     <string name="settings_language_screen_title">Language</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_german">German</string>

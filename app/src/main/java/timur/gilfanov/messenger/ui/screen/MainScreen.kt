@@ -70,42 +70,48 @@ fun MainScreen(
         when (selectedTab) {
             0 -> chatNavDisplay()
 
-            1 -> NavDisplay(
-                backStack = settingsBackStack,
-                onBack = { settingsBackStack.removeLastOrNull() },
-                entryProvider = entryProvider {
-                    entry<Settings> {
-                        SettingsScreen(
-                            onProfileEditClick = { settingsBackStack.add(ProfileEdit) },
-                            onChangeLanguageClick = { settingsBackStack.add(Language) },
-                            modifier = defaultModifier,
-                        )
-                    }
-                    entry<ProfileEdit> {
-                        ProfileEditScreen(
-                            onDoneClick = { settingsBackStack.removeLastOrNull() },
-                            modifier = defaultModifier,
-                            viewModel = ProfileEditViewModel(),
-                        )
-                    }
-                    entry<Language> {
-                        LanguageScreen(
-                            onAuthFailure = {
-                                settingsBackStack.clear()
-                                settingsBackStack.add(Login)
-                            },
-                            onShowSnackbar = { message ->
-                                scope.launch { snackbarHostState.showSnackbar(message) }
-                            },
-                            onBackClick = { settingsBackStack.removeLastOrNull() },
-                            modifier = defaultModifier,
-                        )
-                    }
-                    entry<Login> {
-                        LoginScreen()
-                    }
-                },
-            )
+            1 -> {
+                val onAuthFailure: () -> Unit = {
+                    settingsBackStack.clear()
+                    settingsBackStack.add(Login)
+                }
+                val onShowSnackbar: (String) -> Unit = { message ->
+                    scope.launch { snackbarHostState.showSnackbar(message) }
+                }
+                NavDisplay(
+                    backStack = settingsBackStack,
+                    onBack = { settingsBackStack.removeLastOrNull() },
+                    entryProvider = entryProvider {
+                        entry<Settings> {
+                            SettingsScreen(
+                                onProfileEditClick = { settingsBackStack.add(ProfileEdit) },
+                                onChangeLanguageClick = { settingsBackStack.add(Language) },
+                                onAuthFailure = onAuthFailure,
+                                onShowSnackbar = onShowSnackbar,
+                                modifier = defaultModifier,
+                            )
+                        }
+                        entry<ProfileEdit> {
+                            ProfileEditScreen(
+                                onDoneClick = { settingsBackStack.removeLastOrNull() },
+                                modifier = defaultModifier,
+                                viewModel = ProfileEditViewModel(),
+                            )
+                        }
+                        entry<Language> {
+                            LanguageScreen(
+                                onAuthFailure = onAuthFailure,
+                                onShowSnackbar = onShowSnackbar,
+                                onBackClick = { settingsBackStack.removeLastOrNull() },
+                                modifier = defaultModifier,
+                            )
+                        }
+                        entry<Login> {
+                            LoginScreen()
+                        }
+                    },
+                )
+            }
         }
     }
 }

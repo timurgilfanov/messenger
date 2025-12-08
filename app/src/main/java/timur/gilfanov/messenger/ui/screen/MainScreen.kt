@@ -32,7 +32,7 @@ import timur.gilfanov.messenger.ui.screen.user.LanguageScreen
 import timur.gilfanov.messenger.ui.screen.user.LoginScreen
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditScreen
 import timur.gilfanov.messenger.ui.screen.user.ProfileEditViewModel
-import timur.gilfanov.messenger.ui.screen.user.UserScreen
+import timur.gilfanov.messenger.ui.screen.user.SettingsScreen
 
 @Suppress("LongMethod") // remove suppression on implementation stage
 @Composable
@@ -75,7 +75,7 @@ fun MainScreen(
                 onBack = { settingsBackStack.removeLastOrNull() },
                 entryProvider = entryProvider {
                     entry<Settings> {
-                        UserScreen(
+                        SettingsScreen(
                             onProfileEditClick = { settingsBackStack.add(ProfileEdit) },
                             onChangeLanguageClick = { settingsBackStack.add(Language) },
                             modifier = defaultModifier,

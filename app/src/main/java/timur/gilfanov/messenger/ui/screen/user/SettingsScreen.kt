@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
-fun UserScreen(
+fun SettingsScreen(
     onProfileEditClick: () -> Unit,
     onChangeLanguageClick: () -> Unit,
     modifier: Modifier = Modifier,

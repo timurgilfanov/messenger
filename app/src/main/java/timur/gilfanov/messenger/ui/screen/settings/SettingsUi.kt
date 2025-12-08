@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.ui.screen.user
+package timur.gilfanov.messenger.ui.screen.settings
 
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 

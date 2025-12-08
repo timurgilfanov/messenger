@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.ui.screen.user
+package timur.gilfanov.messenger.ui.screen.settings
 
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.NoOpLogger

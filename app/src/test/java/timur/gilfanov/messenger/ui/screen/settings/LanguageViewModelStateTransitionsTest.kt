@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.ui.screen.user
+package timur.gilfanov.messenger.ui.screen.settings
 
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
@@ -16,10 +16,10 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.user.Settings
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
-import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
-import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createTestSettings
-import timur.gilfanov.messenger.ui.screen.user.LanguageViewModelTestFixtures.createViewModel
+import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
+import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
+import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createTestSettings
+import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createViewModel
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)

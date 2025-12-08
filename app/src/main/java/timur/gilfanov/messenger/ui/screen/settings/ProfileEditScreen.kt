@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.ui.screen.user
+package timur.gilfanov.messenger.ui.screen.settings
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

@@ -40,7 +40,7 @@ android {
         // Build config fields for API configuration
         buildConfigField("String", "API_BASE_URL", "\"https://api.messenger.example.com/v1\"")
         buildConfigField("boolean", "USE_REAL_REMOTE_DATA_SOURCES", "false")
-        buildConfigField("boolean", "FEATURE_SETTINGS", "false")
+        buildConfigField("boolean", "FEATURE_SETTINGS", "true")
     }
 
     testOptions {

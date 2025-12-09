@@ -70,7 +70,10 @@ fun LanguageScreenContent(
         MediumTopAppBar(
             title = { Text(stringResource(R.string.settings_language_screen_title)) },
             navigationIcon = {
-                IconButton(onClick = onBackClick) {
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.testTag("language_back_button"),
+                ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         stringResource(R.string.content_description_navigate_back),

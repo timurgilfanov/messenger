@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -54,12 +55,14 @@ fun MainScreen(
                     onClick = { selectedTab = 0 },
                     icon = { Icon(Icons.Default.Email, contentDescription = null) },
                     label = { Text("Chats") },
+                    modifier = Modifier.testTag("bottom_nav_chats"),
                 )
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                     label = { Text("Settings") },
+                    modifier = Modifier.testTag("bottom_nav_settings"),
                 )
             }
         },

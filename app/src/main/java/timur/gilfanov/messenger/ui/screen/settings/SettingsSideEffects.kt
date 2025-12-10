@@ -4,5 +4,6 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.ObserveSettingsRe
 
 sealed interface SettingsSideEffects {
     data object Unauthorized : SettingsSideEffects
-    data class GetSettingsFailed(val error: ObserveSettingsRepositoryError) : SettingsSideEffects
+    data class ObserveSettingsFailed(val error: ObserveSettingsRepositoryError) :
+        SettingsSideEffects
 }

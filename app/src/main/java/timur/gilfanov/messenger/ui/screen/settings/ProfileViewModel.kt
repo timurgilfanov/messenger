@@ -60,7 +60,7 @@ class ProfileViewModel @Inject constructor(
                                     TAG,
                                     "Profile observation failed with repository error: ${error.error}",
                                 )
-                                postSideEffect(ProfileSideEffects.GetProfileFailed(error.error))
+                                postSideEffect(ProfileSideEffects.ObserveProfileFailed(error.error))
                             }
 
                             ObserveProfileError.Unauthorized -> {

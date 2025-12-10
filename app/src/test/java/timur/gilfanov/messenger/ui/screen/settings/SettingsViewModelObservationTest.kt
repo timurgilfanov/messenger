@@ -70,7 +70,7 @@ class SettingsViewModelObservationTest {
     }
 
     @Test
-    fun `Repository error posts GetSettingsFailed side effect`() = runTest {
+    fun `Repository error posts ObserveSettingsFailed side effect`() = runTest {
         val repositoryError = GetSettingsRepositoryError.UnknownError(Exception("Test error"))
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Failure(
@@ -82,7 +82,7 @@ class SettingsViewModelObservationTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
-            expectSideEffect(SettingsSideEffects.GetSettingsFailed(repositoryError))
+            expectSideEffect(SettingsSideEffects.ObserveSettingsFailed(repositoryError))
 
             testScheduler.advanceTimeBy(300)
             expectNoItems()
@@ -135,7 +135,7 @@ class SettingsViewModelObservationTest {
                 )
             }
 
-            expectSideEffect(SettingsSideEffects.GetSettingsFailed(repositoryError))
+            expectSideEffect(SettingsSideEffects.ObserveSettingsFailed(repositoryError))
 
             testScheduler.advanceTimeBy(300)
             expectNoItems()

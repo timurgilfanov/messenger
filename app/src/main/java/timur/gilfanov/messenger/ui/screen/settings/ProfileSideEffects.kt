@@ -4,5 +4,5 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.ObserveProfileRep
 
 sealed interface ProfileSideEffects {
     data object Unauthorized : ProfileSideEffects
-    data class GetProfileFailed(val error: ObserveProfileRepositoryError) : ProfileSideEffects
+    data class ObserveProfileFailed(val error: ObserveProfileRepositoryError) : ProfileSideEffects
 }

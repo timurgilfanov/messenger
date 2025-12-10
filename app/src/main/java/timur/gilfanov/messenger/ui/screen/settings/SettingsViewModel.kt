@@ -59,7 +59,9 @@ class SettingsViewModel @Inject constructor(
                                     TAG,
                                     "Settings observation failed with repository error: ${error.error}",
                                 )
-                                postSideEffect(SettingsSideEffects.GetSettingsFailed(error.error))
+                                postSideEffect(
+                                    SettingsSideEffects.ObserveSettingsFailed(error.error),
+                                )
                             }
 
                             ObserveSettingsError.Unauthorized -> {

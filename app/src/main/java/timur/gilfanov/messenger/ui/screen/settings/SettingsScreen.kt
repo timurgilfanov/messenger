@@ -54,7 +54,7 @@ fun SettingsScreen(
 
     settingsViewModel.collectSideEffect {
         when (it) {
-            is SettingsSideEffects.GetSettingsFailed -> actions.onShowSnackbar(
+            is SettingsSideEffects.ObserveSettingsFailed -> actions.onShowSnackbar(
                 getSettingsErrorMessage,
             )
             SettingsSideEffects.Unauthorized -> actions.onAuthFailure()

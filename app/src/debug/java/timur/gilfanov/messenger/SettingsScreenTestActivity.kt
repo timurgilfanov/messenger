@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
+import timur.gilfanov.messenger.ui.screen.settings.SettingsActions
 import timur.gilfanov.messenger.ui.screen.settings.SettingsScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
@@ -20,10 +21,7 @@ class SettingsScreenTestActivity : ComponentActivity() {
         setContent {
             MessengerTheme {
                 SettingsScreen(
-                    onProfileEditClick = {},
-                    onChangeLanguageClick = {},
-                    onAuthFailure = {},
-                    onShowSnackbar = {},
+                    actions = SettingsActions(),
                     modifier = Modifier.fillMaxSize(),
                 )
             }

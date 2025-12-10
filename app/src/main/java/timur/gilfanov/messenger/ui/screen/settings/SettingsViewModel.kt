@@ -45,11 +45,7 @@ class SettingsViewModel @Inject constructor(
                 result.fold(
                     onSuccess = { settings ->
                         reduce {
-                            SettingsUiState.Ready(
-                                SettingsUi(
-                                    language = settings.uiLanguage,
-                                ),
-                            )
+                            SettingsUiState.Ready(settings.toSettingsUi())
                         }
                     },
                     onFailure = { error ->

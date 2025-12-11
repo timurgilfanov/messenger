@@ -44,6 +44,11 @@ import timur.gilfanov.messenger.test.RepositoryCleanupRule
 @RunWith(AndroidJUnit4::class)
 class SettingsFeatureTest {
 
+    companion object {
+        private const val SETTINGS_LOAD_TIMEOUT_MILLIS = 5_000L
+    }
+
+
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
@@ -96,7 +101,7 @@ class SettingsFeatureTest {
     fun settingsScreen_displaysLanguageSettingWithEnglish() {
         composeTestRule.waitUntilExactlyOneExists(
             hasTestTag("settings_language_item"),
-            timeoutMillis = 5_000L,
+            timeoutMillis = SETTINGS_LOAD_TIMEOUT_MILLIS,
         )
         composeTestRule.onNodeWithTag("settings_loading").assertDoesNotExist()
     }
@@ -106,7 +111,7 @@ class SettingsFeatureTest {
         with(composeTestRule) {
             waitUntilExactlyOneExists(
                 hasTestTag("settings_language_item"),
-                timeoutMillis = 5_000L,
+                timeoutMillis = SETTINGS_LOAD_TIMEOUT_MILLIS,
             )
 
             composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
@@ -121,7 +126,7 @@ class SettingsFeatureTest {
         with(composeTestRule) {
             waitUntilExactlyOneExists(
                 hasTestTag("settings_language_item"),
-                timeoutMillis = 5_000L,
+                timeoutMillis = SETTINGS_LOAD_TIMEOUT_MILLIS,
             )
 
             repeat(100) {

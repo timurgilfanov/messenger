@@ -112,26 +112,39 @@ fun SettingsContent(
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
-        is SettingsUiState.Loading -> {
-            Box(modifier = modifier.fillMaxWidth().testTag("settings_loading")) {
-                Text(
-                    text = stringResource(R.string.settings_loading),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-        }
+        is SettingsUiState.Loading -> SettingsLoadingContent(modifier)
+        is SettingsUiState.Ready -> SettingsReadyContent(
+            settings = uiState.settings,
+            onChangeLanguageClick = onChangeLanguageClick,
+            modifier = modifier,
+        )
+    }
+}
 
-        is SettingsUiState.Ready -> {
-            Column {
-                SettingsListItem(
-                    title = stringResource(R.string.settings_language_screen_title),
-                    value = uiState.settings.language.toSettingsItem(),
-                    action = onChangeLanguageClick,
-                    modifier = Modifier.testTag("settings_language_item"),
-                )
-            }
-        }
+@Composable
+fun SettingsLoadingContent(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxWidth().testTag("settings_loading")) {
+        Text(
+            text = stringResource(R.string.settings_loading),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    }
+}
+
+@Composable
+fun SettingsReadyContent(
+    settings: SettingsUi,
+    onChangeLanguageClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        SettingsListItem(
+            title = stringResource(R.string.settings_language_screen_title),
+            value = settings.language.toSettingsItem(),
+            action = onChangeLanguageClick,
+            modifier = Modifier.testTag("settings_language_item"),
+        )
     }
 }
 

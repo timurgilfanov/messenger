@@ -10,7 +10,7 @@ import timur.gilfanov.messenger.domain.entity.user.UiLanguage
  * Represents user preferences in a UI-friendly format for display in
  * the settings screen.
  *
- * @property language Display name of the currently selected language
+ * @property language Currently selected UI language
  */
 @Immutable
 data class SettingsUi(val language: UiLanguage)

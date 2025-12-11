@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
 import android.net.Uri
+import androidx.compose.runtime.Immutable
 
 /**
  * UI model for user profile display.
@@ -11,4 +12,5 @@ import android.net.Uri
  * @property name User's display name
  * @property picture URI to user's profile picture, null if no picture is set
  */
+@Immutable
 data class ProfileUi(val name: String, val picture: Uri?)

@@ -75,6 +75,7 @@ class LanguageChangeApplicationTest {
         fun provideSettingsRepository(): SettingsRepository = settingsRepository
 
         @Provides
+        @Singleton
         fun provideIdentityRepository(): IdentityRepository = DefaultIdentityRepository()
 
         @Provides

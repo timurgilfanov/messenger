@@ -5,9 +5,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,20 +22,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.messenger.MainActivity
-import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.ApplicationTest
 import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
-import timur.gilfanov.messenger.data.repository.SettingsRepositoryImpl
-import timur.gilfanov.messenger.data.repository.SettingsSyncScheduler
-import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceImpl
-import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
-import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceNoop
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestUserModule
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
@@ -45,6 +33,7 @@ import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepositor
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
+import timur.gilfanov.messenger.test.AndroidTestSettingsRepository
 import timur.gilfanov.messenger.test.RepositoryCleanupRule
 
 @OptIn(ExperimentalTestApi::class)
@@ -71,39 +60,7 @@ class LanguageChangeApplicationTest {
     object LanguageChangeTestRepositoryModule {
         private val chatMessageRepository = AndroidTestRepositoryWithRealImplementation(NON_EMPTY)
 
-        private val context by lazy {
-            InstrumentationRegistry.getInstrumentation().targetContext
-        }
-
-        private val database by lazy {
-            Room.inMemoryDatabaseBuilder(context, MessengerDatabase::class.java)
-                .allowMainThreadQueries()
-                .build()
-        }
-
-        private val localSettingsDataSource by lazy {
-            LocalSettingsDataSourceImpl(
-                database = database,
-                settingsDao = database.settingsDao(),
-                logger = NoOpLogger(),
-                defaultSettings = Settings(uiLanguage = UiLanguage.English),
-            )
-        }
-
-        private val noOpSyncScheduler = object : SettingsSyncScheduler {
-            override fun scheduleSettingSync(userId: UserId, key: SettingKey) = Unit
-            override fun schedulePeriodicSync() = Unit
-        }
-
-        private val settingsRepository by lazy {
-            SettingsRepositoryImpl(
-                localDataSource = localSettingsDataSource,
-                remoteDataSource = RemoteSettingsDataSourceNoop(),
-                syncScheduler = noOpSyncScheduler,
-                logger = NoOpLogger(),
-                defaultSettings = Settings(uiLanguage = UiLanguage.English),
-            )
-        }
+        private val settingsRepository by lazy { AndroidTestSettingsRepository() }
 
         @Provides
         @Singleton

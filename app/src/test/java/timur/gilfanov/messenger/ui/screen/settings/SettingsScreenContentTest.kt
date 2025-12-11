@@ -30,10 +30,8 @@ class SettingsScreenContentTest {
                 SettingsScreenContent(
                     profileUiState = ProfileUiState.Loading,
                     settingsUiState = SettingsUiState.Loading,
-                    actions = SettingsContentActions(
-                        onProfileEditClick = {},
-                        onChangeLanguageClick = {},
-                    ),
+                    onProfileEditClick = {},
+                    onChangeLanguageClick = {},
                 )
             }
         }
@@ -49,10 +47,8 @@ class SettingsScreenContentTest {
                 SettingsScreenContent(
                     profileUiState = ProfileUiState.Loading,
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
-                    actions = SettingsContentActions(
-                        onProfileEditClick = {},
-                        onChangeLanguageClick = {},
-                    ),
+                    onProfileEditClick = {},
+                    onChangeLanguageClick = {},
                 )
             }
         }
@@ -67,10 +63,8 @@ class SettingsScreenContentTest {
                 SettingsScreenContent(
                     profileUiState = ProfileUiState.Loading,
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
-                    actions = SettingsContentActions(
-                        onProfileEditClick = {},
-                        onChangeLanguageClick = {},
-                    ),
+                    onProfileEditClick = {},
+                    onChangeLanguageClick = {},
                 )
             }
         }
@@ -85,10 +79,8 @@ class SettingsScreenContentTest {
                 SettingsScreenContent(
                     profileUiState = ProfileUiState.Loading,
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.German)),
-                    actions = SettingsContentActions(
-                        onProfileEditClick = {},
-                        onChangeLanguageClick = {},
-                    ),
+                    onProfileEditClick = {},
+                    onChangeLanguageClick = {},
                 )
             }
         }
@@ -105,10 +97,8 @@ class SettingsScreenContentTest {
                 SettingsScreenContent(
                     profileUiState = ProfileUiState.Loading,
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
-                    actions = SettingsContentActions(
-                        onProfileEditClick = {},
-                        onChangeLanguageClick = { languageClicked = true },
-                    ),
+                    onProfileEditClick = {},
+                    onChangeLanguageClick = { languageClicked = true },
                 )
             }
         }

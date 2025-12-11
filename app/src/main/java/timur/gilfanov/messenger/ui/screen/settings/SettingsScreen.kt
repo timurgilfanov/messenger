@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -26,23 +25,15 @@ import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
-@Stable
-data class SettingsActions(
-    val onProfileEditClick: () -> Unit = {},
-    val onChangeLanguageClick: () -> Unit = {},
-    val onAuthFailure: () -> Unit = {},
-    val onShowSnackbar: (String) -> Unit = {},
-)
-
-@Stable
-data class SettingsContentActions(
-    val onProfileEditClick: () -> Unit,
-    val onChangeLanguageClick: () -> Unit,
-)
-
 @Composable
+// Property drilling is preferable over creating wrapper classes to encapsulate state and events in
+// one place because this reduces the visibility of the composable responsibilities.
+@Suppress("LongParameterList")
 fun SettingsScreen(
-    actions: SettingsActions,
+    onProfileEditClick: () -> Unit,
+    onChangeLanguageClick: () -> Unit,
+    onAuthFailure: () -> Unit,
+    onShowSnackbar: (String) -> Unit,
     modifier: Modifier = Modifier,
     profileViewModel: ProfileViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
@@ -54,19 +45,15 @@ fun SettingsScreen(
 
     settingsViewModel.collectSideEffect {
         when (it) {
-            is SettingsSideEffects.ObserveSettingsFailed -> actions.onShowSnackbar(
-                getSettingsErrorMessage,
-            )
-            SettingsSideEffects.Unauthorized -> actions.onAuthFailure()
+            is SettingsSideEffects.ObserveSettingsFailed -> onShowSnackbar(getSettingsErrorMessage)
+            SettingsSideEffects.Unauthorized -> onAuthFailure()
         }
     }
     SettingsScreenContent(
         profileUiState = profileUiState,
         settingsUiState = settingsUiState,
-        actions = SettingsContentActions(
-            onProfileEditClick = actions.onProfileEditClick,
-            onChangeLanguageClick = actions.onChangeLanguageClick,
-        ),
+        onProfileEditClick = onProfileEditClick,
+        onChangeLanguageClick = onChangeLanguageClick,
         modifier = modifier,
     )
 }
@@ -75,17 +62,18 @@ fun SettingsScreen(
 internal fun SettingsScreenContent(
     profileUiState: ProfileUiState,
     settingsUiState: SettingsUiState,
-    actions: SettingsContentActions,
+    onProfileEditClick: () -> Unit,
+    onChangeLanguageClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
         ProfileContent(
             uiState = profileUiState,
-            onProfileEditClick = actions.onProfileEditClick,
+            onProfileEditClick = onProfileEditClick,
         )
         SettingsContent(
             uiState = settingsUiState,
-            onChangeLanguageClick = actions.onChangeLanguageClick,
+            onChangeLanguageClick = onChangeLanguageClick,
         )
     }
 }
@@ -214,10 +202,8 @@ private fun Content(
         SettingsScreenContent(
             profileUiState = profileUiState,
             settingsUiState = settingsUiState,
-            actions = SettingsContentActions(
-                onProfileEditClick = {},
-                onChangeLanguageClick = {},
-            ),
+            onProfileEditClick = {},
+            onChangeLanguageClick = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()

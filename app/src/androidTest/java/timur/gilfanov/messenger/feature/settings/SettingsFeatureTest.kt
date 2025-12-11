@@ -74,6 +74,7 @@ class SettingsFeatureTest {
         fun provideMessageRepository(): MessageRepository = MessageRepositoryStub()
 
         @Provides
+        @Singleton
         fun provideIdentityRepository(): IdentityRepository = DefaultIdentityRepository()
     }
 

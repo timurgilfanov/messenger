@@ -10,6 +10,9 @@ data object ChatList : NavKey
 data class Chat(val chatId: String) : NavKey
 
 @Serializable
+data object Main : NavKey
+
+@Serializable
 data object Settings : NavKey
 
 @Serializable

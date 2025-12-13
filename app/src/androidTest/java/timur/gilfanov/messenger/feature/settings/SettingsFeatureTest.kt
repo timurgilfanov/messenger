@@ -48,7 +48,6 @@ class SettingsFeatureTest {
         private const val SETTINGS_LOAD_TIMEOUT_MILLIS = 5_000L
     }
 
-
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 

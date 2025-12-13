@@ -137,4 +137,37 @@ class NavigationApplicationTest {
             onNodeWithText(BOB_TEXT_1).assertIsDisplayed()
         }
     }
+
+    @Test
+    fun applicationTest_tabsNavigationIsHiddenOnChatScreen() {
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("chat_list"),
+                timeoutMillis = 5_000L,
+            )
+            onNodeWithTag("bottom_nav").assertIsDisplayed()
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
+            onNodeWithText("Alice").assertIsDisplayed()
+            onNodeWithText("Bob").assertIsDisplayed()
+            onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
+
+            waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
+            onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
+            onNodeWithTag("bottom_nav").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun applicationTest_tabsNavigationIsHiddenOnSettingsLanguageScreen() {
+        with(composeTestRule) {
+            onNodeWithTag("bottom_nav").assertIsDisplayed()
+            onNodeWithTag("bottom_nav_settings").performClick()
+
+            waitUntilExactlyOneExists(hasTestTag("settings_language_item"), timeoutMillis = 5_000L)
+            onNodeWithTag("settings_language_item").performClick()
+
+            waitUntilExactlyOneExists(hasTestTag("language_radio_German"), timeoutMillis = 5_000L)
+            onNodeWithTag("bottom_nav").assertDoesNotExist()
+        }
+    }
 }

@@ -4,8 +4,11 @@
         <activity
             android:name="timur.gilfanov.messenger.ChatListScreenTestActivity"
             android:exported="true" />
-        <activity 
+        <activity
             android:name="timur.gilfanov.messenger.ChatScreenTestActivity"
+            android:exported="true" />
+        <activity
+            android:name="timur.gilfanov.messenger.SettingsScreenTestActivity"
             android:exported="true" />
     </application>
 </manifest>

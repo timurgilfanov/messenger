@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -84,11 +86,26 @@ fun ProfileContent(
     onProfileEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxWidth().testTag("profile_loading")) {
+    Box(
+        modifier = modifier
+            .height(200.dp)
+            .fillMaxWidth(),
+    ) {
+        val text = when (uiState) {
+            is ProfileUiState.Ready -> R.string.settings_profile_ready_placeholder
+            ProfileUiState.Loading -> R.string.settings_profile_loading_placeholder
+        }
+        val testTag = when (uiState) {
+            is ProfileUiState.Ready -> "profile_ready"
+            ProfileUiState.Loading -> "profile_loading"
+        }
         Text(
-            text = stringResource(R.string.settings_loading),
+            text = stringResource(text),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .testTag(testTag),
         )
     }
 }
@@ -111,7 +128,11 @@ fun SettingsContent(
 
 @Composable
 fun SettingsLoadingContent(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxWidth().testTag("settings_loading")) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("settings_loading"),
+    ) {
         Text(
             text = stringResource(R.string.settings_loading),
             style = MaterialTheme.typography.bodyMedium,
@@ -181,6 +202,24 @@ private fun SettingsScreenContentDarkPreview() {
 @Composable
 private fun SettingsScreenContentGermanPreview() {
     Content(darkTheme = false)
+}
+
+@Preview
+@Composable
+private fun ProfileContentPreview() {
+    val state = ProfileUiState.Ready(
+        ProfileUi(
+            name = "Timur",
+            picture = null,
+        ),
+    )
+    MessengerTheme(darkTheme = false) {
+        ProfileContent(
+            uiState = state,
+            onProfileEditClick = { },
+            modifier = Modifier.background(MaterialTheme.colorScheme.background),
+        )
+    }
 }
 
 @Composable

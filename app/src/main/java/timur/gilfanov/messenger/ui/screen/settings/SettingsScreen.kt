@@ -4,6 +4,7 @@ package timur.gilfanov.messenger.ui.screen.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -89,7 +90,8 @@ fun ProfileContent(
     Box(
         modifier = modifier
             .height(200.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
     ) {
         val text = when (uiState) {
             is ProfileUiState.Ready -> R.string.settings_profile_ready_placeholder
@@ -131,7 +133,9 @@ fun SettingsLoadingContent(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
             .testTag("settings_loading"),
+        contentAlignment = Alignment.CenterStart,
     ) {
         Text(
             text = stringResource(R.string.settings_loading),
@@ -147,7 +151,10 @@ fun SettingsReadyContent(
     onChangeLanguageClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         SettingsListItem(
             title = stringResource(R.string.settings_language_screen_title),
             value = settings.language.toSettingsItem(),
@@ -164,15 +171,20 @@ private fun SettingsListItem(
     action: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.clickable(enabled = true, onClick = action)) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(enabled = true, onClick = action)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground,
         )
     }
@@ -246,8 +258,7 @@ private fun Content(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .background(MaterialTheme.colorScheme.background),
         )
     }
 }

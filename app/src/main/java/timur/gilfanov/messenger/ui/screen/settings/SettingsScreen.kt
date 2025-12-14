@@ -165,7 +165,7 @@ fun SettingsReadyContent(
 }
 
 @Composable
-private fun SettingsListItem(
+internal fun SettingsListItem(
     title: String,
     value: String,
     action: () -> Unit,
@@ -181,11 +181,13 @@ private fun SettingsListItem(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
         )
     }
 }

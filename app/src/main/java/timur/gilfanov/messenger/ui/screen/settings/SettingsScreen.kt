@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package timur.gilfanov.messenger.ui.screen.settings
 
 import androidx.compose.foundation.background
@@ -88,7 +86,7 @@ internal fun SettingsScreenContent(
 @Composable
 fun ProfileContent(
     uiState: ProfileUiState,
-    onProfileEditClick: () -> Unit,
+    @Suppress("unused") onProfileEditClick: () -> Unit, // will be used in future
     modifier: Modifier = Modifier,
 ) {
     Box(

@@ -44,7 +44,7 @@ fun MainScreen(
     val uiState by viewModel.collectAsState()
 
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             NavigationBar(modifier = Modifier.testTag("bottom_nav")) {

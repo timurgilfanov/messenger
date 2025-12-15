@@ -1,11 +1,9 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -15,6 +13,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
@@ -66,38 +64,44 @@ fun LanguageScreenContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.background(MaterialTheme.colorScheme.background)) {
-        MediumTopAppBar(
-            title = { Text(stringResource(R.string.settings_language_screen_title)) },
-            navigationIcon = {
-                IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier.testTag("language_back_button"),
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            MediumTopAppBar(
+                title = { Text(stringResource(R.string.settings_language_screen_title)) },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.testTag("language_back_button"),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            stringResource(R.string.content_description_navigate_back),
+                        )
+                    }
+                },
+            )
+        },
+    ) { paddingValues ->
+        Column(modifier = Modifier.padding(paddingValues)) {
+            uiState.languages.forEach { language ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        stringResource(R.string.content_description_navigate_back),
+                    RadioButton(
+                        selected = language == uiState.selectedLanguage,
+                        onClick = { onSelectLanguage(language) },
+                        modifier = Modifier.testTag("language_radio_$language"),
+                    )
+                    Text(
+                        text = language.toListItemTitle(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier
+                            .testTag("language_text_$language")
+                            .clickable(enabled = true) { onSelectLanguage(language) },
                     )
                 }
-            },
-        )
-        uiState.languages.forEach { language ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RadioButton(
-                    selected = language == uiState.selectedLanguage,
-                    onClick = { onSelectLanguage(language) },
-                    modifier = Modifier.testTag("language_radio_$language"),
-                )
-                Text(
-                    text = language.toListItemTitle(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier
-                        .testTag("language_text_$language")
-                        .clickable(enabled = true) { onSelectLanguage(language) },
-                )
             }
         }
     }
@@ -141,10 +145,6 @@ private fun Content(darkTheme: Boolean) {
             uiState = uiState,
             onSelectLanguage = {},
             onBackClick = {},
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }
 }

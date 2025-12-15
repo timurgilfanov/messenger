@@ -29,7 +29,6 @@ import timur.gilfanov.messenger.ui.screen.main.MainScreen
 import timur.gilfanov.messenger.ui.screen.settings.LanguageScreen
 import timur.gilfanov.messenger.ui.screen.settings.LoginScreen
 import timur.gilfanov.messenger.ui.screen.settings.ProfileEditScreen
-import timur.gilfanov.messenger.ui.screen.settings.ProfileEditViewModel
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @AndroidEntryPoint
@@ -110,7 +109,6 @@ fun MessengerApp() {
             entry<ProfileEdit> {
                 ProfileEditScreen(
                     onDoneClick = { backStack.removeLastOrNull() },
-                    viewModel = ProfileEditViewModel(),
                 )
             }
             entry<Language> {

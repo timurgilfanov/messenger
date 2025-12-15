@@ -14,10 +14,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -29,10 +32,8 @@ import timur.gilfanov.messenger.ui.screen.settings.SettingsScreen
 @Suppress("LongParameterList") // in Compose property drilling is preferred over wrapper
 @Composable
 fun MainScreen(
-    snackbarHostState: SnackbarHostState,
     currentUserId: ParticipantId,
     onAuthFailure: () -> Unit,
-    onShowSnackbar: (String) -> Unit,
     onProfileEditClick: () -> Unit,
     onChangeLanguageClick: () -> Unit,
     onChatClick: (ChatId) -> Unit,
@@ -42,6 +43,11 @@ fun MainScreen(
     viewModel: MainScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val onShowSnackbar: (String) -> Unit = { message ->
+        scope.launch { snackbarHostState.showSnackbar(message) }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),

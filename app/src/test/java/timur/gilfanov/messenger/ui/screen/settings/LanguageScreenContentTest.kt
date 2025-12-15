@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,7 @@ class LanguageScreenContentTest {
             MessengerTheme {
                 LanguageScreenContent(
                     uiState = state,
+                    snackbarHostState = remember { SnackbarHostState() },
                     onSelectLanguage = { state = state.copy(selectedLanguage = it) },
                     onBackClick = {},
                 )
@@ -71,6 +73,7 @@ class LanguageScreenContentTest {
             MessengerTheme {
                 LanguageScreenContent(
                     uiState = state,
+                    snackbarHostState = remember { SnackbarHostState() },
                     onSelectLanguage = { state = state.copy(selectedLanguage = it) },
                     onBackClick = {},
                 )
@@ -97,6 +100,7 @@ class LanguageScreenContentTest {
             MessengerTheme {
                 LanguageScreenContent(
                     uiState = initialState,
+                    snackbarHostState = remember { SnackbarHostState() },
                     onSelectLanguage = { selectedLanguage = it },
                     onBackClick = {},
                 )
@@ -119,6 +123,7 @@ class LanguageScreenContentTest {
             MessengerTheme {
                 LanguageScreenContent(
                     uiState = initialState,
+                    snackbarHostState = remember { SnackbarHostState() },
                     onSelectLanguage = { selectedLanguage = it },
                     onBackClick = {},
                 )
@@ -141,6 +146,7 @@ class LanguageScreenContentTest {
             MessengerTheme {
                 LanguageScreenContent(
                     uiState = initialState,
+                    snackbarHostState = remember { SnackbarHostState() },
                     onSelectLanguage = {},
                     onBackClick = { backClicked = true },
                 )

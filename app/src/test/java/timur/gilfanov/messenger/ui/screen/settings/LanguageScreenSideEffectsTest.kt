@@ -1,9 +1,10 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -29,15 +30,13 @@ class LanguageScreenSideEffectsTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun `calls onShowSnackbar when language change fails`() {
-        var snackbarMessage: String? = null
+    fun `shows snackbar when language change fails`() {
         val viewModel = createViewModelWithChangeFailure()
 
         composeTestRule.setContent {
             MessengerTheme {
                 LanguageScreen(
                     onAuthFailure = {},
-                    onShowSnackbar = { snackbarMessage = it },
                     onBackClick = {},
                     viewModel = viewModel,
                 )
@@ -47,9 +46,14 @@ class LanguageScreenSideEffectsTest {
         composeTestRule.onNodeWithTag("language_radio_${UiLanguage.German}")
             .performClick()
 
-        composeTestRule.waitUntil { snackbarMessage != null }
+        composeTestRule.waitUntil {
+            composeTestRule
+                .onAllNodes(hasText("Cannot change language"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
 
-        assertEquals("Cannot change language", snackbarMessage)
+        composeTestRule.onNodeWithText("Cannot change language").assertExists()
     }
 
     @Test
@@ -61,7 +65,6 @@ class LanguageScreenSideEffectsTest {
             MessengerTheme {
                 LanguageScreen(
                     onAuthFailure = { authFailureCalled = true },
-                    onShowSnackbar = {},
                     onBackClick = {},
                     viewModel = viewModel,
                 )

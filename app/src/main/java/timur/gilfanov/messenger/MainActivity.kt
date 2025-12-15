@@ -4,12 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -41,7 +39,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MessengerTheme {
-                MessengerApp(modifier = Modifier.fillMaxSize())
+                MessengerApp()
             }
         }
     }
@@ -49,7 +47,7 @@ class MainActivity : ComponentActivity() {
 
 @Suppress("LongMethod") // todo keep entities in feature modules
 @Composable
-fun MessengerApp(modifier: Modifier = Modifier) {
+fun MessengerApp() {
     val scope = rememberCoroutineScope()
 
     val currentUserId = "550e8400-e29b-41d4-a716-446655440000".toParticipantId()
@@ -84,14 +82,12 @@ fun MessengerApp(modifier: Modifier = Modifier) {
                             // Navigation to search screen will be implemented later
                         },
                     ),
-                    modifier = modifier,
                 )
             }
             entry<Chat> { chat ->
                 ChatScreen(
                     chatId = chat.chatId.toChatId(),
                     currentUserId = currentUserId,
-                    modifier = modifier,
                 )
             }
             entry<Main> {
@@ -109,13 +105,11 @@ fun MessengerApp(modifier: Modifier = Modifier) {
                     },
                     onProfileEditClick = { backStack.add(ProfileEdit) },
                     onChangeLanguageClick = { backStack.add(Language) },
-                    modifier = modifier,
                 )
             }
             entry<ProfileEdit> {
                 ProfileEditScreen(
                     onDoneClick = { backStack.removeLastOrNull() },
-                    modifier = modifier,
                     viewModel = ProfileEditViewModel(),
                 )
             }
@@ -124,7 +118,6 @@ fun MessengerApp(modifier: Modifier = Modifier) {
                     onAuthFailure = onAuthFailure,
                     onShowSnackbar = onShowSnackbar,
                     onBackClick = { backStack.removeLastOrNull() },
-                    modifier = modifier,
                 )
             }
             entry<Login> {

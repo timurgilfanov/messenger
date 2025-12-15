@@ -116,6 +116,7 @@ fun ChatListScreenContent(
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
 ) {
+    @Suppress("KotlinConstantConditions")
     if (BuildConfig.FEATURE_SETTINGS) {
         Column(
             modifier = modifier
@@ -131,7 +132,6 @@ fun ChatListScreenContent(
                 screenState = screenState,
                 actions = actions,
                 listState = listState,
-                modifier = Modifier.fillMaxSize(),
             )
         }
     } else {
@@ -149,9 +149,7 @@ fun ChatListScreenContent(
                 screenState = screenState,
                 actions = actions,
                 listState = listState,
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize(),
+                modifier = Modifier.padding(paddingValues),
             )
         }
     }
@@ -172,7 +170,7 @@ private fun ChatListContent(
 
         is NotEmpty -> LazyColumn(
             state = listState,
-            modifier = modifier.testTag("chat_list"),
+            modifier = modifier.fillMaxSize().testTag("chat_list"),
         ) {
             items(
                 items = screenState.uiState.chats,

@@ -65,7 +65,7 @@ fun MainScreen(
             }
         },
     ) { paddingValues ->
-        val modifier1 = Modifier.fillMaxSize().padding(paddingValues)
+        val modifier1 = Modifier.padding(paddingValues)
         when (uiState.selectedTab) {
             0 -> ChatListScreen(
                 currentUserId = currentUserId, // todo retrieve from IdentityRepository

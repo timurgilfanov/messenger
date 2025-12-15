@@ -24,9 +24,7 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 @Composable
 fun EmptyStateComponent(modifier: Modifier = Modifier, onStartFirstChat: () -> Unit = {}) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -56,7 +54,9 @@ fun EmptyStateComponent(modifier: Modifier = Modifier, onStartFirstChat: () -> U
 
         Button(
             onClick = onStartFirstChat,
-            modifier = Modifier.padding(top = 24.dp).testTag("start_first_chat_button"),
+            modifier = Modifier
+                .padding(top = 24.dp)
+                .testTag("start_first_chat_button"),
         ) {
             Text("Start first chat")
         }

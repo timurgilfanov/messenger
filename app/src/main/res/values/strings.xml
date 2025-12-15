@@ -55,4 +55,8 @@
 
     <!-- Common content description -->
     <string name="content_description_navigate_back">Navigate back</string>
+
+    <!-- Main Screen -->
+    <string name="main_tab_chats">Chats</string>
+    <string name="main_tab_settings">Settings</string>
 </resources>

@@ -16,8 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
@@ -50,14 +52,14 @@ fun MainScreen(
                     selected = uiState.selectedTab == 0,
                     onClick = { viewModel.selectTab(0) },
                     icon = { Icon(Icons.Default.Email, contentDescription = null) },
-                    label = { Text("Chats") },
+                    label = { Text(stringResource(R.string.main_tab_chats)) },
                     modifier = Modifier.testTag("bottom_nav_chats"),
                 )
                 NavigationBarItem(
                     selected = uiState.selectedTab == 1,
                     onClick = { viewModel.selectTab(1) },
                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                    label = { Text("Settings") },
+                    label = { Text(stringResource(R.string.main_tab_settings)) },
                     modifier = Modifier.testTag("bottom_nav_settings"),
                 )
             }

@@ -43,6 +43,10 @@ import timur.gilfanov.messenger.test.RepositoryCleanupRule
 @RunWith(AndroidJUnit4::class)
 class LanguageChangeApplicationTest {
 
+    companion object {
+        private const val SCREEN_LOAD_TIMEOUT_MILLIS = 5_000L
+    }
+
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
@@ -100,21 +104,36 @@ class LanguageChangeApplicationTest {
     @Test
     fun applicationTest_userCanChangeLanguageToGermanThroughSettings() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("chat_list"), timeoutMillis = 5_000L)
+            waitUntilExactlyOneExists(
+                hasTestTag("chat_list"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             onNodeWithTag("bottom_nav_settings").performClick()
 
-            waitUntilExactlyOneExists(hasTestTag("settings_language_item"), timeoutMillis = 5_000L)
+            waitUntilExactlyOneExists(
+                hasTestTag("settings_language_item"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("settings_language_item").performClick()
 
-            waitUntilExactlyOneExists(hasTestTag("language_radio_German"), timeoutMillis = 5_000L)
+            waitUntilExactlyOneExists(
+                hasTestTag("language_radio_German"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("language_radio_German").performClick()
 
             onNodeWithTag("language_back_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("settings_language_item"), timeoutMillis = 5_000L)
+            waitUntilExactlyOneExists(
+                hasTestTag("settings_language_item"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             onNodeWithTag("bottom_nav_chats").performClick()
-            waitUntilExactlyOneExists(hasTestTag("chat_list"), timeoutMillis = 5_000L)
+            waitUntilExactlyOneExists(
+                hasTestTag("chat_list"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             // TODO: Uncomment when language change is implemented
             // After selecting German, the UI should display German strings

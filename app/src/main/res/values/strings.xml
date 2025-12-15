@@ -3,7 +3,7 @@
     <string name="message_input_placeholder">Type a message...</string>
     <string name="send_message_content_description">Send message</string>
     <string name="message_input_error_too_long">Message can not be longer then %d characters</string>
-    
+
     <!-- Chat List Screen -->
     <string name="chat_list_search_content_description">Search chats</string>
     <string name="chat_list_new_chat_content_description">New chat</string>
@@ -27,10 +27,10 @@
     <string name="chat_list_swipe_more_content_description">More options</string>
     <string name="chat_list_swipe_settings_content_description">Chat settings</string>
     <string name="chat_list_swipe_notifications_content_description">Notifications</string>
-    
+
     <!-- Time formatting -->
     <string name="yesterday">Yesterday</string>
-    
+
     <!-- Delivery Error Messages -->
     <string name="delivery_error_network_unavailable">No internet connection</string>
     <string name="delivery_error_server_unreachable">Server unreachable</string>
@@ -42,6 +42,12 @@
     <string name="delivery_error_unknown">Failed to send message</string>
 
     <!-- Settings -->
+    <string name="settings_loading">Loading...</string>
+    <string name="settings_get_settings_failed">Cannot read settings</string>
+    <string name="settings_profile_ready_placeholder" translatable="false">Profile</string>
+    <string name="settings_profile_loading_placeholder" translatable="false">Profile loading...</string>
+
+    <!-- Language setting -->
     <string name="settings_language_screen_title">Language</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_german">German</string>
@@ -49,4 +55,8 @@
 
     <!-- Common content description -->
     <string name="content_description_navigate_back">Navigate back</string>
+
+    <!-- Main Screen -->
+    <string name="main_tab_chats">Chats</string>
+    <string name="main_tab_settings">Settings</string>
 </resources>

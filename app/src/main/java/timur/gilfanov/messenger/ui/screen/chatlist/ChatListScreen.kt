@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chatlist
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -32,6 +33,7 @@ import java.util.UUID
 import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
 import org.orbitmvi.orbit.compose.collectAsState
+import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -114,39 +116,74 @@ fun ChatListScreenContent(
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
 ) {
-    Scaffold(
-        modifier = modifier,
-        topBar = { TopBar(screenState, actions.onSearchClick, actions.onNewChatClick) },
-    ) { paddingValues ->
-        when (screenState.uiState) {
-            Empty -> EmptyStateComponent(
-                onStartFirstChat = actions.onNewChatClick,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .testTag("empty_state"),
+    @Suppress("KotlinConstantConditions")
+    if (BuildConfig.FEATURE_SETTINGS) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+        ) {
+            TopBar(
+                screenState = screenState,
+                onSearchClick = actions.onSearchClick,
+                onNewChatClick = actions.onNewChatClick,
             )
+            ChatListContent(
+                screenState = screenState,
+                actions = actions,
+                listState = listState,
+            )
+        }
+    } else {
+        Scaffold(
+            modifier = modifier.fillMaxSize(),
+            topBar = {
+                TopBar(
+                    screenState = screenState,
+                    onSearchClick = actions.onSearchClick,
+                    onNewChatClick = actions.onNewChatClick,
+                )
+            },
+        ) { paddingValues ->
+            ChatListContent(
+                screenState = screenState,
+                actions = actions,
+                listState = listState,
+                modifier = Modifier.padding(paddingValues),
+            )
+        }
+    }
+}
 
-            is NotEmpty -> LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .testTag("chat_list"),
-            ) {
-                items(
-                    items = screenState.uiState.chats,
-                    key = { it.id.id },
-                ) { chatItem ->
-                    ChatListItem(
-                        chatItem = chatItem,
-                        onClick = actions.onChatClick,
-                        onDelete = actions.onDeleteChat,
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                            .testTag("chat_item_${chatItem.id.id}"),
-                    )
-                }
+@Composable
+private fun ChatListContent(
+    screenState: ChatListScreenState,
+    actions: ChatListContentActions,
+    listState: LazyListState,
+    modifier: Modifier = Modifier,
+) {
+    when (screenState.uiState) {
+        Empty -> EmptyStateComponent(
+            onStartFirstChat = actions.onNewChatClick,
+            modifier = modifier.testTag("empty_state"),
+        )
+
+        is NotEmpty -> LazyColumn(
+            state = listState,
+            modifier = modifier.fillMaxSize().testTag("chat_list"),
+        ) {
+            items(
+                items = screenState.uiState.chats,
+                key = { it.id.id },
+            ) { chatItem ->
+                ChatListItem(
+                    chatItem = chatItem,
+                    onClick = actions.onChatClick,
+                    onDelete = actions.onDeleteChat,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .testTag("chat_item_${chatItem.id.id}"),
+                )
             }
         }
     }

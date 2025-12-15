@@ -49,6 +49,10 @@ import timur.gilfanov.messenger.test.SettingsRepositoryStub
 @RunWith(AndroidJUnit4::class)
 class NavigationApplicationTest {
 
+    companion object {
+        private const val SCREEN_LOAD_TIMEOUT_MILLIS = 5_000L
+    }
+
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
@@ -100,7 +104,7 @@ class NavigationApplicationTest {
         with(composeTestRule) {
             waitUntilExactlyOneExists(
                 hasTestTag("chat_list"),
-                timeoutMillis = 5_000L,
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
 
             waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
@@ -119,7 +123,10 @@ class NavigationApplicationTest {
     @Test
     fun applicationTest_userCanNavigateBetweenMultipleChats() {
         with(composeTestRule) {
-            waitUntilExactlyOneExists(hasTestTag("chat_list"), timeoutMillis = 5_000L)
+            waitUntilExactlyOneExists(
+                hasTestTag("chat_list"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
             waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
@@ -135,6 +142,45 @@ class NavigationApplicationTest {
 
             waitUntilExactlyOneExists(hasTextExactly(BOB_TEXT_1))
             onNodeWithText(BOB_TEXT_1).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun applicationTest_tabsNavigationIsHiddenOnChatScreen() {
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("chat_list"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("bottom_nav").assertIsDisplayed()
+            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
+            onNodeWithText("Alice").assertIsDisplayed()
+            onNodeWithText("Bob").assertIsDisplayed()
+            onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
+
+            waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
+            onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
+            onNodeWithTag("bottom_nav").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun applicationTest_tabsNavigationIsHiddenOnSettingsLanguageScreen() {
+        with(composeTestRule) {
+            onNodeWithTag("bottom_nav").assertIsDisplayed()
+            onNodeWithTag("bottom_nav_settings").performClick()
+
+            waitUntilExactlyOneExists(
+                hasTestTag("settings_language_item"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("settings_language_item").performClick()
+
+            waitUntilExactlyOneExists(
+                hasTestTag("language_radio_German"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("bottom_nav").assertDoesNotExist()
         }
     }
 }

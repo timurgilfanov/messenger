@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.feature.chat
 
-import android.content.Context
 import androidx.compose.ui.semantics.SemanticsProperties.Disabled
 import androidx.compose.ui.semantics.SemanticsProperties.EditableText
 import androidx.compose.ui.semantics.getOrNull
@@ -97,10 +96,7 @@ class ChatMessageSendingFeatureTest {
 
         @Provides
         @Singleton
-        fun provideLocaleRepository(
-            @dagger.hilt.android.qualifiers.ApplicationContext context: Context,
-            logger: Logger,
-        ): LocaleRepository = LocaleRepositoryImpl(context, logger)
+        fun provideLocaleRepository(logger: Logger): LocaleRepository = LocaleRepositoryImpl(logger)
     }
 
     @Module

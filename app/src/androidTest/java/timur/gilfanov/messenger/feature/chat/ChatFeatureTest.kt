@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.feature.chat
 
-import android.content.Context
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -92,10 +91,7 @@ class ChatFeatureTest {
 
         @Provides
         @Singleton
-        fun provideLocaleRepository(
-            @dagger.hilt.android.qualifiers.ApplicationContext context: Context,
-            logger: Logger,
-        ): LocaleRepository = LocaleRepositoryImpl(context, logger)
+        fun provideLocaleRepository(logger: Logger): LocaleRepository = LocaleRepositoryImpl(logger)
     }
 
     @Module

@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.feature.chatlist
 
-import android.content.Context
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
@@ -87,10 +86,7 @@ class ChatListNotEmptyFeatureTest {
 
         @Provides
         @Singleton
-        fun provideLocaleRepository(
-            @dagger.hilt.android.qualifiers.ApplicationContext context: Context,
-            logger: Logger,
-        ): LocaleRepository = LocaleRepositoryImpl(context, logger)
+        fun provideLocaleRepository(logger: Logger): LocaleRepository = LocaleRepositoryImpl(logger)
     }
 
     @Module

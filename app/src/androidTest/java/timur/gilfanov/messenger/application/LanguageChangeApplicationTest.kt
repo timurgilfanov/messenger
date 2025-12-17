@@ -1,21 +1,13 @@
 package timur.gilfanov.messenger.application
 
-import android.app.LocaleManager
-import android.content.Context
-import android.os.Build
-import android.os.LocaleList
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.core.os.LocaleListCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,18 +15,12 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
-import java.util.Locale
-import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.test.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.MainActivity
 import timur.gilfanov.messenger.annotations.ApplicationTest
 import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
@@ -50,7 +36,6 @@ import timur.gilfanov.messenger.test.AndroidTestDataHelper
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 import timur.gilfanov.messenger.test.AndroidTestSettingsRepository
-import timur.gilfanov.messenger.test.RepositoryCleanupRule
 import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
@@ -99,10 +84,7 @@ class LanguageChangeApplicationTest {
 
         @Provides
         @Singleton
-        fun provideLocaleRepository(
-            @dagger.hilt.android.qualifiers.ApplicationContext context: Context,
-            logger: Logger,
-        ): LocaleRepository = LocaleRepositoryImpl(context, logger)
+        fun provideLocaleRepository(logger: Logger): LocaleRepository = LocaleRepositoryImpl(logger)
     }
 
     @Module

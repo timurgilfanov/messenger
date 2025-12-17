@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.application
 
-import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -93,10 +92,7 @@ class MessageReplyApplicationTest {
 
         @Provides
         @Singleton
-        fun provideLocaleRepository(
-            @dagger.hilt.android.qualifiers.ApplicationContext context: Context,
-            logger: Logger,
-        ): LocaleRepository = LocaleRepositoryImpl(context, logger)
+        fun provideLocaleRepository(logger: Logger): LocaleRepository = LocaleRepositoryImpl(logger)
     }
 
     @Module

@@ -1,17 +1,28 @@
 package timur.gilfanov.messenger
 
+import android.app.LocaleManager
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
 import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
+import timur.gilfanov.messenger.domain.usecase.user.ObserveAndApplyLocaleUseCase
 import timur.gilfanov.messenger.navigation.Chat
 import timur.gilfanov.messenger.navigation.ChatList
 import timur.gilfanov.messenger.navigation.Language
@@ -29,12 +40,64 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var observeAndApplyLocale: ObserveAndApplyLocaleUseCase
+
+    @Inject
+    lateinit var applicationScope: CoroutineScope
+
+//    @Inject
+//    lateinit var logger: Logger
+
+    override fun attachBaseContext(newBase: Context) {
+        Log.i("MainActivity", "attachBaseContext")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val localeManager = newBase.getSystemService(LocaleManager::class.java)
+            val locales = localeManager.applicationLocales
+            if (!locales.isEmpty) {
+                val locale = locales[0]
+                val configuration = newBase.resources.configuration
+                configuration.setLocale(locale)
+                super.attachBaseContext(newBase.createConfigurationContext(configuration))
+                return
+            }
+        }
+        val locales = AppCompatDelegate.getApplicationLocales()
+        if (!locales.isEmpty) {
+            val locale = locales[0]
+            val configuration = newBase.resources.configuration
+            Log.i("MainActivity", "Set locale: $locale")
+            configuration.setLocale(locale)
+            super.attachBaseContext(newBase.createConfigurationContext(configuration))
+        } else {
+            super.attachBaseContext(newBase)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.i("MainActivity", "onCreate")
+        startLocaleObservation()
         enableEdgeToEdge()
         setContent {
             MessengerTheme {
                 MessengerApp()
+            }
+        }
+    }
+
+    private fun startLocaleObservation() {
+        var i = 0
+        applicationScope.launch {
+            observeAndApplyLocale().collect {
+                if (i != 0) {
+                    Log.i("MainActivity", "Recreate activity")
+                    withContext(Dispatchers.Main) {
+                        recreate()
+                    }
+                }
+                i++
             }
         }
     }

@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.application
 
+import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
@@ -18,6 +19,8 @@ import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -25,12 +28,13 @@ import org.junit.runner.RunWith
 import timur.gilfanov.messenger.MainActivity
 import timur.gilfanov.messenger.annotations.ApplicationTest
 import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
-import timur.gilfanov.messenger.data.repository.SettingsRepositoryImpl
+import timur.gilfanov.messenger.data.repository.LocaleRepositoryImpl
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.user.repository.LocaleRepository
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.ALICE_CHAT_ID
@@ -41,6 +45,7 @@ import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPT
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 import timur.gilfanov.messenger.test.RepositoryCleanupRule
 import timur.gilfanov.messenger.test.SettingsRepositoryStub
+import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -83,6 +88,17 @@ class NavigationApplicationTest {
 
         @Provides
         fun provideIdentityRepository(): IdentityRepository = DefaultIdentityRepository()
+
+        @Provides
+        @Singleton
+        fun provideRepositoryScope(): CoroutineScope = CoroutineScope(SupervisorJob())
+
+        @Provides
+        @Singleton
+        fun provideLocaleRepository(
+            @dagger.hilt.android.qualifiers.ApplicationContext context: Context,
+            logger: Logger,
+        ): LocaleRepository = LocaleRepositoryImpl(context, logger)
     }
 
     @Module

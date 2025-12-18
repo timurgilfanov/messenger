@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.application
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -121,7 +122,10 @@ class LanguageChangeApplicationTest {
             onNodeWithTag("language_radio_German").performClick()
 
             // Verify UI changed to German - "Sprache" is German for "Language"
-            onNodeWithText("Sprache").assertIsDisplayed()
+            waitUntilExactlyOneExists(
+                hasText("Sprache"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             onNodeWithTag("language_back_button").performClick()
             waitUntilExactlyOneExists(

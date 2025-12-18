@@ -5,7 +5,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -37,10 +36,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val viewModel = hiltViewModel<MainActivityViewModel>()
+            hiltViewModel<MainActivityViewModel>() // needed only for locale observation
 
             MessengerTheme {
-                MessengerApp(viewModel)
+                MessengerApp()
             }
         }
     }
@@ -48,11 +47,7 @@ class MainActivity : AppCompatActivity() {
 
 @Suppress("LongMethod") // todo keep entities in feature modules
 @Composable
-fun MessengerApp(viewModel: MainActivityViewModel) {
-    LaunchedEffect(Unit) {
-        viewModel.observeAndApplyLocaleChange()
-    }
-
+fun MessengerApp() {
     val currentUserId = "550e8400-e29b-41d4-a716-446655440000".toParticipantId()
 
     @Suppress("KotlinConstantConditions")

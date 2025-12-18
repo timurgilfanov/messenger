@@ -1,15 +1,19 @@
 package timur.gilfanov.messenger.ui.activity
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.usecase.user.ObserveAndApplyLocaleUseCase
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    private val observeAndApplyLocale: ObserveAndApplyLocaleUseCase,
+    observeAndApplyLocale: ObserveAndApplyLocaleUseCase,
 ) : ViewModel() {
-    suspend fun observeAndApplyLocaleChange() {
-        observeAndApplyLocale().collect { }
+    init {
+        viewModelScope.launch {
+            observeAndApplyLocale().collect { }
+        }
     }
 }

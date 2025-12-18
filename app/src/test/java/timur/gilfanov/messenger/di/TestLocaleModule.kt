@@ -17,7 +17,7 @@ object TestLocaleModule {
     @Provides
     @Singleton
     fun provideLocaleRepository(): LocaleRepository = object : LocaleRepository {
-        override fun applyLocale(language: UiLanguage) = Unit
+        override suspend fun applyLocale(language: UiLanguage) = Unit
         override fun getCurrentLocale(): UiLanguage? = null
     }
 

@@ -7,7 +7,7 @@ class LocaleRepositoryStub(private var currentLocale: UiLanguage? = null) : Loca
 
     val appliedLocales = mutableListOf<UiLanguage>()
 
-    override fun applyLocale(language: UiLanguage) {
+    override suspend fun applyLocale(language: UiLanguage) {
         appliedLocales.add(language)
         currentLocale = language
     }

@@ -5,22 +5,21 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
 import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
-import timur.gilfanov.messenger.domain.usecase.user.ObserveAndApplyLocaleUseCase
 import timur.gilfanov.messenger.navigation.Chat
 import timur.gilfanov.messenger.navigation.ChatList
 import timur.gilfanov.messenger.navigation.Language
 import timur.gilfanov.messenger.navigation.Login
 import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.navigation.ProfileEdit
+import timur.gilfanov.messenger.ui.activity.MainActivityViewModel
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
@@ -30,36 +29,30 @@ import timur.gilfanov.messenger.ui.screen.settings.LoginScreen
 import timur.gilfanov.messenger.ui.screen.settings.ProfileEditScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
+// todo move activity to ui.activity package
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    @Inject
-    lateinit var observeAndApplyLocale: ObserveAndApplyLocaleUseCase
-
-    @Inject
-    lateinit var applicationScope: CoroutineScope
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        startLocaleObservation()
         enableEdgeToEdge()
         setContent {
-            MessengerTheme {
-                MessengerApp()
-            }
-        }
-    }
+            val viewModel = hiltViewModel<MainActivityViewModel>()
 
-    private fun startLocaleObservation() {
-        applicationScope.launch {
-            observeAndApplyLocale().collect {}
+            MessengerTheme {
+                MessengerApp(viewModel)
+            }
         }
     }
 }
 
 @Suppress("LongMethod") // todo keep entities in feature modules
 @Composable
-fun MessengerApp() {
+fun MessengerApp(viewModel: MainActivityViewModel) {
+    LaunchedEffect(Unit) {
+        viewModel.observeAndApplyLocaleChange()
+    }
+
     val currentUserId = "550e8400-e29b-41d4-a716-446655440000".toParticipantId()
 
     @Suppress("KotlinConstantConditions")

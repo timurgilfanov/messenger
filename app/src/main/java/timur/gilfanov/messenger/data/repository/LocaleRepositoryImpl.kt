@@ -4,12 +4,14 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import java.util.Locale
 import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timur.gilfanov.messenger.domain.entity.user.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.user.repository.LocaleRepository
 import timur.gilfanov.messenger.util.Logger
 
+@Singleton
 class LocaleRepositoryImpl @Inject constructor(private val logger: Logger) : LocaleRepository {
     companion object {
         private const val TAG = "LocaleRepository"

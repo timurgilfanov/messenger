@@ -28,11 +28,6 @@ class LocaleRepositoryImpl @Inject constructor(private val logger: Logger) : Loc
             }
         }
     }
-
-    override fun getCurrentLocale(): UiLanguage? =
-        AppCompatDelegate.getApplicationLocales().toUiLanguageOrNull().also {
-            logger.i(TAG, "Current locale is $it (from AppCompatDelegate)")
-        }
 }
 
 private fun UiLanguage.toLocaleListCompat(): LocaleListCompat = LocaleListCompat.create(
@@ -41,13 +36,3 @@ private fun UiLanguage.toLocaleListCompat(): LocaleListCompat = LocaleListCompat
         UiLanguage.German -> Locale.GERMAN
     },
 )
-
-private fun LocaleListCompat.toUiLanguageOrNull(): UiLanguage? = when {
-    isEmpty -> null
-
-    else -> when (get(0)?.language) {
-        "en" -> UiLanguage.English
-        "de" -> UiLanguage.German
-        else -> null
-    }
-}

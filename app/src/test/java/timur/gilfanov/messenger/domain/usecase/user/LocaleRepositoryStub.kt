@@ -11,6 +11,4 @@ class LocaleRepositoryStub(private var currentLocale: UiLanguage? = null) : Loca
         appliedLocales.add(language)
         currentLocale = language
     }
-
-    override fun getCurrentLocale(): UiLanguage? = currentLocale
 }

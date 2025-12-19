@@ -79,7 +79,7 @@ class ObserveAndApplyLocaleUseCaseTest {
     }
 
     @Test
-    fun `does not skips duplicate language emissions`() = runTest {
+    fun `does not skip duplicate language emissions`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {

@@ -79,7 +79,7 @@ class ObserveAndApplyLocaleUseCaseTest {
     }
 
     @Test
-    fun `skips duplicate language emissions`() = runTest {
+    fun `does not skips duplicate language emissions`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
@@ -99,11 +99,12 @@ class ObserveAndApplyLocaleUseCaseTest {
         useCase().test {
             awaitItem()
             awaitItem()
+            awaitItem()
             awaitComplete()
         }
 
         assertEquals(
-            listOf(UiLanguage.English, UiLanguage.German),
+            listOf(UiLanguage.English, UiLanguage.English, UiLanguage.German),
             localeRepository.appliedLocales.toList(),
         )
     }

@@ -18,16 +18,14 @@ class LocaleRepositoryImpl @Inject constructor(private val logger: Logger) : Loc
     }
 
     override suspend fun applyLocale(language: UiLanguage) {
-        // AppCompatDelegate.setApplicationLocales triggers activity recreate() and must be called
-        // from main thread. Application tests runs LaunchedEffect in test dispatcher and will be
-        // failed in thread not switched to main.
-        withContext(Dispatchers.Main.immediate) {
-            val newLocaleList = language.toLocaleListCompat()
-            val currentLocaleList = AppCompatDelegate.getApplicationLocales()
-            if (currentLocaleList != newLocaleList) {
+        val newLocaleList = language.toLocaleListCompat()
+        val currentLocaleList = AppCompatDelegate.getApplicationLocales()
+        if (currentLocaleList != newLocaleList) {
+            // Triggers activity recreate() and must be called from the main thread
+            withContext(Dispatchers.Main.immediate) {
                 AppCompatDelegate.setApplicationLocales(newLocaleList)
-                logger.i(TAG, "Locale changed to $language via AppCompatDelegate")
             }
+            logger.i(TAG, "Locale changed to $language")
         }
     }
 }

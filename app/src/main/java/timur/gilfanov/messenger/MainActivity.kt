@@ -1,10 +1,11 @@
 package timur.gilfanov.messenger
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -18,6 +19,7 @@ import timur.gilfanov.messenger.navigation.Language
 import timur.gilfanov.messenger.navigation.Login
 import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.navigation.ProfileEdit
+import timur.gilfanov.messenger.ui.activity.MainActivityViewModel
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
@@ -27,12 +29,16 @@ import timur.gilfanov.messenger.ui.screen.settings.LoginScreen
 import timur.gilfanov.messenger.ui.screen.settings.ProfileEditScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
+// todo move activity to ui.activity package
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            hiltViewModel<MainActivityViewModel>() // needed only for locale observation
+
             MessengerTheme {
                 MessengerApp()
             }

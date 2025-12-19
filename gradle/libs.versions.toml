@@ -6,6 +6,7 @@ ksp = "2.2.0-2.0.2"
 jetbrainsKotlinJvm = "2.2.0"
 
 # ========== Core AndroidX ==========
+appcompat = "1.7.1"
 composeBom = "2025.07.00"
 coreKtx = "1.16.0"
 lifecycleRuntimeKtx = "2.9.2"
@@ -65,6 +66,7 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 
 # Core
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }

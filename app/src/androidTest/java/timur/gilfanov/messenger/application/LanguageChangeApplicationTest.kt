@@ -1,9 +1,12 @@
 package timur.gilfanov.messenger.application
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.Module
@@ -13,28 +16,28 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.messenger.MainActivity
 import timur.gilfanov.messenger.annotations.ApplicationTest
 import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
+import timur.gilfanov.messenger.data.repository.LocaleRepositoryImpl
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestUserModule
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.user.repository.LocaleRepository
 import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 import timur.gilfanov.messenger.test.AndroidTestSettingsRepository
-import timur.gilfanov.messenger.test.RepositoryCleanupRule
+import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
@@ -52,12 +55,6 @@ class LanguageChangeApplicationTest {
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
-
-    @Inject
-    lateinit var chatRepository: ChatRepository
-
-    @get:Rule(order = 2)
-    val repositoryCleanupRule = RepositoryCleanupRule(repositoryProvider = { chatRepository })
 
     @Module
     @InstallIn(SingletonComponent::class)
@@ -85,6 +82,10 @@ class LanguageChangeApplicationTest {
         @Provides
         @Singleton
         fun provideRepositoryScope(): CoroutineScope = CoroutineScope(SupervisorJob())
+
+        @Provides
+        @Singleton
+        fun provideLocaleRepository(logger: Logger): LocaleRepository = LocaleRepositoryImpl(logger)
     }
 
     @Module
@@ -96,11 +97,6 @@ class LanguageChangeApplicationTest {
         fun provideTestUserId(): String = AndroidTestDataHelper.USER_ID
     }
 
-    @Before
-    fun setup() {
-        hiltRule.inject()
-    }
-
     @Test
     fun applicationTest_userCanChangeLanguageToGermanThroughSettings() {
         with(composeTestRule) {
@@ -108,50 +104,36 @@ class LanguageChangeApplicationTest {
                 hasTestTag("chat_list"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
-
+            onNodeWithText("Sprache").assertDoesNotExist()
             onNodeWithTag("bottom_nav_settings").performClick()
 
             waitUntilExactlyOneExists(
                 hasTestTag("settings_language_item"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithText("Sprache").assertDoesNotExist()
             onNodeWithTag("settings_language_item").performClick()
 
             waitUntilExactlyOneExists(
                 hasTestTag("language_radio_German"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithText("Sprache").assertDoesNotExist()
             onNodeWithTag("language_radio_German").performClick()
+
+            // Verify UI changed to German - "Sprache" is German for "Language"
+            waitUntilExactlyOneExists(
+                hasText("Sprache"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             onNodeWithTag("language_back_button").performClick()
             waitUntilExactlyOneExists(
                 hasTestTag("settings_language_item"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
-
-            onNodeWithTag("bottom_nav_chats").performClick()
-            waitUntilExactlyOneExists(
-                hasTestTag("chat_list"),
-                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
-            )
-
-            // TODO: Uncomment when language change is implemented
-            // After selecting German, the UI should display German strings
-
-            // On LanguageScreen - verify title changed to "Sprache"
-            // waitUntilExactlyOneExists(hasText("Sprache"))
-
-            // On SettingsScreen - verify language item title changed
-            // onNodeWithText("Sprache").assertIsDisplayed()
-
-            // On MainScreen - verify bottom nav changed (requires string resources)
-            // Note: Bottom nav labels are currently hardcoded, would need localization first
-
-            // Verify locale configuration changed
-            // activityRule.scenario.onActivity { activity ->
-            //     val locale = activity.resources.configuration.locales[0]
-            //     assertEquals(java.util.Locale.GERMAN, locale)
-            // }
+            // Verify settings screen also shows German text
+            onNodeWithText("Sprache").assertIsDisplayed()
         }
     }
 }

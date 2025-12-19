@@ -33,7 +33,7 @@ class DefaultIdentityRepository @Inject constructor() : IdentityRepository {
     override val identity: Flow<ResultWithError<Identity, GetIdentityError>>
         get() = identityFlow
 
-    override fun getIdentity(userId: UserId): ResultWithError<Identity, GetIdentityError> =
+    override suspend fun getIdentity(userId: UserId): ResultWithError<Identity, GetIdentityError> =
         if (userId == defaultIdentity.userId) {
             Success(defaultIdentity)
         } else {

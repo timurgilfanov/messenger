@@ -26,5 +26,5 @@ interface IdentityRepository {
      *
      * @param userId The user ID for which to retrieve the identity.
      */
-    fun getIdentity(userId: UserId): ResultWithError<Identity, GetIdentityError>
+    suspend fun getIdentity(userId: UserId): ResultWithError<Identity, GetIdentityError>
 }

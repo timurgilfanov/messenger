@@ -18,6 +18,6 @@ class IdentityRepositoryStub(
 
     override val identity: Flow<ResultWithError<Identity, GetIdentityError>> = identityFlow
 
-    override fun getIdentity(userId: UserId): ResultWithError<Identity, GetIdentityError> =
+    override suspend fun getIdentity(userId: UserId): ResultWithError<Identity, GetIdentityError> =
         getIdentityResult ?: ResultWithError.Failure(GetIdentityError)
 }

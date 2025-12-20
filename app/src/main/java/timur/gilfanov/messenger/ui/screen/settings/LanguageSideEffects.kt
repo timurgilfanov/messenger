@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
-import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
 
 /**
  * One-time side effects for the language selection screen.

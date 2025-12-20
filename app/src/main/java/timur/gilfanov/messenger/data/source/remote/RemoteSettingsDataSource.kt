@@ -2,9 +2,9 @@ package timur.gilfanov.messenger.data.source.remote
 
 import kotlin.time.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 /**
  * Remote data source for user settings data.
@@ -18,9 +18,11 @@ interface RemoteSettingsDataSource {
      * Retrieves settings from the remote server as a typed RemoteSettings object.
      *
      * @param identity The user identity for which to retrieve settings
-     * @return Success with [RemoteSettings] or failure with [RemoteUserDataSourceError]
+     * @return Success with [RemoteSettings] or failure with [RemoteSettingsDataSourceError]
      */
-    suspend fun get(identity: Identity): ResultWithError<RemoteSettings, RemoteUserDataSourceError>
+    suspend fun get(
+        identity: Identity,
+    ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError>
 
     /**
      * Changes user's UI language preference on the remote server.
@@ -79,7 +81,7 @@ interface RemoteSettingsDataSource {
  * Sync operations can fail due to authentication or infrastructure errors.
  * When more specific errors or modifications are needed, use composition, not inheritance.
  */
-typealias SyncSingleSettingError = RemoteUserDataSourceError
+typealias SyncSingleSettingError = RemoteSettingsDataSourceError
 
 /**
  * Error taxonomy for the "sync batch" remote data source method.
@@ -88,7 +90,7 @@ typealias SyncSingleSettingError = RemoteUserDataSourceError
  * Per-setting results (Success/Conflict) are returned in the success map.
  * When more specific errors or modifications are needed, use composition, not inheritance.
  */
-typealias SyncBatchError = RemoteUserDataSourceError
+typealias SyncBatchError = RemoteSettingsDataSourceError
 
 /**
  * A single setting item from remote server response.

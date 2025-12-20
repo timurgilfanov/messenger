@@ -14,8 +14,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import timur.gilfanov.messenger.data.worker.SyncAllSettingsWorker
 import timur.gilfanov.messenger.data.worker.SyncSettingWorker
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 
 @Singleton
 class SettingsSyncSchedulerImpl @Inject constructor(private val workManager: WorkManager) :

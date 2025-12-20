@@ -1,14 +1,14 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import kotlin.time.Duration
-import timur.gilfanov.messenger.domain.usecase.user.repository.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
 
 /**
  * Common errors for remote data source operations.
  *
  * Focused on network and server-level failures during remote API calls.
  * Entity-specific errors (e.g., UserNotFound) are defined in separate
- * interfaces (e.g., RemoteUserDataSourceError) and compose this interface
+ * interfaces (e.g., RemoteSettingsDataSourceError) and compose this interface
  * for common infrastructure errors.
  *
  * ## Migration from RemoteDataSourceError

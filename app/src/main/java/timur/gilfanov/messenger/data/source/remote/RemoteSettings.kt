@@ -1,8 +1,8 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.util.Logger
 
 /**

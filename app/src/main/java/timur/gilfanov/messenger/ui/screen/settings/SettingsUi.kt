@@ -1,8 +1,8 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
 import androidx.compose.runtime.Immutable
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 /**
  * UI model for user settings display.

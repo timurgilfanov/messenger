@@ -1,20 +1,20 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 class RemoteSettingsDataSourceStub : RemoteSettingsDataSource {
 
-    private var getResponse: ResultWithError<RemoteSettings, RemoteUserDataSourceError>? = null
+    private var getResponse: ResultWithError<RemoteSettings, RemoteSettingsDataSourceError>? = null
     private var changeUiLanguageResponse:
         ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError>? = null
     private var putResponse: ResultWithError<Unit, UpdateSettingsRemoteDataSourceError>? = null
     private var syncSingleResponse: ResultWithError<SyncResult, SyncSingleSettingError>? = null
     private var syncBatchResponse: ResultWithError<Map<String, SyncResult>, SyncBatchError>? = null
 
-    fun setGetResponse(response: ResultWithError<RemoteSettings, RemoteUserDataSourceError>) {
+    fun setGetResponse(response: ResultWithError<RemoteSettings, RemoteSettingsDataSourceError>) {
         getResponse = response
     }
 

@@ -8,11 +8,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.util.Logger
 
 const val TIME_STEP_SECONDS = 1L
@@ -75,10 +75,10 @@ class RemoteSettingsDataSourceFake(
 
     override suspend fun get(
         identity: Identity,
-    ): ResultWithError<RemoteSettings, RemoteUserDataSourceError> {
+    ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> {
         val userSettings = settings.value[identity.userId]
         return if (userSettings == null) {
-            ResultWithError.Failure(RemoteUserDataSourceError.Authentication.SessionRevoked)
+            ResultWithError.Failure(RemoteSettingsDataSourceError.Authentication.SessionRevoked)
         } else {
             val items = convertSettingsToDTOs(userSettings, identity.userId)
             val remoteSettings = RemoteSettings.fromItems(logger, items)
@@ -108,7 +108,7 @@ class RemoteSettingsDataSourceFake(
     ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> {
         settings.update {
             val userSettings = it[identity.userId] ?: return ResultWithError.Failure(
-                RemoteUserDataSourceError.Authentication.SessionRevoked,
+                RemoteSettingsDataSourceError.Authentication.SessionRevoked,
             )
             it.put(
                 identity.userId,
@@ -135,7 +135,7 @@ class RemoteSettingsDataSourceFake(
         this.settings.update {
             if (!it.containsKey(identity.userId)) {
                 return ResultWithError.Failure(
-                    RemoteUserDataSourceError.Authentication.SessionRevoked,
+                    RemoteSettingsDataSourceError.Authentication.SessionRevoked,
                 )
             }
             it.put(identity.userId, settings)

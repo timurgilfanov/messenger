@@ -5,10 +5,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
-import timur.gilfanov.messenger.domain.usecase.user.SyncAllPendingSettingsUseCase
-import timur.gilfanov.messenger.domain.usecase.user.SyncSettingUseCase
-import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.settings.SyncAllPendingSettingsUseCase
+import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingUseCase
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
 
 @Module

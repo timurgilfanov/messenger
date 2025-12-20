@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.data.source.remote
 
-import timur.gilfanov.messenger.domain.entity.user.Setting
+import timur.gilfanov.messenger.domain.entity.settings.Setting
 
 /**
  * Typed wrapper for setting synchronization requests to remote server.
@@ -38,6 +38,6 @@ sealed interface TypedSettingSyncRequest {
      */
     data class UiLanguage(
         override val request:
-        SettingSyncRequest<timur.gilfanov.messenger.domain.entity.user.UiLanguage>,
+        SettingSyncRequest<timur.gilfanov.messenger.domain.entity.settings.UiLanguage>,
     ) : TypedSettingSyncRequest
 }

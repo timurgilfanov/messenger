@@ -5,7 +5,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
-import timur.gilfanov.messenger.domain.usecase.user.ObserveProfileUseCase
+import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
 import timur.gilfanov.messenger.util.Logger
 
 @Suppress("UnusedPrivateProperty")

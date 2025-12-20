@@ -3,10 +3,10 @@ package timur.gilfanov.messenger.data.source.local
 import kotlin.time.Clock
 import kotlin.time.Instant
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 /**
  * Type-safe wrapper for user settings stored locally with synchronization metadata.

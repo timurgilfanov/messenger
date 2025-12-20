@@ -8,10 +8,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 class LocalSettingsDataSourceFake(
     private val defaultSettings: Settings = Settings(uiLanguage = UiLanguage.English),

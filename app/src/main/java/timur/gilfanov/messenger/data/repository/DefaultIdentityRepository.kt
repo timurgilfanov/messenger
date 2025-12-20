@@ -8,11 +8,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
-import timur.gilfanov.messenger.domain.entity.user.DeviceId
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.UserId
-import timur.gilfanov.messenger.domain.usecase.user.GetIdentityError
-import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
+import timur.gilfanov.messenger.domain.entity.profile.DeviceId
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
+import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
 
 /**
  * Temporary identity provider until authentication is implemented.

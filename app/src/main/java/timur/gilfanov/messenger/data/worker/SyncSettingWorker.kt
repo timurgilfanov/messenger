@@ -8,12 +8,12 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.UUID
 import timur.gilfanov.messenger.domain.entity.fold
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.UserId
-import timur.gilfanov.messenger.domain.usecase.user.SyncSettingError
-import timur.gilfanov.messenger.domain.usecase.user.SyncSettingUseCase
-import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SyncSettingRepositoryError
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.usecase.profile.repository.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingError
+import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingUseCase
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 @HiltWorker

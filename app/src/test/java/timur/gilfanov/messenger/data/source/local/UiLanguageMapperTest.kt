@@ -5,7 +5,7 @@ import kotlin.test.assertNull
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Unit
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 @Category(Unit::class)
 class UiLanguageMapperTest {

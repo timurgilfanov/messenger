@@ -2,7 +2,7 @@ package timur.gilfanov.messenger.ui.screen.settings
 
 import androidx.compose.runtime.Immutable
 import kotlinx.collections.immutable.ImmutableList
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 /**
  * UI state for the language selection screen.

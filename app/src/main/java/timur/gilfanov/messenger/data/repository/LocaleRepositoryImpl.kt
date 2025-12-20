@@ -7,8 +7,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.usecase.user.repository.LocaleRepository
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.settings.repository.LocaleRepository
 import timur.gilfanov.messenger.util.Logger
 
 @Singleton

@@ -7,15 +7,15 @@ import dagger.hilt.components.SingletonComponent
 import java.util.UUID
 import javax.inject.Singleton
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.DeviceId
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
-import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
-import timur.gilfanov.messenger.domain.usecase.user.IdentityRepositoryStub
-import timur.gilfanov.messenger.domain.usecase.user.SettingsRepositoryStub
-import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import timur.gilfanov.messenger.domain.entity.profile.DeviceId
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub
+import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryStub
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 
 @Module
 @InstallIn(SingletonComponent::class)

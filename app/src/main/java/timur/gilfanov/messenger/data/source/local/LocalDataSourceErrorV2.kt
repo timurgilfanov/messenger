@@ -1,13 +1,13 @@
 package timur.gilfanov.messenger.data.source.local
 
-import timur.gilfanov.messenger.domain.usecase.user.repository.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
 
 /**
  * Common errors for local data source operations.
  *
  * Focused on infrastructure-level failures during I/O and serialization.
  * Entity-specific errors (e.g., UserDataNotFound) are defined in separate
- * interfaces (e.g., LocalUserDataSourceError) and compose this interface
+ * interfaces (e.g., LocalProfileDataSourceError) and compose this interface
  * for common infrastructure errors.
  *
  * ## Migration from LocalDataSourceError

@@ -3,8 +3,8 @@ package timur.gilfanov.messenger.data.source.remote
 import java.io.InputStream
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Profile
-import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.entity.profile.Profile
+import timur.gilfanov.messenger.domain.entity.profile.UserId
 
 /**
  * Remote data source for user profile data.
@@ -17,9 +17,9 @@ interface RemoteProfileDataSource {
      * Retrieves profile from the backend.
      *
      * @param userId The unique identifier of the user
-     * @return Success with [Profile] or failure with [RemoteUserDataSourceError]
+     * @return Success with [Profile] or failure with [RemoteProfileDataSourceError]
      */
-    suspend fun getProfile(userId: UserId): ResultWithError<Profile, RemoteUserDataSourceError>
+    suspend fun getProfile(userId: UserId): ResultWithError<Profile, RemoteProfileDataSourceError>
 
     /**
      * Updates user's display name on the backend.
@@ -64,3 +64,5 @@ interface RemoteProfileDataSource {
         pictureUrl: String,
     ): ResultWithError<Unit, RemovePictureRemoteDataSourceError>
 }
+
+typealias RemoteProfileDataSourceError = RemoteSettingsDataSourceError

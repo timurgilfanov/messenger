@@ -12,7 +12,7 @@ package timur.gilfanov.messenger.data.source.remote
  * - [PlatformPolicyViolation] - Image violates content policy
  *
  * ## Common Errors
- * - [RemoteUserDataSource] - Wraps remote user data source errors
+ * - [RemoteSettingsDataSource] - Wraps remote settings data source errors
  */
 sealed interface UpdatePictureRemoteDataSourceError {
     /**
@@ -55,10 +55,10 @@ sealed interface UpdatePictureRemoteDataSourceError {
     }
 
     /**
-     * Common remote user data source errors.
+     * Common remote settings data source errors.
      *
-     * @property error The underlying remote user data source error
+     * @property error The underlying remote settings data source error
      */
-    data class RemoteUserDataSource(val error: RemoteUserDataSourceError) :
+    data class RemoteSettingsDataSource(val error: RemoteSettingsDataSourceError) :
         UpdatePictureRemoteDataSourceError
 }

@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.data.source.local
 
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 /**
  * Bidirectional mapping between [UiLanguage] domain types and database storage strings.

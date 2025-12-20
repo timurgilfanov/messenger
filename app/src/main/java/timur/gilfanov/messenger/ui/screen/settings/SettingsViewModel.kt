@@ -12,8 +12,8 @@ import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.annotation.OrbitExperimental
 import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.fold
-import timur.gilfanov.messenger.domain.usecase.user.ObserveSettingsError
-import timur.gilfanov.messenger.domain.usecase.user.ObserveSettingsUseCase
+import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsError
+import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCase
 import timur.gilfanov.messenger.util.Logger
 
 @HiltViewModel

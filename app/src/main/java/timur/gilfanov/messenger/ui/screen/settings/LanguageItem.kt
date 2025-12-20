@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 /**
  * UI model for a language option in the language selection screen.

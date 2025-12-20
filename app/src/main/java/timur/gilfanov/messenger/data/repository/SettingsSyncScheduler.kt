@@ -1,7 +1,7 @@
 package timur.gilfanov.messenger.data.repository
 
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 
 /**
  * Schedules background sync operations for settings.

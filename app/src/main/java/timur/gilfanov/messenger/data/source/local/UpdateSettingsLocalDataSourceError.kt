@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.data.source.local
 
-import timur.gilfanov.messenger.domain.usecase.user.repository.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
 
 /**
  * Errors that can occur during settings update operations.

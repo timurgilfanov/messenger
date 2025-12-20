@@ -4,7 +4,7 @@ import timur.gilfanov.messenger.data.source.local.LocalSetting
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.remote.SettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.TypedSettingSyncRequest
-import timur.gilfanov.messenger.domain.entity.user.Identity
+import timur.gilfanov.messenger.domain.entity.profile.Identity
 
 /**
  * Extension function to convert [TypedLocalSetting] to [TypedSettingSyncRequest].

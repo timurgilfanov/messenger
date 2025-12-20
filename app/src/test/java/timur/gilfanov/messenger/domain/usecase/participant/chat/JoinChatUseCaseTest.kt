@@ -17,36 +17,35 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.AlreadyJoined
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatClosed
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.CooldownActive
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.ExpiredInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.InvalidInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.OneToOneChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.RemoteOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserBlocked
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserNotFound
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.AlreadyJoined
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ChatClosed
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ChatFull
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.CooldownActive
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ExpiredInviteLink
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.InvalidInviteLink
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.LocalError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.OneToOneChatFull
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.RemoteUnreachable
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserBlocked
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserNotFound
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(Unit::class)
 class JoinChatUseCaseTest {
 
-    private class RepositoryFake(private val error: RepositoryJoinChatError? = null) :
+    private class RepositoryFake(private val error: JoinChatError? = null) :
         ChatRepository {
         override suspend fun joinChat(
             chatId: ChatId,
             inviteLink: String?,
-        ): ResultWithError<Chat, RepositoryJoinChatError> = if (error == null) {
-            Success<Chat, RepositoryJoinChatError>(buildChat { id = chatId })
+        ): ResultWithError<Chat, JoinChatError> = if (error == null) {
+            Success<Chat, JoinChatError>(buildChat { id = chatId })
         } else {
-            Failure<Chat, RepositoryJoinChatError>(error)
+            Failure<Chat, JoinChatError>(error)
         }
 
         // Implement other required ChatRepository methods as not implemented for this test
@@ -76,49 +75,61 @@ class JoinChatUseCaseTest {
     @Test
     fun `network not available`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
-        val repository = RepositoryFake(NetworkNotAvailable)
+        val repository = RepositoryFake(
+            RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+        )
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
-        assertIs<NetworkNotAvailable>(result.error)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Failed.NetworkNotAvailable>(result.error.error)
     }
 
     @Test
     fun `remote unreachable`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
-        val repository = RepositoryFake(RemoteUnreachable)
+        val repository = RepositoryFake(
+            RemoteOperationFailed(RemoteError.Failed.ServiceDown),
+        )
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
-        assertIs<RemoteUnreachable>(result.error)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
     }
 
     @Test
     fun `remote error`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
-        val repository = RepositoryFake(RemoteError)
+        val repository = RepositoryFake(
+            RemoteOperationFailed(RemoteError.Unauthenticated),
+        )
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
-        assertIs<RemoteError>(result.error)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Unauthenticated>(result.error.error)
     }
 
     @Test
     fun `local error`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
-        val repository = RepositoryFake(LocalError)
+        val repository = RepositoryFake(
+            LocalOperationFailed(LocalStorageError.Corrupted),
+        )
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatError>>(result)
-        assertIs<LocalError>(result.error)
+        assertIs<LocalOperationFailed>(result.error)
+        assertIs<LocalStorageError.Corrupted>(result.error.error)
     }
 
     @Test

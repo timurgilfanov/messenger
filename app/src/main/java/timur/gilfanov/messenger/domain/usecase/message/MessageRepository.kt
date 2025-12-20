@@ -16,18 +16,14 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
  */
 interface MessageRepository {
 
-    suspend fun sendMessage(
-        message: Message,
-    ): Flow<ResultWithError<Message, RepositorySendMessageError>>
+    suspend fun sendMessage(message: Message): Flow<ResultWithError<Message, SendMessageError>>
 
-    suspend fun editMessage(
-        message: Message,
-    ): Flow<ResultWithError<Message, RepositoryEditMessageError>>
+    suspend fun editMessage(message: Message): Flow<ResultWithError<Message, EditMessageError>>
 
     suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,
-    ): ResultWithError<Unit, RepositoryDeleteMessageError>
+    ): ResultWithError<Unit, DeleteMessageError>
 
     /**
      * Returns a Flow of PagingData for messages in a specific chat.

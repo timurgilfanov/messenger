@@ -2,6 +2,8 @@ package timur.gilfanov.messenger.data.source.remote
 
 import kotlin.time.Duration
 
+// todo replace with specific errors for data source operation like in
+//  UpdateNameRemoteDataSourceError.kt with logical and datasource related errors
 sealed interface RemoteDataSourceError {
     data object NetworkNotAvailable : RemoteDataSourceError
     data object ServerUnreachable : RemoteDataSourceError

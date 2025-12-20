@@ -19,18 +19,18 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 
 class RepositoryFake :
     ChatRepository,
@@ -63,7 +63,7 @@ class RepositoryFake :
 
     override fun isChatListUpdating(): Flow<Boolean> = kotlinx.coroutines.flow.flowOf(false)
 
-    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> {
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatError> {
         chats[chat.id] = chat
         chatUpdates.emit(chat)
         emitChatList()
@@ -72,7 +72,7 @@ class RepositoryFake :
 
     override suspend fun sendMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositorySendMessageError>> {
+    ): Flow<ResultWithError<Message, SendMessageError>> {
         val chatId = message.recipient
         val chat = chats[chatId]!!
 
@@ -95,7 +95,7 @@ class RepositoryFake :
 
     override suspend fun editMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositoryEditMessageError>> {
+    ): Flow<ResultWithError<Message, EditMessageError>> {
         val chatId = message.recipient
         val chat = chats[chatId]!!
 
@@ -125,7 +125,7 @@ class RepositoryFake :
     override suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,
-    ): ResultWithError<Unit, RepositoryDeleteMessageError> {
+    ): ResultWithError<Unit, DeleteMessageError> {
         error("Not implemented")
     }
 
@@ -147,11 +147,9 @@ class RepositoryFake :
             .distinctUntilChanged()
     }
 
-    override suspend fun deleteChat(
-        chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryDeleteChatError> {
+    override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, DeleteChatError> {
         if (!chats.containsKey(chatId)) {
-            return ResultWithError.Failure(RepositoryDeleteChatError.ChatNotFound(chatId))
+            return ResultWithError.Failure(DeleteChatError.ChatNotFound(chatId))
         }
 
         chats.remove(chatId)
@@ -162,11 +160,10 @@ class RepositoryFake :
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
+    ): ResultWithError<Chat, JoinChatError> = error("Not yet implemented")
 
-    override suspend fun leaveChat(
-        chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
+    override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, LeaveChatError> =
+        error("Not yet implemented")
 
     override suspend fun markMessagesAsRead(
         chatId: ChatId,

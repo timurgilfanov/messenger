@@ -11,9 +11,9 @@ import timur.gilfanov.messenger.domain.entity.profile.DeviceId
 import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub
-import timur.gilfanov.messenger.domain.usecase.profile.repository.RepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRepositoryError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
@@ -83,7 +83,7 @@ class SyncSettingUseCaseTest {
         val settingsRepository = SettingsRepositoryStub(
             syncSettingResult = ResultWithError.Failure(
                 SyncSettingRepositoryError.RemoteSyncFailed(
-                    RepositoryError.Failed.NetworkNotAvailable,
+                    RemoteError.Failed.NetworkNotAvailable,
                 ),
             ),
         )
@@ -94,6 +94,6 @@ class SyncSettingUseCaseTest {
         assertIs<ResultWithError.Failure<Unit, SyncSettingError>>(result)
         assertIs<SyncSettingError.SyncFailed>(result.error)
         assertIs<SyncSettingRepositoryError.RemoteSyncFailed>(result.error.error)
-        assertIs<RepositoryError.Failed.NetworkNotAvailable>(result.error.error.error)
+        assertIs<RemoteError.Failed.NetworkNotAvailable>(result.error.error.error)
     }
 }

@@ -32,18 +32,18 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.bobChat
 import timur.gilfanov.messenger.util.Logger
 
@@ -160,21 +160,19 @@ class AndroidTestRepositoryWithRealImplementation(
     }
 
     // ChatRepository implementation - delegate to real repository
-    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> =
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatError> =
         realRepository.createChat(chat)
 
-    override suspend fun deleteChat(
-        chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryDeleteChatError> = realRepository.deleteChat(chatId)
+    override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, DeleteChatError> =
+        realRepository.deleteChat(chatId)
 
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, RepositoryJoinChatError> = realRepository.joinChat(chatId, inviteLink)
+    ): ResultWithError<Chat, JoinChatError> = realRepository.joinChat(chatId, inviteLink)
 
-    override suspend fun leaveChat(
-        chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryLeaveChatError> = realRepository.leaveChat(chatId)
+    override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, LeaveChatError> =
+        realRepository.leaveChat(chatId)
 
     override suspend fun flowChatList(): Flow<
         ResultWithError<List<ChatPreview>, FlowChatListError>,
@@ -191,19 +189,16 @@ class AndroidTestRepositoryWithRealImplementation(
     // MessageRepository implementation - delegate to real repository
     override suspend fun sendMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositorySendMessageError>> =
-        realRepository.sendMessage(message)
+    ): Flow<ResultWithError<Message, SendMessageError>> = realRepository.sendMessage(message)
 
     override suspend fun editMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositoryEditMessageError>> =
-        realRepository.editMessage(message)
+    ): Flow<ResultWithError<Message, EditMessageError>> = realRepository.editMessage(message)
 
     override suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,
-    ): ResultWithError<Unit, RepositoryDeleteMessageError> =
-        realRepository.deleteMessage(messageId, mode)
+    ): ResultWithError<Unit, DeleteMessageError> = realRepository.deleteMessage(messageId, mode)
 
     override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
         realRepository.getPagedMessages(chatId)

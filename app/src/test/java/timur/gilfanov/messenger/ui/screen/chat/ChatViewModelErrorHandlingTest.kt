@@ -26,7 +26,9 @@ import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationE
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -115,10 +117,10 @@ class ChatViewModelErrorHandlingTest {
                 copy(inputTextValidationError = TextValidationError.Empty)
             }
             listOf(
-                ReceiveChatUpdatesError.NetworkNotAvailable,
-                ReceiveChatUpdatesError.ServerError,
-                ReceiveChatUpdatesError.ServerUnreachable,
-                ReceiveChatUpdatesError.UnknownError,
+                RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+                RemoteOperationFailed(RemoteError.Unauthenticated),
+                RemoteOperationFailed(RemoteError.Failed.ServiceDown),
+                RemoteOperationFailed(RemoteError.InsufficientPermissions),
             ).forEach { error ->
                 chatFlow.value = Failure(error)
                 expectStateOn<ChatUiState.Ready> { copy(updateError = error) }
@@ -135,7 +137,7 @@ class ChatViewModelErrorHandlingTest {
 
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(
-                Failure(ReceiveChatUpdatesError.NetworkNotAvailable),
+                Failure(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)),
             )
         val repository = MessengerRepositoryFake(flowChat = chatFlow)
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
@@ -158,7 +160,10 @@ class ChatViewModelErrorHandlingTest {
             // Should remain in Loading state with error
             val loadingErrorState = awaitState()
             assertTrue(loadingErrorState is ChatUiState.Loading)
-            assertEquals(ReceiveChatUpdatesError.NetworkNotAvailable, loadingErrorState.error)
+            assertEquals(
+                RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+                loadingErrorState.error,
+            )
 
             job.cancelAndJoin()
         }
@@ -203,11 +208,14 @@ class ChatViewModelErrorHandlingTest {
             }
 
             // Simulate transient network error
-            chatFlow.value = Failure(ReceiveChatUpdatesError.NetworkNotAvailable)
+            chatFlow.value = Failure(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable))
 
             val errorState = awaitState()
             assertTrue(errorState is ChatUiState.Ready)
-            assertEquals(ReceiveChatUpdatesError.NetworkNotAvailable, errorState.updateError)
+            assertEquals(
+                RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+                errorState.updateError,
+            )
 
             // Simulate recovery with successful update including new message
             val newMessage = createTestMessage(

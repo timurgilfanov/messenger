@@ -15,28 +15,26 @@ import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidationError
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
 import timur.gilfanov.messenger.domain.entity.message.MessageId
-import timur.gilfanov.messenger.domain.usecase.chat.ChatIsNotValid
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError.ChatIsNotValid
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class CreateChatUseCaseTest {
 
-    private class RepositoryFake(val error: RepositoryCreateChatError? = null) :
-        ChatRepository {
+    private class RepositoryFake(val error: CreateChatError? = null) : ChatRepository {
         val chats = mutableSetOf<Chat>()
 
-        override suspend fun createChat(
-            chat: Chat,
-        ): ResultWithError<Chat, RepositoryCreateChatError> {
+        override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatError> {
             error?.let {
                 return ResultWithError.Failure(it)
             }
             return if (chats.any { it.id == chat.id }) {
-                ResultWithError.Failure(RepositoryCreateChatError.DuplicateChatId)
+                ResultWithError.Failure(CreateChatError.DuplicateChatId)
             } else {
                 chats.add(chat)
                 ResultWithError.Success(chat)
@@ -92,12 +90,12 @@ class CreateChatUseCaseTest {
     fun `repository error handling`() = runTest {
         val validator = ChatValidatorFake()
         val chat = buildChat {}
-        val repositoryError = RepositoryCreateChatError.UnknownError
+        val repositoryError = RemoteOperationFailed(RemoteError.Unauthenticated)
         val repository = RepositoryFake(repositoryError)
         val useCase = CreateChatUseCase(repository, validator)
         val result = useCase(chat)
         assertIs<ResultWithError.Failure<Chat, CreateChatError>>(result)
-        assertEquals(repositoryError, result.error)
+        assertIs<RemoteOperationFailed>(result.error)
     }
 
     @Test
@@ -119,6 +117,6 @@ class CreateChatUseCaseTest {
         }
         val newResult = useCase(newChat)
         assertIs<ResultWithError.Failure<Chat, CreateChatError>>(newResult)
-        assertEquals(RepositoryCreateChatError.DuplicateChatId, newResult.error)
+        assertEquals(CreateChatError.DuplicateChatId, newResult.error)
     }
 }

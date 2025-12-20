@@ -21,9 +21,9 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.DeleteForEveryoneWindowExpired
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.DeleteWindowExpired
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.MessageAlreadyDelivered
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.MessageNotFound
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.NotAuthorized
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode.FOR_SENDER_ONLY
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError.MessageNotFound
 
 class DeleteMessageUseCase(val repository: MessageRepository) {
 

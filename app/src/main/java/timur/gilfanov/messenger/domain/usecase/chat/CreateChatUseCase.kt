@@ -14,7 +14,7 @@ class CreateChatUseCase(
     suspend operator fun invoke(chat: Chat): ResultWithError<Chat, CreateChatError> {
         val validation = validator.validateOnCreation(chat)
         if (validation is Failure) {
-            return Failure(ChatIsNotValid(validation.error))
+            return Failure(CreateChatError.ChatIsNotValid(validation.error))
         }
 
         val result = repository.createChat(chat)

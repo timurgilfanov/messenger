@@ -23,8 +23,9 @@ import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.NetworkNotAvailable
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -174,7 +175,9 @@ class ChatViewModelLoadingTest {
         val currentUserId = ParticipantId(UUID.randomUUID())
 
         val repository = MessengerRepositoryFake(
-            flowChat = flowOf(Failure(NetworkNotAvailable)),
+            flowChat = flowOf(
+                Failure(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)),
+            ),
         )
 
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
@@ -194,7 +197,7 @@ class ChatViewModelLoadingTest {
         viewModel.test(this) {
             val job = runOnCreate()
             expectState {
-                ChatUiState.Loading(NetworkNotAvailable)
+                ChatUiState.Loading(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable))
             }
 
             job.cancelAndJoin()

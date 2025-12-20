@@ -33,18 +33,20 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
+import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode.FOR_SENDER_ONLY
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(Unit::class)
@@ -121,30 +123,30 @@ class MessengerRepositoryImplTest {
         repository.sendMessage(messageToSend).test {
             // Then: Should receive sending progress updates
             val result0 = awaitItem()
-            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result0)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result0)
             assertEquals(messageToSend.text, (result0.data as TextMessage).text)
             assertIs<DeliveryStatus.Sending>(result0.data.deliveryStatus)
             assertEquals(0, result0.data.deliveryStatus.progress)
 
             val result50 = awaitItem()
-            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result50)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result50)
             assertEquals(messageToSend.text, (result50.data as TextMessage).text)
             assertIs<DeliveryStatus.Sending>(result50.data.deliveryStatus)
             assertEquals(50, result50.data.deliveryStatus.progress)
 
             val result100 = awaitItem()
-            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(result100)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result100)
             assertEquals(messageToSend.text, (result100.data as TextMessage).text)
             assertIs<DeliveryStatus.Sending>(result100.data.deliveryStatus)
             assertEquals(100, result100.data.deliveryStatus.progress)
 
             val resultDelivered = awaitItem()
-            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(resultDelivered)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(resultDelivered)
             assertEquals(messageToSend.text, (resultDelivered.data as TextMessage).text)
             assertEquals(DeliveryStatus.Delivered, resultDelivered.data.deliveryStatus)
 
             val resultRead = awaitItem()
-            assertIs<ResultWithError.Success<Message, RepositorySendMessageError>>(resultRead)
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(resultRead)
             assertEquals(messageToSend.text, (resultRead.data as TextMessage).text)
             assertEquals(DeliveryStatus.Read, resultRead.data.deliveryStatus)
 
@@ -168,7 +170,7 @@ class MessengerRepositoryImplTest {
         val result = repository.createChat(testChat)
 
         // Then: Should succeed
-        assertIs<ResultWithError.Success<Chat, RepositoryCreateChatError>>(result)
+        assertIs<ResultWithError.Success<Chat, CreateChatError>>(result)
         assertEquals(testChat, result.data)
 
         // And: Chat should be stored locally
@@ -222,7 +224,7 @@ class MessengerRepositoryImplTest {
             assertEquals(testChat.id, initialResult.data[0].id)
 
             val result = repository.deleteChat(testChat.id)
-            assertIs<ResultWithError.Success<Unit, RepositoryDeleteChatError>>(result)
+            assertIs<ResultWithError.Success<Unit, DeleteChatError>>(result)
 
             val finalResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(finalResult)
@@ -237,7 +239,7 @@ class MessengerRepositoryImplTest {
 
         val result = repository.joinChat(testChat.id, null)
 
-        assertIs<ResultWithError.Success<Chat, RepositoryJoinChatError>>(result)
+        assertIs<ResultWithError.Success<Chat, JoinChatError>>(result)
         assertEquals(testChat, result.data)
 
         val storedChatResult = localDataSource.getChat(testChat.id)
@@ -258,7 +260,7 @@ class MessengerRepositoryImplTest {
             assertEquals(testChat.id, initialResult.data[0].id)
 
             val result = repository.leaveChat(testChat.id)
-            assertIs<ResultWithError.Success<Unit, RepositoryLeaveChatError>>(result)
+            assertIs<ResultWithError.Success<Unit, LeaveChatError>>(result)
 
             val finalResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(finalResult)
@@ -301,7 +303,7 @@ class MessengerRepositoryImplTest {
         repository.editMessage(editedMessage).test {
             // Then: Should return edited message
             val result = awaitItem()
-            assertIs<ResultWithError.Success<Message, RepositoryEditMessageError>>(result)
+            assertIs<ResultWithError.Success<Message, EditMessageError>>(result)
             assertEquals(editedMessage.text, (result.data as TextMessage).text)
             // Note: RemoteDataSourceFake returns the message as-is without changing delivery status
             assertNull(result.data.deliveryStatus)
@@ -320,7 +322,7 @@ class MessengerRepositoryImplTest {
         val result = repository.deleteMessage(testMessage.id, FOR_SENDER_ONLY)
 
         // Then: Should succeed
-        assertIs<ResultWithError.Success<Unit, RepositoryDeleteMessageError>>(result)
+        assertIs<ResultWithError.Success<Unit, DeleteMessageError>>(result)
     }
 
     @Test
@@ -497,7 +499,7 @@ class MessengerRepositoryImplTest {
         )
 
         // Then: Should return error
-        assertIs<ResultWithError.Failure<Unit, RepositoryDeleteMessageError>>(result)
+        assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
     }
 
     @Test
@@ -641,8 +643,8 @@ class MessengerRepositoryImplTest {
         val result = repository.joinChat(nonExistentChatId, null)
 
         // Then: Should return error
-        assertIs<ResultWithError.Failure<Chat, RepositoryJoinChatError>>(result)
-        assertEquals(RepositoryJoinChatError.ChatNotFound, result.error)
+        assertIs<ResultWithError.Failure<Chat, JoinChatError>>(result)
+        assertEquals(JoinChatError.ChatNotFound, result.error)
     }
 
     @Test
@@ -657,8 +659,8 @@ class MessengerRepositoryImplTest {
         val result = repository.leaveChat(nonExistentChatId)
 
         // Then: Should return error
-        assertIs<ResultWithError.Failure<Unit, RepositoryLeaveChatError>>(result)
-        assertEquals(RepositoryLeaveChatError.ChatNotFound, result.error)
+        assertIs<ResultWithError.Failure<Unit, LeaveChatError>>(result)
+        assertEquals(LeaveChatError.ChatNotFound, result.error)
     }
 
     @Test
@@ -693,7 +695,10 @@ class MessengerRepositoryImplTest {
         repository.flowChatList().test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(result)
-            assertEquals(FlowChatListError.LocalError, result.error)
+            assertEquals(
+                FlowChatListError.LocalOperationFailed(LocalStorageError.Corrupted),
+                result.error,
+            )
         }
 
         // Cleanup
@@ -719,8 +724,11 @@ class MessengerRepositoryImplTest {
 
         repository.sendMessage(message).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Message, RepositorySendMessageError>>(result)
-            assertEquals(RepositorySendMessageError.NetworkNotAvailable, result.error)
+            assertIs<ResultWithError.Failure<Message, SendMessageError>>(result)
+            assertEquals(
+                SendMessageError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+                result.error,
+            )
             awaitComplete()
         }
     }
@@ -735,8 +743,8 @@ class MessengerRepositoryImplTest {
 
         val result = repository.deleteMessage(nonExistentMessageId, FOR_SENDER_ONLY)
 
-        assertIs<ResultWithError.Failure<Unit, RepositoryDeleteMessageError>>(result)
-        assertEquals(RepositoryDeleteMessageError.MessageNotFound, result.error)
+        assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
+        assertEquals(DeleteMessageError.MessageNotFound, result.error)
     }
 
     @Test
@@ -758,8 +766,8 @@ class MessengerRepositoryImplTest {
 
         val result = repository.joinChat(nonExistentChatId, null)
 
-        assertIs<ResultWithError.Failure<Chat, RepositoryJoinChatError>>(result)
-        assertEquals(RepositoryJoinChatError.ChatNotFound, result.error)
+        assertIs<ResultWithError.Failure<Chat, JoinChatError>>(result)
+        assertEquals(JoinChatError.ChatNotFound, result.error)
     }
 
     @Test
@@ -771,8 +779,11 @@ class MessengerRepositoryImplTest {
 
         val result = repository.joinChat(testChat.id, null)
 
-        assertIs<ResultWithError.Failure<Chat, RepositoryJoinChatError>>(result)
-        assertEquals(RepositoryJoinChatError.NetworkNotAvailable, result.error)
+        assertIs<ResultWithError.Failure<Chat, JoinChatError>>(result)
+        assertEquals(
+            JoinChatError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+            result.error,
+        )
     }
 
     @Test
@@ -785,8 +796,11 @@ class MessengerRepositoryImplTest {
 
         val result = repository.leaveChat(testChat.id)
 
-        assertIs<ResultWithError.Failure<Unit, RepositoryLeaveChatError>>(result)
-        assertEquals(RepositoryLeaveChatError.NetworkNotAvailable, result.error)
+        assertIs<ResultWithError.Failure<Unit, LeaveChatError>>(result)
+        assertEquals(
+            LeaveChatError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+            result.error,
+        )
     }
 
     @Test
@@ -800,8 +814,11 @@ class MessengerRepositoryImplTest {
 
         repository.editMessage(updatedMessage).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Message, RepositoryEditMessageError>>(result)
-            assertEquals(RepositoryEditMessageError.NetworkNotAvailable, result.error)
+            assertIs<ResultWithError.Failure<Message, EditMessageError>>(result)
+            assertEquals(
+                EditMessageError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+                result.error,
+            )
             awaitComplete()
         }
     }
@@ -840,8 +857,11 @@ class MessengerRepositoryImplTest {
         val result = repository.createChat(testChat)
 
         // Then: Should return network error
-        assertIs<ResultWithError.Failure<Chat, RepositoryCreateChatError>>(result)
-        assertEquals(RepositoryCreateChatError.NetworkNotAvailable, result.error)
+        assertIs<ResultWithError.Failure<Chat, CreateChatError>>(result)
+        assertEquals(
+            CreateChatError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+            result.error,
+        )
 
         // Verify chat was not stored locally
         val localChat = localDataSource.getChat(testChat.id)
@@ -860,8 +880,8 @@ class MessengerRepositoryImplTest {
         val result = repository.deleteChat(nonExistentChatId)
 
         // Then: Should return error
-        assertIs<ResultWithError.Failure<Unit, RepositoryDeleteChatError>>(result)
-        assertEquals(RepositoryDeleteChatError.ChatNotFound(nonExistentChatId), result.error)
+        assertIs<ResultWithError.Failure<Unit, DeleteChatError>>(result)
+        assertEquals(DeleteChatError.ChatNotFound(nonExistentChatId), result.error)
     }
 
     @Test
@@ -875,8 +895,11 @@ class MessengerRepositoryImplTest {
         val result = repository.deleteChat(testChat.id)
 
         // Then: Should return network error
-        assertIs<ResultWithError.Failure<Unit, RepositoryDeleteChatError>>(result)
-        assertEquals(RepositoryDeleteChatError.NetworkNotAvailable, result.error)
+        assertIs<ResultWithError.Failure<Unit, DeleteChatError>>(result)
+        assertEquals(
+            DeleteChatError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+            result.error,
+        )
 
         // Verify chat still exists locally (remote-first approach failed)
         val localChat = localDataSource.getChat(testChat.id)

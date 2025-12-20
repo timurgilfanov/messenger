@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.data.source.remote
 
-import timur.gilfanov.messenger.domain.usecase.profile.repository.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 /**
  * Errors specific to remote settings operations.
@@ -68,34 +68,37 @@ sealed interface RemoteSettingsDataSourceError {
     data class RemoteDataSource(val error: RemoteDataSourceErrorV2) : RemoteSettingsDataSourceError
 }
 
-fun RemoteSettingsDataSourceError.toRepositoryError(): RepositoryError = when (this) {
+// todo why we hide auth error details?
+// can bearing token refresh happen with Ktor without application logic involved?
+// can we merge RemoteSettingsDataSourceError and RemoteError in one class?
+fun RemoteSettingsDataSourceError.toRemoteError(): RemoteError = when (this) {
     RemoteSettingsDataSourceError.Authentication.SessionRevoked,
     RemoteSettingsDataSourceError.Authentication.TokenInvalid,
     RemoteSettingsDataSourceError.Authentication.TokenMissing,
     RemoteSettingsDataSourceError.Authentication.TokenExpired,
-    -> RepositoryError.Unauthenticated
+    -> RemoteError.Unauthenticated
 
     RemoteSettingsDataSourceError.InsufficientPermissions ->
-        RepositoryError.InsufficientPermissions
+        RemoteError.InsufficientPermissions
 
     is RemoteSettingsDataSourceError.RemoteDataSource ->
         when (error) {
             is RemoteDataSourceErrorV2.CooldownActive ->
-                RepositoryError.Failed.Cooldown(error.remaining)
+                RemoteError.Failed.Cooldown(error.remaining)
 
             RemoteDataSourceErrorV2.RateLimitExceeded,
             RemoteDataSourceErrorV2.ServerError,
             RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
             ->
-                RepositoryError.Failed.ServiceDown
+                RemoteError.Failed.ServiceDown
 
             RemoteDataSourceErrorV2.ServiceUnavailable.Timeout ->
-                RepositoryError.UnknownStatus.ServiceTimeout
+                RemoteError.UnknownStatus.ServiceTimeout
 
             RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable ->
-                RepositoryError.Failed.NetworkNotAvailable
+                RemoteError.Failed.NetworkNotAvailable
 
             is RemoteDataSourceErrorV2.UnknownServiceError ->
-                RepositoryError.Failed.UnknownServiceError(cause = error.reason)
+                RemoteError.Failed.UnknownServiceError(cause = error.reason)
         }
 }

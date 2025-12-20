@@ -17,8 +17,10 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(Unit::class)
 class ReceiveChatUpdatesUseCaseTest {
@@ -105,7 +107,11 @@ class ReceiveChatUpdatesUseCaseTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(
             chatUpdatesFlow = flow {
-                emit(ResultWithError.Failure(ReceiveChatUpdatesError.NetworkNotAvailable))
+                emit(
+                    ResultWithError.Failure(
+                        RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+                    ),
+                )
             },
         )
 
@@ -114,7 +120,8 @@ class ReceiveChatUpdatesUseCaseTest {
         useCase(chatId).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
-            assertIs<ReceiveChatUpdatesError.NetworkNotAvailable>(result.error)
+            assertIs<RemoteOperationFailed>(result.error)
+            assertIs<RemoteError.Failed.NetworkNotAvailable>(result.error.error)
             awaitComplete()
         }
     }
@@ -124,7 +131,11 @@ class ReceiveChatUpdatesUseCaseTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(
             chatUpdatesFlow = flow {
-                emit(ResultWithError.Failure(ReceiveChatUpdatesError.ServerUnreachable))
+                emit(
+                    ResultWithError.Failure(
+                        RemoteOperationFailed(RemoteError.Failed.ServiceDown),
+                    ),
+                )
             },
         )
 
@@ -133,7 +144,8 @@ class ReceiveChatUpdatesUseCaseTest {
         useCase(chatId).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
-            assertIs<ReceiveChatUpdatesError.ServerUnreachable>(result.error)
+            assertIs<RemoteOperationFailed>(result.error)
+            assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
             awaitComplete()
         }
     }
@@ -143,7 +155,11 @@ class ReceiveChatUpdatesUseCaseTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(
             chatUpdatesFlow = flow {
-                emit(ResultWithError.Failure(ReceiveChatUpdatesError.ServerError))
+                emit(
+                    ResultWithError.Failure(
+                        RemoteOperationFailed(RemoteError.Unauthenticated),
+                    ),
+                )
             },
         )
 
@@ -152,7 +168,8 @@ class ReceiveChatUpdatesUseCaseTest {
         useCase(chatId).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
-            assertIs<ReceiveChatUpdatesError.ServerError>(result.error)
+            assertIs<RemoteOperationFailed>(result.error)
+            assertIs<RemoteError.Unauthenticated>(result.error.error)
             awaitComplete()
         }
     }
@@ -160,9 +177,20 @@ class ReceiveChatUpdatesUseCaseTest {
     @Test
     fun `handle unknown error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
+        val cause = RuntimeException("Unknown error")
         val repository = RepositoryFake(
             chatUpdatesFlow = flow {
-                emit(ResultWithError.Failure(ReceiveChatUpdatesError.UnknownError))
+                emit(
+                    ResultWithError.Failure(
+                        RemoteOperationFailed(
+                            RemoteError.Failed.UnknownServiceError(
+                                timur.gilfanov.messenger.domain.usecase.common.ErrorReason(
+                                    cause.message ?: "Unknown",
+                                ),
+                            ),
+                        ),
+                    ),
+                )
             },
         )
 
@@ -171,7 +199,8 @@ class ReceiveChatUpdatesUseCaseTest {
         useCase(chatId).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
-            assertIs<ReceiveChatUpdatesError.UnknownError>(result.error)
+            assertIs<RemoteOperationFailed>(result.error)
+            assertIs<RemoteError.Failed.UnknownServiceError>(result.error.error)
             awaitComplete()
         }
     }

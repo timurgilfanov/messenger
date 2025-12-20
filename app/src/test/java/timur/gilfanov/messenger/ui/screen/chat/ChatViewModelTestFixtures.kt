@@ -30,7 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.Chat
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 
 object ChatViewModelTestFixtures {
 
@@ -79,11 +79,11 @@ object ChatViewModelTestFixtures {
 
         override suspend fun sendMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowSendMessage?.map {
-            ResultWithError.Success<Message, RepositorySendMessageError>(it)
+        ): Flow<ResultWithError<Message, SendMessageError>> = flowSendMessage?.map {
+            ResultWithError.Success<Message, SendMessageError>(it)
         }
             ?: flowOf(
-                ResultWithError.Success<Message, RepositorySendMessageError>(
+                ResultWithError.Success<Message, SendMessageError>(
                     when (message) {
                         is TextMessage -> message.copy(deliveryStatus = Sending(0))
                         else -> message
@@ -128,10 +128,10 @@ object ChatViewModelTestFixtures {
         @OptIn(ExperimentalCoroutinesApi::class)
         override suspend fun sendMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf(
+        ): Flow<ResultWithError<Message, SendMessageError>> = flowOf(
             *(
                 statuses.map {
-                    Success<Message, RepositorySendMessageError>(
+                    Success<Message, SendMessageError>(
                         (message as TextMessage).copy(deliveryStatus = it),
                     )
                 }.toTypedArray()
@@ -212,8 +212,8 @@ object ChatViewModelTestFixtures {
 
         override suspend fun sendMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf(
-            Success<Message, RepositorySendMessageError>(
+        ): Flow<ResultWithError<Message, SendMessageError>> = flowOf(
+            Success<Message, SendMessageError>(
                 when (message) {
                     is TextMessage -> message.copy(deliveryStatus = Sending(0))
                     else -> message

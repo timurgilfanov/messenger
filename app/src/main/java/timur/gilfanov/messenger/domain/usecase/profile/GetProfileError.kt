@@ -1,11 +1,27 @@
 package timur.gilfanov.messenger.domain.usecase.profile
 
-import timur.gilfanov.messenger.domain.usecase.profile.repository.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 /**
  * Errors for profile retrieval operations.
  *
- * Type alias to [RepositoryError] as use case layer has no unique errors.
- * If use case-specific errors are needed, convert this to a sealed interface.
+ * ## Data Source Errors
+ * - [LocalOperationFailed] - Local storage operation failed
+ * - [RemoteOperationFailed] - Remote operation failed
  */
-typealias GetProfileError = RepositoryError
+sealed interface GetProfileError {
+    /**
+     * Local storage operation failed.
+     *
+     * @property error The underlying [LocalStorageError] instance
+     */
+    data class LocalOperationFailed(val error: LocalStorageError) : GetProfileError
+
+    /**
+     * Remote operation failed.
+     *
+     * @property error The underlying [RemoteError] instance
+     */
+    data class RemoteOperationFailed(val error: RemoteError) : GetProfileError
+}

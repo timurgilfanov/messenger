@@ -18,8 +18,12 @@ import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(Unit::class)
 class FlowChatListUseCaseTest {
@@ -74,7 +78,7 @@ class FlowChatListUseCaseTest {
 
     @Test
     fun `returns error from repository`() = runTest {
-        val networkError = FlowChatListError.NetworkNotAvailable
+        val networkError = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)
         val repository = RepositoryFake(
             chatListFlow = flow {
                 emit(ResultWithError.Failure(networkError))
@@ -111,8 +115,8 @@ class FlowChatListUseCaseTest {
 
     @Test
     fun `handles multiple errors in flow`() = runTest {
-        val networkError = FlowChatListError.NetworkNotAvailable
-        val remoteError = FlowChatListError.RemoteError
+        val networkError = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)
+        val remoteError = RemoteOperationFailed(RemoteError.Unauthenticated)
         val repository = RepositoryFake(
             chatListFlow = flow {
                 emit(ResultWithError.Failure(networkError))
@@ -137,7 +141,7 @@ class FlowChatListUseCaseTest {
     @Test
     fun `handles mixed success and errors`() = runTest {
         val chat = ChatPreview.fromChat(buildChat { name = "Test Chat" })
-        val networkError = FlowChatListError.NetworkNotAvailable
+        val networkError = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)
         val repository = RepositoryFake(
             chatListFlow = flow {
                 emit(ResultWithError.Success(listOf(chat)))
@@ -166,10 +170,10 @@ class FlowChatListUseCaseTest {
 
     @Test
     fun `handles different error types`() = runTest {
-        val networkError = FlowChatListError.NetworkNotAvailable
-        val remoteError = FlowChatListError.RemoteError
-        val localError = FlowChatListError.LocalError
-        val remoteUnreachable = FlowChatListError.RemoteUnreachable
+        val networkError = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)
+        val remoteError = RemoteOperationFailed(RemoteError.Unauthenticated)
+        val localError = LocalOperationFailed(LocalStorageError.Corrupted)
+        val remoteUnreachable = RemoteOperationFailed(RemoteError.Failed.ServiceDown)
         val repository = RepositoryFake(
             chatListFlow = flow {
                 emit(ResultWithError.Failure(networkError))

@@ -38,10 +38,7 @@ import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.NotEmpty
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
@@ -170,7 +167,9 @@ private fun ChatListContent(
 
         is NotEmpty -> LazyColumn(
             state = listState,
-            modifier = modifier.fillMaxSize().testTag("chat_list"),
+            modifier = modifier
+                .fillMaxSize()
+                .testTag("chat_list"),
         ) {
             items(
                 items = screenState.uiState.chats,
@@ -258,10 +257,18 @@ private fun getStatusText(uiState: ChatListUiState): String = when (uiState) {
 
 @Composable
 private fun getErrorMessage(error: FlowChatListError): String = when (error) {
-    NetworkNotAvailable -> stringResource(R.string.chat_list_error_network)
-    RemoteError -> stringResource(R.string.chat_list_error_server)
-    RemoteUnreachable -> stringResource(R.string.chat_list_error_server_unreachable)
-    LocalError -> stringResource(R.string.chat_list_error_local)
+    is FlowChatListError.LocalOperationFailed -> stringResource(R.string.chat_list_error_local)
+    is FlowChatListError.RemoteOperationFailed -> when (error.error) {
+        is RemoteError.Failed.Cooldown -> TODO()
+        RemoteError.Failed.NetworkNotAvailable -> stringResource(R.string.chat_list_error_network)
+        RemoteError.Failed.ServiceDown -> stringResource(
+            R.string.chat_list_error_server_unreachable,
+        )
+        is RemoteError.Failed.UnknownServiceError -> stringResource(R.string.chat_list_error_server)
+        RemoteError.InsufficientPermissions -> TODO()
+        RemoteError.Unauthenticated -> TODO()
+        RemoteError.UnknownStatus.ServiceTimeout -> TODO()
+    }
 }
 
 @Preview(showBackground = true)
@@ -415,7 +422,9 @@ private fun ChatListScreenErrorPreview() {
                 ),
                 isLoading = false,
                 isRefreshing = false,
-                error = NetworkNotAvailable,
+                error = FlowChatListError.RemoteOperationFailed(
+                    RemoteError.Failed.NetworkNotAvailable,
+                ),
             ),
             actions = ChatListContentActions(
                 onChatClick = {},

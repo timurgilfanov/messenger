@@ -32,6 +32,8 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteOperationFailed
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Category(Component::class)
@@ -193,7 +195,10 @@ class ChatListScreenComponentTest {
 
     @Test
     fun `ChatListScreen displays error message correctly`() {
-        val screenState = createTestScreenState(error = FlowChatListError.NetworkNotAvailable)
+        val screenState =
+            createTestScreenState(
+                error = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+            )
 
         composeTestRule.setContent {
             MessengerTheme {
@@ -416,7 +421,10 @@ class ChatListScreenComponentTest {
 
     @Test
     fun `ChatListScreen preserves error state after configuration change`() {
-        val screenState = createTestScreenState(error = FlowChatListError.NetworkNotAvailable)
+        val screenState =
+            createTestScreenState(
+                error = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+            )
 
         composeTestRule.setContent {
             MessengerTheme {

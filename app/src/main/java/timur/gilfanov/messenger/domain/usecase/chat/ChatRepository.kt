@@ -17,17 +17,14 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 interface ChatRepository {
 
     // Chat Management Operations
-    suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError>
+    suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatError>
 
-    suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, RepositoryDeleteChatError>
+    suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, DeleteChatError>
 
     // Chat Participation Operations
-    suspend fun joinChat(
-        chatId: ChatId,
-        inviteLink: String?,
-    ): ResultWithError<Chat, RepositoryJoinChatError>
+    suspend fun joinChat(chatId: ChatId, inviteLink: String?): ResultWithError<Chat, JoinChatError>
 
-    suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, RepositoryLeaveChatError>
+    suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, LeaveChatError>
 
     // Chat Streaming Operations
     suspend fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, FlowChatListError>>

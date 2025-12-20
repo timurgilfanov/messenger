@@ -24,7 +24,7 @@ import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.SyncResult
-import timur.gilfanov.messenger.data.source.remote.toRepositoryError
+import timur.gilfanov.messenger.data.source.remote.toRemoteError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
@@ -34,6 +34,7 @@ import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
@@ -351,7 +352,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 handleSingleSyncResult(identity, localSetting, syncResult)
             },
             onFailure = { error ->
-                val mappedRemoteError = error.toRepositoryError()
+                val mappedRemoteError = error.toRemoteError()
                 logErrorMapping(
                     "syncSetting:${localSetting.key.key}:remote",
                     error,
@@ -517,7 +518,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 handleBatchSyncResults(identity, unsyncedSettings, results)
             },
             onFailure = { error ->
-                val mappedRemoteError = error.toRepositoryError()
+                val mappedRemoteError = error.toRemoteError()
                 logErrorMapping("syncAllPending:remote", error, mappedRemoteError)
                 ResultWithError.Failure(
                     SyncAllSettingsRepositoryError.RemoteSyncFailed(mappedRemoteError),
@@ -532,7 +533,7 @@ class SettingsRepositoryImpl @Inject constructor(
         unsyncedSettings: List<TypedLocalSetting>,
         results: Map<String, SyncResult>,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError> {
-        var firstUpsertError: SyncAllSettingsRepositoryError.LocalStorageError? = null
+        var firstUpsertError: LocalStorageError? = null
         results.forEach { (key, result) ->
             val localSetting = unsyncedSettings.firstOrNull { it.key.key == key }
             if (localSetting == null) {
@@ -604,7 +605,9 @@ class SettingsRepositoryImpl @Inject constructor(
                 firstUpsertError = error
             }
         }
-        return firstUpsertError?.let { ResultWithError.Failure(it) }
+        return firstUpsertError?.let {
+            ResultWithError.Failure(SyncAllSettingsRepositoryError.LocalOperationFailed(it))
+        }
             ?: ResultWithError.Success(Unit)
     }
 
@@ -613,7 +616,7 @@ class SettingsRepositoryImpl @Inject constructor(
         identity: Identity,
         localSetting: TypedLocalSetting,
         syncResult: SyncResult.Conflict,
-    ): SyncAllSettingsRepositoryError.LocalStorageError? {
+    ): LocalStorageError? {
         val currentSetting = localDataSource.getSetting(
             identity.userId,
             localSetting.key,
@@ -844,14 +847,21 @@ private fun GetSettingError.toSyncError(
         GetSettingError.SettingNotFound -> SyncSettingRepositoryError.SettingNotFound
         GetSettingError.ConcurrentModificationError,
         GetSettingError.DiskIOError,
-        -> SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable
+        -> SyncSettingRepositoryError.LocalOperationFailed(LocalStorageError.TemporarilyUnavailable)
 
-        GetSettingError.StorageFull -> SyncSettingRepositoryError.LocalStorageError.StorageFull
-        GetSettingError.DatabaseCorrupted -> SyncSettingRepositoryError.LocalStorageError.Corrupted
-        GetSettingError.AccessDenied -> SyncSettingRepositoryError.LocalStorageError.AccessDenied
-        GetSettingError.ReadOnlyDatabase -> SyncSettingRepositoryError.LocalStorageError.ReadOnly
+        GetSettingError.StorageFull ->
+            SyncSettingRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull)
+
+        GetSettingError.DatabaseCorrupted ->
+            SyncSettingRepositoryError.LocalOperationFailed(LocalStorageError.Corrupted)
+
+        GetSettingError.AccessDenied ->
+            SyncSettingRepositoryError.LocalOperationFailed(LocalStorageError.AccessDenied)
+
         is GetSettingError.UnknownError ->
-            SyncSettingRepositoryError.LocalStorageError.UnknownError(this.cause)
+            SyncSettingRepositoryError.LocalOperationFailed(
+                LocalStorageError.UnknownError(this.cause),
+            )
     }
     logger.e(tag, "Error mapped at $context: source=$this mapped=$mapped")
     return mapped
@@ -861,89 +871,83 @@ private fun UpsertSettingError.toSyncError(
     logger: Logger,
     tag: String,
     context: String,
-): SyncSettingRepositoryError.LocalStorageError {
+): SyncSettingRepositoryError.LocalOperationFailed {
     val mapped =
         when (this) {
             UpsertSettingError.ConcurrentModificationError,
             UpsertSettingError.DiskIOError,
-            -> SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable
+            -> LocalStorageError.TemporarilyUnavailable
 
             UpsertSettingError.StorageFull ->
-                SyncSettingRepositoryError.LocalStorageError.StorageFull
+                LocalStorageError.StorageFull
 
             UpsertSettingError.DatabaseCorrupted ->
-                SyncSettingRepositoryError.LocalStorageError.Corrupted
+                LocalStorageError.Corrupted
 
             UpsertSettingError.AccessDenied ->
-                SyncSettingRepositoryError.LocalStorageError.AccessDenied
+                LocalStorageError.AccessDenied
 
             UpsertSettingError.ReadOnlyDatabase ->
-                SyncSettingRepositoryError.LocalStorageError.ReadOnly
+                LocalStorageError.ReadOnly
 
             is UpsertSettingError.UnknownError ->
-                SyncSettingRepositoryError.LocalStorageError.UnknownError(this.cause)
+                LocalStorageError.UnknownError(this.cause)
         }
     logger.e(tag, "Error mapped at $context: source=$this mapped=$mapped")
-    return mapped
+    return SyncSettingRepositoryError.LocalOperationFailed(mapped)
 }
 
 private fun GetUnsyncedSettingsError.toBatchSyncError(
     logger: Logger,
     tag: String,
     context: String,
-): SyncAllSettingsRepositoryError.LocalStorageError {
+): SyncAllSettingsRepositoryError.LocalOperationFailed {
     val mapped =
         when (this) {
             GetUnsyncedSettingsError.ConcurrentModificationError,
             GetUnsyncedSettingsError.DiskIOError,
-            -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
+            -> LocalStorageError.TemporarilyUnavailable
 
             GetUnsyncedSettingsError.StorageFull ->
-                SyncAllSettingsRepositoryError.LocalStorageError.StorageFull
+                LocalStorageError.StorageFull
 
             GetUnsyncedSettingsError.DatabaseCorrupted ->
-                SyncAllSettingsRepositoryError.LocalStorageError.Corrupted
+                LocalStorageError.Corrupted
 
             GetUnsyncedSettingsError.AccessDenied ->
-                SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied
-
-            GetUnsyncedSettingsError.ReadOnlyDatabase ->
-                SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly
+                LocalStorageError.AccessDenied
 
             is GetUnsyncedSettingsError.UnknownError ->
-                SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(this.cause)
+                LocalStorageError.UnknownError(this.cause)
         }
     logger.e(tag, "Error mapped at $context: source=$this mapped=$mapped")
-    return mapped
+    return SyncAllSettingsRepositoryError.LocalOperationFailed(mapped)
 }
 
 private fun GetSettingError.toBatchSyncError(
     logger: Logger,
     tag: String,
     context: String,
-): SyncAllSettingsRepositoryError.LocalStorageError {
+): LocalStorageError {
     val mapped = when (this) {
         GetSettingError.ConcurrentModificationError,
         GetSettingError.DiskIOError,
-        -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
+        -> LocalStorageError.TemporarilyUnavailable
 
         GetSettingError.StorageFull ->
-            SyncAllSettingsRepositoryError.LocalStorageError.StorageFull
+            LocalStorageError.StorageFull
 
         GetSettingError.DatabaseCorrupted ->
-            SyncAllSettingsRepositoryError.LocalStorageError.Corrupted
+            LocalStorageError.Corrupted
 
         GetSettingError.AccessDenied ->
-            SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied
-
-        GetSettingError.ReadOnlyDatabase ->
-            SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly
+            LocalStorageError.AccessDenied
 
         GetSettingError.SettingNotFound ->
-            SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
+            LocalStorageError.TemporarilyUnavailable
 
         is GetSettingError.UnknownError ->
-            SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(this.cause)
+            LocalStorageError.UnknownError(this.cause)
     }
     logger.e(tag, "Error mapped at $context: source=$this mapped=$mapped")
     return mapped
@@ -953,26 +957,26 @@ private fun UpsertSettingError.toBatchSyncError(
     logger: Logger,
     tag: String,
     context: String,
-): SyncAllSettingsRepositoryError.LocalStorageError {
+): LocalStorageError {
     val mapped = when (this) {
         UpsertSettingError.ConcurrentModificationError,
         UpsertSettingError.DiskIOError,
-        -> SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable
+        -> LocalStorageError.TemporarilyUnavailable
 
         UpsertSettingError.StorageFull ->
-            SyncAllSettingsRepositoryError.LocalStorageError.StorageFull
+            LocalStorageError.StorageFull
 
         UpsertSettingError.DatabaseCorrupted ->
-            SyncAllSettingsRepositoryError.LocalStorageError.Corrupted
+            LocalStorageError.Corrupted
 
         UpsertSettingError.AccessDenied ->
-            SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied
+            LocalStorageError.AccessDenied
 
         UpsertSettingError.ReadOnlyDatabase ->
-            SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly
+            LocalStorageError.ReadOnly
 
         is UpsertSettingError.UnknownError ->
-            SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(this.cause)
+            LocalStorageError.UnknownError(this.cause)
     }
     logger.e(tag, "Error mapped at $context: source=$this mapped=$mapped")
     return mapped

@@ -26,6 +26,11 @@ import timur.gilfanov.messenger.data.source.remote.dto.DeliveryStatusDto
 import timur.gilfanov.messenger.data.source.remote.dto.ErrorResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.MessageDto
 import timur.gilfanov.messenger.data.source.remote.dto.ParticipantDto
+import timur.gilfanov.messenger.data.source.remote.dto.SettingItemDto
+import timur.gilfanov.messenger.data.source.remote.dto.SettingSyncResultDto
+import timur.gilfanov.messenger.data.source.remote.dto.SettingsResponseDto
+import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsResponseDto
+import timur.gilfanov.messenger.data.source.remote.dto.SyncStatusDto
 
 /**
  * Mock server scenarios for integration testing remote data sources.
@@ -232,6 +237,7 @@ object MockServerScenarios {
                     timestamp = TEST_TIMESTAMP.plusMillis(requestCount * 1000L).toString(),
                 )
             }
+
             totalDeltas -> {
                 // Final request: delete the chat
                 ChatDeletedDeltaDto(
@@ -239,6 +245,7 @@ object MockServerScenarios {
                     timestamp = TEST_TIMESTAMP.plusMillis(requestCount * 1000L).toString(),
                 )
             }
+
             else -> {
                 // Middle requests: update the chat
                 ChatUpdatedDeltaDto(
@@ -284,6 +291,110 @@ object MockServerScenarios {
         } else {
             respondWithSuccessfulChat()
         }
+    }
+
+    // Settings response scenarios
+    suspend fun MockRequestHandleScope.respondWithSettings(
+        language: String = "English",
+        version: Int = 1,
+        delayMs: Long = 0,
+    ): HttpResponseData {
+        if (delayMs > 0) delay(delayMs)
+
+        val settingsResponse = SettingsResponseDto(
+            settings = listOf(
+                SettingItemDto(key = "ui_language", value = language, version = version),
+            ),
+        )
+
+        val response = ApiResponse(data = settingsResponse, success = true)
+        return respond(
+            content = json.encodeToString(response),
+            status = HttpStatusCode.OK,
+            headers = headersOf(
+                HttpHeaders.ContentType,
+                ContentType.Application.Json.toString(),
+            ),
+        )
+    }
+
+    suspend fun MockRequestHandleScope.respondWithSettingsChangeSuccess(
+        delayMs: Long = 0,
+    ): HttpResponseData {
+        if (delayMs > 0) delay(delayMs)
+
+        val response = ApiResponse(data = Unit, success = true)
+        return respond(
+            content = json.encodeToString(response),
+            status = HttpStatusCode.OK,
+            headers = headersOf(
+                HttpHeaders.ContentType,
+                ContentType.Application.Json.toString(),
+            ),
+        )
+    }
+
+    suspend fun MockRequestHandleScope.respondWithSettingsSyncSuccess(
+        key: String = "ui_language",
+        newVersion: Int = 2,
+        delayMs: Long = 0,
+    ): HttpResponseData {
+        if (delayMs > 0) delay(delayMs)
+
+        val syncResponse = SyncSettingsResponseDto(
+            results = listOf(
+                SettingSyncResultDto(
+                    key = key,
+                    status = SyncStatusDto.SUCCESS,
+                    newVersion = newVersion,
+                ),
+            ),
+        )
+
+        val response = ApiResponse(data = syncResponse, success = true)
+        return respond(
+            content = json.encodeToString(response),
+            status = HttpStatusCode.OK,
+            headers = headersOf(
+                HttpHeaders.ContentType,
+                ContentType.Application.Json.toString(),
+            ),
+        )
+    }
+
+    @Suppress("LongParameterList")
+    suspend fun MockRequestHandleScope.respondWithSettingsSyncConflict(
+        key: String = "ui_language",
+        serverValue: String = "German",
+        serverVersion: Int = 2,
+        newVersion: Int = 3,
+        serverModifiedAt: String = TEST_TIMESTAMP.toString(),
+        delayMs: Long = 0,
+    ): HttpResponseData {
+        if (delayMs > 0) delay(delayMs)
+
+        val syncResponse = SyncSettingsResponseDto(
+            results = listOf(
+                SettingSyncResultDto(
+                    key = key,
+                    status = SyncStatusDto.CONFLICT,
+                    newVersion = newVersion,
+                    serverValue = serverValue,
+                    serverVersion = serverVersion,
+                    serverModifiedAt = serverModifiedAt,
+                ),
+            ),
+        )
+
+        val response = ApiResponse(data = syncResponse, success = true)
+        return respond(
+            content = json.encodeToString(response),
+            status = HttpStatusCode.OK,
+            headers = headersOf(
+                HttpHeaders.ContentType,
+                ContentType.Application.Json.toString(),
+            ),
+        )
     }
 
     // Helper functions

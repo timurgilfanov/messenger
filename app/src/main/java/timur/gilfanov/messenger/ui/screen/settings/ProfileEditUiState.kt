@@ -2,8 +2,8 @@ package timur.gilfanov.messenger.ui.screen.settings
 
 import android.net.Uri
 import androidx.compose.foundation.text.input.TextFieldState
-import timur.gilfanov.messenger.domain.usecase.user.UpdateNameError
-import timur.gilfanov.messenger.domain.usecase.user.UpdatePictureError
+import timur.gilfanov.messenger.domain.usecase.profile.UpdateNameError
+import timur.gilfanov.messenger.domain.usecase.profile.UpdatePictureError
 
 /**
  * UI state for profile editing screen.

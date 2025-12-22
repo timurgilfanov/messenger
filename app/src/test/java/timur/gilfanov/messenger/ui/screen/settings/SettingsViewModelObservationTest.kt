@@ -10,12 +10,12 @@ import org.junit.experimental.categories.Category
 import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.usecase.user.ObserveSettingsError
-import timur.gilfanov.messenger.domain.usecase.user.ObserveSettingsUseCase
-import timur.gilfanov.messenger.domain.usecase.user.ObserveSettingsUseCaseStub
-import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsError
+import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCase
+import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCaseStub
+import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)

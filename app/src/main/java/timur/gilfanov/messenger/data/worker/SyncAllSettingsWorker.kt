@@ -7,10 +7,10 @@ import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import timur.gilfanov.messenger.domain.entity.fold
-import timur.gilfanov.messenger.domain.usecase.user.SyncAllPendingSettingsError
-import timur.gilfanov.messenger.domain.usecase.user.SyncAllPendingSettingsUseCase
-import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SyncAllSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.profile.repository.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.SyncAllPendingSettingsError
+import timur.gilfanov.messenger.domain.usecase.settings.SyncAllPendingSettingsUseCase
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 @HiltWorker

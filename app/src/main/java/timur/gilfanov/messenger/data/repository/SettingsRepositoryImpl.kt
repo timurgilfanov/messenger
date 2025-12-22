@@ -28,17 +28,17 @@ import timur.gilfanov.messenger.data.source.remote.toRepositoryError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.SettingsConflictEvent
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
-import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
-import timur.gilfanov.messenger.domain.usecase.user.repository.SyncAllSettingsRepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SyncSettingRepositoryError
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 /**

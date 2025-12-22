@@ -12,12 +12,12 @@ import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.annotation.OrbitExperimental
 import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.fold
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.uiLanguageList
-import timur.gilfanov.messenger.domain.usecase.user.ChangeUiLanguageError
-import timur.gilfanov.messenger.domain.usecase.user.ChangeUiLanguageUseCase
-import timur.gilfanov.messenger.domain.usecase.user.ObserveUiLanguageError
-import timur.gilfanov.messenger.domain.usecase.user.ObserveUiLanguageUseCase
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.entity.settings.uiLanguageList
+import timur.gilfanov.messenger.domain.usecase.settings.ChangeUiLanguageError
+import timur.gilfanov.messenger.domain.usecase.settings.ChangeUiLanguageUseCase
+import timur.gilfanov.messenger.domain.usecase.settings.ObserveUiLanguageError
+import timur.gilfanov.messenger.domain.usecase.settings.ObserveUiLanguageUseCase
 import timur.gilfanov.messenger.util.Logger
 
 /**

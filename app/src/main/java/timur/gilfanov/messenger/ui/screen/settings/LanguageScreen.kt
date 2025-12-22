@@ -31,8 +31,8 @@ import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import timur.gilfanov.messenger.R
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.uiLanguageList
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.entity.settings.uiLanguageList
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable

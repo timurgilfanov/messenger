@@ -4,7 +4,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.domain.usecase.user.repository.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class ErrorReasonTest {

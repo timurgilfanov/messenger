@@ -29,25 +29,25 @@ import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceErrorV2
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettings
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
+import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceStub
-import timur.gilfanov.messenger.data.source.remote.RemoteUserDataSourceError
 import timur.gilfanov.messenger.data.source.remote.SyncBatchError
 import timur.gilfanov.messenger.data.source.remote.SyncResult
 import timur.gilfanov.messenger.data.source.remote.SyncSingleSettingError
 import timur.gilfanov.messenger.data.source.remote.TypedSettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.UpdateSettingsRemoteDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
-import timur.gilfanov.messenger.domain.usecase.user.repository.ChangeLanguageRepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.RepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SyncAllSettingsRepositoryError
-import timur.gilfanov.messenger.domain.usecase.user.repository.SyncSettingRepositoryError
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.profile.repository.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRepositoryError
 
 private const val INVALID_UI_LANGUAGE = "abc"
 
@@ -60,7 +60,7 @@ class SettingsRepositoryImplTest {
     private val testUserId = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
     private val identity = Identity(
         userId = testUserId,
-        deviceId = timur.gilfanov.messenger.domain.entity.user.DeviceId(
+        deviceId = timur.gilfanov.messenger.domain.entity.profile.DeviceId(
             UUID.fromString("550e8400-e29b-41d4-a716-446655440001"),
         ),
     )
@@ -268,7 +268,7 @@ class SettingsRepositoryImplTest {
 
         stub.setSyncSingleResponse(
             ResultWithError.Failure(
-                RemoteUserDataSourceError.RemoteDataSource(
+                RemoteSettingsDataSourceError.RemoteDataSource(
                     RemoteDataSourceErrorV2.ServerError,
                 ),
             ),
@@ -339,7 +339,7 @@ class SettingsRepositoryImplTest {
 
         stub.setSyncSingleResponse(
             ResultWithError.Failure(
-                RemoteUserDataSourceError.RemoteDataSource(
+                RemoteSettingsDataSourceError.RemoteDataSource(
                     RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
                 ),
             ),
@@ -411,7 +411,7 @@ class SettingsRepositoryImplTest {
 
         stub.setSyncBatchResponse(
             ResultWithError.Failure(
-                RemoteUserDataSourceError.RemoteDataSource(
+                RemoteSettingsDataSourceError.RemoteDataSource(
                     RemoteDataSourceErrorV2.ServerError,
                 ),
             ),
@@ -448,7 +448,7 @@ class SettingsRepositoryImplTest {
 
         stub.setSyncBatchResponse(
             ResultWithError.Failure(
-                RemoteUserDataSourceError.RemoteDataSource(
+                RemoteSettingsDataSourceError.RemoteDataSource(
                     RemoteDataSourceErrorV2.ServerError,
                 ),
             ),
@@ -718,7 +718,7 @@ class SettingsRepositoryImplTest {
                 remoteDataSource = RemoteSettingsDataSourceStub().apply {
                     setGetResponse(
                         ResultWithError.Failure(
-                            RemoteUserDataSourceError.Authentication.SessionRevoked,
+                            RemoteSettingsDataSourceError.Authentication.SessionRevoked,
                         ),
                     )
                 },
@@ -879,7 +879,7 @@ class SettingsRepositoryImplTest {
             val stub = RemoteSettingsDataSourceStub()
             stub.setGetResponse(
                 ResultWithError.Failure(
-                    RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteSettingsDataSourceError.RemoteDataSource(
                         RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
                     ),
                 ),
@@ -920,7 +920,7 @@ class SettingsRepositoryImplTest {
             val remoteWithInvalidValue = object : RemoteSettingsDataSource {
                 override suspend fun get(
                     identity: Identity,
-                ): ResultWithError<RemoteSettings, RemoteUserDataSourceError> {
+                ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> {
                     val remoteSettings = RemoteSettings(
                         uiLanguage = RemoteSetting.InvalidValue(
                             rawValue = INVALID_UI_LANGUAGE,
@@ -1025,7 +1025,7 @@ class SettingsRepositoryImplTest {
             val remoteWithInvalidValue = object : RemoteSettingsDataSource {
                 override suspend fun get(
                     identity: Identity,
-                ): ResultWithError<RemoteSettings, RemoteUserDataSourceError> {
+                ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> {
                     val remoteSettings = RemoteSettings(
                         uiLanguage = RemoteSetting.InvalidValue(
                             rawValue = INVALID_UI_LANGUAGE,
@@ -1225,7 +1225,7 @@ class SettingsRepositoryImplTest {
                 ResultWithError.Success(SyncResult.Success(newVersion = 2))
             } else {
                 ResultWithError.Failure(
-                    RemoteUserDataSourceError.RemoteDataSource(
+                    RemoteSettingsDataSourceError.RemoteDataSource(
                         RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
                     ),
                 )
@@ -1264,7 +1264,7 @@ class SettingsRepositoryImplTest {
                     ResultWithError.Success(SyncResult.Success(newVersion = 2))
                 } else {
                     ResultWithError.Failure(
-                        RemoteUserDataSourceError.RemoteDataSource(
+                        RemoteSettingsDataSourceError.RemoteDataSource(
                             RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
                         ),
                     )

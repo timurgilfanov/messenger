@@ -14,9 +14,9 @@ import timur.gilfanov.messenger.data.repository.MessengerRepositoryImpl
 import timur.gilfanov.messenger.data.repository.SettingsRepositoryImpl
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.user.IdentityRepository
-import timur.gilfanov.messenger.domain.usecase.user.repository.LocaleRepository
-import timur.gilfanov.messenger.domain.usecase.user.repository.SettingsRepository
+import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.settings.repository.LocaleRepository
+import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 
 @Suppress("unused")
 @Module

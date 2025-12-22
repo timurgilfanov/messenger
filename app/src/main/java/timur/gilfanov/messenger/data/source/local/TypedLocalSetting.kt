@@ -1,7 +1,7 @@
 package timur.gilfanov.messenger.data.source.local
 
-import timur.gilfanov.messenger.domain.entity.user.Setting
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
+import timur.gilfanov.messenger.domain.entity.settings.Setting
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 
 /**
  * Typed wrapper for individual settings from local storage.
@@ -38,7 +38,8 @@ sealed interface TypedLocalSetting {
      * @property setting Typed local setting with UiLanguage value and sync metadata
      */
     data class UiLanguage(
-        override val setting: LocalSetting<timur.gilfanov.messenger.domain.entity.user.UiLanguage>,
+        override val setting:
+        LocalSetting<timur.gilfanov.messenger.domain.entity.settings.UiLanguage>,
     ) : TypedLocalSetting {
         override val key: SettingKey = SettingKey.UI_LANGUAGE
     }

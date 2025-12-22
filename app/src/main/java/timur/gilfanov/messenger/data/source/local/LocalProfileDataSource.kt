@@ -2,8 +2,8 @@ package timur.gilfanov.messenger.data.source.local
 
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Profile
-import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.entity.profile.Profile
+import timur.gilfanov.messenger.domain.entity.profile.UserId
 
 /**
  * Local data source for user profile data.
@@ -19,7 +19,7 @@ interface LocalProfileDataSource {
      * @param userId The unique identifier of the user to observe
      * @return Flow emitting profile updates or errors
      */
-    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, LocalUserDataSourceError>>
+    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, LocalProfileDataSourceError>>
 
     /**
      * Updates profile using a transformation function.
@@ -29,10 +29,10 @@ interface LocalProfileDataSource {
      *
      * @param userId The unique identifier of the user
      * @param transform Function transforming the current profile to new profile
-     * @return Success or failure with [LocalUserDataSourceError]
+     * @return Success or failure with [LocalProfileDataSourceError]
      */
     suspend fun updateProfile(
         userId: UserId,
         transform: (Profile) -> Profile,
-    ): ResultWithError<Unit, LocalUserDataSourceError>
+    ): ResultWithError<Unit, LocalProfileDataSourceError>
 }

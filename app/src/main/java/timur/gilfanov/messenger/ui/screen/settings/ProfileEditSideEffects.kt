@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
-import timur.gilfanov.messenger.domain.usecase.user.RemovePictureError
+import timur.gilfanov.messenger.domain.usecase.profile.RemovePictureError
 
 /**
  * One-time side effects for profile editing screen.

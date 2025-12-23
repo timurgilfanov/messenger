@@ -30,6 +30,9 @@ ktor = "3.2.3"
 # Architecture
 orbit = "10.0.0"
 
+# Image Loading
+coil = "3.3.0"
+
 # Kotlin Extensions
 kotlinxDatetime = "0.7.1"
 kotlinxCollectionsImmutable = "0.4.0"
@@ -114,6 +117,9 @@ orbit-compose = { module = "org.orbit-mvi:orbit-compose", version.ref = "orbit" 
 orbit-core = { module = "org.orbit-mvi:orbit-core", version.ref = "orbit" }
 orbit-test = { module = "org.orbit-mvi:orbit-test", version.ref = "orbit" }
 orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orbit" }
+
+# Image Loading
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 
 # Kotlin Extensions
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }

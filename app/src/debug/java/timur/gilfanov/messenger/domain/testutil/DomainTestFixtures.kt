@@ -16,6 +16,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
+import timur.gilfanov.messenger.util.generateProfileImageUrl
 
 @Suppress("MagicNumber")
 object DomainTestFixtures {
@@ -50,7 +51,7 @@ object DomainTestFixtures {
     fun createTestParticipant(
         id: ParticipantId = ParticipantId(UUID.randomUUID()),
         name: String = "Test User",
-        pictureUrl: String? = null,
+        pictureUrl: String? = generateProfileImageUrl(name),
         joinedAt: Instant = fromEpochMilliseconds(1000),
         onlineAt: Instant? = fromEpochMilliseconds(1000),
     ): Participant = buildParticipant {

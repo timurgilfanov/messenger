@@ -5,7 +5,7 @@
 ![Min SDK](https://img.shields.io/badge/MinSDK-24-green.svg)
 ![Target SDK](https://img.shields.io/badge/TargetSDK-35-green.svg)
 
-Showcase project demostrating approach to build a large-scale Android application with maintainable codebase and scalable architecture.
+Showcase project demostrating approach to build a large-scale Android application with maintainable codebase and scalable architecture using Kotlin and Jetpack Compose.
 
 ## 🏗️ Architecture
 

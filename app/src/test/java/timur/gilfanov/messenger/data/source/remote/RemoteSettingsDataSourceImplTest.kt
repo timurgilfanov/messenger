@@ -31,11 +31,11 @@ import timur.gilfanov.messenger.data.source.remote.dto.SettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncStatusDto
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.DeviceId
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
+import timur.gilfanov.messenger.domain.entity.profile.DeviceId
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 @Category(Unit::class)
 class RemoteSettingsDataSourceImplTest {
@@ -132,7 +132,7 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.get(testIdentity)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
     }
 
     @Test
@@ -152,8 +152,8 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.get(testIdentity)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
-        assertIs<RemoteUserDataSourceError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
         assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.Timeout>(result.error.error)
     }
 
@@ -174,8 +174,8 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.get(testIdentity)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
-        assertIs<RemoteUserDataSourceError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
         assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable>(result.error.error)
     }
 
@@ -196,8 +196,8 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.get(testIdentity)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
-        assertIs<RemoteUserDataSourceError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
         assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable>(result.error.error)
     }
 
@@ -218,8 +218,8 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.get(testIdentity)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
-        assertIs<RemoteUserDataSourceError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
         assertIs<RemoteDataSourceErrorV2.ServerError>(result.error.error)
     }
 
@@ -253,7 +253,7 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.changeUiLanguage(testIdentity, UiLanguage.German)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
     }
 
     @Test
@@ -273,7 +273,7 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.changeUiLanguage(testIdentity, UiLanguage.German)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
     }
 
     // put tests
@@ -308,7 +308,7 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.put(testIdentity, settings)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
     }
 
     // syncSingleSetting tests
@@ -417,7 +417,7 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.syncSingleSetting(request)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
     }
 
     // syncBatch tests
@@ -485,7 +485,7 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.syncBatch(requests)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
     }
 
     @Test
@@ -517,8 +517,8 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.syncBatch(requests)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
-        assertIs<RemoteUserDataSourceError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
         assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.Timeout>(result.error.error)
     }
 
@@ -541,8 +541,8 @@ class RemoteSettingsDataSourceImplTest {
         val result = dataSource.get(testIdentity)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RemoteUserDataSourceError>>(result)
-        assertIs<RemoteUserDataSourceError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
         assertIs<RemoteDataSourceErrorV2.UnknownServiceError>(result.error.error)
     }
 }

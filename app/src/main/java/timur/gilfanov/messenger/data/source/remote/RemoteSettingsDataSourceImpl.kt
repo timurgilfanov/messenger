@@ -29,11 +29,11 @@ import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncStatusDto
 import timur.gilfanov.messenger.data.source.remote.network.ApiRoutes
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.usecase.user.repository.ErrorReason
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
 import timur.gilfanov.messenger.util.Logger
 
 @Suppress("TooManyFunctions")
@@ -49,7 +49,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
 
     override suspend fun get(
         identity: Identity,
-    ): ResultWithError<RemoteSettings, RemoteUserDataSourceError> = executeRequest("get") {
+    ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> = executeRequest("get") {
         val response: ApiResponse<SettingsResponseDto> = httpClient.get(ApiRoutes.SETTINGS).body()
 
         if (response.success && response.data != null) {
@@ -127,7 +127,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
                 } else {
                     logger.e(TAG, "Sync response missing result for key: $key")
                     ResultWithError.Failure(
-                        RemoteUserDataSourceError.RemoteDataSource(
+                        RemoteSettingsDataSourceError.RemoteDataSource(
                             RemoteDataSourceErrorV2.UnknownServiceError(
                                 ErrorReason("Missing sync result for key: $key"),
                             ),
@@ -135,6 +135,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
                     )
                 }
             }
+
             is ResultWithError.Failure -> ResultWithError.Failure(syncResult.error)
         }
     }
@@ -145,7 +146,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
 
     private suspend fun executeSyncRequest(
         requests: List<TypedSettingSyncRequest>,
-    ): ResultWithError<Map<String, SyncResult>, RemoteUserDataSourceError> =
+    ): ResultWithError<Map<String, SyncResult>, RemoteSettingsDataSourceError> =
         executeRequest("sync") {
             val syncItems = requests.map { typedRequest ->
                 val baseRequest = typedRequest.request
@@ -178,6 +179,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
 
     private fun SettingSyncResultDto.toSyncResult(): SyncResult = when (status) {
         SyncStatusDto.SUCCESS -> SyncResult.Success(newVersion = newVersion)
+
         SyncStatusDto.CONFLICT -> SyncResult.Conflict(
             serverValue = serverValue ?: "",
             serverVersion = serverVersion ?: 0,
@@ -196,40 +198,40 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
 
     private suspend inline fun <T> executeRequest(
         operationName: String,
-        block: () -> ResultWithError<T, RemoteUserDataSourceError>,
-    ): ResultWithError<T, RemoteUserDataSourceError> = try {
+        block: () -> ResultWithError<T, RemoteSettingsDataSourceError>,
+    ): ResultWithError<T, RemoteSettingsDataSourceError> = try {
         logger.d(TAG, "Executing $operationName")
         block()
     } catch (e: SerializationException) {
         logger.e(TAG, "Failed to serialize/deserialize in $operationName", e)
         ResultWithError.Failure(
-            RemoteUserDataSourceError.RemoteDataSource(RemoteDataSourceErrorV2.ServerError),
+            RemoteSettingsDataSourceError.RemoteDataSource(RemoteDataSourceErrorV2.ServerError),
         )
     } catch (e: SocketTimeoutException) {
         logger.e(TAG, "Request timed out in $operationName", e)
         ResultWithError.Failure(
-            RemoteUserDataSourceError.RemoteDataSource(
+            RemoteSettingsDataSourceError.RemoteDataSource(
                 RemoteDataSourceErrorV2.ServiceUnavailable.Timeout,
             ),
         )
     } catch (e: UnknownHostException) {
         logger.e(TAG, "Network not available in $operationName", e)
         ResultWithError.Failure(
-            RemoteUserDataSourceError.RemoteDataSource(
+            RemoteSettingsDataSourceError.RemoteDataSource(
                 RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
             ),
         )
     } catch (e: ConnectException) {
         logger.e(TAG, "Server unreachable in $operationName", e)
         ResultWithError.Failure(
-            RemoteUserDataSourceError.RemoteDataSource(
+            RemoteSettingsDataSourceError.RemoteDataSource(
                 RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
             ),
         )
     } catch (e: IOException) {
         logger.e(TAG, "Network error in $operationName", e)
         ResultWithError.Failure(
-            RemoteUserDataSourceError.RemoteDataSource(
+            RemoteSettingsDataSourceError.RemoteDataSource(
                 RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
             ),
         )
@@ -239,7 +241,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
     } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
         logger.e(TAG, "Unexpected error in $operationName", e)
         ResultWithError.Failure(
-            RemoteUserDataSourceError.RemoteDataSource(
+            RemoteSettingsDataSourceError.RemoteDataSource(
                 RemoteDataSourceErrorV2.UnknownServiceError(
                     ErrorReason(e.message ?: "Unknown error"),
                 ),
@@ -247,10 +249,10 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
         )
     }
 
-    private fun handleApiError(response: ApiResponse<*>): RemoteUserDataSourceError {
+    private fun handleApiError(response: ApiResponse<*>): RemoteSettingsDataSourceError {
         val errorMessage = response.error?.message ?: "Unknown API error"
         logger.w(TAG, "API error: $errorMessage")
-        return RemoteUserDataSourceError.RemoteDataSource(
+        return RemoteSettingsDataSourceError.RemoteDataSource(
             RemoteDataSourceErrorV2.UnknownServiceError(ErrorReason(errorMessage)),
         )
     }

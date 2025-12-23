@@ -28,13 +28,13 @@ import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWi
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSettingsSyncSuccess
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.user.DeviceId
-import timur.gilfanov.messenger.domain.entity.user.Identity
-import timur.gilfanov.messenger.domain.entity.user.SettingKey
-import timur.gilfanov.messenger.domain.entity.user.Settings
-import timur.gilfanov.messenger.domain.entity.user.UiLanguage
-import timur.gilfanov.messenger.domain.entity.user.UserId
-import timur.gilfanov.messenger.domain.usecase.user.repository.GetSettingsRepositoryError
+import timur.gilfanov.messenger.domain.entity.profile.DeviceId
+import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 

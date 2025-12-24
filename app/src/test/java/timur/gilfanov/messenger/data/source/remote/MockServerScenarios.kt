@@ -366,7 +366,7 @@ object MockServerScenarios {
         serverValue: String = "German",
         serverVersion: Int = 2,
         newVersion: Int = 3,
-        serverModifiedAt: String = TEST_TIMESTAMP.toString(),
+        serverModifiedAt: Instant = TEST_TIMESTAMP,
         delayMs: Long = 0,
     ): HttpResponseData {
         if (delayMs > 0) delay(delayMs)

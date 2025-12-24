@@ -14,7 +14,6 @@ import java.net.ConnectException
 import java.net.UnknownHostException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import timur.gilfanov.messenger.data.source.local.toStorageValue
@@ -153,7 +152,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
                     value = typedRequest.toStorageValue(),
                     clientVersion = baseRequest.clientVersion,
                     lastKnownServerVersion = baseRequest.lastKnownServerVersion,
-                    modifiedAt = baseRequest.modifiedAt.toString(),
+                    modifiedAt = baseRequest.modifiedAt,
                 )
             }
 
@@ -182,7 +181,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
             serverValue = serverValue,
             serverVersion = serverVersion,
             newVersion = newVersion,
-            serverModifiedAt = Instant.parse(serverModifiedAt),
+            serverModifiedAt = serverModifiedAt,
         )
     }
 

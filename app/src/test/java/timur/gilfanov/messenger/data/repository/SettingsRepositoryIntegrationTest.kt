@@ -251,7 +251,7 @@ class SettingsRepositoryIntegrationTest {
                             serverValue = "German",
                             serverVersion = 2,
                             newVersion = 3,
-                            serverModifiedAt = testTimestamp.toString(),
+                            serverModifiedAt = testTimestamp,
                         )
                     }
 

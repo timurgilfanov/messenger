@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.remote.dto
 
+import kotlin.time.Instant
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -52,7 +53,8 @@ data class SettingSyncItemDto(
     val value: String,
     val clientVersion: Int,
     val lastKnownServerVersion: Int,
-    val modifiedAt: String,
+    @Serializable(with = InstantIsoSerializer::class)
+    val modifiedAt: Instant,
 )
 
 /**
@@ -85,6 +87,7 @@ sealed class SettingSyncResultDto {
         override val newVersion: Int,
         val serverValue: String,
         val serverVersion: Int,
-        val serverModifiedAt: String,
+        @Serializable(with = InstantIsoSerializer::class)
+        val serverModifiedAt: Instant,
     ) : SettingSyncResultDto()
 }

@@ -365,7 +365,7 @@ class RemoteSettingsDataSourceImplTest {
     @Test
     fun `syncSingleSetting should return Conflict result`() = runTest {
         // Given
-        val serverModifiedAt = TEST_TIMESTAMP.toString()
+        val serverModifiedAt = TEST_TIMESTAMP
         val syncResponse = SyncSettingsResponseDto(
             results = listOf(
                 SettingSyncResultDto.Conflict(

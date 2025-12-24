@@ -28,7 +28,6 @@ import timur.gilfanov.messenger.data.source.remote.dto.SettingItemDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingSyncResultDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsResponseDto
-import timur.gilfanov.messenger.data.source.remote.dto.SyncStatusDto
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -306,9 +305,8 @@ class RemoteSettingsDataSourceImplTest {
         // Given
         val syncResponse = SyncSettingsResponseDto(
             results = listOf(
-                SettingSyncResultDto(
+                SettingSyncResultDto.Success(
                     key = "ui_language",
-                    status = SyncStatusDto.SUCCESS,
                     newVersion = 2,
                 ),
             ),
@@ -343,9 +341,8 @@ class RemoteSettingsDataSourceImplTest {
         val serverModifiedAt = TEST_TIMESTAMP.toString()
         val syncResponse = SyncSettingsResponseDto(
             results = listOf(
-                SettingSyncResultDto(
+                SettingSyncResultDto.Conflict(
                     key = "ui_language",
-                    status = SyncStatusDto.CONFLICT,
                     newVersion = 3,
                     serverValue = "German",
                     serverVersion = 2,
@@ -412,9 +409,8 @@ class RemoteSettingsDataSourceImplTest {
         // Given
         val syncResponse = SyncSettingsResponseDto(
             results = listOf(
-                SettingSyncResultDto(
+                SettingSyncResultDto.Success(
                     key = "ui_language",
-                    status = SyncStatusDto.SUCCESS,
                     newVersion = 2,
                 ),
             ),

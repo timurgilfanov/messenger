@@ -26,7 +26,6 @@ import timur.gilfanov.messenger.data.source.remote.dto.SettingSyncResultDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsRequestDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsResponseDto
-import timur.gilfanov.messenger.data.source.remote.dto.SyncStatusDto
 import timur.gilfanov.messenger.data.source.remote.network.ApiRoutes
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
@@ -175,14 +174,13 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
             }
         }
 
-    private fun SettingSyncResultDto.toSyncResult(): SyncResult = when (status) {
-        SyncStatusDto.SUCCESS -> SyncResult.Success(newVersion = newVersion)
-
-        SyncStatusDto.CONFLICT -> SyncResult.Conflict(
-            serverValue = serverValue ?: "",
-            serverVersion = serverVersion ?: 0,
+    private fun SettingSyncResultDto.toSyncResult(): SyncResult = when (this) {
+        is SettingSyncResultDto.Success -> SyncResult.Success(newVersion = newVersion)
+        is SettingSyncResultDto.Conflict -> SyncResult.Conflict(
+            serverValue = serverValue,
+            serverVersion = serverVersion,
             newVersion = newVersion,
-            serverModifiedAt = serverModifiedAt?.let { Instant.parse(it) } ?: Instant.DISTANT_PAST,
+            serverModifiedAt = Instant.parse(serverModifiedAt),
         )
     }
 

@@ -30,7 +30,6 @@ import timur.gilfanov.messenger.data.source.remote.dto.SettingItemDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingSyncResultDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsResponseDto
-import timur.gilfanov.messenger.data.source.remote.dto.SyncStatusDto
 
 /**
  * Mock server scenarios for integration testing remote data sources.
@@ -343,9 +342,8 @@ object MockServerScenarios {
 
         val syncResponse = SyncSettingsResponseDto(
             results = listOf(
-                SettingSyncResultDto(
+                SettingSyncResultDto.Success(
                     key = key,
-                    status = SyncStatusDto.SUCCESS,
                     newVersion = newVersion,
                 ),
             ),
@@ -375,9 +373,8 @@ object MockServerScenarios {
 
         val syncResponse = SyncSettingsResponseDto(
             results = listOf(
-                SettingSyncResultDto(
+                SettingSyncResultDto.Conflict(
                     key = key,
-                    status = SyncStatusDto.CONFLICT,
                     newVersion = newVersion,
                     serverValue = serverValue,
                     serverVersion = serverVersion,

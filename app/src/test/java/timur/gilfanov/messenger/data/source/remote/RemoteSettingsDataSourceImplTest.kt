@@ -31,6 +31,7 @@ import timur.gilfanov.messenger.data.source.remote.dto.SettingSyncResultDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsResponseDto
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
@@ -427,6 +428,12 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
+        assertIs<RemoteDataSourceErrorV2.UnknownServiceError>(result.error.error)
+        assertEquals(
+            "Missing sync result for key: ${SettingKey.UI_LANGUAGE.key}",
+            result.error.error.reason.value,
+        )
     }
 
     // syncBatch tests

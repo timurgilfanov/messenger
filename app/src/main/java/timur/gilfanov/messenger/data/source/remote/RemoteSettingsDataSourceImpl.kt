@@ -18,6 +18,7 @@ import kotlin.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import timur.gilfanov.messenger.data.source.local.toStorageValue
+import timur.gilfanov.messenger.data.source.remote.dto.ApiErrorCode
 import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse
 import timur.gilfanov.messenger.data.source.remote.dto.ChangeSettingsRequestDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingChangeDto
@@ -176,6 +177,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
 
     private fun SettingSyncResultDto.toSyncResult(): SyncResult = when (this) {
         is SettingSyncResultDto.Success -> SyncResult.Success(newVersion = newVersion)
+
         is SettingSyncResultDto.Conflict -> SyncResult.Conflict(
             serverValue = serverValue,
             serverVersion = serverVersion,
@@ -245,11 +247,51 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
         )
     }
 
-    private fun handleApiError(response: ApiResponse<*>): RemoteSettingsDataSourceError {
-        val errorMessage = response.error?.message ?: "Unknown API error"
-        logger.w(TAG, "API error: $errorMessage")
-        return RemoteSettingsDataSourceError.RemoteDataSource(
-            RemoteDataSourceErrorV2.UnknownServiceError(ErrorReason(errorMessage)),
-        )
-    }
+    private fun handleApiError(response: ApiResponse<*>): RemoteSettingsDataSourceError =
+        RemoteSettingsDataSourceError.RemoteDataSource(
+            error = when (response.error?.code) {
+                ApiErrorCode.AlreadyJoined,
+
+                ApiErrorCode.ChatClosed,
+
+                ApiErrorCode.ChatFull,
+
+                ApiErrorCode.ChatNotFound,
+
+                ApiErrorCode.ExpiredInviteLink,
+
+                ApiErrorCode.InvalidInviteLink,
+
+                ApiErrorCode.MessageNotFound,
+
+                ApiErrorCode.NetworkNotAvailable,
+                -> TODO("Not relevant for settings")
+
+                is ApiErrorCode.CooldownActive -> RemoteDataSourceErrorV2.CooldownActive(
+                    remaining = response.error.code.remaining,
+                )
+
+                ApiErrorCode.RateLimitExceeded -> RemoteDataSourceErrorV2.RateLimitExceeded
+
+                ApiErrorCode.ServerError -> RemoteDataSourceErrorV2.ServerError
+
+                ApiErrorCode.ServerUnreachable,
+                ApiErrorCode.Unauthorized,
+                -> TODO("Should be handled on HTTP level")
+
+                is ApiErrorCode.Unknown -> {
+                    val reason = ErrorReason(response.error.message)
+                    RemoteDataSourceErrorV2.UnknownServiceError(reason)
+                }
+
+                ApiErrorCode.UserBlocked -> TODO(
+                    "Should be only for authorization request? " +
+                        "For other request should return HTTP 401?",
+                )
+
+                null -> TODO("Should be handled on serialization stage")
+            },
+        ).also {
+            logger.w(TAG, "API error: ${response.error.message} mapped to $it")
+        }
 }

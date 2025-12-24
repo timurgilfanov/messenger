@@ -23,7 +23,9 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Unit
+import timur.gilfanov.messenger.data.source.remote.dto.ApiErrorCode
 import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse
+import timur.gilfanov.messenger.data.source.remote.dto.ErrorResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingItemDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingSyncResultDto
 import timur.gilfanov.messenger.data.source.remote.dto.SettingsResponseDto
@@ -110,6 +112,10 @@ class RemoteSettingsDataSourceImplTest {
         val response = ApiResponse<SettingsResponseDto>(
             data = null,
             success = false,
+            error = ErrorResponseDto(
+                code = ApiErrorCode.RateLimitExceeded,
+                message = "Error message",
+            ),
         )
         val responseJson = json.encodeToString(response)
 
@@ -121,6 +127,8 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
+        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(result.error.error)
     }
 
     @Test
@@ -231,7 +239,14 @@ class RemoteSettingsDataSourceImplTest {
     @Test
     fun `changeUiLanguage should handle error response`() = runTest {
         // Given
-        val response = ApiResponse<kotlin.Unit>(data = null, success = false)
+        val response = ApiResponse<kotlin.Unit>(
+            data = null,
+            success = false,
+            error = ErrorResponseDto(
+                code = ApiErrorCode.RateLimitExceeded,
+                message = "Error message",
+            ),
+        )
         val responseJson = json.encodeToString(response)
 
         val mockClient = createMockClient(responseJson)
@@ -242,6 +257,8 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
+        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(result.error.error)
     }
 
     @Test
@@ -285,7 +302,14 @@ class RemoteSettingsDataSourceImplTest {
     @Test
     fun `put should handle error response`() = runTest {
         // Given
-        val response = ApiResponse<kotlin.Unit>(data = null, success = false)
+        val response = ApiResponse<kotlin.Unit>(
+            data = null,
+            success = false,
+            error = ErrorResponseDto(
+                code = ApiErrorCode.RateLimitExceeded,
+                message = "Error message",
+            ),
+        )
         val responseJson = json.encodeToString(response)
 
         val mockClient = createMockClient(responseJson)
@@ -297,6 +321,8 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
+        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(result.error.error)
     }
 
     // syncSingleSetting tests
@@ -444,7 +470,14 @@ class RemoteSettingsDataSourceImplTest {
     @Test
     fun `syncBatch should handle error response`() = runTest {
         // Given
-        val response = ApiResponse<SyncSettingsResponseDto>(data = null, success = false)
+        val response = ApiResponse<SyncSettingsResponseDto>(
+            data = null,
+            success = false,
+            error = ErrorResponseDto(
+                code = ApiErrorCode.RateLimitExceeded,
+                message = "Error message",
+            ),
+        )
         val responseJson = json.encodeToString(response)
 
         val mockClient = createMockClient(responseJson)
@@ -466,6 +499,8 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
+        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(result.error.error)
     }
 
     @Test

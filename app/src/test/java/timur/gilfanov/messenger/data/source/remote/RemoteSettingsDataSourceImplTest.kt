@@ -12,7 +12,6 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import java.io.IOException
 import java.net.UnknownHostException
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Instant
@@ -31,9 +30,6 @@ import timur.gilfanov.messenger.data.source.remote.dto.SettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncStatusDto
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.DeviceId
-import timur.gilfanov.messenger.domain.entity.profile.Identity
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
@@ -42,7 +38,6 @@ class RemoteSettingsDataSourceImplTest {
 
     private lateinit var dataSource: RemoteSettingsDataSourceImpl
     private lateinit var testLogger: NoOpLogger
-    private lateinit var testIdentity: Identity
 
     private val json = Json {
         prettyPrint = true
@@ -51,18 +46,12 @@ class RemoteSettingsDataSourceImplTest {
     }
 
     companion object {
-        private val TEST_USER_ID = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
-        private val TEST_DEVICE_ID = UUID.fromString("123e4567-e89b-12d3-a456-426614174001")
         private val TEST_TIMESTAMP = Instant.parse("2024-01-15T10:30:00Z")
     }
 
     @Before
     fun setup() {
         testLogger = NoOpLogger()
-        testIdentity = Identity(
-            userId = UserId(TEST_USER_ID),
-            deviceId = DeviceId(TEST_DEVICE_ID),
-        )
     }
 
     private fun createMockClient(
@@ -106,7 +95,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.get(testIdentity)
+        val result = dataSource.get()
 
         // Then
         assertIs<ResultWithError.Success<RemoteSettings, *>>(result)
@@ -129,7 +118,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.get(testIdentity)
+        val result = dataSource.get()
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
@@ -149,7 +138,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.get(testIdentity)
+        val result = dataSource.get()
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
@@ -171,7 +160,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.get(testIdentity)
+        val result = dataSource.get()
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
@@ -193,7 +182,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.get(testIdentity)
+        val result = dataSource.get()
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
@@ -215,7 +204,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.get(testIdentity)
+        val result = dataSource.get()
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
@@ -234,7 +223,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.changeUiLanguage(testIdentity, UiLanguage.German)
+        val result = dataSource.changeUiLanguage(UiLanguage.German)
 
         // Then
         assertIs<ResultWithError.Success<kotlin.Unit, *>>(result)
@@ -250,7 +239,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.changeUiLanguage(testIdentity, UiLanguage.German)
+        val result = dataSource.changeUiLanguage(UiLanguage.German)
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
@@ -270,7 +259,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.changeUiLanguage(testIdentity, UiLanguage.German)
+        val result = dataSource.changeUiLanguage(UiLanguage.German)
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
@@ -288,7 +277,7 @@ class RemoteSettingsDataSourceImplTest {
         val settings = Settings(uiLanguage = UiLanguage.German)
 
         // When
-        val result = dataSource.put(testIdentity, settings)
+        val result = dataSource.put(settings)
 
         // Then
         assertIs<ResultWithError.Success<kotlin.Unit, *>>(result)
@@ -305,7 +294,7 @@ class RemoteSettingsDataSourceImplTest {
         val settings = Settings(uiLanguage = UiLanguage.German)
 
         // When
-        val result = dataSource.put(testIdentity, settings)
+        val result = dataSource.put(settings)
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
@@ -332,7 +321,6 @@ class RemoteSettingsDataSourceImplTest {
 
         val request = TypedSettingSyncRequest.UiLanguage(
             request = SettingSyncRequest(
-                identity = testIdentity,
                 value = UiLanguage.German,
                 clientVersion = 1,
                 lastKnownServerVersion = 0,
@@ -373,7 +361,6 @@ class RemoteSettingsDataSourceImplTest {
 
         val request = TypedSettingSyncRequest.UiLanguage(
             request = SettingSyncRequest(
-                identity = testIdentity,
                 value = UiLanguage.English,
                 clientVersion = 1,
                 lastKnownServerVersion = 1,
@@ -405,7 +392,6 @@ class RemoteSettingsDataSourceImplTest {
 
         val request = TypedSettingSyncRequest.UiLanguage(
             request = SettingSyncRequest(
-                identity = testIdentity,
                 value = UiLanguage.German,
                 clientVersion = 1,
                 lastKnownServerVersion = 0,
@@ -442,7 +428,6 @@ class RemoteSettingsDataSourceImplTest {
         val requests = listOf(
             TypedSettingSyncRequest.UiLanguage(
                 request = SettingSyncRequest(
-                    identity = testIdentity,
                     value = UiLanguage.German,
                     clientVersion = 1,
                     lastKnownServerVersion = 0,
@@ -472,7 +457,6 @@ class RemoteSettingsDataSourceImplTest {
         val requests = listOf(
             TypedSettingSyncRequest.UiLanguage(
                 request = SettingSyncRequest(
-                    identity = testIdentity,
                     value = UiLanguage.German,
                     clientVersion = 1,
                     lastKnownServerVersion = 0,
@@ -504,7 +488,6 @@ class RemoteSettingsDataSourceImplTest {
         val requests = listOf(
             TypedSettingSyncRequest.UiLanguage(
                 request = SettingSyncRequest(
-                    identity = testIdentity,
                     value = UiLanguage.German,
                     clientVersion = 1,
                     lastKnownServerVersion = 0,
@@ -538,7 +521,7 @@ class RemoteSettingsDataSourceImplTest {
         dataSource = createDataSource(mockClient)
 
         // When
-        val result = dataSource.get(testIdentity)
+        val result = dataSource.get()
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)

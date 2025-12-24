@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.data.source.remote
 
 import javax.inject.Inject
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
@@ -23,17 +22,14 @@ class RemoteSettingsDataSourceNoop @Inject constructor() : RemoteSettingsDataSou
     private fun <T> unavailable(): ResultWithError<T, RemoteSettingsDataSourceError> =
         ResultWithError.Failure(unavailableError)
 
-    override suspend fun get(
-        identity: Identity,
-    ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> = unavailable()
+    override suspend fun get(): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> =
+        unavailable()
 
     override suspend fun changeUiLanguage(
-        identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> = unavailable()
 
     override suspend fun put(
-        identity: Identity,
         settings: Settings,
     ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = unavailable()
 

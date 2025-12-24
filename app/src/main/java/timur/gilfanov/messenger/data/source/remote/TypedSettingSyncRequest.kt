@@ -9,6 +9,9 @@ import timur.gilfanov.messenger.domain.entity.settings.Setting
  * domain types. Allows validation to happen at the remote data source boundary when
  * converting to wire format.
  *
+ * User is identified by the Bearer token attached by the auth interceptor,
+ * so requests don't need to include identity information.
+ *
  * Mirrors the pattern used by [timur.gilfanov.messenger.data.source.local.TypedLocalSetting]
  * for architectural consistency between local and remote data layers.
  *
@@ -16,7 +19,6 @@ import timur.gilfanov.messenger.domain.entity.settings.Setting
  * ```kotlin
  * val request = TypedSettingSyncRequest.UiLanguage(
  *     request = SettingSyncRequest(
- *         identity = identity,
  *         value = UiLanguage.ENGLISH,
  *         clientVersion = 2,
  *         lastKnownServerVersion = 1,

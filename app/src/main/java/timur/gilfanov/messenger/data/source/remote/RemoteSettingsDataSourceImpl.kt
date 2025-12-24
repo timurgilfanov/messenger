@@ -29,7 +29,6 @@ import timur.gilfanov.messenger.data.source.remote.dto.SyncSettingsResponseDto
 import timur.gilfanov.messenger.data.source.remote.dto.SyncStatusDto
 import timur.gilfanov.messenger.data.source.remote.network.ApiRoutes
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -47,24 +46,24 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
         private const val TAG = "RemoteSettingsDataSource"
     }
 
-    override suspend fun get(
-        identity: Identity,
-    ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> = executeRequest("get") {
-        val response: ApiResponse<SettingsResponseDto> = httpClient.get(ApiRoutes.SETTINGS).body()
+    override suspend fun get(): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> =
+        executeRequest("get") {
+            val response: ApiResponse<SettingsResponseDto> = httpClient.get(
+                ApiRoutes.SETTINGS,
+            ).body()
 
-        if (response.success && response.data != null) {
-            val settingDtos = response.data.settings.map { item ->
-                RemoteSettingDto(key = item.key, value = item.value, version = item.version)
+            if (response.success && response.data != null) {
+                val settingDtos = response.data.settings.map { item ->
+                    RemoteSettingDto(key = item.key, value = item.value, version = item.version)
+                }
+                val remoteSettings = RemoteSettings.fromItems(logger, settingDtos)
+                ResultWithError.Success(remoteSettings)
+            } else {
+                ResultWithError.Failure(handleApiError(response))
             }
-            val remoteSettings = RemoteSettings.fromItems(logger, settingDtos)
-            ResultWithError.Success(remoteSettings)
-        } else {
-            ResultWithError.Failure(handleApiError(response))
         }
-    }
 
     override suspend fun changeUiLanguage(
-        identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> =
         executeRequest("changeUiLanguage") {
@@ -90,7 +89,6 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
         }
 
     override suspend fun put(
-        identity: Identity,
         settings: Settings,
     ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> = executeRequest("put") {
         val request = ChangeSettingsRequestDto(

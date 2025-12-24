@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.data.source.remote
 
 import kotlin.time.Instant
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
@@ -17,36 +16,27 @@ interface RemoteSettingsDataSource {
     /**
      * Retrieves settings from the remote server as a typed RemoteSettings object.
      *
-     * @param identity The user identity for which to retrieve settings
      * @return Success with [RemoteSettings] or failure with [RemoteSettingsDataSourceError]
      */
-    suspend fun get(
-        identity: Identity,
-    ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError>
+    suspend fun get(): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError>
 
     /**
      * Changes user's UI language preference on the remote server.
      *
-     * @param identity The user identity for which to change the language
      * @param language The new language preference
      * @return Success or failure with [ChangeUiLanguageRemoteDataSourceError]
      */
     suspend fun changeUiLanguage(
-        identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError>
 
     /**
      * Pushes settings to the remote server.
      *
-     * @param identity Identity whose settings should be updated
      * @param settings Settings payload to send to remote
      * @return Success or failure with [UpdateSettingsRemoteDataSourceError]
      */
-    suspend fun put(
-        identity: Identity,
-        settings: Settings,
-    ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError>
+    suspend fun put(settings: Settings): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError>
 
     /**
      * Synchronizes a single setting with the remote server using Last Write Wins.
@@ -108,14 +98,12 @@ data class RemoteSettingDto(val key: String, val value: String, val version: Int
  * Wrapped by [TypedSettingSyncRequest] sealed interface for type safety.
  *
  * @param T The type of the setting value (e.g., UiLanguage)
- * @property identity The user identity for which to sync the setting
  * @property value The typed domain value to sync
  * @property clientVersion Current local version number
  * @property lastKnownServerVersion Last server version known to client (0 if never synced)
  * @property modifiedAt Timestamp of local modification (for conflict resolution)
  */
 data class SettingSyncRequest<T>(
-    val identity: Identity,
     val value: T,
     val clientVersion: Int,
     val lastKnownServerVersion: Int,

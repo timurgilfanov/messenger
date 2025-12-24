@@ -7,13 +7,14 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Named
 import javax.inject.Singleton
-import kotlinx.collections.immutable.persistentMapOf
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
+import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
 /**
  * Debug-only DI module for fake data sources.
@@ -88,7 +89,7 @@ object DebugRemoteDataSourceProviders {
     @Provides
     @Singleton
     fun provideRemoteSettingsDataSourceFake(): RemoteSettingsDataSourceFake =
-        RemoteSettingsDataSourceFake(persistentMapOf())
+        RemoteSettingsDataSourceFake(Settings(uiLanguage = UiLanguage.English))
 
     @Provides
     @Singleton

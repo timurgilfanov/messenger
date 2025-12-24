@@ -55,7 +55,7 @@ class AndroidTestSettingsRepository(private val logger: Logger = TestLogger()) :
         )
 
         remoteDataSourceFake = RemoteSettingsDataSourceFake(
-            initialSettings = AndroidTestSettingsHelper.initialRemoteSettings,
+            initialSettings = AndroidTestSettingsHelper.defaultSettings,
             useRealTime = false,
             logger = logger,
         )

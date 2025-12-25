@@ -40,7 +40,6 @@ import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
@@ -922,7 +921,7 @@ class MessengerRepositoryImplTest {
         val result = repository.markMessagesAsRead(testChat.id, testMessage.id)
 
         // Then: Should succeed
-        assertIs<ResultWithError.Success<Unit, RepositoryMarkMessagesAsReadError>>(result)
+        assertIs<ResultWithError.Success<Unit, MarkMessagesAsReadError>>(result)
     }
 
     @Test
@@ -938,7 +937,7 @@ class MessengerRepositoryImplTest {
             val result = repository.markMessagesAsRead(testChat.id, testMessage.id)
 
             // Then: Should return network error
-            assertIs<ResultWithError.Failure<Unit, RepositoryMarkMessagesAsReadError>>(result)
+            assertIs<ResultWithError.Failure<Unit, MarkMessagesAsReadError>>(result)
             val error = result.error
             assertIs<MarkMessagesAsReadError.RemoteOperationFailed>(error)
             assertIs<RemoteError.Failed.NetworkNotAvailable>(error.error)
@@ -954,7 +953,7 @@ class MessengerRepositoryImplTest {
         val result = repository.markMessagesAsRead(nonExistentChatId, testMessage.id)
 
         // Then: Should return error
-        assertIs<ResultWithError.Failure<Unit, RepositoryMarkMessagesAsReadError>>(result)
+        assertIs<ResultWithError.Failure<Unit, MarkMessagesAsReadError>>(result)
         assertEquals(MarkMessagesAsReadError.ChatNotFound, result.error)
     }
 
@@ -991,7 +990,7 @@ class MessengerRepositoryImplTest {
 
             // Mark first message as read
             val markAsReadResult = repository.markMessagesAsRead(testChat.id, message1.id)
-            assertIs<ResultWithError.Success<Unit, RepositoryMarkMessagesAsReadError>>(
+            assertIs<ResultWithError.Success<Unit, MarkMessagesAsReadError>>(
                 markAsReadResult,
             )
 

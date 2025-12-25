@@ -17,7 +17,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError.LocalOperatio
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError.NotParticipant
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
@@ -42,7 +42,7 @@ class LeaveChatUseCaseTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = error("Not implemented")
+        ): ResultWithError<Unit, MarkMessagesAsReadError> = error("Not implemented")
     }
 
     @Test

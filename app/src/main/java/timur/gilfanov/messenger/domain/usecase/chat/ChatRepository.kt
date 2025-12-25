@@ -39,5 +39,5 @@ interface ChatRepository {
     suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError>
+    ): ResultWithError<Unit, MarkMessagesAsReadError>
 }

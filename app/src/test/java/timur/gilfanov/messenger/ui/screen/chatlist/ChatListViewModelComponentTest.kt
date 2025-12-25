@@ -32,7 +32,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -103,7 +103,7 @@ class ChatListViewModelComponentTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = error("Not implemented")
+        ): ResultWithError<Unit, MarkMessagesAsReadError> = error("Not implemented")
     }
 
     @Test

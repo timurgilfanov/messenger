@@ -30,7 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.RemoteOperatio
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserBlocked
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError.UserNotFound
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
@@ -58,7 +58,7 @@ class JoinChatUseCaseTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<kotlin.Unit, RepositoryMarkMessagesAsReadError> =
+        ): ResultWithError<kotlin.Unit, MarkMessagesAsReadError> =
             ResultWithError.Success(kotlin.Unit)
     }
 

@@ -34,7 +34,6 @@ import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -257,7 +256,7 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> =
+    ): ResultWithError<Unit, MarkMessagesAsReadError> =
         when (val result = remoteDataSources.chat.markMessagesAsRead(chatId, upToMessageId)) {
             is ResultWithError.Success -> {
                 // The delta sync loop will pick up the chat updates automatically
@@ -514,7 +513,7 @@ private fun mapRemoteErrorToDeleteMessageError(error: RemoteDataSourceError): De
 
 private fun mapRemoteErrorToMarkMessagesAsReadError(
     error: RemoteDataSourceError,
-): RepositoryMarkMessagesAsReadError = when (error) {
+): MarkMessagesAsReadError = when (error) {
     RemoteDataSourceError.NetworkNotAvailable -> MarkMessagesAsReadError.RemoteOperationFailed(
         RemoteError.Failed.NetworkNotAvailable,
     )

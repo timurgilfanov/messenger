@@ -24,8 +24,8 @@ import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
@@ -168,7 +168,7 @@ class RepositoryFake :
     override suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> {
+    ): ResultWithError<Unit, MarkMessagesAsReadError> {
         val chat = chats[chatId] ?: return ResultWithError.Success(Unit)
         val upToIndex = chat.messages.indexOfFirst { it.id == upToMessageId }
         val unreadCount = if (upToIndex >= 0) {

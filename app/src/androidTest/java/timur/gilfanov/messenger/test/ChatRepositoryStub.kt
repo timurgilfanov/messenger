@@ -14,8 +14,8 @@ import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 
 class ChatRepositoryStub : ChatRepository {
 
@@ -47,5 +47,5 @@ class ChatRepositoryStub : ChatRepository {
     override suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = throw NotImplementedError()
+    ): ResultWithError<Unit, MarkMessagesAsReadError> = throw NotImplementedError()
 }

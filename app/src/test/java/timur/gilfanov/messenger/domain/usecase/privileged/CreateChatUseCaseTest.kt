@@ -20,7 +20,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError.ChatIsNotValid
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
@@ -52,7 +52,7 @@ class CreateChatUseCaseTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = error("Not implemented")
+        ): ResultWithError<Unit, MarkMessagesAsReadError> = error("Not implemented")
     }
 
     private class ChatValidatorFake(val error: ChatValidationError? = null) : ChatValidator {

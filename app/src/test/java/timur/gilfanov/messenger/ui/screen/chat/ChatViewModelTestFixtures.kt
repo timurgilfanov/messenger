@@ -25,9 +25,9 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
+import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
@@ -108,7 +108,7 @@ object ChatViewModelTestFixtures {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = ResultWithError.Success(Unit)
+        ): ResultWithError<Unit, MarkMessagesAsReadError> = ResultWithError.Success(Unit)
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")
@@ -169,7 +169,7 @@ object ChatViewModelTestFixtures {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = ResultWithError.Success(Unit)
+        ): ResultWithError<Unit, MarkMessagesAsReadError> = ResultWithError.Success(Unit)
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")
@@ -232,7 +232,7 @@ object ChatViewModelTestFixtures {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = ResultWithError.Success(Unit)
+        ): ResultWithError<Unit, MarkMessagesAsReadError> = ResultWithError.Success(Unit)
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")

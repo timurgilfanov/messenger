@@ -133,6 +133,56 @@ class RemoteSettingsDataSourceImplTest {
     }
 
     @Test
+    fun `get should handle ServerError response`() = runTest {
+        // Given
+        val response = ApiResponse<SettingsResponseDto>(
+            data = null,
+            success = false,
+            error = ErrorResponseDto(
+                code = ApiErrorCode.ServerError,
+                message = "Internal server error",
+            ),
+        )
+        val responseJson = json.encodeToString(response)
+
+        val mockClient = createMockClient(responseJson)
+        dataSource = createDataSource(mockClient)
+
+        // When
+        val result = dataSource.get()
+
+        // Then
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
+        assertIs<RemoteDataSourceErrorV2.ServerError>(result.error.error)
+    }
+
+    @Test
+    fun `get should handle Unknown error code`() = runTest {
+        // Given
+        val response = ApiResponse<SettingsResponseDto>(
+            data = null,
+            success = false,
+            error = ErrorResponseDto(
+                code = ApiErrorCode.Unknown("CUSTOM_ERROR"),
+                message = "Unknown error",
+            ),
+        )
+        val responseJson = json.encodeToString(response)
+
+        val mockClient = createMockClient(responseJson)
+        dataSource = createDataSource(mockClient)
+
+        // When
+        val result = dataSource.get()
+
+        // Then
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
+        assertIs<RemoteDataSourceErrorV2.UnknownServiceError>(result.error.error)
+    }
+
+    @Test
     fun `get should handle SocketTimeoutException`() = runTest {
         // Given
         val mockEngine = MockEngine { request ->
@@ -260,6 +310,31 @@ class RemoteSettingsDataSourceImplTest {
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
         assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
         assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(result.error.error)
+    }
+
+    @Test
+    fun `changeUiLanguage should handle ServerError response`() = runTest {
+        // Given
+        val response = ApiResponse<kotlin.Unit>(
+            data = null,
+            success = false,
+            error = ErrorResponseDto(
+                code = ApiErrorCode.ServerError,
+                message = "Internal server error",
+            ),
+        )
+        val responseJson = json.encodeToString(response)
+
+        val mockClient = createMockClient(responseJson)
+        dataSource = createDataSource(mockClient)
+
+        // When
+        val result = dataSource.changeUiLanguage(UiLanguage.German)
+
+        // Then
+        assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
+        assertIs<RemoteDataSourceErrorV2.ServerError>(result.error.error)
     }
 
     @Test

@@ -18,8 +18,6 @@ const val TIME_STEP_SECONDS = 1L
  * A fake implementation of [RemoteSettingsDataSource] for testing purposes.
  *
  * Each instance represents a single user's remote data source (user-scoped).
- * User is identified by the Bearer token attached by the auth interceptor,
- * so the fake doesn't need identity information.
  *
  * @param initialSettings The initial settings for this user.
  * @param useRealTime If true, use system time. If false simulates real-time updates by

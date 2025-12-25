@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 
@@ -36,13 +35,12 @@ class RemoteSettingsDataSourceStub : RemoteSettingsDataSource {
         syncBatchResponse = response
     }
 
-    override suspend fun get(identity: Identity) =
-        getResponse ?: error("get() called but no response configured")
+    override suspend fun get() = getResponse ?: error("get() called but no response configured")
 
-    override suspend fun changeUiLanguage(identity: Identity, language: UiLanguage) =
+    override suspend fun changeUiLanguage(language: UiLanguage) =
         changeUiLanguageResponse ?: error("changeUiLanguage() called but no response configured")
 
-    override suspend fun put(identity: Identity, settings: Settings) =
+    override suspend fun put(settings: Settings) =
         putResponse ?: error("put() called but no response configured")
 
     override suspend fun syncSingleSetting(request: TypedSettingSyncRequest) =

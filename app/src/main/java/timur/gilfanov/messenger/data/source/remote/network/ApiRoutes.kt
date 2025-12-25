@@ -24,6 +24,11 @@ object ApiRoutes {
     const val SYNC = "/sync"
     const val CHAT_DELTAS = "$SYNC/chats/deltas"
 
+    // Settings endpoints
+    const val SETTINGS = "/settings"
+    const val CHANGE_SETTINGS = "$SETTINGS/change"
+    const val SYNC_SETTINGS = "$SETTINGS/sync"
+
     fun deleteChatUrl(chatId: String) = DELETE_CHAT.replace("{chatId}", chatId)
     fun joinChatUrl(chatId: String) = JOIN_CHAT.replace("{chatId}", chatId)
     fun leaveChatUrl(chatId: String) = LEAVE_CHAT.replace("{chatId}", chatId)

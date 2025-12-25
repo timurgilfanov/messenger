@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.test
 
 import java.util.UUID
-import kotlinx.collections.immutable.persistentMapOf
 import timur.gilfanov.messenger.domain.entity.profile.DeviceId
 import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.profile.UserId
@@ -20,6 +19,4 @@ object AndroidTestSettingsHelper {
     )
 
     val defaultSettings = Settings(uiLanguage = UiLanguage.English)
-
-    val initialRemoteSettings = persistentMapOf(testUserId to defaultSettings)
 }

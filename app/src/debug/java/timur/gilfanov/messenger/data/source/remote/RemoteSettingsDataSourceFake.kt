@@ -3,13 +3,10 @@ package timur.gilfanov.messenger.data.source.remote
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
-import kotlinx.collections.immutable.PersistentMap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -20,16 +17,14 @@ const val TIME_STEP_SECONDS = 1L
 /**
  * A fake implementation of [RemoteSettingsDataSource] for testing purposes.
  *
- * While we not implement product [RemoteSettingsDataSource] we can use this fake with
- * [useRealTime] = true with production source set.
+ * Each instance represents a single user's remote data source (user-scoped).
  *
- * @param initialSettings The initial settings to populate the data source with.
+ * @param initialSettings The initial settings for this user.
  * @param useRealTime If true, use system time. If false simulates real-time updates by
  * incrementing timestamps on each fetch. Default is false.
  */
-
 class RemoteSettingsDataSourceFake(
-    initialSettings: PersistentMap<UserId, Settings>,
+    initialSettings: Settings,
     val useRealTime: Boolean = false,
     val logger: Logger = NoOpLogger(),
 ) : RemoteSettingsDataSource {
@@ -43,9 +38,7 @@ class RemoteSettingsDataSourceFake(
     private val settings = MutableStateFlow(initialSettings)
 
     private val settingVersions = MutableStateFlow(
-        initialSettings.keys.associateWith {
-            mapOf(SettingKey.UI_LANGUAGE.key to 1)
-        },
+        mapOf(SettingKey.UI_LANGUAGE.key to 1),
     )
 
     private var timeCounter: Instant = Instant.fromEpochMilliseconds(0)
@@ -59,35 +52,27 @@ class RemoteSettingsDataSourceFake(
         }
 
     private val serverState = MutableStateFlow(
-        initialSettings.entries.associate { (userId, settings) ->
-            userId to mapOf(
-                SettingKey.UI_LANGUAGE to ServerSettingState(
-                    value = when (settings.uiLanguage) {
-                        UiLanguage.English -> "English"
-                        UiLanguage.German -> "German"
-                    },
-                    version = 1,
-                    modifiedAt = now,
-                ),
-            )
-        },
+        mapOf(
+            SettingKey.UI_LANGUAGE to ServerSettingState(
+                value = when (initialSettings.uiLanguage) {
+                    UiLanguage.English -> "English"
+                    UiLanguage.German -> "German"
+                },
+                version = 1,
+                modifiedAt = now,
+            ),
+        ),
     )
 
-    override suspend fun get(
-        identity: Identity,
-    ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> {
-        val userSettings = settings.value[identity.userId]
-        return if (userSettings == null) {
-            ResultWithError.Failure(RemoteSettingsDataSourceError.Authentication.SessionRevoked)
-        } else {
-            val items = convertSettingsToDTOs(userSettings, identity.userId)
-            val remoteSettings = RemoteSettings.fromItems(logger, items)
-            ResultWithError.Success(remoteSettings)
-        }
+    override suspend fun get(): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> {
+        val currentSettings = settings.value
+        val items = convertSettingsToDTOs(currentSettings)
+        val remoteSettings = RemoteSettings.fromItems(logger, items)
+        return ResultWithError.Success(remoteSettings)
     }
 
-    private fun convertSettingsToDTOs(settings: Settings, userId: UserId): List<RemoteSettingDto> {
-        val versionMap = settingVersions.value[userId] ?: emptyMap()
+    private fun convertSettingsToDTOs(settings: Settings): List<RemoteSettingDto> {
+        val versionMap = settingVersions.value
         val uiLanguageValue = when (settings.uiLanguage) {
             UiLanguage.English -> "English"
             UiLanguage.German -> "German"
@@ -103,56 +88,34 @@ class RemoteSettingsDataSourceFake(
     }
 
     override suspend fun changeUiLanguage(
-        identity: Identity,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> {
-        settings.update {
-            val userSettings = it[identity.userId] ?: return ResultWithError.Failure(
-                RemoteSettingsDataSourceError.Authentication.SessionRevoked,
-            )
-            it.put(
-                identity.userId,
-                userSettings.copy(uiLanguage = language),
-            )
-        }
+        settings.update { it.copy(uiLanguage = language) }
 
         settingVersions.update { versionMap ->
-            val userVersions = versionMap[identity.userId] ?: emptyMap()
-            val newVersion = (userVersions[SettingKey.UI_LANGUAGE.key] ?: 0) + 1
-            versionMap +
-                (identity.userId to (userVersions + (SettingKey.UI_LANGUAGE.key to newVersion)))
+            val newVersion = (versionMap[SettingKey.UI_LANGUAGE.key] ?: 0) + 1
+            versionMap + (SettingKey.UI_LANGUAGE.key to newVersion)
         }
 
         return ResultWithError.Success(Unit)
     }
 
     override suspend fun put(
-        identity: Identity,
         settings: Settings,
     ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> {
-        val oldSettings = this.settings.value[identity.userId]
+        val oldSettings = this.settings.value
 
-        this.settings.update {
-            if (!it.containsKey(identity.userId)) {
-                return ResultWithError.Failure(
-                    RemoteSettingsDataSourceError.Authentication.SessionRevoked,
-                )
+        this.settings.update { settings }
+
+        settingVersions.update { versionMap ->
+            val updatedVersions = versionMap.toMutableMap()
+
+            if (oldSettings.uiLanguage != settings.uiLanguage) {
+                val newVersion = (versionMap[SettingKey.UI_LANGUAGE.key] ?: 0) + 1
+                updatedVersions[SettingKey.UI_LANGUAGE.key] = newVersion
             }
-            it.put(identity.userId, settings)
-        }
 
-        if (oldSettings != null) {
-            settingVersions.update { versionMap ->
-                val userVersions = versionMap[identity.userId] ?: emptyMap()
-                val updatedVersions = userVersions.toMutableMap()
-
-                if (oldSettings.uiLanguage != settings.uiLanguage) {
-                    val newVersion = (userVersions[SettingKey.UI_LANGUAGE.key] ?: 0) + 1
-                    updatedVersions[SettingKey.UI_LANGUAGE.key] = newVersion
-                }
-
-                versionMap + (identity.userId to updatedVersions)
-            }
+            updatedVersions
         }
 
         return ResultWithError.Success(Unit)
@@ -175,7 +138,6 @@ class RemoteSettingsDataSourceFake(
 
         customSyncBehavior?.let { return it(request) }
 
-        val userId = request.request.identity.userId
         val value = when (request) {
             is TypedSettingSyncRequest.UiLanguage -> when (request.request.value) {
                 UiLanguage.English -> "English"
@@ -183,21 +145,16 @@ class RemoteSettingsDataSourceFake(
             }
         }
 
-        val serverSetting = serverState.value[userId]?.get(key)
+        val serverSetting = serverState.value[key]
         if (serverSetting == null) {
             val newVersion = 1
             serverState.update { state ->
-                val userState = state[userId] ?: emptyMap()
                 state + (
-                    userId to (
-                        userState + (
-                            key to ServerSettingState(
-                                value = value,
-                                version = newVersion,
-                                modifiedAt = request.request.modifiedAt,
-                            )
-                            )
-                        )
+                    key to ServerSettingState(
+                        value = value,
+                        version = newVersion,
+                        modifiedAt = request.request.modifiedAt,
+                    )
                     )
             }
             return ResultWithError.Success(SyncResult.Success(newVersion = newVersion))
@@ -206,17 +163,12 @@ class RemoteSettingsDataSourceFake(
         if (request.request.modifiedAt >= serverSetting.modifiedAt) {
             val newVersion = serverSetting.version + 1
             serverState.update { state ->
-                val userState = state[userId] ?: emptyMap()
                 state + (
-                    userId to (
-                        userState + (
-                            key to ServerSettingState(
-                                value = value,
-                                version = newVersion,
-                                modifiedAt = request.request.modifiedAt,
-                            )
-                            )
-                        )
+                    key to ServerSettingState(
+                        value = value,
+                        version = newVersion,
+                        modifiedAt = request.request.modifiedAt,
+                    )
                     )
             }
             return ResultWithError.Success(SyncResult.Success(newVersion = newVersion))

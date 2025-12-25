@@ -22,7 +22,7 @@ import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteMessageDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
-import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceNoop
+import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSource
 import timur.gilfanov.messenger.data.source.remote.RemoteSyncDataSourceImpl
 import timur.gilfanov.messenger.domain.entity.settings.Settings
@@ -103,6 +103,6 @@ abstract class DataSourceModule {
     @Singleton
     @Named("real")
     abstract fun bindRealRemoteSettingsDataSource(
-        remoteSettingsDataSourceNoop: RemoteSettingsDataSourceNoop,
+        remoteSettingsDataSourceImpl: RemoteSettingsDataSourceImpl,
     ): RemoteSettingsDataSource
 }

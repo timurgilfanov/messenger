@@ -16,7 +16,6 @@ import timur.gilfanov.messenger.domain.entity.settings.Setting
  * ```kotlin
  * val request = TypedSettingSyncRequest.UiLanguage(
  *     request = SettingSyncRequest(
- *         identity = identity,
  *         value = UiLanguage.ENGLISH,
  *         clientVersion = 2,
  *         lastKnownServerVersion = 1,

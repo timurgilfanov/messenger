@@ -345,7 +345,7 @@ class SettingsRepositoryImpl @Inject constructor(
             return ResultWithError.Success(Unit)
         }
 
-        val request = localSetting.toSyncRequest(identity)
+        val request = localSetting.toSyncRequest()
 
         return remoteDataSource.syncSingleSetting(request).fold(
             onSuccess = { syncResult ->
@@ -510,7 +510,7 @@ class SettingsRepositoryImpl @Inject constructor(
         }
 
         val requests = unsyncedSettings.map { typedSetting ->
-            typedSetting.toSyncRequest(identity)
+            typedSetting.toSyncRequest()
         }
 
         return remoteDataSource.syncBatch(requests).fold(
@@ -673,7 +673,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     private suspend fun recoverSettings(
         identity: Identity,
-    ): ResultWithError<Settings, GetSettingsRepositoryError> = remoteDataSource.get(identity).fold(
+    ): ResultWithError<Settings, GetSettingsRepositoryError> = remoteDataSource.get().fold(
         onSuccess = { remoteSettings ->
             val uiLanguageSetting: LocalSetting<UiLanguage> =
                 when (val setting = remoteSettings.uiLanguage) {

@@ -67,7 +67,8 @@ class SettingsRepositoryImplTest {
     )
 
     private lateinit var localDataSource: LocalSettingsDataSourceFake
-    private lateinit var remoteDataSource: RemoteSettingsDataSourceFake
+    private lateinit var remoteDataSourceFake: RemoteSettingsDataSourceFake
+    private lateinit var remoteDataSourceStub: RemoteSettingsDataSourceStub
     private lateinit var repository: SettingsRepositoryImpl
     private lateinit var testScope: CoroutineScope
     private val defaultSettings = Settings(uiLanguage = UiLanguage.English)
@@ -80,15 +81,34 @@ class SettingsRepositoryImplTest {
     @Before
     fun setup() {
         localDataSource = LocalSettingsDataSourceFake()
-        remoteDataSource = RemoteSettingsDataSourceFake(
-            initialSettings = kotlinx.collections.immutable.persistentMapOf(),
+        remoteDataSourceFake = RemoteSettingsDataSourceFake(
+            initialSettings = defaultSettings,
             useRealTime = false,
         )
+        remoteDataSourceStub = RemoteSettingsDataSourceStub().apply {
+            setGetResponse(
+                ResultWithError.Failure(
+                    RemoteSettingsDataSourceError.RemoteDataSource(
+                        RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
+                    ),
+                ),
+            )
+        }
         testScope = CoroutineScope(UnconfinedTestDispatcher())
 
         repository = SettingsRepositoryImpl(
             localDataSource = localDataSource,
-            remoteDataSource = remoteDataSource,
+            remoteDataSource = remoteDataSourceStub,
+            syncScheduler = syncSchedulerStub,
+            logger = NoOpLogger(),
+            defaultSettings = defaultSettings,
+        )
+    }
+
+    private fun useRemoteDataSourceFake() {
+        repository = SettingsRepositoryImpl(
+            localDataSource = localDataSource,
+            remoteDataSource = remoteDataSourceFake,
             syncScheduler = syncSchedulerStub,
             logger = NoOpLogger(),
             defaultSettings = defaultSettings,
@@ -202,6 +222,8 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncSetting handles conflict with server wins and emits event`() = runTest {
+        useRemoteDataSourceFake()
+
         val setting = createTypedLocalSetting(
             value = UiLanguage.German,
             localVersion = 2,
@@ -211,7 +233,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, setting)
 
-        remoteDataSource.setSyncBehavior {
+        remoteDataSourceFake.setSyncBehavior {
             ResultWithError.Success(
                 SyncResult.Conflict(
                     serverValue = "English",
@@ -373,6 +395,8 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncAllPendingSettings syncs multiple settings`() = runTest {
+        useRemoteDataSourceFake()
+
         val setting1 = createTypedLocalSetting(
             value = UiLanguage.German,
             localVersion = 2,
@@ -382,11 +406,10 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, setting1)
 
-        remoteDataSource.setSyncBehavior { request ->
+        remoteDataSourceFake.setSyncBehavior { request ->
             ResultWithError.Success(
                 SyncResult.Success(
-                    newVersion =
-                    request.request.clientVersion + 1,
+                    newVersion = request.request.clientVersion + 1,
                 ),
             )
         }
@@ -475,6 +498,8 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncAllPendingSettings emits conflict event when server wins`() = runTest {
+        useRemoteDataSourceFake()
+
         val setting = createTypedLocalSetting(
             value = UiLanguage.German,
             localVersion = 2,
@@ -484,7 +509,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, setting)
 
-        remoteDataSource.setSyncBehavior {
+        remoteDataSourceFake.setSyncBehavior {
             ResultWithError.Success(
                 SyncResult.Conflict(
                     serverValue = "English",
@@ -565,6 +590,8 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncAllPendingSettings keeps newer local value when setting changes mid-sync`() = runTest {
+        useRemoteDataSourceFake()
+
         val initial = createTypedLocalSetting(
             value = UiLanguage.German,
             localVersion = 2,
@@ -574,7 +601,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, initial)
 
-        remoteDataSource.setSyncBehavior { request ->
+        remoteDataSourceFake.setSyncBehavior { request ->
             val updated = createTypedLocalSetting(
                 value = UiLanguage.English,
                 localVersion = 3,
@@ -603,6 +630,8 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncAllPendingSettings returns StorageFull when conflict resolution cannot be saved`() =
         runTest {
+            useRemoteDataSourceFake()
+
             val setting = createTypedLocalSetting(
                 value = UiLanguage.German,
                 localVersion = 2,
@@ -612,7 +641,7 @@ class SettingsRepositoryImplTest {
             )
             localDataSource.upsert(testUserId, setting)
 
-            remoteDataSource.setSyncBehavior {
+            remoteDataSourceFake.setSyncBehavior {
                 ResultWithError.Success(
                     SyncResult.Conflict(
                         serverValue = "English",
@@ -634,6 +663,8 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncAllPendingSettings returns ReadOnly when upsert fails after remote success`() =
         runTest {
+            useRemoteDataSourceFake()
+
             val setting = createTypedLocalSetting(
                 value = UiLanguage.German,
                 localVersion = 2,
@@ -642,7 +673,7 @@ class SettingsRepositoryImplTest {
                 modifiedAt = 2000L,
             )
             localDataSource.upsert(testUserId, setting)
-            remoteDataSource.setSyncBehavior { request ->
+            remoteDataSourceFake.setSyncBehavior { request ->
                 ResultWithError.Success(
                     SyncResult.Success(newVersion = request.request.clientVersion + 1),
                 )
@@ -659,6 +690,8 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncAllPendingSettings returns AccessDenied when refreshing local setting fails`() =
         runTest {
+            useRemoteDataSourceFake()
+
             val setting = createTypedLocalSetting(
                 value = UiLanguage.English,
                 localVersion = 2,
@@ -667,7 +700,7 @@ class SettingsRepositoryImplTest {
                 modifiedAt = 1500L,
             )
             localDataSource.upsert(testUserId, setting)
-            remoteDataSource.setSyncBehavior { request ->
+            remoteDataSourceFake.setSyncBehavior { request ->
                 ResultWithError.Success(
                     SyncResult.Success(newVersion = request.request.clientVersion + 1),
                 )
@@ -944,9 +977,10 @@ class SettingsRepositoryImplTest {
     fun `observeSettings triggers recovery with invalid server value falls back to English`() =
         runTest {
             val remoteWithInvalidValue = object : RemoteSettingsDataSource {
-                override suspend fun get(
-                    identity: Identity,
-                ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> {
+                override suspend fun get(): ResultWithError<
+                    RemoteSettings,
+                    RemoteSettingsDataSourceError,
+                    > {
                     val remoteSettings = RemoteSettings(
                         uiLanguage = RemoteSetting.InvalidValue(
                             rawValue = INVALID_UI_LANGUAGE,
@@ -957,13 +991,11 @@ class SettingsRepositoryImplTest {
                 }
 
                 override suspend fun changeUiLanguage(
-                    identity: Identity,
                     language: UiLanguage,
                 ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> =
                     ResultWithError.Success(Unit)
 
                 override suspend fun put(
-                    identity: Identity,
                     settings: Settings,
                 ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> =
                     ResultWithError.Success(Unit)
@@ -972,8 +1004,7 @@ class SettingsRepositoryImplTest {
                     request: TypedSettingSyncRequest,
                 ): ResultWithError<SyncResult, SyncSingleSettingError> = ResultWithError.Success(
                     SyncResult.Success(
-                        newVersion =
-                        request.request.clientVersion + 1,
+                        newVersion = request.request.clientVersion + 1,
                     ),
                 )
 
@@ -1049,9 +1080,10 @@ class SettingsRepositoryImplTest {
     fun `changeUiLanguage with invalid remote value recovers with fallback then applies change`() =
         runTest {
             val remoteWithInvalidValue = object : RemoteSettingsDataSource {
-                override suspend fun get(
-                    identity: Identity,
-                ): ResultWithError<RemoteSettings, RemoteSettingsDataSourceError> {
+                override suspend fun get(): ResultWithError<
+                    RemoteSettings,
+                    RemoteSettingsDataSourceError,
+                    > {
                     val remoteSettings = RemoteSettings(
                         uiLanguage = RemoteSetting.InvalidValue(
                             rawValue = INVALID_UI_LANGUAGE,
@@ -1062,13 +1094,11 @@ class SettingsRepositoryImplTest {
                 }
 
                 override suspend fun changeUiLanguage(
-                    identity: Identity,
                     language: UiLanguage,
                 ): ResultWithError<Unit, ChangeUiLanguageRemoteDataSourceError> =
                     ResultWithError.Success(Unit)
 
                 override suspend fun put(
-                    identity: Identity,
                     settings: Settings,
                 ): ResultWithError<Unit, UpdateSettingsRemoteDataSourceError> =
                     ResultWithError.Success(Unit)
@@ -1077,8 +1107,7 @@ class SettingsRepositoryImplTest {
                     request: TypedSettingSyncRequest,
                 ): ResultWithError<SyncResult, SyncSingleSettingError> = ResultWithError.Success(
                     SyncResult.Success(
-                        newVersion =
-                        request.request.clientVersion + 1,
+                        newVersion = request.request.clientVersion + 1,
                     ),
                 )
 
@@ -1118,6 +1147,8 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncSetting accepts server conflict value`() = runTest {
+        useRemoteDataSourceFake()
+
         val currentTime = Instant.parse("2025-01-15T14:00:00Z")
         val futureTime = Instant.parse("2025-01-15T14:10:00Z")
         val setting = createTypedLocalSetting(
@@ -1129,7 +1160,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, setting)
 
-        remoteDataSource.setSyncBehavior {
+        remoteDataSourceFake.setSyncBehavior {
             ResultWithError.Success(
                 SyncResult.Conflict(
                     serverValue = "German",
@@ -1152,6 +1183,8 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncSetting handles concurrent modification on server success`() = runTest {
+        useRemoteDataSourceFake()
+
         val timestamp = Instant.parse("2025-01-15T10:00:00Z")
         val originalSetting = createTypedLocalSetting(
             value = UiLanguage.English,
@@ -1162,7 +1195,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, originalSetting)
 
-        remoteDataSource.setSyncBehavior {
+        remoteDataSourceFake.setSyncBehavior {
             val modifiedSetting = createTypedLocalSetting(
                 value = UiLanguage.German,
                 localVersion = 3,
@@ -1188,6 +1221,8 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncSetting handles concurrent modification on server conflict`() = runTest {
+        useRemoteDataSourceFake()
+
         val timestamp = Instant.parse("2025-01-15T10:00:00Z")
         val originalSetting = createTypedLocalSetting(
             value = UiLanguage.English,
@@ -1198,7 +1233,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, originalSetting)
 
-        remoteDataSource.setSyncBehavior {
+        remoteDataSourceFake.setSyncBehavior {
             val modifiedSetting = createTypedLocalSetting(
                 value = UiLanguage.German,
                 localVersion = 3,
@@ -1232,6 +1267,8 @@ class SettingsRepositoryImplTest {
     // todo one more setting need to be added for this test to make sense
     @Test
     fun `syncAllPendingSettings handles mixed success conflict and failure`() = runTest {
+        useRemoteDataSourceFake()
+
         val timestamp = Instant.parse("2025-01-15T10:00:00Z")
 
         val setting = createTypedLocalSetting(
@@ -1243,7 +1280,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, setting)
 
-        remoteDataSource.setSyncBehavior { request ->
+        remoteDataSourceFake.setSyncBehavior { request ->
             val expectedTimestamp = Instant.fromEpochMilliseconds(
                 request.request.modifiedAt.toEpochMilliseconds(),
             )
@@ -1272,6 +1309,8 @@ class SettingsRepositoryImplTest {
     @Test
     fun `syncAllPendingSettings with network failure mid-batch updates partial results`() =
         runTest {
+            useRemoteDataSourceFake()
+
             val timestamp = Instant.parse("2025-01-15T10:00:00Z")
 
             val setting = createTypedLocalSetting(
@@ -1284,7 +1323,7 @@ class SettingsRepositoryImplTest {
             localDataSource.upsert(testUserId, setting)
 
             var callCount = 0
-            remoteDataSource.setSyncBehavior { _ ->
+            remoteDataSourceFake.setSyncBehavior { _ ->
                 callCount++
                 if (callCount == 1) {
                     ResultWithError.Success(SyncResult.Success(newVersion = 2))
@@ -1309,6 +1348,8 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncSetting marks FAILED when local storage fails after server accepts`() = runTest {
+        useRemoteDataSourceFake()
+
         val timestamp = Instant.parse("2025-01-15T10:00:00Z")
         val setting = createTypedLocalSetting(
             value = UiLanguage.English,
@@ -1319,7 +1360,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, setting)
 
-        remoteDataSource.setSyncBehavior {
+        remoteDataSourceFake.setSyncBehavior {
             ResultWithError.Success(SyncResult.Success(newVersion = 2))
         }
 
@@ -1334,6 +1375,8 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncSetting returns StorageFull when storage full during conflict resolution`() = runTest {
+        useRemoteDataSourceFake()
+
         val localTimestamp = Instant.parse("2025-01-15T10:00:00Z")
         val serverTimestamp = Instant.parse("2025-01-15T11:00:00Z")
         val setting = createTypedLocalSetting(
@@ -1345,7 +1388,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserId, setting)
 
-        remoteDataSource.setSyncBehavior {
+        remoteDataSourceFake.setSyncBehavior {
             ResultWithError.Success(
                 SyncResult.Conflict(
                     serverValue = "German",

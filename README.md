@@ -5,11 +5,11 @@
 ![Min SDK](https://img.shields.io/badge/MinSDK-24-green.svg)
 ![Target SDK](https://img.shields.io/badge/TargetSDK-35-green.svg)
 
-An Android messenger application showcasing Clean Architecture, comprehensive testing strategy, and modern Android development practices using Kotlin, Jetpack Compose, and Orbit MVI.
+Showcase project demostrating approach to build a large-scale Android application with maintainable codebase and scalable architecture using Kotlin and Jetpack Compose.
 
 ## 🏗️ Architecture
 
-This application follows **Clean Architecture** principles with clear separation of concerns and unidirectional data flow using **Orbit MVI**.
+This project follows **Clean Architecture** principles including **Dependency Injection**, and **MVI** architecture for UI.
 
 ```mermaid
 graph TB
@@ -104,7 +104,7 @@ sequenceDiagram
 ### Key Architectural Decisions
 
 - **Clean Architecture**: Ensures testability, maintainability, and scalability
-- **Orbit MVI**: Provides predictable state management with clear side effects handling
+- **MVI**: Provides predictable state management with clear side effects handling
 - **Domain-Driven Design**: Rich domain models with business logic encapsulation
 - **Repository Pattern**: Abstracts data sources and provides single source of truth
 - **Result Pattern**: Type-safe error handling without exceptions
@@ -134,7 +134,7 @@ sequenceDiagram
 
 - **Language**: Kotlin 2.2.0
 - **UI**: Jetpack Compose (BOM 2025.07.00)
-- **Architecture**: Clean Architecture + Orbit MVI
+- **Architecture**: Clean Architecture + MVI
 - **DI**: Hilt 2.57
 - **Database**: Room 2.7.2
 - **Networking**: Ktor 3.2.3

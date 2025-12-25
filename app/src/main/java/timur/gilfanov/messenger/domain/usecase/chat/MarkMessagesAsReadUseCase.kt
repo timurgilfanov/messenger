@@ -4,15 +4,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 
-// TODO replace with structured error like DeleteMessageError
-sealed class MarkMessagesAsReadError {
-    data object ChatNotFound : MarkMessagesAsReadError()
-    data object NetworkNotAvailable : MarkMessagesAsReadError()
-    data object ServerError : MarkMessagesAsReadError()
-    data object ServerUnreachable : MarkMessagesAsReadError()
-    data class UnknownError(val throwable: Throwable) : MarkMessagesAsReadError()
-}
-
 typealias RepositoryMarkMessagesAsReadError = MarkMessagesAsReadError
 
 class MarkMessagesAsReadUseCase(private val repository: ChatRepository) {

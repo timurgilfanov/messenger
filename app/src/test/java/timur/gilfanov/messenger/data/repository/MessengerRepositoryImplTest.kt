@@ -939,7 +939,9 @@ class MessengerRepositoryImplTest {
 
             // Then: Should return network error
             assertIs<ResultWithError.Failure<Unit, RepositoryMarkMessagesAsReadError>>(result)
-            assertEquals(MarkMessagesAsReadError.NetworkNotAvailable, result.error)
+            val error = result.error
+            assertIs<MarkMessagesAsReadError.RemoteOperationFailed>(error)
+            assertIs<RemoteError.Failed.NetworkNotAvailable>(error.error)
         }
 
     @Test

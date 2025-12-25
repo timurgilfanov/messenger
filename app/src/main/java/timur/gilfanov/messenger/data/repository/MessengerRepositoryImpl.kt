@@ -515,10 +515,33 @@ private fun mapRemoteErrorToDeleteMessageError(error: RemoteDataSourceError): De
 private fun mapRemoteErrorToMarkMessagesAsReadError(
     error: RemoteDataSourceError,
 ): RepositoryMarkMessagesAsReadError = when (error) {
-    RemoteDataSourceError.NetworkNotAvailable -> MarkMessagesAsReadError.NetworkNotAvailable
-    RemoteDataSourceError.ServerUnreachable -> MarkMessagesAsReadError.ServerUnreachable
-    RemoteDataSourceError.ServerError -> MarkMessagesAsReadError.ServerError
+    RemoteDataSourceError.NetworkNotAvailable -> MarkMessagesAsReadError.RemoteOperationFailed(
+        RemoteError.Failed.NetworkNotAvailable,
+    )
+
+    RemoteDataSourceError.ServerUnreachable -> MarkMessagesAsReadError.RemoteOperationFailed(
+        RemoteError.Failed.ServiceDown,
+    )
+
+    RemoteDataSourceError.ServerError -> MarkMessagesAsReadError.RemoteOperationFailed(
+        RemoteError.Failed.ServiceDown,
+    )
+
+    RemoteDataSourceError.Unauthorized -> MarkMessagesAsReadError.RemoteOperationFailed(
+        RemoteError.Unauthenticated,
+    )
+
+    is RemoteDataSourceError.UnknownError -> MarkMessagesAsReadError.RemoteOperationFailed(
+        RemoteError.Failed.UnknownServiceError(
+            ErrorReason("Unknown remote error: ${error.cause}"),
+        ),
+    )
+
     RemoteDataSourceError.ChatNotFound -> MarkMessagesAsReadError.ChatNotFound
-    is RemoteDataSourceError.UnknownError -> MarkMessagesAsReadError.UnknownError(error.cause)
-    else -> MarkMessagesAsReadError.UnknownError(RuntimeException("Unknown remote error: $error"))
+
+    else -> MarkMessagesAsReadError.RemoteOperationFailed(
+        RemoteError.Failed.UnknownServiceError(
+            ErrorReason("Unknown remote error: $error"),
+        ),
+    )
 }

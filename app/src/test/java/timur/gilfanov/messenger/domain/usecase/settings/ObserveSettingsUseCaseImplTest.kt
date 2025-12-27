@@ -16,6 +16,7 @@ import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
@@ -85,7 +86,9 @@ class ObserveSettingsUseCaseImplTest {
     @Test
     fun `emits ObserveSettingsRepository error when repository fails`() = runTest {
         val identity = createTestIdentity()
-        val repositoryError = GetSettingsRepositoryError.UnknownError(Exception("Test error"))
+        val repositoryError = GetSettingsRepositoryError.LocalOperationFailed(
+            LocalStorageError.UnknownError(Exception("Test error")),
+        )
 
         val identityRepository = IdentityRepositoryStub(ResultWithError.Success(identity))
         val settingsRepository = SettingsRepositoryStub(

@@ -12,6 +12,7 @@ import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCaseStub
@@ -71,7 +72,9 @@ class SettingsViewModelObservationTest {
 
     @Test
     fun `Repository error posts ObserveSettingsFailed side effect`() = runTest {
-        val repositoryError = GetSettingsRepositoryError.UnknownError(Exception("Test error"))
+        val repositoryError = GetSettingsRepositoryError.LocalOperationFailed(
+            LocalStorageError.UnknownError(Exception("Test error")),
+        )
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Failure(
                 ObserveSettingsError.ObserveSettingsRepository(repositoryError),
@@ -127,8 +130,9 @@ class SettingsViewModelObservationTest {
 
             expectState { SettingsUiState.Ready(SettingsUi(UiLanguage.English)) }
 
-            val repositoryError =
-                GetSettingsRepositoryError.UnknownError(Exception("Test error"))
+            val repositoryError = GetSettingsRepositoryError.LocalOperationFailed(
+                LocalStorageError.UnknownError(Exception("Test error")),
+            )
             settingsFlow.update {
                 ResultWithError.Failure(
                     ObserveSettingsError.ObserveSettingsRepository(repositoryError),

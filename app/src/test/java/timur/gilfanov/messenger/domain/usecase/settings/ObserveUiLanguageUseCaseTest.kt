@@ -16,6 +16,7 @@ import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
@@ -144,7 +145,13 @@ class ObserveUiLanguageUseCaseTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
+                emit(
+                    Failure(
+                        GetSettingsRepositoryError.LocalOperationFailed(
+                            LocalStorageError.TemporarilyUnavailable,
+                        ),
+                    ),
+                )
             },
         )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
@@ -153,9 +160,9 @@ class ObserveUiLanguageUseCaseTest {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
             assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(result.error)
-            assertIs<GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable>(
-                result.error.error,
-            )
+            val repoError = result.error.error
+            assertIs<GetSettingsRepositoryError.LocalOperationFailed>(repoError)
+            assertIs<LocalStorageError.TemporarilyUnavailable>(repoError.error)
             awaitComplete()
         }
     }
@@ -166,7 +173,13 @@ class ObserveUiLanguageUseCaseTest {
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(Success(Settings(UiLanguage.English)))
-                emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
+                emit(
+                    Failure(
+                        GetSettingsRepositoryError.LocalOperationFailed(
+                            LocalStorageError.TemporarilyUnavailable,
+                        ),
+                    ),
+                )
                 emit(Success(Settings(UiLanguage.German)))
             },
         )
@@ -194,7 +207,13 @@ class ObserveUiLanguageUseCaseTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
+                emit(
+                    Failure(
+                        GetSettingsRepositoryError.LocalOperationFailed(
+                            LocalStorageError.TemporarilyUnavailable,
+                        ),
+                    ),
+                )
                 emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
                 emit(Success(Settings(UiLanguage.English)))
             },
@@ -205,9 +224,9 @@ class ObserveUiLanguageUseCaseTest {
             val first = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(first)
             assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(first.error)
-            assertIs<GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable>(
-                first.error.error,
-            )
+            val firstError = first.error.error
+            assertIs<GetSettingsRepositoryError.LocalOperationFailed>(firstError)
+            assertIs<LocalStorageError.TemporarilyUnavailable>(firstError.error)
 
             val second = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(second)

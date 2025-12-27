@@ -71,7 +71,9 @@ object ChatViewModelTestFixtures {
 
     class MessengerRepositoryFake(
         private val chat: Chat? = null,
-        private val flowChat: Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>? = null,
+        private val flowChat: Flow<
+            ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>,
+            >? = null,
         private val flowSendMessage: Flow<Message>? = null,
         private val pagedMessages: List<Message>? = null,
     ) : ChatRepository,
@@ -104,6 +106,7 @@ object ChatViewModelTestFixtures {
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
             error("Not implemented")
+
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
@@ -165,6 +168,7 @@ object ChatViewModelTestFixtures {
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
             error("Not implemented")
+
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
@@ -189,7 +193,9 @@ object ChatViewModelTestFixtures {
      */
     class MessengerRepositoryFakeWithPaging(
         private val initialChat: Chat? = null,
-        private val chatFlow: Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>? = null,
+        private val chatFlow: Flow<
+            ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>,
+            >? = null,
     ) : ChatRepository,
         MessageRepository {
 
@@ -228,6 +234,7 @@ object ChatViewModelTestFixtures {
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
             error("Not implemented")
+
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun markMessagesAsRead(
             chatId: ChatId,

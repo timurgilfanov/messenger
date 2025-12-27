@@ -13,6 +13,7 @@ import timur.gilfanov.messenger.domain.entity.profile.DeviceId
 import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub
@@ -47,16 +48,18 @@ class ChangeUiLanguageUseCaseTest {
     fun `when repository failed then use case failed`() = runTest {
         val settingsRepository = SettingsRepositoryStub(
             changeLanguage = Failure(
-                ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable,
+                ChangeLanguageRepositoryError.LocalOperationFailed(
+                    LocalStorageError.TemporarilyUnavailable,
+                ),
             ),
         )
         val useCase = ChangeUiLanguageUseCase(identityRepository, settingsRepository, logger)
         val result = useCase(UiLanguage.English)
         assertIs<Failure<*, ChangeUiLanguageError>>(result)
         assertIs<ChangeUiLanguageError.ChangeLanguageRepository>(result.error)
-        assertIs<ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable>(
-            result.error.error,
-        )
+        val repoError = result.error.error
+        assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(repoError)
+        assertIs<LocalStorageError.TemporarilyUnavailable>(repoError.error)
     }
 
     @Test

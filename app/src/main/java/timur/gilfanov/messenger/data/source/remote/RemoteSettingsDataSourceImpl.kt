@@ -31,7 +31,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
-import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 import timur.gilfanov.messenger.util.Logger
 
 @Suppress("TooManyFunctions")

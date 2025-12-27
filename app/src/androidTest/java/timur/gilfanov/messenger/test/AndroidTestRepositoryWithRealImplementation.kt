@@ -39,11 +39,16 @@ import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.EditMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.bobChat
 import timur.gilfanov.messenger.util.Logger
 
@@ -160,11 +165,12 @@ class AndroidTestRepositoryWithRealImplementation(
     }
 
     // ChatRepository implementation - delegate to real repository
-    override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatError> =
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatRepositoryError> =
         realRepository.createChat(chat)
 
-    override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, DeleteChatError> =
-        realRepository.deleteChat(chatId)
+    override suspend fun deleteChat(
+        chatId: ChatId,
+    ): ResultWithError<Unit, DeleteChatRepositoryError> = realRepository.deleteChat(chatId)
 
     override suspend fun joinChat(
         chatId: ChatId,
@@ -189,16 +195,19 @@ class AndroidTestRepositoryWithRealImplementation(
     // MessageRepository implementation - delegate to real repository
     override suspend fun sendMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, SendMessageError>> = realRepository.sendMessage(message)
+    ): Flow<ResultWithError<Message, SendMessageRepositoryError>> =
+        realRepository.sendMessage(message)
 
     override suspend fun editMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, EditMessageError>> = realRepository.editMessage(message)
+    ): Flow<ResultWithError<Message, EditMessageRepositoryError>> =
+        realRepository.editMessage(message)
 
     override suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,
-    ): ResultWithError<Unit, DeleteMessageError> = realRepository.deleteMessage(messageId, mode)
+    ): ResultWithError<Unit, DeleteMessageRepositoryError> =
+        realRepository.deleteMessage(messageId, mode)
 
     override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
         realRepository.getPagedMessages(chatId)

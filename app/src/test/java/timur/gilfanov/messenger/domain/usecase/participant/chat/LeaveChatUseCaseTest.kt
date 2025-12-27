@@ -11,25 +11,23 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
 import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.LocalError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.NotParticipant
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError.RemoteUnreachable
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError.NotParticipant
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError.RemoteOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class LeaveChatUseCaseTest {
 
-    private class RepositoryFake(val error: RepositoryLeaveChatError? = null) :
-        ChatRepository {
+    private class RepositoryFake(val repoError: LeaveChatRepositoryError? = null) : ChatRepository {
         override suspend fun leaveChat(
             chatId: ChatId,
-        ): ResultWithError<Unit, RepositoryLeaveChatError> = error?.let {
+        ): ResultWithError<Unit, LeaveChatRepositoryError> = repoError?.let {
             Failure(it)
         } ?: Success(Unit)
 
@@ -45,7 +43,7 @@ class LeaveChatUseCaseTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = error("Not implemented")
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = error("Not implemented")
     }
 
     @Test
@@ -56,7 +54,7 @@ class LeaveChatUseCaseTest {
 
         val result = useCase(chatId)
 
-        assertIs<Success<Unit, LeaveChatError>>(result)
+        assertIs<Success<Unit, LeaveChatRepositoryError>>(result)
     }
 
     @Test
@@ -67,7 +65,7 @@ class LeaveChatUseCaseTest {
 
         val result = useCase(chatId)
 
-        assertIs<Failure<Unit, LeaveChatError>>(result)
+        assertIs<Failure<Unit, LeaveChatRepositoryError>>(result)
         assertIs<ChatNotFound>(result.error)
     }
 
@@ -79,55 +77,67 @@ class LeaveChatUseCaseTest {
 
         val result = useCase(chatId)
 
-        assertIs<Failure<Unit, LeaveChatError>>(result)
+        assertIs<Failure<Unit, LeaveChatRepositoryError>>(result)
         assertIs<NotParticipant>(result.error)
     }
 
     @Test
     fun `network not available`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val repository = RepositoryFake(NetworkNotAvailable)
+        val repository = RepositoryFake(
+            RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+        )
         val useCase = LeaveChatUseCase(repository)
 
         val result = useCase(chatId)
 
-        assertIs<Failure<Unit, LeaveChatError>>(result)
-        assertIs<NetworkNotAvailable>(result.error)
+        assertIs<Failure<Unit, LeaveChatRepositoryError>>(result)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Failed.NetworkNotAvailable>(result.error.error)
     }
 
     @Test
     fun `remote unreachable`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val repository = RepositoryFake(RemoteUnreachable)
+        val repository = RepositoryFake(
+            RemoteOperationFailed(RemoteError.Failed.ServiceDown),
+        )
         val useCase = LeaveChatUseCase(repository)
 
         val result = useCase(chatId)
 
-        assertIs<Failure<Unit, LeaveChatError>>(result)
-        assertIs<RemoteUnreachable>(result.error)
+        assertIs<Failure<Unit, LeaveChatRepositoryError>>(result)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
     }
 
     @Test
     fun `remote error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val repository = RepositoryFake(RemoteError)
+        val repository = RepositoryFake(
+            RemoteOperationFailed(RemoteError.Unauthenticated),
+        )
         val useCase = LeaveChatUseCase(repository)
 
         val result = useCase(chatId)
 
-        assertIs<Failure<Unit, LeaveChatError>>(result)
-        assertIs<RemoteError>(result.error)
+        assertIs<Failure<Unit, LeaveChatRepositoryError>>(result)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Unauthenticated>(result.error.error)
     }
 
     @Test
     fun `local error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
-        val repository = RepositoryFake(LocalError)
+        val repository = RepositoryFake(
+            LocalOperationFailed(LocalStorageError.Corrupted),
+        )
         val useCase = LeaveChatUseCase(repository)
 
         val result = useCase(chatId)
 
-        assertIs<Failure<Unit, LeaveChatError>>(result)
-        assertIs<LocalError>(result.error)
+        assertIs<Failure<Unit, LeaveChatRepositoryError>>(result)
+        assertIs<LocalOperationFailed>(result.error)
+        assertIs<LocalStorageError.Corrupted>(result.error.error)
     }
 }

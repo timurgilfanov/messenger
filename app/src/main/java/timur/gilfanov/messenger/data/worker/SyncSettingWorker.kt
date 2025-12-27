@@ -10,10 +10,10 @@ import java.util.UUID
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
-import timur.gilfanov.messenger.domain.usecase.profile.repository.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingError
 import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingUseCase
-import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 @HiltWorker
@@ -73,69 +73,65 @@ class SyncSettingWorker @AssistedInject constructor(
                         logger.e(TAG, "Identity not available for user ${userId.id}")
                         Result.retry()
                     }
-                    is SyncSettingError.SyncFailed -> {
-                        handleSyncError(error.error)
+                    SyncSettingError.SettingNotFound -> {
+                        logger.e(TAG, "Setting not found")
+                        Result.failure()
+                    }
+                    is SyncSettingError.LocalOperationFailed -> {
+                        handleLocalError(error.error)
+                    }
+                    is SyncSettingError.RemoteSyncFailed -> {
+                        handleRemoteError(error.error)
                     }
                 }
             },
         )
     }
 
-    private fun handleSyncError(error: SyncSettingRepositoryError): Result = when (error) {
-        is SyncSettingRepositoryError.LocalStorageError -> {
-            when (error) {
-                SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable -> {
-                    logger.w(TAG, "Local storage temporarily unavailable")
-                    Result.retry()
-                }
-                SyncSettingRepositoryError.LocalStorageError.StorageFull,
-                SyncSettingRepositoryError.LocalStorageError.AccessDenied,
-                SyncSettingRepositoryError.LocalStorageError.ReadOnly,
-                SyncSettingRepositoryError.LocalStorageError.Corrupted,
-                -> {
-                    logger.e(TAG, "Permanent local storage error: $error")
-                    Result.failure()
-                }
-                is SyncSettingRepositoryError.LocalStorageError.UnknownError -> {
-                    logger.e(TAG, "Unknown local storage error", error.cause)
-                    Result.failure()
-                }
-            }
+    private fun handleLocalError(error: LocalStorageError): Result = when (error) {
+        LocalStorageError.TemporarilyUnavailable -> {
+            logger.w(TAG, "Local storage temporarily unavailable")
+            Result.retry()
         }
-        is SyncSettingRepositoryError.RemoteSyncFailed -> {
-            handleRemoteError(error.error)
+        LocalStorageError.StorageFull,
+        LocalStorageError.AccessDenied,
+        LocalStorageError.ReadOnly,
+        LocalStorageError.Corrupted,
+        -> {
+            logger.e(TAG, "Permanent local storage error: $error")
+            Result.failure()
         }
-        SyncSettingRepositoryError.SettingNotFound -> {
-            logger.e(TAG, "Setting not found")
+        is LocalStorageError.UnknownError -> {
+            logger.e(TAG, "Unknown local storage error", error.cause)
             Result.failure()
         }
     }
 
-    private fun handleRemoteError(error: RepositoryError): Result = when (error) {
-        RepositoryError.Unauthenticated,
-        RepositoryError.InsufficientPermissions,
+    private fun handleRemoteError(error: RemoteError): Result = when (error) {
+        RemoteError.Unauthenticated,
+        RemoteError.InsufficientPermissions,
         -> {
             logger.e(TAG, "Authentication error: $error")
             Result.failure()
         }
-        is RepositoryError.Failed -> when (error) {
-            RepositoryError.Failed.NetworkNotAvailable,
-            RepositoryError.Failed.ServiceDown,
+        is RemoteError.Failed -> when (error) {
+            RemoteError.Failed.NetworkNotAvailable,
+            RemoteError.Failed.ServiceDown,
             -> {
                 logger.w(TAG, "Transient remote error: $error")
                 Result.retry()
             }
-            is RepositoryError.Failed.Cooldown -> {
+            is RemoteError.Failed.Cooldown -> {
                 logger.e(TAG, "Remote error - cooldown: ${error.remaining}")
                 Result.failure()
             }
-            is RepositoryError.Failed.UnknownServiceError -> {
+            is RemoteError.Failed.UnknownServiceError -> {
                 logger.e(TAG, "Remote error - unknown service error: ${error.cause}")
                 Result.failure()
             }
         }
-        is RepositoryError.UnknownStatus -> when (error) {
-            is RepositoryError.UnknownStatus.ServiceTimeout -> {
+        is RemoteError.UnknownStatus -> when (error) {
+            RemoteError.UnknownStatus.ServiceTimeout -> {
                 logger.w(TAG, "Service timeout")
                 Result.retry()
             }

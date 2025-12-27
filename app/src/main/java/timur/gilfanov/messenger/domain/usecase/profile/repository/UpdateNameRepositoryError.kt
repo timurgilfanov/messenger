@@ -1,6 +1,8 @@
 package timur.gilfanov.messenger.domain.usecase.profile.repository
 
 import kotlinx.collections.immutable.ImmutableList
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 /**
  * Errors specific to name update repository operations.
@@ -12,8 +14,9 @@ import kotlinx.collections.immutable.ImmutableList
  * - [ForbiddenCharacter] - Name contains prohibited characters
  * - [PlatformPolicyViolation] - Name violates content policy
  *
- * ## Common Errors
- * - [Repository] - Wraps common failures defined in [RepositoryError]
+ * ## Data Source Errors
+ * - [LocalOperationFailed] - Local storage operation failed
+ * - [RemoteOperationFailed] - Remote operation failed
  */
 sealed interface UpdateNameRepositoryError {
     /**
@@ -47,9 +50,16 @@ sealed interface UpdateNameRepositoryError {
     }
 
     /**
-     * Common repository errors expressed in the shared taxonomy.
+     * Local storage operation failed.
      *
-     * @property error The underlying [RepositoryError] instance
+     * @property error The underlying [LocalStorageError] instance
      */
-    data class Repository(val error: RepositoryError) : UpdateNameRepositoryError
+    data class LocalOperationFailed(val error: LocalStorageError) : UpdateNameRepositoryError
+
+    /**
+     * Remote operation failed.
+     *
+     * @property error The underlying [RemoteError] instance
+     */
+    data class RemoteOperationFailed(val error: RemoteError) : UpdateNameRepositoryError
 }

@@ -1,5 +1,8 @@
 package timur.gilfanov.messenger.domain.usecase.profile.repository
 
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+
 /**
  * Errors specific to picture update repository operations.
  *
@@ -11,8 +14,9 @@ package timur.gilfanov.messenger.domain.usecase.profile.repository
  * - [HeightOutOfBounds] - Image height doesn't meet requirements
  * - [PlatformPolicyViolation] - Image violates content policy
  *
- * ## Common Errors
- * - [Repository] - Wraps common failures defined in [RepositoryError]
+ * ## Data Source Errors
+ * - [LocalOperationFailed] - Local storage operation failed
+ * - [RemoteOperationFailed] - Remote operation failed
  */
 sealed interface UpdatePictureRepositoryError {
     /**
@@ -55,9 +59,16 @@ sealed interface UpdatePictureRepositoryError {
     }
 
     /**
-     * Common repository errors expressed in the shared taxonomy.
+     * Local storage operation failed.
      *
-     * @property error The underlying [RepositoryError] instance
+     * @property error The underlying [LocalStorageError] instance
      */
-    data class Repository(val error: RepositoryError) : UpdatePictureRepositoryError
+    data class LocalOperationFailed(val error: LocalStorageError) : UpdatePictureRepositoryError
+
+    /**
+     * Remote operation failed.
+     *
+     * @property error The underlying [RemoteError] instance
+     */
+    data class RemoteOperationFailed(val error: RemoteError) : UpdatePictureRepositoryError
 }

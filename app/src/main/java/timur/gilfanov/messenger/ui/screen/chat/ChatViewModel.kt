@@ -33,14 +33,12 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ServerUnreachable
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.UnknownError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
+import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Error
+import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Loading
 
 private const val STATE_UPDATE_DEBOUNCE = 200L
 
@@ -204,13 +202,12 @@ class ChatViewModel @AssistedInject constructor(
                                 }
 
                                 is ResultWithError.Failure -> when (result.error) {
-                                    ChatNotFound -> ChatUiState.Error(result.error)
-                                    NetworkNotAvailable,
-                                    ServerError,
-                                    ServerUnreachable,
-                                    UnknownError,
+                                    ReceiveChatUpdatesRepositoryError.ChatNotFound ->
+                                        Error(result.error)
+                                    is ReceiveChatUpdatesRepositoryError.LocalOperationFailed,
+                                    is ReceiveChatUpdatesRepositoryError.RemoteOperationFailed,
                                     -> when (val s = state) {
-                                        is ChatUiState.Loading -> ChatUiState.Loading(result.error)
+                                        is ChatUiState.Loading -> Loading(result.error)
 
                                         is ChatUiState.Ready -> s.copy(updateError = result.error)
 

@@ -29,18 +29,18 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.EditMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
 class TestRepositoryWithRealImplementation :
     ChatRepository,
@@ -153,24 +153,24 @@ class TestRepositoryWithRealImplementation :
     }
 
     // ChatRepository implementation - delegate to real repository
-    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> =
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatRepositoryError> =
         realRepository.createChat(chat)
 
     override suspend fun deleteChat(
         chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryDeleteChatError> = realRepository.deleteChat(chatId)
+    ): ResultWithError<Unit, DeleteChatRepositoryError> = realRepository.deleteChat(chatId)
 
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, RepositoryJoinChatError> = realRepository.joinChat(chatId, inviteLink)
+    ): ResultWithError<Chat, JoinChatRepositoryError> = realRepository.joinChat(chatId, inviteLink)
 
     override suspend fun leaveChat(
         chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryLeaveChatError> = realRepository.leaveChat(chatId)
+    ): ResultWithError<Unit, LeaveChatRepositoryError> = realRepository.leaveChat(chatId)
 
     override suspend fun flowChatList(): Flow<
-        ResultWithError<List<ChatPreview>, FlowChatListError>,
+        ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>,
         > =
         realRepository.flowChatList()
 
@@ -178,24 +178,24 @@ class TestRepositoryWithRealImplementation :
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> =
+    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> =
         realRepository.receiveChatUpdates(chatId)
 
     // MessageRepository implementation - delegate to real repository
     override suspend fun sendMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositorySendMessageError>> =
+    ): Flow<ResultWithError<Message, SendMessageRepositoryError>> =
         realRepository.sendMessage(message)
 
     override suspend fun editMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositoryEditMessageError>> =
+    ): Flow<ResultWithError<Message, EditMessageRepositoryError>> =
         realRepository.editMessage(message)
 
     override suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,
-    ): ResultWithError<Unit, RepositoryDeleteMessageError> =
+    ): ResultWithError<Unit, DeleteMessageRepositoryError> =
         realRepository.deleteMessage(messageId, mode)
 
     override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
@@ -204,6 +204,6 @@ class TestRepositoryWithRealImplementation :
     override suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> =
+    ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> =
         realRepository.markMessagesAsRead(chatId, upToMessageId)
 }

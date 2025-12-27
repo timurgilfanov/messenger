@@ -33,9 +33,9 @@ import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusV
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
 typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError>
 
@@ -43,13 +43,13 @@ typealias ValidationResult = ResultWithError<Unit, DeliveryStatusValidationError
 class CreateMessageUseCaseTest {
 
     private class RepositoryFake(
-        val sendMessageResult: Flow<ResultWithError<Message, RepositorySendMessageError>> =
+        val sendMessageResult: Flow<ResultWithError<Message, SendMessageRepositoryError>> =
             flowOf(),
         val exception: Exception? = null,
     ) : MessageRepository {
         override suspend fun sendMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, RepositorySendMessageError>> {
+        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> {
             exception?.let { throw it }
             return sendMessageResult
         }

@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
-import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 
 /**
  * One-time side effects for the language selection screen.
@@ -12,5 +12,5 @@ sealed interface LanguageSideEffects {
 
     data object Unauthorized : LanguageSideEffects
 
-    data class ChangeFailed(val error: ChangeLanguageRepositoryError) : LanguageSideEffects
+    data class ChangeFailed(val error: LocalStorageError) : LanguageSideEffects
 }

@@ -11,9 +11,10 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.DeviceId
 import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub
-import timur.gilfanov.messenger.domain.usecase.profile.repository.RepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
@@ -56,14 +57,14 @@ class SyncAllPendingSettingsUseCaseTest {
     }
 
     @Test
-    fun `when remote sync fails then returns SyncFailed with RemoteSyncFailed`() = runTest {
+    fun `when remote sync fails then returns RemoteSyncFailed`() = runTest {
         val identityRepository = IdentityRepositoryStub(
             identityFlow = flowOf(ResultWithError.Success(identity)),
         )
         val settingsRepository = SettingsRepositoryStub(
             syncAllResult = ResultWithError.Failure(
                 SyncAllSettingsRepositoryError.RemoteSyncFailed(
-                    RepositoryError.Failed.ServiceDown,
+                    RemoteError.Failed.ServiceDown,
                 ),
             ),
         )
@@ -72,19 +73,18 @@ class SyncAllPendingSettingsUseCaseTest {
         val result = useCase()
 
         assertIs<ResultWithError.Failure<Unit, SyncAllPendingSettingsError>>(result)
-        assertIs<SyncAllPendingSettingsError.SyncFailed>(result.error)
-        assertIs<SyncAllSettingsRepositoryError.RemoteSyncFailed>(result.error.error)
-        assertIs<RepositoryError.Failed.ServiceDown>(result.error.error.error)
+        assertIs<SyncAllPendingSettingsError.RemoteSyncFailed>(result.error)
+        assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
     }
 
     @Test
-    fun `when local storage fails then returns SyncFailed with LocalStorageError`() = runTest {
+    fun `when local storage fails then returns LocalOperationFailed`() = runTest {
         val identityRepository = IdentityRepositoryStub(
             identityFlow = flowOf(ResultWithError.Success(identity)),
         )
         val settingsRepository = SettingsRepositoryStub(
             syncAllResult = ResultWithError.Failure(
-                SyncAllSettingsRepositoryError.LocalStorageError.StorageFull,
+                SyncAllSettingsRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
             ),
         )
         val useCase = SyncAllPendingSettingsUseCase(identityRepository, settingsRepository, logger)
@@ -92,7 +92,7 @@ class SyncAllPendingSettingsUseCaseTest {
         val result = useCase()
 
         assertIs<ResultWithError.Failure<Unit, SyncAllPendingSettingsError>>(result)
-        assertIs<SyncAllPendingSettingsError.SyncFailed>(result.error)
-        assertIs<SyncAllSettingsRepositoryError.LocalStorageError.StorageFull>(result.error.error)
+        assertIs<SyncAllPendingSettingsError.LocalOperationFailed>(result.error)
+        assertIs<LocalStorageError.StorageFull>(result.error.error)
     }
 }

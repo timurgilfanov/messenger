@@ -307,15 +307,6 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             RetryDecision.Fail(GetSettingError.AccessDenied)
         }
 
-        is SQLiteReadOnlyDatabaseException -> {
-            logger.e(
-                TAG,
-                "Read-only database while getting setting ${key.key} for user ${userId.id}",
-                exception,
-            )
-            RetryDecision.Fail(GetSettingError.ReadOnlyDatabase)
-        }
-
         else -> {
             logger.e(
                 TAG,
@@ -440,15 +431,6 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 exception,
             )
             RetryDecision.Fail(GetUnsyncedSettingsError.AccessDenied)
-        }
-
-        is SQLiteReadOnlyDatabaseException -> {
-            logger.e(
-                TAG,
-                "Read-only database while fetching unsynced settings for ${userId.id}",
-                exception,
-            )
-            RetryDecision.Fail(GetUnsyncedSettingsError.ReadOnlyDatabase)
         }
 
         else -> {

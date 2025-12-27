@@ -64,11 +64,12 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
@@ -329,8 +330,9 @@ class MessengerRepositoryIntegrationTest {
         val result = repository.createChat(createTestChat())
 
         // Then
-        assertIs<ResultWithError.Failure<*, RepositoryCreateChatError>>(result)
-        assertIs<RepositoryCreateChatError.UnknownError>(result.error)
+        assertIs<ResultWithError.Failure<*, CreateChatRepositoryError>>(result)
+        assertIs<CreateChatRepositoryError.RemoteOperationFailed>(result.error)
+        assertEquals(RemoteError.Unauthenticated, result.error.error)
     }
 
     @Test
@@ -358,8 +360,9 @@ class MessengerRepositoryIntegrationTest {
         val result = repository.joinChat(testChatId, inviteLink = "test-invite")
 
         // Then
-        assertIs<ResultWithError.Failure<*, RepositoryJoinChatError>>(result)
-        assertIs<RepositoryJoinChatError.RemoteUnreachable>(result.error)
+        assertIs<ResultWithError.Failure<*, JoinChatRepositoryError>>(result)
+        assertIs<JoinChatRepositoryError.RemoteOperationFailed>(result.error)
+        assertEquals(RemoteError.Failed.ServiceDown, result.error.error)
     }
 
     // Message Management - Happy Path Tests
@@ -510,8 +513,9 @@ class MessengerRepositoryIntegrationTest {
         // When & Then
         repository.sendMessage(testMessage).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<*, RepositorySendMessageError>>(result)
-            assertIs<RepositorySendMessageError.RemoteError>(result.error)
+            assertIs<ResultWithError.Failure<*, SendMessageRepositoryError>>(result)
+            assertIs<SendMessageRepositoryError.RemoteOperationFailed>(result.error)
+            assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
             awaitComplete()
         }
     }
@@ -541,8 +545,9 @@ class MessengerRepositoryIntegrationTest {
         val result = repository.deleteMessage(testMessageId, DeleteMessageMode.FOR_SENDER_ONLY)
 
         // Then
-        assertIs<ResultWithError.Failure<*, RepositoryDeleteMessageError>>(result)
-        assertIs<RepositoryDeleteMessageError.RemoteError>(result.error)
+        assertIs<ResultWithError.Failure<*, DeleteMessageRepositoryError>>(result)
+        assertIs<DeleteMessageRepositoryError.RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
     }
 
     // Helper functions

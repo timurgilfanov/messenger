@@ -26,7 +26,7 @@ class SyncAllPendingSettingsUseCase(
                     onSuccess = { ResultWithError.Success(Unit) },
                     onFailure = { error ->
                         logger.e(TAG, "Repository syncAllPendingSettings failed: $error")
-                        ResultWithError.Failure(SyncAllPendingSettingsError.SyncFailed(error))
+                        ResultWithError.Failure(error.toUseCaseError())
                     },
                 )
             },

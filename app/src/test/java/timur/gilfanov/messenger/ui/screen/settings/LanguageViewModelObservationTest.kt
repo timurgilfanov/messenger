@@ -11,6 +11,7 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createFailingIdentityRepository
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
@@ -45,7 +46,9 @@ class LanguageViewModelObservationTest {
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
             ResultWithError.Failure(
-                GetSettingsRepositoryError.UnknownError(Exception("Test error")),
+                GetSettingsRepositoryError.LocalOperationFailed(
+                    LocalStorageError.UnknownError(Exception("Test error")),
+                ),
             ),
         )
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
@@ -156,7 +159,9 @@ class LanguageViewModelObservationTest {
 
             settingsFlow.update {
                 ResultWithError.Failure(
-                    GetSettingsRepositoryError.UnknownError(Exception("Test error")),
+                    GetSettingsRepositoryError.LocalOperationFailed(
+                        LocalStorageError.UnknownError(Exception("Test error")),
+                    ),
                 )
             }
 

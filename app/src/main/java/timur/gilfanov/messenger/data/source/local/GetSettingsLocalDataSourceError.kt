@@ -9,13 +9,15 @@ sealed interface GetSettingsLocalDataSourceError {
 
     data object NoSettings : GetSettingsLocalDataSourceError
 
+    // todo extract Recoverable and UnknownError to common local data source error?
+
     /**
      * Recoverable errors that can be resolved by user action.
      *
      * These errors indicate specific issues that the user can address
      * to restore settings functionality.
      */
-    sealed interface Recoverable : GetSettingsLocalDataSourceError {
+    sealed interface Recoverable : GetSettingsLocalDataSourceError { // todo rename to StorageError?
         /**
          * Insufficient storage space available on the device.
          *

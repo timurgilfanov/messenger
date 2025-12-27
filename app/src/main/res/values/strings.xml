@@ -12,11 +12,7 @@
     <string name="chat_list_status_loading">Loading...</string>
     <string name="chat_list_status_no_chats">No chats</string>
     <string name="chat_list_status_chats_count">%d chats</string>
-    <string name="chat_list_error_network">No internet connection</string>
-    <string name="chat_list_error_server">Server error</string>
-    <string name="chat_list_error_server_unreachable">Server unreachable</string>
     <string name="chat_list_error_local">Local error</string>
-    <string name="chat_list_error_unknown">Unknown error</string>
     <string name="chat_list_avatar_content_description">Avatar</string>
     <string name="chat_list_group_content_description">Group chat</string>
     <string name="chat_list_swipe_delete_content_description">Delete chat</string>

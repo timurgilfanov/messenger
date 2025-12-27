@@ -31,7 +31,9 @@ import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Category(Component::class)
@@ -49,7 +51,7 @@ class ChatListScreenComponentTest {
         uiState: ChatListUiState = ChatListUiState.Empty,
         isLoading: Boolean = false,
         isRefreshing: Boolean = false,
-        error: FlowChatListError? = null,
+        error: FlowChatListRepositoryError? = null,
     ) = ChatListScreenState(
         uiState = uiState,
         currentUser = CurrentUserUiModel(
@@ -193,7 +195,10 @@ class ChatListScreenComponentTest {
 
     @Test
     fun `ChatListScreen displays error message correctly`() {
-        val screenState = createTestScreenState(error = FlowChatListError.NetworkNotAvailable)
+        val screenState =
+            createTestScreenState(
+                error = LocalOperationFailed(LocalStorageError.Corrupted),
+            )
 
         composeTestRule.setContent {
             MessengerTheme {
@@ -210,7 +215,7 @@ class ChatListScreenComponentTest {
         }
 
         composeTestRule.onNodeWithText(
-            composeTestRule.activity.getString(R.string.chat_list_error_network),
+            composeTestRule.activity.getString(R.string.chat_list_error_local),
         )
             .assertIsDisplayed()
     }
@@ -416,7 +421,10 @@ class ChatListScreenComponentTest {
 
     @Test
     fun `ChatListScreen preserves error state after configuration change`() {
-        val screenState = createTestScreenState(error = FlowChatListError.NetworkNotAvailable)
+        val screenState =
+            createTestScreenState(
+                error = LocalOperationFailed(LocalStorageError.Corrupted),
+            )
 
         composeTestRule.setContent {
             MessengerTheme {
@@ -434,7 +442,7 @@ class ChatListScreenComponentTest {
 
         // Verify error is displayed
         composeTestRule.onNodeWithText(
-            composeTestRule.activity.getString(R.string.chat_list_error_network),
+            composeTestRule.activity.getString(R.string.chat_list_error_local),
         )
             .assertIsDisplayed()
 
@@ -444,7 +452,7 @@ class ChatListScreenComponentTest {
 
         // Verify error is still displayed
         composeTestRule.onNodeWithText(
-            composeTestRule.activity.getString(R.string.chat_list_error_network),
+            composeTestRule.activity.getString(R.string.chat_list_error_local),
         )
             .assertIsDisplayed()
     }

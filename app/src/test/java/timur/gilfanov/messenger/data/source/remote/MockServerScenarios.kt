@@ -9,7 +9,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
-import java.io.IOException
+import java.net.ConnectException
 import java.util.UUID
 import kotlin.time.Instant
 import kotlinx.coroutines.delay
@@ -188,7 +188,7 @@ object MockServerScenarios {
 
     suspend fun MockRequestHandleScope.respondWithNetworkError(delayMs: Long = 0): Nothing {
         if (delayMs > 0) delay(delayMs)
-        throw IOException("Network connection failed")
+        throw ConnectException("Network connection failed")
     }
 
     suspend fun MockRequestHandleScope.respondWithInvalidJson(

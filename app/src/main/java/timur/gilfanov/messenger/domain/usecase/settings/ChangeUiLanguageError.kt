@@ -1,13 +1,17 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
 
 /**
  * Errors that can occur during UI language change operations.
  *
- * Represents failures at the use case layer, combining identity retrieval errors
- * with repository-level language change errors.
+ * ## Identity Errors
+ * - [Unauthorized] - Failed to retrieve current user identity
+ *
+ * ## Data Source Errors
+ * - [LocalOperationFailed] - Local storage operation failed
  */
 sealed interface ChangeUiLanguageError {
     /**
@@ -19,11 +23,17 @@ sealed interface ChangeUiLanguageError {
     data object Unauthorized : ChangeUiLanguageError
 
     /**
-     * Language change operation failed at the repository layer.
+     * Local storage operation failed.
      *
-     * Wraps errors from [ChangeLanguageRepositoryError] such as network failures,
-     * local storage issues, or backup synchronization problems.
+     * @property error The underlying [LocalStorageError] instance
      */
-    data class ChangeLanguageRepository(val error: ChangeLanguageRepositoryError) :
-        ChangeUiLanguageError
+    data class LocalOperationFailed(val error: LocalStorageError) : ChangeUiLanguageError
+}
+
+/**
+ * Maps a [ChangeLanguageRepositoryError] to the corresponding [ChangeUiLanguageError].
+ */
+internal fun ChangeLanguageRepositoryError.toUseCaseError(): ChangeUiLanguageError = when (this) {
+    is ChangeLanguageRepositoryError.LocalOperationFailed ->
+        ChangeUiLanguageError.LocalOperationFailed(error)
 }

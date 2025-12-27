@@ -1,10 +1,9 @@
-package timur.gilfanov.messenger.domain.usecase.profile.repository
+package timur.gilfanov.messenger.domain.usecase.common
 
 import kotlin.time.Duration
-import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
 
 /**
- * Common error taxonomy for user repository operations involving remote data.
+ * Common error taxonomy for repository operations involving remote data.
  *
  * Introduced to remove duplication across multiple use cases that share similar error modes.
  *
@@ -18,19 +17,19 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
  * - [Failed] - Operation definitely failed with a known error
  * - [UnknownStatus] - Operation outcome is unknown
  */
-sealed interface RepositoryError {
+sealed interface RemoteError {
     /** Caller is unauthenticated or the session expired. */
-    data object Unauthenticated : RepositoryError
+    data object Unauthenticated : RemoteError
 
     /** Caller lacks permission to perform the operation for the current identity. */
-    data object InsufficientPermissions : RepositoryError
+    data object InsufficientPermissions : RemoteError
 
     /**
      * Operation definitely failed. Each subtype captures a concrete failure mode reported by lower
      * layers, such as network connectivity, service throttling, or unexpected infrastructure
      * issues.
      */
-    sealed interface Failed : RepositoryError {
+    sealed interface Failed : RemoteError {
         /** No network connectivity at the moment of the operation attempt. */
         data object NetworkNotAvailable : Failed
 
@@ -52,7 +51,7 @@ sealed interface RepositoryError {
      * The operation outcome is unknown (e.g., request timed out after being sent). Callers may need
      * to query status or re-attempt once the underlying condition clears.
      */
-    sealed interface UnknownStatus : RepositoryError {
+    sealed interface UnknownStatus : RemoteError {
         /** Request timed out before the service confirmed success or failure. */
         data object ServiceTimeout : UnknownStatus
     }

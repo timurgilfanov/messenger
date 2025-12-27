@@ -21,7 +21,8 @@ import timur.gilfanov.messenger.util.Logger
  *
  * ## Error Handling
  * - [ObserveUiLanguageError.Unauthorized]: Current user identity cannot be retrieved
- * - [ObserveUiLanguageError.ObserveLanguageRepository]: Settings retrieval failed
+ * - [ObserveUiLanguageError.SettingsResetToDefaults]: Settings were not found and reset
+ * - [ObserveUiLanguageError.LocalOperationFailed]: Local storage operation failed
  *
  * @property identityRepository Provides access to the current user's identity
  * @property settingsRepository Provides access to user settings including language preference
@@ -51,7 +52,7 @@ class ObserveUiLanguageUseCase(
                                         TAG,
                                         "Settings observation failed: $error",
                                     )
-                                    ObserveUiLanguageError.ObserveLanguageRepository(error)
+                                    error.toObserveUiLanguageError()
                                 },
                             )
                         }

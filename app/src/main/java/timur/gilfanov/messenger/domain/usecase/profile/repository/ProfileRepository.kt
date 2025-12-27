@@ -5,6 +5,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.PictureUri
 import timur.gilfanov.messenger.domain.entity.profile.Profile
 import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 
 /**
  * Repository for managing user profile data.
@@ -20,7 +21,7 @@ interface ProfileRepository {
      * @param userId The unique identifier of the user to observe
      * @return Flow emitting profile updates or errors
      */
-    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, RepositoryError>>
+    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, ObserveProfileError>>
 
     /**
      * Updates user's display name.

@@ -37,11 +37,8 @@ import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteUnreachable
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.NotEmpty
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
@@ -170,7 +167,9 @@ private fun ChatListContent(
 
         is NotEmpty -> LazyColumn(
             state = listState,
-            modifier = modifier.fillMaxSize().testTag("chat_list"),
+            modifier = modifier
+                .fillMaxSize()
+                .testTag("chat_list"),
         ) {
             items(
                 items = screenState.uiState.chats,
@@ -257,11 +256,9 @@ private fun getStatusText(uiState: ChatListUiState): String = when (uiState) {
 }
 
 @Composable
-private fun getErrorMessage(error: FlowChatListError): String = when (error) {
-    NetworkNotAvailable -> stringResource(R.string.chat_list_error_network)
-    RemoteError -> stringResource(R.string.chat_list_error_server)
-    RemoteUnreachable -> stringResource(R.string.chat_list_error_server_unreachable)
-    LocalError -> stringResource(R.string.chat_list_error_local)
+private fun getErrorMessage(error: FlowChatListRepositoryError): String = when (error) {
+    is FlowChatListRepositoryError.LocalOperationFailed ->
+        stringResource(R.string.chat_list_error_local)
 }
 
 @Preview(showBackground = true)
@@ -415,7 +412,9 @@ private fun ChatListScreenErrorPreview() {
                 ),
                 isLoading = false,
                 isRefreshing = false,
-                error = NetworkNotAvailable,
+                error = FlowChatListRepositoryError.LocalOperationFailed(
+                    LocalStorageError.Corrupted,
+                ),
             ),
             actions = ChatListContentActions(
                 onChatClick = {},

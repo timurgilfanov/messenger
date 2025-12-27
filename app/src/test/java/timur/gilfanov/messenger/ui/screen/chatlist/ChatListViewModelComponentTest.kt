@@ -28,9 +28,11 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -74,7 +76,8 @@ class ChatListViewModelComponentTest {
     }
 
     private class RepositoryFake(
-        private val chatListFlow: Flow<ResultWithError<List<ChatPreview>, FlowChatListError>> =
+        private val chatListFlow:
+        Flow<ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>> =
             flowOf(
                 Success(emptyList()),
             ),
@@ -82,7 +85,7 @@ class ChatListViewModelComponentTest {
     ) : ChatRepository {
 
         override suspend fun flowChatList(): Flow<
-            ResultWithError<List<ChatPreview>, FlowChatListError>,
+            ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>,
             > =
             chatListFlow
 
@@ -99,7 +102,7 @@ class ChatListViewModelComponentTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = error("Not implemented")
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = error("Not implemented")
     }
 
     @Test
@@ -147,75 +150,11 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `ViewModel handles network error correctly`() = runTest {
-        val repository = RepositoryFake(
-            chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.NetworkNotAvailable)),
-        )
-        val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
-
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitState()
-
-            assertTrue(state.uiState is ChatListUiState.NotEmpty)
-            assertEquals(0, state.uiState.chats.size)
-            assertEquals(false, state.isLoading)
-            assertEquals(false, state.isRefreshing)
-            assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
-
-            job.cancelAndJoin()
-        }
-    }
-
-    @Test
-    fun `ViewModel handles server error correctly`() = runTest {
-        val repository = RepositoryFake(
-            chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.RemoteError)),
-        )
-        val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
-
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitState()
-
-            assertTrue(state.uiState is ChatListUiState.NotEmpty)
-            assertEquals(0, state.uiState.chats.size)
-            assertEquals(false, state.isLoading)
-            assertEquals(false, state.isRefreshing)
-            assertEquals(FlowChatListError.RemoteError, state.error)
-
-            job.cancelAndJoin()
-        }
-    }
-
-    @Test
-    fun `ViewModel handles server unreachable error correctly`() = runTest {
-        val repository = RepositoryFake(
-            chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.RemoteUnreachable)),
-        )
-        val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
-
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitState()
-
-            assertTrue(state.uiState is ChatListUiState.NotEmpty)
-            assertEquals(0, state.uiState.chats.size)
-            assertEquals(false, state.isLoading)
-            assertEquals(false, state.isRefreshing)
-            assertEquals(FlowChatListError.RemoteUnreachable, state.error)
-
-            job.cancelAndJoin()
-        }
-    }
-
-    @Test
     fun `ViewModel handles local error correctly`() = runTest {
         val repository = RepositoryFake(
-            chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.LocalError)),
+            chatListFlow = flowOf(
+                ResultWithError.Failure(LocalOperationFailed(LocalStorageError.Corrupted)),
+            ),
         )
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
@@ -228,7 +167,7 @@ class ChatListViewModelComponentTest {
             assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
-            assertEquals(FlowChatListError.LocalError, state.error)
+            assertEquals(LocalOperationFailed(LocalStorageError.Corrupted), state.error)
 
             job.cancelAndJoin()
         }
@@ -296,9 +235,10 @@ class ChatListViewModelComponentTest {
 
     @Test
     fun `ViewModel handles chat updates correctly`() = runTest {
-        val chatListFlow = MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListError>>(
-            Success(listOf(ChatPreview.fromChat(createTestChat(name = "Initial Chat")))),
-        )
+        val chatListFlow =
+            MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>>(
+                Success(listOf(ChatPreview.fromChat(createTestChat(name = "Initial Chat")))),
+            )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
@@ -326,9 +266,10 @@ class ChatListViewModelComponentTest {
 
     @Test
     fun `ViewModel clears error on successful data load`() = runTest {
-        val chatListFlow = MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListError>>(
-            ResultWithError.Failure(FlowChatListError.NetworkNotAvailable),
-        )
+        val chatListFlow =
+            MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>>(
+                ResultWithError.Failure(LocalOperationFailed(LocalStorageError.Corrupted)),
+            )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
@@ -338,7 +279,10 @@ class ChatListViewModelComponentTest {
 
             // Initial error state
             val errorState = awaitState()
-            assertEquals(FlowChatListError.NetworkNotAvailable, errorState.error)
+            assertEquals(
+                LocalOperationFailed(LocalStorageError.Corrupted),
+                errorState.error,
+            )
 
             // Fix the error with successful data
             chatListFlow.value = Success(emptyList())
@@ -354,7 +298,11 @@ class ChatListViewModelComponentTest {
     @Test
     fun `ViewModel stops loading and refreshing on error`() = runTest {
         val repository = RepositoryFake(
-            chatListFlow = flowOf(ResultWithError.Failure(FlowChatListError.NetworkNotAvailable)),
+            chatListFlow = flowOf(
+                ResultWithError.Failure(
+                    LocalOperationFailed(LocalStorageError.Corrupted),
+                ),
+            ),
         )
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
@@ -365,7 +313,7 @@ class ChatListViewModelComponentTest {
 
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)
-            assertEquals(FlowChatListError.NetworkNotAvailable, state.error)
+            assertEquals(LocalOperationFailed(LocalStorageError.Corrupted), state.error)
 
             job.cancelAndJoin()
         }

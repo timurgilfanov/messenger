@@ -1,7 +1,5 @@
 package timur.gilfanov.messenger.domain.usecase.profile
 
-import timur.gilfanov.messenger.domain.usecase.profile.repository.ObserveProfileRepositoryError
-
 /**
  * Errors that can occur during profile observation operations.
  *
@@ -14,12 +12,4 @@ sealed interface ObserveProfileError {
      * This error occurs when the identity needed for profile observation cannot be retrieved.
      */
     data object Unauthorized : ObserveProfileError
-
-    /**
-     * Profile observation operation failed at the repository layer.
-     *
-     * Wraps errors from [ObserveProfileRepositoryError].
-     */
-    data class ObserveProfileRepository(val error: ObserveProfileRepositoryError) :
-        ObserveProfileError
 }

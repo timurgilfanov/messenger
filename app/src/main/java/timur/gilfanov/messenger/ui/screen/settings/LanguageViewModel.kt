@@ -65,17 +65,17 @@ class LanguageViewModel @Inject constructor(
                     },
                     onFailure = { error ->
                         when (error) {
-                            is ObserveUiLanguageError.ObserveLanguageRepository -> {
-                                logger.i(
-                                    TAG,
-                                    "Language observation failed with repository error: ${error.error}",
-                                )
-                            }
-
                             ObserveUiLanguageError.Unauthorized -> {
                                 logger.i(TAG, "Language observation failed with Unauthorized error")
-                                postSideEffect(
-                                    LanguageSideEffects.Unauthorized,
+                                postSideEffect(LanguageSideEffects.Unauthorized)
+                            }
+                            ObserveUiLanguageError.SettingsResetToDefaults -> {
+                                logger.i(TAG, "Settings were reset to defaults")
+                            }
+                            is ObserveUiLanguageError.LocalOperationFailed -> {
+                                logger.i(
+                                    TAG,
+                                    "Language observation failed with local error: ${error.error}",
                                 )
                             }
                         }
@@ -97,19 +97,16 @@ class LanguageViewModel @Inject constructor(
                 },
                 onFailure = { error ->
                     when (error) {
-                        is ChangeUiLanguageError.ChangeLanguageRepository -> {
-                            logger.i(
-                                TAG,
-                                "Language change failed with repository error: ${error.error}",
-                            )
-                            postSideEffect(LanguageSideEffects.ChangeFailed(error.error))
-                        }
-
                         ChangeUiLanguageError.Unauthorized -> {
                             logger.i(TAG, "Language change failed with Unauthorized error")
-                            postSideEffect(
-                                LanguageSideEffects.Unauthorized,
+                            postSideEffect(LanguageSideEffects.Unauthorized)
+                        }
+                        is ChangeUiLanguageError.LocalOperationFailed -> {
+                            logger.i(
+                                TAG,
+                                "Language change failed with local error: ${error.error}",
                             )
+                            postSideEffect(LanguageSideEffects.ChangeFailed(error.error))
                         }
                     }
                 },

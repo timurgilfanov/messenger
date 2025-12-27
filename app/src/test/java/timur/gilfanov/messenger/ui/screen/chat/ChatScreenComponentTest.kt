@@ -26,7 +26,8 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError.RemoteOperationFailed
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @RunWith(RobolectricTestRunner::class)
@@ -56,7 +57,7 @@ class ChatScreenComponentTest {
 
     @Test
     fun `chat screen shows error state`() {
-        val errorMessage = ReceiveChatUpdatesError.UnknownError
+        val errorMessage = RemoteOperationFailed(RemoteError.InsufficientPermissions)
         val errorState = ChatUiState.Error(errorMessage)
 
         composeTestRule.setContent {
@@ -258,7 +259,7 @@ class ChatScreenComponentTest {
 
     @Test
     fun `chat screen shows update error`() {
-        val updateError = ReceiveChatUpdatesError.UnknownError
+        val updateError = RemoteOperationFailed(RemoteError.InsufficientPermissions)
         val readyState = ChatUiState.Ready(
             id = testChatId,
             title = "Test Chat",

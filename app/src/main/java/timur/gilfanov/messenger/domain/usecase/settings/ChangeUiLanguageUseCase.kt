@@ -20,7 +20,7 @@ import timur.gilfanov.messenger.util.Logger
  *
  * ## Error Handling
  * - [ChangeUiLanguageError.Unauthorized]: Current user identity cannot be retrieved
- * - [ChangeUiLanguageError.ChangeLanguageRepository]: Language change operation failed
+ * - [ChangeUiLanguageError.LocalOperationFailed]: Local storage operation failed
  */
 class ChangeUiLanguageUseCase(
     private val identityRepository: IdentityRepository,
@@ -42,7 +42,7 @@ class ChangeUiLanguageUseCase(
                             TAG,
                             "Repository changeUiLanguage failed: $error",
                         )
-                        ChangeUiLanguageError.ChangeLanguageRepository(error)
+                        error.toUseCaseError()
                     }
             },
             onFailure = {

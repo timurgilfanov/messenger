@@ -32,7 +32,7 @@ class SyncSettingUseCase(
                         TAG,
                         "Repository syncSetting failed for user ${userId.id} key ${key.key}: $error",
                     )
-                    ResultWithError.Failure(SyncSettingError.SyncFailed(error))
+                    ResultWithError.Failure(error.toUseCaseError())
                 },
             )
         },

@@ -15,6 +15,7 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryFake
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
@@ -84,7 +85,7 @@ class LanguageScreenSideEffectsTest {
         val settingsRepository = createSettingsRepositoryFake(
             currentLanguage = UiLanguage.English,
             changeResult = ResultWithError.Failure(
-                ChangeLanguageRepositoryError.Recoverable.InsufficientStorage,
+                ChangeLanguageRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
             ),
         )
         return createViewModel(identityRepository, settingsRepository)

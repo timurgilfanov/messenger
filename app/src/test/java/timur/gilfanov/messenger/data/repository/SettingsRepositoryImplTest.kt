@@ -43,7 +43,8 @@ import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
-import timur.gilfanov.messenger.domain.usecase.profile.repository.RepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
@@ -311,18 +312,26 @@ class SettingsRepositoryImplTest {
         val cases = listOf(
             GetSettingError.SettingNotFound to SyncSettingRepositoryError.SettingNotFound,
             GetSettingError.ConcurrentModificationError to
-                SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable,
+                SyncSettingRepositoryError.LocalOperationFailed(
+                    LocalStorageError.TemporarilyUnavailable,
+                ),
             GetSettingError.DiskIOError to
-                SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable,
-            GetSettingError.StorageFull to SyncSettingRepositoryError.LocalStorageError.StorageFull,
+                SyncSettingRepositoryError.LocalOperationFailed(
+                    LocalStorageError.TemporarilyUnavailable,
+                ),
+            GetSettingError.StorageFull to SyncSettingRepositoryError.LocalOperationFailed(
+                LocalStorageError.StorageFull,
+            ),
             GetSettingError.DatabaseCorrupted to
-                SyncSettingRepositoryError.LocalStorageError.Corrupted,
+                SyncSettingRepositoryError.LocalOperationFailed(LocalStorageError.Corrupted),
             GetSettingError.AccessDenied to
-                SyncSettingRepositoryError.LocalStorageError.AccessDenied,
-            GetSettingError.ReadOnlyDatabase to
-                SyncSettingRepositoryError.LocalStorageError.ReadOnly,
+                SyncSettingRepositoryError.LocalOperationFailed(LocalStorageError.AccessDenied),
             GetSettingError.UnknownError(cause) to
-                SyncSettingRepositoryError.LocalStorageError.UnknownError(cause),
+                SyncSettingRepositoryError.LocalOperationFailed(
+                    LocalStorageError.UnknownError(
+                        cause,
+                    ),
+                ),
         )
 
         cases.forEach { (source, expected) ->
@@ -332,9 +341,12 @@ class SettingsRepositoryImplTest {
 
             assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
             assertEquals(expected::class, result.error::class)
-            if (expected is SyncSettingRepositoryError.LocalStorageError.UnknownError) {
-                assertIs<SyncSettingRepositoryError.LocalStorageError.UnknownError>(result.error)
-                assertEquals(cause, result.error.cause)
+            if (expected is SyncSettingRepositoryError.LocalOperationFailed &&
+                expected.error is LocalStorageError.UnknownError
+            ) {
+                val localOpFailed = result.error as SyncSettingRepositoryError.LocalOperationFailed
+                val unknownError = localOpFailed.error as LocalStorageError.UnknownError
+                assertEquals(cause, unknownError.cause)
             }
         }
     }
@@ -371,7 +383,7 @@ class SettingsRepositoryImplTest {
 
         assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
         assertIs<SyncSettingRepositoryError.RemoteSyncFailed>(result.error)
-        assertIs<RepositoryError.Failed.NetworkNotAvailable>(result.error.error)
+        assertIs<RemoteError.Failed.NetworkNotAvailable>(result.error.error)
     }
 
     @Test
@@ -481,7 +493,7 @@ class SettingsRepositoryImplTest {
 
         assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
         assertIs<SyncAllSettingsRepositoryError.RemoteSyncFailed>(result.error)
-        assertIs<RepositoryError.Failed.ServiceDown>(result.error.error)
+        assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
     }
 
     @Test
@@ -534,19 +546,31 @@ class SettingsRepositoryImplTest {
         val cause = RuntimeException("Test database error")
         val cases = listOf(
             GetUnsyncedSettingsError.ConcurrentModificationError to
-                SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable,
+                SyncAllSettingsRepositoryError.LocalOperationFailed(
+                    LocalStorageError.TemporarilyUnavailable,
+                ),
             GetUnsyncedSettingsError.DiskIOError to
-                SyncAllSettingsRepositoryError.LocalStorageError.TemporarilyUnavailable,
+                SyncAllSettingsRepositoryError.LocalOperationFailed(
+                    LocalStorageError.TemporarilyUnavailable,
+                ),
             GetUnsyncedSettingsError.StorageFull to
-                SyncAllSettingsRepositoryError.LocalStorageError.StorageFull,
+                SyncAllSettingsRepositoryError.LocalOperationFailed(
+                    LocalStorageError.StorageFull,
+                ),
             GetUnsyncedSettingsError.DatabaseCorrupted to
-                SyncAllSettingsRepositoryError.LocalStorageError.Corrupted,
+                SyncAllSettingsRepositoryError.LocalOperationFailed(
+                    LocalStorageError.Corrupted,
+                ),
             GetUnsyncedSettingsError.AccessDenied to
-                SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied,
-            GetUnsyncedSettingsError.ReadOnlyDatabase to
-                SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly,
+                SyncAllSettingsRepositoryError.LocalOperationFailed(
+                    LocalStorageError.AccessDenied,
+                ),
             GetUnsyncedSettingsError.UnknownError(cause) to
-                SyncAllSettingsRepositoryError.LocalStorageError.UnknownError(cause),
+                SyncAllSettingsRepositoryError.LocalOperationFailed(
+                    LocalStorageError.UnknownError(
+                        cause,
+                    ),
+                ),
         )
 
         cases.forEach { (source, expected) ->
@@ -556,11 +580,10 @@ class SettingsRepositoryImplTest {
 
             assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
             assertEquals(expected::class, result.error::class)
-            if (expected is SyncAllSettingsRepositoryError.LocalStorageError.UnknownError) {
-                assertIs<SyncAllSettingsRepositoryError.LocalStorageError.UnknownError>(
-                    result.error,
-                )
-                assertEquals(cause, result.error.cause)
+            if (expected.error is LocalStorageError.UnknownError) {
+                assertIs<SyncAllSettingsRepositoryError.LocalOperationFailed>(result.error)
+                assertIs<LocalStorageError.UnknownError>(result.error.error)
+                assertEquals(cause, result.error.error.cause)
             }
         }
     }
@@ -633,7 +656,8 @@ class SettingsRepositoryImplTest {
             val result = repository.syncAllPendingSettings(identity)
 
             assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
-            assertIs<SyncAllSettingsRepositoryError.LocalStorageError.StorageFull>(result.error)
+            assertIs<SyncAllSettingsRepositoryError.LocalOperationFailed>(result.error)
+            assertIs<LocalStorageError.StorageFull>(result.error.error)
         }
 
     @Test
@@ -659,7 +683,8 @@ class SettingsRepositoryImplTest {
             val result = repository.syncAllPendingSettings(identity)
 
             assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
-            assertIs<SyncAllSettingsRepositoryError.LocalStorageError.ReadOnly>(result.error)
+            assertIs<SyncAllSettingsRepositoryError.LocalOperationFailed>(result.error)
+            assertIs<LocalStorageError.ReadOnly>(result.error.error)
         }
 
     @Test
@@ -685,7 +710,8 @@ class SettingsRepositoryImplTest {
             val result = repository.syncAllPendingSettings(identity)
 
             assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
-            assertIs<SyncAllSettingsRepositoryError.LocalStorageError.AccessDenied>(result.error)
+            assertIs<SyncAllSettingsRepositoryError.LocalOperationFailed>(result.error)
+            assertIs<LocalStorageError.AccessDenied>(result.error.error)
         }
 
     @Test
@@ -729,20 +755,20 @@ class SettingsRepositoryImplTest {
         val cause = IllegalStateException("observe failed")
         val cases = listOf(
             GetSettingsLocalDataSourceError.Recoverable.AccessDenied to
-                GetSettingsRepositoryError.Recoverable.AccessDenied,
+                LocalStorageError.AccessDenied,
             GetSettingsLocalDataSourceError.Recoverable.DataCorruption to
-                GetSettingsRepositoryError.Recoverable.DataCorruption,
+                LocalStorageError.Corrupted,
             GetSettingsLocalDataSourceError.Recoverable.InsufficientStorage to
-                GetSettingsRepositoryError.Recoverable.InsufficientStorage,
+                LocalStorageError.StorageFull,
             GetSettingsLocalDataSourceError.Recoverable.ReadOnly to
-                GetSettingsRepositoryError.Recoverable.ReadOnly,
+                LocalStorageError.ReadOnly,
             GetSettingsLocalDataSourceError.Recoverable.TemporarilyUnavailable to
-                GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable,
+                LocalStorageError.TemporarilyUnavailable,
             GetSettingsLocalDataSourceError.UnknownError(cause) to
-                GetSettingsRepositoryError.UnknownError(cause),
+                LocalStorageError.UnknownError(cause),
         )
 
-        cases.forEach { (sourceError, expected) ->
+        cases.forEach { (sourceError, expectedLocalError) ->
             val failingLocal = LocalSettingsDataSourceFake().apply {
                 setObserveBehavior(sourceError)
             }
@@ -763,11 +789,13 @@ class SettingsRepositoryImplTest {
             repo.observeSettings(identity).test {
                 val result = awaitItem()
                 assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(result)
-                assertEquals(expected::class, result.error::class)
-                if (expected is GetSettingsRepositoryError.UnknownError) {
+                val error = result.error
+                assertIs<GetSettingsRepositoryError.LocalOperationFailed>(error)
+                assertEquals(expectedLocalError::class, error.error::class)
+                if (expectedLocalError is LocalStorageError.UnknownError) {
                     assertEquals(
                         cause,
-                        (result.error as GetSettingsRepositoryError.UnknownError).cause,
+                        (error.error as LocalStorageError.UnknownError).cause,
                     )
                 }
                 awaitComplete()
@@ -813,34 +841,30 @@ class SettingsRepositoryImplTest {
     fun `changeUiLanguage maps transform errors`() = runTest {
         val cause = IllegalStateException("boom")
         val cases = listOf(
-            TransformSettingError.AccessDenied to
-                ChangeLanguageRepositoryError.Recoverable.AccessDenied,
-            TransformSettingError.DiskIOError to
-                ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable,
+            TransformSettingError.AccessDenied to LocalStorageError.AccessDenied,
+            TransformSettingError.DiskIOError to LocalStorageError.TemporarilyUnavailable,
             TransformSettingError.ConcurrentModificationError to
-                ChangeLanguageRepositoryError.Recoverable.TemporarilyUnavailable,
-            TransformSettingError.DatabaseCorrupted to
-                ChangeLanguageRepositoryError.Recoverable.DataCorruption,
-            TransformSettingError.ReadOnlyDatabase to
-                ChangeLanguageRepositoryError.Recoverable.ReadOnly,
-            TransformSettingError.StorageFull to
-                ChangeLanguageRepositoryError.Recoverable.InsufficientStorage,
-            TransformSettingError.UnknownError(cause) to
-                ChangeLanguageRepositoryError.UnknownError(cause),
+                LocalStorageError.TemporarilyUnavailable,
+            TransformSettingError.DatabaseCorrupted to LocalStorageError.Corrupted,
+            TransformSettingError.ReadOnlyDatabase to LocalStorageError.ReadOnly,
+            TransformSettingError.StorageFull to LocalStorageError.StorageFull,
+            TransformSettingError.UnknownError(cause) to LocalStorageError.UnknownError(cause),
         )
 
-        cases.forEach { (transformError, expected) ->
+        cases.forEach { (transformError, expectedLocalError) ->
             localDataSource.clear()
             localDataSource.setTransformBehavior(transformError)
 
             val result = repository.changeUiLanguage(identity, UiLanguage.German)
 
             assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
-            assertEquals(expected::class, result.error::class)
-            if (expected is ChangeLanguageRepositoryError.UnknownError) {
+            val error = result.error
+            assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(error)
+            assertEquals(expectedLocalError::class, error.error::class)
+            if (expectedLocalError is LocalStorageError.UnknownError) {
                 assertEquals(
                     cause,
-                    (result.error as ChangeLanguageRepositoryError.UnknownError).cause,
+                    (error.error as LocalStorageError.UnknownError).cause,
                 )
             }
         }
@@ -871,7 +895,9 @@ class SettingsRepositoryImplTest {
         val result = repoWithRemote.changeUiLanguage(identity, UiLanguage.German)
 
         assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
-        assertIs<ChangeLanguageRepositoryError.Recoverable.AccessDenied>(result.error)
+        val error = result.error
+        assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(error)
+        assertIs<LocalStorageError.AccessDenied>(error.error)
     }
 
     @Test
@@ -902,35 +928,38 @@ class SettingsRepositoryImplTest {
 
             assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
             val error = result.error
-            assertIs<ChangeLanguageRepositoryError.UnknownError>(error)
-            assertEquals(cause, error.cause)
+            assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(error)
+            val localError = error.error
+            assertIs<LocalStorageError.UnknownError>(localError)
+            assertEquals(cause, localError.cause)
         }
 
     @Test
-    fun `changeUiLanguage returns InsufficientStorage when recovery defaults fail to upsert`() =
-        runTest {
-            val stub = RemoteSettingsDataSourceStub()
-            stub.setGetResponse(
-                ResultWithError.Failure(
-                    RemoteSettingsDataSourceError.RemoteDataSource(
-                        RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
-                    ),
+    fun `changeUiLanguage returns StorageFull when recovery defaults fail to upsert`() = runTest {
+        val stub = RemoteSettingsDataSourceStub()
+        stub.setGetResponse(
+            ResultWithError.Failure(
+                RemoteSettingsDataSourceError.RemoteDataSource(
+                    RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
                 ),
-            )
-            localDataSource.setUpsertBehavior(UpsertSettingError.StorageFull)
-            val repoWithRemote = SettingsRepositoryImpl(
-                localDataSource = localDataSource,
-                remoteDataSource = stub,
-                syncScheduler = syncSchedulerStub,
-                logger = NoOpLogger(),
-                defaultSettings = defaultSettings,
-            )
+            ),
+        )
+        localDataSource.setUpsertBehavior(UpsertSettingError.StorageFull)
+        val repoWithRemote = SettingsRepositoryImpl(
+            localDataSource = localDataSource,
+            remoteDataSource = stub,
+            syncScheduler = syncSchedulerStub,
+            logger = NoOpLogger(),
+            defaultSettings = defaultSettings,
+        )
 
-            val result = repoWithRemote.changeUiLanguage(identity, UiLanguage.German)
+        val result = repoWithRemote.changeUiLanguage(identity, UiLanguage.German)
 
-            assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
-            assertIs<ChangeLanguageRepositoryError.Recoverable.InsufficientStorage>(result.error)
-        }
+        assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
+        val error = result.error
+        assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(error)
+        assertIs<LocalStorageError.StorageFull>(error.error)
+    }
 
     @Test
     fun `changeUiLanguage with no local and no remote creates default then applies change`() =
@@ -1343,7 +1372,8 @@ class SettingsRepositoryImplTest {
         val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
-        assertIs<SyncSettingRepositoryError.LocalStorageError.TemporarilyUnavailable>(result.error)
+        assertIs<SyncSettingRepositoryError.LocalOperationFailed>(result.error)
+        assertIs<LocalStorageError.TemporarilyUnavailable>(result.error.error)
     }
 
     @Test
@@ -1377,7 +1407,8 @@ class SettingsRepositoryImplTest {
         val result = repository.syncSetting(identity, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
-        assertIs<SyncSettingRepositoryError.LocalStorageError.StorageFull>(result.error)
+        assertIs<SyncSettingRepositoryError.LocalOperationFailed>(result.error)
+        assertIs<LocalStorageError.StorageFull>(result.error.error)
     }
 
     @Suppress("LongParameterList")

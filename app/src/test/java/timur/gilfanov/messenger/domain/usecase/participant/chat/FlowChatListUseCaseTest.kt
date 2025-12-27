@@ -19,11 +19,9 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalOperationFailed
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
-import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(Unit::class)
 class FlowChatListUseCaseTest {
@@ -78,10 +76,10 @@ class FlowChatListUseCaseTest {
 
     @Test
     fun `returns error from repository`() = runTest {
-        val networkError = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)
+        val localError = LocalOperationFailed(LocalStorageError.Corrupted)
         val repository = RepositoryFake(
             chatListFlow = flow {
-                emit(ResultWithError.Failure(networkError))
+                emit(ResultWithError.Failure(localError))
             },
         )
 
@@ -90,7 +88,7 @@ class FlowChatListUseCaseTest {
         useCase().test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(result)
-            assertEquals(networkError, result.error)
+            assertEquals(localError, result.error)
             awaitComplete()
         }
     }
@@ -115,12 +113,12 @@ class FlowChatListUseCaseTest {
 
     @Test
     fun `handles multiple errors in flow`() = runTest {
-        val networkError = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)
-        val remoteError = RemoteOperationFailed(RemoteError.Unauthenticated)
+        val error1 = LocalOperationFailed(LocalStorageError.Corrupted)
+        val error2 = LocalOperationFailed(LocalStorageError.TemporarilyUnavailable)
         val repository = RepositoryFake(
             chatListFlow = flow {
-                emit(ResultWithError.Failure(networkError))
-                emit(ResultWithError.Failure(remoteError))
+                emit(ResultWithError.Failure(error1))
+                emit(ResultWithError.Failure(error2))
             },
         )
 
@@ -129,11 +127,11 @@ class FlowChatListUseCaseTest {
         useCase().test {
             val firstResult = awaitItem()
             assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(firstResult)
-            assertEquals(networkError, firstResult.error)
+            assertEquals(error1, firstResult.error)
 
             val secondResult = awaitItem()
             assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(secondResult)
-            assertEquals(remoteError, secondResult.error)
+            assertEquals(error2, secondResult.error)
             awaitComplete()
         }
     }
@@ -141,11 +139,11 @@ class FlowChatListUseCaseTest {
     @Test
     fun `handles mixed success and errors`() = runTest {
         val chat = ChatPreview.fromChat(buildChat { name = "Test Chat" })
-        val networkError = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)
+        val localError = LocalOperationFailed(LocalStorageError.Corrupted)
         val repository = RepositoryFake(
             chatListFlow = flow {
                 emit(ResultWithError.Success(listOf(chat)))
-                emit(ResultWithError.Failure(networkError))
+                emit(ResultWithError.Failure(localError))
                 emit(ResultWithError.Success(listOf(chat)))
             },
         )
@@ -159,7 +157,7 @@ class FlowChatListUseCaseTest {
 
             val secondResult = awaitItem()
             assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(secondResult)
-            assertEquals(networkError, secondResult.error)
+            assertEquals(localError, secondResult.error)
 
             val thirdResult = awaitItem()
             assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(thirdResult)
@@ -170,16 +168,12 @@ class FlowChatListUseCaseTest {
 
     @Test
     fun `handles different error types`() = runTest {
-        val networkError = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)
-        val remoteError = RemoteOperationFailed(RemoteError.Unauthenticated)
-        val localError = LocalOperationFailed(LocalStorageError.Corrupted)
-        val remoteUnreachable = RemoteOperationFailed(RemoteError.Failed.ServiceDown)
+        val error1 = LocalOperationFailed(LocalStorageError.Corrupted)
+        val error2 = LocalOperationFailed(LocalStorageError.TemporarilyUnavailable)
         val repository = RepositoryFake(
             chatListFlow = flow {
-                emit(ResultWithError.Failure(networkError))
-                emit(ResultWithError.Failure(remoteError))
-                emit(ResultWithError.Failure(localError))
-                emit(ResultWithError.Failure(remoteUnreachable))
+                emit(ResultWithError.Failure(error1))
+                emit(ResultWithError.Failure(error2))
             },
         )
 
@@ -188,19 +182,12 @@ class FlowChatListUseCaseTest {
         useCase().test {
             val firstResult = awaitItem()
             assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(firstResult)
-            assertEquals(networkError, firstResult.error)
+            assertEquals(error1, firstResult.error)
 
             val secondResult = awaitItem()
             assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(secondResult)
-            assertEquals(remoteError, secondResult.error)
+            assertEquals(error2, secondResult.error)
 
-            val thirdResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(thirdResult)
-            assertEquals(localError, thirdResult.error)
-
-            val fourthResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(fourthResult)
-            assertEquals(remoteUnreachable, fourthResult.error)
             awaitComplete()
         }
     }

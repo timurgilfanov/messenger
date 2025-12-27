@@ -38,7 +38,7 @@ import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.NotEmpty
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
@@ -258,17 +258,6 @@ private fun getStatusText(uiState: ChatListUiState): String = when (uiState) {
 @Composable
 private fun getErrorMessage(error: FlowChatListError): String = when (error) {
     is FlowChatListError.LocalOperationFailed -> stringResource(R.string.chat_list_error_local)
-    is FlowChatListError.RemoteOperationFailed -> when (error.error) {
-        is RemoteError.Failed.Cooldown -> TODO()
-        RemoteError.Failed.NetworkNotAvailable -> stringResource(R.string.chat_list_error_network)
-        RemoteError.Failed.ServiceDown -> stringResource(
-            R.string.chat_list_error_server_unreachable,
-        )
-        is RemoteError.Failed.UnknownServiceError -> stringResource(R.string.chat_list_error_server)
-        RemoteError.InsufficientPermissions -> TODO()
-        RemoteError.Unauthenticated -> TODO()
-        RemoteError.UnknownStatus.ServiceTimeout -> TODO()
-    }
 }
 
 @Preview(showBackground = true)
@@ -422,8 +411,8 @@ private fun ChatListScreenErrorPreview() {
                 ),
                 isLoading = false,
                 isRefreshing = false,
-                error = FlowChatListError.RemoteOperationFailed(
-                    RemoteError.Failed.NetworkNotAvailable,
+                error = FlowChatListError.LocalOperationFailed(
+                    LocalStorageError.Corrupted,
                 ),
             ),
             actions = ChatListContentActions(

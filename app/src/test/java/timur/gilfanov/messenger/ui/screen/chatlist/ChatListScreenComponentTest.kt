@@ -32,8 +32,8 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.RemoteOperationFailed
-import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Category(Component::class)
@@ -197,7 +197,7 @@ class ChatListScreenComponentTest {
     fun `ChatListScreen displays error message correctly`() {
         val screenState =
             createTestScreenState(
-                error = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+                error = LocalOperationFailed(LocalStorageError.Corrupted),
             )
 
         composeTestRule.setContent {
@@ -215,7 +215,7 @@ class ChatListScreenComponentTest {
         }
 
         composeTestRule.onNodeWithText(
-            composeTestRule.activity.getString(R.string.chat_list_error_network),
+            composeTestRule.activity.getString(R.string.chat_list_error_local),
         )
             .assertIsDisplayed()
     }
@@ -423,7 +423,7 @@ class ChatListScreenComponentTest {
     fun `ChatListScreen preserves error state after configuration change`() {
         val screenState =
             createTestScreenState(
-                error = RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+                error = LocalOperationFailed(LocalStorageError.Corrupted),
             )
 
         composeTestRule.setContent {
@@ -442,7 +442,7 @@ class ChatListScreenComponentTest {
 
         // Verify error is displayed
         composeTestRule.onNodeWithText(
-            composeTestRule.activity.getString(R.string.chat_list_error_network),
+            composeTestRule.activity.getString(R.string.chat_list_error_local),
         )
             .assertIsDisplayed()
 
@@ -452,7 +452,7 @@ class ChatListScreenComponentTest {
 
         // Verify error is still displayed
         composeTestRule.onNodeWithText(
-            composeTestRule.activity.getString(R.string.chat_list_error_network),
+            composeTestRule.activity.getString(R.string.chat_list_error_local),
         )
             .assertIsDisplayed()
     }

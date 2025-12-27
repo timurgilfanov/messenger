@@ -17,7 +17,6 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
  * - [OneToOneChatFull] - Cannot join a one-to-one chat that already has two participants
  * - [UserNotFound] - The user to join was not found
  * - [UserBlocked] - The user is blocked from joining this chat
- * - [CooldownActive] - User must wait before joining again
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed

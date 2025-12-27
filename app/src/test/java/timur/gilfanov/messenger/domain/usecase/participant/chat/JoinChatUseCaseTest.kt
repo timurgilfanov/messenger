@@ -22,7 +22,6 @@ import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositor
 import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.ChatClosed
 import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.ChatFull
 import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.CooldownActive
 import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.ExpiredInviteLink
 import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.InvalidInviteLink
 import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.LocalOperationFailed
@@ -244,13 +243,15 @@ class JoinChatUseCaseTest {
     fun `cooldown active`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val cooldownDuration = 30.seconds
-        val repository = RepositoryFake(CooldownActive(cooldownDuration))
+        val repository =
+            RepositoryFake(RemoteOperationFailed(RemoteError.Failed.Cooldown(cooldownDuration)))
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
         assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
-        assertIs<CooldownActive>(result.error)
-        assertEquals(cooldownDuration, (result.error as CooldownActive).remaining)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Failed.Cooldown>(result.error.error)
+        assertEquals(cooldownDuration, result.error.error.remaining)
     }
 }

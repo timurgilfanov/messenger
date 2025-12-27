@@ -14,7 +14,6 @@ import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingError
 import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingUseCase
-import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 @HiltWorker
@@ -74,25 +73,19 @@ class SyncSettingWorker @AssistedInject constructor(
                         logger.e(TAG, "Identity not available for user ${userId.id}")
                         Result.retry()
                     }
-                    is SyncSettingError.SyncFailed -> {
-                        handleSyncError(error.error)
+                    SyncSettingError.SettingNotFound -> {
+                        logger.e(TAG, "Setting not found")
+                        Result.failure()
+                    }
+                    is SyncSettingError.LocalOperationFailed -> {
+                        handleLocalError(error.error)
+                    }
+                    is SyncSettingError.RemoteSyncFailed -> {
+                        handleRemoteError(error.error)
                     }
                 }
             },
         )
-    }
-
-    private fun handleSyncError(error: SyncSettingRepositoryError): Result = when (error) {
-        is SyncSettingRepositoryError.LocalOperationFailed -> {
-            handleLocalError(error.error)
-        }
-        is SyncSettingRepositoryError.RemoteSyncFailed -> {
-            handleRemoteError(error.error)
-        }
-        SyncSettingRepositoryError.SettingNotFound -> {
-            logger.e(TAG, "Setting not found")
-            Result.failure()
-        }
     }
 
     private fun handleLocalError(error: LocalStorageError): Result = when (error) {

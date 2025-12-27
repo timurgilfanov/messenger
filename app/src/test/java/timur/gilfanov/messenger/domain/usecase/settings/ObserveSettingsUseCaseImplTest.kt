@@ -84,15 +84,15 @@ class ObserveSettingsUseCaseImplTest {
     }
 
     @Test
-    fun `emits ObserveSettingsRepository error when repository fails`() = runTest {
+    fun `emits LocalOperationFailed error when repository fails`() = runTest {
         val identity = createTestIdentity()
-        val repositoryError = GetSettingsRepositoryError.LocalOperationFailed(
-            LocalStorageError.UnknownError(Exception("Test error")),
-        )
+        val localStorageError = LocalStorageError.UnknownError(Exception("Test error"))
 
         val identityRepository = IdentityRepositoryStub(ResultWithError.Success(identity))
         val settingsRepository = SettingsRepositoryStub(
-            settings = ResultWithError.Failure(repositoryError),
+            settings = ResultWithError.Failure(
+                GetSettingsRepositoryError.LocalOperationFailed(localStorageError),
+            ),
         )
 
         val useCase = ObserveSettingsUseCaseImpl(
@@ -105,8 +105,8 @@ class ObserveSettingsUseCaseImplTest {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Settings, ObserveSettingsError>>(result)
             val error = result.error
-            assertIs<ObserveSettingsError.ObserveSettingsRepository>(error)
-            assertEquals(repositoryError, error.error)
+            assertIs<ObserveSettingsError.LocalOperationFailed>(error)
+            assertEquals(localStorageError, error.error)
             awaitComplete()
         }
     }

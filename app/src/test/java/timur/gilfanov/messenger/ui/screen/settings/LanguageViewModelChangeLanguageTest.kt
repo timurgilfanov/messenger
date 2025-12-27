@@ -119,7 +119,7 @@ class LanguageViewModelChangeLanguageTest {
     }
 
     @Test
-    fun `ChangeLanguageRepository StorageFull posts ChangeFailed side effect`() = runTest {
+    fun `LocalStorageError StorageFull posts ChangeFailed side effect`() = runTest {
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(
             currentLanguage = UiLanguage.English,
@@ -139,10 +139,7 @@ class LanguageViewModelChangeLanguageTest {
             viewModel.changeLanguage(UiLanguage.German)
 
             val sideEffect = assertIs<LanguageSideEffects.ChangeFailed>(awaitSideEffect())
-            val localError = assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(
-                sideEffect.error,
-            )
-            assertIs<LocalStorageError.StorageFull>(localError.error)
+            assertIs<LocalStorageError.StorageFull>(sideEffect.error)
 
             testScheduler.advanceTimeBy(300)
             expectNoItems()
@@ -152,7 +149,7 @@ class LanguageViewModelChangeLanguageTest {
     }
 
     @Test
-    fun `ChangeLanguageRepository Corrupted posts ChangeFailed side effect`() = runTest {
+    fun `LocalStorageError Corrupted posts ChangeFailed side effect`() = runTest {
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(
             currentLanguage = UiLanguage.English,
@@ -173,10 +170,7 @@ class LanguageViewModelChangeLanguageTest {
 
             val sideEffect = awaitSideEffect()
             assertIs<LanguageSideEffects.ChangeFailed>(sideEffect)
-            val localError = assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(
-                sideEffect.error,
-            )
-            assertIs<LocalStorageError.Corrupted>(localError.error)
+            assertIs<LocalStorageError.Corrupted>(sideEffect.error)
 
             testScheduler.advanceTimeBy(300)
             expectNoItems()
@@ -186,7 +180,7 @@ class LanguageViewModelChangeLanguageTest {
     }
 
     @Test
-    fun `ChangeLanguageRepository UnknownError posts ChangeFailed side effect`() = runTest {
+    fun `LocalStorageError UnknownError posts ChangeFailed side effect`() = runTest {
         val testException = RuntimeException("Test exception")
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(
@@ -210,10 +204,7 @@ class LanguageViewModelChangeLanguageTest {
 
             val sideEffect = awaitSideEffect()
             assertIs<LanguageSideEffects.ChangeFailed>(sideEffect)
-            val localError = assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(
-                sideEffect.error,
-            )
-            val unknownError = assertIs<LocalStorageError.UnknownError>(localError.error)
+            val unknownError = assertIs<LocalStorageError.UnknownError>(sideEffect.error)
             assertEquals(testException, unknownError.cause)
 
             testScheduler.advanceTimeBy(300)

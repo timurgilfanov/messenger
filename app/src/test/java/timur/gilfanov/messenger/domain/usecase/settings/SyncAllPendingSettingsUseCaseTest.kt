@@ -57,7 +57,7 @@ class SyncAllPendingSettingsUseCaseTest {
     }
 
     @Test
-    fun `when remote sync fails then returns SyncFailed with RemoteSyncFailed`() = runTest {
+    fun `when remote sync fails then returns RemoteSyncFailed`() = runTest {
         val identityRepository = IdentityRepositoryStub(
             identityFlow = flowOf(ResultWithError.Success(identity)),
         )
@@ -73,13 +73,12 @@ class SyncAllPendingSettingsUseCaseTest {
         val result = useCase()
 
         assertIs<ResultWithError.Failure<Unit, SyncAllPendingSettingsError>>(result)
-        assertIs<SyncAllPendingSettingsError.SyncFailed>(result.error)
-        assertIs<SyncAllSettingsRepositoryError.RemoteSyncFailed>(result.error.error)
-        assertIs<RemoteError.Failed.ServiceDown>(result.error.error.error)
+        assertIs<SyncAllPendingSettingsError.RemoteSyncFailed>(result.error)
+        assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
     }
 
     @Test
-    fun `when local storage fails then returns SyncFailed with LocalOperationFailed`() = runTest {
+    fun `when local storage fails then returns LocalOperationFailed`() = runTest {
         val identityRepository = IdentityRepositoryStub(
             identityFlow = flowOf(ResultWithError.Success(identity)),
         )
@@ -93,8 +92,7 @@ class SyncAllPendingSettingsUseCaseTest {
         val result = useCase()
 
         assertIs<ResultWithError.Failure<Unit, SyncAllPendingSettingsError>>(result)
-        assertIs<SyncAllPendingSettingsError.SyncFailed>(result.error)
-        assertIs<SyncAllSettingsRepositoryError.LocalOperationFailed>(result.error.error)
-        assertIs<LocalStorageError.StorageFull>(result.error.error.error)
+        assertIs<SyncAllPendingSettingsError.LocalOperationFailed>(result.error)
+        assertIs<LocalStorageError.StorageFull>(result.error.error)
     }
 }

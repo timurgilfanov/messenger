@@ -57,7 +57,7 @@ class SyncSettingUseCaseTest {
     }
 
     @Test
-    fun `when setting not found then returns SyncFailed with SettingNotFound`() = runTest {
+    fun `when setting not found then returns SettingNotFound`() = runTest {
         val identityRepository = IdentityRepositoryStub(
             identityResult = ResultWithError.Success(identity),
         )
@@ -71,12 +71,11 @@ class SyncSettingUseCaseTest {
         val result = useCase(userId, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<Unit, SyncSettingError>>(result)
-        assertIs<SyncSettingError.SyncFailed>(result.error)
-        assertIs<SyncSettingRepositoryError.SettingNotFound>(result.error.error)
+        assertIs<SyncSettingError.SettingNotFound>(result.error)
     }
 
     @Test
-    fun `when remote sync fails then returns SyncFailed with RemoteSyncFailed`() = runTest {
+    fun `when remote sync fails then returns RemoteSyncFailed`() = runTest {
         val identityRepository = IdentityRepositoryStub(
             identityResult = ResultWithError.Success(identity),
         )
@@ -92,8 +91,7 @@ class SyncSettingUseCaseTest {
         val result = useCase(userId, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<Unit, SyncSettingError>>(result)
-        assertIs<SyncSettingError.SyncFailed>(result.error)
-        assertIs<SyncSettingRepositoryError.RemoteSyncFailed>(result.error.error)
-        assertIs<RemoteError.Failed.NetworkNotAvailable>(result.error.error.error)
+        assertIs<SyncSettingError.RemoteSyncFailed>(result.error)
+        assertIs<RemoteError.Failed.NetworkNotAvailable>(result.error.error)
     }
 }

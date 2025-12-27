@@ -16,7 +16,6 @@ import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCaseStub
-import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
@@ -71,13 +70,11 @@ class SettingsViewModelObservationTest {
     }
 
     @Test
-    fun `Repository error posts ObserveSettingsFailed side effect`() = runTest {
-        val repositoryError = GetSettingsRepositoryError.LocalOperationFailed(
-            LocalStorageError.UnknownError(Exception("Test error")),
-        )
+    fun `LocalOperationFailed error posts ObserveSettingsFailed side effect`() = runTest {
+        val localStorageError = LocalStorageError.UnknownError(Exception("Test error"))
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Failure(
-                ObserveSettingsError.ObserveSettingsRepository(repositoryError),
+                ObserveSettingsError.LocalOperationFailed(localStorageError),
             ),
         )
         val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
@@ -85,7 +82,7 @@ class SettingsViewModelObservationTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
-            expectSideEffect(SettingsSideEffects.ObserveSettingsFailed(repositoryError))
+            expectSideEffect(SettingsSideEffects.ObserveSettingsFailed(localStorageError))
 
             testScheduler.advanceTimeBy(300)
             expectNoItems()
@@ -130,16 +127,14 @@ class SettingsViewModelObservationTest {
 
             expectState { SettingsUiState.Ready(SettingsUi(UiLanguage.English)) }
 
-            val repositoryError = GetSettingsRepositoryError.LocalOperationFailed(
-                LocalStorageError.UnknownError(Exception("Test error")),
-            )
+            val localStorageError = LocalStorageError.UnknownError(Exception("Test error"))
             settingsFlow.update {
                 ResultWithError.Failure(
-                    ObserveSettingsError.ObserveSettingsRepository(repositoryError),
+                    ObserveSettingsError.LocalOperationFailed(localStorageError),
                 )
             }
 
-            expectSideEffect(SettingsSideEffects.ObserveSettingsFailed(repositoryError))
+            expectSideEffect(SettingsSideEffects.ObserveSettingsFailed(localStorageError))
 
             testScheduler.advanceTimeBy(300)
             expectNoItems()

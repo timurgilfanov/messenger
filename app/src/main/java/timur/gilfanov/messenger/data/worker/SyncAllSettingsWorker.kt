@@ -11,7 +11,6 @@ import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.settings.SyncAllPendingSettingsError
 import timur.gilfanov.messenger.domain.usecase.settings.SyncAllPendingSettingsUseCase
-import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 @HiltWorker
@@ -34,21 +33,15 @@ class SyncAllSettingsWorker @AssistedInject constructor(
                     logger.e(TAG, "Identity not available for sync")
                     Result.retry()
                 }
-                is SyncAllPendingSettingsError.SyncFailed -> {
-                    handleSyncError(error.error)
+                is SyncAllPendingSettingsError.LocalOperationFailed -> {
+                    handleLocalError(error.error)
+                }
+                is SyncAllPendingSettingsError.RemoteSyncFailed -> {
+                    handleRemoteError(error.error)
                 }
             }
         },
     )
-
-    private fun handleSyncError(error: SyncAllSettingsRepositoryError): Result = when (error) {
-        is SyncAllSettingsRepositoryError.LocalOperationFailed -> {
-            handleLocalError(error.error)
-        }
-        is SyncAllSettingsRepositoryError.RemoteSyncFailed -> {
-            handleRemoteError(error.error)
-        }
-    }
 
     private fun handleLocalError(error: LocalStorageError): Result = when (error) {
         LocalStorageError.TemporarilyUnavailable -> {

@@ -122,7 +122,7 @@ class ObserveUiLanguageUseCaseTest {
     }
 
     @Test
-    fun `emits repository error when settings reset to defaults`() = runTest {
+    fun `emits SettingsResetToDefaults error when settings reset to defaults`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
@@ -134,14 +134,13 @@ class ObserveUiLanguageUseCaseTest {
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(result.error)
-            assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(result.error.error)
+            assertIs<ObserveUiLanguageError.SettingsResetToDefaults>(result.error)
             awaitComplete()
         }
     }
 
     @Test
-    fun `emits repository error on temporary errors`() = runTest {
+    fun `emits LocalOperationFailed error on temporary errors`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
@@ -159,10 +158,8 @@ class ObserveUiLanguageUseCaseTest {
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(result.error)
-            val repoError = result.error.error
-            assertIs<GetSettingsRepositoryError.LocalOperationFailed>(repoError)
-            assertIs<LocalStorageError.TemporarilyUnavailable>(repoError.error)
+            assertIs<ObserveUiLanguageError.LocalOperationFailed>(result.error)
+            assertIs<LocalStorageError.TemporarilyUnavailable>(result.error.error)
             awaitComplete()
         }
     }
@@ -192,7 +189,7 @@ class ObserveUiLanguageUseCaseTest {
 
             val second = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(second)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(second.error)
+            assertIs<ObserveUiLanguageError.LocalOperationFailed>(second.error)
 
             val third = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(third)
@@ -223,15 +220,12 @@ class ObserveUiLanguageUseCaseTest {
         useCase().test {
             val first = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(first)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(first.error)
-            val firstError = first.error.error
-            assertIs<GetSettingsRepositoryError.LocalOperationFailed>(firstError)
-            assertIs<LocalStorageError.TemporarilyUnavailable>(firstError.error)
+            assertIs<ObserveUiLanguageError.LocalOperationFailed>(first.error)
+            assertIs<LocalStorageError.TemporarilyUnavailable>(first.error.error)
 
             val second = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(second)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(second.error)
-            assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(second.error.error)
+            assertIs<ObserveUiLanguageError.SettingsResetToDefaults>(second.error)
 
             val third = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(third)

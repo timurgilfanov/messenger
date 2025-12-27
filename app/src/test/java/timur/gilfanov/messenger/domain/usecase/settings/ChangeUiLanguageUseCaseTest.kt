@@ -56,10 +56,8 @@ class ChangeUiLanguageUseCaseTest {
         val useCase = ChangeUiLanguageUseCase(identityRepository, settingsRepository, logger)
         val result = useCase(UiLanguage.English)
         assertIs<Failure<*, ChangeUiLanguageError>>(result)
-        assertIs<ChangeUiLanguageError.ChangeLanguageRepository>(result.error)
-        val repoError = result.error.error
-        assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(repoError)
-        assertIs<LocalStorageError.TemporarilyUnavailable>(repoError.error)
+        assertIs<ChangeUiLanguageError.LocalOperationFailed>(result.error)
+        assertIs<LocalStorageError.TemporarilyUnavailable>(result.error.error)
     }
 
     @Test

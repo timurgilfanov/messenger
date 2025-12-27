@@ -33,9 +33,8 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Error
@@ -203,9 +202,10 @@ class ChatViewModel @AssistedInject constructor(
                                 }
 
                                 is ResultWithError.Failure -> when (result.error) {
-                                    ChatNotFound -> Error(result.error)
-                                    is ReceiveChatUpdatesError.LocalOperationFailed,
-                                    is ReceiveChatUpdatesError.RemoteOperationFailed,
+                                    ReceiveChatUpdatesRepositoryError.ChatNotFound ->
+                                        Error(result.error)
+                                    is ReceiveChatUpdatesRepositoryError.LocalOperationFailed,
+                                    is ReceiveChatUpdatesRepositoryError.RemoteOperationFailed,
                                     -> when (val s = state) {
                                         is ChatUiState.Loading -> Loading(result.error)
 

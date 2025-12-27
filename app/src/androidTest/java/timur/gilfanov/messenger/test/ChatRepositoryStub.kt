@@ -9,32 +9,34 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.LeaveChatError
-import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
 
 class ChatRepositoryStub : ChatRepository {
 
-    override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatError> =
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatRepositoryError> =
         throw NotImplementedError()
 
-    override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, DeleteChatError> =
-        throw NotImplementedError()
+    override suspend fun deleteChat(
+        chatId: ChatId,
+    ): ResultWithError<Unit, DeleteChatRepositoryError> = throw NotImplementedError()
 
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, JoinChatError> = throw NotImplementedError()
+    ): ResultWithError<Chat, JoinChatRepositoryError> = throw NotImplementedError()
 
-    override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, LeaveChatError> =
-        throw NotImplementedError()
+    override suspend fun leaveChat(
+        chatId: ChatId,
+    ): ResultWithError<Unit, LeaveChatRepositoryError> = throw NotImplementedError()
 
     override suspend fun flowChatList(): Flow<
-        ResultWithError<List<ChatPreview>, FlowChatListError>,
+        ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>,
         > =
         flowOf(ResultWithError.Success(emptyList()))
 
@@ -42,10 +44,10 @@ class ChatRepositoryStub : ChatRepository {
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = emptyFlow()
+    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> = emptyFlow()
 
     override suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, MarkMessagesAsReadError> = throw NotImplementedError()
+    ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = throw NotImplementedError()
 }

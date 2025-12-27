@@ -17,20 +17,20 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 
 @Category(Unit::class)
 class FlowChatListUseCaseTest {
 
     private class RepositoryFake(
-        val chatListFlow: Flow<ResultWithError<List<ChatPreview>, FlowChatListError>>,
+        val chatListFlow: Flow<ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>>,
     ) : ChatRepository {
         override suspend fun flowChatList(): Flow<
-            ResultWithError<List<ChatPreview>, FlowChatListError>,
+            ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>,
             > =
             chatListFlow
 
@@ -45,7 +45,7 @@ class FlowChatListUseCaseTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<kotlin.Unit, MarkMessagesAsReadError> =
+        ): ResultWithError<kotlin.Unit, MarkMessagesAsReadRepositoryError> =
             ResultWithError.Success(kotlin.Unit)
     }
 
@@ -64,11 +64,13 @@ class FlowChatListUseCaseTest {
 
         useCase().test {
             val first = awaitItem()
-            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(first)
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListRepositoryError>>(first)
             assertEquals(listOf(chat1Preview), first.data)
 
             val second = awaitItem()
-            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(second)
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListRepositoryError>>(
+                second,
+            )
             assertEquals(listOf(chat1Preview, chat2Preview), second.data)
             awaitComplete()
         }
@@ -87,7 +89,7 @@ class FlowChatListUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(result)
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListRepositoryError>>(result)
             assertEquals(localError, result.error)
             awaitComplete()
         }
@@ -105,7 +107,7 @@ class FlowChatListUseCaseTest {
 
         useCase().test {
             val result = awaitItem()
-            assertIs<ResultWithError.Success<List<Chat>, FlowChatListError>>(result)
+            assertIs<ResultWithError.Success<List<Chat>, FlowChatListRepositoryError>>(result)
             assertEquals(emptyList(), result.data)
             awaitComplete()
         }
@@ -126,11 +128,13 @@ class FlowChatListUseCaseTest {
 
         useCase().test {
             val firstResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(firstResult)
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListRepositoryError>>(firstResult)
             assertEquals(error1, firstResult.error)
 
             val secondResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(secondResult)
+            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListRepositoryError>>(
+                secondResult,
+            )
             assertEquals(error2, secondResult.error)
             awaitComplete()
         }
@@ -152,15 +156,21 @@ class FlowChatListUseCaseTest {
 
         useCase().test {
             val firstResult = awaitItem()
-            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(firstResult)
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListRepositoryError>>(
+                firstResult,
+            )
             assertEquals(listOf(chat), firstResult.data)
 
             val secondResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(secondResult)
+            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListRepositoryError>>(
+                secondResult,
+            )
             assertEquals(localError, secondResult.error)
 
             val thirdResult = awaitItem()
-            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListError>>(thirdResult)
+            assertIs<ResultWithError.Success<List<ChatPreview>, FlowChatListRepositoryError>>(
+                thirdResult,
+            )
             assertEquals(listOf(chat), thirdResult.data)
             awaitComplete()
         }
@@ -181,11 +191,13 @@ class FlowChatListUseCaseTest {
 
         useCase().test {
             val firstResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListError>>(firstResult)
+            assertIs<ResultWithError.Failure<List<Chat>, FlowChatListRepositoryError>>(firstResult)
             assertEquals(error1, firstResult.error)
 
             val secondResult = awaitItem()
-            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListError>>(secondResult)
+            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListRepositoryError>>(
+                secondResult,
+            )
             assertEquals(error2, secondResult.error)
 
             awaitComplete()

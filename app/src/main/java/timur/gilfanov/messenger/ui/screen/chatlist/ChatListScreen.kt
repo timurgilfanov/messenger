@@ -37,7 +37,7 @@ import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.NotEmpty
@@ -256,8 +256,9 @@ private fun getStatusText(uiState: ChatListUiState): String = when (uiState) {
 }
 
 @Composable
-private fun getErrorMessage(error: FlowChatListError): String = when (error) {
-    is FlowChatListError.LocalOperationFailed -> stringResource(R.string.chat_list_error_local)
+private fun getErrorMessage(error: FlowChatListRepositoryError): String = when (error) {
+    is FlowChatListRepositoryError.LocalOperationFailed ->
+        stringResource(R.string.chat_list_error_local)
 }
 
 @Preview(showBackground = true)
@@ -411,7 +412,7 @@ private fun ChatListScreenErrorPreview() {
                 ),
                 isLoading = false,
                 isRefreshing = false,
-                error = FlowChatListError.LocalOperationFailed(
+                error = FlowChatListRepositoryError.LocalOperationFailed(
                     LocalStorageError.Corrupted,
                 ),
             ),

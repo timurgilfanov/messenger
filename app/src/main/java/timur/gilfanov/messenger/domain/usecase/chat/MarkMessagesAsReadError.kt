@@ -1,9 +1,5 @@
 package timur.gilfanov.messenger.domain.usecase.chat
 
-import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 
-sealed interface MarkMessagesAsReadError {
-    data object ChatNotFound : MarkMessagesAsReadError
-
-    data class RemoteOperationFailed(val error: RemoteError) : MarkMessagesAsReadError
-}
+typealias MarkMessagesAsReadError = MarkMessagesAsReadRepositoryError

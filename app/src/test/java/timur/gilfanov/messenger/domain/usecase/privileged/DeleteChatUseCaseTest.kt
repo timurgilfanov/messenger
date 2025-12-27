@@ -16,17 +16,19 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatError
 import timur.gilfanov.messenger.domain.usecase.chat.DeleteChatUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class DeleteChatUseCaseTest {
 
     private class RepositoryFake(
-        private val deleteChatResult: ResultWithError<Unit, DeleteChatError> =
+        private val deleteChatResult: ResultWithError<Unit, DeleteChatRepositoryError> =
             Success(Unit),
     ) : ChatRepository {
-        override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, DeleteChatError> =
-            deleteChatResult
+        override suspend fun deleteChat(
+            chatId: ChatId,
+        ): ResultWithError<Unit, DeleteChatRepositoryError> = deleteChatResult
 
         // Implement other required ChatRepository methods as not implemented for this test
         override suspend fun flowChatList() = error("Not implemented")
@@ -40,7 +42,7 @@ class DeleteChatUseCaseTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, MarkMessagesAsReadError> = error("Not implemented")
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = error("Not implemented")
     }
 
     @Test

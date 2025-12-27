@@ -16,21 +16,21 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(Unit::class)
 class ReceiveChatUpdatesUseCaseTest {
 
     private class RepositoryFake(
-        val chatUpdatesFlow: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>,
+        val chatUpdatesFlow: Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>,
     ) : ChatRepository {
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
-        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatUpdatesFlow
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> = chatUpdatesFlow
 
         // Implement other required ChatRepository methods as not implemented for this test
         override suspend fun flowChatList() = error("Not implemented")
@@ -43,7 +43,7 @@ class ReceiveChatUpdatesUseCaseTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<kotlin.Unit, MarkMessagesAsReadError> =
+        ): ResultWithError<kotlin.Unit, MarkMessagesAsReadRepositoryError> =
             ResultWithError.Success(kotlin.Unit)
     }
 
@@ -70,12 +70,12 @@ class ReceiveChatUpdatesUseCaseTest {
 
         useCase(chatId).test {
             val result1 = awaitItem()
-            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(result1)
+            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesRepositoryError>>(result1)
             assertEquals(chat, result1.data)
             assertEquals("Test Chat", result1.data.name)
 
             val result2 = awaitItem()
-            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesError>>(result2)
+            assertIs<ResultWithError.Success<Chat, ReceiveChatUpdatesRepositoryError>>(result2)
             assertEquals(updatedChat, result2.data)
             assertEquals("Updated Chat", result2.data.name)
 
@@ -88,7 +88,7 @@ class ReceiveChatUpdatesUseCaseTest {
         val chatId = ChatId(UUID.randomUUID())
         val repository = RepositoryFake(
             chatUpdatesFlow = flow {
-                emit(ResultWithError.Failure(ReceiveChatUpdatesError.ChatNotFound))
+                emit(ResultWithError.Failure(ReceiveChatUpdatesRepositoryError.ChatNotFound))
             },
         )
 
@@ -96,8 +96,8 @@ class ReceiveChatUpdatesUseCaseTest {
 
         useCase(chatId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
-            assertIs<ReceiveChatUpdatesError.ChatNotFound>(result.error)
+            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesRepositoryError>>(result)
+            assertIs<ReceiveChatUpdatesRepositoryError.ChatNotFound>(result.error)
             awaitComplete()
         }
     }
@@ -119,7 +119,7 @@ class ReceiveChatUpdatesUseCaseTest {
 
         useCase(chatId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
+            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesRepositoryError>>(result)
             assertIs<RemoteOperationFailed>(result.error)
             assertIs<RemoteError.Failed.NetworkNotAvailable>(result.error.error)
             awaitComplete()
@@ -143,7 +143,7 @@ class ReceiveChatUpdatesUseCaseTest {
 
         useCase(chatId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
+            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesRepositoryError>>(result)
             assertIs<RemoteOperationFailed>(result.error)
             assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
             awaitComplete()
@@ -167,7 +167,7 @@ class ReceiveChatUpdatesUseCaseTest {
 
         useCase(chatId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
+            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesRepositoryError>>(result)
             assertIs<RemoteOperationFailed>(result.error)
             assertIs<RemoteError.Unauthenticated>(result.error.error)
             awaitComplete()
@@ -198,7 +198,7 @@ class ReceiveChatUpdatesUseCaseTest {
 
         useCase(chatId).test {
             val result = awaitItem()
-            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesError>>(result)
+            assertIs<ResultWithError.Failure<Chat, ReceiveChatUpdatesRepositoryError>>(result)
             assertIs<RemoteOperationFailed>(result.error)
             assertIs<RemoteError.Failed.UnknownServiceError>(result.error.error)
             awaitComplete()

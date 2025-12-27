@@ -31,8 +31,8 @@ import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError.LocalOperationFailed
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
@@ -51,7 +51,7 @@ class ChatListScreenComponentTest {
         uiState: ChatListUiState = ChatListUiState.Empty,
         isLoading: Boolean = false,
         isRefreshing: Boolean = false,
-        error: FlowChatListError? = null,
+        error: FlowChatListRepositoryError? = null,
     ) = ChatListScreenState(
         uiState = uiState,
         currentUser = CurrentUserUiModel(

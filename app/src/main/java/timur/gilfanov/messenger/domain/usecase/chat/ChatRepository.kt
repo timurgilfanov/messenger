@@ -6,6 +6,13 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.MessageId
+import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
 
 /**
  * Repository interface for all chat-related operations.
@@ -17,27 +24,32 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 interface ChatRepository {
 
     // Chat Management Operations
-    suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatError>
+    suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatRepositoryError>
 
-    suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, DeleteChatError>
+    suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, DeleteChatRepositoryError>
 
     // Chat Participation Operations
-    suspend fun joinChat(chatId: ChatId, inviteLink: String?): ResultWithError<Chat, JoinChatError>
+    suspend fun joinChat(
+        chatId: ChatId,
+        inviteLink: String?,
+    ): ResultWithError<Chat, JoinChatRepositoryError>
 
-    suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, LeaveChatError>
+    suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, LeaveChatRepositoryError>
 
     // Chat Streaming Operations
-    suspend fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, FlowChatListError>>
+    suspend fun flowChatList(): Flow<
+        ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>,
+        >
 
     fun isChatListUpdating(): Flow<Boolean>
 
     suspend fun receiveChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>
+    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>
 
     // Message Read Status Operations
     suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, MarkMessagesAsReadError>
+    ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError>
 }

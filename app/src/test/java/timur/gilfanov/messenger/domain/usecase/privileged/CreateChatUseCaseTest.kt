@@ -18,23 +18,26 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError.ChatIsNotValid
-import timur.gilfanov.messenger.domain.usecase.chat.CreateChatError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.CreateChatUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class CreateChatUseCaseTest {
 
-    private class RepositoryFake(val error: CreateChatError? = null) : ChatRepository {
+    private class RepositoryFake(val repoError: CreateChatRepositoryError? = null) :
+        ChatRepository {
         val chats = mutableSetOf<Chat>()
 
-        override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatError> {
-            error?.let {
+        override suspend fun createChat(
+            chat: Chat,
+        ): ResultWithError<Chat, CreateChatRepositoryError> {
+            repoError?.let {
                 return ResultWithError.Failure(it)
             }
             return if (chats.any { it.id == chat.id }) {
-                ResultWithError.Failure(CreateChatError.DuplicateChatId)
+                ResultWithError.Failure(CreateChatRepositoryError.DuplicateChatId)
             } else {
                 chats.add(chat)
                 ResultWithError.Success(chat)
@@ -52,7 +55,7 @@ class CreateChatUseCaseTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, MarkMessagesAsReadError> = error("Not implemented")
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = error("Not implemented")
     }
 
     private class ChatValidatorFake(val error: ChatValidationError? = null) : ChatValidator {
@@ -90,12 +93,14 @@ class CreateChatUseCaseTest {
     fun `repository error handling`() = runTest {
         val validator = ChatValidatorFake()
         val chat = buildChat {}
-        val repositoryError = RemoteOperationFailed(RemoteError.Unauthenticated)
+        val repositoryError = CreateChatRepositoryError.RemoteOperationFailed(
+            RemoteError.Unauthenticated,
+        )
         val repository = RepositoryFake(repositoryError)
         val useCase = CreateChatUseCase(repository, validator)
         val result = useCase(chat)
         assertIs<ResultWithError.Failure<Chat, CreateChatError>>(result)
-        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<CreateChatError.RemoteOperationFailed>(result.error)
     }
 
     @Test

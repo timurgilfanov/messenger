@@ -24,6 +24,7 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.Messag
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.MessageNotFound
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError.NotAuthorized
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode.FOR_SENDER_ONLY
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
 
 class DeleteMessageUseCase(val repository: MessageRepository) {
 
@@ -51,9 +52,17 @@ class DeleteMessageUseCase(val repository: MessageRepository) {
         return repository.deleteMessage(messageId, deleteMode).let { result ->
             when (result) {
                 is Success -> Success(Unit)
-                is Failure -> Failure(result.error)
+                is Failure -> Failure(result.error.toUseCaseError())
             }
         }
+    }
+
+    private fun DeleteMessageRepositoryError.toUseCaseError(): DeleteMessageError = when (this) {
+        is DeleteMessageRepositoryError.MessageNotFound -> MessageNotFound
+        is DeleteMessageRepositoryError.LocalOperationFailed ->
+            DeleteMessageError.LocalOperationFailed(error)
+        is DeleteMessageRepositoryError.RemoteOperationFailed ->
+            DeleteMessageError.RemoteOperationFailed(error)
     }
 
     private fun checkRules(

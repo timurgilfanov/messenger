@@ -28,10 +28,10 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError.LocalOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
@@ -76,7 +76,8 @@ class ChatListViewModelComponentTest {
     }
 
     private class RepositoryFake(
-        private val chatListFlow: Flow<ResultWithError<List<ChatPreview>, FlowChatListError>> =
+        private val chatListFlow:
+        Flow<ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>> =
             flowOf(
                 Success(emptyList()),
             ),
@@ -84,7 +85,7 @@ class ChatListViewModelComponentTest {
     ) : ChatRepository {
 
         override suspend fun flowChatList(): Flow<
-            ResultWithError<List<ChatPreview>, FlowChatListError>,
+            ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>,
             > =
             chatListFlow
 
@@ -101,7 +102,7 @@ class ChatListViewModelComponentTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, MarkMessagesAsReadError> = error("Not implemented")
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = error("Not implemented")
     }
 
     @Test
@@ -234,9 +235,10 @@ class ChatListViewModelComponentTest {
 
     @Test
     fun `ViewModel handles chat updates correctly`() = runTest {
-        val chatListFlow = MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListError>>(
-            Success(listOf(ChatPreview.fromChat(createTestChat(name = "Initial Chat")))),
-        )
+        val chatListFlow =
+            MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>>(
+                Success(listOf(ChatPreview.fromChat(createTestChat(name = "Initial Chat")))),
+            )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testUserId, useCase, repository)
@@ -264,9 +266,10 @@ class ChatListViewModelComponentTest {
 
     @Test
     fun `ViewModel clears error on successful data load`() = runTest {
-        val chatListFlow = MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListError>>(
-            ResultWithError.Failure(LocalOperationFailed(LocalStorageError.Corrupted)),
-        )
+        val chatListFlow =
+            MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>>(
+                ResultWithError.Failure(LocalOperationFailed(LocalStorageError.Corrupted)),
+            )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testUserId, useCase, repository)

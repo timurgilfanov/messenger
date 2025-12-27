@@ -150,7 +150,6 @@ class MessengerRepositoryImpl @Inject constructor(
                     if (deltaResult is ResultWithError.Success) {
                         logger.d(TAG, "Received delta updates: ${deltaResult.data}")
                         isUpdatingFlow.value = true
-                        // todo should map local error
                         localDataSources.sync.applyChatListDelta(deltaResult.data)
                         isUpdatingFlow.value = false
                     } else {
@@ -168,7 +167,7 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatError> =
         when (val result = remoteDataSources.chat.createChat(chat)) {
             is ResultWithError.Success -> {
-                localDataSources.chat.insertChat(result.data) // todo should map local error
+                localDataSources.chat.insertChat(result.data)
                 ResultWithError.Success(result.data)
             }
 
@@ -180,7 +179,7 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun deleteChat(chatId: ChatId): ResultWithError<Unit, DeleteChatError> =
         when (val result = remoteDataSources.chat.deleteChat(chatId)) {
             is ResultWithError.Success -> {
-                localDataSources.chat.deleteChat(chatId) // todo should map local error
+                localDataSources.chat.deleteChat(chatId)
                 ResultWithError.Success(Unit)
             }
 
@@ -195,7 +194,7 @@ class MessengerRepositoryImpl @Inject constructor(
     ): ResultWithError<Chat, JoinChatError> =
         when (val result = remoteDataSources.chat.joinChat(chatId, inviteLink)) {
             is ResultWithError.Success -> {
-                localDataSources.chat.insertChat(result.data) // todo should map local error
+                localDataSources.chat.insertChat(result.data)
                 ResultWithError.Success(result.data)
             }
 
@@ -207,7 +206,7 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, LeaveChatError> =
         when (val result = remoteDataSources.chat.leaveChat(chatId)) {
             is ResultWithError.Success -> {
-                localDataSources.chat.deleteChat(chatId) // todo should map local error
+                localDataSources.chat.deleteChat(chatId)
                 ResultWithError.Success(Unit)
             }
 
@@ -230,9 +229,9 @@ class MessengerRepositoryImpl @Inject constructor(
                         when (localResult.error) {
                             LocalDataSourceError.StorageUnavailable -> LocalStorageError.Corrupted
                             else -> LocalStorageError.UnknownError(
-                                TODO(
+                                error(
                                     "use localResult.error after local " +
-                                        "data source errors refactoring",
+                                        "data source errors refactoring. See #137.",
                                 ),
                             )
                         },
@@ -272,12 +271,11 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun sendMessage(
         message: Message,
     ): Flow<ResultWithError<Message, SendMessageError>> {
-        localDataSources.message.insertMessage(message) // todo should map local error
+        localDataSources.message.insertMessage(message)
 
         return remoteDataSources.message.sendMessage(message).map { result ->
             when (result) {
                 is ResultWithError.Success -> {
-                    // todo should map local error
                     localDataSources.message.updateMessage(result.data)
                     ResultWithError.Success(result.data)
                 }
@@ -295,7 +293,6 @@ class MessengerRepositoryImpl @Inject constructor(
         remoteDataSources.message.editMessage(message).map { result ->
             when (result) {
                 is ResultWithError.Success -> {
-                    // todo should map local error
                     localDataSources.message.updateMessage(result.data)
                     ResultWithError.Success(result.data)
                 }
@@ -312,7 +309,7 @@ class MessengerRepositoryImpl @Inject constructor(
     ): ResultWithError<Unit, DeleteMessageError> =
         when (val result = remoteDataSources.message.deleteMessage(messageId, mode)) {
             is ResultWithError.Success -> {
-                localDataSources.message.deleteMessage(messageId) // todo should map local error
+                localDataSources.message.deleteMessage(messageId)
                 ResultWithError.Success(Unit)
             }
 
@@ -345,7 +342,7 @@ private fun mapRemoteErrorToCreateChatError(error: RemoteDataSourceError): Creat
                 ErrorReason("Unknown remote error: ${error.cause}"),
             )
 
-            else -> TODO("Implement after remote data source operation error refactor")
+            else -> error("Implement after remote data source operation error refactor. See #137.")
         },
     )
 
@@ -377,7 +374,7 @@ private fun mapRemoteErrorToDeleteChatError(
 
     RemoteDataSourceError.ChatNotFound -> DeleteChatError.ChatNotFound(chatId)
 
-    else -> TODO("Implement after remote data source operation error refactor")
+    else -> error("Implement after remote data source operation error refactor. See #137.")
 }
 
 @Suppress("CyclomaticComplexMethod")
@@ -420,7 +417,7 @@ private fun mapRemoteErrorToJoinChatError(error: RemoteDataSourceError): JoinCha
         )
 
         RemoteDataSourceError.UserBlocked -> JoinChatError.UserBlocked
-        else -> TODO("Implement after remote data source operation error refactor")
+        else -> error("Implement after remote data source operation error refactor. See #137.")
     }
 
 private fun mapRemoteErrorToLeaveChatError(error: RemoteDataSourceError): LeaveChatError =
@@ -449,7 +446,7 @@ private fun mapRemoteErrorToLeaveChatError(error: RemoteDataSourceError): LeaveC
 
         RemoteDataSourceError.ChatNotFound -> LeaveChatError.ChatNotFound
 
-        else -> TODO("Implement after remote data source operation error refactor")
+        else -> error("Implement after remote data source operation error refactor. See #137.")
     }
 
 private fun mapRemoteErrorToSendMessageError(error: RemoteDataSourceError): SendMessageError =
@@ -463,7 +460,7 @@ private fun mapRemoteErrorToSendMessageError(error: RemoteDataSourceError): Send
                 ErrorReason("Unknown remote error: ${error.cause}"),
             )
 
-            else -> TODO("Implement after remote data source operation error refactor")
+            else -> error("Implement after remote data source operation error refactor. See #137.")
         },
     )
 
@@ -478,7 +475,7 @@ private fun mapRemoteErrorToEditMessageError(error: RemoteDataSourceError): Edit
                 ErrorReason("Unknown remote error: ${error.cause}"),
             )
 
-            else -> TODO("Implement after remote data source operation error refactor")
+            else -> error("Implement after remote data source operation error refactor. See #137.")
         },
     )
 
@@ -508,7 +505,7 @@ private fun mapRemoteErrorToDeleteMessageError(error: RemoteDataSourceError): De
 
         RemoteDataSourceError.MessageNotFound -> DeleteMessageError.MessageNotFound
 
-        else -> TODO("Implement after remote data source operation error refactor")
+        else -> error("Implement after remote data source operation error refactor. See #137.")
     }
 
 private fun mapRemoteErrorToMarkMessagesAsReadError(

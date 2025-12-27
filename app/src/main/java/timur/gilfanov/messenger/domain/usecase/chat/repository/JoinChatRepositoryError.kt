@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.domain.usecase.chat.repository
 
-import kotlin.time.Duration
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
@@ -67,13 +66,6 @@ sealed interface JoinChatRepositoryError {
      * The user is blocked from joining this chat.
      */
     data object UserBlocked : JoinChatRepositoryError
-
-    /**
-     * User must wait before joining again.
-     *
-     * @property remaining The remaining cooldown duration
-     */
-    data class CooldownActive(val remaining: Duration) : JoinChatRepositoryError
 
     /**
      * Local storage operation failed.

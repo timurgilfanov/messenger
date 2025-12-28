@@ -19,8 +19,6 @@ sealed interface DeleteChatError {
     /**
      * User is not authorized to delete this chat.
      */
-    // todo is RemoteError.InsufficientPermissions not enough?
-    //  Is there local permission check on repository level?
     data object NotAuthorized : DeleteChatError
 
     /**

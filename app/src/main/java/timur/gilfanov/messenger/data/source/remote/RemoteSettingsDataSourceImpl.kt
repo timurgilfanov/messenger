@@ -31,7 +31,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
-import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 import timur.gilfanov.messenger.util.Logger
 
 @Suppress("TooManyFunctions")
@@ -264,7 +264,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
                 ApiErrorCode.MessageNotFound,
 
                 ApiErrorCode.NetworkNotAvailable,
-                -> TODO("Not relevant for settings")
+                -> error("Not relevant for settings. See #135")
 
                 is ApiErrorCode.CooldownActive -> RemoteDataSourceErrorV2.CooldownActive(
                     remaining = response.error.code.remaining,
@@ -276,19 +276,18 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
 
                 ApiErrorCode.ServerUnreachable,
                 ApiErrorCode.Unauthorized,
-                -> TODO("Should be handled on HTTP level")
+                -> error("Should be handled on HTTP level. See #135")
 
                 is ApiErrorCode.Unknown -> {
                     val reason = ErrorReason(response.error.message)
                     RemoteDataSourceErrorV2.UnknownServiceError(reason)
                 }
 
-                ApiErrorCode.UserBlocked -> TODO(
-                    "Should be only for authorization request? " +
-                        "For other request should return HTTP 401?",
+                ApiErrorCode.UserBlocked -> error(
+                    "UserBlocked should be handled differently. See #135",
                 )
 
-                null -> TODO("Should be handled on serialization stage")
+                null -> error("Null error code should be handled on serialization. See #135")
             },
         ).also {
             logger.w(TAG, "API error: ${response.error.message} mapped to $it")

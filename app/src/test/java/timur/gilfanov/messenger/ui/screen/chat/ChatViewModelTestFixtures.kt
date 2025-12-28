@@ -25,12 +25,12 @@ import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError.ChatNotFound
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
 object ChatViewModelTestFixtures {
 
@@ -71,7 +71,9 @@ object ChatViewModelTestFixtures {
 
     class MessengerRepositoryFake(
         private val chat: Chat? = null,
-        private val flowChat: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>? = null,
+        private val flowChat: Flow<
+            ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>,
+            >? = null,
         private val flowSendMessage: Flow<Message>? = null,
         private val pagedMessages: List<Message>? = null,
     ) : ChatRepository,
@@ -79,11 +81,11 @@ object ChatViewModelTestFixtures {
 
         override suspend fun sendMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowSendMessage?.map {
-            ResultWithError.Success<Message, RepositorySendMessageError>(it)
+        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> = flowSendMessage?.map {
+            ResultWithError.Success<Message, SendMessageRepositoryError>(it)
         }
             ?: flowOf(
-                ResultWithError.Success<Message, RepositorySendMessageError>(
+                ResultWithError.Success<Message, SendMessageRepositoryError>(
                     when (message) {
                         is TextMessage -> message.copy(deliveryStatus = Sending(0))
                         else -> message
@@ -93,7 +95,7 @@ object ChatViewModelTestFixtures {
 
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
-        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = flowChat ?: flowOf(
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> = flowChat ?: flowOf(
             chat?.let { Success(it) } ?: Failure(ChatNotFound),
         )
 
@@ -104,11 +106,12 @@ object ChatViewModelTestFixtures {
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
             error("Not implemented")
+
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = ResultWithError.Success(Unit)
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = ResultWithError.Success(Unit)
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")
@@ -128,10 +131,10 @@ object ChatViewModelTestFixtures {
         @OptIn(ExperimentalCoroutinesApi::class)
         override suspend fun sendMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf(
+        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> = flowOf(
             *(
                 statuses.map {
-                    Success<Message, RepositorySendMessageError>(
+                    Success<Message, SendMessageRepositoryError>(
                         (message as TextMessage).copy(deliveryStatus = it),
                     )
                 }.toTypedArray()
@@ -154,7 +157,7 @@ object ChatViewModelTestFixtures {
 
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
-        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatFlow.map { chat ->
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> = chatFlow.map { chat ->
             Success(chat)
         }
 
@@ -165,11 +168,12 @@ object ChatViewModelTestFixtures {
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
             error("Not implemented")
+
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = ResultWithError.Success(Unit)
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = ResultWithError.Success(Unit)
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")
@@ -189,13 +193,15 @@ object ChatViewModelTestFixtures {
      */
     class MessengerRepositoryFakeWithPaging(
         private val initialChat: Chat? = null,
-        private val chatFlow: Flow<ResultWithError<Chat, ReceiveChatUpdatesError>>? = null,
+        private val chatFlow: Flow<
+            ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>,
+            >? = null,
     ) : ChatRepository,
         MessageRepository {
 
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
-        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> = chatFlow ?: flowOf(
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> = chatFlow ?: flowOf(
             initialChat?.let { Success(it) } ?: Failure(ChatNotFound),
         )
 
@@ -212,8 +218,8 @@ object ChatViewModelTestFixtures {
 
         override suspend fun sendMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, RepositorySendMessageError>> = flowOf(
-            Success<Message, RepositorySendMessageError>(
+        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> = flowOf(
+            Success<Message, SendMessageRepositoryError>(
                 when (message) {
                     is TextMessage -> message.copy(deliveryStatus = Sending(0))
                     else -> message
@@ -228,11 +234,12 @@ object ChatViewModelTestFixtures {
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
             error("Not implemented")
+
         override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> = ResultWithError.Success(Unit)
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = ResultWithError.Success(Unit)
 
         // Implement other required MessageRepository methods as not implemented for this test
         override suspend fun editMessage(message: Message) = error("Not implemented")

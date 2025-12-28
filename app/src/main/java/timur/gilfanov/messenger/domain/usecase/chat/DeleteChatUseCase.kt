@@ -20,7 +20,7 @@ class DeleteChatUseCase(private val repository: ChatRepository) {
         return repository.deleteChat(chat.id).let { result ->
             when (result) {
                 is Success -> Success(Unit)
-                is Failure -> Failure(result.error)
+                is Failure -> Failure(result.error.toUseCaseError())
             }
         }
     }

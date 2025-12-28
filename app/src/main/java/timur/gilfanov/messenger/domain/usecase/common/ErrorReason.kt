@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.settings.repository
+package timur.gilfanov.messenger.domain.usecase.common
 
 /**
  * A wrapper for error reason messages from data source operations.

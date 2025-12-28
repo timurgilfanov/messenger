@@ -87,20 +87,6 @@ class LocalSettingsDataSourceImplExceptionTest {
     }
 
     @Test
-    fun `getSetting returns ReadOnlyDatabase on SQLiteReadOnlyDatabaseException`() = runTest {
-        // Given
-        wrappedDao.simulateDatabaseError = SQLiteReadOnlyDatabaseException("read only")
-
-        // When
-        val result = dataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
-
-        // Then
-        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(result)
-        assertEquals(GetSettingError.ReadOnlyDatabase, result.error)
-        assertEquals(1, wrappedDao.callCount) // No retry
-    }
-
-    @Test
     fun `getSetting returns ConcurrentModificationError after 3 lock retries`() = runTest {
         // Given - fail all 4 attempts (initial + 3 retries)
         wrappedDao.failNextNCalls = 4
@@ -475,23 +461,6 @@ class LocalSettingsDataSourceImplExceptionTest {
         assertEquals(GetUnsyncedSettingsError.AccessDenied, result.error)
         assertEquals(1, wrappedDao.callCount)
     }
-
-    @Test
-    fun `getUnsyncedSettings returns ReadOnlyDatabase on SQLiteReadOnlyDatabaseException`() =
-        runTest {
-            // Given
-            wrappedDao.simulateDatabaseError = SQLiteReadOnlyDatabaseException("read only")
-
-            // When
-            val result = dataSource.getUnsyncedSettings(testUserId)
-
-            // Then
-            assertIs<ResultWithError.Failure<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(
-                result,
-            )
-            assertEquals(GetUnsyncedSettingsError.ReadOnlyDatabase, result.error)
-            assertEquals(1, wrappedDao.callCount)
-        }
 
     @Test
     fun `getUnsyncedSettings returns ConcurrentModificationError after 3 retries`() = runTest {

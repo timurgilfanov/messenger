@@ -21,25 +21,24 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildMessage
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageUseCase
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError.MessageNotFound
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError.RemoteError
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class DeleteMessageUseCaseTest {
 
     private class RepositoryFake(
-        private val deleteMessageResult: ResultWithError<Unit, RepositoryDeleteMessageError> =
+        private val deleteMessageResult: ResultWithError<Unit, DeleteMessageRepositoryError> =
             ResultWithError.Success(Unit),
     ) : MessageRepository {
         override suspend fun deleteMessage(
             messageId: MessageId,
             mode: DeleteMessageMode,
-        ): ResultWithError<Unit, RepositoryDeleteMessageError> = deleteMessageResult
+        ): ResultWithError<Unit, DeleteMessageRepositoryError> = deleteMessageResult
 
         // Implement other required MessageRepository methods as not implemented for this test
         override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
@@ -76,7 +75,7 @@ class DeleteMessageUseCaseTest {
             now = customTime,
         )
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-        assertIs<MessageNotFound>(result.error)
+        assertIs<DeleteMessageError.MessageNotFound>(result.error)
     }
 
     @Test
@@ -430,7 +429,9 @@ class DeleteMessageUseCaseTest {
             rules = persistentSetOf(DeleteMessageRule.SenderCanDeleteOwn)
         }
 
-        val repositoryError = RemoteError
+        val repositoryError = DeleteMessageRepositoryError.RemoteOperationFailed(
+            RemoteError.Unauthenticated,
+        )
         val repository = RepositoryFake(ResultWithError.Failure(repositoryError))
 
         val useCase = DeleteMessageUseCase(
@@ -445,7 +446,7 @@ class DeleteMessageUseCaseTest {
             now = customTime,
         )
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-        assertEquals(repositoryError, result.error)
+        assertIs<DeleteMessageError.RemoteOperationFailed>(result.error)
     }
 
     @Test
@@ -486,7 +487,7 @@ class DeleteMessageUseCaseTest {
             now = customTime,
         )
         assertIs<ResultWithError.Failure<Unit, DeleteMessageError>>(result)
-        assertIs<MessageNotFound>(result.error)
+        assertIs<DeleteMessageError.MessageNotFound>(result.error)
     }
 
     @Test

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
 import timur.gilfanov.messenger.data.source.paging.MessagePagingSource
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceError
@@ -25,20 +26,21 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.EditMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
 /**
@@ -161,7 +163,7 @@ class MessengerRepositoryImpl @Inject constructor(
     }
 
     // ChatRepository implementation
-    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> =
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatRepositoryError> =
         when (val result = remoteDataSources.chat.createChat(chat)) {
             is ResultWithError.Success -> {
                 localDataSources.chat.insertChat(result.data)
@@ -175,7 +177,7 @@ class MessengerRepositoryImpl @Inject constructor(
 
     override suspend fun deleteChat(
         chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryDeleteChatError> =
+    ): ResultWithError<Unit, DeleteChatRepositoryError> =
         when (val result = remoteDataSources.chat.deleteChat(chatId)) {
             is ResultWithError.Success -> {
                 localDataSources.chat.deleteChat(chatId)
@@ -190,7 +192,7 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, RepositoryJoinChatError> =
+    ): ResultWithError<Chat, JoinChatRepositoryError> =
         when (val result = remoteDataSources.chat.joinChat(chatId, inviteLink)) {
             is ResultWithError.Success -> {
                 localDataSources.chat.insertChat(result.data)
@@ -204,7 +206,7 @@ class MessengerRepositoryImpl @Inject constructor(
 
     override suspend fun leaveChat(
         chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryLeaveChatError> =
+    ): ResultWithError<Unit, LeaveChatRepositoryError> =
         when (val result = remoteDataSources.chat.leaveChat(chatId)) {
             is ResultWithError.Success -> {
                 localDataSources.chat.deleteChat(chatId)
@@ -217,12 +219,28 @@ class MessengerRepositoryImpl @Inject constructor(
         }
 
     override suspend fun flowChatList(): Flow<
-        ResultWithError<List<ChatPreview>, FlowChatListError>,
+        ResultWithError<
+            List<ChatPreview>,
+            FlowChatListRepositoryError,
+            >,
         > =
         localDataSources.chat.flowChatList().map { localResult ->
             when (localResult) {
                 is ResultWithError.Success -> ResultWithError.Success(localResult.data)
-                is ResultWithError.Failure -> ResultWithError.Failure(FlowChatListError.LocalError)
+                is ResultWithError.Failure -> ResultWithError.Failure(
+                    FlowChatListRepositoryError.LocalOperationFailed(
+                        when (localResult.error) {
+                            LocalDataSourceError.StorageUnavailable ->
+                                LocalStorageError.TemporarilyUnavailable
+                            else -> LocalStorageError.UnknownError(
+                                error(
+                                    "use localResult.error after local " +
+                                        "data source errors refactoring. See #137.",
+                                ),
+                            )
+                        },
+                    ),
+                )
             }
         }
 
@@ -230,18 +248,20 @@ class MessengerRepositoryImpl @Inject constructor(
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> =
+    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> =
         localDataSources.chat.flowChatUpdates(chatId).map { localResult ->
             when (localResult) {
                 is ResultWithError.Success -> ResultWithError.Success(localResult.data)
-                is ResultWithError.Failure -> ResultWithError.Failure(ChatNotFound)
+                is ResultWithError.Failure -> ResultWithError.Failure(
+                    ReceiveChatUpdatesRepositoryError.ChatNotFound,
+                )
             }
         }
 
     override suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> =
+    ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> =
         when (val result = remoteDataSources.chat.markMessagesAsRead(chatId, upToMessageId)) {
             is ResultWithError.Success -> {
                 // The delta sync loop will pick up the chat updates automatically
@@ -256,7 +276,7 @@ class MessengerRepositoryImpl @Inject constructor(
     // MessageRepository implementation
     override suspend fun sendMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositorySendMessageError>> {
+    ): Flow<ResultWithError<Message, SendMessageRepositoryError>> {
         localDataSources.message.insertMessage(message)
 
         return remoteDataSources.message.sendMessage(message).map { result ->
@@ -275,7 +295,7 @@ class MessengerRepositoryImpl @Inject constructor(
 
     override suspend fun editMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositoryEditMessageError>> =
+    ): Flow<ResultWithError<Message, EditMessageRepositoryError>> =
         remoteDataSources.message.editMessage(message).map { result ->
             when (result) {
                 is ResultWithError.Success -> {
@@ -292,7 +312,7 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,
-    ): ResultWithError<Unit, RepositoryDeleteMessageError> =
+    ): ResultWithError<Unit, DeleteMessageRepositoryError> =
         when (val result = remoteDataSources.message.deleteMessage(messageId, mode)) {
             is ResultWithError.Success -> {
                 localDataSources.message.deleteMessage(messageId)
@@ -319,89 +339,222 @@ class MessengerRepositoryImpl @Inject constructor(
 // Error mapping functions
 private fun mapRemoteErrorToCreateChatError(
     error: RemoteDataSourceError,
-): RepositoryCreateChatError = when (error) {
-    RemoteDataSourceError.NetworkNotAvailable -> RepositoryCreateChatError.NetworkNotAvailable
-    RemoteDataSourceError.ServerUnreachable -> RepositoryCreateChatError.ServerUnreachable
-    RemoteDataSourceError.ServerError -> RepositoryCreateChatError.ServerError
-    RemoteDataSourceError.Unauthorized -> RepositoryCreateChatError.UnknownError
-    else -> RepositoryCreateChatError.UnknownError
-}
+): CreateChatRepositoryError = CreateChatRepositoryError.RemoteOperationFailed(
+    when (error) {
+        RemoteDataSourceError.NetworkNotAvailable -> RemoteError.Failed.NetworkNotAvailable
+        RemoteDataSourceError.ServerUnreachable -> RemoteError.Failed.ServiceDown
+        RemoteDataSourceError.ServerError -> RemoteError.Failed.ServiceDown
+        RemoteDataSourceError.Unauthorized -> RemoteError.Unauthenticated
+        is RemoteDataSourceError.UnknownError -> RemoteError.Failed.UnknownServiceError(
+            ErrorReason("Unknown remote error: ${error.cause}"),
+        )
+
+        else -> error("Implement after remote data source operation error refactor. See #137.")
+    },
+)
 
 private fun mapRemoteErrorToDeleteChatError(
     error: RemoteDataSourceError,
     chatId: ChatId,
-): RepositoryDeleteChatError = when (error) {
-    RemoteDataSourceError.NetworkNotAvailable -> RepositoryDeleteChatError.NetworkNotAvailable
-    RemoteDataSourceError.ServerUnreachable -> RepositoryDeleteChatError.RemoteUnreachable
-    RemoteDataSourceError.ServerError -> RepositoryDeleteChatError.RemoteError
-    RemoteDataSourceError.Unauthorized -> RepositoryDeleteChatError.LocalError
-    RemoteDataSourceError.ChatNotFound -> RepositoryDeleteChatError.ChatNotFound(chatId)
-    else -> RepositoryDeleteChatError.LocalError
+): DeleteChatRepositoryError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable -> DeleteChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.NetworkNotAvailable,
+    )
+
+    RemoteDataSourceError.ServerUnreachable -> DeleteChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.ServiceDown,
+    )
+
+    RemoteDataSourceError.ServerError -> DeleteChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.ServiceDown,
+    )
+
+    RemoteDataSourceError.Unauthorized -> DeleteChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Unauthenticated,
+    )
+
+    is RemoteDataSourceError.UnknownError -> DeleteChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.UnknownServiceError(
+            ErrorReason("Unknown remote error: ${error.cause}"),
+        ),
+    )
+
+    RemoteDataSourceError.ChatNotFound -> DeleteChatRepositoryError.ChatNotFound(chatId)
+
+    else -> error("Implement after remote data source operation error refactor. See #137.")
 }
 
-private fun mapRemoteErrorToJoinChatError(error: RemoteDataSourceError): RepositoryJoinChatError =
+@Suppress("CyclomaticComplexMethod")
+private fun mapRemoteErrorToJoinChatError(error: RemoteDataSourceError): JoinChatRepositoryError =
     when (error) {
-        RemoteDataSourceError.NetworkNotAvailable -> RepositoryJoinChatError.NetworkNotAvailable
-        RemoteDataSourceError.ServerUnreachable -> RepositoryJoinChatError.RemoteUnreachable
-        RemoteDataSourceError.ServerError -> RepositoryJoinChatError.RemoteError
-        RemoteDataSourceError.ChatNotFound -> RepositoryJoinChatError.ChatNotFound
-        RemoteDataSourceError.InvalidInviteLink -> RepositoryJoinChatError.InvalidInviteLink
-        RemoteDataSourceError.ExpiredInviteLink -> RepositoryJoinChatError.ExpiredInviteLink
-        RemoteDataSourceError.ChatClosed -> RepositoryJoinChatError.ChatClosed
-        RemoteDataSourceError.AlreadyJoined -> RepositoryJoinChatError.AlreadyJoined
-        RemoteDataSourceError.ChatFull -> RepositoryJoinChatError.ChatFull
-        RemoteDataSourceError.UserBlocked -> RepositoryJoinChatError.UserBlocked
-        is RemoteDataSourceError.CooldownActive -> RepositoryJoinChatError.CooldownActive(
-            error.remaining,
+        RemoteDataSourceError.AlreadyJoined -> JoinChatRepositoryError.AlreadyJoined
+        RemoteDataSourceError.ChatClosed -> JoinChatRepositoryError.ChatClosed
+        RemoteDataSourceError.ChatFull -> JoinChatRepositoryError.ChatFull
+        RemoteDataSourceError.ChatNotFound -> JoinChatRepositoryError.ChatNotFound
+        is RemoteDataSourceError.CooldownActive -> JoinChatRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.Cooldown(error.remaining),
         )
 
-        else -> RepositoryJoinChatError.LocalError
+        RemoteDataSourceError.ExpiredInviteLink -> JoinChatRepositoryError.ExpiredInviteLink
+        RemoteDataSourceError.InvalidInviteLink -> JoinChatRepositoryError.InvalidInviteLink
+        RemoteDataSourceError.NetworkNotAvailable -> JoinChatRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.NetworkNotAvailable,
+        )
+
+        RemoteDataSourceError.RateLimitExceeded -> JoinChatRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.ServiceDown,
+        )
+
+        RemoteDataSourceError.ServerError -> JoinChatRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.ServiceDown,
+        )
+
+        RemoteDataSourceError.ServerUnreachable -> JoinChatRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.ServiceDown,
+        )
+
+        RemoteDataSourceError.Unauthorized -> JoinChatRepositoryError.RemoteOperationFailed(
+            RemoteError.Unauthenticated,
+        )
+
+        is RemoteDataSourceError.UnknownError -> JoinChatRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.UnknownServiceError(
+                ErrorReason("Unknown remote error: ${error.cause}"),
+            ),
+        )
+
+        RemoteDataSourceError.UserBlocked -> JoinChatRepositoryError.UserBlocked
+        else -> error("Implement after remote data source operation error refactor. See #137.")
     }
 
 private fun mapRemoteErrorToLeaveChatError(
     error: RemoteDataSourceError,
-): RepositoryLeaveChatError = when (error) {
-    RemoteDataSourceError.NetworkNotAvailable -> RepositoryLeaveChatError.NetworkNotAvailable
-    RemoteDataSourceError.ServerUnreachable -> RepositoryLeaveChatError.RemoteUnreachable
-    RemoteDataSourceError.ServerError -> RepositoryLeaveChatError.RemoteError
-    RemoteDataSourceError.ChatNotFound -> RepositoryLeaveChatError.ChatNotFound
-    else -> RepositoryLeaveChatError.LocalError
+): LeaveChatRepositoryError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable -> LeaveChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.NetworkNotAvailable,
+    )
+
+    RemoteDataSourceError.ServerUnreachable -> LeaveChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.ServiceDown,
+    )
+
+    RemoteDataSourceError.ServerError -> LeaveChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.ServiceDown,
+    )
+
+    RemoteDataSourceError.Unauthorized -> LeaveChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Unauthenticated,
+    )
+
+    is RemoteDataSourceError.UnknownError -> LeaveChatRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.UnknownServiceError(
+            ErrorReason("Unknown remote error: ${error.cause}"),
+        ),
+    )
+
+    RemoteDataSourceError.ChatNotFound -> LeaveChatRepositoryError.ChatNotFound
+
+    else -> error("Implement after remote data source operation error refactor. See #137.")
 }
 
 private fun mapRemoteErrorToSendMessageError(
     error: RemoteDataSourceError,
-): RepositorySendMessageError = when (error) {
-    RemoteDataSourceError.NetworkNotAvailable -> RepositorySendMessageError.NetworkNotAvailable
-    RemoteDataSourceError.ServerUnreachable -> RepositorySendMessageError.RemoteUnreachable
-    RemoteDataSourceError.ServerError -> RepositorySendMessageError.RemoteError
-    else -> RepositorySendMessageError.RemoteError
-}
+): SendMessageRepositoryError = SendMessageRepositoryError.RemoteOperationFailed(
+    when (error) {
+        RemoteDataSourceError.NetworkNotAvailable -> RemoteError.Failed.NetworkNotAvailable
+        RemoteDataSourceError.ServerUnreachable -> RemoteError.Failed.ServiceDown
+        RemoteDataSourceError.ServerError -> RemoteError.Failed.ServiceDown
+        RemoteDataSourceError.Unauthorized -> RemoteError.Unauthenticated
+        is RemoteDataSourceError.UnknownError -> RemoteError.Failed.UnknownServiceError(
+            ErrorReason("Unknown remote error: ${error.cause}"),
+        )
+
+        else -> error("Implement after remote data source operation error refactor. See #137.")
+    },
+)
 
 private fun mapRemoteErrorToEditMessageError(
     error: RemoteDataSourceError,
-): RepositoryEditMessageError = when (error) {
-    RemoteDataSourceError.NetworkNotAvailable -> RepositoryEditMessageError.NetworkNotAvailable
-    RemoteDataSourceError.ServerUnreachable -> RepositoryEditMessageError.RemoteUnreachable
-    RemoteDataSourceError.ServerError -> RepositoryEditMessageError.RemoteError
-    else -> RepositoryEditMessageError.RemoteError
-}
+): EditMessageRepositoryError = EditMessageRepositoryError.RemoteOperationFailed(
+    when (error) {
+        RemoteDataSourceError.NetworkNotAvailable -> RemoteError.Failed.NetworkNotAvailable
+        RemoteDataSourceError.ServerUnreachable -> RemoteError.Failed.ServiceDown
+        RemoteDataSourceError.ServerError -> RemoteError.Failed.ServiceDown
+        RemoteDataSourceError.Unauthorized -> RemoteError.Unauthenticated
+        is RemoteDataSourceError.UnknownError -> RemoteError.Failed.UnknownServiceError(
+            ErrorReason("Unknown remote error: ${error.cause}"),
+        )
+
+        else -> error("Implement after remote data source operation error refactor. See #137.")
+    },
+)
 
 private fun mapRemoteErrorToDeleteMessageError(
     error: RemoteDataSourceError,
-): RepositoryDeleteMessageError = when (error) {
-    RemoteDataSourceError.NetworkNotAvailable -> RepositoryDeleteMessageError.NetworkNotAvailable
-    RemoteDataSourceError.ServerUnreachable -> RepositoryDeleteMessageError.RemoteUnreachable
-    RemoteDataSourceError.MessageNotFound -> RepositoryDeleteMessageError.MessageNotFound
-    else -> RepositoryDeleteMessageError.RemoteError
+): DeleteMessageRepositoryError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable ->
+        DeleteMessageRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.NetworkNotAvailable,
+        )
+
+    RemoteDataSourceError.ServerUnreachable ->
+        DeleteMessageRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.ServiceDown,
+        )
+
+    RemoteDataSourceError.ServerError -> DeleteMessageRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.ServiceDown,
+    )
+
+    RemoteDataSourceError.Unauthorized -> DeleteMessageRepositoryError.RemoteOperationFailed(
+        RemoteError.Unauthenticated,
+    )
+
+    is RemoteDataSourceError.UnknownError ->
+        DeleteMessageRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.UnknownServiceError(
+                ErrorReason("Unknown remote error: ${error.cause}"),
+            ),
+        )
+
+    RemoteDataSourceError.MessageNotFound -> DeleteMessageRepositoryError.MessageNotFound
+
+    else -> error("Implement after remote data source operation error refactor. See #137.")
 }
 
 private fun mapRemoteErrorToMarkMessagesAsReadError(
     error: RemoteDataSourceError,
-): RepositoryMarkMessagesAsReadError = when (error) {
-    RemoteDataSourceError.NetworkNotAvailable -> MarkMessagesAsReadError.NetworkNotAvailable
-    RemoteDataSourceError.ServerUnreachable -> MarkMessagesAsReadError.ServerUnreachable
-    RemoteDataSourceError.ServerError -> MarkMessagesAsReadError.ServerError
-    RemoteDataSourceError.ChatNotFound -> MarkMessagesAsReadError.ChatNotFound
-    is RemoteDataSourceError.UnknownError -> MarkMessagesAsReadError.UnknownError(error.cause)
-    else -> MarkMessagesAsReadError.UnknownError(RuntimeException("Unknown remote error: $error"))
+): MarkMessagesAsReadRepositoryError = when (error) {
+    RemoteDataSourceError.NetworkNotAvailable ->
+        MarkMessagesAsReadRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.NetworkNotAvailable,
+        )
+
+    RemoteDataSourceError.ServerUnreachable ->
+        MarkMessagesAsReadRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.ServiceDown,
+        )
+
+    RemoteDataSourceError.ServerError -> MarkMessagesAsReadRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.ServiceDown,
+    )
+
+    RemoteDataSourceError.Unauthorized -> MarkMessagesAsReadRepositoryError.RemoteOperationFailed(
+        RemoteError.Unauthenticated,
+    )
+
+    is RemoteDataSourceError.UnknownError ->
+        MarkMessagesAsReadRepositoryError.RemoteOperationFailed(
+            RemoteError.Failed.UnknownServiceError(
+                ErrorReason("Unknown remote error: ${error.cause}"),
+            ),
+        )
+
+    RemoteDataSourceError.ChatNotFound -> MarkMessagesAsReadRepositoryError.ChatNotFound
+
+    else -> MarkMessagesAsReadRepositoryError.RemoteOperationFailed(
+        RemoteError.Failed.UnknownServiceError(
+            ErrorReason("Unknown remote error: $error"),
+        ),
+    )
 }

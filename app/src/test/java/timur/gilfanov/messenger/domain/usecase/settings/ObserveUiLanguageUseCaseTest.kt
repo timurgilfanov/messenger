@@ -16,6 +16,7 @@ import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
@@ -121,7 +122,7 @@ class ObserveUiLanguageUseCaseTest {
     }
 
     @Test
-    fun `emits repository error when settings reset to defaults`() = runTest {
+    fun `emits SettingsResetToDefaults error when settings reset to defaults`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
@@ -133,18 +134,23 @@ class ObserveUiLanguageUseCaseTest {
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(result.error)
-            assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(result.error.error)
+            assertIs<ObserveUiLanguageError.SettingsResetToDefaults>(result.error)
             awaitComplete()
         }
     }
 
     @Test
-    fun `emits repository error on temporary errors`() = runTest {
+    fun `emits LocalOperationFailed error on temporary errors`() = runTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
+                emit(
+                    Failure(
+                        GetSettingsRepositoryError.LocalOperationFailed(
+                            LocalStorageError.TemporarilyUnavailable,
+                        ),
+                    ),
+                )
             },
         )
         val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
@@ -152,10 +158,8 @@ class ObserveUiLanguageUseCaseTest {
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(result.error)
-            assertIs<GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable>(
-                result.error.error,
-            )
+            assertIs<ObserveUiLanguageError.LocalOperationFailed>(result.error)
+            assertIs<LocalStorageError.TemporarilyUnavailable>(result.error.error)
             awaitComplete()
         }
     }
@@ -166,7 +170,13 @@ class ObserveUiLanguageUseCaseTest {
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(Success(Settings(UiLanguage.English)))
-                emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
+                emit(
+                    Failure(
+                        GetSettingsRepositoryError.LocalOperationFailed(
+                            LocalStorageError.TemporarilyUnavailable,
+                        ),
+                    ),
+                )
                 emit(Success(Settings(UiLanguage.German)))
             },
         )
@@ -179,7 +189,7 @@ class ObserveUiLanguageUseCaseTest {
 
             val second = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(second)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(second.error)
+            assertIs<ObserveUiLanguageError.LocalOperationFailed>(second.error)
 
             val third = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(third)
@@ -194,7 +204,13 @@ class ObserveUiLanguageUseCaseTest {
         val identityRepository = IdentityRepositoryStub(Success(testIdentity))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Failure(GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable))
+                emit(
+                    Failure(
+                        GetSettingsRepositoryError.LocalOperationFailed(
+                            LocalStorageError.TemporarilyUnavailable,
+                        ),
+                    ),
+                )
                 emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
                 emit(Success(Settings(UiLanguage.English)))
             },
@@ -204,15 +220,12 @@ class ObserveUiLanguageUseCaseTest {
         useCase().test {
             val first = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(first)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(first.error)
-            assertIs<GetSettingsRepositoryError.Recoverable.TemporarilyUnavailable>(
-                first.error.error,
-            )
+            assertIs<ObserveUiLanguageError.LocalOperationFailed>(first.error)
+            assertIs<LocalStorageError.TemporarilyUnavailable>(first.error.error)
 
             val second = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(second)
-            assertIs<ObserveUiLanguageError.ObserveLanguageRepository>(second.error)
-            assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(second.error.error)
+            assertIs<ObserveUiLanguageError.SettingsResetToDefaults>(second.error)
 
             val third = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(third)

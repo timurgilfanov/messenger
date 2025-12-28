@@ -33,7 +33,7 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageUseCase
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
+import timur.gilfanov.messenger.domain.usecase.message.repository.EditMessageRepositoryError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class EditMessageUseCaseTest {
@@ -42,13 +42,13 @@ class EditMessageUseCaseTest {
 
         override suspend fun editMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, RepositoryEditMessageError>> {
+        ): Flow<ResultWithError<Message, EditMessageRepositoryError>> {
             val updatedMessage = when (message) {
                 is TextMessage -> message.copy(deliveryStatus = DeliveryStatus.Sent)
                 else -> message
             }
             return flowOf(
-                ResultWithError.Success<Message, RepositoryEditMessageError>(updatedMessage),
+                ResultWithError.Success<Message, EditMessageRepositoryError>(updatedMessage),
             )
         }
 

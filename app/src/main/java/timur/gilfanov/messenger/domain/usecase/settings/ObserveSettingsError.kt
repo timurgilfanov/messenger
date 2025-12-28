@@ -1,13 +1,20 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
-import timur.gilfanov.messenger.domain.usecase.settings.repository.ObserveSettingsRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 
 /**
  * Errors that can occur during settings observation operations.
  *
- * Represents failures at the use case layer, combining identity retrieval errors
- * with repository-level settings observation errors.
+ * ## Identity Errors
+ * - [Unauthorized] - Failed to retrieve current user identity
+ *
+ * ## Logical Errors
+ * - [SettingsResetToDefaults] - Settings were not found and reset to defaults
+ *
+ * ## Data Source Errors
+ * - [LocalOperationFailed] - Local storage operation failed
  */
 sealed interface ObserveSettingsError {
     /**
@@ -19,11 +26,28 @@ sealed interface ObserveSettingsError {
     data object Unauthorized : ObserveSettingsError
 
     /**
-     * Settings observation operation failed at the repository layer.
+     * Settings were not found and were reset to default values.
      *
-     * Wraps errors from [ObserveSettingsRepositoryError] such as insufficient storage,
-     * data corruption, or settings reset to defaults.
+     * Occurs when settings cannot be loaded from any available source
+     * and the system automatically created default settings.
      */
-    data class ObserveSettingsRepository(val error: ObserveSettingsRepositoryError) :
-        ObserveSettingsError
+    data object SettingsResetToDefaults : ObserveSettingsError
+
+    /**
+     * Local storage operation failed.
+     *
+     * @property error The underlying [LocalStorageError] instance
+     */
+    data class LocalOperationFailed(val error: LocalStorageError) : ObserveSettingsError
 }
+
+/**
+ * Maps a [GetSettingsRepositoryError] to the corresponding [ObserveSettingsError].
+ */
+internal fun GetSettingsRepositoryError.toObserveSettingsError(): ObserveSettingsError =
+    when (this) {
+        GetSettingsRepositoryError.SettingsResetToDefaults ->
+            ObserveSettingsError.SettingsResetToDefaults
+        is GetSettingsRepositoryError.LocalOperationFailed ->
+            ObserveSettingsError.LocalOperationFailed(error)
+    }

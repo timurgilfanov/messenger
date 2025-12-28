@@ -35,7 +35,7 @@ class ObserveSettingsUseCaseImpl(
                                 },
                                 onFailure = { error ->
                                     logger.e(TAG, "Settings observation failed: $error")
-                                    ObserveSettingsError.ObserveSettingsRepository(error)
+                                    error.toObserveSettingsError()
                                 },
                             )
                         }

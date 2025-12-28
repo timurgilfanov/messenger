@@ -58,7 +58,7 @@ class SendMessageUseCase(
                         prev = progress.deliveryStatus
                     }
                     is Failure -> {
-                        emit(Failure(result.error))
+                        emit(Failure(result.error.toUseCaseError()))
                         return@collect
                     }
                 }

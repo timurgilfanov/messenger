@@ -27,8 +27,8 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
@@ -242,7 +242,7 @@ class ChatPaginationIntegrationTest {
         override suspend fun deleteMessage(
             messageId: timur.gilfanov.messenger.domain.entity.message.MessageId,
             mode: DeleteMessageMode,
-        ): ResultWithError<Unit, RepositoryDeleteMessageError> =
+        ): ResultWithError<Unit, DeleteMessageRepositoryError> =
             error("Not implemented for pagination tests")
     }
 }

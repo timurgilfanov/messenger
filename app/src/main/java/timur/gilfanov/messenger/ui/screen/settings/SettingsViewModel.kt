@@ -50,22 +50,24 @@ class SettingsViewModel @Inject constructor(
                     },
                     onFailure = { error ->
                         when (error) {
-                            is ObserveSettingsError.ObserveSettingsRepository -> {
-                                logger.i(
-                                    TAG,
-                                    "Settings observation failed with repository error: ${error.error}",
-                                )
-                                postSideEffect(
-                                    SettingsSideEffects.ObserveSettingsFailed(error.error),
-                                )
-                            }
-
                             ObserveSettingsError.Unauthorized -> {
                                 logger.i(
                                     TAG,
                                     "Settings observation failed with Unauthorized error",
                                 )
                                 postSideEffect(SettingsSideEffects.Unauthorized)
+                            }
+                            ObserveSettingsError.SettingsResetToDefaults -> {
+                                logger.i(TAG, "Settings were reset to defaults")
+                            }
+                            is ObserveSettingsError.LocalOperationFailed -> {
+                                logger.i(
+                                    TAG,
+                                    "Settings observation failed with local error: ${error.error}",
+                                )
+                                postSideEffect(
+                                    SettingsSideEffects.ObserveSettingsFailed(error.error),
+                                )
                             }
                         }
                     },

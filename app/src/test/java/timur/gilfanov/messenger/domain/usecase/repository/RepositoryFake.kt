@@ -19,18 +19,18 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListError
-import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryCreateChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryDeleteChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryLeaveChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryDeleteMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositoryEditMessageError
-import timur.gilfanov.messenger.domain.usecase.message.RepositorySendMessageError
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.EditMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
 class RepositoryFake :
     ChatRepository,
@@ -54,7 +54,7 @@ class RepositoryFake :
     }
 
     override suspend fun flowChatList(): Flow<
-        ResultWithError<List<ChatPreview>, FlowChatListError>,
+        ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>,
         > =
         chatListFlow
             .onStart { emit(chats.values.toList()) }
@@ -63,7 +63,7 @@ class RepositoryFake :
 
     override fun isChatListUpdating(): Flow<Boolean> = kotlinx.coroutines.flow.flowOf(false)
 
-    override suspend fun createChat(chat: Chat): ResultWithError<Chat, RepositoryCreateChatError> {
+    override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatRepositoryError> {
         chats[chat.id] = chat
         chatUpdates.emit(chat)
         emitChatList()
@@ -72,7 +72,7 @@ class RepositoryFake :
 
     override suspend fun sendMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositorySendMessageError>> {
+    ): Flow<ResultWithError<Message, SendMessageRepositoryError>> {
         val chatId = message.recipient
         val chat = chats[chatId]!!
 
@@ -95,7 +95,7 @@ class RepositoryFake :
 
     override suspend fun editMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, RepositoryEditMessageError>> {
+    ): Flow<ResultWithError<Message, EditMessageRepositoryError>> {
         val chatId = message.recipient
         val chat = chats[chatId]!!
 
@@ -125,7 +125,7 @@ class RepositoryFake :
     override suspend fun deleteMessage(
         messageId: MessageId,
         mode: DeleteMessageMode,
-    ): ResultWithError<Unit, RepositoryDeleteMessageError> {
+    ): ResultWithError<Unit, DeleteMessageRepositoryError> {
         error("Not implemented")
     }
 
@@ -135,12 +135,12 @@ class RepositoryFake :
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,
-    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesError>> {
+    ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> {
         val initialChat = chats[chatId]
 
         return chatUpdates
             .filter { it.id == chatId }
-            .map { ResultWithError.Success<Chat, ReceiveChatUpdatesError>(it) }
+            .map { ResultWithError.Success<Chat, ReceiveChatUpdatesRepositoryError>(it) }
             .onStart {
                 initialChat?.let { emit(ResultWithError.Success(it)) }
             }
@@ -149,9 +149,9 @@ class RepositoryFake :
 
     override suspend fun deleteChat(
         chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryDeleteChatError> {
+    ): ResultWithError<Unit, DeleteChatRepositoryError> {
         if (!chats.containsKey(chatId)) {
-            return ResultWithError.Failure(RepositoryDeleteChatError.ChatNotFound(chatId))
+            return ResultWithError.Failure(DeleteChatRepositoryError.ChatNotFound(chatId))
         }
 
         chats.remove(chatId)
@@ -162,16 +162,16 @@ class RepositoryFake :
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, RepositoryJoinChatError> = error("Not yet implemented")
+    ): ResultWithError<Chat, JoinChatRepositoryError> = error("Not yet implemented")
 
     override suspend fun leaveChat(
         chatId: ChatId,
-    ): ResultWithError<Unit, RepositoryLeaveChatError> = error("Not yet implemented")
+    ): ResultWithError<Unit, LeaveChatRepositoryError> = error("Not yet implemented")
 
     override suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, RepositoryMarkMessagesAsReadError> {
+    ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> {
         val chat = chats[chatId] ?: return ResultWithError.Success(Unit)
         val upToIndex = chat.messages.indexOfFirst { it.id == upToMessageId }
         val unreadCount = if (upToIndex >= 0) {

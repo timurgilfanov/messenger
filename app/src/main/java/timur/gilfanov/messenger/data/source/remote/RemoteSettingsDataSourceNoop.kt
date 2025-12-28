@@ -4,7 +4,7 @@ import javax.inject.Inject
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
-import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 
 /**
  * Temporary placeholder implementation until real remote settings API is available.

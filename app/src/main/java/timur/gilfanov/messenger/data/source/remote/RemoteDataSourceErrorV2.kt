@@ -1,7 +1,7 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import kotlin.time.Duration
-import timur.gilfanov.messenger.domain.usecase.settings.repository.ErrorReason
+import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 
 /**
  * Common errors for remote data source operations.

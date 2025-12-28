@@ -9,7 +9,6 @@ sealed interface GetSettingError {
     data object StorageFull : GetSettingError
     data object DatabaseCorrupted : GetSettingError
     data object AccessDenied : GetSettingError
-    data object ReadOnlyDatabase : GetSettingError
 
     data class UnknownError(val cause: Throwable) : GetSettingError
 }
@@ -47,7 +46,6 @@ sealed interface GetUnsyncedSettingsError {
     data object StorageFull : GetUnsyncedSettingsError
     data object DatabaseCorrupted : GetUnsyncedSettingsError
     data object AccessDenied : GetUnsyncedSettingsError
-    data object ReadOnlyDatabase : GetUnsyncedSettingsError
 
     data class UnknownError(val cause: Throwable) : GetUnsyncedSettingsError
 }

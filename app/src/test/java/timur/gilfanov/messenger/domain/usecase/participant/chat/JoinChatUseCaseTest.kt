@@ -16,37 +16,35 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.buildChat
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
-import timur.gilfanov.messenger.domain.usecase.chat.JoinChatError
 import timur.gilfanov.messenger.domain.usecase.chat.JoinChatUseCase
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.AlreadyJoined
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ChatClosed
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ChatFull
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ChatNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.CooldownActive
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.ExpiredInviteLink
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.InvalidInviteLink
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.LocalError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.NetworkNotAvailable
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.OneToOneChatFull
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.RemoteError
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.RemoteUnreachable
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserBlocked
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryJoinChatError.UserNotFound
-import timur.gilfanov.messenger.domain.usecase.chat.RepositoryMarkMessagesAsReadError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.AlreadyJoined
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.ChatClosed
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.ChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.ChatNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.ExpiredInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.InvalidInviteLink
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.LocalOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.OneToOneChatFull
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.RemoteOperationFailed
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.UserBlocked
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError.UserNotFound
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(Unit::class)
 class JoinChatUseCaseTest {
 
-    private class RepositoryFake(private val error: RepositoryJoinChatError? = null) :
+    private class RepositoryFake(private val repoError: JoinChatRepositoryError? = null) :
         ChatRepository {
         override suspend fun joinChat(
             chatId: ChatId,
             inviteLink: String?,
-        ): ResultWithError<Chat, RepositoryJoinChatError> = if (error == null) {
-            Success<Chat, RepositoryJoinChatError>(buildChat { id = chatId })
+        ): ResultWithError<Chat, JoinChatRepositoryError> = if (repoError == null) {
+            Success<Chat, JoinChatRepositoryError>(buildChat { id = chatId })
         } else {
-            Failure<Chat, RepositoryJoinChatError>(error)
+            Failure<Chat, JoinChatRepositoryError>(repoError)
         }
 
         // Implement other required ChatRepository methods as not implemented for this test
@@ -59,7 +57,7 @@ class JoinChatUseCaseTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<kotlin.Unit, RepositoryMarkMessagesAsReadError> =
+        ): ResultWithError<kotlin.Unit, MarkMessagesAsReadRepositoryError> =
             ResultWithError.Success(kotlin.Unit)
     }
 
@@ -69,56 +67,68 @@ class JoinChatUseCaseTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val useCase = JoinChatUseCase(repo)
         val result = useCase(chatId, null)
-        assertIs<Success<Chat, JoinChatError>>(result)
+        assertIs<Success<Chat, JoinChatRepositoryError>>(result)
         assertEquals(chatId, result.data.id)
     }
 
     @Test
     fun `network not available`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
-        val repository = RepositoryFake(NetworkNotAvailable)
+        val repository = RepositoryFake(
+            RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+        )
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
-        assertIs<NetworkNotAvailable>(result.error)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Failed.NetworkNotAvailable>(result.error.error)
     }
 
     @Test
     fun `remote unreachable`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
-        val repository = RepositoryFake(RemoteUnreachable)
+        val repository = RepositoryFake(
+            RemoteOperationFailed(RemoteError.Failed.ServiceDown),
+        )
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
-        assertIs<RemoteUnreachable>(result.error)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
     }
 
     @Test
     fun `remote error`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
-        val repository = RepositoryFake(RemoteError)
+        val repository = RepositoryFake(
+            RemoteOperationFailed(RemoteError.Unauthenticated),
+        )
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
-        assertIs<RemoteError>(result.error)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Unauthenticated>(result.error.error)
     }
 
     @Test
     fun `local error`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
-        val repository = RepositoryFake(LocalError)
+        val repository = RepositoryFake(
+            LocalOperationFailed(LocalStorageError.Corrupted),
+        )
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
-        assertIs<LocalError>(result.error)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
+        assertIs<LocalOperationFailed>(result.error)
+        assertIs<LocalStorageError.Corrupted>(result.error.error)
     }
 
     @Test
@@ -129,7 +139,7 @@ class JoinChatUseCaseTest {
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
         assertIs<ChatNotFound>(result.error)
     }
 
@@ -141,7 +151,7 @@ class JoinChatUseCaseTest {
 
         val result = useCase(chatId, "invalid-link")
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
         assertIs<InvalidInviteLink>(result.error)
     }
 
@@ -153,7 +163,7 @@ class JoinChatUseCaseTest {
 
         val result = useCase(chatId, "expired-link")
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
         assertIs<ExpiredInviteLink>(result.error)
     }
 
@@ -165,7 +175,7 @@ class JoinChatUseCaseTest {
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
         assertIs<ChatClosed>(result.error)
     }
 
@@ -177,7 +187,7 @@ class JoinChatUseCaseTest {
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
         assertIs<AlreadyJoined>(result.error)
     }
 
@@ -189,7 +199,7 @@ class JoinChatUseCaseTest {
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
         assertIs<ChatFull>(result.error)
     }
 
@@ -201,7 +211,7 @@ class JoinChatUseCaseTest {
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
         assertIs<OneToOneChatFull>(result.error)
     }
 
@@ -213,7 +223,7 @@ class JoinChatUseCaseTest {
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
         assertIs<UserNotFound>(result.error)
     }
 
@@ -225,7 +235,7 @@ class JoinChatUseCaseTest {
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
         assertIs<UserBlocked>(result.error)
     }
 
@@ -233,13 +243,15 @@ class JoinChatUseCaseTest {
     fun `cooldown active`() = runTest {
         val chatId = ChatId(id = UUID.randomUUID())
         val cooldownDuration = 30.seconds
-        val repository = RepositoryFake(CooldownActive(cooldownDuration))
+        val repository =
+            RepositoryFake(RemoteOperationFailed(RemoteError.Failed.Cooldown(cooldownDuration)))
         val useCase = JoinChatUseCase(repository)
 
         val result = useCase(chatId, null)
 
-        assertIs<Failure<Chat, JoinChatError>>(result)
-        assertIs<CooldownActive>(result.error)
-        assertEquals(cooldownDuration, (result.error as CooldownActive).remaining)
+        assertIs<Failure<Chat, JoinChatRepositoryError>>(result)
+        assertIs<RemoteOperationFailed>(result.error)
+        assertIs<RemoteError.Failed.Cooldown>(result.error.error)
+        assertEquals(cooldownDuration, result.error.error.remaining)
     }
 }

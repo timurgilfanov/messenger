@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.domain.usecase.chat
 
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
@@ -41,4 +42,12 @@ sealed interface DeleteChatError {
      * @property error The underlying [RemoteError] instance
      */
     data class RemoteOperationFailed(val error: RemoteError) : DeleteChatError
+}
+
+internal fun DeleteChatRepositoryError.toUseCaseError(): DeleteChatError = when (this) {
+    is DeleteChatRepositoryError.ChatNotFound -> DeleteChatError.ChatNotFound(chatId)
+    is DeleteChatRepositoryError.LocalOperationFailed ->
+        DeleteChatError.LocalOperationFailed(error)
+    is DeleteChatRepositoryError.RemoteOperationFailed ->
+        DeleteChatError.RemoteOperationFailed(error)
 }

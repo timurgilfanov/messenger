@@ -20,7 +20,6 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.Delivery
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.MessageIsNotValid
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.WaitAfterJoining
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError.WaitDebounce
-import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
 class SendMessageUseCase(
     val repository: MessageRepository,
@@ -65,13 +64,6 @@ class SendMessageUseCase(
                 }
             }
         }
-
-    private fun SendMessageRepositoryError.toUseCaseError(): SendMessageError = when (this) {
-        is SendMessageRepositoryError.LocalOperationFailed ->
-            SendMessageError.LocalOperationFailed(error)
-        is SendMessageRepositoryError.RemoteOperationFailed ->
-            SendMessageError.RemoteOperationFailed(error)
-    }
 
     fun checkRules(
         chat: Chat,

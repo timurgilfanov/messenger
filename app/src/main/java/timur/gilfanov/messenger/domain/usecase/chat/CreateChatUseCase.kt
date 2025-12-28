@@ -6,7 +6,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidator
 import timur.gilfanov.messenger.domain.entity.chat.validation.ChatValidatorImpl
-import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
 
 class CreateChatUseCase(
     private val repository: ChatRepository,
@@ -23,13 +22,5 @@ class CreateChatUseCase(
             is Success -> Success(result.data)
             is Failure -> Failure(result.error.toUseCaseError())
         }
-    }
-
-    private fun CreateChatRepositoryError.toUseCaseError(): CreateChatError = when (this) {
-        is CreateChatRepositoryError.DuplicateChatId -> CreateChatError.DuplicateChatId
-        is CreateChatRepositoryError.LocalOperationFailed ->
-            CreateChatError.LocalOperationFailed(error)
-        is CreateChatRepositoryError.RemoteOperationFailed ->
-            CreateChatError.RemoteOperationFailed(error)
     }
 }

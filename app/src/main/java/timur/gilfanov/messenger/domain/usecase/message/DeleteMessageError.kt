@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.domain.usecase.message
 import kotlin.time.Duration
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
 
 /**
  * Errors for message deletion operations.
@@ -67,4 +68,12 @@ sealed interface DeleteMessageError {
      * @property error The underlying [RemoteError] instance
      */
     data class RemoteOperationFailed(val error: RemoteError) : DeleteMessageError
+}
+
+internal fun DeleteMessageRepositoryError.toUseCaseError(): DeleteMessageError = when (this) {
+    is DeleteMessageRepositoryError.MessageNotFound -> DeleteMessageError.MessageNotFound
+    is DeleteMessageRepositoryError.LocalOperationFailed ->
+        DeleteMessageError.LocalOperationFailed(error)
+    is DeleteMessageRepositoryError.RemoteOperationFailed ->
+        DeleteMessageError.RemoteOperationFailed(error)
 }

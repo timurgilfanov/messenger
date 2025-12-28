@@ -7,7 +7,6 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule
 import timur.gilfanov.messenger.domain.entity.chat.DeleteChatRule.OnlyAdminCanDelete
 import timur.gilfanov.messenger.domain.entity.chat.Participant
-import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
 
 class DeleteChatUseCase(private val repository: ChatRepository) {
     suspend operator fun invoke(
@@ -24,14 +23,6 @@ class DeleteChatUseCase(private val repository: ChatRepository) {
                 is Failure -> Failure(result.error.toUseCaseError())
             }
         }
-    }
-
-    private fun DeleteChatRepositoryError.toUseCaseError(): DeleteChatError = when (this) {
-        is DeleteChatRepositoryError.ChatNotFound -> DeleteChatError.ChatNotFound(chatId)
-        is DeleteChatRepositoryError.LocalOperationFailed ->
-            DeleteChatError.LocalOperationFailed(error)
-        is DeleteChatRepositoryError.RemoteOperationFailed ->
-            DeleteChatError.RemoteOperationFailed(error)
     }
 
     private fun checkRules(

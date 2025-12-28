@@ -5,6 +5,7 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.message.repository.EditMessageRepositoryError
 
 /**
  * Errors for message editing operations.
@@ -78,4 +79,11 @@ sealed interface EditMessageError {
      * @property error The underlying [RemoteError] instance
      */
     data class RemoteOperationFailed(val error: RemoteError) : EditMessageError
+}
+
+internal fun EditMessageRepositoryError.toUseCaseError(): EditMessageError = when (this) {
+    is EditMessageRepositoryError.LocalOperationFailed ->
+        EditMessageError.LocalOperationFailed(error)
+    is EditMessageRepositoryError.RemoteOperationFailed ->
+        EditMessageError.RemoteOperationFailed(error)
 }

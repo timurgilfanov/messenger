@@ -6,6 +6,7 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
 /**
  * Errors for message sending operations.
@@ -71,4 +72,11 @@ sealed interface SendMessageError {
      * @property error The underlying [RemoteError] instance
      */
     data class RemoteOperationFailed(val error: RemoteError) : SendMessageError
+}
+
+internal fun SendMessageRepositoryError.toUseCaseError(): SendMessageError = when (this) {
+    is SendMessageRepositoryError.LocalOperationFailed ->
+        SendMessageError.LocalOperationFailed(error)
+    is SendMessageRepositoryError.RemoteOperationFailed ->
+        SendMessageError.RemoteOperationFailed(error)
 }

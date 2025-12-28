@@ -1,7 +1,5 @@
 package timur.gilfanov.messenger.data.source.local
 
-//
-// todo replace with operation-specific errors with logic/data source structure like GetSettingsLocalDataSourceError
 sealed interface LocalDataSourceError {
     // Entity-specific errors
     data object ChatNotFound : LocalDataSourceError

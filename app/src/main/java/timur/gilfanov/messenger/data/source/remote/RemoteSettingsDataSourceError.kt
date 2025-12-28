@@ -68,9 +68,6 @@ sealed interface RemoteSettingsDataSourceError {
     data class RemoteDataSource(val error: RemoteDataSourceErrorV2) : RemoteSettingsDataSourceError
 }
 
-// todo why we hide auth error details?
-// can bearing token refresh happen with Ktor without application logic involved?
-// can we merge RemoteSettingsDataSourceError and RemoteError in one class?
 fun RemoteSettingsDataSourceError.toRemoteError(): RemoteError = when (this) {
     RemoteSettingsDataSourceError.Authentication.SessionRevoked,
     RemoteSettingsDataSourceError.Authentication.TokenInvalid,

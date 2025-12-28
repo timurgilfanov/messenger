@@ -230,7 +230,8 @@ class MessengerRepositoryImpl @Inject constructor(
                 is ResultWithError.Failure -> ResultWithError.Failure(
                     FlowChatListRepositoryError.LocalOperationFailed(
                         when (localResult.error) {
-                            LocalDataSourceError.StorageUnavailable -> LocalStorageError.Corrupted
+                            LocalDataSourceError.StorageUnavailable ->
+                                LocalStorageError.TemporarilyUnavailable
                             else -> LocalStorageError.UnknownError(
                                 error(
                                     "use localResult.error after local " +

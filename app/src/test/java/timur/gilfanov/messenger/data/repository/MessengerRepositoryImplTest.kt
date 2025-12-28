@@ -739,7 +739,9 @@ class MessengerRepositoryImplTest {
                 result,
             )
             assertEquals(
-                FlowChatListRepositoryError.LocalOperationFailed(LocalStorageError.Corrupted),
+                FlowChatListRepositoryError.LocalOperationFailed(
+                    LocalStorageError.TemporarilyUnavailable,
+                ),
                 result.error,
             )
         }

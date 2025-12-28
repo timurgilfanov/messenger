@@ -41,6 +41,9 @@ import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
 import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.JoinChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.LeaveChatRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageError
 import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError
@@ -175,10 +178,11 @@ class AndroidTestRepositoryWithRealImplementation(
     override suspend fun joinChat(
         chatId: ChatId,
         inviteLink: String?,
-    ): ResultWithError<Chat, JoinChatError> = realRepository.joinChat(chatId, inviteLink)
+    ): ResultWithError<Chat, JoinChatRepositoryError> = realRepository.joinChat(chatId, inviteLink)
 
-    override suspend fun leaveChat(chatId: ChatId): ResultWithError<Unit, LeaveChatError> =
-        realRepository.leaveChat(chatId)
+    override suspend fun leaveChat(
+        chatId: ChatId,
+    ): ResultWithError<Unit, LeaveChatRepositoryError> = realRepository.leaveChat(chatId)
 
     override suspend fun flowChatList(): Flow<
         ResultWithError<List<ChatPreview>, FlowChatListError>,
@@ -215,7 +219,7 @@ class AndroidTestRepositoryWithRealImplementation(
     override suspend fun markMessagesAsRead(
         chatId: ChatId,
         upToMessageId: MessageId,
-    ): ResultWithError<Unit, MarkMessagesAsReadError> =
+    ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> =
         realRepository.markMessagesAsRead(chatId, upToMessageId)
 
     fun simulateBobSendingMessage(messageText: String, createdAt: Instant) {

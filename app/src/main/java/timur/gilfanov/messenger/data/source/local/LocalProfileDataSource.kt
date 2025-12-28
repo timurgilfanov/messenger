@@ -12,7 +12,6 @@ import timur.gilfanov.messenger.domain.entity.profile.UserId
  * single source of truth for profile data in the app, with updates
  * synchronized from remote data source.
  */
-// todo errors should be speciefic to operation like GetSettingsLocalDataSourceError
 interface LocalProfileDataSource {
     /**
      * Observes profile changes for a specific user.

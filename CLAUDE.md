@@ -206,36 +206,3 @@ domain/
     └── message/     # Message management use cases
 ```
 
-## Technical Debt & Improvement Areas
-
-### Data Layer Optimizations
-- **LocalSyncDataSourceImpl.applyChatUpdatedDelta()** - Consider incremental participant updates instead of full replace operation for better performance with large participant lists ([#53](https://github.com/timurgilfanov/messenger/issues/53))
-- **applyChatDeletedDelta()** - Implement proper cascade deletion handling for associated messages and participants when chat is deleted ([#54](https://github.com/timurgilfanov/messenger/issues/54))
-- **ParticipantDao foreign key strategy** - Monitor performance impact of OnConflictStrategy.IGNORE vs REPLACE with the new schema
-
-### Database Performance
-- **Room relationship queries** - Verify optimal query performance for ChatWithParticipantsAndMessages with large datasets
-- **Participant cross-reference queries** - Consider indexing strategies for chat-participant junction table queries
-- **Message pagination** - Future consideration for handling large chat histories efficiently
-
-### Testing Coverage
-- **Multi-chat stress testing** - Add performance tests for scenarios with many chats and participants ([#55](https://github.com/timurgilfanov/messenger/issues/55))
-- **Edge case testing** - Add tests for participant role changes, permission updates, and concurrent chat operations
-- **Integration test scenarios** - Expand coverage for complex delta synchronization patterns
-
-### Security & Permissions
-- **Message deletion privileges** - Implement proper privilege checks to prevent unauthorized message deletion ([#56](https://github.com/timurgilfanov/messenger/issues/56))
-
-### Architecture & Code Quality  
-- **SendMessageUseCase refactoring** - Fetch chat and user data internally instead of requiring as parameters, consider separate use cases per message type ([#57](https://github.com/timurgilfanov/messenger/issues/57))
-- **SendMessageError interface** - Convert from sealed class to interface for better extensibility ([#58](https://github.com/timurgilfanov/messenger/issues/58))
-- **Test categories consistency** - Replace JUnit categories with annotations to reduce test-annotations module dependency ([#59](https://github.com/timurgilfanov/messenger/issues/59))
-
-### User Experience & UI
-- **UI polish improvements** - Replace placeholder icons, fix colors, and improve layout centering ([#60](https://github.com/timurgilfanov/messenger/issues/60))  
-- **User data integration** - Replace hardcoded "Current User" with actual user name from authentication ([#61](https://github.com/timurgilfanov/messenger/issues/61))
-
-### Additional Testing Items
-- **ViewModel state transitions** - Add tests for ChatViewModel Ready ↔ Error state transitions ([#62](https://github.com/timurgilfanov/messenger/issues/62))
-
-*Items with GitHub issue links are tracked with priorities and milestones. Use GitHub issues to track new items from this list.*

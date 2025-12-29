@@ -32,6 +32,7 @@ import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
+import timur.gilfanov.messenger.util.generateProfileImageUrl
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
@@ -58,12 +59,12 @@ class ChatViewModelLoadingTest {
                 ParticipantUiModel(
                     id = params.currentUserId,
                     name = "Current User",
-                    pictureUrl = null,
+                    pictureUrl = generateProfileImageUrl("Current User"),
                 ),
                 ParticipantUiModel(
                     id = params.otherUserId,
                     name = "Other User",
-                    pictureUrl = null,
+                    pictureUrl = generateProfileImageUrl("Other User"),
                 ),
             ),
             isGroupChat = params.isGroupChat,

@@ -282,6 +282,9 @@ dependencies {
     implementation(libs.orbit.viewmodel)
     implementation(libs.orbit.compose)
 
+    // Image Loading
+    implementation(libs.coil.compose)
+
     // Kotlin Extensions
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.collections.immutable)

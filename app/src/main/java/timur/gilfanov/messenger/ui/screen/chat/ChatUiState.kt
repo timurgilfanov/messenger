@@ -42,6 +42,7 @@ data class MessageUiModel(
     val text: String,
     val senderId: String,
     val senderName: String,
+    val senderPictureUrl: String?,
     val createdAt: String,
     val deliveryStatus: DeliveryStatus,
     val isFromCurrentUser: Boolean,

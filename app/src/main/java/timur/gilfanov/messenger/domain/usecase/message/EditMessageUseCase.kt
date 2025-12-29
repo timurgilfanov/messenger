@@ -23,7 +23,6 @@ import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.EditWind
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.MessageIsNotValid
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.RecipientChanged
 import timur.gilfanov.messenger.domain.usecase.message.EditMessageError.SenderIdChanged
-import timur.gilfanov.messenger.domain.usecase.message.repository.EditMessageRepositoryError
 
 class EditMessageUseCase(
     val repository: MessageRepository,
@@ -68,13 +67,6 @@ class EditMessageUseCase(
                 }
             }
         }
-
-    private fun EditMessageRepositoryError.toUseCaseError(): EditMessageError = when (this) {
-        is EditMessageRepositoryError.LocalOperationFailed ->
-            EditMessageError.LocalOperationFailed(error)
-        is EditMessageRepositoryError.RemoteOperationFailed ->
-            EditMessageError.RemoteOperationFailed(error)
-    }
 
     fun checkRules(
         chat: Chat,

@@ -195,7 +195,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
 
     private suspend inline fun <T> executeRequest(
         operationName: String,
-        block: () -> ResultWithError<T, RemoteSettingsDataSourceError>,
+        block: suspend () -> ResultWithError<T, RemoteSettingsDataSourceError>,
     ): ResultWithError<T, RemoteSettingsDataSourceError> = try {
         logger.d(TAG, "Executing $operationName")
         block()

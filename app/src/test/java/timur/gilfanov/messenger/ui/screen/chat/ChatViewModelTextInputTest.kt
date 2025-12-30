@@ -1,7 +1,5 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
-import androidx.compose.runtime.snapshots.Snapshot
 import java.util.UUID
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -63,21 +61,19 @@ class ChatViewModelTextInputTest {
             assertTrue(initialState is ChatUiState.Ready)
             assertNull(initialState.inputTextValidationError)
 
+            viewModel.onInputTextChanged("")
+
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = TextValidationError.Empty)
             }
 
-            Snapshot.withMutableSnapshot {
-                initialState.inputTextField.setTextAndPlaceCursorAtEnd("Hi!")
-            }
+            viewModel.onInputTextChanged("Hi!")
 
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = null)
             }
 
-            Snapshot.withMutableSnapshot {
-                initialState.inputTextField.setTextAndPlaceCursorAtEnd("")
-            }
+            viewModel.onInputTextChanged("")
 
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = TextValidationError.Empty)

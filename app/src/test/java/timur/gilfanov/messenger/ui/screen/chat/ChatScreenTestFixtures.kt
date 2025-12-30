@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.paging.PagingData
 import java.util.UUID
 import kotlin.time.Instant
@@ -80,7 +79,6 @@ object ChatScreenTestFixtures {
         ),
         isGroupChat: Boolean = false,
         messages: List<TextMessage> = emptyList(),
-        inputTextField: TextFieldState = TextFieldState(""),
         isSending: Boolean = false,
         status: ChatStatus = ChatStatus.OneToOne(null),
         inputTextValidationError: TextValidationError? = null,
@@ -92,7 +90,6 @@ object ChatScreenTestFixtures {
         participants = persistentListOf(*participants.toTypedArray()),
         isGroupChat = isGroupChat,
         messages = flowOf(PagingData.from(messages)),
-        inputTextField = inputTextField,
         isSending = isSending,
         status = status,
         inputTextValidationError = inputTextValidationError,

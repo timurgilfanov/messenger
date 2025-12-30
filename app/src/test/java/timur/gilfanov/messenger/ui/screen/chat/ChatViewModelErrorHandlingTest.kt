@@ -22,7 +22,6 @@ import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
-import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
@@ -113,13 +112,9 @@ class ChatViewModelErrorHandlingTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
-            // Wait for initial Ready state
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputTextValidationError = TextValidationError.Empty)
-            }
             listOf(
                 RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
                 RemoteOperationFailed(RemoteError.Unauthenticated),
@@ -204,16 +199,10 @@ class ChatViewModelErrorHandlingTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
-            // Initial state should be ready
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertNull(initialState.updateError)
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputTextValidationError = TextValidationError.Empty)
-            }
-
-            // Simulate transient network error
             chatFlow.value = Failure(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable))
 
             val errorState = awaitState()

@@ -46,6 +46,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = ChatUiState.Loading(),
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -64,6 +65,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = errorState,
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -75,7 +77,6 @@ class ChatScreenComponentTest {
 
     @Test
     fun `chat screen shows ready state with messages`() {
-        // Create participants and messages using fixtures
         val (alice, currentUser) = ChatScreenTestFixtures.createAliceAndCurrentUser()
         val messages = ChatScreenTestFixtures.createSampleMessages(alice, currentUser)
 
@@ -89,20 +90,16 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
 
-        // Verify chat title is displayed in top bar (use first occurrence)
         composeTestRule.onAllNodesWithText("Alice")[0].assertIsDisplayed()
-
-        // Verify messages are displayed
         composeTestRule.onNodeWithText("Hello! 👋").assertIsDisplayed()
         composeTestRule.onNodeWithText("How are you doing today?").assertIsDisplayed()
-
-        // Verify message input is displayed
         composeTestRule.onNodeWithTag("message_input").assertIsDisplayed()
         composeTestRule.onNodeWithTag("send_button").assertIsDisplayed()
     }
@@ -114,13 +111,13 @@ class ChatScreenComponentTest {
             id = testChatId,
             title = "Test Chat",
             participants = emptyList(),
-            inputTextField = textFieldState,
         )
 
         composeTestRule.setContent {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = textFieldState,
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -130,8 +127,6 @@ class ChatScreenComponentTest {
         val testMessage = "Hello, this is a test message!"
         composeTestRule.onNodeWithTag("message_input").performTextInput(testMessage)
 
-        // Note: In a real test, we would need to update the state and recompose
-        // This test verifies that the callback is called
         assert(textFieldState.text == testMessage)
     }
 
@@ -142,13 +137,13 @@ class ChatScreenComponentTest {
             id = testChatId,
             title = "Test Chat",
             participants = emptyList(),
-            inputTextField = textFieldState,
         )
 
         composeTestRule.setContent {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = textFieldState,
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -171,7 +166,6 @@ class ChatScreenComponentTest {
             participants = persistentListOf(),
             isGroupChat = false,
             messages = flowOf(PagingData.empty()),
-            inputTextField = TextFieldState("Test message"),
             isSending = false,
             status = ChatStatus.OneToOne(null),
         )
@@ -182,6 +176,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState("Test message"),
                     onSendMessage = { sendClicked = true },
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -200,7 +195,6 @@ class ChatScreenComponentTest {
             participants = persistentListOf(),
             isGroupChat = false,
             messages = flowOf(PagingData.empty()),
-            inputTextField = TextFieldState("Sending..."),
             isSending = true,
             status = ChatStatus.OneToOne(null),
         )
@@ -209,15 +203,14 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState("Sending..."),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
             }
         }
 
-        // Verify that the send button is disabled during sending
         composeTestRule.onNodeWithTag("send_button").assertExists()
-        // The button should show a progress indicator or be disabled when sending
     }
 
     @Test
@@ -239,7 +232,6 @@ class ChatScreenComponentTest {
             ),
             isGroupChat = true,
             messages = flowOf(PagingData.empty()),
-            inputTextField = TextFieldState(""),
             isSending = false,
             status = ChatStatus.Group(2),
         )
@@ -248,6 +240,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -266,7 +259,6 @@ class ChatScreenComponentTest {
             participants = persistentListOf(),
             isGroupChat = false,
             messages = flowOf(PagingData.empty()),
-            inputTextField = TextFieldState(""),
             isSending = false,
             status = ChatStatus.OneToOne(null),
             updateError = updateError,
@@ -276,6 +268,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -296,10 +289,10 @@ class ChatScreenComponentTest {
                         participants = persistentListOf(),
                         isGroupChat = false,
                         messages = flowOf(PagingData.empty()),
-                        inputTextField = TextFieldState(""),
                         inputTextValidationError = TextValidationError.Empty,
                         status = ChatStatus.OneToOne(null),
                     ),
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -322,9 +315,9 @@ class ChatScreenComponentTest {
                         participants = persistentListOf(),
                         isGroupChat = false,
                         messages = flowOf(PagingData.empty()),
-                        inputTextField = TextFieldState("a"),
                         status = ChatStatus.OneToOne(null),
                     ),
+                    inputTextFieldState = TextFieldState("a"),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )

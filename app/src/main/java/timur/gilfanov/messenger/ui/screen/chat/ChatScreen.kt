@@ -75,7 +75,7 @@ fun ChatScreen(
         }
     }
 
-    LaunchedEffect(inputTextFieldState.text) {
+    LaunchedEffect(inputTextFieldState.text, uiState is ChatUiState.Ready) {
         viewModel.onInputTextChanged(inputTextFieldState.text.toString())
     }
 

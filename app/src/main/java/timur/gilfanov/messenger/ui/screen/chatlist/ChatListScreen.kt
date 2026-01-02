@@ -77,16 +77,9 @@ data class ChatListContentActions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListScreen(
-    currentUserId: ParticipantId,
     actions: ChatListActions,
     modifier: Modifier = Modifier,
-    viewModel: ChatListViewModel =
-        hiltViewModel(
-            key = currentUserId.id.toString(),
-            creationCallback = { factory: ChatListViewModel.ChatListViewModelFactory ->
-                factory.create(currentUserId = currentUserId.id)
-            },
-        ),
+    viewModel: ChatListViewModel = hiltViewModel(),
 ) {
     val screenState by viewModel.collectAsState()
 

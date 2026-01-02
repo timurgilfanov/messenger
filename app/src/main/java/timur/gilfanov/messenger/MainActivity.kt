@@ -66,7 +66,6 @@ fun MessengerApp() {
         entryProvider = entryProvider {
             entry<ChatList> {
                 ChatListScreen(
-                    currentUserId = currentUserId,
                     actions = ChatListActions(
                         onChatClick = { chatId ->
                             backStack.add(Chat(chatId.id.toString()))
@@ -88,7 +87,6 @@ fun MessengerApp() {
             }
             entry<Main> {
                 MainScreen(
-                    currentUserId = currentUserId,
                     onAuthFailure = onAuthFailure,
                     onChatClick = { chatId -> backStack.add(Chat(chatId.id.toString())) },
                     onNewChatClick = {

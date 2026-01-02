@@ -28,7 +28,7 @@ import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
 import timur.gilfanov.messenger.ui.screen.settings.SettingsScreen
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList") // in Compose property drilling is preferred over wrapper
 @Composable
 fun MainScreen(
     onAuthFailure: () -> Unit,

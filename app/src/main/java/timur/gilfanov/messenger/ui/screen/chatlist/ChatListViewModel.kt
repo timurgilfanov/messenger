@@ -48,22 +48,19 @@ class ChatListViewModel @Inject constructor(
             observeProfileUseCase()
                 .distinctUntilChanged()
                 .collect { result ->
-                    ensureActive()
-                    withContext(Dispatchers.Main) {
-                        reduce {
-                            when (result) {
-                                is ResultWithError.Success -> {
-                                    val profile = result.data
-                                    state.copy(
-                                        currentUser = CurrentUserUiModel(
-                                            id = ParticipantId(profile.id.id),
-                                            name = profile.name,
-                                            pictureUrl = profile.pictureUrl,
-                                        ),
-                                    )
-                                }
-                                is ResultWithError.Failure -> state
+                    reduce {
+                        when (result) {
+                            is ResultWithError.Success -> {
+                                val profile = result.data
+                                state.copy(
+                                    currentUser = CurrentUserUiModel(
+                                        id = ParticipantId(profile.id.id),
+                                        name = profile.name,
+                                        pictureUrl = profile.pictureUrl,
+                                    ),
+                                )
                             }
+                            is ResultWithError.Failure -> state
                         }
                     }
                 }

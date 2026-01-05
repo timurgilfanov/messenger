@@ -112,7 +112,9 @@ class ChatViewModel @AssistedInject constructor(
                     when (result) {
                         is ResultWithError.Success -> {
                             reduce { state.copy(isSending = false) }
-                            if (currentInputText == (result.data as TextMessage).text) {
+                            if (result.data is TextMessage &&
+                                currentInputText == result.data.text
+                            ) {
                                 currentInputText = ""
                                 postSideEffect(ChatSideEffect.ClearInputText)
                             }

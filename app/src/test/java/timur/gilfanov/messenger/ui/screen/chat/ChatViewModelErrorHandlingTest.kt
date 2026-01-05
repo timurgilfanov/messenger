@@ -112,6 +112,7 @@ class ChatViewModelErrorHandlingTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
+            // Wait for initial Ready state
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
 
@@ -199,10 +200,12 @@ class ChatViewModelErrorHandlingTest {
         viewModel.test(this) {
             val job = runOnCreate()
 
+            // Initial state should be ready
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertNull(initialState.updateError)
 
+            // Simulate transient network error
             chatFlow.value = Failure(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable))
 
             val errorState = awaitState()

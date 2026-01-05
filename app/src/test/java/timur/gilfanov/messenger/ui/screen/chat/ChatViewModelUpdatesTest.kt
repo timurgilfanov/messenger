@@ -147,6 +147,7 @@ class ChatViewModelUpdatesTest {
             assertTrue(initialState.isGroupChat)
             assertEquals(ChatStatus.Group(2), initialState.status)
 
+            // Update chat metadata: change name and add new participant
             val newParticipant = buildParticipant {
                 id = newParticipantId
                 name = "New Participant"

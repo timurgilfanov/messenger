@@ -128,6 +128,7 @@ class ChatViewModelMessageSendingTest {
                 copy(inputTextValidationError = TextValidationError.Empty)
             }
 
+            // Sending a empty text message should cause an error
             viewModel.sendMessage(MessageId(UUID.randomUUID()), Instant.fromEpochMilliseconds(1000))
 
             expectStateOn<ChatUiState.Ready> {

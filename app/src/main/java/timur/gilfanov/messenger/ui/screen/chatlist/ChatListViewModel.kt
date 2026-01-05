@@ -1,11 +1,8 @@
 package timur.gilfanov.messenger.ui.screen.chatlist
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.UUID
+import javax.inject.Inject
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -22,37 +19,52 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
+import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
 
 private const val STATE_UPDATE_DEBOUNCE = 200L
 private const val UPDATING_DEBOUNCE = 1000L
 
-@HiltViewModel(assistedFactory = ChatListViewModel.ChatListViewModelFactory::class)
-class ChatListViewModel @AssistedInject constructor(
-    @Assisted("currentUserId") currentUserIdUuid: UUID,
+@HiltViewModel
+class ChatListViewModel @Inject constructor(
+    private val observeProfileUseCase: ObserveProfileUseCase,
     private val flowChatListUseCase: FlowChatListUseCase,
     private val chatRepository: ChatRepository,
 ) : ViewModel(),
     ContainerHost<ChatListScreenState, Nothing> {
 
     override val container = container<ChatListScreenState, Nothing>(
-        ChatListScreenState(
-            currentUser = CurrentUserUiModel(
-                id = ParticipantId(currentUserIdUuid),
-                name = "Current User",
-                pictureUrl = null,
-            ),
-            isLoading = true,
-        ),
+        ChatListScreenState(isLoading = true),
     ) {
         coroutineScope {
+            launch { observeProfile() }
             launch { observeChatList() }
             launch { observeChatListUpdating() }
         }
     }
 
-    @AssistedFactory
-    interface ChatListViewModelFactory {
-        fun create(@Assisted("currentUserId") currentUserId: UUID): ChatListViewModel
+    @OptIn(OrbitExperimental::class)
+    private suspend fun observeProfile() = subIntent {
+        repeatOnSubscription {
+            observeProfileUseCase()
+                .distinctUntilChanged()
+                .collect { result ->
+                    reduce {
+                        when (result) {
+                            is ResultWithError.Success -> {
+                                val profile = result.data
+                                state.copy(
+                                    currentUser = CurrentUserUiModel(
+                                        id = ParticipantId(profile.id.id),
+                                        name = profile.name,
+                                        pictureUrl = profile.pictureUrl,
+                                    ),
+                                )
+                            }
+                            is ResultWithError.Failure -> state
+                        }
+                    }
+                }
+        }
     }
 
     @OptIn(OrbitExperimental::class, FlowPreview::class)

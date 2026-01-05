@@ -68,7 +68,6 @@ class ChatViewModelLoadingTest {
             ),
             isGroupChat = params.isGroupChat,
             messages = params.actualState.messages,
-            inputTextField = params.actualState.inputTextField,
             isSending = false,
             status = if (params.isGroupChat) ChatStatus.Group(2) else ChatStatus.OneToOne(null),
         )

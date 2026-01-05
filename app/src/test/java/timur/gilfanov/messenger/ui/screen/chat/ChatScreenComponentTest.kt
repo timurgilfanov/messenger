@@ -46,6 +46,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = ChatUiState.Loading(),
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -64,6 +65,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = errorState,
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -89,6 +91,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -114,13 +117,13 @@ class ChatScreenComponentTest {
             id = testChatId,
             title = "Test Chat",
             participants = emptyList(),
-            inputTextField = textFieldState,
         )
 
         composeTestRule.setContent {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = textFieldState,
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -142,13 +145,13 @@ class ChatScreenComponentTest {
             id = testChatId,
             title = "Test Chat",
             participants = emptyList(),
-            inputTextField = textFieldState,
         )
 
         composeTestRule.setContent {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = textFieldState,
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -171,7 +174,6 @@ class ChatScreenComponentTest {
             participants = persistentListOf(),
             isGroupChat = false,
             messages = flowOf(PagingData.empty()),
-            inputTextField = TextFieldState("Test message"),
             isSending = false,
             status = ChatStatus.OneToOne(null),
         )
@@ -182,6 +184,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState("Test message"),
                     onSendMessage = { sendClicked = true },
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -200,7 +203,6 @@ class ChatScreenComponentTest {
             participants = persistentListOf(),
             isGroupChat = false,
             messages = flowOf(PagingData.empty()),
-            inputTextField = TextFieldState("Sending..."),
             isSending = true,
             status = ChatStatus.OneToOne(null),
         )
@@ -209,6 +211,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState("Sending..."),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -239,7 +242,6 @@ class ChatScreenComponentTest {
             ),
             isGroupChat = true,
             messages = flowOf(PagingData.empty()),
-            inputTextField = TextFieldState(""),
             isSending = false,
             status = ChatStatus.Group(2),
         )
@@ -248,6 +250,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -266,7 +269,6 @@ class ChatScreenComponentTest {
             participants = persistentListOf(),
             isGroupChat = false,
             messages = flowOf(PagingData.empty()),
-            inputTextField = TextFieldState(""),
             isSending = false,
             status = ChatStatus.OneToOne(null),
             updateError = updateError,
@@ -276,6 +278,7 @@ class ChatScreenComponentTest {
             MessengerTheme {
                 ChatScreenContent(
                     uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -296,10 +299,10 @@ class ChatScreenComponentTest {
                         participants = persistentListOf(),
                         isGroupChat = false,
                         messages = flowOf(PagingData.empty()),
-                        inputTextField = TextFieldState(""),
                         inputTextValidationError = TextValidationError.Empty,
                         status = ChatStatus.OneToOne(null),
                     ),
+                    inputTextFieldState = TextFieldState(""),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )
@@ -322,9 +325,9 @@ class ChatScreenComponentTest {
                         participants = persistentListOf(),
                         isGroupChat = false,
                         messages = flowOf(PagingData.empty()),
-                        inputTextField = TextFieldState("a"),
                         status = ChatStatus.OneToOne(null),
                     ),
+                    inputTextFieldState = TextFieldState("a"),
                     onSendMessage = {},
                     onMarkMessagesAsReadUpTo = {},
                 )

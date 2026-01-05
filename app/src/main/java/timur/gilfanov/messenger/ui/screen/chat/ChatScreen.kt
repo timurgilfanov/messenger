@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +40,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
@@ -64,8 +67,22 @@ fun ChatScreen(
         ),
 ) {
     val uiState by viewModel.collectAsState()
+    val inputTextFieldState = rememberTextFieldState()
+
+    viewModel.collectSideEffect { sideEffect ->
+        when (sideEffect) {
+            ChatSideEffect.ClearInputText -> inputTextFieldState.setTextAndPlaceCursorAtEnd("")
+        }
+    }
+
+    // key2 needed to launch text validation after transition to Ready state
+    LaunchedEffect(key1 = inputTextFieldState.text, key2 = uiState is ChatUiState.Ready) {
+        viewModel.onInputTextChanged(inputTextFieldState.text.toString())
+    }
+
     ChatScreenContent(
         uiState = uiState,
+        inputTextFieldState = inputTextFieldState,
         onSendMessage = viewModel::sendMessage,
         onMarkMessagesAsReadUpTo = viewModel::markMessagesAsReadUpTo,
         modifier = modifier,
@@ -76,6 +93,7 @@ fun ChatScreen(
 @Composable
 fun ChatScreenContent(
     uiState: ChatUiState,
+    inputTextFieldState: TextFieldState,
     onSendMessage: () -> Unit,
     onMarkMessagesAsReadUpTo: (MessageId) -> Unit,
     modifier: Modifier = Modifier,
@@ -108,6 +126,7 @@ fun ChatScreenContent(
         is ChatUiState.Ready -> {
             ChatContent(
                 state = uiState,
+                inputTextFieldState = inputTextFieldState,
                 onSendMessage = onSendMessage,
                 onMarkMessagesAsReadUpTo = onMarkMessagesAsReadUpTo,
                 modifier = modifier,
@@ -123,6 +142,7 @@ private const val MARK_AS_VISIBLE_DEBOUNCE = 300L
 @Suppress("LongMethod") // Complex UI composition requires length
 fun ChatContent(
     state: ChatUiState.Ready,
+    inputTextFieldState: TextFieldState,
     onSendMessage: () -> Unit,
     onMarkMessagesAsReadUpTo: (MessageId) -> Unit,
     modifier: Modifier = Modifier,
@@ -179,7 +199,7 @@ fun ChatContent(
         },
         bottomBar = {
             MessageInput(
-                state = state.inputTextField,
+                state = inputTextFieldState,
                 textValidationError = state.inputTextValidationError,
                 isSending = state.isSending,
                 onSendMessage = onSendMessage,
@@ -228,11 +248,11 @@ private fun ChatContentPreview() {
                     ),
                 ),
                 isGroupChat = false,
-                messages = flowOf(PagingData.empty()), // Paging data will be not shown in preview
-                inputTextField = TextFieldState(""),
+                messages = flowOf(PagingData.empty()),
                 isSending = false,
                 status = ChatStatus.OneToOne(null),
             ),
+            inputTextFieldState = TextFieldState(""),
             onSendMessage = {},
             onMarkMessagesAsReadUpTo = {},
         )

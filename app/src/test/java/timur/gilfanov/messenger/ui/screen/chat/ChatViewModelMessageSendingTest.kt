@@ -1,11 +1,8 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
-import androidx.compose.runtime.snapshots.Snapshot
 import java.util.UUID
-import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -74,31 +71,23 @@ class ChatViewModelMessageSendingTest {
             )
             viewModel.test(this) {
                 val job = runOnCreate()
-                val inputTextField: TextFieldState
                 awaitState().let { state ->
                     assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
-                    assertEquals("", state.inputTextField.text)
                     assertFalse(state.isSending)
-                    inputTextField = state.inputTextField
                 }
 
-                Snapshot.withMutableSnapshot {
-                    inputTextField.setTextAndPlaceCursorAtEnd("Test message")
-                }
+                viewModel.onInputTextChanged("Test message")
                 viewModel.sendMessage(message.id, now = now)
                 expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
                 expectStateOn<ChatUiState.Ready> { copy(isSending = false) }
-                assertEquals("", inputTextField.text)
-                Snapshot.withMutableSnapshot {
-                    inputTextField.setTextAndPlaceCursorAtEnd("Test message 2")
-                }
-                // State should be the same as before sending the message, but we can't check paged
-                // messages and it will be different instance. This test is more about ensuring
-                // that input text field is cleared only once, not checking the messages list.
+
+                val sideEffect = awaitSideEffect()
+                assertIs<ChatSideEffect.ClearInputText>(sideEffect)
+
+                viewModel.onInputTextChanged("Test message 2")
                 awaitState().let { state ->
                     assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
                 }
-                assertEquals("Test message 2", inputTextField.text)
                 job.cancelAndJoin()
             }
         }
@@ -132,6 +121,8 @@ class ChatViewModelMessageSendingTest {
             val readyState = awaitState()
             assertTrue(readyState is ChatUiState.Ready)
             assertNull(readyState.dialogError)
+
+            viewModel.onInputTextChanged("")
 
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = TextValidationError.Empty)

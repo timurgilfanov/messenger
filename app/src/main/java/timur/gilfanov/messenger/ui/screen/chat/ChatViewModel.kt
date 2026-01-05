@@ -1,8 +1,5 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
-import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -15,7 +12,6 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -51,16 +47,16 @@ class ChatViewModel @AssistedInject constructor(
     private val getPagedMessagesUseCase: GetPagedMessagesUseCase,
     private val markMessagesAsReadUseCase: MarkMessagesAsReadUseCase,
 ) : ViewModel(),
-    ContainerHost<ChatUiState, Nothing> {
+    ContainerHost<ChatUiState, ChatSideEffect> {
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val container = container<ChatUiState, Nothing>(ChatUiState.Loading()) {
+    override val container = container<ChatUiState, ChatSideEffect>(ChatUiState.Loading()) {
         coroutineScope {
             launch { observeChatUpdates() }
         }
     }
 
-    var observeInputTextJob: Job? = null
+    private var currentInputText: String = ""
 
     private val chatId = ChatId(chatIdUuid)
     private val currentUserId = ParticipantId(currentUserIdUuid)
@@ -71,28 +67,6 @@ class ChatViewModel @AssistedInject constructor(
             @Assisted("chatId") chatId: UUID,
             @Assisted("currentUserId") currentUserId: UUID,
         ): ChatViewModel
-    }
-
-    @OptIn(
-        OrbitExperimental::class,
-        FlowPreview::class,
-        ExperimentalCoroutinesApi::class,
-    )
-    private suspend fun observeInputText() = subIntent {
-        runOn<ChatUiState.Ready> {
-            repeatOnSubscription {
-                snapshotFlow { state.inputTextField.text }
-                    .distinctUntilChanged()
-                    .collect { inputText ->
-                        withContext(Dispatchers.Main) {
-                            reduce {
-                                val error = validateInputText(inputText.toString())
-                                state.copy(inputTextValidationError = error)
-                            }
-                        }
-                    }
-            }
-        }
     }
 
     private fun validateInputText(text: String): TextValidationError? {
@@ -110,6 +84,17 @@ class ChatViewModel @AssistedInject constructor(
         }
     }
 
+    @OptIn(OrbitExperimental::class)
+    fun onInputTextChanged(text: String) = intent {
+        currentInputText = text
+        runOn<ChatUiState.Ready> {
+            reduce {
+                val error = validateInputText(text)
+                state.copy(inputTextValidationError = error)
+            }
+        }
+    }
+
     private var currentChat: Chat? = null
 
     @OptIn(OrbitExperimental::class)
@@ -121,24 +106,17 @@ class ChatViewModel @AssistedInject constructor(
             runOn<ChatUiState.Ready> {
                 reduce { state.copy(isSending = true) }
 
-                val message = textMessage(messageId, now, state.inputTextField.text.toString())
+                val textToSend = currentInputText
+                val message = textMessage(messageId, now, textToSend)
                 sendMessageUseCase(currentChat!!, message).collect { result ->
                     when (result) {
                         is ResultWithError.Success -> {
-                            var clear = false
-                            reduce {
-                                if (state.inputTextField.text ==
-                                    (result.data as TextMessage).text
-                                ) {
-                                    clear = true
-                                    state.copy(isSending = false)
-                                } else {
-                                    state
-                                }
-                            }
-                            if (clear) {
-                                // important to clear after the state is updated to prevent concurrency issues
-                                state.inputTextField.setTextAndPlaceCursorAtEnd("")
+                            reduce { state.copy(isSending = false) }
+                            if (result.data is TextMessage &&
+                                currentInputText == result.data.text
+                            ) {
+                                currentInputText = ""
+                                postSideEffect(ChatSideEffect.ClearInputText)
                             }
                         }
 
@@ -217,13 +195,6 @@ class ChatViewModel @AssistedInject constructor(
                             }
                         }
                     }
-                    if (observeInputTextJob?.isActive != true) {
-                        runOn<ChatUiState.Ready> {
-                            observeInputTextJob = launch {
-                                observeInputText()
-                            }
-                        }
-                    }
                 }
         }
     }
@@ -252,7 +223,6 @@ class ChatViewModel @AssistedInject constructor(
             isGroupChat = !chat.isOneToOne,
             messages = getPagedMessagesUseCase(chat.id),
             status = chatStatus,
-            inputTextField = (state as? ChatUiState.Ready?)?.inputTextField ?: TextFieldState(""),
             inputTextValidationError = inputTextValidationError,
             isSending = (state as? ChatUiState.Ready?)?.isSending == true,
             updateError = (state as? ChatUiState.Ready?)?.updateError,

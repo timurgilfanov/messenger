@@ -75,7 +75,8 @@ fun ChatScreen(
         }
     }
 
-    LaunchedEffect(inputTextFieldState.text, uiState is ChatUiState.Ready) {
+    // key2 needed to launch text validation after transition to Ready state
+    LaunchedEffect(key1 = inputTextFieldState.text, key2 = uiState is ChatUiState.Ready) {
         viewModel.onInputTextChanged(inputTextFieldState.text.toString())
     }
 

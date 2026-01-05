@@ -24,7 +24,6 @@ import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
 import timur.gilfanov.messenger.ui.screen.settings.SettingsScreen
@@ -32,7 +31,6 @@ import timur.gilfanov.messenger.ui.screen.settings.SettingsScreen
 @Suppress("LongParameterList") // in Compose property drilling is preferred over wrapper
 @Composable
 fun MainScreen(
-    currentUserId: ParticipantId,
     onAuthFailure: () -> Unit,
     onProfileEditClick: () -> Unit,
     onChangeLanguageClick: () -> Unit,
@@ -74,7 +72,6 @@ fun MainScreen(
         val modifier1 = Modifier.padding(paddingValues)
         when (uiState.selectedTab) {
             0 -> ChatListScreen(
-                currentUserId = currentUserId, // todo retrieve from IdentityRepository
                 actions = ChatListActions(
                     onChatClick = onChatClick,
                     onNewChatClick = onNewChatClick,

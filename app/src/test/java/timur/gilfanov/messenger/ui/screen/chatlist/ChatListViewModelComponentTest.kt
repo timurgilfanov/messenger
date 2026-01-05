@@ -27,12 +27,16 @@ import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
+import timur.gilfanov.messenger.domain.entity.profile.Profile
+import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError.LocalOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
+import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -43,6 +47,9 @@ class ChatListViewModelComponentTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val testUserId = UUID.randomUUID()
+    private val testProfile = Profile(UserId(testUserId), "Test User", null)
+    private val testObserveProfileUseCase: ObserveProfileUseCase =
+        ObserveProfileUseCaseStub(flowOf(Success(testProfile)))
     private val testChatId = ChatId(UUID.randomUUID())
     private val testTimestamp = Clock.System.now()
 
@@ -105,17 +112,29 @@ class ChatListViewModelComponentTest {
         ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = error("Not implemented")
     }
 
+    private suspend fun org.orbitmvi.orbit.test.OrbitTestContext<
+        ChatListScreenState,
+        Nothing,
+        ChatListViewModel,
+        >.awaitLoadedState(): ChatListScreenState {
+        var state = awaitState()
+        while (state.isLoading) {
+            state = awaitState()
+        }
+        return state
+    }
+
     @Test
     fun `ViewModel displays empty state when no chats`() = runTest {
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(emptyList())),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
         viewModel.test(this) {
             val job = runOnCreate()
-            val state = awaitState()
+            val state = awaitLoadedState()
 
             assertEquals(ChatListUiState.Empty, state.uiState)
             assertEquals(false, state.isLoading)
@@ -133,11 +152,11 @@ class ChatListViewModelComponentTest {
             chatListFlow = flowOf(Success(listOf(ChatPreview.fromChat(testChat)))),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
         viewModel.test(this) {
             val job = runOnCreate()
-            val state = awaitState()
+            val state = awaitLoadedState()
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
             assertEquals(1, state.uiState.chats.size)
@@ -157,11 +176,11 @@ class ChatListViewModelComponentTest {
             ),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
         viewModel.test(this) {
             val job = runOnCreate()
-            val state = awaitState()
+            val state = awaitLoadedState()
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
             assertEquals(0, state.uiState.chats.size)
@@ -181,13 +200,13 @@ class ChatListViewModelComponentTest {
             updatingFlow = updatingFlow,
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
         viewModel.test(this) {
             val job = runOnCreate()
 
-            // Initial state
-            val initialState = awaitState()
+            // Initial state - wait for loaded
+            val initialState = awaitLoadedState()
             assertEquals(false, initialState.isRefreshing)
 
             // Simulate refreshing
@@ -216,11 +235,11 @@ class ChatListViewModelComponentTest {
             chatListFlow = flowOf(Success(listOf(ChatPreview.fromChat(testChat)))),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
         viewModel.test(this) {
             val job = runOnCreate()
-            val state = awaitState()
+            val state = awaitLoadedState()
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
             val chatItem = state.uiState.chats[0]
@@ -241,13 +260,13 @@ class ChatListViewModelComponentTest {
             )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
         viewModel.test(this) {
             val job = runOnCreate()
 
             // Initial state
-            val initialState = awaitState()
+            val initialState = awaitLoadedState()
             assertTrue(initialState.uiState is ChatListUiState.NotEmpty)
             val initialNotEmpty = initialState.uiState
             assertEquals("Initial Chat", initialNotEmpty.chats[0].name)
@@ -272,13 +291,13 @@ class ChatListViewModelComponentTest {
             )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
         viewModel.test(this) {
             val job = runOnCreate()
 
             // Initial error state
-            val errorState = awaitState()
+            val errorState = awaitLoadedState()
             assertEquals(
                 LocalOperationFailed(LocalStorageError.Corrupted),
                 errorState.error,
@@ -305,11 +324,11 @@ class ChatListViewModelComponentTest {
             ),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testUserId, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
         viewModel.test(this) {
             val job = runOnCreate()
-            val state = awaitState()
+            val state = awaitLoadedState()
 
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isRefreshing)

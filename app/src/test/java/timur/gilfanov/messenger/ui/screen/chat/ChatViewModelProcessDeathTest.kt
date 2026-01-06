@@ -48,8 +48,8 @@ class ChatViewModelProcessDeathTest {
         val repository = MessengerRepositoryFake(chat = chat, flowChat = flowOf(Success(chat)))
 
         val viewModel = ChatViewModel(
-            chatIdUuid = UUID.randomUUID(),
-            currentUserIdUuid = UUID.randomUUID(),
+            chatIdUuid = UUID.fromString("00000000-0000-0000-0000-000000000010"),
+            currentUserIdUuid = UUID.fromString("00000000-0000-0000-0000-000000000020"),
             savedStateHandle = restoredSavedStateHandle,
             sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),

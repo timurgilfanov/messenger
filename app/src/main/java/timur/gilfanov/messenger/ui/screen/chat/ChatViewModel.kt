@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -37,11 +38,15 @@ import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Error
 import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Loading
 
 private const val STATE_UPDATE_DEBOUNCE = 200L
+private const val KEY_CHAT_ID = "chatId"
+private const val KEY_CURRENT_USER_ID = "currentUserId"
 
+@Suppress("LongParameterList") // a lot of use cases is valid for ViewModel
 @HiltViewModel(assistedFactory = ChatViewModel.ChatViewModelFactory::class)
 class ChatViewModel @AssistedInject constructor(
     @Assisted("chatId") chatIdUuid: UUID,
     @Assisted("currentUserId") currentUserIdUuid: UUID,
+    private val savedStateHandle: SavedStateHandle,
     private val sendMessageUseCase: SendMessageUseCase,
     private val receiveChatUpdatesUseCase: ReceiveChatUpdatesUseCase,
     private val getPagedMessagesUseCase: GetPagedMessagesUseCase,
@@ -58,8 +63,18 @@ class ChatViewModel @AssistedInject constructor(
 
     private var currentInputText: String = ""
 
-    private val chatId = ChatId(chatIdUuid)
-    private val currentUserId = ParticipantId(currentUserIdUuid)
+    private val chatId: ChatId = savedStateHandle.get<String>(KEY_CHAT_ID)?.let {
+        ChatId(UUID.fromString(it))
+    } ?: ChatId(chatIdUuid).also {
+        savedStateHandle[KEY_CHAT_ID] = it.id.toString()
+    }
+
+    private val currentUserId: ParticipantId =
+        savedStateHandle.get<String>(KEY_CURRENT_USER_ID)?.let {
+            ParticipantId(UUID.fromString(it))
+        } ?: ParticipantId(currentUserIdUuid).also {
+            savedStateHandle[KEY_CURRENT_USER_ID] = it.id.toString()
+        }
 
     @AssistedFactory
     interface ChatViewModelFactory {

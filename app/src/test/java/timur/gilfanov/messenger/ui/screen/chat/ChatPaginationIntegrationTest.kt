@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.paging.PagingData
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -60,6 +61,7 @@ class ChatPaginationIntegrationTest {
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
+            savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
                 DeliveryStatusValidatorImpl(),
@@ -109,6 +111,7 @@ class ChatPaginationIntegrationTest {
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
+            savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
                 DeliveryStatusValidatorImpl(),
@@ -146,6 +149,7 @@ class ChatPaginationIntegrationTest {
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
+            savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
                 DeliveryStatusValidatorImpl(),
@@ -196,6 +200,7 @@ class ChatPaginationIntegrationTest {
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
+            savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
                 DeliveryStatusValidatorImpl(),

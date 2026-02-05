@@ -22,3 +22,5 @@ style:
 StoreRules:
   NoMutableStateFlowExposure:
     active: true
+  ReduceOnlyInActor:
+    active: true

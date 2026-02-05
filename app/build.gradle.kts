@@ -335,6 +335,7 @@ dependencies {
     ktlintRuleset(libs.ktlint.compose)
     detektPlugins(libs.detekt.compose)
     detektPlugins(libs.detekt.formatting)
+    detektPlugins(project(":build-logic"))
 }
 
 tasks.withType<Test> {

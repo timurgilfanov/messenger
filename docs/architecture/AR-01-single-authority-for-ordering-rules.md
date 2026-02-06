@@ -34,6 +34,3 @@ Centralization in `actor` reduces hidden coupling between actions and makes orde
 ## Anti-patterns
 - ordering is enforced implicitly via scattered guards across multiple writers
 - commit UI state updates (e.g., call `reduce`) outside `actor`
-
-## Related
-- AR-02: Serialized UI State Commits (Single Writer)

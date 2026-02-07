@@ -11,7 +11,7 @@ import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.viewmodel.container
 
 @HiltViewModel
-class MainScreenViewModel @Inject constructor(val savedStateHandle: SavedStateHandle) :
+class MainScreenViewModel @Inject constructor(private val savedStateHandle: SavedStateHandle) :
     ViewModel(),
     ContainerHost<MainScreenUiState, Nothing> {
 

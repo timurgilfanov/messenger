@@ -9,5 +9,5 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun ProfileEditScreen(
     onDoneClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ProfileEditViewModel = hiltViewModel(),
+    store: ProfileEditStore = hiltViewModel(),
 ) = Unit

@@ -30,13 +30,13 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.createTestChat
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.createTestMessage
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
-class ChatViewModelLoadingTest {
+class ChatStoreLoadingTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -89,7 +89,7 @@ class ChatViewModelLoadingTest {
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -99,7 +99,7 @@ class ChatViewModelLoadingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
@@ -139,7 +139,7 @@ class ChatViewModelLoadingTest {
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -149,7 +149,7 @@ class ChatViewModelLoadingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             val state = awaitState()
             assertTrue { state is ChatUiState.Ready }
@@ -187,7 +187,7 @@ class ChatViewModelLoadingTest {
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -197,7 +197,7 @@ class ChatViewModelLoadingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             expectState {
                 ChatUiState.Loading(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable))

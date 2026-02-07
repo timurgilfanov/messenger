@@ -19,26 +19,25 @@ import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCaseSt
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
-class SettingsViewModelObservationTest {
+class SettingsStoreObservationTest {
 
     fun createTestSettings(language: UiLanguage = UiLanguage.English): Settings = Settings(
         uiLanguage = language,
     )
 
-    fun createViewModel(observeSettings: ObserveSettingsUseCase): SettingsViewModel =
-        SettingsViewModel(
-            observeSettings = observeSettings,
-            logger = NoOpLogger(),
-        )
+    fun createViewModel(observeSettings: ObserveSettingsUseCase): SettingsStore = SettingsStore(
+        observeSettings = observeSettings,
+        logger = NoOpLogger(),
+    )
 
     @Test
     fun `transitions to Ready state on successful observation`() = runTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Success(createTestSettings(UiLanguage.English)),
         )
-        val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
+        val store = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState { SettingsUiState.Ready(SettingsUi(UiLanguage.English)) }
@@ -55,9 +54,9 @@ class SettingsViewModelObservationTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Failure(ObserveSettingsError.Unauthorized),
         )
-        val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
+        val store = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectSideEffect(SettingsSideEffects.Unauthorized)
@@ -77,9 +76,9 @@ class SettingsViewModelObservationTest {
                 ObserveSettingsError.LocalOperationFailed(localStorageError),
             ),
         )
-        val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
+        val store = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectSideEffect(SettingsSideEffects.ObserveSettingsFailed(localStorageError))
@@ -96,9 +95,9 @@ class SettingsViewModelObservationTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Success(createTestSettings(UiLanguage.English)),
         )
-        val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
+        val store = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState { SettingsUiState.Ready(SettingsUi(UiLanguage.English)) }
@@ -120,9 +119,9 @@ class SettingsViewModelObservationTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Success(createTestSettings(UiLanguage.English)),
         )
-        val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
+        val store = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState { SettingsUiState.Ready(SettingsUi(UiLanguage.English)) }

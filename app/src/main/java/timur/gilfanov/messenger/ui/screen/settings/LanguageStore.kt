@@ -21,13 +21,13 @@ import timur.gilfanov.messenger.domain.usecase.settings.ObserveUiLanguageUseCase
 import timur.gilfanov.messenger.util.Logger
 
 /**
- * ViewModel for the language selection screen.
+ * Store for the language selection screen.
  *
  * Manages UI state and side effects for changing the user's preferred
  * application language. Uses Orbit MVI pattern for state management.
  */
 @HiltViewModel
-class LanguageViewModel @Inject constructor(
+class LanguageStore @Inject constructor(
     private val observe: ObserveUiLanguageUseCase,
     private val change: ChangeUiLanguageUseCase,
     private val logger: Logger,
@@ -35,7 +35,7 @@ class LanguageViewModel @Inject constructor(
     ContainerHost<LanguageUiState, LanguageSideEffects> {
 
     companion object {
-        private const val TAG = "LanguageViewModel"
+        private const val TAG = "LanguageStore"
         private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
     }
 

@@ -31,13 +31,13 @@ import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.createTestChat
 
 /**
  * Integration tests for pagination functionality in the chat feature.
  *
- * These tests verify that pagination is properly integrated into the ChatViewModel
+ * These tests verify that pagination is properly integrated into the ChatStore
  * and that the UI state correctly includes paginated message data.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -48,7 +48,7 @@ class ChatPaginationIntegrationTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `ChatViewModel initializes with pagination support`() = runTest {
+    fun `ChatStore initializes with pagination support`() = runTest {
         // Given: Chat setup with pagination-enabled repository
         val chatId = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
         val currentUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
@@ -58,7 +58,7 @@ class ChatPaginationIntegrationTest {
         val chatRepository = MessengerRepositoryFake(chat = chat)
         val messageRepository = PaginationTestRepository()
 
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -71,8 +71,8 @@ class ChatPaginationIntegrationTest {
             markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(chatRepository),
         )
 
-        // When: ViewModel initializes
-        viewModel.test(this) {
+        // When: Store initializes
+        store.test(this) {
             val job = runOnCreate()
 
             // Then: Ready state includes pagination support
@@ -108,7 +108,7 @@ class ChatPaginationIntegrationTest {
         val chatRepository = MessengerRepositoryFake(chat = chat)
         val messageRepository = PaginationTestRepository(testMessages = testMessages)
 
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -121,8 +121,8 @@ class ChatPaginationIntegrationTest {
             markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(chatRepository),
         )
 
-        // When: ViewModel loads with paginated data
-        viewModel.test(this) {
+        // When: Store loads with paginated data
+        store.test(this) {
             val job = runOnCreate()
 
             val state = awaitState()
@@ -146,7 +146,7 @@ class ChatPaginationIntegrationTest {
         val chatRepository = MessengerRepositoryFake(chat = chat)
         val messageRepository = PaginationTestRepository(testMessages = emptyList())
 
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -159,8 +159,8 @@ class ChatPaginationIntegrationTest {
             markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(chatRepository),
         )
 
-        // When: ViewModel loads with empty data
-        viewModel.test(this) {
+        // When: Store loads with empty data
+        store.test(this) {
             val job = runOnCreate()
 
             val state = awaitState()
@@ -197,7 +197,7 @@ class ChatPaginationIntegrationTest {
         val chatRepository = MessengerRepositoryFake(chat = chat)
         val messageRepository = PaginationTestRepository(testMessages = paginatedMessages)
 
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -210,8 +210,8 @@ class ChatPaginationIntegrationTest {
             markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(chatRepository),
         )
 
-        // When: ViewModel loads with both regular and paginated data
-        viewModel.test(this) {
+        // When: Store loads with both regular and paginated data
+        store.test(this) {
             val job = runOnCreate()
 
             val state = awaitState()

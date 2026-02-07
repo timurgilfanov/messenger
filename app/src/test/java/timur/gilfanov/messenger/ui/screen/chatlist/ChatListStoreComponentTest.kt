@@ -41,7 +41,7 @@ import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
-class ChatListViewModelComponentTest {
+class ChatListStoreComponentTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -115,7 +115,7 @@ class ChatListViewModelComponentTest {
     private suspend fun org.orbitmvi.orbit.test.OrbitTestContext<
         ChatListScreenState,
         Nothing,
-        ChatListViewModel,
+        ChatListStore,
         >.awaitLoadedState(): ChatListScreenState {
         var state = awaitState()
         while (state.isLoading) {
@@ -125,14 +125,14 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `ViewModel displays empty state when no chats`() = runTest {
+    fun `Store displays empty state when no chats`() = runTest {
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(emptyList())),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val store = ChatListStore(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             val state = awaitLoadedState()
 
@@ -146,15 +146,15 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `ViewModel displays chat list when chats available`() = runTest {
+    fun `Store displays chat list when chats available`() = runTest {
         val testChat = createTestChat(name = "Test Chat")
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(listOf(ChatPreview.fromChat(testChat)))),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val store = ChatListStore(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             val state = awaitLoadedState()
 
@@ -169,16 +169,16 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `ViewModel handles local error correctly`() = runTest {
+    fun `Store handles local error correctly`() = runTest {
         val repository = RepositoryFake(
             chatListFlow = flowOf(
                 ResultWithError.Failure(LocalOperationFailed(LocalStorageError.Corrupted)),
             ),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val store = ChatListStore(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             val state = awaitLoadedState()
 
@@ -193,16 +193,16 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `ViewModel updates refreshing state correctly`() = runTest {
+    fun `Store updates refreshing state correctly`() = runTest {
         val updatingFlow = MutableStateFlow(false)
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(emptyList())),
             updatingFlow = updatingFlow,
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val store = ChatListStore(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             // Initial state - wait for loaded
@@ -224,7 +224,7 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `ViewModel transforms chat to UI model correctly`() = runTest {
+    fun `Store transforms chat to UI model correctly`() = runTest {
         val message = createTestMessage("Hello world")
         val testChat = createTestChat(
             name = "Test Chat",
@@ -235,9 +235,9 @@ class ChatListViewModelComponentTest {
             chatListFlow = flowOf(Success(listOf(ChatPreview.fromChat(testChat)))),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val store = ChatListStore(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             val state = awaitLoadedState()
 
@@ -253,16 +253,16 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `ViewModel handles chat updates correctly`() = runTest {
+    fun `Store handles chat updates correctly`() = runTest {
         val chatListFlow =
             MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>>(
                 Success(listOf(ChatPreview.fromChat(createTestChat(name = "Initial Chat")))),
             )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val store = ChatListStore(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             // Initial state
@@ -284,16 +284,16 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `ViewModel clears error on successful data load`() = runTest {
+    fun `Store clears error on successful data load`() = runTest {
         val chatListFlow =
             MutableStateFlow<ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>>(
                 ResultWithError.Failure(LocalOperationFailed(LocalStorageError.Corrupted)),
             )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val store = ChatListStore(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             // Initial error state
@@ -315,7 +315,7 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `ViewModel stops loading and refreshing on error`() = runTest {
+    fun `Store stops loading and refreshing on error`() = runTest {
         val repository = RepositoryFake(
             chatListFlow = flowOf(
                 ResultWithError.Failure(
@@ -324,9 +324,9 @@ class ChatListViewModelComponentTest {
             ),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val store = ChatListStore(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             val state = awaitLoadedState()
 

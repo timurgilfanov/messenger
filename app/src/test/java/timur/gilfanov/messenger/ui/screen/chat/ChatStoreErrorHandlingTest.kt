@@ -32,14 +32,14 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithPaging
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.MessengerRepositoryFakeWithPaging
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.createTestChat
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.createTestMessage
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
-class ChatViewModelErrorHandlingTest {
+class ChatStoreErrorHandlingTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -59,7 +59,7 @@ class ChatViewModelErrorHandlingTest {
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -69,7 +69,7 @@ class ChatViewModelErrorHandlingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             // Should transition to Error state for ChatNotFound
@@ -102,7 +102,7 @@ class ChatViewModelErrorHandlingTest {
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -112,7 +112,7 @@ class ChatViewModelErrorHandlingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             // Wait for initial Ready state
@@ -148,7 +148,7 @@ class ChatViewModelErrorHandlingTest {
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -158,7 +158,7 @@ class ChatViewModelErrorHandlingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             // Should remain in Loading state with error
@@ -192,7 +192,7 @@ class ChatViewModelErrorHandlingTest {
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -202,7 +202,7 @@ class ChatViewModelErrorHandlingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             // Initial state should be ready

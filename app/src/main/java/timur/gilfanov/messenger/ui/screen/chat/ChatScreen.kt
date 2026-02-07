@@ -55,10 +55,10 @@ fun ChatScreen(
     chatId: ChatId,
     currentUserId: ParticipantId,
     modifier: Modifier = Modifier,
-    viewModel: ChatViewModel =
+    store: ChatStore =
         hiltViewModel(
             key = "${chatId.id}_${currentUserId.id}",
-            creationCallback = { factory: ChatViewModel.ChatViewModelFactory ->
+            creationCallback = { factory: ChatStore.ChatStoreFactory ->
                 factory.create(
                     chatId = chatId.id,
                     currentUserId = currentUserId.id,
@@ -66,10 +66,10 @@ fun ChatScreen(
             },
         ),
 ) {
-    val uiState by viewModel.collectAsState()
+    val uiState by store.collectAsState()
     val inputTextFieldState = rememberTextFieldState()
 
-    viewModel.collectSideEffect { sideEffect ->
+    store.collectSideEffect { sideEffect ->
         when (sideEffect) {
             ChatSideEffect.ClearInputText -> inputTextFieldState.setTextAndPlaceCursorAtEnd("")
         }
@@ -77,14 +77,14 @@ fun ChatScreen(
 
     // key2 needed to launch text validation after transition to Ready state
     LaunchedEffect(key1 = inputTextFieldState.text, key2 = uiState is ChatUiState.Ready) {
-        viewModel.onInputTextChanged(inputTextFieldState.text.toString())
+        store.onInputTextChanged(inputTextFieldState.text.toString())
     }
 
     ChatScreenContent(
         uiState = uiState,
         inputTextFieldState = inputTextFieldState,
-        onSendMessage = viewModel::sendMessage,
-        onMarkMessagesAsReadUpTo = viewModel::markMessagesAsReadUpTo,
+        onSendMessage = store::sendMessage,
+        onMarkMessagesAsReadUpTo = store::markMessagesAsReadUpTo,
         modifier = modifier,
     )
 }

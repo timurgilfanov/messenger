@@ -38,9 +38,9 @@ fun MainScreen(
     onNewChatClick: () -> Unit,
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MainScreenViewModel = hiltViewModel(),
+    store: MainScreenStore = hiltViewModel(),
 ) {
-    val uiState by viewModel.collectAsState()
+    val uiState by store.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val onShowSnackbar: (String) -> Unit = { message ->
@@ -54,14 +54,14 @@ fun MainScreen(
             NavigationBar(modifier = Modifier.testTag("bottom_nav")) {
                 NavigationBarItem(
                     selected = uiState.selectedTab == 0,
-                    onClick = { viewModel.selectTab(0) },
+                    onClick = { store.selectTab(0) },
                     icon = { Icon(Icons.Default.Email, contentDescription = null) },
                     label = { Text(stringResource(R.string.main_tab_chats)) },
                     modifier = Modifier.testTag("bottom_nav_chats"),
                 )
                 NavigationBarItem(
                     selected = uiState.selectedTab == 1,
-                    onClick = { viewModel.selectTab(1) },
+                    onClick = { store.selectTab(1) },
                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                     label = { Text(stringResource(R.string.main_tab_settings)) },
                     modifier = Modifier.testTag("bottom_nav_settings"),

@@ -10,7 +10,7 @@ import timur.gilfanov.messenger.util.Logger
 
 @Suppress("UnusedPrivateProperty")
 @HiltViewModel
-class ProfileViewModel @Inject constructor(
+class ProfileStore @Inject constructor(
     private val observeProfile: ObserveProfileUseCase,
     private val logger: Logger,
 ) : ViewModel(),

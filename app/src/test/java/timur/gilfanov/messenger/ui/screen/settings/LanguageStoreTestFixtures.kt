@@ -19,7 +19,7 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguag
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 
-object LanguageViewModelTestFixtures {
+object LanguageStoreTestFixtures {
 
     private val TEST_USER_ID = java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440001")
     private val TEST_DEVICE_ID = java.util.UUID.fromString("00000000-0000-0000-0000-000000000002")
@@ -36,7 +36,7 @@ object LanguageViewModelTestFixtures {
     fun createViewModel(
         identityRepository: IdentityRepository,
         settingsRepository: SettingsRepository,
-    ): LanguageViewModel {
+    ): LanguageStore {
         val observeUseCase = ObserveUiLanguageUseCase(
             identityRepository = identityRepository,
             settingsRepository = settingsRepository,
@@ -47,7 +47,7 @@ object LanguageViewModelTestFixtures {
             settingsRepository = settingsRepository,
             logger = NoOpLogger(),
         )
-        return LanguageViewModel(
+        return LanguageStore(
             observe = observeUseCase,
             change = changeUseCase,
             logger = NoOpLogger(),

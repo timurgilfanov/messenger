@@ -22,12 +22,12 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.createTestChat
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(Component::class)
-class ChatViewModelTextInputTest {
+class ChatStoreTextInputTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -46,7 +46,7 @@ class ChatViewModelTextInputTest {
 
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
@@ -56,26 +56,26 @@ class ChatViewModelTextInputTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             val initialState = awaitState()
             assertTrue(initialState is ChatUiState.Ready)
             assertNull(initialState.inputTextValidationError)
 
-            viewModel.onInputTextChanged("")
+            store.onInputTextChanged("")
 
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = TextValidationError.Empty)
             }
 
-            viewModel.onInputTextChanged("Hi!")
+            store.onInputTextChanged("Hi!")
 
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = null)
             }
 
-            viewModel.onInputTextChanged("")
+            store.onInputTextChanged("")
 
             expectStateOn<ChatUiState.Ready> {
                 copy(inputTextValidationError = TextValidationError.Empty)

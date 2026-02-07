@@ -25,7 +25,7 @@ private const val STATE_UPDATE_DEBOUNCE = 200L
 private const val UPDATING_DEBOUNCE = 1000L
 
 @HiltViewModel
-class ChatListViewModel @Inject constructor(
+class ChatListStore @Inject constructor(
     private val observeProfileUseCase: ObserveProfileUseCase,
     private val flowChatListUseCase: FlowChatListUseCase,
     private val chatRepository: ChatRepository,

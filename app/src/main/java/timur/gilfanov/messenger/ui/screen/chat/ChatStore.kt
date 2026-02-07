@@ -42,8 +42,8 @@ private const val KEY_CHAT_ID = "chatId"
 private const val KEY_CURRENT_USER_ID = "currentUserId"
 
 @Suppress("LongParameterList") // a lot of use cases is valid for ViewModel
-@HiltViewModel(assistedFactory = ChatViewModel.ChatViewModelFactory::class)
-class ChatViewModel @AssistedInject constructor(
+@HiltViewModel(assistedFactory = ChatStore.ChatStoreFactory::class)
+class ChatStore @AssistedInject constructor(
     @Assisted("chatId") chatIdUuid: UUID,
     @Assisted("currentUserId") currentUserIdUuid: UUID,
     private val savedStateHandle: SavedStateHandle,
@@ -77,11 +77,11 @@ class ChatViewModel @AssistedInject constructor(
         }
 
     @AssistedFactory
-    interface ChatViewModelFactory {
+    interface ChatStoreFactory {
         fun create(
             @Assisted("chatId") chatId: UUID,
             @Assisted("currentUserId") currentUserId: UUID,
-        ): ChatViewModel
+        ): ChatStore
     }
 
     private fun validateInputText(text: String): TextValidationError? {

@@ -16,14 +16,14 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createTestSettings
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createViewModel
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createSettingsRepositoryWithFlow
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createSuccessfulIdentityRepository
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createTestSettings
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createViewModel
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
-class LanguageViewModelStateTransitionsTest {
+class LanguageStoreStateTransitionsTest {
 
     /**
      * Verifies that the `languages` list maintains referential equality across state changes.
@@ -36,15 +36,15 @@ class LanguageViewModelStateTransitionsTest {
         )
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
-            val languages1 = viewModel.container.stateFlow.value.languages
+            val languages1 = store.container.stateFlow.value.languages
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
@@ -53,7 +53,7 @@ class LanguageViewModelStateTransitionsTest {
             expectState {
                 copy(selectedLanguage = UiLanguage.German)
             }
-            val languages2 = viewModel.container.stateFlow.value.languages
+            val languages2 = store.container.stateFlow.value.languages
 
             assertSame(languages1, languages2)
             assertEquals(
@@ -76,15 +76,15 @@ class LanguageViewModelStateTransitionsTest {
         )
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
-            val state1 = viewModel.container.stateFlow.value
+            val state1 = store.container.stateFlow.value
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
@@ -93,7 +93,7 @@ class LanguageViewModelStateTransitionsTest {
             expectState {
                 copy(selectedLanguage = UiLanguage.German)
             }
-            val state2 = viewModel.container.stateFlow.value
+            val state2 = store.container.stateFlow.value
 
             assertNotSame(state1, state2)
             assertEquals(UiLanguage.English, state1.selectedLanguage)

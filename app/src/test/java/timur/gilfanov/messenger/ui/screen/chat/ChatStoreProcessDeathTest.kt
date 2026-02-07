@@ -21,12 +21,12 @@ import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatStoreTestFixtures.createTestChat
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
-class ChatViewModelProcessDeathTest {
+class ChatStoreProcessDeathTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -47,7 +47,7 @@ class ChatViewModelProcessDeathTest {
         val chat = createTestChat(chatId, currentUserId, otherUserId)
         val repository = MessengerRepositoryFake(chat = chat, flowChat = flowOf(Success(chat)))
 
-        val viewModel = ChatViewModel(
+        val store = ChatStore(
             chatIdUuid = UUID.fromString("00000000-0000-0000-0000-000000000010"),
             currentUserIdUuid = UUID.fromString("00000000-0000-0000-0000-000000000020"),
             savedStateHandle = restoredSavedStateHandle,
@@ -57,7 +57,7 @@ class ChatViewModelProcessDeathTest {
             markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository),
         )
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             val state = awaitState()
             assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
@@ -77,7 +77,7 @@ class ChatViewModelProcessDeathTest {
         val chat = createTestChat(chatId, currentUserId, otherUserId)
         val repository = MessengerRepositoryFake(chat = chat, flowChat = flowOf(Success(chat)))
 
-        ChatViewModel(
+        ChatStore(
             chatIdUuid = chatId.id,
             currentUserIdUuid = currentUserId.id,
             savedStateHandle = emptySavedStateHandle,

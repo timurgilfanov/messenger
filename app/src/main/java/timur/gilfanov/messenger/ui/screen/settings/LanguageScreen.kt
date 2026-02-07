@@ -40,9 +40,9 @@ fun LanguageScreen(
     onAuthFailure: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LanguageViewModel = hiltViewModel(),
+    store: LanguageStore = hiltViewModel(),
 ) {
-    val uiState by viewModel.collectAsState()
+    val uiState by store.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val errorMessage = stringResource(R.string.settings_language_change_failed)
@@ -51,7 +51,7 @@ fun LanguageScreen(
         scope.launch { snackbarHostState.showSnackbar(message) }
     }
 
-    viewModel.collectSideEffect {
+    store.collectSideEffect {
         when (it) {
             is LanguageSideEffects.ChangeFailed -> onShowSnackbar(errorMessage)
             LanguageSideEffects.Unauthorized -> onAuthFailure()
@@ -61,7 +61,7 @@ fun LanguageScreen(
     LanguageScreenContent(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
-        onSelectLanguage = viewModel::changeLanguage,
+        onSelectLanguage = store::changeLanguage,
         onBackClick = onBackClick,
         modifier = modifier,
     )

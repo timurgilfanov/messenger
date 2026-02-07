@@ -6,7 +6,7 @@ import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
 
 /**
- * ViewModel for the profile editing screen.
+ * Store for the profile editing screen.
  *
  * Manages user profile updates including display name and profile picture changes.
  * Uses Orbit MVI pattern for state management with [ProfileEditUiState] for UI state
@@ -14,14 +14,14 @@ import org.orbitmvi.orbit.ContainerHost
  *
  * ## Error Handling Strategy
  *
- * This ViewModel implements a dual error handling approach:
+ * This Store implements a dual error handling approach:
  * - **State errors**: Persistent errors shown inline (validation, upload progress)
  * - **Side effect errors**: Transient notifications (instant operation failures)
  *
  * @see ProfileEditUiState for detailed error handling documentation
  * @see ProfileEditSideEffects for side effect patterns
  */
-class ProfileEditViewModel :
+class ProfileEditStore :
     ViewModel(),
     ContainerHost<ProfileEditUiState, ProfileEditSideEffects> {
     override val container: Container<ProfileEditUiState, ProfileEditSideEffects>

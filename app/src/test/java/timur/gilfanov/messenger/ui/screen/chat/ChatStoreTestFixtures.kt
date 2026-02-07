@@ -32,7 +32,7 @@ import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
-object ChatViewModelTestFixtures {
+object ChatStoreTestFixtures {
 
     fun createTestChat(
         chatId: ChatId,

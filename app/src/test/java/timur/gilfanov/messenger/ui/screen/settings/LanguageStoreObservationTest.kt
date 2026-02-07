@@ -13,15 +13,15 @@ import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createFailingIdentityRepository
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createTestSettings
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createViewModel
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createFailingIdentityRepository
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createSettingsRepositoryWithFlow
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createSuccessfulIdentityRepository
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createTestSettings
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createViewModel
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
-class LanguageViewModelObservationTest {
+class LanguageStoreObservationTest {
 
     @Test
     fun `Unauthorized error from observation posts Unauthorized side effect`() = runTest {
@@ -30,9 +30,9 @@ class LanguageViewModelObservationTest {
         )
         val identityRepository = createFailingIdentityRepository()
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectSideEffect(LanguageSideEffects.Unauthorized)
@@ -52,9 +52,9 @@ class LanguageViewModelObservationTest {
             ),
         )
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             testScheduler.advanceTimeBy(300)
@@ -71,9 +71,9 @@ class LanguageViewModelObservationTest {
             ResultWithError.Success(createTestSettings(UiLanguage.English)),
         )
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
@@ -105,9 +105,9 @@ class LanguageViewModelObservationTest {
         )
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
@@ -148,9 +148,9 @@ class LanguageViewModelObservationTest {
         )
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {

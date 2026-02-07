@@ -79,9 +79,9 @@ data class ChatListContentActions(
 fun ChatListScreen(
     actions: ChatListActions,
     modifier: Modifier = Modifier,
-    viewModel: ChatListViewModel = hiltViewModel(),
+    store: ChatListStore = hiltViewModel(),
 ) {
-    val screenState by viewModel.collectAsState()
+    val screenState by store.collectAsState()
 
     val contentActions = remember(actions) {
         ChatListContentActions(

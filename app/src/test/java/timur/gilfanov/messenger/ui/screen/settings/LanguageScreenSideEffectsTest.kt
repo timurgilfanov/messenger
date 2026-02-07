@@ -17,9 +17,9 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryFake
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createViewModel
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createSettingsRepositoryFake
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createSuccessfulIdentityRepository
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createViewModel
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @RunWith(RobolectricTestRunner::class)
@@ -32,14 +32,14 @@ class LanguageScreenSideEffectsTest {
 
     @Test
     fun `shows snackbar when language change fails`() {
-        val viewModel = createViewModelWithChangeFailure()
+        val store = createViewModelWithChangeFailure()
 
         composeTestRule.setContent {
             MessengerTheme {
                 LanguageScreen(
                     onAuthFailure = {},
                     onBackClick = {},
-                    viewModel = viewModel,
+                    store = store,
                 )
             }
         }
@@ -60,14 +60,14 @@ class LanguageScreenSideEffectsTest {
     @Test
     fun `calls onAuthFailure when unauthorized`() {
         var authFailureCalled = false
-        val viewModel = createViewModelWithUnauthorized()
+        val store = createViewModelWithUnauthorized()
 
         composeTestRule.setContent {
             MessengerTheme {
                 LanguageScreen(
                     onAuthFailure = { authFailureCalled = true },
                     onBackClick = {},
-                    viewModel = viewModel,
+                    store = store,
                 )
             }
         }
@@ -80,7 +80,7 @@ class LanguageScreenSideEffectsTest {
         assertTrue(authFailureCalled)
     }
 
-    private fun createViewModelWithChangeFailure(): LanguageViewModel {
+    private fun createViewModelWithChangeFailure(): LanguageStore {
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(
             currentLanguage = UiLanguage.English,
@@ -91,8 +91,8 @@ class LanguageScreenSideEffectsTest {
         return createViewModel(identityRepository, settingsRepository)
     }
 
-    private fun createViewModelWithUnauthorized(): LanguageViewModel {
-        val identityRepository = LanguageViewModelTestFixtures.createFailingIdentityRepository()
+    private fun createViewModelWithUnauthorized(): LanguageStore {
+        val identityRepository = LanguageStoreTestFixtures.createFailingIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
         return createViewModel(identityRepository, settingsRepository)
     }

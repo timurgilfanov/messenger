@@ -12,28 +12,28 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryFake
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
-import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createViewModel
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createSettingsRepositoryFake
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createSuccessfulIdentityRepository
+import timur.gilfanov.messenger.ui.screen.settings.LanguageStoreTestFixtures.createViewModel
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
-class LanguageViewModelChangeLanguageTest {
+class LanguageStoreChangeLanguageTest {
 
     @Test
     fun `changeLanguage successfully completes without errors`() = runTest {
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
 
-            viewModel.changeLanguage(UiLanguage.German)
+            store.changeLanguage(UiLanguage.German)
 
             expectState {
                 copy(selectedLanguage = UiLanguage.German)
@@ -47,14 +47,14 @@ class LanguageViewModelChangeLanguageTest {
     fun `changing to same language does not update state`() = runTest {
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
             val initialState = awaitState()
             assertEquals(UiLanguage.English, initialState.selectedLanguage)
 
-            viewModel.changeLanguage(UiLanguage.English)
+            store.changeLanguage(UiLanguage.English)
 
             testScheduler.advanceTimeBy(300)
             expectNoItems()
@@ -67,16 +67,16 @@ class LanguageViewModelChangeLanguageTest {
     fun `changing from German to English works`() = runTest {
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(UiLanguage.German)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
                 copy(selectedLanguage = UiLanguage.German)
             }
 
-            viewModel.changeLanguage(UiLanguage.English)
+            store.changeLanguage(UiLanguage.English)
 
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
@@ -90,26 +90,26 @@ class LanguageViewModelChangeLanguageTest {
     fun `multiple consecutive language changes process correctly`() = runTest {
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
 
-            viewModel.changeLanguage(UiLanguage.German)
+            store.changeLanguage(UiLanguage.German)
             expectState {
                 copy(selectedLanguage = UiLanguage.German)
             }
 
-            viewModel.changeLanguage(UiLanguage.English)
+            store.changeLanguage(UiLanguage.English)
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
 
-            viewModel.changeLanguage(UiLanguage.German)
+            store.changeLanguage(UiLanguage.German)
             expectState {
                 copy(selectedLanguage = UiLanguage.German)
             }
@@ -127,16 +127,16 @@ class LanguageViewModelChangeLanguageTest {
                 ChangeLanguageRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
             ),
         )
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
 
-            viewModel.changeLanguage(UiLanguage.German)
+            store.changeLanguage(UiLanguage.German)
 
             val sideEffect = assertIs<LanguageSideEffects.ChangeFailed>(awaitSideEffect())
             assertIs<LocalStorageError.StorageFull>(sideEffect.error)
@@ -157,16 +157,16 @@ class LanguageViewModelChangeLanguageTest {
                 ChangeLanguageRepositoryError.LocalOperationFailed(LocalStorageError.Corrupted),
             ),
         )
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
 
-            viewModel.changeLanguage(UiLanguage.German)
+            store.changeLanguage(UiLanguage.German)
 
             val sideEffect = awaitSideEffect()
             assertIs<LanguageSideEffects.ChangeFailed>(sideEffect)
@@ -191,16 +191,16 @@ class LanguageViewModelChangeLanguageTest {
                 ),
             ),
         )
-        val viewModel = createViewModel(identityRepository, settingsRepository)
+        val store = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
+        store.test(this) {
             val job = runOnCreate()
 
             expectState {
                 copy(selectedLanguage = UiLanguage.English)
             }
 
-            viewModel.changeLanguage(UiLanguage.German)
+            store.changeLanguage(UiLanguage.German)
 
             val sideEffect = awaitSideEffect()
             assertIs<LanguageSideEffects.ChangeFailed>(sideEffect)
@@ -222,16 +222,16 @@ class LanguageViewModelChangeLanguageTest {
 //          todo need change from success to failure for this test
 //        val identityRepository = createFailingIdentityRepository()
 //        val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
-//        val viewModel = createViewModel(identityRepository, settingsRepository)
+//        val store = createViewModel(identityRepository, settingsRepository)
 //
-//        viewModel.test(this) {
+//        store.test(this) {
 //            val job = runOnCreate()
 //
 //            expectState {
 //                copy(selectedLanguage = UiLanguage.English)
 //            }
 //
-//            viewModel.changeLanguage(UiLanguage.German)
+//            store.changeLanguage(UiLanguage.German)
 //
 //            val sideEffect = awaitSideEffect()
 //            assertIs<LanguageSideEffects.Unauthorized>(sideEffect)

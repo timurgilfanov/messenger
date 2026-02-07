@@ -17,14 +17,14 @@ import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCase
 import timur.gilfanov.messenger.util.Logger
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsStore @Inject constructor(
     private val observeSettings: ObserveSettingsUseCase,
     private val logger: Logger,
 ) : ViewModel(),
     ContainerHost<SettingsUiState, SettingsSideEffects> {
 
     companion object {
-        private const val TAG = "SettingsViewModel"
+        private const val TAG = "SettingsStore"
         private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
     }
 

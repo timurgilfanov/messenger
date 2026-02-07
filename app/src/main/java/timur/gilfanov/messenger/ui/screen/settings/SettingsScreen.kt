@@ -36,15 +36,15 @@ fun SettingsScreen(
     onAuthFailure: () -> Unit,
     onShowSnackbar: (String) -> Unit,
     modifier: Modifier = Modifier,
-    profileViewModel: ProfileViewModel = hiltViewModel(),
-    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    profileStore: ProfileStore = hiltViewModel(),
+    settingsStore: SettingsStore = hiltViewModel(),
 ) {
-    val profileUiState by profileViewModel.collectAsState()
-    val settingsUiState by settingsViewModel.collectAsState()
+    val profileUiState by profileStore.collectAsState()
+    val settingsUiState by settingsStore.collectAsState()
 
     val getSettingsErrorMessage = stringResource(R.string.settings_get_settings_failed)
 
-    settingsViewModel.collectSideEffect {
+    settingsStore.collectSideEffect {
         when (it) {
             is SettingsSideEffects.ObserveSettingsFailed -> onShowSnackbar(getSettingsErrorMessage)
             SettingsSideEffects.Unauthorized -> onAuthFailure()

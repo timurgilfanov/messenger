@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.ksp)
     id("jacoco")
+    id("kotlin-parcelize")
 }
 
 roborazzi {

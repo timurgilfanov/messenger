@@ -30,7 +30,7 @@ class NoMutableStateFlowExposureRule(config: Config = Config.empty) : Rule(confi
         super.visitProperty(property)
 
         val containingClass = property.containingClass()
-        if (!isStoreClass(containingClass)) return
+        if (!isCustomStoreClass(containingClass)) return
 
         if (property.isPrivate()) return
 
@@ -77,14 +77,19 @@ class NoMutableStateFlowExposureRule(config: Config = Config.empty) : Rule(confi
         )
     }
 
-    private fun isStoreClass(ktClass: KtClass?): Boolean {
+    private fun isCustomStoreClass(ktClass: KtClass?): Boolean {
         if (ktClass == null) return false
 
         val className = ktClass.name ?: return false
         if (!className.endsWith("Store")) return false
 
         val packageName = ktClass.containingKtFile.packageFqName.asString()
-        return packageName.startsWith("timur.gilfanov.messenger.ui")
+        if (!packageName.startsWith("timur.gilfanov.messenger.ui")) return false
+
+        val isContainerHost = ktClass.superTypeListEntries.any { entry ->
+            entry.text.contains("ContainerHost")
+        }
+        return !isContainerHost
     }
 
     companion object {

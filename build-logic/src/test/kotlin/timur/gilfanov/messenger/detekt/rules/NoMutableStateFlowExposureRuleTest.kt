@@ -75,6 +75,22 @@ class NoMutableStateFlowExposureRuleTest {
     }
 
     @Test
+    fun `ignores Store classes implementing ContainerHost`() {
+        val code = """
+            package timur.gilfanov.messenger.ui.screen.chat
+
+            import kotlinx.coroutines.flow.MutableStateFlow
+
+            class ChatStore : ContainerHost<State, SideEffect> {
+                val state = MutableStateFlow(Unit)
+            }
+        """.trimIndent()
+
+        val findings = rule.lint(code)
+        assertEquals(0, findings.size, "Expected 0 findings but got ${findings.size}: $findings")
+    }
+
+    @Test
     fun `ignores non-Store classes`() {
         val code = """
             package timur.gilfanov.messenger.ui.screen.chat

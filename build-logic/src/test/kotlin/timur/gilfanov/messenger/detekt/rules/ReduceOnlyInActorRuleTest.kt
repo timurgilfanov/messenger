@@ -48,6 +48,22 @@ class ReduceOnlyInActorRuleTest {
     }
 
     @Test
+    fun `ignores Store classes implementing ContainerHost`() {
+        val code = """
+            package timur.gilfanov.messenger.ui.screen.search
+
+            class SearchStore : ContainerHost<State, SideEffect> {
+                fun doSomething() {
+                    reduce(state, result)
+                }
+            }
+        """.trimIndent()
+
+        val findings = rule.lint(code)
+        assertEquals(0, findings.size, "Expected 0 findings but got ${findings.size}: $findings")
+    }
+
+    @Test
     fun `ignores non-Store classes`() {
         val code = """
             package timur.gilfanov.messenger.ui.screen.search

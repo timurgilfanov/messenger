@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.ksp)
     id("jacoco")
+    id("kotlin-parcelize")
 }
 
 roborazzi {
@@ -335,6 +336,7 @@ dependencies {
     ktlintRuleset(libs.ktlint.compose)
     detektPlugins(libs.detekt.compose)
     detektPlugins(libs.detekt.formatting)
+    detektPlugins(project(":build-logic"))
 }
 
 tasks.withType<Test> {

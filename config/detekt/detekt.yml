@@ -18,3 +18,9 @@ style:
     ignoreCompanionObjectPropertyDeclaration: true
   UnusedPrivateMember:
     allowedNames: '.*Preview$'
+
+StoreRules:
+  NoMutableStateFlowExposure:
+    active: true
+  ReduceOnlyInActor:
+    active: true

@@ -3,7 +3,7 @@ package timur.gilfanov.messenger.ui.screen.main
 import androidx.lifecycle.SavedStateHandle
 import kotlin.test.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -24,25 +24,19 @@ class MainScreenViewModelTest {
     // Orbit's test() DSL cannot be used here because it swaps the real
     // container with a TestContainerDecorator, bypassing persistence.
     //
-    // The collector must be launched BEFORE selectTab so that both the
-    // collector subscription and the intent are processed in a single
-    // advanceUntilIdle() pass: collector subscribes first (FIFO), then
-    // the event loop runs the intent, and the emission reaches the
-    // already-active collector whose onEach persists state.
+    // Orbit's event loop runs on Dispatchers.Default internally, so
+    // advanceUntilIdle() on the test scheduler cannot process intents.
+    // first { } waits for the actual state change on Dispatchers.Default
+    // and triggers the onEach save via active collection.
     @Test
     fun `selected tab persists across process death via SavedStateHandle`() = runTest {
         val savedStateHandle = SavedStateHandle()
         val viewModel1 = MainScreenViewModel(savedStateHandle)
 
-        val collectJob = launch(mainDispatcherRule.testDispatcher) {
-            viewModel1.container.stateFlow.collect { }
-        }
         viewModel1.selectTab(1)
-        mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
-        collectJob.cancel()
+        viewModel1.container.stateFlow.first { it.selectedTab == 1 }
 
         val viewModel2 = MainScreenViewModel(savedStateHandle)
-        mainDispatcherRule.testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(1, viewModel2.container.stateFlow.value.selectedTab)
     }

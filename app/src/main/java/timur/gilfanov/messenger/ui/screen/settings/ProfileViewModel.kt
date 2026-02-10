@@ -25,7 +25,7 @@ class ProfileViewModel @Inject constructor(
         private const val TAG = "ProfileViewModel"
     }
 
-    private var _state = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
+    private val _state = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val state = _state.asStateFlow()
 
     private val _effects = Channel<ProfileSideEffects>(capacity = Channel.BUFFERED)

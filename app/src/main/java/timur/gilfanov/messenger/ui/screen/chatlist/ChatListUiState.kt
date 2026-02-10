@@ -33,7 +33,7 @@ data class ChatListScreenState(
     val currentUser: CurrentUserUiModel =
         CurrentUserUiModel(ParticipantId(java.util.UUID.randomUUID()), "", null),
     val isLoading: Boolean = false,
-    val isRefreshing: Boolean = false,
+    val isChatListUpdateApplying: Boolean = false,
     val error: FlowChatListRepositoryError? = null,
 )
 

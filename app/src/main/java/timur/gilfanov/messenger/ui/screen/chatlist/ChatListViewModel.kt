@@ -70,14 +70,14 @@ class ChatListViewModel @Inject constructor(
     @OptIn(OrbitExperimental::class, FlowPreview::class)
     private suspend fun observeChatListUpdating() = subIntent {
         repeatOnSubscription {
-            chatRepository.isChatListUpdating()
+            chatRepository.isChatListUpdateApplying()
                 .distinctUntilChanged()
                 .debounce(UPDATING_DEBOUNCE)
                 .collect { isUpdating ->
                     ensureActive()
                     withContext(Dispatchers.Main) {
                         reduce {
-                            state.copy(isRefreshing = isUpdating)
+                            state.copy(isChatListUpdateApplying = isUpdating)
                         }
                     }
                 }

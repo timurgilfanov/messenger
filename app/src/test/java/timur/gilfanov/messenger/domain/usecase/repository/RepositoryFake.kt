@@ -61,7 +61,7 @@ class RepositoryFake :
             .distinctUntilChanged()
             .map { chats -> ResultWithError.Success(chats.map { ChatPreview.fromChat(it) }) }
 
-    override fun isChatListUpdating(): Flow<Boolean> = kotlinx.coroutines.flow.flowOf(false)
+    override fun isChatListUpdateApplying(): Flow<Boolean> = kotlinx.coroutines.flow.flowOf(false)
 
     override suspend fun createChat(chat: Chat): ResultWithError<Chat, CreateChatRepositoryError> {
         chats[chat.id] = chat

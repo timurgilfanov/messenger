@@ -267,7 +267,7 @@ private fun ChatListScreenEmptyPreview() {
                     pictureUrl = null,
                 ),
                 isLoading = false,
-                isRefreshing = false,
+                isChatListUpdateApplying = false,
                 error = null,
             ),
             actions = ChatListContentActions(
@@ -293,7 +293,7 @@ private fun ChatListScreenEmptyPortraitPreview() {
                     pictureUrl = null,
                 ),
                 isLoading = false,
-                isRefreshing = false,
+                isChatListUpdateApplying = false,
                 error = null,
             ),
             actions = ChatListContentActions(
@@ -352,7 +352,7 @@ private fun ChatListScreenWithChatsPreview() {
                     pictureUrl = null,
                 ),
                 isLoading = false,
-                isRefreshing = false,
+                isChatListUpdateApplying = false,
                 error = null,
             ),
             actions = ChatListContentActions(
@@ -378,7 +378,7 @@ private fun ChatListScreenLoadingPreview() {
                     pictureUrl = null,
                 ),
                 isLoading = true,
-                isRefreshing = false,
+                isChatListUpdateApplying = false,
                 error = null,
             ),
             actions = ChatListContentActions(
@@ -404,7 +404,7 @@ private fun ChatListScreenErrorPreview() {
                     pictureUrl = null,
                 ),
                 isLoading = false,
-                isRefreshing = false,
+                isChatListUpdateApplying = false,
                 error = FlowChatListRepositoryError.LocalOperationFailed(
                     LocalStorageError.Corrupted,
                 ),

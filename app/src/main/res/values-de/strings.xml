@@ -40,6 +40,7 @@
     <!-- Settings -->
     <string name="settings_loading">Laden...</string>
     <string name="settings_get_settings_failed">Einstellungen können nicht gelesen werden</string>
+    <string name="settings_get_profile_failed">Profil kann nicht abgerufen werden</string>
 
     <!-- Language setting -->
     <string name="settings_language_screen_title">Sprache</string>

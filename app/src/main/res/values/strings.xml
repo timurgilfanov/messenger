@@ -40,6 +40,7 @@
     <!-- Settings -->
     <string name="settings_loading">Loading...</string>
     <string name="settings_get_settings_failed">Cannot read settings</string>
+    <string name="settings_get_profile_failed">Cannot get profile</string>
     <string name="settings_profile_ready_placeholder" translatable="false">Profile</string>
     <string name="settings_profile_loading_placeholder" translatable="false">Profile loading...</string>
 

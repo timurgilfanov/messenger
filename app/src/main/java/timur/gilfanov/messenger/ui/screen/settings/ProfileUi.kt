@@ -2,6 +2,8 @@ package timur.gilfanov.messenger.ui.screen.settings
 
 import android.net.Uri
 import androidx.compose.runtime.Immutable
+import androidx.core.net.toUri
+import timur.gilfanov.messenger.domain.entity.profile.Profile
 
 /**
  * UI model for user profile display.
@@ -14,3 +16,5 @@ import androidx.compose.runtime.Immutable
  */
 @Immutable
 data class ProfileUi(val name: String, val picture: Uri?)
+
+fun Profile.toProfileUi() = ProfileUi(name = name, picture = pictureUrl?.toUri())

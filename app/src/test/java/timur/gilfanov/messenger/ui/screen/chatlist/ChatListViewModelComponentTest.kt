@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chatlist
 
+import app.cash.turbine.ReceiveTurbine
+import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -7,7 +9,6 @@ import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -15,7 +16,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -39,7 +39,6 @@ import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class ChatListViewModelComponentTest {
 
@@ -98,7 +97,6 @@ class ChatListViewModelComponentTest {
 
         override fun isChatListUpdateApplying(): Flow<Boolean> = updatingFlow
 
-        // Implement other required ChatRepository methods as not implemented for this test
         override suspend fun createChat(chat: timur.gilfanov.messenger.domain.entity.chat.Chat) =
             error("Not implemented")
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
@@ -112,14 +110,12 @@ class ChatListViewModelComponentTest {
         ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = error("Not implemented")
     }
 
-    private suspend fun org.orbitmvi.orbit.test.OrbitTestContext<
-        ChatListScreenState,
-        Nothing,
-        ChatListViewModel,
-        >.awaitLoadedState(): ChatListScreenState {
-        var state = awaitState()
+    private suspend fun awaitLoadedState(
+        turbine: ReceiveTurbine<ChatListScreenState>,
+    ): ChatListScreenState {
+        var state = turbine.awaitItem()
         while (state.isLoading) {
-            state = awaitState()
+            state = turbine.awaitItem()
         }
         return state
     }
@@ -132,16 +128,13 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitLoadedState()
+        viewModel.state.test {
+            val state = awaitLoadedState(this)
 
             assertEquals(ChatListUiState.Empty, state.uiState)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isChatListUpdateApplying)
             assertNull(state.error)
-
-            job.cancelAndJoin()
         }
     }
 
@@ -154,17 +147,14 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitLoadedState()
+        viewModel.state.test {
+            val state = awaitLoadedState(this)
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
             assertEquals(1, state.uiState.chats.size)
             assertEquals("Test Chat", state.uiState.chats[0].name)
             assertEquals(false, state.isLoading)
             assertNull(state.error)
-
-            job.cancelAndJoin()
         }
     }
 
@@ -178,17 +168,14 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitLoadedState()
+        viewModel.state.test {
+            val state = awaitLoadedState(this)
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
             assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isChatListUpdateApplying)
             assertEquals(LocalOperationFailed(LocalStorageError.Corrupted), state.error)
-
-            job.cancelAndJoin()
         }
     }
 
@@ -202,24 +189,17 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            // Initial state - wait for loaded
-            val initialState = awaitLoadedState()
+        viewModel.state.test {
+            val initialState = awaitLoadedState(this)
             assertEquals(false, initialState.isChatListUpdateApplying)
 
-            // Simulate refreshing
             updatingFlow.value = true
-            val refreshingState = awaitState()
+            val refreshingState = awaitItem()
             assertEquals(true, refreshingState.isChatListUpdateApplying)
 
-            // Stop refreshing
             updatingFlow.value = false
-            val finalState = awaitState()
+            val finalState = awaitItem()
             assertEquals(false, finalState.isChatListUpdateApplying)
-
-            job.cancelAndJoin()
         }
     }
 
@@ -237,9 +217,8 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitLoadedState()
+        viewModel.state.test {
+            val state = awaitLoadedState(this)
 
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
             val chatItem = state.uiState.chats[0]
@@ -247,8 +226,6 @@ class ChatListViewModelComponentTest {
             assertEquals("Hello world", chatItem.lastMessage)
             assertEquals(2, chatItem.unreadCount)
             assertEquals(testTimestamp, chatItem.lastMessageTime)
-
-            job.cancelAndJoin()
         }
     }
 
@@ -262,24 +239,18 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            // Initial state
-            val initialState = awaitLoadedState()
+        viewModel.state.test {
+            val initialState = awaitLoadedState(this)
             assertTrue(initialState.uiState is ChatListUiState.NotEmpty)
             val initialNotEmpty = initialState.uiState
             assertEquals("Initial Chat", initialNotEmpty.chats[0].name)
 
-            // Update chat list
             chatListFlow.value =
                 Success(listOf(ChatPreview.fromChat(createTestChat(name = "Updated Chat"))))
 
-            val updatedState = awaitState()
+            val updatedState = awaitItem()
             assertTrue(updatedState.uiState is ChatListUiState.NotEmpty)
             assertEquals("Updated Chat", updatedState.uiState.chats[0].name)
-
-            job.cancelAndJoin()
         }
     }
 
@@ -293,24 +264,18 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            // Initial error state
-            val errorState = awaitLoadedState()
+        viewModel.state.test {
+            val errorState = awaitLoadedState(this)
             assertEquals(
                 LocalOperationFailed(LocalStorageError.Corrupted),
                 errorState.error,
             )
 
-            // Fix the error with successful data
             chatListFlow.value = Success(emptyList())
 
-            val successState = awaitState()
+            val successState = awaitItem()
             assertNull(successState.error)
             assertEquals(false, successState.isLoading)
-
-            job.cancelAndJoin()
         }
     }
 
@@ -326,15 +291,12 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitLoadedState()
+        viewModel.state.test {
+            val state = awaitLoadedState(this)
 
             assertEquals(false, state.isLoading)
             assertEquals(false, state.isChatListUpdateApplying)
             assertEquals(LocalOperationFailed(LocalStorageError.Corrupted), state.error)
-
-            job.cancelAndJoin()
         }
     }
 }

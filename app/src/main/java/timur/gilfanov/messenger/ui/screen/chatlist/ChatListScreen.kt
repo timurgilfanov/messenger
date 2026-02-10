@@ -29,10 +29,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.util.UUID
 import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
-import org.orbitmvi.orbit.compose.collectAsState
 import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -81,7 +81,7 @@ fun ChatListScreen(
     modifier: Modifier = Modifier,
     viewModel: ChatListViewModel = hiltViewModel(),
 ) {
-    val screenState by viewModel.collectAsState()
+    val screenState by viewModel.state.collectAsStateWithLifecycle()
 
     val contentActions = remember(actions) {
         ChatListContentActions(

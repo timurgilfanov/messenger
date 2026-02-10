@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
@@ -45,7 +46,7 @@ fun SettingsScreen(
     profileViewModel: ProfileViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
-    val profileUiState by profileViewModel.state.collectAsState()
+    val profileUiState by profileViewModel.state.collectAsStateWithLifecycle()
 
     val getProfileErrorMessage = stringResource(R.string.settings_get_profile_failed)
     val lifecycleOwner = LocalLifecycleOwner.current

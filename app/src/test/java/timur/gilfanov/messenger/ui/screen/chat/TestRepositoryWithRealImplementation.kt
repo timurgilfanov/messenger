@@ -174,7 +174,8 @@ class TestRepositoryWithRealImplementation :
         > =
         realRepository.flowChatList()
 
-    override fun isChatListUpdating(): Flow<Boolean> = realRepository.isChatListUpdating()
+    override fun isChatListUpdateApplying(): Flow<Boolean> =
+        realRepository.isChatListUpdateApplying()
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,

@@ -33,7 +33,7 @@ class LeaveChatUseCaseTest {
 
         // Implement other required ChatRepository methods as not implemented for this test
         override suspend fun flowChatList() = error("Not implemented")
-        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override fun isChatListUpdateApplying() = kotlinx.coroutines.flow.flowOf(false)
         override suspend fun createChat(chat: timur.gilfanov.messenger.domain.entity.chat.Chat) =
             error("Not implemented")
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")

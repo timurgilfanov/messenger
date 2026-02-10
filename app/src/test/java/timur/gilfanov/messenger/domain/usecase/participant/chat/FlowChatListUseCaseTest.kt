@@ -35,7 +35,7 @@ class FlowChatListUseCaseTest {
             chatListFlow
 
         // Implement other required ChatRepository methods as not implemented for this test
-        override fun isChatListUpdating() = flowOf(false)
+        override fun isChatListUpdateApplying() = flowOf(false)
         override suspend fun createChat(chat: Chat) = error("Not implemented")
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =

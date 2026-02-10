@@ -96,7 +96,7 @@ class ChatListViewModelComponentTest {
             > =
             chatListFlow
 
-        override fun isChatListUpdating(): Flow<Boolean> = updatingFlow
+        override fun isChatListUpdateApplying(): Flow<Boolean> = updatingFlow
 
         // Implement other required ChatRepository methods as not implemented for this test
         override suspend fun createChat(chat: timur.gilfanov.messenger.domain.entity.chat.Chat) =
@@ -138,7 +138,7 @@ class ChatListViewModelComponentTest {
 
             assertEquals(ChatListUiState.Empty, state.uiState)
             assertEquals(false, state.isLoading)
-            assertEquals(false, state.isRefreshing)
+            assertEquals(false, state.isChatListUpdateApplying)
             assertNull(state.error)
 
             job.cancelAndJoin()
@@ -185,7 +185,7 @@ class ChatListViewModelComponentTest {
             assertTrue(state.uiState is ChatListUiState.NotEmpty)
             assertEquals(0, state.uiState.chats.size)
             assertEquals(false, state.isLoading)
-            assertEquals(false, state.isRefreshing)
+            assertEquals(false, state.isChatListUpdateApplying)
             assertEquals(LocalOperationFailed(LocalStorageError.Corrupted), state.error)
 
             job.cancelAndJoin()
@@ -207,17 +207,17 @@ class ChatListViewModelComponentTest {
 
             // Initial state - wait for loaded
             val initialState = awaitLoadedState()
-            assertEquals(false, initialState.isRefreshing)
+            assertEquals(false, initialState.isChatListUpdateApplying)
 
             // Simulate refreshing
             updatingFlow.value = true
             val refreshingState = awaitState()
-            assertEquals(true, refreshingState.isRefreshing)
+            assertEquals(true, refreshingState.isChatListUpdateApplying)
 
             // Stop refreshing
             updatingFlow.value = false
             val finalState = awaitState()
-            assertEquals(false, finalState.isRefreshing)
+            assertEquals(false, finalState.isChatListUpdateApplying)
 
             job.cancelAndJoin()
         }
@@ -331,7 +331,7 @@ class ChatListViewModelComponentTest {
             val state = awaitLoadedState()
 
             assertEquals(false, state.isLoading)
-            assertEquals(false, state.isRefreshing)
+            assertEquals(false, state.isChatListUpdateApplying)
             assertEquals(LocalOperationFailed(LocalStorageError.Corrupted), state.error)
 
             job.cancelAndJoin()

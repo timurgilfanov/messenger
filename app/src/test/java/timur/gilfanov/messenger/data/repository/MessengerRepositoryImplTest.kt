@@ -198,7 +198,7 @@ class MessengerRepositoryImplTest {
     }
 
     @Test
-    fun `isChatListUpdating initially returns false`() = runTest {
+    fun `isChatListUpdateApplying initially returns false`() = runTest {
         repository = repositoryImpl(backgroundScope)
         repository.flowChatList().test {
             val initialResult = awaitItem()
@@ -207,7 +207,7 @@ class MessengerRepositoryImplTest {
             )
             assertEquals(0, initialResult.data.size)
 
-            repository.isChatListUpdating().test {
+            repository.isChatListUpdateApplying().test {
                 assertEquals(false, awaitItem())
             }
         }
@@ -471,7 +471,7 @@ class MessengerRepositoryImplTest {
     }
 
     @Test
-    fun `isChatListUpdating should change to true when delta sync occurs`() = runTest {
+    fun `isChatListUpdateApplying should change to true when delta sync occurs`() = runTest {
         // Given: Repository is created with empty state
         repository = repositoryImpl(backgroundScope)
 
@@ -485,7 +485,7 @@ class MessengerRepositoryImplTest {
             val chatListTestScope = this
 
             // When & Then: Test updating state changes during sync
-            repository.isChatListUpdating().test {
+            repository.isChatListUpdateApplying().test {
                 assertEquals(false, awaitItem())
 
                 // Add chat to remote to trigger delta sync

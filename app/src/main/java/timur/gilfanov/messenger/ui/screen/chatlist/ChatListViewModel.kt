@@ -110,7 +110,6 @@ class ChatListViewModel @Inject constructor(
                                     state.copy(
                                         uiState = uiState,
                                         isLoading = false,
-                                        isRefreshing = false,
                                         error = null,
                                     )
                                 }
@@ -118,7 +117,6 @@ class ChatListViewModel @Inject constructor(
                                 is ResultWithError.Failure -> {
                                     state.copy(
                                         isLoading = false,
-                                        isRefreshing = false,
                                         error = result.error,
                                     )
                                 }

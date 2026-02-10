@@ -3,11 +3,13 @@ package timur.gilfanov.messenger.ui.screen.settings
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -20,7 +22,6 @@ import timur.gilfanov.messenger.domain.entity.profile.Profile
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
-import java.util.UUID
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -72,6 +73,8 @@ class ProfileViewModelProcessDeathTest {
             assertIs<ProfileUiState.Loading>(awaitItem())
             assertIs<ProfileUiState.Ready>(awaitItem())
         }
+
+        advanceUntilIdle()
 
         assertEquals(
             ProfileUi("Timur", Uri.parse("https://example.com/avatar.jpg")),

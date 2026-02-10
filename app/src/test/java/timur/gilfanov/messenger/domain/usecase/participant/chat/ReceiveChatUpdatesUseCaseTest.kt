@@ -34,7 +34,7 @@ class ReceiveChatUpdatesUseCaseTest {
 
         // Implement other required ChatRepository methods as not implemented for this test
         override suspend fun flowChatList() = error("Not implemented")
-        override fun isChatListUpdating() = kotlinx.coroutines.flow.flowOf(false)
+        override fun isChatListUpdateApplying() = kotlinx.coroutines.flow.flowOf(false)
         override suspend fun createChat(chat: Chat) = error("Not implemented")
         override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
         override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =

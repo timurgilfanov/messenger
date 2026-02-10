@@ -77,7 +77,7 @@ import timur.gilfanov.messenger.util.Logger
  *
  *                     // Process chat changes (this repository's responsibility)
  *                     if (delta.chatChanges.isNotEmpty()) {
- *                         isUpdatingFlow.value = true
+ *                         isChatListUpdateApplying.value = true
  *                         localDataSources.sync.applyChatListDelta(
  *                             ChatListDelta(
  *                                 changes = delta.chatChanges,
@@ -85,7 +85,7 @@ import timur.gilfanov.messenger.util.Logger
  *                                 hasMoreChanges = delta.hasMoreChanges
  *                             )
  *                         )
- *                         isUpdatingFlow.value = false
+ *                         isChatListUpdateApplying.value = false
  *                     }
  *
  *                     // Note: settingsChange filtered out (SettingsRepository handles it)
@@ -126,7 +126,7 @@ class MessengerRepositoryImpl @Inject constructor(
         private const val TAG = "MessengerRepository"
     }
 
-    private val isUpdatingFlow = MutableStateFlow(false)
+    private val isChatListUpdateApplying = MutableStateFlow(false)
 
     init {
         performDeltaSyncLoop(backgroundScope)
@@ -148,9 +148,9 @@ class MessengerRepositoryImpl @Inject constructor(
                 .onEach { deltaResult ->
                     if (deltaResult is ResultWithError.Success) {
                         logger.d(TAG, "Received delta updates: ${deltaResult.data}")
-                        isUpdatingFlow.value = true
+                        isChatListUpdateApplying.value = true
                         localDataSources.sync.applyChatListDelta(deltaResult.data)
-                        isUpdatingFlow.value = false
+                        isChatListUpdateApplying.value = false
                     } else {
                         logger.w(TAG, "Delta result was failure: $deltaResult")
                     }
@@ -244,7 +244,7 @@ class MessengerRepositoryImpl @Inject constructor(
             }
         }
 
-    override fun isChatListUpdating(): Flow<Boolean> = isUpdatingFlow
+    override fun isChatListUpdateApplying(): Flow<Boolean> = isChatListUpdateApplying
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,

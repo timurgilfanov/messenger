@@ -50,7 +50,7 @@ class ChatListScreenComponentTest {
     private fun createTestScreenState(
         uiState: ChatListUiState = ChatListUiState.Empty,
         isLoading: Boolean = false,
-        isRefreshing: Boolean = false,
+        isChatListUpdateApplying: Boolean = false,
         error: FlowChatListRepositoryError? = null,
     ) = ChatListScreenState(
         uiState = uiState,
@@ -60,7 +60,7 @@ class ChatListScreenComponentTest {
             pictureUrl = null,
         ),
         isLoading = isLoading,
-        isRefreshing = isRefreshing,
+        isChatListUpdateApplying = isChatListUpdateApplying,
         error = error,
     )
 

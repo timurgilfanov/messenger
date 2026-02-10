@@ -40,7 +40,7 @@ class ChatRepositoryStub : ChatRepository {
         > =
         flowOf(ResultWithError.Success(emptyList()))
 
-    override fun isChatListUpdating(): Flow<Boolean> = flowOf(false)
+    override fun isChatListUpdateApplying(): Flow<Boolean> = flowOf(false)
 
     override suspend fun receiveChatUpdates(
         chatId: ChatId,

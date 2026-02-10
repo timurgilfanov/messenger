@@ -41,7 +41,7 @@ interface ChatRepository {
         ResultWithError<List<ChatPreview>, FlowChatListRepositoryError>,
         >
 
-    fun isChatListUpdating(): Flow<Boolean>
+    fun isChatListUpdateApplying(): Flow<Boolean>
 
     suspend fun receiveChatUpdates(
         chatId: ChatId,

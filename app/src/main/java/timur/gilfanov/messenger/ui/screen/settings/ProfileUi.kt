@@ -1,8 +1,10 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
 import android.net.Uri
+import android.os.Parcelable
 import androidx.compose.runtime.Immutable
 import androidx.core.net.toUri
+import kotlinx.parcelize.Parcelize
 import timur.gilfanov.messenger.domain.entity.profile.Profile
 
 /**
@@ -15,6 +17,7 @@ import timur.gilfanov.messenger.domain.entity.profile.Profile
  * @property picture URI to user's profile picture, null if no picture is set
  */
 @Immutable
-data class ProfileUi(val name: String, val picture: Uri?)
+@Parcelize
+data class ProfileUi(val name: String, val picture: Uri?) : Parcelable
 
 fun Profile.toProfileUi() = ProfileUi(name = name, picture = pictureUrl?.toUri())

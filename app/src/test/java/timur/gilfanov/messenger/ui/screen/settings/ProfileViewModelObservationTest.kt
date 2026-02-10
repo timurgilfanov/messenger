@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -34,6 +35,7 @@ class ProfileViewModelObservationTest {
     ) = ProfileViewModel(
         observeProfile = ObserveProfileUseCaseStub(flow),
         logger = NoOpLogger(),
+        savedStateHandle = SavedStateHandle(),
     )
 
     @Test

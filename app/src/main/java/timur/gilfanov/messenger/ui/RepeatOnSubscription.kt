@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 suspend fun <T> MutableStateFlow<T>.repeatOnSubscription(
     stopTimeout: Duration = 5.seconds,
     block: suspend CoroutineScope.() -> Unit,
-): Nothing = coroutineScope {
+): Unit = coroutineScope {
     var blockJob: Job? = null
     var stopJob: Job? = null
     subscriptionCount

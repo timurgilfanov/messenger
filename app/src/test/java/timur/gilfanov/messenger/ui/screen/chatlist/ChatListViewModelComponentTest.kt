@@ -6,6 +6,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.channels.Channel
 import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
@@ -16,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -35,9 +37,11 @@ import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepos
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError.LocalOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
+import timur.gilfanov.messenger.util.Logger
 
 @Category(Component::class)
 class ChatListViewModelComponentTest {
@@ -120,13 +124,33 @@ class ChatListViewModelComponentTest {
         return state
     }
 
+    private class RecordingLogger : Logger {
+        private val infoMessages = Channel<Pair<String, String>>(capacity = Channel.BUFFERED)
+
+        suspend fun awaitInfoMessage(): Pair<String, String> = infoMessages.receive()
+
+        override fun d(tag: String, message: String) = Unit
+
+        override fun i(tag: String, message: String) {
+            infoMessages.trySend(tag to message)
+        }
+
+        override fun w(tag: String, message: String) = Unit
+
+        override fun w(tag: String, message: String, throwable: Throwable) = Unit
+
+        override fun e(tag: String, message: String) = Unit
+
+        override fun e(tag: String, message: String, throwable: Throwable) = Unit
+    }
+
     @Test
     fun `ViewModel displays empty state when no chats`() = runTest {
         val repository = RepositoryFake(
             chatListFlow = flowOf(Success(emptyList())),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository, NoOpLogger())
 
         viewModel.state.test {
             val state = awaitLoadedState(this)
@@ -145,7 +169,7 @@ class ChatListViewModelComponentTest {
             chatListFlow = flowOf(Success(listOf(ChatPreview.fromChat(testChat)))),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository, NoOpLogger())
 
         viewModel.state.test {
             val state = awaitLoadedState(this)
@@ -166,7 +190,7 @@ class ChatListViewModelComponentTest {
             ),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository, NoOpLogger())
 
         viewModel.state.test {
             val state = awaitLoadedState(this)
@@ -187,7 +211,7 @@ class ChatListViewModelComponentTest {
             updatingFlow = updatingFlow,
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository, NoOpLogger())
 
         viewModel.state.test {
             val initialState = awaitLoadedState(this)
@@ -215,7 +239,7 @@ class ChatListViewModelComponentTest {
             chatListFlow = flowOf(Success(listOf(ChatPreview.fromChat(testChat)))),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository, NoOpLogger())
 
         viewModel.state.test {
             val state = awaitLoadedState(this)
@@ -237,7 +261,7 @@ class ChatListViewModelComponentTest {
             )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository, NoOpLogger())
 
         viewModel.state.test {
             val initialState = awaitLoadedState(this)
@@ -254,6 +278,36 @@ class ChatListViewModelComponentTest {
         }
     }
 
+
+    @Test
+    fun `ViewModel emits unauthorized effect when profile observation is unauthorized`() = runTest {
+        val profileUseCase = ObserveProfileUseCaseStub(
+            flowOf(ResultWithError.Failure(ObserveProfileError.Unauthorized)),
+        )
+        val repository = RepositoryFake()
+        val useCase = FlowChatListUseCase(repository)
+        val viewModel = ChatListViewModel(profileUseCase, useCase, repository, NoOpLogger())
+
+        viewModel.effects.test {
+            assertEquals(ChatListSideEffects.Unauthorized, awaitItem())
+        }
+    }
+
+    @Test
+    fun `ViewModel logs unauthorized profile observation error`() = runTest {
+        val profileUseCase = ObserveProfileUseCaseStub(
+            flowOf(ResultWithError.Failure(ObserveProfileError.Unauthorized)),
+        )
+        val repository = RepositoryFake()
+        val useCase = FlowChatListUseCase(repository)
+        val logger = RecordingLogger()
+        ChatListViewModel(profileUseCase, useCase, repository, logger)
+
+        val log = logger.awaitInfoMessage()
+        assertEquals("ChatListViewModel", log.first)
+        assertEquals("Profile observation failed with Unauthorized error", log.second)
+    }
+
     @Test
     fun `ViewModel clears error on successful data load`() = runTest {
         val chatListFlow =
@@ -262,7 +316,7 @@ class ChatListViewModelComponentTest {
             )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository, NoOpLogger())
 
         viewModel.state.test {
             val errorState = awaitLoadedState(this)
@@ -289,7 +343,7 @@ class ChatListViewModelComponentTest {
             ),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository, NoOpLogger())
 
         viewModel.state.test {
             val state = awaitLoadedState(this)

@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -35,6 +36,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepos
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError.LocalOperationFailed
 import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -49,6 +51,7 @@ class ChatListViewModelComponentTest {
     private val testProfile = Profile(UserId(testUserId), "Test User", null)
     private val testObserveProfileUseCase: ObserveProfileUseCase =
         ObserveProfileUseCaseStub(flowOf(Success(testProfile)))
+    private val testLogger = NoOpLogger()
     private val testChatId = ChatId(UUID.randomUUID())
     private val testTimestamp = Clock.System.now()
 
@@ -126,7 +129,8 @@ class ChatListViewModelComponentTest {
             chatListFlow = flowOf(Success(emptyList())),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel =
+            ChatListViewModel(testObserveProfileUseCase, useCase, repository, testLogger)
 
         viewModel.state.test {
             val state = awaitLoadedState(this)
@@ -145,7 +149,8 @@ class ChatListViewModelComponentTest {
             chatListFlow = flowOf(Success(listOf(ChatPreview.fromChat(testChat)))),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel =
+            ChatListViewModel(testObserveProfileUseCase, useCase, repository, testLogger)
 
         viewModel.state.test {
             val state = awaitLoadedState(this)
@@ -166,7 +171,8 @@ class ChatListViewModelComponentTest {
             ),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel =
+            ChatListViewModel(testObserveProfileUseCase, useCase, repository, testLogger)
 
         viewModel.state.test {
             val state = awaitLoadedState(this)
@@ -187,7 +193,8 @@ class ChatListViewModelComponentTest {
             updatingFlow = updatingFlow,
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel =
+            ChatListViewModel(testObserveProfileUseCase, useCase, repository, testLogger)
 
         viewModel.state.test {
             val initialState = awaitLoadedState(this)
@@ -215,7 +222,8 @@ class ChatListViewModelComponentTest {
             chatListFlow = flowOf(Success(listOf(ChatPreview.fromChat(testChat)))),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel =
+            ChatListViewModel(testObserveProfileUseCase, useCase, repository, testLogger)
 
         viewModel.state.test {
             val state = awaitLoadedState(this)
@@ -237,7 +245,8 @@ class ChatListViewModelComponentTest {
             )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel =
+            ChatListViewModel(testObserveProfileUseCase, useCase, repository, testLogger)
 
         viewModel.state.test {
             val initialState = awaitLoadedState(this)
@@ -262,7 +271,8 @@ class ChatListViewModelComponentTest {
             )
         val repository = RepositoryFake(chatListFlow = chatListFlow)
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel =
+            ChatListViewModel(testObserveProfileUseCase, useCase, repository, testLogger)
 
         viewModel.state.test {
             val errorState = awaitLoadedState(this)
@@ -289,7 +299,8 @@ class ChatListViewModelComponentTest {
             ),
         )
         val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(testObserveProfileUseCase, useCase, repository)
+        val viewModel =
+            ChatListViewModel(testObserveProfileUseCase, useCase, repository, testLogger)
 
         viewModel.state.test {
             val state = awaitLoadedState(this)
@@ -298,5 +309,48 @@ class ChatListViewModelComponentTest {
             assertEquals(false, state.isChatListUpdateApplying)
             assertEquals(LocalOperationFailed(LocalStorageError.Corrupted), state.error)
         }
+    }
+
+    @Test
+    fun `emits Unauthorized side effect when observeProfile returns Unauthorized`() = runTest {
+        val observeProfileUseCase = ObserveProfileUseCaseStub(
+            flowOf(ResultWithError.Failure(ObserveProfileError.Unauthorized)),
+        )
+        val repository = RepositoryFake()
+        val useCase = FlowChatListUseCase(repository)
+        val viewModel = ChatListViewModel(observeProfileUseCase, useCase, repository, testLogger)
+
+        viewModel.effects.test {
+            assertEquals(ChatListSideEffects.Unauthorized, awaitItem())
+        }
+    }
+
+    @Test
+    fun `logs error when observeProfile returns Unauthorized`() = runTest {
+        val loggedMessages = mutableListOf<Pair<String, String>>()
+        val capturingLogger = object : timur.gilfanov.messenger.util.Logger {
+            override fun d(tag: String, message: String) = Unit
+            override fun i(tag: String, message: String) {
+                loggedMessages.add(tag to message)
+            }
+            override fun w(tag: String, message: String) = Unit
+            override fun w(tag: String, message: String, throwable: Throwable) = Unit
+            override fun e(tag: String, message: String) = Unit
+            override fun e(tag: String, message: String, throwable: Throwable) = Unit
+        }
+
+        val observeProfileUseCase = ObserveProfileUseCaseStub(
+            flowOf(ResultWithError.Failure(ObserveProfileError.Unauthorized)),
+        )
+        val repository = RepositoryFake()
+        val useCase = FlowChatListUseCase(repository)
+        val viewModel =
+            ChatListViewModel(observeProfileUseCase, useCase, repository, capturingLogger)
+
+        viewModel.effects.test {
+            awaitItem()
+        }
+
+        assertTrue(loggedMessages.any { it.first == "ChatListViewModel" })
     }
 }

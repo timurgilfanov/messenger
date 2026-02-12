@@ -46,6 +46,7 @@ This document defines the priority system for GitHub issues in this project.
 1. **Every issue should have a priority label** - Triage new issues within 48 hours
 2. **Combine with layer labels** - Use `ui-layer`, `data-layer`, `domain-layer`, or `use-case-layer` to indicate affected area
 3. **Use additional context labels** - `bug`, `enhancement`, `performance`, `developer-experience` as appropriate
+4. **Apply `agent` for AI-delegatable tasks** - Use when all five [solvability criteria](AI-Agent-Tasks.md) are met. File using the `ai-agent-task` issue template
 
 ## Filtering Issues
 
@@ -59,6 +60,9 @@ gh issue list --label "priority:high" --label "data-layer"
 
 # See all prioritized issues
 gh issue list --label "priority:critical,priority:high,priority:medium,priority:low"
+
+# See tasks delegatable to AI agent
+gh issue list --label "agent"
 ```
 
 ## Updating Priorities

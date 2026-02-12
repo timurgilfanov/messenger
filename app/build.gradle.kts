@@ -441,12 +441,18 @@ tasks.register("preCommit") {
             "config/",
         )
 
-    val hasCodeChanges = providers.exec {
-        commandLine("git", "diff", "--cached", "--name-only")
-    }.standardOutput.asText.map { output ->
-        output.lineSequence()
-            .filter { it.isNotBlank() }
-            .any { file -> codePaths.any { prefix -> file.startsWith(prefix) } }
+    val force = project.hasProperty("force")
+
+    val hasCodeChanges = if (force) {
+        provider { true }
+    } else {
+        providers.exec {
+            commandLine("git", "diff", "--cached", "--name-only")
+        }.standardOutput.asText.map { output ->
+            output.lineSequence()
+                .filter { it.isNotBlank() }
+                .any { file -> codePaths.any { prefix -> file.startsWith(prefix) } }
+        }
     }
 
     if (hasCodeChanges.get()) {

@@ -46,12 +46,8 @@ jobs:
             1. Read the issue. It uses a structured template with: reference pattern, what to do, scope boundaries, acceptance criteria, test requirements, and pre-made decisions.
             2. Study the reference pattern file or PR mentioned in the issue.
             3. Implement the solution following CLAUDE.md conventions.
-            4. Run verification (preCommit uses git staged files, so run each step directly):
-               ./gradlew ktlintFormat detekt --auto-correct
-               ./gradlew lintMockDebug
-               ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
-               ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Unit
-               ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Component
+            4. Run verification:
+               ./gradlew preCommit -Pforce
             5. If any step fails, fix and re-run.
             6. Create a PR referencing the issue number.
           claude_args: "--max-turns 25 --model claude-sonnet-4-20250514"

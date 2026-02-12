@@ -326,7 +326,7 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `logs error when observeProfile returns Unauthorized`() = runTest {
+    fun `logs when observeProfile returns Unauthorized`() = runTest {
         val loggedMessages = mutableListOf<Pair<String, String>>()
         val capturingLogger = object : timur.gilfanov.messenger.util.Logger {
             override fun d(tag: String, message: String) = Unit
@@ -351,6 +351,10 @@ class ChatListViewModelComponentTest {
             awaitItem()
         }
 
-        assertTrue(loggedMessages.any { it.first == "ChatListViewModel" })
+        assertTrue(
+            loggedMessages.any {
+                it.first == "ChatListViewModel" && it.second == "Profile observation failed with Unauthorized error"
+            }
+        )
     }
 }

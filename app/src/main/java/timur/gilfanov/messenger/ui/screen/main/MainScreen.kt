@@ -72,6 +72,7 @@ fun MainScreen(
         val modifier1 = Modifier.padding(paddingValues)
         when (uiState.selectedTab) {
             0 -> ChatListScreen(
+                onAuthFailure = onAuthFailure,
                 actions = ChatListActions(
                     onChatClick = onChatClick,
                     onNewChatClick = onNewChatClick,

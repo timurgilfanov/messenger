@@ -1,0 +1,98 @@
+name: AI Agent Task
+description: A well-scoped task suitable for autonomous AI agent execution
+title: "[Agent] "
+labels: ["agent"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is for tasks that meet all [AI agent solvability criteria](../../docs/AI-Agent-Tasks.md).
+        Every required field must be filled before applying the `agent` label.
+
+  - type: input
+    id: reference-pattern
+    attributes:
+      label: Reference pattern
+      description: File path or merged PR that demonstrates the pattern the agent should replicate.
+      placeholder: "e.g., domain/usecase/settings/SyncAllPendingSettingsUseCase.kt or PR #42"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-to-do
+    attributes:
+      label: What to do
+      description: Imperative, concrete instructions. Include exact names, types, and file paths.
+      placeholder: |
+        1. Create `domain/usecase/chat/ArchiveChatUseCase.kt` following the pattern in the reference.
+        2. Add sealed interface `ArchiveChatError` with `NotFound` and `Unknown(val cause: Throwable)`.
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope-boundaries
+    attributes:
+      label: Scope boundaries
+      description: Explicit IN and OUT scope. Prevents agent scope creep.
+      value: |
+        **IN scope:**
+        -
+
+        **OUT of scope:**
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Checkboxes the agent and reviewer verify mechanically.
+      value: |
+        - [ ] `./gradlew preCommit` passes
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: test-requirements
+    attributes:
+      label: Test requirements
+      description: Test category, behaviors to test, which fakes/stubs to use.
+      placeholder: |
+        Category: Unit
+        Behaviors:
+        - Returns success when chat exists
+        - Returns NotFound when chat does not exist
+        Fakes: FakeChatRepository
+    validations:
+      required: true
+
+  - type: textarea
+    id: pre-made-decisions
+    attributes:
+      label: Pre-made decisions
+      description: Resolves ambiguities so the agent doesn't have to make judgment calls. Leave empty if none.
+      placeholder: |
+        - Use Channel not SharedFlow for one-shot events
+        - Unknown = data class with non-nullable cause
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: solvability-checklist
+    attributes:
+      label: Solvability checklist
+      description: All boxes must be checked. If any criterion is not met, this task is not suitable for the agent.
+      options:
+        - label: Verifiable by `preCommit` — no visual, manual, or device testing needed
+          required: true
+        - label: No open design decisions — all choices made in this issue
+          required: true
+        - label: Reference pattern exists — a merged file or PR demonstrating the same pattern
+          required: true
+        - label: Bounded blast radius — ~10 files or fewer
+          required: true
+        - label: "Effort XS or S (or purely mechanical M)"
+          required: true

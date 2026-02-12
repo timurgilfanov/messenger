@@ -4,6 +4,9 @@ This document defines which GitHub issues are safe to delegate to an autonomous 
 
 ## Prerequisites
 
+1. `ANTHROPIC_API_KEY` repository secret configured
+2. [Claude GitHub App](https://github.com/apps/claude) installed on the repository
+
 The agent's only verification tool is `./gradlew preCommit`. It cannot inspect a screen, evaluate aesthetics, or make architectural judgment calls. Tasks must be scoped accordingly.
 
 ## Solvability Criteria
@@ -50,7 +53,7 @@ A task is AI-solvable when **all five** conditions hold:
 1. **Author** writes issue using the `ai-agent-task` template
 2. **Author** confirms all five solvability criteria in the template checklist
 3. **Author** applies the `agent` label
-4. **Agent** picks up the issue, reads the reference pattern, implements, runs `preCommit`
+4. **GitHub Actions** triggers the `Claude Agent` workflow (`.github/workflows/claude-agent.yml`), which launches Claude Code to read the issue, implement the solution, run verification, and open a PR automatically
 5. **Author** reviews the resulting PR on their schedule
 
 ## Related

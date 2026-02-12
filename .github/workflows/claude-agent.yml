@@ -41,14 +41,18 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           label_trigger: "agent"
           prompt: |
-            You are an autonomous AI agent resolving a GitHub issue.
+            You are an autonomous AI agent resolving GitHub issue #${{ github.event.issue.number }}.
+
+            ISSUE TITLE: ${{ github.event.issue.title }}
+
+            ISSUE BODY:
+            ${{ github.event.issue.body }}
 
             WORKFLOW:
-            1. Read the issue. It uses a structured template with: reference pattern, what to do, scope boundaries, acceptance criteria, test requirements, and pre-made decisions.
-            2. Study the reference pattern file or PR mentioned in the issue.
-            3. Implement the solution following CLAUDE.md conventions.
-            4. Run verification:
+            1. Study the reference pattern file or PR mentioned in the issue.
+            2. Implement the solution following CLAUDE.md conventions.
+            3. Run verification:
                ./gradlew preCommit -Pforce
-            5. If any step fails, fix and re-run.
-            6. Create a PR referencing the issue number.
-          claude_args: "--max-turns 25 --model claude-sonnet-4-20250514"
+            4. If any step fails, fix and re-run.
+            5. Create a PR referencing issue #${{ github.event.issue.number }}.
+          claude_args: "--max-turns 25 --model claude-sonnet-4-20250514 --allowedTools 'Bash(./gradlew *)' 'Bash(git *)' 'Bash(gh *)' Edit Read Write Glob Grep"

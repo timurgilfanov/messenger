@@ -91,7 +91,9 @@ private fun Button(onSendMessage: () -> Unit, isValid: Boolean, isSending: Boole
     ) {
         if (isSending) {
             CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier
+                    .size(24.dp)
+                    .testTag("sending_indicator"),
                 strokeWidth = 2.dp,
                 color = MaterialTheme.colorScheme.primary,
             )

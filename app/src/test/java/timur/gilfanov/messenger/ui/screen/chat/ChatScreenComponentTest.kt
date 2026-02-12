@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -218,9 +219,10 @@ class ChatScreenComponentTest {
             }
         }
 
-        // Verify that the send button is disabled during sending
-        composeTestRule.onNodeWithTag("send_button").assertExists()
-        // The button should show a progress indicator or be disabled when sending
+        composeTestRule.onNodeWithTag("sending_indicator", useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Send message")
+            .assertDoesNotExist()
     }
 
     @Test

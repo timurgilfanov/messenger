@@ -353,8 +353,9 @@ class ChatListViewModelComponentTest {
 
         assertTrue(
             loggedMessages.any {
-                it.first == "ChatListViewModel" && it.second == "Profile observation failed with Unauthorized error"
-            }
+                it.first == "ChatListViewModel" &&
+                    it.second == "Profile observation failed with Unauthorized error"
+            },
         )
     }
 }

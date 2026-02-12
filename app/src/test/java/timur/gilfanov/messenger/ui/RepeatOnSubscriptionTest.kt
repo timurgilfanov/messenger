@@ -194,13 +194,13 @@ class RepeatOnSubscriptionTest {
         assertTrue(blockActive)
         assertEquals(1, blockStartCount)
 
-        collectors.removeFirst().cancelAndJoin()
+        collectors.removeAt(0).cancelAndJoin()
         runCurrent()
         advanceTimeBy(stopTimeout)
         runCurrent()
         assertTrue(blockActive)
 
-        collectors.removeFirst().cancelAndJoin()
+        collectors.removeAt(0).cancelAndJoin()
         runCurrent()
         advanceTimeBy(stopTimeout)
         runCurrent()

@@ -2,11 +2,13 @@ name: Claude Agent
 
 on:
   issues:
-    types: [labeled]
+    types: [labeled, opened]
 
 jobs:
   resolve-issue:
-    if: github.event.label.name == 'agent'
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == 'agent') ||
+      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'agent'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

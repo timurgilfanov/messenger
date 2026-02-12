@@ -430,48 +430,72 @@ tasks.register("preCommit") {
     group = "verification"
     description = "Run all pre-commit checks locally"
 
-    dependsOn("ktlintFormat", "lintMockDebug", "detekt", "checkScreenshotSize")
-
-    doLast {
-        println("✅ Pre-commit formatting, lint, and static analysis complete!")
-        println("")
-        println("Running test categories with coverage...")
-
-        val categories = listOf(
-            "Architecture" to "🔧",
-            "Unit" to "🧪",
-            "Component" to "🔩",
+    val codePaths =
+        listOf(
+            "app/",
+            "build-logic/",
+            "build.gradle.kts",
+            "settings.gradle.kts",
+            "gradle/",
+            "config/",
         )
 
-        categories.forEach { (category, emoji) ->
-            println("$emoji Running $category tests with coverage...")
+    val hasCodeChanges = providers.exec {
+        commandLine("git", "diff", "--cached", "--name-only")
+    }.standardOutput.asText.map { output ->
+        output.lineSequence()
+            .filter { it.isNotBlank() }
+            .any { file -> codePaths.any { prefix -> file.startsWith(prefix) } }
+    }
 
-            val process = ProcessBuilder(
-                "./gradlew",
-                "testMockDebugUnitTest",
-                "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
-                "-Pcoverage",
+    if (hasCodeChanges.get()) {
+        dependsOn("ktlintFormat", "lintMockDebug", "detekt", "checkScreenshotSize")
+
+        doLast {
+            println("✅ Pre-commit formatting, lint, and static analysis complete!")
+            println("")
+            println("Running test categories with coverage...")
+
+            val categories = listOf(
+                "Architecture" to "🔧",
+                "Unit" to "🧪",
+                "Component" to "🔩",
             )
-                .directory(project.rootDir)
-                .redirectErrorStream(true)
-                .start()
 
-            val output = process.inputStream.bufferedReader().use { it.readText() }
-            val exitCode = process.waitFor()
+            categories.forEach { (category, emoji) ->
+                println("$emoji Running $category tests with coverage...")
 
-            if (exitCode != 0) {
-                val errorMessage = buildString {
-                    appendLine("$category tests failed with exit code $exitCode")
-                    appendLine()
-                    appendLine("Error output:")
-                    appendLine(output.takeLast(2000))
+                val process = ProcessBuilder(
+                    "./gradlew",
+                    "testMockDebugUnitTest",
+                    "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
+                    "-Pcoverage",
+                )
+                    .directory(project.rootDir)
+                    .redirectErrorStream(true)
+                    .start()
+
+                val output = process.inputStream.bufferedReader().use { it.readText() }
+                val exitCode = process.waitFor()
+
+                if (exitCode != 0) {
+                    val errorMessage = buildString {
+                        appendLine("$category tests failed with exit code $exitCode")
+                        appendLine()
+                        appendLine("Error output:")
+                        appendLine(output.takeLast(2000))
+                    }
+                    throw GradleException(errorMessage)
                 }
-                throw GradleException(errorMessage)
             }
-        }
 
-        println("")
-        println("✅ All pre-commit checks passed! Coverage reports generated.")
-        println("📊 Coverage reports available in app/build/reports/kover/")
+            println("")
+            println("✅ All pre-commit checks passed! Coverage reports generated.")
+            println("📊 Coverage reports available in app/build/reports/kover/")
+        }
+    } else {
+        doLast {
+            println("No code changes staged. Skipping pre-commit checks.")
+        }
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -81,18 +82,20 @@ data class ChatListContentActions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListScreen(
+    onAuthFailure: () -> Unit,
     actions: ChatListActions,
     modifier: Modifier = Modifier,
     viewModel: ChatListViewModel = hiltViewModel(),
 ) {
     val screenState by viewModel.state.collectAsStateWithLifecycle()
 
+    val currentOnAuthFailure by rememberUpdatedState(onAuthFailure)
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
             viewModel.effects.collect { effect ->
                 when (effect) {
-                    ChatListSideEffects.Unauthorized -> Unit
+                    ChatListSideEffects.Unauthorized -> currentOnAuthFailure()
                 }
             }
         }

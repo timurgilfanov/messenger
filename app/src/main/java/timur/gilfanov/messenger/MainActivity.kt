@@ -66,6 +66,7 @@ fun MessengerApp() {
         entryProvider = entryProvider {
             entry<ChatList> {
                 ChatListScreen(
+                    onAuthFailure = onAuthFailure,
                     actions = ChatListActions(
                         onChatClick = { chatId ->
                             backStack.add(Chat(chatId.id.toString()))

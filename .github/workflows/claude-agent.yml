@@ -41,7 +41,8 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           label_trigger: "agent"
           prompt: |
-            You are an autonomous AI agent resolving a GitHub issue.
+            You are an autonomous AI agent resolving GitHub issue #${{ github.event.issue.number }}.
+            Read the issue with: gh issue view ${{ github.event.issue.number }}
 
             WORKFLOW:
             1. Read the issue. It uses a structured template with: reference pattern, what to do, scope boundaries, acceptance criteria, test requirements, and pre-made decisions.
@@ -50,5 +51,5 @@ jobs:
             4. Run verification:
                ./gradlew preCommit -Pforce
             5. If any step fails, fix and re-run.
-            6. Create a PR referencing the issue number.
-          claude_args: "--max-turns 25 --model claude-sonnet-4-20250514"
+            6. Create a PR referencing issue #${{ github.event.issue.number }}.
+          claude_args: "--max-turns 25 --model claude-sonnet-4-20250514 --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"

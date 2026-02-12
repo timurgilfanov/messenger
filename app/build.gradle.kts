@@ -436,6 +436,7 @@ tasks.register("preCommit") {
             "build-logic/",
             "build.gradle.kts",
             "settings.gradle.kts",
+            "gradle.properties",
             "gradle/",
             "config/",
         )

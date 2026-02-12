@@ -6,9 +6,11 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -93,9 +95,11 @@ class ProfileViewModelObservationTest {
             flowOf(ResultWithError.Failure(ObserveProfileError.Unauthorized)),
         )
 
+        val stateJob = launch { viewModel.state.collect {} }
         viewModel.effects.test {
             assertEquals(ProfileSideEffects.Unauthorized, awaitItem())
         }
+        stateJob.cancelAndJoin()
     }
 
     @Test

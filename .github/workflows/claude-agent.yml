@@ -4,6 +4,10 @@ on:
   issues:
     types: [labeled, opened]
 
+env:
+  CLAUDE_MODEL: claude-sonnet-4-5-20250929
+  CLAUDE_MAX_TURNS: 40
+
 jobs:
   resolve-issue:
     if: >-
@@ -59,7 +63,7 @@ jobs:
             5. Once build and tests pass, run formatting:
                ./gradlew ktlintFormat detekt --auto-correct
             6. Create a PR referencing issue #${{ github.event.issue.number }}.
-          claude_args: "--max-turns 40 --model claude-sonnet-4-5-20250929 --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"
+          claude_args: "--max-turns ${{ env.CLAUDE_MAX_TURNS }} --model ${{ env.CLAUDE_MODEL }} --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -106,7 +110,8 @@ jobs:
           | Metric | Value |
           |--------|-------|
           | Status | ${STATUS} |
-          | Turns | ${NUM_TURNS}/30 |
+          | Model | ${CLAUDE_MODEL} |
+          | Turns | ${NUM_TURNS}/${CLAUDE_MAX_TURNS} |
           | Duration | ${DURATION_FMT} |
           | Cost | ${COST_FMT} |"
 

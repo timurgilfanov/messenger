@@ -21,6 +21,16 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
+      - name: Check sender is admin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PERMISSION=$(gh api repos/${{ github.repository }}/collaborators/${{ github.event.sender.login }}/permission --jq '.permission')
+          if [ "$PERMISSION" != "admin" ]; then
+            echo "::error::Only repository admins can trigger the agent. Sender '${{ github.event.sender.login }}' has '$PERMISSION' permission."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4
@@ -62,7 +72,9 @@ jobs:
                If any step fails, fix and re-run from step 4.
             5. Once build and tests pass, run formatting:
                ./gradlew ktlintFormat detekt --auto-correct
-            6. Create a PR referencing issue #${{ github.event.issue.number }}.
+            6. Before pushing, rebase onto latest main to avoid stale-branch push failures:
+               git fetch origin main && git rebase origin/main
+            7. Create a PR referencing issue #${{ github.event.issue.number }}.
           claude_args: "--max-turns ${{ env.CLAUDE_MAX_TURNS }} --model ${{ env.CLAUDE_MODEL }} --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"
 
       - uses: actions/upload-artifact@v4

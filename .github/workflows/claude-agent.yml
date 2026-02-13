@@ -65,13 +65,14 @@ jobs:
         if: always()
         with:
           name: claude-agent-output
-          path: ${{ steps.agent.outputs.execution_file }}
+          path: ${{ steps.agent.outputs.execution_file || format('{0}/claude-execution-output.json', runner.temp) }}
+          if-no-files-found: warn
 
       - name: Report execution stats
-        if: always() && steps.agent.outputs.execution_file
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-          EXECUTION_FILE: ${{ steps.agent.outputs.execution_file }}
+          EXECUTION_FILE: ${{ steps.agent.outputs.execution_file || format('{0}/claude-execution-output.json', runner.temp) }}
           BRANCH_NAME: ${{ steps.agent.outputs.branch_name }}
         run: |
           # Extract result message from execution file

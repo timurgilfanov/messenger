@@ -59,7 +59,7 @@ jobs:
             5. Once build and tests pass, run formatting:
                ./gradlew ktlintFormat detekt --auto-correct
             6. Create a PR referencing issue #${{ github.event.issue.number }}.
-          claude_args: "--max-turns 30 --model claude-sonnet-4-20250514 --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"
+          claude_args: "--max-turns 40 --model claude-sonnet-4-20250514 --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"
 
       - uses: actions/upload-artifact@v4
         if: always()

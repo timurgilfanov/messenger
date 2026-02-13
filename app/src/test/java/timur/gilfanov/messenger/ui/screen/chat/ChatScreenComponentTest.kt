@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import android.content.Context
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -7,12 +8,14 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.paging.PagingData
+import androidx.test.core.app.ApplicationProvider
 import java.util.UUID
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.flowOf
@@ -22,6 +25,7 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -218,9 +222,14 @@ class ChatScreenComponentTest {
             }
         }
 
-        // Verify that the send button is disabled during sending
-        composeTestRule.onNodeWithTag("send_button").assertExists()
-        // The button should show a progress indicator or be disabled when sending
+        val sendMessageContentDescription = ApplicationProvider.getApplicationContext<Context>()
+            .getString(R.string.send_message_content_description)
+        composeTestRule.onNodeWithTag("send_button").assertIsNotEnabled()
+        composeTestRule.onNodeWithTag("sending_indicator").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(
+            sendMessageContentDescription,
+        ).assertDoesNotExist()
+        composeTestRule.onNodeWithTag("message_input").assertIsNotEnabled()
     }
 
     @Test

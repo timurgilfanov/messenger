@@ -44,19 +44,23 @@ jobs:
           show_full_output: true
           prompt: |
             You are an autonomous AI agent resolving GitHub issue #${{ github.event.issue.number }}.
-            Read the issue with: gh issue view ${{ github.event.issue.number }}
+            Read the issue with: gh issue view ${{ github.event.issue.number }} --json title,body
+
+            RULES:
+            - Avoid TodoWrite and Task (sub-agents) for XS/S tasks. Work directly.
 
             WORKFLOW:
-            1. Read the issue. It uses a structured template with: reference pattern, what to do, scope boundaries, acceptance criteria, test requirements, and pre-made decisions.
+            1. Read the issue (--json title,body to avoid truncation).
             2. Study the reference pattern file or PR mentioned in the issue.
             3. Implement the solution following CLAUDE.md conventions.
-            4. Run verification:
-               ./gradlew ktlintFormat detekt --auto-correct
+            4. Run verification (in this order):
                ./gradlew compileMockDebugKotlin
-               Then run the specific test class related to your change (e.g., ./gradlew testMockDebugUnitTest --tests "TestClassName")
-            5. If any step fails, fix and re-run.
+               Then run the specific test class related to your change (e.g., ./gradlew testMockDebugUnitTest --tests "TestClassName").
+               If any step fails, fix and re-run from step 4.
+            5. Once build and tests pass, run formatting:
+               ./gradlew ktlintFormat detekt --auto-correct
             6. Create a PR referencing issue #${{ github.event.issue.number }}.
-          claude_args: "--max-turns 25 --model claude-sonnet-4-20250514 --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"
+          claude_args: "--max-turns 30 --model claude-sonnet-4-20250514 --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"
 
       - uses: actions/upload-artifact@v4
         if: always()

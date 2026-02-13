@@ -62,7 +62,9 @@ jobs:
                If any step fails, fix and re-run from step 4.
             5. Once build and tests pass, run formatting:
                ./gradlew ktlintFormat detekt --auto-correct
-            6. Create a PR referencing issue #${{ github.event.issue.number }}.
+            6. Before pushing, rebase onto latest main to avoid stale-branch push failures:
+               git fetch origin main && git rebase origin/main
+            7. Create a PR referencing issue #${{ github.event.issue.number }}.
           claude_args: "--max-turns ${{ env.CLAUDE_MAX_TURNS }} --model ${{ env.CLAUDE_MODEL }} --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"
 
       - uses: actions/upload-artifact@v4

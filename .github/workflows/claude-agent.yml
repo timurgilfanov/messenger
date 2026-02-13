@@ -66,3 +66,61 @@ jobs:
         with:
           name: claude-agent-output
           path: ${{ steps.agent.outputs.execution_file }}
+
+      - name: Report execution stats
+        if: always() && steps.agent.outputs.execution_file
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_FILE: ${{ steps.agent.outputs.execution_file }}
+          BRANCH_NAME: ${{ steps.agent.outputs.branch_name }}
+        run: |
+          # Extract result message from execution file
+          RESULT=$(jq '[.[] | select(.type == "result")] | last' "$EXECUTION_FILE")
+
+          NUM_TURNS=$(echo "$RESULT" | jq -r '.num_turns // "N/A"')
+          COST=$(echo "$RESULT" | jq -r '.total_cost_usd // "N/A"')
+          DURATION_MS=$(echo "$RESULT" | jq -r '.duration_ms // "N/A"')
+          STATUS=$(echo "$RESULT" | jq -r '.subtype // "N/A"')
+
+          # Convert duration to minutes:seconds
+          if [ "$DURATION_MS" != "N/A" ]; then
+            DURATION_SEC=$((DURATION_MS / 1000))
+            DURATION_MIN=$((DURATION_SEC / 60))
+            DURATION_REM=$((DURATION_SEC % 60))
+            DURATION_FMT="${DURATION_MIN}m ${DURATION_REM}s"
+          else
+            DURATION_FMT="N/A"
+          fi
+
+          # Format cost
+          if [ "$COST" != "N/A" ]; then
+            COST_FMT=$(printf '$%.2f' "$COST")
+          else
+            COST_FMT="N/A"
+          fi
+
+          # Build stats markdown
+          STATS="## Agent Stats
+
+          | Metric | Value |
+          |--------|-------|
+          | Status | ${STATUS} |
+          | Turns | ${NUM_TURNS}/30 |
+          | Duration | ${DURATION_FMT} |
+          | Cost | ${COST_FMT} |"
+
+          # 1. Write to GitHub Step Summary (Actions web UI)
+          echo "$STATS" >> "$GITHUB_STEP_SUMMARY"
+
+          # 2. Append to PR description (if PR exists)
+          if [ -n "$BRANCH_NAME" ]; then
+            PR_NUMBER=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number' || true)
+            if [ -n "$PR_NUMBER" ]; then
+              EXISTING_BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body')
+              # Remove old stats section if present, then append new one
+              CLEAN_BODY=$(echo "$EXISTING_BODY" | sed '/^## Agent Stats$/,$ d')
+              gh pr edit "$PR_NUMBER" --body "${CLEAN_BODY}
+
+          ${STATS}"
+            fi
+          fi

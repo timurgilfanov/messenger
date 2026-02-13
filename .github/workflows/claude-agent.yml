@@ -21,6 +21,16 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
+      - name: Check sender is admin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PERMISSION=$(gh api repos/${{ github.repository }}/collaborators/${{ github.event.sender.login }}/permission --jq '.permission')
+          if [ "$PERMISSION" != "admin" ]; then
+            echo "::error::Only repository admins can trigger the agent. Sender '${{ github.event.sender.login }}' has '$PERMISSION' permission."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4

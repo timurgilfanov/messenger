@@ -4,7 +4,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +26,6 @@ suspend fun <T> MutableStateFlow<T>.repeatOnSubscription(
                     if (blockJob?.isActive != true) {
                         blockJob = launch(block = block)
                     }
-                    awaitCancellation()
                 } else {
                     delay(stopTimeout)
                     blockJob?.cancel()

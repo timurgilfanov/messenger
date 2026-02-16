@@ -39,8 +39,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.messenger.annotations.ApplicationTest
 
 # Pre-commit checks
-./gradlew preCommit                   # Run all pre-commit checks (formatting, lint, detekt, architecture, unit, component tests)
+./gradlew preCommit                   # Run all pre-commit checks (checks staged files)
                                       # IMPORTANT: Run this before committing when changes are ready for compilation and testing
+./gradlew preCommit -Pforce           # Run all checks unconditionally (CI / agent)
 
 # Exclude specific categories
 ./gradlew testMockDebugUnitTest -PexcludeCategory=timur.gilfanov.messenger.annotations.Architecture

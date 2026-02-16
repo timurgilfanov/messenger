@@ -4,19 +4,22 @@ This document defines which GitHub issues are safe to delegate to an autonomous 
 
 ## Prerequisites
 
-The agent's only verification tool is `./gradlew preCommit`. It cannot inspect a screen, evaluate aesthetics, or make architectural judgment calls. Tasks must be scoped accordingly.
+1. `ANTHROPIC_API_KEY` repository secret configured
+2. [Claude GitHub App](https://github.com/apps/claude) installed on the repository
+
+The agent's verification tool is `./gradlew preCommit`. It cannot inspect a screen, evaluate aesthetics, or make architectural judgment calls. Tasks must be scoped accordingly.
 
 ## Solvability Criteria
 
 A task is AI-solvable when **all five** conditions hold:
 
-| # | Criterion | Rationale |
-|---|-----------|-----------|
-| 1 | **Verifiable by `preCommit`** | The agent's only verification tool. If correctness requires looking at a screen, the agent can't confirm it. |
-| 2 | **No open design decisions** | Agent replicates patterns, it doesn't make architectural calls. "Decide during implementation" = human task. |
-| 3 | **Reference pattern exists** | A merged file or PR demonstrating the same pattern. Agent's primary success mode is pattern replication. |
-| 4 | **Bounded blast radius** (~10 files or fewer) | Beyond this, the agent misses integration points. |
-| 5 | **Effort XS or S** (or purely mechanical M) | Correlates with all above. |
+| # | Criterion                                     | Rationale                                                                                                    |
+|---|-----------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| 1 | **Verifiable by `preCommit`**                 | The agent's verification tool. If correctness requires looking at a screen, the agent can't confirm it.      |
+| 2 | **No open design decisions**                  | Agent replicates patterns, it doesn't make architectural calls. "Decide during implementation" = human task. |
+| 3 | **Reference pattern exists**                  | A merged file or PR demonstrating the same pattern. Agent's primary success mode is pattern replication.     |
+| 4 | **Bounded blast radius** (~10 files or fewer) | Beyond this, the agent misses integration points.                                                            |
+| 5 | **Effort XS or S** (or purely mechanical M)   | Correlates with all above.                                                                                   |
 
 ## Task Type Reference
 
@@ -50,7 +53,7 @@ A task is AI-solvable when **all five** conditions hold:
 1. **Author** writes issue using the `ai-agent-task` template
 2. **Author** confirms all five solvability criteria in the template checklist
 3. **Author** applies the `agent` label
-4. **Agent** picks up the issue, reads the reference pattern, implements, runs `preCommit`
+4. **GitHub Actions** triggers the `Claude Agent` workflow (`.github/workflows/claude-agent.yml`), which launches Claude Code to read the issue, implement the solution, run verification, and open a PR automatically
 5. **Author** reviews the resulting PR on their schedule
 
 ## Related

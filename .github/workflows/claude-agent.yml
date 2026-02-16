@@ -1,0 +1,141 @@
+name: Claude Agent
+
+on:
+  issues:
+    types: [labeled, opened]
+
+env:
+  CLAUDE_MODEL: ${{ contains(github.event.issue.labels.*.name, 'effort:XS') && 'claude-haiku-4-5-20251001' || 'claude-sonnet-4-5-20250929' }}
+  CLAUDE_MAX_TURNS: 40
+
+jobs:
+  resolve-issue:
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == 'agent') ||
+      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'agent'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Check sender is admin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PERMISSION=$(gh api repos/${{ github.repository }}/collaborators/${{ github.event.sender.login }}/permission --jq '.permission')
+          if [ "$PERMISSION" != "admin" ]; then
+            echo "::error::Only repository admins can trigger the agent. Sender '${{ github.event.sender.login }}' has '$PERMISSION' permission."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/configuration-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - run: chmod +x gradlew
+
+      - uses: anthropics/claude-code-action@v1
+        id: agent
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          label_trigger: "agent"
+          prompt: |
+            You are an autonomous AI agent resolving GitHub issue #${{ github.event.issue.number }}.
+            Read the issue with: gh issue view ${{ github.event.issue.number }} --json title,body
+
+            RULES:
+            - Avoid TodoWrite and Task (sub-agents) for XS/S tasks. Work directly.
+
+            WORKFLOW:
+            1. Read the issue (--json title,body to avoid truncation).
+            2. Study the reference pattern file or PR mentioned in the issue.
+            3. Implement the solution following CLAUDE.md conventions.
+            4. Run verification:
+               ./gradlew preCommit -Pforce
+               If it fails, fix and re-run from step 4.
+            5. Before pushing, rebase onto latest main to avoid stale-branch push failures:
+               git fetch origin main && git rebase origin/main
+            6. Create a PR referencing issue #${{ github.event.issue.number }}.
+          claude_args: "--max-turns ${{ env.CLAUDE_MAX_TURNS }} --model ${{ env.CLAUDE_MODEL }} --allowedTools Bash(./gradlew *),Bash(git *),Bash(gh *),Edit,Read,Write,Glob,Grep"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: claude-agent-output
+          path: ${{ steps.agent.outputs.execution_file || format('{0}/claude-execution-output.json', runner.temp) }}
+          if-no-files-found: warn
+
+      - name: Report execution stats
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_FILE: ${{ steps.agent.outputs.execution_file || format('{0}/claude-execution-output.json', runner.temp) }}
+          BRANCH_NAME: ${{ steps.agent.outputs.branch_name }}
+        run: |
+          # Extract result message from execution file
+          RESULT=$(jq '[.[] | select(.type == "result")] | last' "$EXECUTION_FILE")
+
+          NUM_TURNS=$(echo "$RESULT" | jq -r '.num_turns // "N/A"')
+          COST=$(echo "$RESULT" | jq -r '.total_cost_usd // "N/A"')
+          DURATION_MS=$(echo "$RESULT" | jq -r '.duration_ms // "N/A"')
+          STATUS=$(echo "$RESULT" | jq -r '.subtype // "N/A"')
+
+          # Convert duration to minutes:seconds
+          if [ "$DURATION_MS" != "N/A" ]; then
+            DURATION_SEC=$((DURATION_MS / 1000))
+            DURATION_MIN=$((DURATION_SEC / 60))
+            DURATION_REM=$((DURATION_SEC % 60))
+            DURATION_FMT="${DURATION_MIN}m ${DURATION_REM}s"
+          else
+            DURATION_FMT="N/A"
+          fi
+
+          # Format cost
+          if [ "$COST" != "N/A" ]; then
+            COST_FMT=$(printf '$%.2f' "$COST")
+          else
+            COST_FMT="N/A"
+          fi
+
+          # Build stats markdown
+          STATS="## Agent Stats
+
+          | Metric | Value |
+          |--------|-------|
+          | Status | ${STATUS} |
+          | Model | ${CLAUDE_MODEL} |
+          | Turns | ${NUM_TURNS}/${CLAUDE_MAX_TURNS} |
+          | Duration | ${DURATION_FMT} |
+          | Cost | ${COST_FMT} |"
+
+          # 1. Write to GitHub Step Summary (Actions web UI)
+          echo "$STATS" >> "$GITHUB_STEP_SUMMARY"
+
+          # 2. Append to PR description (if PR exists)
+          if [ -n "$BRANCH_NAME" ]; then
+            PR_NUMBER=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number' || true)
+            if [ -n "$PR_NUMBER" ]; then
+              EXISTING_BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body')
+              # Remove old stats section if present, then append new one
+              CLEAN_BODY=$(echo "$EXISTING_BODY" | sed '/^## Agent Stats$/,$ d')
+              gh pr edit "$PR_NUMBER" --body "${CLEAN_BODY}
+
+          ${STATS}"
+            fi
+          fi

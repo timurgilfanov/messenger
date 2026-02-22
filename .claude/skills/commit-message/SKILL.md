@@ -1,13 +1,13 @@
 ---
 name: commit-message
 description: commit message rules for this codebase
-allowed-tools: Bash(git status *), Bash(git diff *)
+allowed-tools: Bash(git status *), Bash(git diff --staged*)
 ---
 
 Use `conventional-commits-1-0-0.md` to write consistent and meaningful commit messages. This makes your work easier to review, track, and maintain for everyone involved in the project.
 
 ## Commit context
-- Commit diff: `!git diff`
+- Commit diff: `!git diff --staged`
 - Changed files: `!git status`
 
 ## Commit message format
@@ -39,7 +39,7 @@ Components:
 | revert | Reverting previous commits | revert: remove feature flag |
 
 ### Scope
-Scope is optional but recommended for clarity. This list of scopes is not comprehansive:
+Scope is optional but recommended for clarity. This list of scopes is not comprehensive:
 
 | Scope | Use for... | Example |
 |-------|-----------|---------|
@@ -53,7 +53,7 @@ Scope is optional but recommended for clarity. This list of scopes is not compre
 ## Best practices
 ### One Commit, One Purpose
 - Each commit should represent a single logical change or addition to the codebase.
-- Don’t mix unrelated changes together (e.g., fixing a bug and updating docs, or changing a style and ) adding a feature).
+- Don’t mix unrelated changes together (e.g., fixing a bug and updating docs, or changing a style and adding a feature).
 
 ### Think About Reviewers (and Future You)
 - Write messages for your teammates and future self, assuming they have no context.

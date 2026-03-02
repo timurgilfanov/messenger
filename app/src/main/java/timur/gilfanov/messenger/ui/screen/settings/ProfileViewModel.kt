@@ -16,6 +16,7 @@ import timur.gilfanov.messenger.domain.entity.onSuccess
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
 import timur.gilfanov.messenger.util.Logger
+import timur.gilfanov.messenger.util.repeatOnSubscription
 
 private const val TAG = "ProfileViewModel"
 private const val KEY_PROFILE = "profile"
@@ -38,17 +39,19 @@ class ProfileViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            observeProfile().collect {
-                it.onSuccess { profile ->
-                    _state.value = ProfileUiState.Ready(profile.toProfileUi())
-                }.onFailure { error ->
-                    when (error) {
-                        ObserveProfileError.Unauthorized -> {
-                            logger.i(
-                                TAG,
-                                "Profile observation failed with Unauthorized error",
-                            )
-                            _effects.send(ProfileSideEffects.Unauthorized)
+            _state.repeatOnSubscription {
+                observeProfile().collect {
+                    it.onSuccess { profile ->
+                        _state.value = ProfileUiState.Ready(profile.toProfileUi())
+                    }.onFailure { error ->
+                        when (error) {
+                            ObserveProfileError.Unauthorized -> {
+                                logger.i(
+                                    TAG,
+                                    "Profile observation failed with Unauthorized error",
+                                )
+                                _effects.send(ProfileSideEffects.Unauthorized)
+                            }
                         }
                     }
                 }

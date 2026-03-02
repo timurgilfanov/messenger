@@ -85,7 +85,11 @@ class RepeatOnSubscriptionUnitTest {
 
         launchRepeatOnSubscription(flow) {
             blockRunning = true
-            try { awaitCancellation() } finally { blockRunning = false }
+            try {
+                awaitCancellation()
+            } finally {
+                blockRunning = false
+            }
         }
 
         val sub = subscribe(flow)
@@ -104,7 +108,11 @@ class RepeatOnSubscriptionUnitTest {
 
         launchRepeatOnSubscription(flow) {
             blockRunning = true
-            try { awaitCancellation() } finally { blockRunning = false }
+            try {
+                awaitCancellation()
+            } finally {
+                blockRunning = false
+            }
         }
 
         val sub = subscribe(flow)
@@ -123,7 +131,11 @@ class RepeatOnSubscriptionUnitTest {
 
         launchRepeatOnSubscription(flow) {
             blockRunning = true
-            try { awaitCancellation() } finally { blockRunning = false }
+            try {
+                awaitCancellation()
+            } finally {
+                blockRunning = false
+            }
         }
 
         val sub = subscribe(flow)
@@ -146,7 +158,11 @@ class RepeatOnSubscriptionUnitTest {
         launchRepeatOnSubscription(flow) {
             startCount.incrementAndGet()
             blockRunning = true
-            try { awaitCancellation() } finally { blockRunning = false }
+            try {
+                awaitCancellation()
+            } finally {
+                blockRunning = false
+            }
         }
 
         val sub1 = subscribe(flow)
@@ -184,6 +200,7 @@ class RepeatOnSubscriptionUnitTest {
         runCurrent()
 
         advanceTimeBy(STOP_TIMEOUT)
+        runCurrent()
 
         val sub2 = subscribe(flow)
         runCurrent()
@@ -199,7 +216,11 @@ class RepeatOnSubscriptionUnitTest {
 
         val parentJob = launchRepeatOnSubscription(flow) {
             blockRunning = true
-            try { awaitCancellation() } finally { blockRunning = false }
+            try {
+                awaitCancellation()
+            } finally {
+                blockRunning = false
+            }
         }
 
         val sub = subscribe(flow)

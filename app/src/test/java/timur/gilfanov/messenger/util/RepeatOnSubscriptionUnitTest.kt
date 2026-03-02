@@ -26,6 +26,8 @@ class RepeatOnSubscriptionUnitTest {
 
     companion object {
         private val STOP_TIMEOUT = 1.seconds
+        private val WITHIN_TIMEOUT = 500.milliseconds
+        private val LONG_ADVANCE = 10.seconds
     }
 
     private fun TestScope.subscribe(flow: MutableStateFlow<Int>): Job =
@@ -35,7 +37,7 @@ class RepeatOnSubscriptionUnitTest {
 
     private fun TestScope.launchRepeatOnSubscription(
         flow: MutableStateFlow<Int>,
-        block: suspend CoroutineScope.() -> kotlin.Unit,
+        block: suspend CoroutineScope.() -> Unit,
     ): Job = backgroundScope.launch {
         flow.repeatOnSubscription(stopTimeout = STOP_TIMEOUT, block = block)
     }
@@ -72,7 +74,7 @@ class RepeatOnSubscriptionUnitTest {
         runCurrent()
         assertEquals(1, startCount.get())
 
-        advanceTimeBy(10.seconds)
+        advanceTimeBy(LONG_ADVANCE)
         assertEquals(1, startCount.get())
 
         sub.cancel()
@@ -95,7 +97,7 @@ class RepeatOnSubscriptionUnitTest {
         val sub = subscribe(flow)
         runCurrent()
 
-        advanceTimeBy(10.seconds)
+        advanceTimeBy(LONG_ADVANCE)
         assertTrue(blockRunning)
 
         sub.cancel()
@@ -171,7 +173,7 @@ class RepeatOnSubscriptionUnitTest {
         sub1.cancel()
         runCurrent()
 
-        advanceTimeBy(500.milliseconds)
+        advanceTimeBy(WITHIN_TIMEOUT)
 
         val sub2 = subscribe(flow)
         runCurrent()

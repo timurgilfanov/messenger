@@ -12,6 +12,12 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
+/**
+ * Runs [block] whenever this [MutableStateFlow] has active collectors, and cancels it after
+ * [stopTimeout] elapses with no collectors.
+ *
+ * Suspends until the parent coroutine is cancelled.
+ */
 suspend fun <T> MutableStateFlow<T>.repeatOnSubscription(
     stopTimeout: Duration = 5.seconds,
     block: suspend CoroutineScope.() -> Unit,

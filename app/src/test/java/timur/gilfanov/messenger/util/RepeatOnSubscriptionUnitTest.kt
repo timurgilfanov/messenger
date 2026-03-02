@@ -2,10 +2,10 @@ package timur.gilfanov.messenger.util
 
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -81,18 +81,18 @@ class RepeatOnSubscriptionUnitTest {
     @Test
     fun `block keeps running while subscribers are active`() = runTest {
         val flow = MutableStateFlow(0)
-        val blockJob = CompletableDeferred<Job>()
+        var blockRunning = false
 
         launchRepeatOnSubscription(flow) {
-            blockJob.complete(coroutineContext[Job]!!)
-            awaitCancellation()
+            blockRunning = true
+            try { awaitCancellation() } finally { blockRunning = false }
         }
 
         val sub = subscribe(flow)
         runCurrent()
 
         advanceTimeBy(10.seconds)
-        assertTrue(blockJob.await().isActive)
+        assertTrue(blockRunning)
 
         sub.cancel()
     }
@@ -100,11 +100,11 @@ class RepeatOnSubscriptionUnitTest {
     @Test
     fun `block is not cancelled immediately when subscribers leave`() = runTest {
         val flow = MutableStateFlow(0)
-        val blockJob = CompletableDeferred<Job>()
+        var blockRunning = false
 
         launchRepeatOnSubscription(flow) {
-            blockJob.complete(coroutineContext[Job]!!)
-            awaitCancellation()
+            blockRunning = true
+            try { awaitCancellation() } finally { blockRunning = false }
         }
 
         val sub = subscribe(flow)
@@ -113,17 +113,17 @@ class RepeatOnSubscriptionUnitTest {
         sub.cancel()
         runCurrent()
 
-        assertTrue(blockJob.await().isActive)
+        assertTrue(blockRunning)
     }
 
     @Test
     fun `block is cancelled after stopTimeout elapses with no subscribers`() = runTest {
         val flow = MutableStateFlow(0)
-        val blockJob = CompletableDeferred<Job>()
+        var blockRunning = false
 
         launchRepeatOnSubscription(flow) {
-            blockJob.complete(coroutineContext[Job]!!)
-            awaitCancellation()
+            blockRunning = true
+            try { awaitCancellation() } finally { blockRunning = false }
         }
 
         val sub = subscribe(flow)
@@ -134,19 +134,19 @@ class RepeatOnSubscriptionUnitTest {
 
         advanceTimeBy(STOP_TIMEOUT)
         runCurrent()
-        assertTrue(blockJob.await().isCancelled)
+        assertFalse(blockRunning)
     }
 
     @Test
     fun `block keeps running if subscribers return within stopTimeout`() = runTest {
         val flow = MutableStateFlow(0)
         val startCount = AtomicInteger(0)
-        val blockJob = CompletableDeferred<Job>()
+        var blockRunning = false
 
         launchRepeatOnSubscription(flow) {
             startCount.incrementAndGet()
-            blockJob.complete(coroutineContext[Job]!!)
-            awaitCancellation()
+            blockRunning = true
+            try { awaitCancellation() } finally { blockRunning = false }
         }
 
         val sub1 = subscribe(flow)
@@ -161,7 +161,7 @@ class RepeatOnSubscriptionUnitTest {
         runCurrent()
 
         assertEquals(1, startCount.get())
-        assertTrue(blockJob.await().isActive)
+        assertTrue(blockRunning)
 
         sub2.cancel()
     }
@@ -195,11 +195,11 @@ class RepeatOnSubscriptionUnitTest {
     @Test
     fun `block is cancelled when parent scope is cancelled`() = runTest {
         val flow = MutableStateFlow(0)
-        val blockJob = CompletableDeferred<Job>()
+        var blockRunning = false
 
         val parentJob = launchRepeatOnSubscription(flow) {
-            blockJob.complete(coroutineContext[Job]!!)
-            awaitCancellation()
+            blockRunning = true
+            try { awaitCancellation() } finally { blockRunning = false }
         }
 
         val sub = subscribe(flow)
@@ -208,7 +208,7 @@ class RepeatOnSubscriptionUnitTest {
         parentJob.cancel()
         runCurrent()
 
-        assertTrue(blockJob.await().isCancelled)
+        assertFalse(blockRunning)
 
         sub.cancel()
     }

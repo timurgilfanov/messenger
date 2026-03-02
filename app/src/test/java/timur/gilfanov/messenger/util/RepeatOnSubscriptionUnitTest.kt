@@ -19,10 +19,9 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.annotations.Unit
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@Category(Unit::class)
+@Category(timur.gilfanov.messenger.annotations.Unit::class)
 class RepeatOnSubscriptionUnitTest {
 
     companion object {
@@ -55,6 +54,25 @@ class RepeatOnSubscriptionUnitTest {
 
         val sub = subscribe(flow)
         runCurrent()
+        assertEquals(1, startCount.get())
+
+        sub.cancel()
+    }
+
+    @Test
+    fun `block is not restarted after self-completing while subscribers are present`() = runTest {
+        val flow = MutableStateFlow(0)
+        val startCount = AtomicInteger(0)
+
+        launchRepeatOnSubscription(flow) {
+            startCount.incrementAndGet()
+        }
+
+        val sub = subscribe(flow)
+        runCurrent()
+        assertEquals(1, startCount.get())
+
+        advanceTimeBy(10.seconds)
         assertEquals(1, startCount.get())
 
         sub.cancel()

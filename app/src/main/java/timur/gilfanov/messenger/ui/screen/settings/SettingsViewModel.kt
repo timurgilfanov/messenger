@@ -1,77 +1,87 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import org.orbitmvi.orbit.ContainerHost
-import org.orbitmvi.orbit.annotation.OrbitExperimental
-import org.orbitmvi.orbit.viewmodel.container
-import timur.gilfanov.messenger.domain.entity.fold
+import timur.gilfanov.messenger.domain.entity.onFailure
+import timur.gilfanov.messenger.domain.entity.onSuccess
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCase
 import timur.gilfanov.messenger.util.Logger
+import timur.gilfanov.messenger.util.repeatOnSubscription
 
+private const val TAG = "SettingsViewModel"
+private const val SAVED_STATE_KEY = "settingsUiState"
+private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
+
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val observeSettings: ObserveSettingsUseCase,
     private val logger: Logger,
-) : ViewModel(),
-    ContainerHost<SettingsUiState, SettingsSideEffects> {
+    private val savedStateHandle: SavedStateHandle,
+) : ViewModel() {
 
-    companion object {
-        private const val TAG = "SettingsViewModel"
-        private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
-    }
+    private val _state = MutableStateFlow(
+        savedStateHandle.get<SettingsUiState>(SAVED_STATE_KEY) ?: SettingsUiState.Loading,
+    )
+    val state = _state.asStateFlow()
 
-    override val container =
-        container<SettingsUiState, SettingsSideEffects>(SettingsUiState.Loading) {
-            coroutineScope {
-                launch {
-                    observeSettingsChanges()
-                }
+    private val _effects = Channel<SettingsSideEffects>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
+
+    init {
+        viewModelScope.launch {
+            _state.repeatOnSubscription {
+                observeSettings()
+                    .debounce(STATE_UPDATE_DEBOUNCE)
+                    .collect { result ->
+                        result
+                            .onSuccess { settings ->
+                                _state.value = SettingsUiState.Ready(settings.toSettingsUi())
+                            }
+                            .onFailure { error ->
+                                when (error) {
+                                    ObserveSettingsError.Unauthorized -> {
+                                        logger.i(
+                                            TAG,
+                                            "Settings observation failed with Unauthorized error",
+                                        )
+                                        _effects.send(SettingsSideEffects.Unauthorized)
+                                    }
+                                    ObserveSettingsError.SettingsResetToDefaults -> {
+                                        logger.i(TAG, "Settings were reset to defaults")
+                                    }
+                                    is ObserveSettingsError.LocalOperationFailed -> {
+                                        logger.i(
+                                            TAG,
+                                            "Settings observation failed with local error: ${error.error}",
+                                        )
+                                        _effects.send(
+                                            SettingsSideEffects.ObserveSettingsFailed(error.error),
+                                        )
+                                    }
+                                }
+                            }
+                    }
             }
         }
 
-    @OptIn(OrbitExperimental::class, FlowPreview::class)
-    private suspend fun observeSettingsChanges() = subIntent {
-        observeSettings()
-            .debounce(STATE_UPDATE_DEBOUNCE)
-            .collect { result ->
-                result.fold(
-                    onSuccess = { settings ->
-                        reduce {
-                            SettingsUiState.Ready(settings.toSettingsUi())
-                        }
-                    },
-                    onFailure = { error ->
-                        when (error) {
-                            ObserveSettingsError.Unauthorized -> {
-                                logger.i(
-                                    TAG,
-                                    "Settings observation failed with Unauthorized error",
-                                )
-                                postSideEffect(SettingsSideEffects.Unauthorized)
-                            }
-                            ObserveSettingsError.SettingsResetToDefaults -> {
-                                logger.i(TAG, "Settings were reset to defaults")
-                            }
-                            is ObserveSettingsError.LocalOperationFailed -> {
-                                logger.i(
-                                    TAG,
-                                    "Settings observation failed with local error: ${error.error}",
-                                )
-                                postSideEffect(
-                                    SettingsSideEffects.ObserveSettingsFailed(error.error),
-                                )
-                            }
-                        }
-                    },
-                )
+        viewModelScope.launch {
+            _state.filterIsInstance<SettingsUiState.Ready>().collect {
+                savedStateHandle[SAVED_STATE_KEY] = it
             }
+        }
     }
 }

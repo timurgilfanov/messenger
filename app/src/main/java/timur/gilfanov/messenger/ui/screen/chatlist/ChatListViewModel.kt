@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.onFailure
@@ -50,9 +51,11 @@ class ChatListViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _state.repeatOnSubscription {
-                launch { observeProfile() }
-                launch { observeChatList() }
-                launch { observeChatListUpdating() }
+                supervisorScope {
+                    launch { observeProfile() }
+                    launch { observeChatList() }
+                    launch { observeChatListUpdating() }
+                }
             }
         }
     }

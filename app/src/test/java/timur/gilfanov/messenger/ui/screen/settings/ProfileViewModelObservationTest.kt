@@ -9,6 +9,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -92,6 +93,8 @@ class ProfileViewModelObservationTest {
         val viewModel = createViewModel(
             flowOf(ResultWithError.Failure(ObserveProfileError.Unauthorized)),
         )
+
+        backgroundScope.launch { viewModel.state.collect {} }
 
         viewModel.effects.test {
             assertEquals(ProfileSideEffects.Unauthorized, awaitItem())

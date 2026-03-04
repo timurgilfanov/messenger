@@ -8,7 +8,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.entity.onFailure
@@ -42,7 +41,9 @@ class ProfileViewModel @Inject constructor(
             _state.repeatOnSubscription {
                 observeProfile().collect {
                     it.onSuccess { profile ->
-                        _state.value = ProfileUiState.Ready(profile.toProfileUi())
+                        val profileUi = profile.toProfileUi()
+                        _state.value = ProfileUiState.Ready(profileUi)
+                        savedStateHandle[KEY_PROFILE] = profileUi
                     }.onFailure { error ->
                         when (error) {
                             ObserveProfileError.Unauthorized -> {
@@ -56,14 +57,6 @@ class ProfileViewModel @Inject constructor(
                     }
                 }
             }
-        }
-
-        viewModelScope.launch {
-            state
-                .filterIsInstance<ProfileUiState.Ready>()
-                .collect {
-                    savedStateHandle[KEY_PROFILE] = it.profile
-                }
         }
     }
 }

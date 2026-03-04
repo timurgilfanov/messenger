@@ -1,16 +1,18 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.orbitmvi.orbit.ContainerHost
-import org.orbitmvi.orbit.annotation.OrbitExperimental
-import org.orbitmvi.orbit.viewmodel.container
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.entity.settings.uiLanguageList
@@ -19,55 +21,57 @@ import timur.gilfanov.messenger.domain.usecase.settings.ChangeUiLanguageUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveUiLanguageError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveUiLanguageUseCase
 import timur.gilfanov.messenger.util.Logger
+import timur.gilfanov.messenger.util.repeatOnSubscription
+
+private const val TAG = "LanguageViewModel"
+private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
 
 /**
  * ViewModel for the language selection screen.
  *
  * Manages UI state and side effects for changing the user's preferred
- * application language. Uses Orbit MVI pattern for state management.
+ * application language.
  */
 @HiltViewModel
 class LanguageViewModel @Inject constructor(
     private val observe: ObserveUiLanguageUseCase,
     private val change: ChangeUiLanguageUseCase,
     private val logger: Logger,
-) : ViewModel(),
-    ContainerHost<LanguageUiState, LanguageSideEffects> {
+) : ViewModel() {
 
-    companion object {
-        private const val TAG = "LanguageViewModel"
-        private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
-    }
-
-    override val container = container<LanguageUiState, LanguageSideEffects>(
+    private val _state = MutableStateFlow(
         LanguageUiState(
             languages = uiLanguageList,
             selectedLanguage = null,
         ),
-    ) {
-        coroutineScope {
-            launch {
+    )
+    val state = _state.asStateFlow()
+
+    private val _effects = Channel<LanguageSideEffects>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
+
+    init {
+        viewModelScope.launch {
+            _state.repeatOnSubscription {
                 observeLanguageChanges()
             }
         }
     }
 
-    @OptIn(OrbitExperimental::class, FlowPreview::class)
-    private suspend fun observeLanguageChanges() = subIntent {
+    @OptIn(FlowPreview::class)
+    private suspend fun observeLanguageChanges() {
         observe()
             .debounce(STATE_UPDATE_DEBOUNCE)
             .collect { result ->
                 result.fold(
                     onSuccess = { language ->
-                        reduce {
-                            state.copy(selectedLanguage = language)
-                        }
+                        _state.update { it.copy(selectedLanguage = language) }
                     },
                     onFailure = { error ->
                         when (error) {
                             ObserveUiLanguageError.Unauthorized -> {
                                 logger.i(TAG, "Language observation failed with Unauthorized error")
-                                postSideEffect(LanguageSideEffects.Unauthorized)
+                                _effects.send(LanguageSideEffects.Unauthorized)
                             }
                             ObserveUiLanguageError.SettingsResetToDefaults -> {
                                 logger.i(TAG, "Settings were reset to defaults")
@@ -84,13 +88,8 @@ class LanguageViewModel @Inject constructor(
             }
     }
 
-    /**
-     * Changes the user's UI language preference.
-     *
-     * @param value The language item to set as the new preference
-     */
     fun changeLanguage(value: UiLanguage) {
-        intent {
+        viewModelScope.launch {
             change(value).fold(
                 onSuccess = {
                     logger.i(TAG, "Language changed to $value")
@@ -99,14 +98,14 @@ class LanguageViewModel @Inject constructor(
                     when (error) {
                         ChangeUiLanguageError.Unauthorized -> {
                             logger.i(TAG, "Language change failed with Unauthorized error")
-                            postSideEffect(LanguageSideEffects.Unauthorized)
+                            _effects.send(LanguageSideEffects.Unauthorized)
                         }
                         is ChangeUiLanguageError.LocalOperationFailed -> {
                             logger.i(
                                 TAG,
                                 "Language change failed with local error: ${error.error}",
                             )
-                            postSideEffect(LanguageSideEffects.ChangeFailed(error.error))
+                            _effects.send(LanguageSideEffects.ChangeFailed(error.error))
                         }
                     }
                 },

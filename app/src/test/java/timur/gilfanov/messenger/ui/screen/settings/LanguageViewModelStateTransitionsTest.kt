@@ -1,29 +1,35 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
+import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
+import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createTestSettings
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createViewModel
 
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class LanguageViewModelStateTransitionsTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
 
     /**
      * Verifies that the `languages` list maintains referential equality across state changes.
@@ -38,22 +44,18 @@ class LanguageViewModelStateTransitionsTest {
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
-            val languages1 = viewModel.container.stateFlow.value.languages
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(201)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
+            val languages1 = viewModel.state.value.languages
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.German)
-            }
-            val languages2 = viewModel.container.stateFlow.value.languages
+            advanceTimeBy(201)
+            assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
+            val languages2 = viewModel.state.value.languages
 
             assertSame(languages1, languages2)
             assertEquals(
@@ -61,7 +63,7 @@ class LanguageViewModelStateTransitionsTest {
                 languages2,
             )
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -78,28 +80,24 @@ class LanguageViewModelStateTransitionsTest {
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
-            val state1 = viewModel.container.stateFlow.value
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(201)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
+            val state1 = viewModel.state.value
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.German)
-            }
-            val state2 = viewModel.container.stateFlow.value
+            advanceTimeBy(201)
+            assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
+            val state2 = viewModel.state.value
 
             assertNotSame(state1, state2)
             assertEquals(UiLanguage.English, state1.selectedLanguage)
             assertEquals(UiLanguage.German, state2.selectedLanguage)
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

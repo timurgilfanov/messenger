@@ -32,7 +32,7 @@ class SettingsViewModelProcessDeathTest {
     @Test
     fun `restores settings from SavedStateHandle after process death`() = runTest {
         val restoredState = SavedStateHandle(
-            mapOf("settingsUiState" to SettingsUiState.Ready(SettingsUi(UiLanguage.German))),
+            mapOf("settingsUiState" to SettingsUi(UiLanguage.German)),
         )
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Success(Settings(uiLanguage = UiLanguage.English)),
@@ -65,8 +65,8 @@ class SettingsViewModelProcessDeathTest {
         advanceTimeBy(201)
 
         assertEquals(
-            SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
-            savedStateHandle.get<SettingsUiState>("settingsUiState"),
+            SettingsUi(UiLanguage.English),
+            savedStateHandle.get<SettingsUi>("settingsUiState"),
         )
     }
 }

@@ -11,7 +11,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.entity.onFailure
@@ -34,7 +33,8 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
-        savedStateHandle.get<SettingsUiState>(SAVED_STATE_KEY) ?: SettingsUiState.Loading,
+        savedStateHandle.get<SettingsUi>(SAVED_STATE_KEY)?.let { SettingsUiState.Ready(it) }
+            ?: SettingsUiState.Loading,
     )
     val state = _state.asStateFlow()
 
@@ -49,7 +49,9 @@ class SettingsViewModel @Inject constructor(
                     .collect { result ->
                         result
                             .onSuccess { settings ->
-                                _state.value = SettingsUiState.Ready(settings.toSettingsUi())
+                                val settingsUi = settings.toSettingsUi()
+                                _state.value = SettingsUiState.Ready(settingsUi)
+                                savedStateHandle[SAVED_STATE_KEY] = settingsUi
                             }
                             .onFailure { error ->
                                 when (error) {
@@ -75,12 +77,6 @@ class SettingsViewModel @Inject constructor(
                                 }
                             }
                     }
-            }
-        }
-
-        viewModelScope.launch {
-            _state.filterIsInstance<SettingsUiState.Ready>().collect {
-                savedStateHandle[SAVED_STATE_KEY] = it
             }
         }
     }

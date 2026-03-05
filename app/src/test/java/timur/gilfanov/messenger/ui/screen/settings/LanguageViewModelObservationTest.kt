@@ -66,8 +66,8 @@ class LanguageViewModelObservationTest {
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.state.test {
-            awaitItem()
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
             advanceTimeBy(DEBOUNCE_PASS_MS)
             expectNoEvents()
             cancelAndIgnoreRemainingEvents()

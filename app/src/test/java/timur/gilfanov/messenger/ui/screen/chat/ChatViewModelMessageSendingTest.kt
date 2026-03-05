@@ -1,18 +1,17 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -71,26 +70,37 @@ class ChatViewModelMessageSendingTest {
                 getPagedMessagesUseCase = getPagedMessagesUseCase,
                 markMessagesAsReadUseCase = markMessagesAsReadUseCase,
             )
-            viewModel.test(this) {
-                val job = runOnCreate()
-                awaitState().let { state ->
-                    assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
-                    assertFalse(state.isSending)
-                }
+
+            viewModel.state.test {
+                awaitItem() // Loading
+                val readyState = awaitItem()
+                assertTrue(
+                    readyState is ChatUiState.Ready,
+                    "Expected Ready state, but got: $readyState",
+                )
+                assertFalse(readyState.isSending)
 
                 viewModel.onInputTextChanged("Test message")
                 viewModel.sendMessage(message.id, now = now)
-                expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
-                expectStateOn<ChatUiState.Ready> { copy(isSending = false) }
 
-                val sideEffect = awaitSideEffect()
-                assertIs<ChatSideEffect.ClearInputText>(sideEffect)
+                val sendingState = awaitItem()
+                assertTrue(sendingState is ChatUiState.Ready)
+                assertTrue(sendingState.isSending)
+
+                val sentState = awaitItem()
+                assertTrue(sentState is ChatUiState.Ready)
+                assertFalse(sentState.isSending)
 
                 viewModel.onInputTextChanged("Test message 2")
-                awaitState().let { state ->
+                awaitItem().let { state ->
                     assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
                 }
-                job.cancelAndJoin()
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            viewModel.effects.test {
+                assertIs<ChatSideEffect.ClearInputText>(awaitItem())
+                cancelAndIgnoreRemainingEvents()
             }
         }
     }
@@ -119,43 +129,40 @@ class ChatViewModelMessageSendingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val readyState = awaitState()
+        viewModel.state.test {
+            awaitItem() // Loading
+            val readyState = awaitItem()
             assertTrue(readyState is ChatUiState.Ready)
             assertNull(readyState.dialogError)
 
             viewModel.onInputTextChanged("")
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputTextValidationError = TextValidationError.Empty)
-            }
+            val validationErrorState = awaitItem()
+            assertTrue(validationErrorState is ChatUiState.Ready)
+            assertIs<TextValidationError.Empty>(validationErrorState.inputTextValidationError)
 
-            // Sending a empty text message should cause an error
+            // Sending an empty text message should cause an error
             viewModel.sendMessage(MessageId(UUID.randomUUID()), Instant.fromEpochMilliseconds(1000))
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(isSending = true)
-            }
+            val sendingState = awaitItem()
+            assertTrue(sendingState is ChatUiState.Ready)
+            assertTrue(sendingState.isSending)
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(
-                    isSending = false,
-                    dialogError = ReadyError.SendMessageError(
-                        error = SendMessageError.MessageIsNotValid(
-                            reason = TextValidationError.Empty,
-                        ),
-                    ),
-                )
-            }
+            val errorState = awaitItem()
+            assertTrue(errorState is ChatUiState.Ready)
+            assertFalse(errorState.isSending)
+            assertIs<ReadyError.SendMessageError>(errorState.dialogError)
+            assertIs<SendMessageError.MessageIsNotValid>(
+                (errorState.dialogError as ReadyError.SendMessageError).error,
+            )
 
             viewModel.dismissDialogError()
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(dialogError = null)
-            }
+            val clearedState = awaitItem()
+            assertTrue(clearedState is ChatUiState.Ready)
+            assertNull(clearedState.dialogError)
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

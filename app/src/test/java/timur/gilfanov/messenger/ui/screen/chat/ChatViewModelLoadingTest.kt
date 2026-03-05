@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -9,13 +10,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -99,9 +98,9 @@ class ChatViewModelLoadingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitState()
+        viewModel.state.test {
+            awaitItem() // Loading
+            val state = awaitItem()
             assertTrue { state is ChatUiState.Ready }
 
             val expectedState = createExpectedReadyState(
@@ -117,7 +116,7 @@ class ChatViewModelLoadingTest {
             )
             assertEquals(expectedState, state)
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -149,9 +148,9 @@ class ChatViewModelLoadingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitState()
+        viewModel.state.test {
+            awaitItem() // Loading
+            val state = awaitItem()
             assertTrue { state is ChatUiState.Ready }
 
             val expectedState = createExpectedReadyState(
@@ -167,7 +166,7 @@ class ChatViewModelLoadingTest {
             )
             assertEquals(expectedState, state)
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -197,13 +196,15 @@ class ChatViewModelLoadingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            expectState {
-                ChatUiState.Loading(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable))
-            }
+        viewModel.state.test {
+            awaitItem() // Loading (initial)
+            val state = awaitItem()
+            assertEquals(
+                ChatUiState.Loading(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)),
+                state,
+            )
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

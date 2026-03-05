@@ -9,6 +9,8 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -50,10 +52,42 @@ class LanguageViewModel @Inject constructor(
     private val _effects = Channel<LanguageSideEffects>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
+    /* Channel rather than MutableStateFlow: MutableStateFlow deduplicates by equality,
+       so retrying a failed change with the same language would be silently dropped.
+       CONFLATED enforces last-write-wins: a new tap while a write is in-flight
+       overwrites the buffered next language rather than queuing behind it */
+    private val changeLanguageChannel = Channel<UiLanguage>(Channel.CONFLATED)
+
     init {
         viewModelScope.launch {
             _state.repeatOnSubscription {
                 observeLanguageChanges()
+            }
+        }
+
+        viewModelScope.launch {
+            changeLanguageChannel.consumeAsFlow().collectLatest { value ->
+                change(value).fold(
+                    onSuccess = {
+                        logger.i(TAG, "Language changed to $value")
+                    },
+                    onFailure = { error ->
+                        when (error) {
+                            ChangeUiLanguageError.Unauthorized -> {
+                                logger.i(TAG, "Language change failed with Unauthorized error")
+                                _effects.send(LanguageSideEffects.Unauthorized)
+                            }
+
+                            is ChangeUiLanguageError.LocalOperationFailed -> {
+                                logger.i(
+                                    TAG,
+                                    "Language change failed with local error: ${error.error}",
+                                )
+                                _effects.send(LanguageSideEffects.ChangeFailed(error.error))
+                            }
+                        }
+                    },
+                )
             }
         }
     }
@@ -73,9 +107,11 @@ class LanguageViewModel @Inject constructor(
                                 logger.i(TAG, "Language observation failed with Unauthorized error")
                                 _effects.send(LanguageSideEffects.Unauthorized)
                             }
+
                             ObserveUiLanguageError.SettingsResetToDefaults -> {
                                 logger.i(TAG, "Settings were reset to defaults")
                             }
+
                             is ObserveUiLanguageError.LocalOperationFailed -> {
                                 logger.i(
                                     TAG,
@@ -88,28 +124,12 @@ class LanguageViewModel @Inject constructor(
             }
     }
 
+    /*
+    This function change UI language for application.
+
+    Business requirement: language change must have last write wins ordering.
+     */
     fun changeLanguage(value: UiLanguage) {
-        viewModelScope.launch {
-            change(value).fold(
-                onSuccess = {
-                    logger.i(TAG, "Language changed to $value")
-                },
-                onFailure = { error ->
-                    when (error) {
-                        ChangeUiLanguageError.Unauthorized -> {
-                            logger.i(TAG, "Language change failed with Unauthorized error")
-                            _effects.send(LanguageSideEffects.Unauthorized)
-                        }
-                        is ChangeUiLanguageError.LocalOperationFailed -> {
-                            logger.i(
-                                TAG,
-                                "Language change failed with local error: ${error.error}",
-                            )
-                            _effects.send(LanguageSideEffects.ChangeFailed(error.error))
-                        }
-                    }
-                },
-            )
-        }
+        changeLanguageChannel.trySend(value)
     }
 }

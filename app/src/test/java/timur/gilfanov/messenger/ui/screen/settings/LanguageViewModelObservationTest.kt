@@ -1,27 +1,40 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
-import kotlinx.coroutines.cancelAndJoin
+import app.cash.turbine.test
+import kotlin.test.assertEquals
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
+import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createFailingIdentityRepository
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryWithFlow
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createTestSettings
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createViewModel
 
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class LanguageViewModelObservationTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private companion object {
+        const val DEBOUNCE_PASS_MS = 201L
+        const val NO_UPDATE_WINDOW_MS = 300L
+    }
 
     @Test
     fun `Unauthorized error from observation posts Unauthorized side effect`() = runTest {
@@ -32,12 +45,11 @@ class LanguageViewModelObservationTest {
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectSideEffect(LanguageSideEffects.Unauthorized)
-
-            job.cancelAndJoin()
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(LanguageSideEffects.Unauthorized, awaitItem())
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -54,13 +66,11 @@ class LanguageViewModelObservationTest {
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
-
-            job.cancelAndJoin()
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -73,28 +83,24 @@ class LanguageViewModelObservationTest {
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
-            expectState {
-                copy(selectedLanguage = UiLanguage.German)
-            }
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.English))
             }
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -107,12 +113,10 @@ class LanguageViewModelObservationTest {
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
@@ -130,14 +134,13 @@ class LanguageViewModelObservationTest {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
 
-            expectState {
-                copy(selectedLanguage = UiLanguage.German)
-            }
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
+            advanceTimeBy(NO_UPDATE_WINDOW_MS)
+            expectNoEvents()
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -150,12 +153,10 @@ class LanguageViewModelObservationTest {
         val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             settingsFlow.update {
                 ResultWithError.Failure(
@@ -165,18 +166,16 @@ class LanguageViewModelObservationTest {
                 )
             }
 
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
+            advanceTimeBy(NO_UPDATE_WINDOW_MS)
+            expectNoEvents()
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
-            expectState {
-                copy(selectedLanguage = UiLanguage.German)
-            }
-
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

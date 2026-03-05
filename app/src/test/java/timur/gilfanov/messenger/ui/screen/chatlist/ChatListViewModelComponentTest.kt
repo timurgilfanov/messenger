@@ -12,6 +12,7 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -320,6 +321,8 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel = ChatListViewModel(observeProfileUseCase, useCase, repository, testLogger)
 
+        backgroundScope.launch { viewModel.state.collect {} }
+
         viewModel.effects.test {
             assertEquals(ChatListSideEffects.Unauthorized, awaitItem())
         }
@@ -346,6 +349,8 @@ class ChatListViewModelComponentTest {
         val useCase = FlowChatListUseCase(repository)
         val viewModel =
             ChatListViewModel(observeProfileUseCase, useCase, repository, capturingLogger)
+
+        backgroundScope.launch { viewModel.state.collect {} }
 
         viewModel.effects.test {
             awaitItem()

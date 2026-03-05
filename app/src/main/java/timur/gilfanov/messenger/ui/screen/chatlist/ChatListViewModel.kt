@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.onFailure
@@ -24,6 +25,7 @@ import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
 import timur.gilfanov.messenger.util.Logger
+import timur.gilfanov.messenger.util.repeatOnSubscription
 
 private const val TAG = "ChatListViewModel"
 
@@ -47,9 +49,15 @@ class ChatListViewModel @Inject constructor(
     val effects = _effects.receiveAsFlow()
 
     init {
-        viewModelScope.launch { observeProfile() }
-        viewModelScope.launch { observeChatList() }
-        viewModelScope.launch { observeChatListUpdating() }
+        viewModelScope.launch {
+            _state.repeatOnSubscription {
+                supervisorScope {
+                    launch { observeProfile() }
+                    launch { observeChatList() }
+                    launch { observeChatListUpdating() }
+                }
+            }
+        }
     }
 
     private suspend fun observeProfile() {

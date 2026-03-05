@@ -13,7 +13,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -27,8 +26,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
@@ -46,12 +43,14 @@ fun SettingsScreen(
     profileViewModel: ProfileViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
+    val currentOnAuthFailure by rememberUpdatedState(onAuthFailure)
+    val currentOnShowSnackbar by rememberUpdatedState(onShowSnackbar)
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     val profileUiState by profileViewModel.state.collectAsStateWithLifecycle()
 
     val getProfileErrorMessage = stringResource(R.string.settings_get_profile_failed)
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val currentOnAuthFailure by rememberUpdatedState(onAuthFailure)
-    val currentOnShowSnackbar by rememberUpdatedState(onShowSnackbar)
+
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
             profileViewModel.effects.collect { effects ->
@@ -66,16 +65,19 @@ fun SettingsScreen(
         }
     }
 
-    val settingsUiState by settingsViewModel.collectAsState()
+    val settingsUiState by settingsViewModel.state.collectAsStateWithLifecycle()
 
     val getSettingsErrorMessage = stringResource(R.string.settings_get_settings_failed)
 
-    settingsViewModel.collectSideEffect {
-        when (it) {
-            is SettingsSideEffects.ObserveSettingsFailed -> currentOnShowSnackbar(
-                getSettingsErrorMessage,
-            )
-            SettingsSideEffects.Unauthorized -> currentOnAuthFailure()
+    LaunchedEffect(settingsViewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            settingsViewModel.effects.collect {
+                when (it) {
+                    is SettingsSideEffects.ObserveSettingsFailed ->
+                        currentOnShowSnackbar(getSettingsErrorMessage)
+                    SettingsSideEffects.Unauthorized -> currentOnAuthFailure()
+                }
+            }
         }
     }
     SettingsScreenContent(

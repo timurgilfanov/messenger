@@ -1,13 +1,17 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
-import kotlin.test.assertIs
-import kotlinx.coroutines.cancelAndJoin
+import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
+import kotlin.test.assertEquals
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
@@ -16,20 +20,40 @@ import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCaseStub
+import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class SettingsViewModelObservationTest {
 
-    fun createTestSettings(language: UiLanguage = UiLanguage.English): Settings = Settings(
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private fun createTestSettings(language: UiLanguage = UiLanguage.English): Settings = Settings(
         uiLanguage = language,
     )
 
-    fun createViewModel(observeSettings: ObserveSettingsUseCase): SettingsViewModel =
-        SettingsViewModel(
-            observeSettings = observeSettings,
-            logger = NoOpLogger(),
+    private fun createViewModel(
+        observeSettings: ObserveSettingsUseCase,
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    ): SettingsViewModel = SettingsViewModel(
+        observeSettings = observeSettings,
+        logger = NoOpLogger(),
+        savedStateHandle = savedStateHandle,
+    )
+
+    @Test
+    fun `initial state is Loading`() = runTest {
+        val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
+            ResultWithError.Success(createTestSettings()),
         )
+        val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
+
+        viewModel.state.test {
+            assertEquals(SettingsUiState.Loading, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 
     @Test
     fun `transitions to Ready state on successful observation`() = runTest {
@@ -38,39 +62,31 @@ class SettingsViewModelObservationTest {
         )
         val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState { SettingsUiState.Ready(SettingsUi(UiLanguage.English)) }
-
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
-
-            job.cancelAndJoin()
+        viewModel.state.test {
+            assertEquals(SettingsUiState.Loading, awaitItem())
+            advanceTimeBy(201)
+            assertEquals(SettingsUiState.Ready(SettingsUi(UiLanguage.English)), awaitItem())
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `Unauthorized error posts Unauthorized side effect`() = runTest {
+    fun `sends Unauthorized effect on Unauthorized error`() = runTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Failure(ObserveSettingsError.Unauthorized),
         )
         val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectSideEffect(SettingsSideEffects.Unauthorized)
-
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
-
-            job.cancelAndJoin()
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            advanceTimeBy(201)
+            assertEquals(SettingsSideEffects.Unauthorized, awaitItem())
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `LocalOperationFailed error posts ObserveSettingsFailed side effect`() = runTest {
+    fun `sends ObserveSettingsFailed effect on LocalOperationFailed error`() = runTest {
         val localStorageError = LocalStorageError.UnknownError(Exception("Test error"))
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Failure(
@@ -79,39 +95,33 @@ class SettingsViewModelObservationTest {
         )
         val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectSideEffect(SettingsSideEffects.ObserveSettingsFailed(localStorageError))
-
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
-
-            job.cancelAndJoin()
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            advanceTimeBy(201)
+            assertEquals(SettingsSideEffects.ObserveSettingsFailed(localStorageError), awaitItem())
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `state updates via flow observation`() = runTest {
+    fun `state updates on subsequent settings changes`() = runTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Success(createTestSettings(UiLanguage.English)),
         )
         val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState { SettingsUiState.Ready(SettingsUi(UiLanguage.English)) }
+        viewModel.state.test {
+            assertEquals(SettingsUiState.Loading, awaitItem())
+            advanceTimeBy(201)
+            assertEquals(SettingsUiState.Ready(SettingsUi(UiLanguage.English)), awaitItem())
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
-            expectState {
-                assertIs<SettingsUiState.Ready>(this)
-                copy(settings = settings.copy(language = UiLanguage.German))
-            }
+            advanceTimeBy(201)
+            assertEquals(SettingsUiState.Ready(SettingsUi(UiLanguage.German)), awaitItem())
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -122,10 +132,10 @@ class SettingsViewModelObservationTest {
         )
         val viewModel = createViewModel(ObserveSettingsUseCaseStub(settingsFlow))
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState { SettingsUiState.Ready(SettingsUi(UiLanguage.English)) }
+        viewModel.state.test {
+            assertEquals(SettingsUiState.Loading, awaitItem())
+            advanceTimeBy(201)
+            assertEquals(SettingsUiState.Ready(SettingsUi(UiLanguage.English)), awaitItem())
 
             val localStorageError = LocalStorageError.UnknownError(Exception("Test error"))
             settingsFlow.update {
@@ -133,22 +143,16 @@ class SettingsViewModelObservationTest {
                     ObserveSettingsError.LocalOperationFailed(localStorageError),
                 )
             }
-
-            expectSideEffect(SettingsSideEffects.ObserveSettingsFailed(localStorageError))
-
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
+            advanceTimeBy(201)
+            expectNoEvents()
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
+            advanceTimeBy(201)
+            assertEquals(SettingsUiState.Ready(SettingsUi(UiLanguage.German)), awaitItem())
 
-            expectState {
-                assertIs<SettingsUiState.Ready>(this)
-                copy(settings = settings.copy(language = UiLanguage.German))
-            }
-
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

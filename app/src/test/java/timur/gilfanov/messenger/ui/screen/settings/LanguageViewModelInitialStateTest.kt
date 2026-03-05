@@ -24,6 +24,10 @@ class LanguageViewModelInitialStateTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private companion object {
+        const val DEBOUNCE_PASS_MS = 201L
+    }
+
     @Test
     fun `first state update contains English and German languages with selected from repository`() =
         runTest {
@@ -39,7 +43,7 @@ class LanguageViewModelInitialStateTest {
                     initial.languages,
                 )
 
-                advanceTimeBy(201)
+                advanceTimeBy(DEBOUNCE_PASS_MS)
                 val updated = awaitItem()
                 assertEquals(UiLanguage.English, updated.selectedLanguage)
                 assertEquals(

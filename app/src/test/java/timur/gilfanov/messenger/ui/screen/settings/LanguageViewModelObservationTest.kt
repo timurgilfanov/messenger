@@ -31,6 +31,11 @@ class LanguageViewModelObservationTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private companion object {
+        const val DEBOUNCE_PASS_MS = 201L
+        const val NO_UPDATE_WINDOW_MS = 300L
+    }
+
     @Test
     fun `Unauthorized error from observation posts Unauthorized side effect`() = runTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
@@ -42,7 +47,7 @@ class LanguageViewModelObservationTest {
 
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(LanguageSideEffects.Unauthorized, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -63,7 +68,7 @@ class LanguageViewModelObservationTest {
 
         viewModel.state.test {
             awaitItem()
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
@@ -80,19 +85,19 @@ class LanguageViewModelObservationTest {
 
         viewModel.state.test {
             awaitItem()
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.English))
             }
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             cancelAndIgnoreRemainingEvents()
@@ -110,7 +115,7 @@ class LanguageViewModelObservationTest {
 
         viewModel.state.test {
             awaitItem()
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             settingsFlow.update {
@@ -129,10 +134,10 @@ class LanguageViewModelObservationTest {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
 
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
-            advanceTimeBy(300)
+            advanceTimeBy(NO_UPDATE_WINDOW_MS)
             expectNoEvents()
 
             cancelAndIgnoreRemainingEvents()
@@ -150,7 +155,7 @@ class LanguageViewModelObservationTest {
 
         viewModel.state.test {
             awaitItem()
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             settingsFlow.update {
@@ -161,13 +166,13 @@ class LanguageViewModelObservationTest {
                 )
             }
 
-            advanceTimeBy(300)
+            advanceTimeBy(NO_UPDATE_WINDOW_MS)
             expectNoEvents()
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
             cancelAndIgnoreRemainingEvents()

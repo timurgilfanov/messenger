@@ -31,6 +31,10 @@ class LanguageViewModelStateTransitionsTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private companion object {
+        const val DEBOUNCE_PASS_MS = 201L
+    }
+
     /**
      * Verifies that the `languages` list maintains referential equality across state changes.
      * This avoids unnecessary allocations and Compose recompositions.
@@ -46,14 +50,14 @@ class LanguageViewModelStateTransitionsTest {
 
         viewModel.state.test {
             awaitItem()
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
             val languages1 = viewModel.state.value.languages
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
             val languages2 = viewModel.state.value.languages
 
@@ -82,14 +86,14 @@ class LanguageViewModelStateTransitionsTest {
 
         viewModel.state.test {
             awaitItem()
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
             val state1 = viewModel.state.value
 
             settingsFlow.update {
                 ResultWithError.Success(createTestSettings(UiLanguage.German))
             }
-            advanceTimeBy(201)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
             assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
             val state2 = viewModel.state.value
 

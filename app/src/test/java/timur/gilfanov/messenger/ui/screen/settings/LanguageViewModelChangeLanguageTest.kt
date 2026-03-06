@@ -1,24 +1,37 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
+import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSettingsRepositoryFake
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createSuccessfulIdentityRepository
 import timur.gilfanov.messenger.ui.screen.settings.LanguageViewModelTestFixtures.createViewModel
 
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class LanguageViewModelChangeLanguageTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private companion object {
+        const val DEBOUNCE_PASS_MS = 201L
+        const val NO_UPDATE_WINDOW_MS = 301L
+    }
 
     @Test
     fun `changeLanguage successfully completes without errors`() = runTest {
@@ -26,20 +39,16 @@ class LanguageViewModelChangeLanguageTest {
         val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             viewModel.changeLanguage(UiLanguage.German)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
-            expectState {
-                copy(selectedLanguage = UiLanguage.German)
-            }
-
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -49,17 +58,16 @@ class LanguageViewModelChangeLanguageTest {
         val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val initialState = awaitState()
-            assertEquals(UiLanguage.English, initialState.selectedLanguage)
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             viewModel.changeLanguage(UiLanguage.English)
+            advanceTimeBy(NO_UPDATE_WINDOW_MS)
+            expectNoEvents()
 
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
-
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -69,20 +77,16 @@ class LanguageViewModelChangeLanguageTest {
         val settingsRepository = createSettingsRepositoryFake(UiLanguage.German)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.German)
-            }
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
             viewModel.changeLanguage(UiLanguage.English)
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
-
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -92,29 +96,24 @@ class LanguageViewModelChangeLanguageTest {
         val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             viewModel.changeLanguage(UiLanguage.German)
-            expectState {
-                copy(selectedLanguage = UiLanguage.German)
-            }
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
             viewModel.changeLanguage(UiLanguage.English)
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 
             viewModel.changeLanguage(UiLanguage.German)
-            expectState {
-                copy(selectedLanguage = UiLanguage.German)
-            }
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.German, awaitItem().selectedLanguage)
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -129,22 +128,17 @@ class LanguageViewModelChangeLanguageTest {
         )
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            advanceTimeBy(DEBOUNCE_PASS_MS)
 
             viewModel.changeLanguage(UiLanguage.German)
+            advanceUntilIdle()
 
-            val sideEffect = assertIs<LanguageSideEffects.ChangeFailed>(awaitSideEffect())
+            val sideEffect = assertIs<LanguageSideEffects.ChangeFailed>(awaitItem())
             assertIs<LocalStorageError.StorageFull>(sideEffect.error)
 
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
-
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -159,23 +153,17 @@ class LanguageViewModelChangeLanguageTest {
         )
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            advanceTimeBy(DEBOUNCE_PASS_MS)
 
             viewModel.changeLanguage(UiLanguage.German)
+            advanceUntilIdle()
 
-            val sideEffect = awaitSideEffect()
-            assertIs<LanguageSideEffects.ChangeFailed>(sideEffect)
+            val sideEffect = assertIs<LanguageSideEffects.ChangeFailed>(awaitItem())
             assertIs<LocalStorageError.Corrupted>(sideEffect.error)
 
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
-
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -193,24 +181,66 @@ class LanguageViewModelChangeLanguageTest {
         )
         val viewModel = createViewModel(identityRepository, settingsRepository)
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            expectState {
-                copy(selectedLanguage = UiLanguage.English)
-            }
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            advanceTimeBy(DEBOUNCE_PASS_MS)
 
             viewModel.changeLanguage(UiLanguage.German)
+            advanceUntilIdle()
 
-            val sideEffect = awaitSideEffect()
-            assertIs<LanguageSideEffects.ChangeFailed>(sideEffect)
+            val sideEffect = assertIs<LanguageSideEffects.ChangeFailed>(awaitItem())
             val unknownError = assertIs<LocalStorageError.UnknownError>(sideEffect.error)
             assertEquals(testException, unknownError.cause)
 
-            testScheduler.advanceTimeBy(300)
-            expectNoItems()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 
-            job.cancelAndJoin()
+    @Test
+    fun `failed change with same language can be retried`() = runTest {
+        val identityRepository = createSuccessfulIdentityRepository()
+        val settingsRepository = createSettingsRepositoryFake(
+            currentLanguage = UiLanguage.English,
+            changeResult = ResultWithError.Failure(
+                ChangeLanguageRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
+            ),
+        )
+        val viewModel = createViewModel(identityRepository, settingsRepository)
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+
+            viewModel.changeLanguage(UiLanguage.German)
+            advanceUntilIdle()
+            assertIs<LanguageSideEffects.ChangeFailed>(awaitItem())
+
+            viewModel.changeLanguage(UiLanguage.German)
+            advanceUntilIdle()
+            assertIs<LanguageSideEffects.ChangeFailed>(awaitItem())
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `rapid taps only last language change is applied`() = runTest {
+        val identityRepository = createSuccessfulIdentityRepository()
+        val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
+        val viewModel = createViewModel(identityRepository, settingsRepository)
+
+        viewModel.state.test {
+            awaitItem()
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
+
+            viewModel.changeLanguage(UiLanguage.German)
+            viewModel.changeLanguage(UiLanguage.English)
+            advanceUntilIdle()
+            advanceTimeBy(DEBOUNCE_PASS_MS)
+            expectNoEvents()
+
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -224,19 +254,15 @@ class LanguageViewModelChangeLanguageTest {
 //        val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
 //        val viewModel = createViewModel(identityRepository, settingsRepository)
 //
-//        viewModel.test(this) {
-//            val job = runOnCreate()
-//
-//            expectState {
-//                copy(selectedLanguage = UiLanguage.English)
-//            }
+//        viewModel.state.test {
+//            awaitItem()
+//            advanceTimeBy(DEBOUNCE_PASS_MS)
+//            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
 //
 //            viewModel.changeLanguage(UiLanguage.German)
 //
-//            val sideEffect = awaitSideEffect()
+//            val sideEffect = awaitItem() // effects
 //            assertIs<LanguageSideEffects.Unauthorized>(sideEffect)
-//
-//            job.cancelAndJoin()
 //        }
 //    }
 }

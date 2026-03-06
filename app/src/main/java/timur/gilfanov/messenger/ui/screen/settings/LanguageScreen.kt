@@ -18,18 +18,22 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
-import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.entity.settings.uiLanguageList
@@ -42,7 +46,9 @@ fun LanguageScreen(
     modifier: Modifier = Modifier,
     viewModel: LanguageViewModel = hiltViewModel(),
 ) {
-    val uiState by viewModel.collectAsState()
+    val currentOnAuthFailure by rememberUpdatedState(onAuthFailure)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val uiState by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val errorMessage = stringResource(R.string.settings_language_change_failed)
@@ -51,10 +57,14 @@ fun LanguageScreen(
         scope.launch { snackbarHostState.showSnackbar(message) }
     }
 
-    viewModel.collectSideEffect {
-        when (it) {
-            is LanguageSideEffects.ChangeFailed -> onShowSnackbar(errorMessage)
-            LanguageSideEffects.Unauthorized -> onAuthFailure()
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.effects.collect {
+                when (it) {
+                    is LanguageSideEffects.ChangeFailed -> onShowSnackbar(errorMessage)
+                    LanguageSideEffects.Unauthorized -> currentOnAuthFailure()
+                }
+            }
         }
     }
 

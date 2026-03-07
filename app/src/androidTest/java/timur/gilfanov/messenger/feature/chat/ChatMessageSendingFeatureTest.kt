@@ -174,21 +174,22 @@ class ChatMessageSendingFeatureTest {
                 onNodeWithTag("message_input").run {
                     performTextInput(message)
                     waitUntil(timeoutMillis = 1_000) {
-                        fetchSemanticsNode().config[EditableText].text == message
+                        val inputText = fetchSemanticsNode().config[EditableText].text
+                        inputText == message
                     }
                 }
                 onNodeWithText("Type a message...").assertIsNotDisplayed()
-                onNodeWithTag("send_button").let {
-                    it.assertIsEnabled()
-                    it.performClick()
+                onNodeWithTag("send_button").run {
+                    assertIsEnabled()
+                    performClick()
                 }
                 waitUntil(timeoutMillis = 1_000) {
-                    onNodeWithTag("message_input")
+                    val config = onNodeWithTag("message_input")
                         .fetchSemanticsNode()
-                        .config.run {
-                            getOrNull(EditableText)?.text?.isEmpty() == true &&
-                                getOrNull(Disabled) == null
-                        }
+                        .config
+                    val inputIsEmpty = config.getOrNull(EditableText)?.text?.isEmpty() == true
+                    val inputIsEnabled = config.getOrNull(Disabled) == null
+                    inputIsEmpty && inputIsEnabled
                 }
             }
         }

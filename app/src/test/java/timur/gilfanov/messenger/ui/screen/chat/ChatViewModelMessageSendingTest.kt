@@ -71,32 +71,35 @@ class ChatViewModelMessageSendingTest {
                 markMessagesAsReadUseCase = markMessagesAsReadUseCase,
             )
 
-            viewModel.state.test {
-                var readyState = awaitItem()
-                while (readyState !is ChatUiState.Ready) {
-                    readyState = awaitItem()
-                }
-                assertFalse(readyState.isSending)
-
-                viewModel.onInputTextChanged("Test message")
-                viewModel.sendMessage(message.id, now = now)
-
-                val sendingState = awaitItem()
-                assertTrue(sendingState is ChatUiState.Ready)
-                assertTrue(sendingState.isSending)
-
-                val sentState = awaitItem()
-                assertTrue(sentState is ChatUiState.Ready)
-                assertFalse(sentState.isSending)
-
-                viewModel.onInputTextChanged("Test message 2")
-                awaitItem().let { state ->
-                    assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
-                }
-                cancelAndIgnoreRemainingEvents()
-            }
-
             viewModel.effects.test {
+                viewModel.state.test {
+                    var readyState = awaitItem()
+                    while (readyState !is ChatUiState.Ready) {
+                        readyState = awaitItem()
+                    }
+                    assertFalse(readyState.isSending)
+
+                    viewModel.onInputTextChanged("Test message")
+                    viewModel.sendMessage(message.id, now = now)
+
+                    val sendingState = awaitItem()
+                    assertTrue(sendingState is ChatUiState.Ready)
+                    assertTrue(sendingState.isSending)
+
+                    val sentState = awaitItem()
+                    assertTrue(sentState is ChatUiState.Ready)
+                    assertFalse(sentState.isSending)
+
+                    viewModel.onInputTextChanged("Test message 2")
+                    awaitItem().let { state ->
+                        assertTrue(
+                            state is ChatUiState.Ready,
+                            "Expected Ready state, but got: $state",
+                        )
+                    }
+                    cancelAndIgnoreRemainingEvents()
+                }
+
                 assertIs<ChatSideEffect.ClearInputText>(awaitItem())
                 cancelAndIgnoreRemainingEvents()
             }

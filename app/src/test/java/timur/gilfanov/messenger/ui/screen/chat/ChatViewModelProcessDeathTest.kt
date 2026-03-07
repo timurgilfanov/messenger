@@ -1,17 +1,15 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -57,12 +55,13 @@ class ChatViewModelProcessDeathTest {
             markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository),
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val state = awaitState()
-            assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
+        viewModel.state.test {
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
             assertEquals(chatId, state.id)
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 

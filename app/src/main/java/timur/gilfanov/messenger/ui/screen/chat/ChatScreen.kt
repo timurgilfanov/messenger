@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -39,8 +40,6 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
-import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
@@ -66,12 +65,15 @@ fun ChatScreen(
             },
         ),
 ) {
-    val uiState by viewModel.collectAsState()
+    val uiState by viewModel.state.collectAsStateWithLifecycle()
     val inputTextFieldState = rememberTextFieldState()
 
-    viewModel.collectSideEffect { sideEffect ->
-        when (sideEffect) {
-            ChatSideEffect.ClearInputText -> inputTextFieldState.setTextAndPlaceCursorAtEnd("")
+    val effects = viewModel.effects
+    LaunchedEffect(viewModel) {
+        effects.collect { sideEffect ->
+            when (sideEffect) {
+                ChatSideEffect.ClearInputText -> inputTextFieldState.setTextAndPlaceCursorAtEnd("")
+            }
         }
     }
 

@@ -1,17 +1,16 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -56,32 +55,32 @@ class ChatViewModelTextInputTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            val initialState = awaitState()
-            assertTrue(initialState is ChatUiState.Ready)
+        viewModel.state.test {
+            var initialState = awaitItem()
+            while (initialState !is ChatUiState.Ready) {
+                initialState = awaitItem()
+            }
             assertNull(initialState.inputTextValidationError)
 
             viewModel.onInputTextChanged("")
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputTextValidationError = TextValidationError.Empty)
-            }
+            val emptyErrorState = awaitItem()
+            assertTrue(emptyErrorState is ChatUiState.Ready)
+            assertTrue(emptyErrorState.inputTextValidationError is TextValidationError.Empty)
 
             viewModel.onInputTextChanged("Hi!")
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputTextValidationError = null)
-            }
+            val clearedState = awaitItem()
+            assertTrue(clearedState is ChatUiState.Ready)
+            assertNull(clearedState.inputTextValidationError)
 
             viewModel.onInputTextChanged("")
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputTextValidationError = TextValidationError.Empty)
-            }
+            val emptyErrorState2 = awaitItem()
+            assertTrue(emptyErrorState2 is ChatUiState.Ready)
+            assertTrue(emptyErrorState2.inputTextValidationError is TextValidationError.Empty)
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

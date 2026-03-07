@@ -2,20 +2,18 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.paging.PagingData
+import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Feature
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -72,15 +70,16 @@ class ChatPaginationIntegrationTest {
         )
 
         // When: ViewModel initializes
-        viewModel.test(this) {
-            val job = runOnCreate()
+        viewModel.state.test {
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             // Then: Ready state includes pagination support
-            val state = awaitState()
-            assertTrue(state is ChatUiState.Ready, "Expected Ready state")
             assertNotNull(state.messages, "messages should not be null")
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -122,16 +121,16 @@ class ChatPaginationIntegrationTest {
         )
 
         // When: ViewModel loads with paginated data
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            val state = awaitState()
-            assertTrue(state is ChatUiState.Ready)
+        viewModel.state.test {
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             // Then: Pagination data is accessible and not null
             assertNotNull(state.messages, "messages should not be null")
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -160,16 +159,16 @@ class ChatPaginationIntegrationTest {
         )
 
         // When: ViewModel loads with empty data
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            val state = awaitState()
-            assertTrue(state is ChatUiState.Ready)
+        viewModel.state.test {
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             // Then: Pagination handles empty data - flow should not be null
             assertNotNull(state.messages, "messages should not be null")
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -211,11 +210,11 @@ class ChatPaginationIntegrationTest {
         )
 
         // When: ViewModel loads with both regular and paginated data
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            val state = awaitState()
-            assertTrue(state is ChatUiState.Ready)
+        viewModel.state.test {
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             // Then: Both regular chat state and pagination work together
             assertEquals("Direct Message", state.title) // Regular chat functionality
@@ -224,7 +223,7 @@ class ChatPaginationIntegrationTest {
             // Then: Pagination flow is available for integration
             assertNotNull(state.messages, "messages should not be null")
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 

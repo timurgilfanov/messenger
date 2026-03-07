@@ -3,11 +3,14 @@ package timur.gilfanov.messenger.ui.screen.chat
 import androidx.paging.PagingData
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -182,6 +185,61 @@ object ChatViewModelTestFixtures {
 
         override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
             flowOf(PagingData.empty())
+    }
+
+    class MessengerRepositoryFakeWithGate(chat: Chat) :
+        ChatRepository,
+        MessageRepository {
+        private val chatFlow = MutableStateFlow(chat)
+        private val gateQueue = Channel<CompletableDeferred<DeliveryStatus>>(Channel.UNLIMITED)
+
+        fun addGate(): CompletableDeferred<DeliveryStatus> {
+            val gate = CompletableDeferred<DeliveryStatus>()
+            gateQueue.trySend(gate)
+            return gate
+        }
+
+        override suspend fun sendMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> = flow {
+            val gate = gateQueue.receive()
+            val status = gate.await()
+            val msg = (message as TextMessage).copy(deliveryStatus = status)
+            chatFlow.update { currentChat ->
+                val msgs = currentChat.messages.toMutableList()
+                val idx = msgs.indexOfFirst { it.id == msg.id }
+                if (idx != -1) msgs[idx] = msg else msgs.add(msg)
+                currentChat.copy(messages = msgs.toPersistentList())
+            }
+            emit(Success<Message, SendMessageRepositoryError>(msg))
+        }
+
+        override suspend fun receiveChatUpdates(
+            chatId: ChatId,
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> = chatFlow.map { chat ->
+            Success(chat)
+        }
+
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdateApplying() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun markMessagesAsRead(
+            chatId: ChatId,
+            upToMessageId: MessageId,
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = ResultWithError.Success(Unit)
+
+        override suspend fun editMessage(message: Message) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
+
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+            flowOf(PagingData.empty())
+
+        fun getChat(): Chat = chatFlow.value
     }
 
     /**

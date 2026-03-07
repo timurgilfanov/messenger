@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.Ignore
 import kotlin.test.assertEquals
@@ -8,14 +9,12 @@ import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -24,7 +23,6 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
-import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
@@ -76,15 +74,11 @@ class ChatViewModelUpdatesTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
+        viewModel.state.test {
+            awaitItem() // Loading
 
-            val initialState = awaitState()
+            val initialState = awaitItem()
             assertTrue(initialState is ChatUiState.Ready)
-
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputTextValidationError = TextValidationError.Empty)
-            }
 
             // Add a new message to the chat
             val newMessage = createTestMessage(
@@ -100,15 +94,10 @@ class ChatViewModelUpdatesTest {
             chatFlow.value = Success(updatedChat)
 
             // Verify the new message appears in UI state
-            val updatedState = awaitState()
+            val updatedState = awaitItem()
             assertTrue(updatedState is ChatUiState.Ready)
-//            assertEquals(1, messages.size)
-//            val message = messages[0]
-//            assertIs<TextMessage>(message)
-//            assertEquals("Hello from other user!", message.text)
-//            assertEquals(otherUserId.id.toString(), message.sender.id.toString())
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -140,11 +129,11 @@ class ChatViewModelUpdatesTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-
-            val initialState = awaitState()
-            assertTrue(initialState is ChatUiState.Ready)
+        viewModel.state.test {
+            var initialState = awaitItem()
+            while (initialState !is ChatUiState.Ready) {
+                initialState = awaitItem()
+            }
             assertEquals("Group Chat", initialState.title)
             assertEquals(2, initialState.participants.size)
             assertTrue(initialState.isGroupChat)
@@ -167,7 +156,7 @@ class ChatViewModelUpdatesTest {
             chatFlow.value = Success(updatedChat)
 
             // Verify metadata changes are reflected in UI state
-            val updatedState = awaitState()
+            val updatedState = awaitItem()
             assertTrue(updatedState is ChatUiState.Ready)
             assertEquals("Updated Group Chat", updatedState.title)
             assertEquals(3, updatedState.participants.size)
@@ -178,7 +167,7 @@ class ChatViewModelUpdatesTest {
             val newParticipantUi = updatedState.participants.find { it.id == newParticipantId }
             assertEquals("New Participant", newParticipantUi?.name)
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -213,17 +202,13 @@ class ChatViewModelUpdatesTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
+        viewModel.state.test {
+            awaitItem() // Loading
 
             // Initial state should be ready
-            val initialState = awaitState()
+            val initialState = awaitItem()
             assertTrue(initialState is ChatUiState.Ready)
             assertEquals("Direct Message", initialState.title)
-
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputTextValidationError = TextValidationError.Empty)
-            }
 
             // Send rapid updates within debounce window (200ms)
             val message1 =
@@ -250,12 +235,10 @@ class ChatViewModelUpdatesTest {
             testDispatcher.scheduler.advanceTimeBy(200L) // Complete debounce delay
 
             // Only the final update should be emitted due to debounce
-            val finalState = awaitState()
+            val finalState = awaitItem()
             assertTrue(finalState is ChatUiState.Ready)
-//            assertEquals(3, finalState.messages.size)
-//            assertEquals("Final Message", finalState.messages[2].text)
 
-            job.cancelAndJoin()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

@@ -102,7 +102,7 @@ class ChatViewModelMessageSendingTest {
                 }
 
                 assertIs<ChatSideEffect.ClearInputText>(awaitItem())
-                cancelAndIgnoreRemainingEvents()
+                expectNoEvents()
             }
         }
     }

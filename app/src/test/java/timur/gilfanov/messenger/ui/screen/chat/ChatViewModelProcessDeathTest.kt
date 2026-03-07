@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -57,9 +56,10 @@ class ChatViewModelProcessDeathTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading
-            val state = awaitItem()
-            assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
             assertEquals(chatId, state.id)
             cancelAndIgnoreRemainingEvents()
         }

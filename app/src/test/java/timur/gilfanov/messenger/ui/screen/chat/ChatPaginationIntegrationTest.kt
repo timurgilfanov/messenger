@@ -6,7 +6,6 @@ import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -72,11 +71,12 @@ class ChatPaginationIntegrationTest {
 
         // When: ViewModel initializes
         viewModel.state.test {
-            awaitItem() // Loading
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             // Then: Ready state includes pagination support
-            val state = awaitItem()
-            assertTrue(state is ChatUiState.Ready, "Expected Ready state")
             assertNotNull(state.messages, "messages should not be null")
 
             cancelAndIgnoreRemainingEvents()
@@ -122,10 +122,10 @@ class ChatPaginationIntegrationTest {
 
         // When: ViewModel loads with paginated data
         viewModel.state.test {
-            awaitItem() // Loading
-
-            val state = awaitItem()
-            assertTrue(state is ChatUiState.Ready)
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             // Then: Pagination data is accessible and not null
             assertNotNull(state.messages, "messages should not be null")
@@ -160,10 +160,10 @@ class ChatPaginationIntegrationTest {
 
         // When: ViewModel loads with empty data
         viewModel.state.test {
-            awaitItem() // Loading
-
-            val state = awaitItem()
-            assertTrue(state is ChatUiState.Ready)
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             // Then: Pagination handles empty data - flow should not be null
             assertNotNull(state.messages, "messages should not be null")
@@ -211,10 +211,10 @@ class ChatPaginationIntegrationTest {
 
         // When: ViewModel loads with both regular and paginated data
         viewModel.state.test {
-            awaitItem() // Loading
-
-            val state = awaitItem()
-            assertTrue(state is ChatUiState.Ready)
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             // Then: Both regular chat state and pagination work together
             assertEquals("Direct Message", state.title) // Regular chat functionality

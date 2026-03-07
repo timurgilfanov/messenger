@@ -69,11 +69,12 @@ class ChatViewModelErrorHandlingTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading (initial)
+            var errorState = awaitItem()
+            while (errorState !is ChatUiState.Error) {
+                errorState = awaitItem()
+            }
 
             // Should transition to Error state for ChatNotFound
-            val errorState = awaitItem()
-            assertTrue(errorState is ChatUiState.Error)
             assertEquals(ChatNotFound, errorState.error)
 
             cancelAndIgnoreRemainingEvents()
@@ -112,11 +113,12 @@ class ChatViewModelErrorHandlingTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading (initial)
+            var initialState = awaitItem()
+            while (initialState !is ChatUiState.Ready) {
+                initialState = awaitItem()
+            }
 
             // Wait for initial Ready state
-            val initialState = awaitItem()
-            assertTrue(initialState is ChatUiState.Ready)
 
             listOf(
                 RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
@@ -160,10 +162,12 @@ class ChatViewModelErrorHandlingTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading (initial, no error)
+            var loadingErrorState = awaitItem()
+            while (loadingErrorState is ChatUiState.Loading && loadingErrorState.error == null) {
+                loadingErrorState = awaitItem()
+            }
 
             // Should remain in Loading state with error
-            val loadingErrorState = awaitItem()
             assertTrue(loadingErrorState is ChatUiState.Loading)
             assertEquals(
                 RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),

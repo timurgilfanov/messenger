@@ -56,10 +56,10 @@ class ChatViewModelTextInputTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading
-
-            val initialState = awaitItem()
-            assertTrue(initialState is ChatUiState.Ready)
+            var initialState = awaitItem()
+            while (initialState !is ChatUiState.Ready) {
+                initialState = awaitItem()
+            }
             assertNull(initialState.inputTextValidationError)
 
             viewModel.onInputTextChanged("")

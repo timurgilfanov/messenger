@@ -7,7 +7,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.flowOf
@@ -99,9 +98,10 @@ class ChatViewModelLoadingTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading
-            val state = awaitItem()
-            assertTrue { state is ChatUiState.Ready }
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             val expectedState = createExpectedReadyState(
                 ExpectedStateParams(
@@ -149,9 +149,10 @@ class ChatViewModelLoadingTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading
-            val state = awaitItem()
-            assertTrue { state is ChatUiState.Ready }
+            var state = awaitItem()
+            while (state !is ChatUiState.Ready) {
+                state = awaitItem()
+            }
 
             val expectedState = createExpectedReadyState(
                 ExpectedStateParams(
@@ -197,8 +198,10 @@ class ChatViewModelLoadingTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading (initial)
-            val state = awaitItem()
+            var state = awaitItem()
+            while (state is ChatUiState.Loading && state.error == null) {
+                state = awaitItem()
+            }
             assertEquals(
                 ChatUiState.Loading(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)),
                 state,

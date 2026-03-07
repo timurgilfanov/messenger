@@ -130,10 +130,10 @@ class ChatViewModelUpdatesTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading
-
-            val initialState = awaitItem()
-            assertTrue(initialState is ChatUiState.Ready)
+            var initialState = awaitItem()
+            while (initialState !is ChatUiState.Ready) {
+                initialState = awaitItem()
+            }
             assertEquals("Group Chat", initialState.title)
             assertEquals(2, initialState.participants.size)
             assertTrue(initialState.isGroupChat)

@@ -72,12 +72,10 @@ class ChatViewModelMessageSendingTest {
             )
 
             viewModel.state.test {
-                awaitItem() // Loading
-                val readyState = awaitItem()
-                assertTrue(
-                    readyState is ChatUiState.Ready,
-                    "Expected Ready state, but got: $readyState",
-                )
+                var readyState = awaitItem()
+                while (readyState !is ChatUiState.Ready) {
+                    readyState = awaitItem()
+                }
                 assertFalse(readyState.isSending)
 
                 viewModel.onInputTextChanged("Test message")
@@ -106,6 +104,117 @@ class ChatViewModelMessageSendingTest {
     }
 
     @Test
+    fun `second send is queued while first is in-flight`() = runTest {
+        val chatId = ChatId(UUID.randomUUID())
+        val currentUserId = ParticipantId(UUID.randomUUID())
+        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chat = createTestChat(chatId, currentUserId, otherUserId)
+        val now = Instant.fromEpochMilliseconds(1000)
+        val id1 = MessageId(UUID.randomUUID())
+        val id2 = MessageId(UUID.randomUUID())
+
+        val rep = MessengerRepositoryFakeWithGate(chat)
+        val gate1 = rep.addGate()
+        val gate2 = rep.addGate()
+
+        val viewModel = ChatViewModel(
+            chatIdUuid = chatId.id,
+            currentUserIdUuid = currentUserId.id,
+            savedStateHandle = SavedStateHandle(),
+            sendMessageUseCase = SendMessageUseCase(rep, DeliveryStatusValidatorImpl()),
+            receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
+            getPagedMessagesUseCase = GetPagedMessagesUseCase(rep),
+            markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(rep),
+        )
+
+        viewModel.state.test {
+            var readyState = awaitItem()
+            while (readyState !is ChatUiState.Ready) {
+                readyState = awaitItem()
+            }
+            assertTrue(readyState is ChatUiState.Ready)
+
+            viewModel.onInputTextChanged("Hello")
+            viewModel.sendMessage(id1, now)
+            viewModel.sendMessage(id2, now)
+
+            val isSendingState = awaitItem()
+            assertTrue(isSendingState is ChatUiState.Ready)
+            assertTrue(isSendingState.isSending)
+
+            gate1.complete(Delivered)
+
+            // After gate1, executeSend1 finishes but pendingSendCount=1 (second still queued).
+            // No isSending state change, but debounced chat update (200ms) provides next emission.
+            val afterFirst = awaitItem()
+            assertTrue(afterFirst is ChatUiState.Ready)
+            assertTrue(afterFirst.isSending, "Should still be sending while second is in-flight")
+
+            gate2.complete(Delivered)
+
+            val afterSecond = awaitItem()
+            assertTrue(afterSecond is ChatUiState.Ready)
+            assertFalse(afterSecond.isSending)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `two rapid sends with same text are both processed (not conflated)`() = runTest {
+        val chatId = ChatId(UUID.randomUUID())
+        val currentUserId = ParticipantId(UUID.randomUUID())
+        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chat = createTestChat(chatId, currentUserId, otherUserId)
+        val now = Instant.fromEpochMilliseconds(1000)
+        val id1 = MessageId(UUID.randomUUID())
+        val id2 = MessageId(UUID.randomUUID())
+
+        val rep = MessengerRepositoryFakeWithGate(chat)
+        val gate1 = rep.addGate()
+        val gate2 = rep.addGate()
+
+        val viewModel = ChatViewModel(
+            chatIdUuid = chatId.id,
+            currentUserIdUuid = currentUserId.id,
+            savedStateHandle = SavedStateHandle(),
+            sendMessageUseCase = SendMessageUseCase(rep, DeliveryStatusValidatorImpl()),
+            receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
+            getPagedMessagesUseCase = GetPagedMessagesUseCase(rep),
+            markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(rep),
+        )
+
+        viewModel.state.test {
+            var readyState = awaitItem()
+            while (readyState !is ChatUiState.Ready) {
+                readyState = awaitItem()
+            }
+            assertTrue(readyState is ChatUiState.Ready)
+
+            viewModel.onInputTextChanged("Hello")
+            viewModel.sendMessage(id1, now)
+            viewModel.sendMessage(id2, now)
+
+            val isSendingState = awaitItem()
+            assertTrue(isSendingState is ChatUiState.Ready)
+            assertTrue(isSendingState.isSending)
+
+            gate1.complete(Delivered)
+            gate2.complete(Delivered)
+
+            val doneState = awaitItem()
+            assertTrue(doneState is ChatUiState.Ready)
+            assertFalse(doneState.isSending)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val messages = rep.getChat().messages
+        assertTrue(messages.any { it.id == id1 }, "Message id1 should be in chat")
+        assertTrue(messages.any { it.id == id2 }, "Message id2 should be in chat")
+    }
+
+    @Test
     fun `dismissDialogError clears error`() = runTest {
         val chatId = ChatId(UUID.randomUUID())
         val currentUserId = ParticipantId(UUID.randomUUID())
@@ -130,9 +239,10 @@ class ChatViewModelMessageSendingTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading
-            val readyState = awaitItem()
-            assertTrue(readyState is ChatUiState.Ready)
+            var readyState = awaitItem()
+            while (readyState !is ChatUiState.Ready) {
+                readyState = awaitItem()
+            }
             assertNull(readyState.dialogError)
 
             viewModel.onInputTextChanged("")

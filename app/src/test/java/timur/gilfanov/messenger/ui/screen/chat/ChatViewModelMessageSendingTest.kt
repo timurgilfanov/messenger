@@ -29,6 +29,7 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithGate
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithStatusFlow
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
@@ -135,7 +136,6 @@ class ChatViewModelMessageSendingTest {
             while (readyState !is ChatUiState.Ready) {
                 readyState = awaitItem()
             }
-            assertTrue(readyState is ChatUiState.Ready)
 
             viewModel.onInputTextChanged("Hello")
             viewModel.sendMessage(id1, now)
@@ -145,7 +145,7 @@ class ChatViewModelMessageSendingTest {
             assertTrue(isSendingState is ChatUiState.Ready)
             assertTrue(isSendingState.isSending)
 
-            gate1.complete(Delivered)
+            gate1.complete(Sending(0))
 
             // After gate1, executeSend1 finishes but pendingSendCount=1 (second still queued).
             // No isSending state change, but debounced chat update (200ms) provides next emission.
@@ -153,7 +153,7 @@ class ChatViewModelMessageSendingTest {
             assertTrue(afterFirst is ChatUiState.Ready)
             assertTrue(afterFirst.isSending, "Should still be sending while second is in-flight")
 
-            gate2.complete(Delivered)
+            gate2.complete(Sending(0))
 
             val afterSecond = awaitItem()
             assertTrue(afterSecond is ChatUiState.Ready)
@@ -192,7 +192,6 @@ class ChatViewModelMessageSendingTest {
             while (readyState !is ChatUiState.Ready) {
                 readyState = awaitItem()
             }
-            assertTrue(readyState is ChatUiState.Ready)
 
             viewModel.onInputTextChanged("Hello")
             viewModel.sendMessage(id1, now)
@@ -202,8 +201,8 @@ class ChatViewModelMessageSendingTest {
             assertTrue(isSendingState is ChatUiState.Ready)
             assertTrue(isSendingState.isSending)
 
-            gate1.complete(Delivered)
-            gate2.complete(Delivered)
+            gate1.complete(Sending(0))
+            gate2.complete(Sending(0))
 
             val doneState = awaitItem()
             assertTrue(doneState is ChatUiState.Ready)

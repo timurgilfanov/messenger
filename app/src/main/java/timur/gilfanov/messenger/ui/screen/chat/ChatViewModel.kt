@@ -17,6 +17,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -72,10 +73,23 @@ class ChatViewModel @AssistedInject constructor(
     private val _effects = Channel<ChatSideEffect>(capacity = Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
+    private data class SendRequest(val messageId: MessageId, val now: Instant, val text: String)
+
+    private val sendMessageChannel = Channel<SendRequest>(Channel.UNLIMITED)
+
     init {
         viewModelScope.launch {
             _state.repeatOnSubscription {
                 observeChatUpdates()
+            }
+        }
+        viewModelScope.launch {
+            sendMessageChannel.consumeAsFlow().collect { request ->
+                executeSend(request)
+                pendingSendCount--
+                if (pendingSendCount == 0) {
+                    _state.update { (it as? ChatUiState.Ready)?.copy(isSending = false) ?: it }
+                }
             }
         }
     }
@@ -130,32 +144,35 @@ class ChatViewModel @AssistedInject constructor(
     }
 
     private var currentChat: Chat? = null
+    private var pendingSendCount = 0
 
     fun sendMessage(
         messageId: MessageId = MessageId(UUID.randomUUID()),
         now: Instant = Clock.System.now(),
     ) {
         if (_state.value !is ChatUiState.Ready) return
-        viewModelScope.launch {
-            _state.update { (it as? ChatUiState.Ready)?.copy(isSending = true) ?: it }
-            val message = textMessage(messageId, now, currentInputText)
-            sendMessageUseCase(currentChat!!, message).collect { result ->
-                when (result) {
-                    is ResultWithError.Success -> {
-                        _state.update { (it as? ChatUiState.Ready)?.copy(isSending = false) ?: it }
-                        if (result.data is TextMessage && currentInputText == result.data.text) {
-                            currentInputText = ""
-                            _effects.send(ChatSideEffect.ClearInputText)
-                        }
-                    }
+        pendingSendCount++
+        _state.update { (it as? ChatUiState.Ready)?.copy(isSending = true) ?: it }
+        sendMessageChannel.trySend(SendRequest(messageId, now, currentInputText))
+    }
 
-                    is ResultWithError.Failure -> {
-                        _state.update {
-                            (it as? ChatUiState.Ready)?.copy(
-                                isSending = false,
-                                dialogError = ReadyError.SendMessageError(result.error),
-                            ) ?: it
-                        }
+    private suspend fun executeSend(request: SendRequest) {
+        val message = textMessage(request.messageId, request.now, request.text)
+        sendMessageUseCase(currentChat!!, message).collect { result ->
+            when (result) {
+                is ResultWithError.Success -> {
+                    if (result.data is TextMessage && currentInputText == request.text) {
+                        currentInputText = ""
+                        _effects.send(ChatSideEffect.ClearInputText)
+                    }
+                }
+
+                is ResultWithError.Failure -> {
+                    _state.update {
+                        (it as? ChatUiState.Ready)?.copy(
+                            isSending = pendingSendCount > 1,
+                            dialogError = ReadyError.SendMessageError(result.error),
+                        ) ?: it
                     }
                 }
             }

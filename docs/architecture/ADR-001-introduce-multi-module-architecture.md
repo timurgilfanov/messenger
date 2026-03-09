@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-The Android codebase is expected to be developed by multiple engineers working in parallel. Even with a two separate Android teams with 1-2 engineers in each, parallel feature development can introduce coordination overhead, merge conflicts, and unclear ownership of code. Build times are also expected to increase as the project grows.
+The Android codebase is expected to be developed by multiple engineers working in parallel. Even with two separate Android teams with 1-2 engineers in each, parallel feature development can introduce coordination overhead, merge conflicts, and unclear ownership of code. Build times are also expected to increase as the project grows.
 
 Architecture should support team scalability rather than only code size. According to Conway’s Law, system architecture tends to mirror the communication structure of the organization. Introducing modular boundaries early helps isolate features, reduce coupling, and improve build performance when multiple engineers work concurrently.
 

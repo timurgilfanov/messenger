@@ -161,13 +161,13 @@ class ChatViewModel @AssistedInject constructor(
             sendMessageUseCase(currentChat!!, message).collect { result ->
                 when (result) {
                     is ResultWithError.Success -> {
-                        if (result.data is TextMessage && currentInputText == request.text) {
-                            currentInputText = ""
-                            _effects.send(ChatSideEffect.ClearInputText)
-                        }
                         if (!wasSend) {
                             wasSend = true
                             pendingSendCount--
+                            if (result.data is TextMessage && currentInputText == request.text) {
+                                currentInputText = ""
+                                _effects.send(ChatSideEffect.ClearInputText)
+                            }
                         }
                         if (pendingSendCount == 0) {
                             _state.update {

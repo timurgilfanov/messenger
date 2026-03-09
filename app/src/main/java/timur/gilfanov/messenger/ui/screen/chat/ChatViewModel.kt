@@ -158,41 +158,46 @@ class ChatViewModel @AssistedInject constructor(
         val acknowledged = CompletableDeferred<Unit>()
         viewModelScope.launch {
             var wasSend = false
-            sendMessageUseCase(currentChat!!, message).collect { result ->
-                when (result) {
-                    is ResultWithError.Success -> {
-                        if (!wasSend) {
-                            wasSend = true
-                            pendingSendCount--
-                            if (result.data is TextMessage && currentInputText == request.text) {
-                                currentInputText = ""
-                                _effects.send(ChatSideEffect.ClearInputText)
+            try {
+                sendMessageUseCase(currentChat!!, message).collect { result ->
+                    when (result) {
+                        is ResultWithError.Success -> {
+                            if (!wasSend) {
+                                wasSend = true
+                                pendingSendCount--
+                                if (result.data is TextMessage &&
+                                    currentInputText == request.text
+                                ) {
+                                    currentInputText = ""
+                                    _effects.send(ChatSideEffect.ClearInputText)
+                                }
                             }
-                        }
-                        if (pendingSendCount == 0) {
-                            _state.update {
-                                (it as? ChatUiState.Ready)?.copy(isSending = false) ?: it
+                            if (pendingSendCount == 0) {
+                                _state.update {
+                                    (it as? ChatUiState.Ready)?.copy(isSending = false) ?: it
+                                }
                             }
+                            acknowledged.complete(Unit)
                         }
-                        acknowledged.complete(Unit)
-                    }
 
-                    is ResultWithError.Failure -> {
-                        if (!wasSend) {
-                            wasSend = true
-                            pendingSendCount--
+                        is ResultWithError.Failure -> {
+                            if (!wasSend) {
+                                wasSend = true
+                                pendingSendCount--
+                            }
+                            _state.update {
+                                (it as? ChatUiState.Ready)?.copy(
+                                    isSending = pendingSendCount > 0,
+                                    dialogError = ReadyError.SendMessageError(result.error),
+                                ) ?: it
+                            }
+                            acknowledged.complete(Unit)
                         }
-                        _state.update {
-                            (it as? ChatUiState.Ready)?.copy(
-                                isSending = pendingSendCount > 0,
-                                dialogError = ReadyError.SendMessageError(result.error),
-                            ) ?: it
-                        }
-                        acknowledged.complete(Unit)
                     }
                 }
+            } finally {
+                acknowledged.complete(Unit)
             }
-            acknowledged.complete(Unit)
         }
         acknowledged.await()
     }

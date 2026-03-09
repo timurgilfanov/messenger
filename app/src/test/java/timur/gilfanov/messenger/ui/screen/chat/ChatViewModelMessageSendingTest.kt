@@ -58,6 +58,19 @@ class ChatViewModelMessageSendingTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    companion object {
+        private val TEST_CHAT_ID = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+        private val TEST_CURRENT_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+        private val TEST_OTHER_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
+        private val TEST_MESSAGE_ID_1 =
+            MessageId(UUID.fromString("00000000-0000-0000-0000-000000000004"))
+        private val TEST_MESSAGE_ID_2 =
+            MessageId(UUID.fromString("00000000-0000-0000-0000-000000000005"))
+        private val TEST_INSTANT = Instant.fromEpochMilliseconds(1000)
+    }
+
     @Test
     fun `sending a message clears input only once`() = runTest {
         listOf(
@@ -66,11 +79,11 @@ class ChatViewModelMessageSendingTest {
             listOf(Sending(0), DeliveryStatus.Delivered),
             listOf(Sending(0), DeliveryStatus.Read),
         ).forEach { statuses ->
-            val chatId = ChatId(UUID.randomUUID())
-            val currentUserId = ParticipantId(UUID.randomUUID())
-            val otherUserId = ParticipantId(UUID.randomUUID())
+            val chatId = TEST_CHAT_ID
+            val currentUserId = TEST_CURRENT_USER_ID
+            val otherUserId = TEST_OTHER_USER_ID
             val chat = createTestChat(chatId, currentUserId, otherUserId)
-            val now = Instant.fromEpochMilliseconds(1000)
+            val now = TEST_INSTANT
             val message = buildTextMessage {
                 sender = chat.participants.first { it.id == currentUserId }
                 recipient = chatId
@@ -127,13 +140,12 @@ class ChatViewModelMessageSendingTest {
 
     @Test
     fun `second send is queued while first is in-flight`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
         val chat = createTestChat(chatId, currentUserId, otherUserId)
-        val now = Instant.fromEpochMilliseconds(1000)
-        val id1 = MessageId(UUID.randomUUID())
-        val id2 = MessageId(UUID.randomUUID())
+        val id1 = TEST_MESSAGE_ID_1
+        val id2 = TEST_MESSAGE_ID_2
 
         val rep = MessengerRepositoryFakeWithGate(chat)
         val gate1 = rep.addGate()
@@ -156,8 +168,8 @@ class ChatViewModelMessageSendingTest {
             }
 
             viewModel.onInputTextChanged("Hello")
-            viewModel.sendMessage(id1, now)
-            viewModel.sendMessage(id2, now)
+            viewModel.sendMessage(id1, TEST_INSTANT)
+            viewModel.sendMessage(id2, TEST_INSTANT)
 
             val isSendingState = awaitItem()
             assertTrue(isSendingState is ChatUiState.Ready)
@@ -183,13 +195,12 @@ class ChatViewModelMessageSendingTest {
 
     @Test
     fun `two rapid sends with same text are both processed (not conflated)`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
         val chat = createTestChat(chatId, currentUserId, otherUserId)
-        val now = Instant.fromEpochMilliseconds(1000)
-        val id1 = MessageId(UUID.randomUUID())
-        val id2 = MessageId(UUID.randomUUID())
+        val id1 = TEST_MESSAGE_ID_1
+        val id2 = TEST_MESSAGE_ID_2
 
         val rep = MessengerRepositoryFakeWithGate(chat)
         val gate1 = rep.addGate()
@@ -212,8 +223,8 @@ class ChatViewModelMessageSendingTest {
             }
 
             viewModel.onInputTextChanged("Hello")
-            viewModel.sendMessage(id1, now)
-            viewModel.sendMessage(id2, now)
+            viewModel.sendMessage(id1, TEST_INSTANT)
+            viewModel.sendMessage(id2, TEST_INSTANT)
 
             val isSendingState = awaitItem()
             assertTrue(isSendingState is ChatUiState.Ready)
@@ -237,12 +248,11 @@ class ChatViewModelMessageSendingTest {
     @Test
     fun `isSending becomes false after first success not after entire use case flow completes`() =
         runTest {
-            val chatId = ChatId(UUID.randomUUID())
-            val currentUserId = ParticipantId(UUID.randomUUID())
-            val otherUserId = ParticipantId(UUID.randomUUID())
+            val chatId = TEST_CHAT_ID
+            val currentUserId = TEST_CURRENT_USER_ID
+            val otherUserId = TEST_OTHER_USER_ID
             val chat = createTestChat(chatId, currentUserId, otherUserId)
-            val now = Instant.fromEpochMilliseconds(1000)
-            val messageId = MessageId(UUID.randomUUID())
+            val messageId = TEST_MESSAGE_ID_1
 
             val completionGate = CompletableDeferred<Unit>()
             val chatStateFlow = MutableStateFlow(chat)
@@ -296,7 +306,7 @@ class ChatViewModelMessageSendingTest {
                 }
 
                 viewModel.onInputTextChanged("Hello")
-                viewModel.sendMessage(messageId, now)
+                viewModel.sendMessage(messageId, TEST_INSTANT)
 
                 val isSendingState = awaitItem()
                 assertTrue(isSendingState is ChatUiState.Ready)
@@ -317,9 +327,9 @@ class ChatViewModelMessageSendingTest {
 
     @Test
     fun `dismissDialogError clears error`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
         val repository = MessengerRepositoryFake(chat = chat)
@@ -353,7 +363,7 @@ class ChatViewModelMessageSendingTest {
             assertIs<TextValidationError.Empty>(validationErrorState.inputTextValidationError)
 
             // Sending an empty text message should cause an error
-            viewModel.sendMessage(MessageId(UUID.randomUUID()), Instant.fromEpochMilliseconds(1000))
+            viewModel.sendMessage(TEST_MESSAGE_ID_1, TEST_INSTANT)
 
             val sendingState = awaitItem()
             assertTrue(sendingState is ChatUiState.Ready)

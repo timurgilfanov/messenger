@@ -12,6 +12,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
@@ -86,10 +87,6 @@ class ChatViewModel @AssistedInject constructor(
         viewModelScope.launch {
             sendMessageChannel.consumeAsFlow().collect { request ->
                 executeSend(request)
-                pendingSendCount--
-                if (pendingSendCount == 0) {
-                    _state.update { (it as? ChatUiState.Ready)?.copy(isSending = false) ?: it }
-                }
             }
         }
     }
@@ -158,25 +155,46 @@ class ChatViewModel @AssistedInject constructor(
 
     private suspend fun executeSend(request: SendRequest) {
         val message = textMessage(request.messageId, request.now, request.text)
-        sendMessageUseCase(currentChat!!, message).collect { result ->
-            when (result) {
-                is ResultWithError.Success -> {
-                    if (result.data is TextMessage && currentInputText == request.text) {
-                        currentInputText = ""
-                        _effects.send(ChatSideEffect.ClearInputText)
+        val acknowledged = CompletableDeferred<Unit>()
+        viewModelScope.launch {
+            var wasSend = false
+            sendMessageUseCase(currentChat!!, message).collect { result ->
+                when (result) {
+                    is ResultWithError.Success -> {
+                        if (result.data is TextMessage && currentInputText == request.text) {
+                            currentInputText = ""
+                            _effects.send(ChatSideEffect.ClearInputText)
+                        }
+                        if (!wasSend) {
+                            wasSend = true
+                            pendingSendCount--
+                        }
+                        if (pendingSendCount == 0) {
+                            _state.update {
+                                (it as? ChatUiState.Ready)?.copy(isSending = false) ?: it
+                            }
+                        }
+                        acknowledged.complete(Unit)
                     }
-                }
 
-                is ResultWithError.Failure -> {
-                    _state.update {
-                        (it as? ChatUiState.Ready)?.copy(
-                            isSending = pendingSendCount > 1,
-                            dialogError = ReadyError.SendMessageError(result.error),
-                        ) ?: it
+                    is ResultWithError.Failure -> {
+                        if (!wasSend) {
+                            wasSend = true
+                            pendingSendCount--
+                        }
+                        _state.update {
+                            (it as? ChatUiState.Ready)?.copy(
+                                isSending = pendingSendCount > 0,
+                                dialogError = ReadyError.SendMessageError(result.error),
+                            ) ?: it
+                        }
+                        acknowledged.complete(Unit)
                     }
                 }
             }
+            acknowledged.complete(Unit)
         }
+        acknowledged.await()
     }
 
     private fun textMessage(messageId: MessageId, now: Instant, text: String): TextMessage =

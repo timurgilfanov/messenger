@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.paging.PagingData
 import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertFalse
@@ -8,25 +9,42 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
+import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
+import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
+import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithGate
@@ -215,6 +233,87 @@ class ChatViewModelMessageSendingTest {
         assertTrue(messages.any { it.id == id1 }, "Message id1 should be in chat")
         assertTrue(messages.any { it.id == id2 }, "Message id2 should be in chat")
     }
+
+    @Test
+    fun `isSending becomes false after first success not after entire use case flow completes`() =
+        runTest {
+            val chatId = ChatId(UUID.randomUUID())
+            val currentUserId = ParticipantId(UUID.randomUUID())
+            val otherUserId = ParticipantId(UUID.randomUUID())
+            val chat = createTestChat(chatId, currentUserId, otherUserId)
+            val now = Instant.fromEpochMilliseconds(1000)
+            val messageId = MessageId(UUID.randomUUID())
+
+            val completionGate = CompletableDeferred<Unit>()
+            val chatStateFlow = MutableStateFlow(chat)
+            val rep = object : ChatRepository, MessageRepository {
+                override suspend fun sendMessage(
+                    message: Message,
+                ): Flow<ResultWithError<Message, SendMessageRepositoryError>> = flow {
+                    val msg = (message as TextMessage).copy(deliveryStatus = Sending(0))
+                    emit(Success(msg))
+                    completionGate.await()
+                    emit(Success(msg.copy(deliveryStatus = DeliveryStatus.Delivered)))
+                }
+
+                override suspend fun receiveChatUpdates(
+                    chatId: ChatId,
+                ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> =
+                    chatStateFlow.map { Success(it) }
+
+                override suspend fun flowChatList() = error("Not implemented")
+                override fun isChatListUpdateApplying() = flowOf(false)
+                override suspend fun createChat(chat: Chat) = error("Not implemented")
+                override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+                override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+                    error("Not implemented")
+                override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+                override suspend fun markMessagesAsRead(
+                    chatId: ChatId,
+                    upToMessageId: MessageId,
+                ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = Success(Unit)
+                override suspend fun editMessage(message: Message) = error("Not implemented")
+                override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+                    error("Not implemented")
+                override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+                    flowOf(PagingData.empty())
+            }
+
+            val viewModel = ChatViewModel(
+                chatIdUuid = chatId.id,
+                currentUserIdUuid = currentUserId.id,
+                savedStateHandle = SavedStateHandle(),
+                sendMessageUseCase = SendMessageUseCase(rep, DeliveryStatusValidatorImpl()),
+                receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
+                getPagedMessagesUseCase = GetPagedMessagesUseCase(rep),
+                markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(rep),
+            )
+
+            viewModel.state.test {
+                var readyState = awaitItem()
+                while (readyState !is ChatUiState.Ready) {
+                    readyState = awaitItem()
+                }
+
+                viewModel.onInputTextChanged("Hello")
+                viewModel.sendMessage(messageId, now)
+
+                val isSendingState = awaitItem()
+                assertTrue(isSendingState is ChatUiState.Ready)
+                assertTrue(isSendingState.isSending)
+
+                val doneState = awaitItem()
+                assertTrue(doneState is ChatUiState.Ready)
+                assertFalse(
+                    doneState.isSending,
+                    "isSending must be false after first Success even though the use case flow has not completed yet",
+                )
+                assertFalse(completionGate.isCompleted, "completion gate must still be blocking")
+
+                completionGate.complete(Unit)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
 
     @Test
     fun `dismissDialogError clears error`() = runTest {

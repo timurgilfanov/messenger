@@ -2,14 +2,12 @@ package timur.gilfanov.messenger.ui.screen.settings
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
-import org.orbitmvi.orbit.Container
-import org.orbitmvi.orbit.ContainerHost
 
 /**
  * ViewModel for the profile editing screen.
  *
  * Manages user profile updates including display name and profile picture changes.
- * Uses Orbit MVI pattern for state management with [ProfileEditUiState] for UI state
+ * Uses MVVM pattern for state management with [ProfileEditUiState] for UI state
  * and [ProfileEditSideEffects] for one-time events.
  *
  * ## Error Handling Strategy
@@ -21,11 +19,7 @@ import org.orbitmvi.orbit.ContainerHost
  * @see ProfileEditUiState for detailed error handling documentation
  * @see ProfileEditSideEffects for side effect patterns
  */
-class ProfileEditViewModel :
-    ViewModel(),
-    ContainerHost<ProfileEditUiState, ProfileEditSideEffects> {
-    override val container: Container<ProfileEditUiState, ProfileEditSideEffects>
-        get() = TODO("Not yet implemented")
+class ProfileEditViewModel : ViewModel() {
 
     /**
      * Updates the user's profile picture.

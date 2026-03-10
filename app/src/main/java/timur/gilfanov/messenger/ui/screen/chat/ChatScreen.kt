@@ -68,9 +68,8 @@ fun ChatScreen(
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val inputTextFieldState = rememberTextFieldState()
 
-    val effects = viewModel.effects
     LaunchedEffect(viewModel) {
-        effects.collect { sideEffect ->
+        viewModel.effects.collect { sideEffect ->
             when (sideEffect) {
                 ChatSideEffect.ClearInputText -> inputTextFieldState.setTextAndPlaceCursorAtEnd("")
             }

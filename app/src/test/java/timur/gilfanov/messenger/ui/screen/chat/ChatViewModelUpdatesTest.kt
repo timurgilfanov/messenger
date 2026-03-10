@@ -96,8 +96,6 @@ class ChatViewModelUpdatesTest {
             // Verify the new message appears in UI state
             val updatedState = awaitItem()
             assertTrue(updatedState is ChatUiState.Ready)
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -166,8 +164,6 @@ class ChatViewModelUpdatesTest {
             // Verify new participant appears in participants list
             val newParticipantUi = updatedState.participants.find { it.id == newParticipantId }
             assertEquals("New Participant", newParticipantUi?.name)
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -237,8 +233,6 @@ class ChatViewModelUpdatesTest {
             // Only the final update should be emitted due to debounce
             val finalState = awaitItem()
             assertTrue(finalState is ChatUiState.Ready)
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 }

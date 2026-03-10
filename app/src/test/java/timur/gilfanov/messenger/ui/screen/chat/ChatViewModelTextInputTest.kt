@@ -79,8 +79,6 @@ class ChatViewModelTextInputTest {
             val emptyErrorState2 = awaitItem()
             assertTrue(emptyErrorState2 is ChatUiState.Ready)
             assertTrue(emptyErrorState2.inputTextValidationError is TextValidationError.Empty)
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 }

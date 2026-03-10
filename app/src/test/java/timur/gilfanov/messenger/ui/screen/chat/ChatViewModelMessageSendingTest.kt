@@ -108,7 +108,6 @@ class ChatViewModelMessageSendingTest {
                             "Expected Ready state, but got: $state",
                         )
                     }
-                    cancelAndIgnoreRemainingEvents()
                 }
 
                 assertIs<ChatSideEffect.ClearInputText>(awaitItem())
@@ -174,8 +173,6 @@ class ChatViewModelMessageSendingTest {
             val clearedState = awaitItem()
             assertTrue(clearedState is ChatUiState.Ready)
             assertNull(clearedState.dialogError)
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 }

@@ -115,8 +115,6 @@ class ChatViewModelLoadingTest {
                 ),
             )
             assertEquals(expectedState, state)
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -166,8 +164,6 @@ class ChatViewModelLoadingTest {
                 ),
             )
             assertEquals(expectedState, state)
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -206,8 +202,6 @@ class ChatViewModelLoadingTest {
                 ChatUiState.Loading(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable)),
                 state,
             )
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 }

@@ -61,7 +61,6 @@ class ChatViewModelProcessDeathTest {
                 state = awaitItem()
             }
             assertEquals(chatId, state.id)
-            cancelAndIgnoreRemainingEvents()
         }
     }
 

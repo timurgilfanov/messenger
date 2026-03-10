@@ -76,8 +76,6 @@ class ChatViewModelErrorHandlingTest {
 
             // Should transition to Error state for ChatNotFound
             assertEquals(ChatNotFound, errorState.error)
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -131,8 +129,6 @@ class ChatViewModelErrorHandlingTest {
                 assertTrue(errorState is ChatUiState.Ready)
                 assertEquals(error, errorState.updateError)
             }
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -173,8 +169,6 @@ class ChatViewModelErrorHandlingTest {
                 RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
                 loadingErrorState.error,
             )
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -243,8 +237,6 @@ class ChatViewModelErrorHandlingTest {
             // how to do it with paged messages.
             // Also, I don't understand why update error is not cleared here. I expect it to be null.
             assertNotNull(recoveredState.updateError)
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 }

@@ -78,8 +78,6 @@ class ChatPaginationIntegrationTest {
 
             // Then: Ready state includes pagination support
             assertNotNull(state.messages, "messages should not be null")
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -129,8 +127,6 @@ class ChatPaginationIntegrationTest {
 
             // Then: Pagination data is accessible and not null
             assertNotNull(state.messages, "messages should not be null")
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -167,8 +163,6 @@ class ChatPaginationIntegrationTest {
 
             // Then: Pagination handles empty data - flow should not be null
             assertNotNull(state.messages, "messages should not be null")
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -222,8 +216,6 @@ class ChatPaginationIntegrationTest {
 
             // Then: Pagination flow is available for integration
             assertNotNull(state.messages, "messages should not be null")
-
-            cancelAndIgnoreRemainingEvents()
         }
     }
 

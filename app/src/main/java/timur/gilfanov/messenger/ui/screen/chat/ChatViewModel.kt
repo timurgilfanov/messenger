@@ -12,13 +12,11 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toPersistentList
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -39,6 +37,8 @@ import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Error
 import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Loading
+import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Ready
+import timur.gilfanov.messenger.ui.screen.chat.ReadyError.SendMessageError
 import timur.gilfanov.messenger.util.repeatOnSubscription
 
 private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
@@ -76,17 +76,10 @@ class ChatViewModel @AssistedInject constructor(
 
     private data class SendRequest(val messageId: MessageId, val now: Instant, val text: String)
 
-    private val sendMessageChannel = Channel<SendRequest>(Channel.UNLIMITED)
-
     init {
         viewModelScope.launch {
             _state.repeatOnSubscription {
                 observeChatUpdates()
-            }
-        }
-        viewModelScope.launch {
-            sendMessageChannel.consumeAsFlow().collect { request ->
-                executeSend(request)
             }
         }
     }
@@ -141,65 +134,44 @@ class ChatViewModel @AssistedInject constructor(
     }
 
     private var currentChat: Chat? = null
-    private var pendingSendCount = 0
 
     fun sendMessage(
         messageId: MessageId = MessageId(UUID.randomUUID()),
         now: Instant = Clock.System.now(),
     ) {
-        if (_state.value !is ChatUiState.Ready) return
-        pendingSendCount++
+        val value = _state.value
+        if (value !is ChatUiState.Ready) return
+        if (value.isSending) return
+
         _state.update { (it as? ChatUiState.Ready)?.copy(isSending = true) ?: it }
-        sendMessageChannel.trySend(SendRequest(messageId, now, currentInputText))
-    }
-
-    private suspend fun executeSend(request: SendRequest) {
-        val message = textMessage(request.messageId, request.now, request.text)
-        val acknowledged = CompletableDeferred<Unit>()
         viewModelScope.launch {
-            var wasSend = false
-            try {
-                sendMessageUseCase(currentChat!!, message).collect { result ->
-                    when (result) {
-                        is ResultWithError.Success -> {
-                            if (!wasSend) {
-                                wasSend = true
-                                pendingSendCount--
-                                if (result.data is TextMessage &&
-                                    currentInputText == request.text
-                                ) {
-                                    currentInputText = ""
-                                    _effects.send(ChatSideEffect.ClearInputText)
-                                }
-                            }
-                            if (pendingSendCount == 0) {
-                                _state.update {
-                                    (it as? ChatUiState.Ready)?.copy(isSending = false) ?: it
-                                }
-                            }
-                            acknowledged.complete(Unit)
+            val request = SendRequest(messageId, now, currentInputText)
+            val message = textMessage(request.messageId, request.now, request.text)
+            sendMessageUseCase(currentChat!!, message).collect { result ->
+                when (result) {
+                    is ResultWithError.Success -> {
+                        if (result.data is TextMessage &&
+                            currentInputText == request.text
+                        ) {
+                            currentInputText = ""
+                            _effects.send(ChatSideEffect.ClearInputText)
                         }
+                        _state.update {
+                            (it as? Ready)?.copy(isSending = false) ?: it
+                        }
+                    }
 
-                        is ResultWithError.Failure -> {
-                            if (!wasSend) {
-                                wasSend = true
-                                pendingSendCount--
-                            }
-                            _state.update {
-                                (it as? ChatUiState.Ready)?.copy(
-                                    isSending = pendingSendCount > 0,
-                                    dialogError = ReadyError.SendMessageError(result.error),
-                                ) ?: it
-                            }
-                            acknowledged.complete(Unit)
+                    is ResultWithError.Failure -> {
+                        _state.update {
+                            (it as? Ready)?.copy(
+                                isSending = false,
+                                dialogError = SendMessageError(result.error),
+                            ) ?: it
                         }
                     }
                 }
-            } finally {
-                acknowledged.complete(Unit)
             }
         }
-        acknowledged.await()
     }
 
     private fun textMessage(messageId: MessageId, now: Instant, text: String): TextMessage =

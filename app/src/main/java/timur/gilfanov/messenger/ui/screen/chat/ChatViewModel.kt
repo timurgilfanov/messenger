@@ -45,17 +45,6 @@ private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
 private const val KEY_CHAT_ID = "chatId"
 private const val KEY_CURRENT_USER_ID = "currentUserId"
 
-/*
-    Message is sending from sendMessageUseCase call to receiving any value from the use case.
-
-    Business requirements:
-    - when message is sending input must be disabled (responsibility of View, not ViewModel)
-    - when sent message appears in chat input must be cleared
-    - sending new message must be queued while any other message is sending
-    - sending messages must be not conflated by object equality
-    - input text changes must be processed sequentially
-    - only last error dialog dismissal matters, no need to queue them
- */
 @Suppress("LongParameterList") // a lot of use cases is valid for ViewModel
 @HiltViewModel(assistedFactory = ChatViewModel.ChatViewModelFactory::class)
 class ChatViewModel @AssistedInject constructor(

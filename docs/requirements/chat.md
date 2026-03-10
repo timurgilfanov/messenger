@@ -33,12 +33,11 @@ The following requirements describe user-visible behavior and guarantees the sys
 - Messages must appear in a consistent chronological order for all participants.
 - Users must be able to read recent messages offline.
 - Message data must be protected from unauthorized access.
-- Duplicate messages must not appear in the conversation, including cases where messages are retried due to network failures.
 - Messages must be synchronized across all devices of a user.
 - Messages deleted by the backend must be removed or marked unavailable.
 - Users must be able to edit previously sent messages and see that a message has been edited.
-- Sending the same message multiple times because of network retries must not create multiple copies of the message on the backend.
 - Messages must remain uniquely identifiable across retries and synchronization between devices.
+- Message delivery must be idempotent: retries on sending the same message must not create duplicating messages.
 - When messages are missed due to temporary connectivity issues, the system must recover and display the missing messages when synchronization is restored.
 - Message ordering must remain consistent even when participants send messages from different devices or when network delays occur.
 

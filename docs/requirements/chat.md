@@ -7,37 +7,31 @@ The following requirements describe user-visible behavior and guarantees the sys
 - User able to send message if chat is shown and has no cool down period for the user.
 - Sent message appears in chat on local device immediately.
 - If message not added to chat then error must be shown to the user, input must be filled and enabled for modification.
-- Message appeared in the chat on local device must be validated on the backend and delivered to all participants.
 - User must be informed of failed message sending to the backend.
 - User must be able to retry sending failed messages.
-- When a message is read by any participant of the chat, the sender must see that message as read.
 - Messages created while the device is offline must be delivered once connectivity is restored.
 - Messages that fail to be delivered to the backend must remain visible in the chat with a failed status and allow the user to retry sending them.
+- When a message is read by any participant of the chat, the sender must see that message as read.
 
-### Input validation
-- Input must be validated on server before it appears for other users.
-- User must be informed about his/her invalid messages.
-
-### Message validation
+### Message content and validation
 - Message must be not blank.
 - Message text must be less or equal to 4000 characters.
 
-### Messages
+### Message lifecycle and visibility
 - Users must see messages that have already been loaded when the chat screen is displayed.
 - User can scroll to see older messages without manual refresh.
 - User must see who sent a message and when.
-- User must be able to see participants that read any message in the chat.
-- Incoming messages must appear in the chat without manual refresh.
+- Users must be able to see which participants have read a message.
+- Incoming messages must appear in the chat automatically without user intervention.
 - When a user reads a message, that message and all earlier messages must be marked as read for other participants.
-- If a user is forbidden to see the chat, the user must see an error instead of messages.
 - Messages must appear in a consistent chronological order for all participants.
 - Users must be able to read recent messages offline.
 - Only participants of a conversation must be able to access its messages.
 - Users must see the same messages on all devices associated with their account.
 - Messages deleted by the backend must be removed or marked unavailable.
-- Users must be able to edit previously sent messages and see that a message has been edited.
 - Users must not see duplicate messages in a conversation.
 - Messages missed due to temporary connectivity issues must appear in the conversation once the connection is restored.
+- Users must be able to edit previously sent messages and see that a message has been edited.
 
 ### Presence indicators
 - User must see online/offline status of participants.
@@ -53,11 +47,13 @@ The following rules define expected user experience and interface behavior.
 - Blocking errors should require user acknowledgement before dismissal.
 - A message is considered read when the user has visibly viewed at least
 100 consecutive characters or 50% of viewport of the message for at least 1 second without interruption.
+- User must be informed about his/her invalid messages.
 
 ## System requirements
 - Messages must have stable identities so the system can reconcile retries,
 synchronization between devices, and message updates.
 - Message delivery must be idempotent: retries on sending the same message must not create duplicating messages.
+- Input must be validated on server before it appears for other users.
 
 ## Non-functional requirements
 The following requirements describe performance and scalability expectations.

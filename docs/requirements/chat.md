@@ -9,7 +9,6 @@ The following requirements describe user-visible behavior and guarantees the sys
 - All messages sent by a user must eventually be delivered to the recipient(s) unless explicitly deleted or blocked.
 - User must be informed of failed message sending.
 - User must be able to retry sending failed messages.
-- Messages that fail to be delivered to the backend must remain visible in the chat with a failed status and allow the user to retry sending them.
 - When a message is read by any participant of the chat, the sender must see that message as read.
 
 ### Message content and validation
@@ -29,7 +28,6 @@ The following requirements describe user-visible behavior and guarantees the sys
 - Users must see the same messages on all devices associated with their account.
 - Messages deleted by the backend must be removed or marked unavailable.
 - Users must not see duplicate messages in a conversation.
-- Messages missed due to temporary connectivity issues must appear in the conversation once the connection is restored.
 - Users must be able to edit previously sent messages and see that a message has been edited.
 
 ### Presence indicators
@@ -43,6 +41,7 @@ The following rules define expected user experience and interface behavior.
 - While a message is being sent, the message input should not allow edits that could change the content of the message being sent.
 - After a message is successfully added to the chat, the input field should be cleared.
 - If message not added to chat then error must be shown to the user, user input must be kept and enabled for modification. 
+- Messages that fail to be delivered to the backend must remain visible in the chat with a failed status and allow the user to retry sending them.
 - Only one blocking error should be shown to the user at a time.
 - Blocking errors should require user acknowledgement before dismissal.
 - A message is considered read when the user has visibly viewed at least

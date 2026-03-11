@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -8,13 +9,11 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
@@ -69,15 +68,14 @@ class ChatViewModelErrorHandlingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
+        viewModel.state.test {
+            var errorState = awaitItem()
+            while (errorState !is ChatUiState.Error) {
+                errorState = awaitItem()
+            }
 
             // Should transition to Error state for ChatNotFound
-            val errorState = awaitState()
-            assertTrue(errorState is ChatUiState.Error)
             assertEquals(ChatNotFound, errorState.error)
-
-            job.cancelAndJoin()
         }
     }
 
@@ -112,12 +110,13 @@ class ChatViewModelErrorHandlingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
+        viewModel.state.test {
+            var initialState = awaitItem()
+            while (initialState !is ChatUiState.Ready) {
+                initialState = awaitItem()
+            }
 
             // Wait for initial Ready state
-            val initialState = awaitState()
-            assertTrue(initialState is ChatUiState.Ready)
 
             listOf(
                 RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
@@ -126,10 +125,10 @@ class ChatViewModelErrorHandlingTest {
                 RemoteOperationFailed(RemoteError.InsufficientPermissions),
             ).forEach { error ->
                 chatFlow.value = Failure(error)
-                expectStateOn<ChatUiState.Ready> { copy(updateError = error) }
+                val errorState = awaitItem()
+                assertTrue(errorState is ChatUiState.Ready)
+                assertEquals(error, errorState.updateError)
             }
-
-            job.cancelAndJoin()
         }
     }
 
@@ -158,18 +157,18 @@ class ChatViewModelErrorHandlingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
+        viewModel.state.test {
+            var loadingErrorState = awaitItem()
+            while (loadingErrorState is ChatUiState.Loading && loadingErrorState.error == null) {
+                loadingErrorState = awaitItem()
+            }
 
             // Should remain in Loading state with error
-            val loadingErrorState = awaitState()
             assertTrue(loadingErrorState is ChatUiState.Loading)
             assertEquals(
                 RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
                 loadingErrorState.error,
             )
-
-            job.cancelAndJoin()
         }
     }
 
@@ -202,18 +201,18 @@ class ChatViewModelErrorHandlingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
+        viewModel.state.test {
+            awaitItem() // Loading (initial)
 
             // Initial state should be ready
-            val initialState = awaitState()
+            val initialState = awaitItem()
             assertTrue(initialState is ChatUiState.Ready)
             assertNull(initialState.updateError)
 
             // Simulate transient network error
             chatFlow.value = Failure(RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable))
 
-            val errorState = awaitState()
+            val errorState = awaitItem()
             assertTrue(errorState is ChatUiState.Ready)
             assertEquals(
                 RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
@@ -232,14 +231,12 @@ class ChatViewModelErrorHandlingTest {
             )
             chatFlow.value = Success(recoveredChat)
 
-            val recoveredState = awaitState()
+            val recoveredState = awaitItem()
             assertTrue(recoveredState is ChatUiState.Ready)
             // It will be nice to check that we have the new message in the state, but I don't know
             // how to do it with paged messages.
             // Also, I don't understand why update error is not cleared here. I expect it to be null.
             assertNotNull(recoveredState.updateError)
-
-            job.cancelAndJoin()
         }
     }
 }

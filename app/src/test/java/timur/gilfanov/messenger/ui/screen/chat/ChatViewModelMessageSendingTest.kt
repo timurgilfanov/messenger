@@ -1,18 +1,17 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.orbitmvi.orbit.test.test
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -40,6 +39,17 @@ class ChatViewModelMessageSendingTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    companion object {
+        private val TEST_CHAT_ID = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+        private val TEST_CURRENT_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+        private val TEST_OTHER_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
+        private val TEST_MESSAGE_ID_1 =
+            MessageId(UUID.fromString("00000000-0000-0000-0000-000000000004"))
+        private val TEST_INSTANT = Instant.fromEpochMilliseconds(1000)
+    }
+
     @Test
     fun `sending a message clears input only once`() = runTest {
         listOf(
@@ -48,11 +58,11 @@ class ChatViewModelMessageSendingTest {
             listOf(Sending(0), DeliveryStatus.Delivered),
             listOf(Sending(0), DeliveryStatus.Read),
         ).forEach { statuses ->
-            val chatId = ChatId(UUID.randomUUID())
-            val currentUserId = ParticipantId(UUID.randomUUID())
-            val otherUserId = ParticipantId(UUID.randomUUID())
+            val chatId = TEST_CHAT_ID
+            val currentUserId = TEST_CURRENT_USER_ID
+            val otherUserId = TEST_OTHER_USER_ID
             val chat = createTestChat(chatId, currentUserId, otherUserId)
-            val now = Instant.fromEpochMilliseconds(1000)
+            val now = TEST_INSTANT
             val message = buildTextMessage {
                 sender = chat.participants.first { it.id == currentUserId }
                 recipient = chatId
@@ -71,35 +81,46 @@ class ChatViewModelMessageSendingTest {
                 getPagedMessagesUseCase = getPagedMessagesUseCase,
                 markMessagesAsReadUseCase = markMessagesAsReadUseCase,
             )
-            viewModel.test(this) {
-                val job = runOnCreate()
-                awaitState().let { state ->
-                    assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
-                    assertFalse(state.isSending)
+
+            viewModel.effects.test {
+                viewModel.state.test {
+                    var readyState = awaitItem()
+                    while (readyState !is ChatUiState.Ready) {
+                        readyState = awaitItem()
+                    }
+                    assertFalse(readyState.isSending)
+
+                    viewModel.onInputTextChanged("Test message")
+                    viewModel.sendMessage(message.id, now = now)
+
+                    val sendingState = awaitItem()
+                    assertTrue(sendingState is ChatUiState.Ready)
+                    assertTrue(sendingState.isSending)
+
+                    val sentState = awaitItem()
+                    assertTrue(sentState is ChatUiState.Ready)
+                    assertFalse(sentState.isSending)
+
+                    viewModel.onInputTextChanged("Test message 2")
+                    awaitItem().let { state ->
+                        assertTrue(
+                            state is ChatUiState.Ready,
+                            "Expected Ready state, but got: $state",
+                        )
+                    }
                 }
 
-                viewModel.onInputTextChanged("Test message")
-                viewModel.sendMessage(message.id, now = now)
-                expectStateOn<ChatUiState.Ready> { copy(isSending = true) }
-                expectStateOn<ChatUiState.Ready> { copy(isSending = false) }
-
-                val sideEffect = awaitSideEffect()
-                assertIs<ChatSideEffect.ClearInputText>(sideEffect)
-
-                viewModel.onInputTextChanged("Test message 2")
-                awaitState().let { state ->
-                    assertTrue(state is ChatUiState.Ready, "Expected Ready state, but got: $state")
-                }
-                job.cancelAndJoin()
+                assertIs<ChatSideEffect.ClearInputText>(awaitItem())
+                expectNoEvents()
             }
         }
     }
 
     @Test
     fun `dismissDialogError clears error`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
         val repository = MessengerRepositoryFake(chat = chat)
@@ -119,43 +140,39 @@ class ChatViewModelMessageSendingTest {
             markMessagesAsReadUseCase = markMessagesAsReadUseCase,
         )
 
-        viewModel.test(this) {
-            val job = runOnCreate()
-            val readyState = awaitState()
-            assertTrue(readyState is ChatUiState.Ready)
+        viewModel.state.test {
+            var readyState = awaitItem()
+            while (readyState !is ChatUiState.Ready) {
+                readyState = awaitItem()
+            }
             assertNull(readyState.dialogError)
 
             viewModel.onInputTextChanged("")
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(inputTextValidationError = TextValidationError.Empty)
-            }
+            val validationErrorState = awaitItem()
+            assertTrue(validationErrorState is ChatUiState.Ready)
+            assertIs<TextValidationError.Empty>(validationErrorState.inputTextValidationError)
 
-            // Sending a empty text message should cause an error
-            viewModel.sendMessage(MessageId(UUID.randomUUID()), Instant.fromEpochMilliseconds(1000))
+            // Sending an empty text message should cause an error
+            viewModel.sendMessage(TEST_MESSAGE_ID_1, TEST_INSTANT)
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(isSending = true)
-            }
+            val sendingState = awaitItem()
+            assertTrue(sendingState is ChatUiState.Ready)
+            assertTrue(sendingState.isSending)
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(
-                    isSending = false,
-                    dialogError = ReadyError.SendMessageError(
-                        error = SendMessageError.MessageIsNotValid(
-                            reason = TextValidationError.Empty,
-                        ),
-                    ),
-                )
-            }
+            val errorState = awaitItem()
+            assertTrue(errorState is ChatUiState.Ready)
+            assertFalse(errorState.isSending)
+            assertIs<ReadyError.SendMessageError>(errorState.dialogError)
+            assertIs<SendMessageError.MessageIsNotValid>(
+                (errorState.dialogError as ReadyError.SendMessageError).error,
+            )
 
             viewModel.dismissDialogError()
 
-            expectStateOn<ChatUiState.Ready> {
-                copy(dialogError = null)
-            }
-
-            job.cancelAndJoin()
+            val clearedState = awaitItem()
+            assertTrue(clearedState is ChatUiState.Ready)
+            assertNull(clearedState.dialogError)
         }
     }
 }

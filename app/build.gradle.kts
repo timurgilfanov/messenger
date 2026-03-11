@@ -278,11 +278,6 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.logging)
 
-    // Architecture
-    implementation(libs.orbit.core)
-    implementation(libs.orbit.viewmodel)
-    implementation(libs.orbit.compose)
-
     // Kotlin Extensions
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.collections.immutable)
@@ -295,7 +290,6 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
-    testImplementation(libs.orbit.test)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
 

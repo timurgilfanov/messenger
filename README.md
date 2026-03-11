@@ -104,7 +104,7 @@ sequenceDiagram
 ### Key Architectural Decisions
 
 - **Clean Architecture**: Ensures testability, maintainability, and scalability
-- **MVVM**: Separates concerns between application/feature and UI element state rendering and mutation
+- **MVVM**: Well-known architecture for state management that covers UI needs without unnecessary boilerplate.
 - **Domain-Driven Design**: Rich domain models with business logic encapsulation
 - **Repository Pattern**: Abstracts data sources and provides single source of truth
 - **Result Pattern**: Type-safe error handling without exceptions

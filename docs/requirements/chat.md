@@ -7,14 +7,13 @@ The following requirements describe user-visible behavior and guarantees the sys
 - User can send message to participant(s) in the chat.
 - Sent message appears in chat on local device immediately.
 - All messages sent by a user must eventually be delivered to the recipient(s) unless explicitly deleted or blocked.
-- If message not added to chat then error must be shown to the user, input must be filled and enabled for modification.
-- User must be informed of failed message sending to the backend.
+- User must be informed of failed message sending.
 - User must be able to retry sending failed messages.
 - Messages that fail to be delivered to the backend must remain visible in the chat with a failed status and allow the user to retry sending them.
 - When a message is read by any participant of the chat, the sender must see that message as read.
 
 ### Message content and validation
-- Message must be not blank.
+- Message must not be blank.
 - Message text must be less or equal to 4000 characters.
 
 ### Message lifecycle and visibility
@@ -43,6 +42,7 @@ The following rules define expected user experience and interface behavior.
 - The chat screen should display recently loaded messages quickly after opening.
 - While a message is being sent, the message input should not allow edits that could change the content of the message being sent.
 - After a message is successfully added to the chat, the input field should be cleared.
+- If message not added to chat then error must be shown to the user, user input must be kept and enabled for modification. 
 - Only one blocking error should be shown to the user at a time.
 - Blocking errors should require user acknowledgement before dismissal.
 - A message is considered read when the user has visibly viewed at least

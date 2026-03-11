@@ -4,12 +4,12 @@
 The following requirements describe user-visible behavior and guarantees the system must provide.
 
 ### Sending message
-- User able to send message if chat is shown and has no cool down period for the user.
+- User can send message to participant(s) in the chat.
 - Sent message appears in chat on local device immediately.
+- All messages sent by a user must eventually be delivered to the recipient(s) unless explicitly deleted or blocked.
 - If message not added to chat then error must be shown to the user, input must be filled and enabled for modification.
 - User must be informed of failed message sending to the backend.
 - User must be able to retry sending failed messages.
-- Messages created while the device is offline must be delivered once connectivity is restored.
 - Messages that fail to be delivered to the backend must remain visible in the chat with a failed status and allow the user to retry sending them.
 - When a message is read by any participant of the chat, the sender must see that message as read.
 
@@ -50,6 +50,7 @@ The following rules define expected user experience and interface behavior.
 - User must be informed about his/her invalid messages.
 
 ## System requirements
+- Messages created while the device is offline must be delivered once connectivity is restored.
 - Messages must have stable identities so the system can reconcile retries,
 synchronization between devices, and message updates.
 - Message delivery must be idempotent: retries on sending the same message must not create duplicating messages.

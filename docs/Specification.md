@@ -257,9 +257,13 @@ Mobile client for 1-to-1 and group conversations with text.
 - Profile name input must show validation feedback when the entered name is invalid.
 - When the user selects a new profile picture, the preview must be shown before saving.
 - When a user updates their profile name or picture, the change must become visible in chats and message lists without requiring the application to restart.
+
+### Blocking
 - The option to block a user must be accessible from the user's profile or conversation settings.
 - The blocked users list must be accessible from settings.
 - Users must receive confirmation before blocking or unblocking.
+
+### Account deletion
 - The option to delete the account must be accessible from settings.
 - Users must receive confirmation before account deletion with a clear warning that the action is irreversible.
 - After account deletion, the interface must navigate the user to the login screen.

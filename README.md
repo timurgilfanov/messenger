@@ -9,7 +9,7 @@ Showcase project demostrating approach to build a large-scale Android applicatio
 
 ## 🏗️ Architecture
 
-This project follows **Clean Architecture** principles including **Dependency Injection**, and **MVVM** architecture for UI.
+This project follows **Clean Architecture** principles including **Dependency Injection**, and light **MVI** architecture for UI.
 
 ```mermaid
 graph TB
@@ -104,7 +104,7 @@ sequenceDiagram
 ### Key Architectural Decisions
 
 - **Clean Architecture**: Ensures testability, maintainability, and scalability
-- **MVVM**: Well-known architecture for state management that covers UI needs without unnecessary boilerplate.
+- Light **MVI**: Provide single authority for the UI state management without unnecessary intents, actor, and reducer. Number of intents per screen is lower than 5 and ordering doesn't require coordination of async work. 
 - **Domain-Driven Design**: Rich domain models with business logic encapsulation
 - **Repository Pattern**: Abstracts data sources and provides single source of truth
 - **Result Pattern**: Type-safe error handling without exceptions
@@ -134,7 +134,7 @@ sequenceDiagram
 
 - **Language**: Kotlin 2.2.0
 - **UI**: Jetpack Compose (BOM 2025.07.00)
-- **Architecture**: Clean Architecture + MVVM
+- **Architecture**: Clean Architecture + MVI
 - **DI**: Hilt 2.57
 - **Database**: Room 2.7.2
 - **Networking**: Ktor 3.2.3

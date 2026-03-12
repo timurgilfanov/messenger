@@ -14,7 +14,7 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Capabilities
 - Users can see list of their chats.
 - Users can create a new 1-to-1 chat with another user.
-- Users can create a group chat with multiple users.
+- Users can create a group chat with one or more other users.
 - Users can delete a 1-to-1 chat (for self only).
 - Users can join an existing group chat via an invite link.
 - Admins and moderators can add participants to a group chat directly.
@@ -58,6 +58,7 @@ Mobile client for 1-to-1 and group conversations with text.
 
 ### Rules
 - A group chat must always have at least one admin.
+- When the last remaining admin attempts to leave, the action must be rejected until the admin promotes another participant to admin.
 - Only admins can change the group chat name.
 
 ## Message modification
@@ -181,6 +182,7 @@ Mobile client for 1-to-1 and group conversations with text.
 - When a user opens an invite link, the interface must show the group name and a confirmation before joining.
 - When a participant is removed or leaves, remaining participants must see a system indication.
 - When a new participant joins, existing participants must see a system indication.
+- When the last admin attempts to leave, the interface must inform them that they must first promote another participant to admin.
 
 ## Chat
 

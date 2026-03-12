@@ -67,7 +67,7 @@ Mobile client for 1-to-1 and group conversations with text.
 - Users can edit own messages.
 - Users can see when a message was edited.
 - Users can delete own messages ("delete for me" or "delete for everyone").
-- In group chats, admins and moderators can delete any participant's messages.
+- In group chats, admins and moderators can delete any participant's messages ("delete for everyone" only).
 
 ### Rules
 - "Delete for me" removes the message only from the deleting user's view.
@@ -116,6 +116,7 @@ Mobile client for 1-to-1 and group conversations with text.
 - Blocked users cannot send messages to the blocking user in 1-to-1 chats.
 - Blocked users cannot be added to new conversations by the blocking user.
 - Blocking does not remove existing group chat membership.
+- Blocking does not hide or suppress messages in shared group chats; both users continue to see each other's messages within groups.
 - Blocking is not visible to the blocked user.
 
 ## User profile
@@ -137,6 +138,7 @@ Mobile client for 1-to-1 and group conversations with text.
 - Public user ID must be 3-32 characters, alphanumeric and underscores only.
 - Public user ID must be unique across all users.
 - Profile name must be 1-64 characters and must not be blank or whitespace-only.
+- Account deletion must be rejected while the user is the sole admin of any group chat; the user must first promote another participant to admin.
 - Account deletion must remove all user data from the server.
 - Account deletion is irreversible.
 
@@ -268,6 +270,7 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Account deletion
 - The option to delete the account must be accessible from settings.
 - Users must receive confirmation before account deletion with a clear warning that the action is irreversible.
+- If the user is the sole admin of any group chat, the interface must list those chats and inform the user to transfer adminship before deletion can proceed.
 - After account deletion, the interface must navigate the user to the login screen.
 
 ## Localization

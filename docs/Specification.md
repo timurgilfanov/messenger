@@ -41,6 +41,8 @@ Mobile client for 1-to-1 and group conversations with text.
 - Users can retry sending a failed message.
 - Users must see the same messages on all devices associated with their account.
 - Users can see when other participants were last online.
+- Users can load older messages by scrolling up in a conversation.
+- Users can search for messages within a conversation.
 
 ### Rules
 - Messages must not be blank.
@@ -75,6 +77,16 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Capabilities
 - Users can read, create, edit, and delete messages offline.
 
+## Push notifications
+
+### Capabilities
+- Users receive push notifications for new messages when the app is in the background.
+- Users can mute notifications for specific conversations.
+
+### Rules
+- Notifications must not reveal message content on the lock screen unless the user has enabled content preview.
+- Muted conversations must not generate push notifications.
+
 ## Privacy
 
 ### Rules
@@ -92,6 +104,19 @@ Mobile client for 1-to-1 and group conversations with text.
 - Per-conversation identity is independent of the user's global profile and is visible only within that conversation.
 - 1-to-1 chats always use the global profile.
 
+## Blocking
+
+### Capabilities
+- Users can block other users.
+- Users can unblock previously blocked users.
+- Users can view a list of blocked users.
+
+### Rules
+- Blocked users cannot send messages to the blocking user in 1-to-1 chats.
+- Blocked users cannot be added to new conversations by the blocking user.
+- Blocking does not remove existing group chat membership.
+- Blocking is not visible to the blocked user.
+
 ## User profile
 
 ### Capabilities
@@ -105,11 +130,14 @@ Mobile client for 1-to-1 and group conversations with text.
 - Users can edit their profile name.
 - Users can set a profile picture.
 - Users can edit their profile picture.
+- Users can delete their account.
 
 ### Rules
 - Public user ID must be 3-32 characters, alphanumeric and underscores only.
 - Public user ID must be unique across all users.
 - Profile name must be 1-64 characters and must not be blank or whitespace-only.
+- Account deletion must remove all user data from the server.
+- Account deletion is irreversible.
 
 ## Localization
 
@@ -168,6 +196,12 @@ Mobile client for 1-to-1 and group conversations with text.
 - In group chats, each message must show a read count; users can tap to see which participants have read the message.
 - When deleting a message, the user must be presented with a choice between "delete for me" and "delete for everyone".
 - Messages deleted for everyone must display a "this message was deleted" placeholder.
+- When the user scrolls to the top of loaded messages, older messages must load automatically or via a visible trigger.
+- A loading indicator must be shown while older messages are being fetched.
+- Loading older messages must not change the current scroll position.
+- The search option must be accessible within the conversation screen.
+- Search results must highlight matching text and allow the user to navigate to the message in context.
+- If no results are found, the interface must display a clear empty state.
 
 ## Errors
 - Blocking errors must provide a clear explanation of the problem.
@@ -209,6 +243,12 @@ Mobile client for 1-to-1 and group conversations with text.
 - Profile name input must show validation feedback when the entered name is invalid.
 - When the user selects a new profile picture, the preview must be shown before saving.
 - When a user updates their profile name or picture, the change must become visible in chats and message lists without requiring the application to restart.
+- The option to block a user must be accessible from the user's profile or conversation settings.
+- The blocked users list must be accessible from settings.
+- Users must receive confirmation before blocking or unblocking.
+- The option to delete the account must be accessible from settings.
+- Users must receive confirmation before account deletion with a clear warning that the action is irreversible.
+- After account deletion, the interface must navigate the user to the login screen.
 
 ## Localization
 - The option to select a UI language must be clearly accessible in the settings or profile screen.
@@ -223,6 +263,12 @@ Mobile client for 1-to-1 and group conversations with text.
 - Users must be able to choose between using their global profile or a per-conversation identity as the default for new group chats.
 - In group chat settings, users must be able to set a per-conversation display name and picture that differs from their global profile.
 - Changes to per-conversation identity must take effect immediately for new messages.
+
+## Push notifications
+- Notifications must display the sender name and conversation name.
+- Tapping a notification must navigate the user to the relevant conversation.
+- Users must be able to mute and unmute notifications from the conversation settings.
+- Users must be able to control notification content preview (show/hide message text) in settings.
 
 # System requirements
 - Messages must have stable unique identities across all devices.
@@ -273,7 +319,7 @@ Mobile client for 1-to-1 and group conversations with text.
 Represents an individual using the messaging system. The client never receives or stores an internal user ID. Users are identified on the client by their authenticated session and are discoverable by others via an optional public user ID. Each user has a profile containing a display name, an optional public user ID for discovery, and an optional profile picture.
 
 #### UserSettings
-User preferences such as UI language.
+User preferences such as UI language, last-online visibility, and default identity mode for group chats.
 
 #### Conversation
 Represents a chat session between two or more users. A conversation can be either a 1-to-1 chat or a group chat. Group chats have a name and support admin/moderator roles. Participants' identifiers are unique per conversation and do not allow correlation across different conversations, preserving user anonymity. Each conversation maintains the current state of the chat, including the latest message for preview and ordering purposes. Conversations track activity timestamps to support ordering and synchronization.
@@ -308,6 +354,8 @@ erDiagram
     }
     USERSETTINGS {
         Enum languagePreference
+        Boolean lastOnlineVisible
+        Enum defaultIdentityMode
     }
     CONVERSATION {
         Enum type

@@ -12,13 +12,13 @@ Mobile client for 1-to-1 and group conversations with text.
 ## Chat management
 
 ### Capabilities
-- Users can see list of their chats
-- Users can create a new 1-to-1 chat with other user
-- Users can create a group chat with multiple users
-- Users can delete a 1-to-1 chat (for self only)
-- Users can join an existing group chat via an invite link
-- Admins and moderators can add participants to a group chat directly
-- Users can leave a group chat
+- Users can see list of their chats.
+- Users can create a new 1-to-1 chat with other user.
+- Users can create a group chat with multiple users.
+- Users can delete a 1-to-1 chat (for self only).
+- Users can join an existing group chat via an invite link.
+- Admins and moderators can add participants to a group chat directly.
+- Users can leave a group chat.
 
 ### Rules
 - Only one 1-to-1 conversation may exist between two users.
@@ -31,13 +31,13 @@ Mobile client for 1-to-1 and group conversations with text.
 ## Chat
 
 ### Capabilities
-- Users can read messages
-- Users can create messages
+- Users can read messages.
+- Users can create messages.
 - Users can see who sent a message and when.
-- Users can see per-message read receipts from each participant
-- Users can reply to the message
-- Users can see when a message failed to send
-- Users can retry sending a failed message
+- Users can see per-message read receipts from each participant.
+- Users can reply to the message.
+- Users can see when a message failed to send.
+- Users can retry sending a failed message.
 - Users must see the same messages on all devices associated with their account.
 
 ### Rules
@@ -60,9 +60,9 @@ Mobile client for 1-to-1 and group conversations with text.
 ## Message modification
 
 ### Capabilities
-- Users can edit own messages
-- Users can see when a message was edited
-- Users can delete own messages ("delete for me" or "delete for everyone")
+- Users can edit own messages.
+- Users can see when a message was edited.
+- Users can delete own messages ("delete for me" or "delete for everyone").
 - In group chats, admins and moderators can delete any participant's messages.
 
 ### Rules
@@ -72,26 +72,26 @@ Mobile client for 1-to-1 and group conversations with text.
 ## Offline capabilities
 
 ### Capabilities
-- Users can read, create, edit, and delete messages offline
+- Users can read, create, edit, and delete messages offline.
 
 ## Privacy
 
 ### Rules
-- Only participants of a conversation must be able to access its messages
+- Only participants of a conversation must be able to access its messages.
 - Users' communications circle and usage patterns must not be exposed or inferable to other users or external observers through the application.
 
 ## User profile
 
 ### Capabilities
-- Users must login to account to use the application
-- User can create an account
-- Users can set a public user ID, a human-readable unique name for discovery by other users
-- Users can change their public user ID
-- Users must enter profile name
-- Users can edit profile name
-- Users can set picture for a profile
-- Users can edit picture for a profile
-- Users can see when other participants were last online
+- Users must login to account to use the application.
+- User can create an account.
+- Users can set a public user ID, a human-readable unique name for discovery by other users.
+- Users can change their public user ID.
+- Users must enter profile name.
+- Users can edit profile name.
+- Users can set picture for a profile.
+- Users can edit picture for a profile.
+- Users can see when other participants were last online.
 
 ### Rules
 - Public user ID must be 3-32 characters, alphanumeric and underscores only.
@@ -101,7 +101,7 @@ Mobile client for 1-to-1 and group conversations with text.
 ## Localization
 
 ### Capabilities
-- Users can select UI language between English and German
+- Users can select UI language between English and German.
 
 # UX requirements
 

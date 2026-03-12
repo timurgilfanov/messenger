@@ -15,15 +15,18 @@ Mobile client for 1-to-1 and group conversations with text.
 - Users can see list of their chats
 - Users can create a new 1-to-1 chat with other user
 - Users can create a group chat with multiple users
-- Users can delete a chat
-- Users can join an existing group chat
+- Users can delete a 1-to-1 chat (for self only)
+- Users can join an existing group chat via an invite link
+- Admins and moderators can add participants to a group chat directly
 - Users can leave a group chat
 
 ### Rules
 - Only one 1-to-1 conversation may exist between two users.
 - Chats must be ordered by most recent message.
-- Group chats must have a name.
-- Group chats must have at least two participants.
+- Deleting a 1-to-1 chat removes it only from the deleter's chat list; the other participant still sees the conversation.
+- Group chats cannot be deleted; participants can only leave.
+- Group chats must have a name between 1 and 128 characters.
+- Group chats must have at least two and at most 1000 participants.
 
 ## Chat
 
@@ -31,7 +34,7 @@ Mobile client for 1-to-1 and group conversations with text.
 - Users can read messages
 - Users can create messages
 - Users can see who sent a message and when.
-- Users can see read receipts
+- Users can see per-message read receipts from each participant
 - Users can reply to the message
 - Users can see when a message failed to send
 - Users can retry sending a failed message
@@ -59,13 +62,17 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Capabilities
 - Users can edit own messages
 - Users can see when a message was edited
-- Users can delete own messages
+- Users can delete own messages ("delete for me" or "delete for everyone")
 - In group chats, admins and moderators can delete any participant's messages.
+
+### Rules
+- "Delete for me" removes the message only from the deleting user's view.
+- "Delete for everyone" replaces the message with a "deleted" placeholder visible to all participants.
 
 ## Offline capabilities
 
 ### Capabilities
-- Users can read, create, edit messages offline
+- Users can read, create, edit, and delete messages offline
 
 ## Privacy
 
@@ -78,10 +85,18 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Capabilities
 - Users must login to account to use the application
 - User can create an account
+- Users can set a public user ID, a human-readable unique name for discovery by other users
+- Users can change their public user ID
 - Users must enter profile name
 - Users can edit profile name
 - Users can set picture for a profile
 - Users can edit picture for a profile
+- Users can see when other participants were last online
+
+### Rules
+- Public user ID must be 3-32 characters, alphanumeric and underscores only.
+- Public user ID must be unique across all users.
+- Profile name must be 1-64 characters and must not be blank or whitespace-only.
 
 ## Localization
 
@@ -106,20 +121,23 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Chat creation
 - The option to create a new chat must be clearly visible on the same screen with the chat list.
 - Users must be able to choose between creating a 1-to-1 chat or a group chat.
-- When creating a new chat, users must be able to search for or select participants from a list of available contacts.
+- When creating a new chat, users must be able to search by profile name or public user ID, or select participants from a list of device contacts who have an account in the application.
 - When creating a group chat, users must be able to select multiple participants and provide a group name.
 - After a new chat is created, the interface must display the new chat in the chat list and navigate the user to the conversation.
 - If a 1-to-1 chat already exists with the selected participant, the interface must notify the user and open the existing chat instead of creating a duplicate.
 - If creating a new chat fails (e.g., network error or blocked participant), the interface must display a clear error message and allow the user to retry.
 
 ### Chat deletion
-- When a chat is deleted, it must immediately disappear from the chat list.
+- Only 1-to-1 chats may be deleted; the delete option must not appear for group chats.
+- When a chat is deleted, it must immediately disappear from the deleter's chat list.
 - Users must receive confirmation before deleting a chat.
 
 ### Group chat management
 - Group chats must display the group name and participant count in the chat list.
 - Users must be able to view the list of participants in a group chat.
 - Admins must be able to access group settings to change the group name or manage participants.
+- Admins must be able to generate invite links for the group chat.
+- When a user opens an invite link, the interface must show the group name and a confirmation before joining.
 - When a participant is removed or leaves, remaining participants must see a system indication.
 - When a new participant joins, existing participants must see a system indication.
 
@@ -131,6 +149,12 @@ Mobile client for 1-to-1 and group conversations with text.
 - When the user is viewing the latest messages, incoming messages must automatically appear in view.
 - When new messages arrive while the user is viewing older messages, the UI must indicate that new messages are available.
 - Edited messages must be visibly marked as edited.
+- Replies must display an inline compact preview of the parent message above the reply text.
+- Replying to a deleted message must show "original message deleted" in the preview.
+- In 1-to-1 chats, each message must show its read status (e.g., sent, delivered, read).
+- In group chats, each message must show a read count; users can tap to see which participants have read the message.
+- When deleting a message, the user must be presented with a choice between "delete for me" and "delete for everyone".
+- Messages deleted for everyone must display a "this message was deleted" placeholder.
 
 ## Errors
 - Blocking errors must provide a clear explanation of the problem.
@@ -141,6 +165,18 @@ Mobile client for 1-to-1 and group conversations with text.
 - User input must not be lost when an error occurs.
 
 ## User profile
+
+### Login
+- The login screen must be presented when the user is not authenticated.
+- Users must be able to enter their credentials and submit them to log in.
+- If login fails, the interface must display a clear error message and allow the user to retry.
+- After successful login, the interface must navigate the user to the chat list.
+
+### Account creation
+- The login screen must provide an option to create a new account.
+- Users must be able to enter a profile name and credentials to create an account.
+- If account creation fails, the interface must display a clear error message and allow the user to retry.
+- After successful account creation, the interface must navigate the user to the chat list.
 
 ### Profile display
 - The profile screen must display the user's current name and profile picture.
@@ -164,45 +200,41 @@ Mobile client for 1-to-1 and group conversations with text.
 
 # System requirements
 - Messages must have stable unique identities across all devices.
-- Messages created by a user must eventually be delivered to recipients unless deleted.
-- Messages must appear in a consistent chronological order for all participants
+- Messages must appear in a consistent chronological order for all participants.
 - Messages created or modified on one device must be synchronized to other devices.
-- Conflicting updates must be resolved deterministically.
-- Users must not see duplicate messages in a conversation
-- Message delivery must be idempotent.
+- The client must handle conflicting updates using a server-wins strategy: the client always accepts the server's version when conflicts are detected.
+- Users must not see duplicate messages in a conversation.
+- The client must retry failed message deliveries until acknowledged or deleted.
+
+## User identity model
+- The backend identifies users with an internal user ID that is never exposed to clients.
+- Users are discoverable by other users via a public user ID, a human-readable unique account identifier.
+- Within each conversation, users are represented by a participant ID that is unique to that conversation and cannot be correlated with participant IDs in other conversations.
+- The client identifies the current user via the authenticated session, not via a stored user ID.
 
 ## User anonymity across chats
-- The system must generate unique participant identifiers for each conversation that cannot be correlated with identifiers in other conversations.
-- Any data stored or transmitted must not include global user IDs or other attributes that allow cross-chat correlation.
+- The client must not store or receive internal user IDs.
 - Cached messages and participant information must maintain per-conversation anonymity even when stored locally.
+- Contact discovery must not expose internal user IDs to the client; the server returns public user IDs or opaque handles.
 
 # Security requirements
 
 ## Authentication
-- All API calls must require authentication tokens.
-- Tokens must expire and be validated on each request.
-
-## Authorization / Access control
-- Only authenticated participants of a conversation can read, send, or edit messages.
-- Users must not be able to access conversations they are not a participant of, even via API calls.
+- All API calls must include authentication tokens.
+- The client must handle token expiry and refresh.
+- The client must clear stored credentials on logout.
 
 ## Data protection
-- All messages and profile data must be transmitted over encrypted channels (e.g., TLS 1.2+).
-- Message data and user profile data must be encrypted at rest.
-- Sensitive fields (passwords, tokens) must be hashed or encrypted.
+- All network communication must use encrypted channels (e.g., TLS 1.2+).
+- Message data and user profile data must be encrypted at rest on the device.
+- Authentication tokens must be stored in secure platform storage (e.g., Android Keystore).
 
 ## Input validation
-- All user input must be validated and sanitized before processing or storage to prevent injection attacks.
-
-## Logging & auditing
-- All failed login attempts, unauthorized access attempts, and message deletion operations must be logged for auditing purposes.
+- All user input must be validated before submission to prevent injection attacks.
 
 ## Session management
-- User sessions must expire after inactivity.
+- The client must handle session expiry and authorization failures by prompting re-authentication.
 - Users must be able to revoke sessions from other devices.
-
-## Data integrity
-- Messages must be signed or verified to prevent tampering during storage or transit.
 
 # Data model
 
@@ -211,8 +243,7 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Entities
 
 #### User
-Represents an individual using the messaging system. 
-Each user has a profile containing a display name and an optional profile picture.
+Represents an individual using the messaging system. The client never receives or stores an internal user ID. Users are identified on the client by their authenticated session and are discoverable by others via an optional public user ID. Each user has a profile containing a display name, an optional public user ID for discovery, and an optional profile picture.
 
 #### UserSettings
 User preferences such as UI language.
@@ -222,6 +253,9 @@ Represents a chat session between two or more users. A conversation can be eithe
 
 #### Message
 Represents an individual message within a conversation. Messages include the text content, sender information, status (such as sending, sent, failed, read), and metadata about edits and deletions. Messages have stable identities to support synchronization and retries.
+
+#### Participant
+Represents a user's identity within a specific conversation. Each participant has a unique identifier scoped to the conversation, a role (member, moderator, or admin for group chats), a display name, an optional profile picture, and a last-online timestamp. Participant identifiers cannot be correlated across different conversations.
 
 #### ReadReceipt
 Represents the event of a participant reading a particular message, including the timestamp when the message was read.
@@ -234,6 +268,7 @@ Represents the event of a participant reading a particular message, including th
 - A Conversation contains multiple Messages.
 - A Message is sent by one Participant.
 - A Message can have multiple ReadReceipts, each associated with a Participant.
+- A Message can optionally reply to one parent Message.
 
 # Entity-Relationship Diagram
 
@@ -241,7 +276,8 @@ Represents the event of a participant reading a particular message, including th
 erDiagram
     USER {
         String displayName
-        String profilePicture                
+        String publicUserId
+        String profilePicture
     }
     USERSETTINGS {
         Enum languagePreference
@@ -255,14 +291,20 @@ erDiagram
     PARTICIPANT {
         UUID participantId
         Enum role
-        String presenceInformation
+        String displayName
+        String profilePicture
+        Timestamp lastOnlineAt
     }
     MESSAGE {
         UUID messageId
         UUID participantId
         String content
         String status
-        String editDeletionMetadata        
+        Timestamp createdAt
+        Timestamp sentAt
+        Timestamp deliveredAt
+        Timestamp editedAt
+        UUID parentId
     }
     READRECEIPT {
         UUID participantId
@@ -275,6 +317,7 @@ erDiagram
     CONVERSATION ||--o{ PARTICIPANT : has
     CONVERSATION ||--o{ MESSAGE : contains
     MESSAGE ||--o{ READRECEIPT : has
+    MESSAGE ||--o| MESSAGE : replies_to
     PARTICIPANT ||--o{ MESSAGE : sends
     PARTICIPANT ||--o{ READRECEIPT : reads
 ```
@@ -292,10 +335,6 @@ erDiagram
 - Background storage must scale linearly with message and chat count and avoid exceeding device storage limits.
 - Old caches must be cleaned automatically to prevent storage growth.
 
-## Error handling UX
-- Errors due to connectivity or offline status must not block message input.
-- Failed messages must remain visible and allow retry or editing.
-
 ## Chat list
 
 ### Load performance
@@ -306,13 +345,8 @@ erDiagram
 - Scrolling through 1,000 chats must remain smooth without dropped frames.
 - Lazy loading or placeholders must be used for chat previews.
 
-### Offline caching
-- Cached chats must remain visible when the device is offline.
-- Offline chats must indicate synchronization status.
-
 ### Memory and resource usage
 - Chat list must not exceed 50 MB of memory on the device.
-- Background synchronization must not consume more than 5% CPU over 1 hour.
 
 ### Data consistency
 - Chat order and unread message counts must remain accurate across restarts and devices.

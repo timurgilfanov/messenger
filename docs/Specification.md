@@ -13,7 +13,7 @@ Mobile client for 1-to-1 and group conversations with text.
 
 ### Capabilities
 - Users can see list of their chats.
-- Users can create a new 1-to-1 chat with other user.
+- Users can create a new 1-to-1 chat with another user.
 - Users can create a group chat with multiple users.
 - Users can delete a 1-to-1 chat (for self only).
 - Users can join an existing group chat via an invite link.
@@ -40,11 +40,11 @@ Mobile client for 1-to-1 and group conversations with text.
 - Users can see when a message failed to send.
 - Users can retry sending a failed message.
 - Users must see the same messages on all devices associated with their account.
+- Users can see when other participants were last online.
 
 ### Rules
 - Messages must not be blank.
 - Message text must be less than or equal to 2000 characters.
-- Users must not be identifiable across different conversations. Participant identifiers in one conversation must not allow correlation with the same user in any other conversation.
 
 ## Group chat administration
 
@@ -80,19 +80,29 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Rules
 - Only participants of a conversation must be able to access its messages.
 - Users' communications circle and usage patterns must not be exposed or inferable to other users or external observers through the application.
+- The application must guarantee that users who use per-conversation identity, disable last-online visibility, and do not set a public user ID are not identifiable across different conversations by other participants.
+
+## Privacy settings
+
+### Capabilities
+- Users can choose whether to use their global profile name and picture or a per-conversation identity in group chats.
+- Users can disable last-online visibility for other participants.
+
+### Rules
+- Per-conversation identity is independent of the user's global profile and is visible only within that conversation.
+- 1-to-1 chats always use the global profile.
 
 ## User profile
 
 ### Capabilities
 - Users must log in to an account to use the application.
-- User can create an account.
+- Users can create an account.
 - Users can set a public user ID, a human-readable unique name for discovery by other users.
 - Users can change their public user ID.
 - Users must enter a profile name.
-- Users can edit profile name.
-- Users can set picture for a profile.
-- Users can edit picture for a profile.
-- Users can see when other participants were last online.
+- Users can edit their profile name.
+- Users can set a profile picture.
+- Users can edit their profile picture.
 
 ### Rules
 - Public user ID must be 3-32 characters, alphanumeric and underscores only.
@@ -200,6 +210,13 @@ Mobile client for 1-to-1 and group conversations with text.
 - If a string is not available in the selected language, the interface must display a fallback language (e.g., English) rather than showing an empty or broken string.
 - UI must handle different text lengths and formatting correctly for the selected language (e.g., longer words in German must not break layout).
 
+## Privacy settings
+- Privacy settings must be accessible from the settings or profile screen.
+- Users must be able to toggle last-online visibility on or off.
+- Users must be able to choose between using their global profile or a per-conversation identity as the default for new group chats.
+- In group chat settings, users must be able to set a per-conversation display name and picture that differs from their global profile.
+- Changes to per-conversation identity must take effect immediately for new messages.
+
 # System requirements
 - Messages must have stable unique identities across all devices.
 - Messages must appear in a consistent chronological order for all participants.
@@ -258,7 +275,7 @@ Represents a chat session between two or more users. A conversation can be eithe
 Represents an individual message within a conversation. Messages include the text content, sender information, status (such as sending, sent, failed, read), and metadata about edits and deletions. Messages have stable identities to support synchronization and retries.
 
 #### Participant
-Represents a user's identity within a specific conversation. Each participant has a unique identifier scoped to the conversation, a role (member, moderator, or admin for group chats), a display name, an optional profile picture, and a last-online timestamp. Participant identifiers cannot be correlated across different conversations.
+Represents a user's identity within a specific conversation. Each participant has a unique identifier scoped to the conversation, a role (member, moderator, or admin for group chats), a display name, an optional profile picture, and a last-online timestamp. The display name and profile picture may differ from the user's global profile when per-conversation identity is used. Participant identifiers cannot be correlated across different conversations.
 
 #### ReadReceipt
 Represents the event of a participant reading a particular message, including the timestamp when the message was read.
@@ -267,7 +284,7 @@ Represents the event of a participant reading a particular message, including th
 
 - A User can participate in multiple Conversations.
 - A User has one UserSettings configuration.
-- A Conversation includes multiple Participants. A 1-to-1 conversation has exactly two; a group conversation has two or more.
+- A Conversation includes multiple Participants. A 1-to-1 conversation has exactly two; a group conversation has one or more.
 - A Conversation contains multiple Messages.
 - A Message is sent by one Participant.
 - A Message can have multiple ReadReceipts, each associated with a Participant.

@@ -183,22 +183,36 @@ Mobile client for 1-to-1 and group conversations with text.
 - When a new participant joins, existing participants must see a system indication.
 
 ## Chat
+
+### Sending and delivery
 - After a message is successfully added to the chat, the input field must be cleared.
 - Messages created offline must remain visible in the conversation in a stable position until synchronization completes.
 - Messages that fail to be delivered must remain visible in the chat with a failed status.
+
+### Scrolling and incoming messages
 - Incoming messages must not change the current scroll position when the user is viewing older messages.
 - When the user is viewing the latest messages, incoming messages must automatically appear in view.
 - When new messages arrive while the user is viewing older messages, the UI must indicate that new messages are available.
+
+### Message display
 - Edited messages must be visibly marked as edited.
 - Replies must display an inline compact preview of the parent message above the reply text.
 - Replying to a deleted message must show "original message deleted" in the preview.
+
+### Read receipts
 - In 1-to-1 chats, each message must show its read status (e.g., sent, delivered, read).
 - In group chats, each message must show a read count; users can tap to see which participants have read the message.
+
+### Message deletion
 - When deleting a message, the user must be presented with a choice between "delete for me" and "delete for everyone".
 - Messages deleted for everyone must display a "this message was deleted" placeholder.
+
+### Message history loading
 - When the user scrolls to the top of loaded messages, older messages must load automatically or via a visible trigger.
 - A loading indicator must be shown while older messages are being fetched.
 - Loading older messages must not change the current scroll position.
+
+### Message search
 - The search option must be accessible within the conversation screen.
 - Search results must highlight matching text and allow the user to navigate to the message in context.
 - If no results are found, the interface must display a clear empty state.

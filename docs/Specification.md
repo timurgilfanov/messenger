@@ -19,6 +19,7 @@ Mobile client for 1-to-1 and group conversations with text.
 - Users can join an existing group chat via an invite link.
 - Admins and moderators can add participants to a group chat directly.
 - Users can leave a group chat.
+- Users can search for and select participants from their device contacts who have an account in the application.
 
 ### Rules
 - Only one 1-to-1 conversation may exist between two users.
@@ -26,7 +27,7 @@ Mobile client for 1-to-1 and group conversations with text.
 - Deleting a 1-to-1 chat removes it only from the deleter's chat list; the other participant still sees the conversation.
 - Group chats cannot be deleted; participants can only leave.
 - Group chats must have a name between 1 and 128 characters.
-- Group chats must have at least two and at most 1000 participants.
+- Group chats must have at least one and at most 1000 participants.
 
 ## Chat
 
@@ -83,11 +84,11 @@ Mobile client for 1-to-1 and group conversations with text.
 ## User profile
 
 ### Capabilities
-- Users must login to account to use the application.
+- Users must log in to an account to use the application.
 - User can create an account.
 - Users can set a public user ID, a human-readable unique name for discovery by other users.
 - Users can change their public user ID.
-- Users must enter profile name.
+- Users must enter a profile name.
 - Users can edit profile name.
 - Users can set picture for a profile.
 - Users can edit picture for a profile.
@@ -175,6 +176,7 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Account creation
 - The login screen must provide an option to create a new account.
 - Users must be able to enter a profile name and credentials to create an account.
+- Users may optionally set a public user ID during account creation or later via profile settings.
 - If account creation fails, the interface must display a clear error message and allow the user to retry.
 - After successful account creation, the interface must navigate the user to the chat list.
 
@@ -284,7 +286,7 @@ erDiagram
     }
     CONVERSATION {
         Enum type
-        String name
+        String name "nullable, group chats only"
         String latestMessagePreview
         Timestamp activityTimestamps
     }
@@ -299,7 +301,7 @@ erDiagram
         UUID messageId
         UUID participantId
         String content
-        String status
+        Enum status
         Timestamp createdAt
         Timestamp sentAt
         Timestamp deliveredAt

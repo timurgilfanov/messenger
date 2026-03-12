@@ -1,10 +1,9 @@
 # Overview
 ## Scope
-Mobile client for 1-to-1 conversations with text.
+Mobile client for 1-to-1 and group conversations with text.
 ## Out-of-scope
 - attachments
 - reactions
-- group chats
 - channels
 - backend requirements
 
@@ -15,11 +14,16 @@ Mobile client for 1-to-1 conversations with text.
 ### Capabilities
 - Users can see list of their chats
 - Users can create a new 1-to-1 chat with other user
+- Users can create a group chat with multiple users
 - Users can delete a chat
+- Users can join an existing group chat
+- Users can leave a group chat
 
 ### Rules
 - Only one 1-to-1 conversation may exist between two users.
 - Chats must be ordered by most recent message.
+- Group chats must have a name.
+- Group chats must have at least two participants.
 
 ## Chat
 
@@ -27,7 +31,7 @@ Mobile client for 1-to-1 conversations with text.
 - Users can read messages
 - Users can create messages
 - Users can see who sent a message and when.
-- Users can see read receipt
+- Users can see read receipts
 - Users can reply to the message
 - Users can see when a message failed to send
 - Users can retry sending a failed message
@@ -38,12 +42,25 @@ Mobile client for 1-to-1 conversations with text.
 - Message text must be less than or equal to 2000 characters.
 - Users must not be identifiable across different conversations. Participant identifiers in one conversation must not allow correlation with the same user in any other conversation.
 
+## Group chat administration
+
+### Capabilities
+- The user who creates a group chat becomes its admin.
+- Admins can promote participants to moderator or admin.
+- Admins can remove participants from a group chat.
+- Moderators can remove non-admin participants from a group chat.
+
+### Rules
+- A group chat must always have at least one admin.
+- Only admins can change the group chat name.
+
 ## Message modification
 
 ### Capabilities
 - Users can edit own messages
 - Users can see when a message was edited
 - Users can delete own messages
+- In group chats, admins and moderators can delete any participant's messages.
 
 ## Offline capabilities
 
@@ -54,7 +71,7 @@ Mobile client for 1-to-1 conversations with text.
 
 ### Rules
 - Only participants of a conversation must be able to access its messages
-- Users communications circle and usage patterns must not be exposed or inferable to other users or external observers through the application.
+- Users' communications circle and usage patterns must not be exposed or inferable to other users or external observers through the application.
 
 ## User profile
 
@@ -87,15 +104,24 @@ Mobile client for 1-to-1 conversations with text.
 - When the user has no chats, the interface must display an empty state explaining how to start a conversation.
 
 ### Chat creation
-- The option to create a new 1-to-1 chat must be clearly visible on the same screen with the chat list.
-- When creating a new chat, users must be able to search for or select the participant from a list of available contacts.
+- The option to create a new chat must be clearly visible on the same screen with the chat list.
+- Users must be able to choose between creating a 1-to-1 chat or a group chat.
+- When creating a new chat, users must be able to search for or select participants from a list of available contacts.
+- When creating a group chat, users must be able to select multiple participants and provide a group name.
 - After a new chat is created, the interface must display the new chat in the chat list and navigate the user to the conversation.
-- If a chat already exists with the selected participant, the interface must notify the user and open the existing chat instead of creating a duplicate.
+- If a 1-to-1 chat already exists with the selected participant, the interface must notify the user and open the existing chat instead of creating a duplicate.
 - If creating a new chat fails (e.g., network error or blocked participant), the interface must display a clear error message and allow the user to retry.
 
 ### Chat deletion
 - When a chat is deleted, it must immediately disappear from the chat list.
 - Users must receive confirmation before deleting a chat.
+
+### Group chat management
+- Group chats must display the group name and participant count in the chat list.
+- Users must be able to view the list of participants in a group chat.
+- Admins must be able to access group settings to change the group name or manage participants.
+- When a participant is removed or leaves, remaining participants must see a system indication.
+- When a new participant joins, existing participants must see a system indication.
 
 ## Chat
 - After a message is successfully added to the chat, the input field must be cleared.
@@ -192,7 +218,7 @@ Each user has a profile containing a display name and an optional profile pictur
 User preferences such as UI language.
 
 #### Conversation
-Represents a one-to-one chat session between two users. Participant's identifier are unique per conversation and do not allow correlation across different conversations, preserving user anonymity. Each conversation maintains the current state of the chat, including the latest message for preview and ordering purposes. Conversations track activity timestamps to support ordering and synchronization.
+Represents a chat session between two or more users. A conversation can be either a 1-to-1 chat or a group chat. Group chats have a name and support admin/moderator roles. Participants' identifiers are unique per conversation and do not allow correlation across different conversations, preserving user anonymity. Each conversation maintains the current state of the chat, including the latest message for preview and ordering purposes. Conversations track activity timestamps to support ordering and synchronization.
 
 #### Message
 Represents an individual message within a conversation. Messages include the text content, sender information, status (such as sending, sent, failed, read), and metadata about edits and deletions. Messages have stable identities to support synchronization and retries.
@@ -204,10 +230,10 @@ Represents the event of a participant reading a particular message, including th
 
 - A User can participate in multiple Conversations.
 - A User has one UserSettings configuration.
-- A Conversation includes multiple Participants (enable group chats).
+- A Conversation includes multiple Participants. A 1-to-1 conversation has exactly two; a group conversation has two or more.
 - A Conversation contains multiple Messages.
 - A Message is sent by one Participant.
-- A Message can have multiple ReadReceipts (enable group chats), each associated with a Participant.
+- A Message can have multiple ReadReceipts, each associated with a Participant.
 
 # Entity-Relationship Diagram
 
@@ -221,11 +247,14 @@ erDiagram
         Enum languagePreference
     }
     CONVERSATION {
+        Enum type
+        String name
         String latestMessagePreview
         Timestamp activityTimestamps
     }
     PARTICIPANT {
         UUID participantId
+        Enum role
         String presenceInformation
     }
     MESSAGE {

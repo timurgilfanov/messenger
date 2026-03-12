@@ -97,6 +97,8 @@ Mobile client for 1-to-1 and group conversations with text.
 ### Capabilities
 - Users must log in to an account to use the application.
 - Users can create an account.
+- Users can log out of the application.
+- Users must remain logged in across app restarts until they explicitly log out.
 - Users can set a public user ID, a human-readable unique name for discovery by other users.
 - Users can change their public user ID.
 - Users must enter a profile name.
@@ -182,6 +184,11 @@ Mobile client for 1-to-1 and group conversations with text.
 - Users must be able to enter their credentials and submit them to log in.
 - If login fails, the interface must display a clear error message and allow the user to retry.
 - After successful login, the interface must navigate the user to the chat list.
+
+### Logout
+- The logout option must be accessible from the settings or profile screen.
+- Users must receive confirmation before logging out.
+- After logout, the interface must navigate the user to the login screen.
 
 ### Account creation
 - The login screen must provide an option to create a new account.

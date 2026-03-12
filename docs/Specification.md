@@ -228,6 +228,7 @@ Mobile client for 1-to-1 and group conversations with text.
 
 ## Data protection
 - All network communication must use encrypted channels (e.g., TLS 1.2+).
+- The client must use certificate pinning to prevent man-in-the-middle attacks via forged certificates.
 - Message data and user profile data must be encrypted at rest on the device.
 - Authentication tokens must be stored in secure platform storage (e.g., Android Keystore).
 

@@ -19,7 +19,7 @@ style:
   UnusedPrivateMember:
     allowedNames: '.*Preview$'
 
-StoreRules:
+MviRules:
   NoMutableStateFlowExposure:
     active: true
   ReduceOnlyInActor:

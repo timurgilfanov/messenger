@@ -16,7 +16,7 @@ class NoMutableStateFlowExposureRuleTest {
 
             import kotlinx.coroutines.flow.MutableStateFlow
 
-            class ChatStore {
+            class ChatViewModel {
                 val badState = MutableStateFlow(Unit)
             }
         """.trimIndent()
@@ -33,7 +33,7 @@ class NoMutableStateFlowExposureRuleTest {
             import kotlinx.coroutines.flow.MutableStateFlow
             import kotlinx.coroutines.flow.asStateFlow
 
-            class ChatStore {
+            class ChatViewModel {
                 val state = MutableStateFlow(Unit).asStateFlow()
             }
         """.trimIndent()
@@ -49,7 +49,7 @@ class NoMutableStateFlowExposureRuleTest {
 
             import kotlinx.coroutines.flow.MutableStateFlow
 
-            class ChatStore {
+            class ChatViewModel {
                 val badState: MutableStateFlow<Unit> = MutableStateFlow(Unit)
             }
         """.trimIndent()
@@ -65,7 +65,7 @@ class NoMutableStateFlowExposureRuleTest {
 
             import kotlinx.coroutines.flow.MutableStateFlow
 
-            class ChatStore {
+            class ChatViewModel {
                 private val _state = MutableStateFlow(Unit)
             }
         """.trimIndent()
@@ -75,29 +75,13 @@ class NoMutableStateFlowExposureRuleTest {
     }
 
     @Test
-    fun `ignores Store classes implementing ContainerHost`() {
+    fun `ignores non-ViewModel classes`() {
         val code = """
             package timur.gilfanov.messenger.ui.screen.chat
 
             import kotlinx.coroutines.flow.MutableStateFlow
 
-            class ChatStore : ContainerHost<State, SideEffect> {
-                val state = MutableStateFlow(Unit)
-            }
-        """.trimIndent()
-
-        val findings = rule.lint(code)
-        assertEquals(0, findings.size, "Expected 0 findings but got ${findings.size}: $findings")
-    }
-
-    @Test
-    fun `ignores non-Store classes`() {
-        val code = """
-            package timur.gilfanov.messenger.ui.screen.chat
-
-            import kotlinx.coroutines.flow.MutableStateFlow
-
-            class ChatViewModel {
+            class ChatRepository {
                 val state = MutableStateFlow(Unit)
             }
         """.trimIndent()

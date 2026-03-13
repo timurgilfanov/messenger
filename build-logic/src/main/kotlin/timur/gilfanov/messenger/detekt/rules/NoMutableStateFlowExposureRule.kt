@@ -21,7 +21,7 @@ class NoMutableStateFlowExposureRule(config: Config = Config.empty) : Rule(confi
     override val issue = Issue(
         id = "NoMutableStateFlowExposure",
         severity = Severity.Defect,
-        description = "Store classes must not expose MutableStateFlow publicly. " +
+        description = "ViewModel classes must not expose MutableStateFlow publicly. " +
             "Use .asStateFlow() to expose a read-only StateFlow instead.",
         debt = Debt.FIVE_MINS,
     )
@@ -30,7 +30,7 @@ class NoMutableStateFlowExposureRule(config: Config = Config.empty) : Rule(confi
         super.visitProperty(property)
 
         val containingClass = property.containingClass()
-        if (!isCustomStoreClass(containingClass)) return
+        if (!isViewModelClass(containingClass)) return
 
         if (property.isPrivate()) return
 
@@ -77,19 +77,14 @@ class NoMutableStateFlowExposureRule(config: Config = Config.empty) : Rule(confi
         )
     }
 
-    private fun isCustomStoreClass(ktClass: KtClass?): Boolean {
+    private fun isViewModelClass(ktClass: KtClass?): Boolean {
         if (ktClass == null) return false
 
         val className = ktClass.name ?: return false
-        if (!className.endsWith("Store")) return false
+        if (!className.endsWith("ViewModel")) return false
 
         val packageName = ktClass.containingKtFile.packageFqName.asString()
-        if (!packageName.startsWith("timur.gilfanov.messenger.ui")) return false
-
-        val isContainerHost = ktClass.superTypeListEntries.any { entry ->
-            entry.text.contains("ContainerHost")
-        }
-        return !isContainerHost
+        return packageName.startsWith("timur.gilfanov.messenger.ui")
     }
 
     companion object {

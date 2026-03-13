@@ -14,7 +14,7 @@ class ReduceOnlyInActorRuleTest {
         val code = """
             package timur.gilfanov.messenger.ui.screen.search
 
-            class SearchStore {
+            class SearchViewModel {
                 val state = actor(intents)
                     .scan(State()) { acc, result ->
                         reduce(acc, result)
@@ -34,7 +34,7 @@ class ReduceOnlyInActorRuleTest {
         val code = """
             package timur.gilfanov.messenger.ui.screen.search
 
-            class SearchStore {
+            class SearchViewModel {
                 fun doSomething() {
                     val newState = reduce(state.value, result)
                 }
@@ -48,27 +48,11 @@ class ReduceOnlyInActorRuleTest {
     }
 
     @Test
-    fun `ignores Store classes implementing ContainerHost`() {
+    fun `ignores non-ViewModel classes`() {
         val code = """
             package timur.gilfanov.messenger.ui.screen.search
 
-            class SearchStore : ContainerHost<State, SideEffect> {
-                fun doSomething() {
-                    reduce(state, result)
-                }
-            }
-        """.trimIndent()
-
-        val findings = rule.lint(code)
-        assertEquals(0, findings.size, "Expected 0 findings but got ${findings.size}: $findings")
-    }
-
-    @Test
-    fun `ignores non-Store classes`() {
-        val code = """
-            package timur.gilfanov.messenger.ui.screen.search
-
-            class SearchViewModel {
+            class SearchHelper {
                 fun doSomething() {
                     reduce(state, result)
                 }
@@ -84,7 +68,7 @@ class ReduceOnlyInActorRuleTest {
         val code = """
             package timur.gilfanov.messenger.ui.screen.search
 
-            class SearchStore {
+            class SearchViewModel {
                 private fun reduce(state: State, result: Result): State = state
             }
         """.trimIndent()
@@ -98,7 +82,7 @@ class ReduceOnlyInActorRuleTest {
         val code = """
             package com.example.other
 
-            class SomeStore {
+            class SomeViewModel {
                 fun doSomething() {
                     reduce(state, result)
                 }
@@ -114,7 +98,7 @@ class ReduceOnlyInActorRuleTest {
         val code = """
             package timur.gilfanov.messenger.ui.screen.search
 
-            class SearchStore {
+            class SearchViewModel {
                 val state = actor(intents)
                     .scan(State()) { acc, result ->
                         result.items.fold(acc) { current, item ->
@@ -136,7 +120,7 @@ class ReduceOnlyInActorRuleTest {
         val code = """
             package timur.gilfanov.messenger.ui.screen.search
 
-            class SearchStore {
+            class SearchViewModel {
                 val transformed = items.map { item ->
                     reduce(state.value, item)
                 }

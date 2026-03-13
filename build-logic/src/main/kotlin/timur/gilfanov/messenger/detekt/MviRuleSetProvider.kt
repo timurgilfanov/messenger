@@ -6,8 +6,8 @@ import io.gitlab.arturbosch.detekt.api.RuleSetProvider
 import timur.gilfanov.messenger.detekt.rules.NoMutableStateFlowExposureRule
 import timur.gilfanov.messenger.detekt.rules.ReduceOnlyInActorRule
 
-class StoreRuleSetProvider : RuleSetProvider {
-    override val ruleSetId: String = "StoreRules"
+class MviRuleSetProvider : RuleSetProvider {
+    override val ruleSetId: String = "MviRules"
 
     override fun instance(config: Config): RuleSet = RuleSet(
         ruleSetId,

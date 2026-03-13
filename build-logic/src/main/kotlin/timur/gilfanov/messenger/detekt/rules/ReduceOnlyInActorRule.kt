@@ -18,9 +18,9 @@ class ReduceOnlyInActorRule(config: Config = Config.empty) : Rule(config) {
     override val issue = Issue(
         id = "ReduceOnlyInActor",
         severity = Severity.Defect,
-        description = "Calls to `reduce` must only be made within `scan { }` block " +
-            "that processes actor output. This ensures only the actor can commit " +
-            "UI state updates (AR-01).",
+        description = "Calls to `reduce` in ViewModel classes must only be made within " +
+            "`scan { }` block that processes actor output. This ensures only the actor " +
+            "can commit UI state updates (AR-01).",
         debt = Debt.TEN_MINS,
     )
 
@@ -31,7 +31,7 @@ class ReduceOnlyInActorRule(config: Config = Config.empty) : Rule(config) {
         if (calleeName != "reduce") return
 
         val containingClass = expression.containingClass()
-        if (!isCustomStoreClass(containingClass)) return
+        if (!isViewModelClass(containingClass)) return
 
         if (!isInsideScanBlock(expression)) {
             report(
@@ -57,18 +57,13 @@ class ReduceOnlyInActorRule(config: Config = Config.empty) : Rule(config) {
         return false
     }
 
-    private fun isCustomStoreClass(ktClass: KtClass?): Boolean {
+    private fun isViewModelClass(ktClass: KtClass?): Boolean {
         if (ktClass == null) return false
 
         val className = ktClass.name ?: return false
-        if (!className.endsWith("Store")) return false
+        if (!className.endsWith("ViewModel")) return false
 
         val packageName = ktClass.containingKtFile.packageFqName.asString()
-        if (!packageName.startsWith("timur.gilfanov.messenger.ui")) return false
-
-        val isContainerHost = ktClass.superTypeListEntries.any { entry ->
-            entry.text.contains("ContainerHost")
-        }
-        return !isContainerHost
+        return packageName.startsWith("timur.gilfanov.messenger.ui")
     }
 }

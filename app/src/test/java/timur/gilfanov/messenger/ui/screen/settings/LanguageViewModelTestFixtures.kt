@@ -1,13 +1,13 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
 import kotlinx.coroutines.flow.Flow
-import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.DeviceId
 import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub

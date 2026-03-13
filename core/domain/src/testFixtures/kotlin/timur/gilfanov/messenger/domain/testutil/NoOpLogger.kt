@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger
+package timur.gilfanov.messenger.domain.testutil
 
 import timur.gilfanov.messenger.util.Logger
 

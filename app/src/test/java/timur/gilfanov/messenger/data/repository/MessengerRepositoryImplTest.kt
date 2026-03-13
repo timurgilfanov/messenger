@@ -15,7 +15,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
@@ -33,6 +32,7 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
 import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError

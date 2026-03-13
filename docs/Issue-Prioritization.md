@@ -74,3 +74,8 @@ Priorities can change based on:
 - Dependencies with other issues
 
 When changing priority, add a comment explaining the reason.
+
+## Related
+
+- [Issue Guidelines](Issue-Guidelines.md) for how to write effective issues
+- [AI Agent Tasks](AI-Agent-Tasks.md) for tasks delegatable to the AI agent

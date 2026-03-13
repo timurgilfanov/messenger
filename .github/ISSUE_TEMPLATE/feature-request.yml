@@ -1,0 +1,77 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Problem statement
+      description: What problem does this feature solve? Describe from the user's perspective.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: How should this feature work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives-considered
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider and why were they ruled out?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: affected-layer
+    attributes:
+      label: Affected layer
+      description: Which architectural layer is primarily affected?
+      options:
+        - UI
+        - Domain
+        - Use case
+        - Data
+        - Multiple
+    validations:
+      required: false
+
+  - type: dropdown
+    id: suggested-priority
+    attributes:
+      label: Suggested priority
+      description: See [Issue Prioritization](../../docs/Issue-Prioritization.md) for definitions.
+      options:
+        - critical
+        - high
+        - medium
+        - low
+    validations:
+      required: false
+
+  - type: dropdown
+    id: estimated-effort
+    attributes:
+      label: Estimated effort
+      description: Rough size estimate for the implementation.
+      options:
+        - XS
+        - S
+        - M
+        - L
+        - XL
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Any other context, mockups, or references.
+    validations:
+      required: false

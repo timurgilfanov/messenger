@@ -1,0 +1,108 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: A clear and concise description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reproduce the behavior.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: What actually happened.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: build-flavor
+    attributes:
+      label: Build flavor
+      description: Which build flavor does this bug occur in?
+      options:
+        - mock
+        - dev
+        - staging
+        - production
+        - All
+    validations:
+      required: true
+
+  - type: input
+    id: android-api-level
+    attributes:
+      label: Android API level
+      description: The API level where the bug occurs.
+      placeholder: "e.g., 34"
+    validations:
+      required: false
+
+  - type: input
+    id: device
+    attributes:
+      label: Device / Emulator
+      description: The device or emulator where the bug occurs.
+      placeholder: "e.g., Pixel 8, Medium Phone API 35 emulator"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: affected-layer
+    attributes:
+      label: Affected layer
+      description: Which architectural layer is affected?
+      options:
+        - UI
+        - Domain
+        - Use case
+        - Data
+        - Unknown
+    validations:
+      required: false
+
+  - type: dropdown
+    id: suggested-priority
+    attributes:
+      label: Suggested priority
+      description: See [Issue Prioritization](../../docs/Issue-Prioritization.md) for definitions.
+      options:
+        - critical
+        - high
+        - medium
+        - low
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots, or stack traces
+      description: Paste relevant logcat output, screenshots, or stack traces.
+      render: shell
+    validations:
+      required: false

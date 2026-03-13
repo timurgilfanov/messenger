@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Issue Guidelines
+    url: https://github.com/timurgilfanov/messenger/blob/main/docs/Issue-Guidelines.md
+    about: How to write effective issues for this project
+  - name: Issue Prioritization Guide
+    url: https://github.com/timurgilfanov/messenger/blob/main/docs/Issue-Prioritization.md
+    about: How issues are prioritized and labeled

@@ -1,0 +1,91 @@
+name: Refactoring
+description: Propose a code refactoring or structural improvement
+title: "[Refactor] "
+labels: ["developer-experience"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If this refactoring is mechanical and bounded (e.g., rename, extract, move), consider using the
+        [AI Agent Task](ai-agent-task.yml) template instead.
+
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current state
+      description: Describe the current code structure or pattern that needs improvement.
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired-state
+    attributes:
+      label: Desired state
+      description: Describe what the code should look like after refactoring.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this refactoring needed? What problems does the current state cause?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-layer
+    attributes:
+      label: Affected layer
+      description: Which architectural layer is primarily affected?
+      options:
+        - UI
+        - Domain
+        - Use case
+        - Data
+        - Multiple
+    validations:
+      required: false
+
+  - type: dropdown
+    id: estimated-effort
+    attributes:
+      label: Estimated effort
+      description: Rough size estimate for the refactoring.
+      options:
+        - XS
+        - S
+        - M
+        - L
+        - XL
+    validations:
+      required: false
+
+  - type: dropdown
+    id: suggested-priority
+    attributes:
+      label: Suggested priority
+      description: See [Issue Prioritization](../../docs/Issue-Prioritization.md) for definitions.
+      options:
+        - critical
+        - high
+        - medium
+        - low
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: behavior-change
+    attributes:
+      label: Behavior impact
+      options:
+        - label: This refactoring changes no externally observable behavior
+          required: false
+
+  - type: textarea
+    id: affected-files
+    attributes:
+      label: Affected files or modules
+      description: List the files, packages, or modules that will be touched.
+    validations:
+      required: false

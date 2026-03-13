@@ -7,13 +7,13 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(libs.versions.javaVersion.get().toInt())
     compilerOptions {
         freeCompilerArgs.add("-opt-in=kotlin.time.ExperimentalTime")
     }
 }
 
-ktlint { version.set("1.7.1") }
+ktlint { version.set(libs.versions.ktlintTool.get()) }
 
 detekt {
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))

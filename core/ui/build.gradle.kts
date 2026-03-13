@@ -9,15 +9,15 @@ plugins {
 
 android {
     namespace = "timur.gilfanov.messenger.ui"
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
     }
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
+            languageVersion = JavaLanguageVersion.of(libs.versions.javaVersion.get())
         }
     }
 
@@ -32,7 +32,7 @@ android {
     }
 }
 
-ktlint { version.set("1.7.1") }
+ktlint { version.set(libs.versions.ktlintTool.get()) }
 
 detekt {
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))

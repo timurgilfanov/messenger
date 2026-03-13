@@ -328,6 +328,7 @@ dependencies {
 
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
+    testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(testFixtures(project(":core:domain")))
 
@@ -445,6 +446,7 @@ tasks.register("koverXmlReportAllJvmModules") {
         rootProject.subprojects
             .filter { sub ->
                 sub.plugins.hasPlugin("org.jetbrains.kotlin.jvm") &&
+                    sub.plugins.hasPlugin("org.jetbrains.kotlinx.kover") &&
                     !sub.plugins.hasPlugin("com.android.application") &&
                     !sub.plugins.hasPlugin("com.android.library") &&
                     sub.path != ":build-logic"

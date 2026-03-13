@@ -444,10 +444,10 @@ tasks.register("koverXmlReportAllJvmModules") {
     dependsOn(
         rootProject.subprojects
             .filter { sub ->
-                sub.plugins.hasPlugin("org.jetbrains.kotlin.jvm")
-                    && !sub.plugins.hasPlugin("com.android.application")
-                    && !sub.plugins.hasPlugin("com.android.library")
-                    && sub.path != ":build-logic"
+                sub.plugins.hasPlugin("org.jetbrains.kotlin.jvm") &&
+                    !sub.plugins.hasPlugin("com.android.application") &&
+                    !sub.plugins.hasPlugin("com.android.library") &&
+                    sub.path != ":build-logic"
             }
             .map { "${it.path}:koverXmlReport" },
     )

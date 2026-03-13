@@ -44,35 +44,16 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 
 ### Testing
 Full strategy in `docs/Testing Strategy.md`.
+CI/CD pipeline details in `docs/ci-cd-pipeline.md`.
 - **Fakes over Mocks**: Use test doubles other than mock or spy by default. We test behaviour not implementation.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
 - **Test Categories**: Tests are organized by category:
   - `Architecture`: Verify architecture rules
   - `Unit`: Test single method or class with minimal dependencies
-  - `Component`: Test multiply classes together  
+  - `Component`: Test multiply classes together
   - `Feature`: Test integration between two or more components
   - `Application`: Test deployable binary to verify application functionality
   - `ReleaseCandidate`: Verifies the critical user journeys of a release build and performance
-
-### CI/CD Pipeline
-The CI/CD pipeline is organized by test categories and follows the Testing Strategy execution matrix:
-
-**Every Commit (push + PR):**
-- `build`: lint + detekt + architecture tests + APK generation
-- `unit-component-tests`: Unit and Component tests (fast feedback)
-
-**Local Development:**
-- `preCommit`: Run all pre-commit checks locally before committing (auto-formatting + lint + detekt + architecture + unit + component tests)
-
-**Pre-merge (PR only):**
-- `feature-tests`: Feature tests on emulators
-- `application-tests-emulator`: Application unit tests locally + instrumentation tests on Firebase Test Lab emulators
-
-**Post-merge (main branch):**
-- `application-tests-devices`: Application instrumentation tests on real devices via Firebase Test Lab
-
-**Pre-release (tags):**
-- `release-candidate-tests`: Release Candidate tests on multiple devices with release build
 
 ### Code Quality Tools
 - **Detekt**: Static analysis with custom rules in `config/detekt/detekt.yml`

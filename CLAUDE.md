@@ -2,11 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+- Do not generate comments
+
 ## Development Commands
 
 Full reference: `docs/development-commands.md`
 
-- Do not generate comments
 - Run code quality checks and auto corrections after code editing
 ```bash
 ./gradlew preCommit                   # Pre-commit checks (formatting + lint + detekt + tests)
@@ -21,11 +22,7 @@ See `docs/coverage-reports.md` for detailed coverage configuration, Codecov comp
 
 This is an Android messenger application built with Kotlin and Jetpack Compose, following Clean Architecture principles with a domain-driven design approach.
 
-### Domain Layer Structure
-- **Entities**: Core business objects (`Chat`, `Message`, `Participant`) with validation logic
-- **Use Cases**: Business logic operations for chat and message management
-- **Repository Interface**: Data access abstraction
-- **Validation**: Dedicated validators for domain entities with error types
+Package organization in `docs/package-organization.md`.
 
 ### Key Architectural Patterns
 - **Result Pattern**: `ResultWithError<T, E>` wrapper for handling success/failure states
@@ -47,49 +44,6 @@ Full strategy in `docs/Testing Strategy.md`.
 CI/CD pipeline details in `docs/ci-cd-pipeline.md`.
 - **Fakes over Mocks**: Use test doubles other than mock or spy by default. We test behaviour not implementation.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
-- **Test Categories**: Tests are organized by category:
-  - `Architecture`: Verify architecture rules
-  - `Unit`: Test single method or class with minimal dependencies
-  - `Component`: Test multiply classes together
-  - `Feature`: Test integration between two or more components
-  - `Application`: Test deployable binary to verify application functionality
-  - `ReleaseCandidate`: Verifies the critical user journeys of a release build and performance
-
-### Code Quality Tools
-- **Detekt**: Static analysis with custom rules in `config/detekt/detekt.yml`
-- **Ktlint**: Code formatting with Compose rules
-- **Kover**: Test coverage reporting
-- **Custom Rules**: Compose-specific detekt and ktlint rules enabled
-
-### Package Organization
-```
-app/src/main/java/timur/gilfanov/messenger/
-├── domain/
-│   ├── entity/           # Core business entities with validation
-│   │   ├── chat/        # Chat-related entities and validation
-│   │   ├── message/     # Message-related entities and validation
-│   │   ├── profile/     # Profile entity and validation
-│   │   └── settings/    # Settings entity
-│   └── usecase/         # Business logic operations
-│       ├── chat/        # Chat management use cases
-│       ├── message/     # Message management use cases
-│       ├── profile/     # Profile use cases
-│       ├── settings/    # Settings use cases
-│       └── common/      # Shared use cases
-├── data/
-│   ├── repository/      # Repository implementations
-│   ├── source/          # Data sources
-│   │   ├── local/       # Room database
-│   │   ├── remote/      # API calls
-│   │   └── paging/      # Paging data sources
-│   └── worker/          # WorkManager workers
-├── ui/
-│   ├── screen/          # Compose screens and ViewModels
-│   ├── theme/           # Theme and styling
-│   └── activity/        # Activity classes
-├── di/                  # Hilt dependency injection modules
-└── navigation/          # Navigation destinations
-```
 
 ### Self-Learning
 When you discover important project knowledge during implementation that is not already captured in this file or linked docs — such as new architectural patterns, non-obvious conventions, critical gotchas, or structural changes — propose an update to this CLAUDE.md or the relevant doc file. Present the proposed change to the user for approval before applying it.

@@ -54,6 +54,12 @@
 ./gradlew koverXmlReportMockDebug
 ```
 
+### Code Quality Tools
+- **Detekt**: Static analysis with custom rules in `config/detekt/detekt.yml`
+- **Ktlint**: Code formatting with Compose rules
+- **Kover**: Test coverage reporting
+- **Custom Rules**: Compose-specific detekt and ktlint rules enabled
+
 ## Test Categories with Coverage
 ```bash
 # Run specific test categories with coverage

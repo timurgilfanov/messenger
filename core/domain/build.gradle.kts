@@ -34,6 +34,9 @@ dependencies {
     testFixturesImplementation(libs.kotlinx.coroutines.core)
     testFixturesImplementation(libs.kotlinx.collections.immutable)
     testFixturesImplementation(libs.androidx.paging.common)
+
+    detektPlugins(libs.detekt.formatting)
+    detektPlugins(project(":build-logic"))
 }
 
 tasks.withType<Test> {

@@ -456,7 +456,14 @@ tasks.register("preCommit") {
     }
 
     if (hasCodeChanges.get()) {
-        dependsOn("ktlintFormat", "lintMockDebug", "detekt", "checkScreenshotSize")
+        dependsOn(
+            "ktlintFormat",
+            ":core:domain:ktlintFormat",
+            "lintMockDebug",
+            "detekt",
+            ":core:domain:detekt",
+            "checkScreenshotSize",
+        )
 
         doLast {
             println("✅ Pre-commit formatting, lint, and static analysis complete!")

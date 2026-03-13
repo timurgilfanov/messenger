@@ -151,11 +151,8 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
   - Use cases make decisions based on sealed interface hierarchy, not cause inspection
   - Causes are extracted ONLY for logging and diagnostics
   - See `SyncAllPendingSettingsUseCase.kt` for reference implementation pattern
-- **MVI Store Pattern**: MVI model classes should end with `Store` and must follow AR-01:
-  - State is private mutable, exposed as read-only
-  - Only `actor` can commit UI state updates (call `reduce`)
-  - **Tests must exist for all ordering invariants** (e.g., "search clears paging", "refresh cancels pending load", "latest wins")
-  - See `docs/architecture/AR-01-single-authority-for-ordering-rules.md` for details
+- **MVI Pattern**: ViewModels expose a single read-only `StateFlow` for persistent UI state and a `Channel`-backed `Flow` for one-off side effects (navigation, toasts, input clearing)
+  - When a screen has overlapping async operations with business ordering invariants, apply AR-01: centralize all state commits in an `actor` with a `reduce` function (see `docs/architecture/AR-01-single-authority-for-ordering-rules.md`)
 - **Vertical Feature Delivery**: Features are developed and shipped as complete vertical units (domain + data + UI, fully tested) rather than partial horizontal layers across multiple features
 
 ### Testing

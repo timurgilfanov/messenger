@@ -13,7 +13,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
-import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.data.repository.MessengerRepositoryImpl
 import timur.gilfanov.messenger.data.source.local.LocalChatDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
@@ -28,6 +27,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
+import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.repository.CreateChatRepositoryError
 import timur.gilfanov.messenger.domain.usecase.chat.repository.DeleteChatRepositoryError

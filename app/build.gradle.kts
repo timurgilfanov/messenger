@@ -325,6 +325,7 @@ dependencies {
     // ========== Debug Dependencies ==========
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    debugImplementation(testFixtures(project(":core:domain")))
 
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))

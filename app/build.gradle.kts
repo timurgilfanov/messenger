@@ -326,6 +326,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    // ========== Module Dependencies ==========
+    implementation(project(":core:domain"))
+    testImplementation(testFixtures(project(":core:domain")))
+    androidTestImplementation(testFixtures(project(":core:domain")))
+
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)
     detektPlugins(libs.detekt.compose)
@@ -428,6 +433,7 @@ tasks.register("preCommit") {
         listOf(
             "app/",
             "build-logic/",
+            "core/",
             "build.gradle.kts",
             "settings.gradle.kts",
             "gradle.properties",
@@ -465,6 +471,34 @@ tasks.register("preCommit") {
 
             categories.forEach { (category, emoji) ->
                 println("$emoji Running $category tests with coverage...")
+
+                if (category == "Unit") {
+                    val domainProcess = ProcessBuilder(
+                        "./gradlew",
+                        ":core:domain:test",
+                        "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
+                    )
+                        .directory(project.rootDir)
+                        .redirectErrorStream(true)
+                        .start()
+
+                    val domainOutput = domainProcess.inputStream.bufferedReader().use {
+                        it.readText()
+                    }
+                    val domainExitCode = domainProcess.waitFor()
+
+                    if (domainExitCode != 0) {
+                        val errorMessage = buildString {
+                            appendLine(
+                                ":core:domain $category tests failed with exit code $domainExitCode",
+                            )
+                            appendLine()
+                            appendLine("Error output:")
+                            appendLine(domainOutput.takeLast(2000))
+                        }
+                        throw GradleException(errorMessage)
+                    }
+                }
 
                 val process = ProcessBuilder(
                     "./gradlew",

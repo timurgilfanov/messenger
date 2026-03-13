@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "Messenger"
 include(":app")
 include(":build-logic")
+include(":core:domain")

@@ -177,9 +177,10 @@ class LocalChatDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(result)
-        assertIs<LocalDataSourceError.InvalidData>(result.error)
-        assertEquals("name", result.error.field)
-        assertEquals("Chat name cannot be blank", result.error.reason)
+        val invalidDataError0 = result.error
+        assertIs<LocalDataSourceError.InvalidData>(invalidDataError0)
+        assertEquals("name", invalidDataError0.field)
+        assertEquals("Chat name cannot be blank", invalidDataError0.reason)
     }
 
     @Test
@@ -192,9 +193,10 @@ class LocalChatDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(result)
-        assertIs<LocalDataSourceError.InvalidData>(result.error)
-        assertEquals("participants", result.error.field)
-        assertEquals("Chat must have at least one participant", result.error.reason)
+        val invalidDataError1 = result.error
+        assertIs<LocalDataSourceError.InvalidData>(invalidDataError1)
+        assertEquals("participants", invalidDataError1.field)
+        assertEquals("Chat must have at least one participant", invalidDataError1.reason)
     }
 
     @Test
@@ -210,8 +212,9 @@ class LocalChatDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(result)
-        assertIs<LocalDataSourceError.InvalidData>(result.error)
-        assertEquals("name", result.error.field)
+        val invalidDataError2 = result.error
+        assertIs<LocalDataSourceError.InvalidData>(invalidDataError2)
+        assertEquals("name", invalidDataError2.field)
     }
 
     @Test
@@ -227,8 +230,9 @@ class LocalChatDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(result)
-        assertIs<LocalDataSourceError.InvalidData>(result.error)
-        assertEquals("participants", result.error.field)
+        val invalidDataError3 = result.error
+        assertIs<LocalDataSourceError.InvalidData>(invalidDataError3)
+        assertEquals("participants", invalidDataError3.field)
     }
 
     // Upsert behavior tests (Room uses OnConflictStrategy.REPLACE)

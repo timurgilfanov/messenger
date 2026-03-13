@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
+import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
 
 class IdentityRepositoryStub(
     identityFlow: Flow<ResultWithError<Identity, GetIdentityError>>,

@@ -331,8 +331,9 @@ class MessengerRepositoryIntegrationTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, CreateChatRepositoryError>>(result)
-        assertIs<CreateChatRepositoryError.RemoteOperationFailed>(result.error)
-        assertEquals(RemoteError.Unauthenticated, result.error.error)
+        val createChatError = result.error
+        assertIs<CreateChatRepositoryError.RemoteOperationFailed>(createChatError)
+        assertEquals(RemoteError.Unauthenticated, createChatError.error)
     }
 
     @Test
@@ -361,8 +362,9 @@ class MessengerRepositoryIntegrationTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, JoinChatRepositoryError>>(result)
-        assertIs<JoinChatRepositoryError.RemoteOperationFailed>(result.error)
-        assertEquals(RemoteError.Failed.ServiceDown, result.error.error)
+        val joinChatError = result.error
+        assertIs<JoinChatRepositoryError.RemoteOperationFailed>(joinChatError)
+        assertEquals(RemoteError.Failed.ServiceDown, joinChatError.error)
     }
 
     // Message Management - Happy Path Tests
@@ -441,8 +443,9 @@ class MessengerRepositoryIntegrationTest {
             assertIs<ResultWithError.Success<Message, *>>(result)
             assertEquals(editedMessage.id, result.data.id)
             // Verify that the message content was actually updated
-            assertIs<TextMessage>(result.data)
-            assertEquals("Edited message content", result.data.text)
+            val editedData = result.data
+            assertIs<TextMessage>(editedData)
+            assertEquals("Edited message content", editedData.text)
             awaitComplete()
         }
     }
@@ -514,8 +517,9 @@ class MessengerRepositoryIntegrationTest {
         repository.sendMessage(testMessage).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<*, SendMessageRepositoryError>>(result)
-            assertIs<SendMessageRepositoryError.RemoteOperationFailed>(result.error)
-            assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
+            val sendMessageError = result.error
+            assertIs<SendMessageRepositoryError.RemoteOperationFailed>(sendMessageError)
+            assertIs<RemoteError.Failed.ServiceDown>(sendMessageError.error)
             awaitComplete()
         }
     }
@@ -546,8 +550,9 @@ class MessengerRepositoryIntegrationTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, DeleteMessageRepositoryError>>(result)
-        assertIs<DeleteMessageRepositoryError.RemoteOperationFailed>(result.error)
-        assertIs<RemoteError.Failed.ServiceDown>(result.error.error)
+        val deleteMessageError = result.error
+        assertIs<DeleteMessageRepositoryError.RemoteOperationFailed>(deleteMessageError)
+        assertIs<RemoteError.Failed.ServiceDown>(deleteMessageError.error)
     }
 
     // Helper functions

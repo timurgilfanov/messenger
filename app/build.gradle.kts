@@ -328,6 +328,7 @@ dependencies {
 
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
+    testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(testFixtures(project(":core:domain")))
 

@@ -5,8 +5,11 @@
 # Build the project
 ./gradlew build
 
-# Run unit tests (default: mock flavor)
+# Run unit tests (default: mock flavor) — Android modules only
 ./gradlew testMockDebugUnitTest
+
+# Run unit tests for pure-JVM modules (e.g. :core:domain)
+./gradlew :core:domain:test
 
 # Run unit tests for specific flavors
 ./gradlew testDevDebugUnitTest     # Development environment

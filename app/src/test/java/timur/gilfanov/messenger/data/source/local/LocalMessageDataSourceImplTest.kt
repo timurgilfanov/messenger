@@ -15,6 +15,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.ParticipantEntity
@@ -26,7 +27,6 @@ import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
-import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 
 @RunWith(AndroidJUnit4::class)

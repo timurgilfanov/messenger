@@ -3,11 +3,12 @@ package timur.gilfanov.messenger.testutil
 import java.io.Closeable
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.util.Logger
 
 class RepositoryCleanupRule(
     private val repositoryProvider: () -> Any?,
-    private val logger: Logger,
+    private val logger: Logger = NoOpLogger(),
 ) : TestWatcher() {
 
     companion object {

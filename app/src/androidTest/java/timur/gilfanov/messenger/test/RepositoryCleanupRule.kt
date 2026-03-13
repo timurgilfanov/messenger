@@ -3,7 +3,7 @@ package timur.gilfanov.messenger.test
 import java.io.Closeable
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
-import timur.gilfanov.messenger.domain.testutil.NoOpLogger
+import timur.gilfanov.messenger.NoOpLogger
 import timur.gilfanov.messenger.util.Logger
 
 class RepositoryCleanupRule(

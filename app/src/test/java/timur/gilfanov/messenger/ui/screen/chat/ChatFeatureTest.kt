@@ -28,7 +28,6 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.ChatScreenTestActivity
 import timur.gilfanov.messenger.annotations.Feature
 import timur.gilfanov.messenger.di.RepositoryModule
-import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.testutil.RepositoryCleanupRule
@@ -54,8 +53,7 @@ class ChatFeatureTest {
     lateinit var chatRepository: ChatRepository
 
     @get:Rule(order = 2)
-    val repositoryCleanupRule =
-        RepositoryCleanupRule(repositoryProvider = { chatRepository }, logger = NoOpLogger())
+    val repositoryCleanupRule = RepositoryCleanupRule(repositoryProvider = { chatRepository })
 
     @Module
     @InstallIn(SingletonComponent::class)

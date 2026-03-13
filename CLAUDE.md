@@ -2,7 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-- Do not generate comments
+- Do not generate inline comments or code comments
+- Generate KDoc only on interfaces and their members that define contracts between layers (repositories, data sources, validators, services), and on sealed error/validation hierarchies — only where the contract is not obvious from the type signature alone. Update existing KDocs when modifying documented code.
 
 ## Development Commands
 

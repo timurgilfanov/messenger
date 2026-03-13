@@ -156,6 +156,7 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
   - Only `actor` can commit UI state updates (call `reduce`)
   - **Tests must exist for all ordering invariants** (e.g., "search clears paging", "refresh cancels pending load", "latest wins")
   - See `docs/architecture/AR-01-single-authority-for-ordering-rules.md` for details
+- **Vertical Feature Delivery**: Features are developed and shipped as complete vertical units (domain + data + UI, fully tested) rather than partial horizontal layers across multiple features
 
 ### Testing
 Full strategy in `docs/Testing Strategy.md`.

@@ -329,6 +329,7 @@ dependencies {
 
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
+    implementation(project(":core:ui"))
     testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(testFixtures(project(":core:domain")))
@@ -436,9 +437,25 @@ fun jvmModuleTestTasks() = rootProject.subprojects
     }
     .map { "${it.path}:test" }
 
-fun androidLibraryTestTasks(variant: String) = rootProject.subprojects
+fun androidLibraryTestTasks() = rootProject.subprojects
     .filter { it.plugins.hasPlugin("com.android.library") }
-    .map { "${it.path}:test${variant.replaceFirstChar { c -> c.uppercase() }}UnitTest" }
+    .map { "${it.path}:testDebugUnitTest" }
+
+fun androidLibraryLintTasks() = rootProject.subprojects
+    .filter { it.plugins.hasPlugin("com.android.library") }
+    .map { "${it.path}:lintDebug" }
+
+tasks.register("lintAllMockDebug") {
+    group = "verification"
+    description = "Run lint across all modules for mock debug"
+    dependsOn(androidLibraryLintTasks() + listOf("lintMockDebug"))
+}
+
+tasks.register("lintAllProductionRelease") {
+    group = "verification"
+    description = "Run lint across all modules for production release"
+    dependsOn(androidLibraryLintTasks() + listOf("lintProductionRelease"))
+}
 
 tasks.register("koverXmlReportAllJvmModules") {
     group = "verification"
@@ -460,7 +477,7 @@ tasks.register("testAllMockDebugUnitTests") {
     group = "verification"
     description = "Run mockDebug unit tests across all modules"
     dependsOn(
-        jvmModuleTestTasks() + androidLibraryTestTasks("mockDebug") +
+        jvmModuleTestTasks() + androidLibraryTestTasks() +
             listOf("testMockDebugUnitTest"),
     )
 }
@@ -469,7 +486,7 @@ tasks.register("testAllProductionReleaseUnitTests") {
     group = "verification"
     description = "Run productionRelease unit tests across all modules"
     dependsOn(
-        jvmModuleTestTasks() + androidLibraryTestTasks("productionRelease") +
+        jvmModuleTestTasks() + androidLibraryTestTasks() +
             listOf("testProductionReleaseUnitTest"),
     )
 }
@@ -516,14 +533,11 @@ tasks.register("preCommit") {
                 it.path != project.path && it.plugins.hasPlugin("io.gitlab.arturbosch.detekt")
             }
             .map { "${it.path}:detekt" }
-        val moduleAndroidLint = rootProject.subprojects
-            .filter { it.plugins.hasPlugin("com.android.library") }
-            .map { "${it.path}:lintMockDebug" }
         dependsOn(
             listOf("ktlintFormat", "lintMockDebug", "detekt", "checkScreenshotSize") +
                 moduleKtlint +
                 moduleDetekt +
-                moduleAndroidLint,
+                androidLibraryLintTasks(),
         )
 
         doLast {
@@ -567,7 +581,7 @@ tasks.register("preCommit") {
 
                 val androidProcess = ProcessBuilder(
                     listOf("./gradlew") +
-                        androidLibraryTestTasks("mockDebug") +
+                        androidLibraryTestTasks() +
                         listOf(
                             "testMockDebugUnitTest",
                             "-PtestCategory=timur.gilfanov.messenger.annotations.$category",

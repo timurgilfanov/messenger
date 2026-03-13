@@ -326,6 +326,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    // ========== Module Dependencies ==========
+    implementation(project(":core:domain"))
+    testImplementation(testFixtures(project(":core:domain")))
+    androidTestImplementation(testFixtures(project(":core:domain")))
+
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)
     detektPlugins(libs.detekt.compose)
@@ -420,6 +425,52 @@ tasks.register("checkScreenshotSize") {
     }
 }
 
+fun jvmModuleTestTasks() = rootProject.subprojects
+    .filter { sub ->
+        sub.plugins.hasPlugin("org.jetbrains.kotlin.jvm") &&
+            !sub.plugins.hasPlugin("com.android.application") &&
+            !sub.plugins.hasPlugin("com.android.library") &&
+            sub.path != ":build-logic"
+    }
+    .map { "${it.path}:test" }
+
+fun androidLibraryTestTasks(variant: String) = rootProject.subprojects
+    .filter { it.plugins.hasPlugin("com.android.library") }
+    .map { "${it.path}:test${variant.replaceFirstChar { c -> c.uppercase() }}UnitTest" }
+
+tasks.register("koverXmlReportAllJvmModules") {
+    group = "verification"
+    description = "Generate Kover XML coverage reports for all pure-JVM modules"
+    dependsOn(
+        rootProject.subprojects
+            .filter { sub ->
+                sub.plugins.hasPlugin("org.jetbrains.kotlin.jvm") &&
+                    !sub.plugins.hasPlugin("com.android.application") &&
+                    !sub.plugins.hasPlugin("com.android.library") &&
+                    sub.path != ":build-logic"
+            }
+            .map { "${it.path}:koverXmlReport" },
+    )
+}
+
+tasks.register("testAllMockDebugUnitTests") {
+    group = "verification"
+    description = "Run mockDebug unit tests across all modules"
+    dependsOn(
+        jvmModuleTestTasks() + androidLibraryTestTasks("mockDebug") +
+            listOf("testMockDebugUnitTest"),
+    )
+}
+
+tasks.register("testAllProductionReleaseUnitTests") {
+    group = "verification"
+    description = "Run productionRelease unit tests across all modules"
+    dependsOn(
+        jvmModuleTestTasks() + androidLibraryTestTasks("productionRelease") +
+            listOf("testProductionReleaseUnitTest"),
+    )
+}
+
 tasks.register("preCommit") {
     group = "verification"
     description = "Run all pre-commit checks locally"
@@ -428,6 +479,7 @@ tasks.register("preCommit") {
         listOf(
             "app/",
             "build-logic/",
+            "core/",
             "build.gradle.kts",
             "settings.gradle.kts",
             "gradle.properties",
@@ -450,7 +502,26 @@ tasks.register("preCommit") {
     }
 
     if (hasCodeChanges.get()) {
-        dependsOn("ktlintFormat", "lintMockDebug", "detekt", "checkScreenshotSize")
+        val moduleKtlint = rootProject.subprojects
+            .filter {
+                it.path != project.path &&
+                    it.plugins.hasPlugin("org.jlleitschuh.gradle.ktlint")
+            }
+            .map { "${it.path}:ktlintFormat" }
+        val moduleDetekt = rootProject.subprojects
+            .filter {
+                it.path != project.path && it.plugins.hasPlugin("io.gitlab.arturbosch.detekt")
+            }
+            .map { "${it.path}:detekt" }
+        val moduleAndroidLint = rootProject.subprojects
+            .filter { it.plugins.hasPlugin("com.android.library") }
+            .map { "${it.path}:lintMockDebug" }
+        dependsOn(
+            listOf("ktlintFormat", "lintMockDebug", "detekt", "checkScreenshotSize") +
+                moduleKtlint +
+                moduleDetekt +
+                moduleAndroidLint,
+        )
 
         doLast {
             println("✅ Pre-commit formatting, lint, and static analysis complete!")
@@ -463,28 +534,58 @@ tasks.register("preCommit") {
                 "Component" to "🔩",
             )
 
+            val jvmTestTasks = jvmModuleTestTasks()
+
             categories.forEach { (category, emoji) ->
                 println("$emoji Running $category tests with coverage...")
 
-                val process = ProcessBuilder(
-                    "./gradlew",
-                    "testMockDebugUnitTest",
-                    "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
-                    "-Pcoverage",
+                if (jvmTestTasks.isNotEmpty()) {
+                    val jvmProcess = ProcessBuilder(
+                        listOf("./gradlew") + jvmTestTasks +
+                            listOf("-PtestCategory=timur.gilfanov.messenger.annotations.$category"),
+                    )
+                        .directory(project.rootDir)
+                        .redirectErrorStream(true)
+                        .start()
+
+                    val jvmOutput = jvmProcess.inputStream.bufferedReader().use { it.readText() }
+                    val jvmExitCode = jvmProcess.waitFor()
+
+                    if (jvmExitCode != 0) {
+                        val errorMessage = buildString {
+                            appendLine("JVM $category tests failed with exit code $jvmExitCode")
+                            appendLine()
+                            appendLine("Error output:")
+                            appendLine(jvmOutput.takeLast(2000))
+                        }
+                        throw GradleException(errorMessage)
+                    }
+                }
+
+                val androidProcess = ProcessBuilder(
+                    listOf("./gradlew") +
+                        androidLibraryTestTasks("mockDebug") +
+                        listOf(
+                            "testMockDebugUnitTest",
+                            "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
+                            "-Pcoverage",
+                        ),
                 )
                     .directory(project.rootDir)
                     .redirectErrorStream(true)
                     .start()
 
-                val output = process.inputStream.bufferedReader().use { it.readText() }
-                val exitCode = process.waitFor()
+                val androidOutput = androidProcess.inputStream.bufferedReader().use {
+                    it.readText()
+                }
+                val androidExitCode = androidProcess.waitFor()
 
-                if (exitCode != 0) {
+                if (androidExitCode != 0) {
                     val errorMessage = buildString {
-                        appendLine("$category tests failed with exit code $exitCode")
+                        appendLine("$category tests failed with exit code $androidExitCode")
                         appendLine()
                         appendLine("Error output:")
-                        appendLine(output.takeLast(2000))
+                        appendLine(androidOutput.takeLast(2000))
                     }
                     throw GradleException(errorMessage)
                 }

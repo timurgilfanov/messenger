@@ -194,9 +194,10 @@ class LocalMessageDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
-        assertIs<LocalDataSourceError.InvalidData>(result.error)
-        assertEquals("text", result.error.field)
-        assertEquals("Message text cannot be blank", result.error.reason)
+        val invalidDataError0 = result.error
+        assertIs<LocalDataSourceError.InvalidData>(invalidDataError0)
+        assertEquals("text", invalidDataError0.field)
+        assertEquals("Message text cannot be blank", invalidDataError0.reason)
     }
 
     @Test
@@ -211,9 +212,10 @@ class LocalMessageDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
-        assertIs<LocalDataSourceError.InvalidData>(result.error)
-        assertEquals("text", result.error.field)
-        assertTrue(result.error.reason.contains("cannot exceed"))
+        val invalidDataError1 = result.error
+        assertIs<LocalDataSourceError.InvalidData>(invalidDataError1)
+        assertEquals("text", invalidDataError1.field)
+        assertTrue(invalidDataError1.reason.contains("cannot exceed"))
     }
 
     @Test
@@ -230,9 +232,10 @@ class LocalMessageDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
-        assertIs<LocalDataSourceError.InvalidData>(result.error)
-        assertEquals("timestamps", result.error.field)
-        assertEquals("Created time cannot be after sent time", result.error.reason)
+        val invalidDataError2 = result.error
+        assertIs<LocalDataSourceError.InvalidData>(invalidDataError2)
+        assertEquals("timestamps", invalidDataError2.field)
+        assertEquals("Created time cannot be after sent time", invalidDataError2.reason)
     }
 
     @Test
@@ -249,8 +252,9 @@ class LocalMessageDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
-        assertIs<LocalDataSourceError.InvalidData>(result.error)
-        assertEquals("text", result.error.field)
+        val invalidDataError3 = result.error
+        assertIs<LocalDataSourceError.InvalidData>(invalidDataError3)
+        assertEquals("text", invalidDataError3.field)
     }
 
     // Upsert behavior tests (Room uses OnConflictStrategy.REPLACE)

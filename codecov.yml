@@ -18,25 +18,25 @@ component_management:
     - component_id: domain_entities
       name: "Domain Entities"
       paths:
-        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/**"
-    
+        - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/entity/**"
+
     - component_id: domain_usecases
       name: "Domain Use Cases"
       paths:
-        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/**"
-    
+        - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/usecase/**"
+
     - component_id: chat_feature
       name: "Chat Feature"
       paths:
-        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/chat/**"
-        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/chat/**"
+        - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/entity/chat/**"
+        - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/usecase/chat/**"
         - "app/src/main/java/timur/gilfanov/messenger/ui/screen/chat/**"
-    
+
     - component_id: message_feature
       name: "Message Feature"
       paths:
-        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/message/**"
-        - "app/src/main/java/timur/gilfanov/messenger/domain/usecase/message/**"
+        - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/entity/message/**"
+        - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/usecase/message/**"
     
     - component_id: ui_screens
       name: "UI Screens"
@@ -56,8 +56,8 @@ component_management:
     - component_id: validation_logic
       name: "Validation Logic"
       paths:
-        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/chat/validation/**"
-        - "app/src/main/java/timur/gilfanov/messenger/domain/entity/message/validation/**"
+        - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/entity/chat/validation/**"
+        - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/entity/message/validation/**"
     
     - component_id: application_core
       name: "Application Core"

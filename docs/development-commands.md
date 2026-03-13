@@ -5,19 +5,23 @@
 # Build the project
 ./gradlew build
 
-# Run unit tests (default: mock flavor)
-./gradlew testMockDebugUnitTest
+# Run unit tests across all modules (JVM + Android library + app)
+./gradlew testAllMockDebugUnitTests
+./gradlew testAllProductionReleaseUnitTests
 
-# Run unit tests for specific flavors
-./gradlew testDevDebugUnitTest     # Development environment
-./gradlew testStagingDebugUnitTest # Staging environment
-./gradlew testProductionDebugUnitTest # Production environment
+# Run unit tests for specific flavors (app module only)
+./gradlew testDevDebugUnitTest
+./gradlew testStagingDebugUnitTest
+./gradlew testProductionDebugUnitTest
+
+# Run unit tests for a single JVM module
+./gradlew :core:domain:test
 
 # Run instrumentation tests
 ./gradlew connectedMockDebugAndroidTest
 
 # Run tests with coverage
-./gradlew testMockDebugUnitTest -Pcoverage
+./gradlew testAllMockDebugUnitTests -Pcoverage
 
 # Run a single test class
 ./gradlew testMockDebugUnitTest --tests "ClassName"
@@ -27,20 +31,20 @@
 ./gradlew testMockDebugUnitTest --tests "ClassName.testMethodName"
 
 # Run tests by category (property-based approach)
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Unit
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Component
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Feature
+./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
+./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Unit
+./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Component
+./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Feature
 ./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.messenger.annotations.FeatureTest
 ./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.messenger.annotations.ApplicationTest
+
+# Exclude specific categories
+./gradlew testAllMockDebugUnitTests -PexcludeCategory=timur.gilfanov.messenger.annotations.Architecture
 
 # Pre-commit checks
 ./gradlew preCommit                   # Run all pre-commit checks (checks staged files)
                                       # IMPORTANT: Run this before committing when changes are ready for compilation and testing
 ./gradlew preCommit -Pforce           # Run all checks unconditionally (CI / agent)
-
-# Exclude specific categories
-./gradlew testMockDebugUnitTest -PexcludeCategory=timur.gilfanov.messenger.annotations.Architecture
 ```
 
 ## Code Quality
@@ -63,8 +67,8 @@
 ## Test Categories with Coverage
 ```bash
 # Run specific test categories with coverage
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Unit -Pcoverage
-./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Component -Pcoverage
+./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Unit -Pcoverage
+./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Component -Pcoverage
 
 # Generate category-specific coverage reports
 ./gradlew koverXmlReportMockDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit

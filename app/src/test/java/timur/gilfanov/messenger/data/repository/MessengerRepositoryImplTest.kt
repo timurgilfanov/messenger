@@ -124,20 +124,23 @@ class MessengerRepositoryImplTest {
             val result0 = awaitItem()
             assertIs<ResultWithError.Success<Message, SendMessageRepositoryError>>(result0)
             assertEquals(messageToSend.text, (result0.data as TextMessage).text)
-            assertIs<DeliveryStatus.Sending>(result0.data.deliveryStatus)
-            assertEquals(0, result0.data.deliveryStatus.progress)
+            val deliveryStatus0 = result0.data.deliveryStatus
+            assertIs<DeliveryStatus.Sending>(deliveryStatus0)
+            assertEquals(0, deliveryStatus0.progress)
 
             val result50 = awaitItem()
             assertIs<ResultWithError.Success<Message, SendMessageRepositoryError>>(result50)
             assertEquals(messageToSend.text, (result50.data as TextMessage).text)
-            assertIs<DeliveryStatus.Sending>(result50.data.deliveryStatus)
-            assertEquals(50, result50.data.deliveryStatus.progress)
+            val deliveryStatus50 = result50.data.deliveryStatus
+            assertIs<DeliveryStatus.Sending>(deliveryStatus50)
+            assertEquals(50, deliveryStatus50.progress)
 
             val result100 = awaitItem()
             assertIs<ResultWithError.Success<Message, SendMessageRepositoryError>>(result100)
             assertEquals(messageToSend.text, (result100.data as TextMessage).text)
-            assertIs<DeliveryStatus.Sending>(result100.data.deliveryStatus)
-            assertEquals(100, result100.data.deliveryStatus.progress)
+            val deliveryStatus100 = result100.data.deliveryStatus
+            assertIs<DeliveryStatus.Sending>(deliveryStatus100)
+            assertEquals(100, deliveryStatus100.progress)
 
             val resultDelivered = awaitItem()
             assertIs<ResultWithError.Success<Message, SendMessageRepositoryError>>(resultDelivered)

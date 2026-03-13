@@ -248,18 +248,21 @@ class RemoteDataSourceFakeTest {
         remoteDataSource.sendMessage(testMessage).test {
             val sendingStart = awaitItem()
             assertIs<ResultWithError.Success<TextMessage, *>>(sendingStart)
-            assertIs<DeliveryStatus.Sending>(sendingStart.data.deliveryStatus)
-            assertEquals(0, sendingStart.data.deliveryStatus.progress)
+            val deliveryStatusStart = sendingStart.data.deliveryStatus
+            assertIs<DeliveryStatus.Sending>(deliveryStatusStart)
+            assertEquals(0, deliveryStatusStart.progress)
 
             val sendingMid = awaitItem()
             assertIs<ResultWithError.Success<TextMessage, *>>(sendingMid)
-            assertIs<DeliveryStatus.Sending>(sendingMid.data.deliveryStatus)
-            assertEquals(50, sendingMid.data.deliveryStatus.progress)
+            val deliveryStatusMid = sendingMid.data.deliveryStatus
+            assertIs<DeliveryStatus.Sending>(deliveryStatusMid)
+            assertEquals(50, deliveryStatusMid.progress)
 
             val sendingComplete = awaitItem()
             assertIs<ResultWithError.Success<TextMessage, *>>(sendingComplete)
-            assertIs<DeliveryStatus.Sending>(sendingComplete.data.deliveryStatus)
-            assertEquals(100, sendingComplete.data.deliveryStatus.progress)
+            val deliveryStatusComplete = sendingComplete.data.deliveryStatus
+            assertIs<DeliveryStatus.Sending>(deliveryStatusComplete)
+            assertEquals(100, deliveryStatusComplete.progress)
 
             val delivered = awaitItem()
             assertIs<ResultWithError.Success<TextMessage, *>>(delivered)

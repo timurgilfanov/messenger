@@ -128,8 +128,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(result.error.error)
+        val remoteDataSourceError0 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError0)
+        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(remoteDataSourceError0.error)
     }
 
     @Test
@@ -153,8 +154,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.ServerError>(result.error.error)
+        val remoteDataSourceError1 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError1)
+        assertIs<RemoteDataSourceErrorV2.ServerError>(remoteDataSourceError1.error)
     }
 
     @Test
@@ -178,8 +180,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.UnknownServiceError>(result.error.error)
+        val remoteDataSourceError2 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError2)
+        assertIs<RemoteDataSourceErrorV2.UnknownServiceError>(remoteDataSourceError2.error)
     }
 
     @Test
@@ -200,8 +203,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.Timeout>(result.error.error)
+        val remoteDataSourceError3 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError3)
+        assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.Timeout>(remoteDataSourceError3.error)
     }
 
     @Test
@@ -222,8 +226,11 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable>(result.error.error)
+        val remoteDataSourceError4 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError4)
+        assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable>(
+            remoteDataSourceError4.error,
+        )
     }
 
     @Test
@@ -244,8 +251,11 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable>(result.error.error)
+        val remoteDataSourceError5 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError5)
+        assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable>(
+            remoteDataSourceError5.error,
+        )
     }
 
     @Test
@@ -266,8 +276,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.ServerError>(result.error.error)
+        val remoteDataSourceError6 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError6)
+        assertIs<RemoteDataSourceErrorV2.ServerError>(remoteDataSourceError6.error)
     }
 
     // changeUiLanguage tests
@@ -308,8 +319,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(result.error.error)
+        val remoteDataSourceError7 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError7)
+        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(remoteDataSourceError7.error)
     }
 
     @Test
@@ -333,8 +345,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.ServerError>(result.error.error)
+        val remoteDataSourceError8 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError8)
+        assertIs<RemoteDataSourceErrorV2.ServerError>(remoteDataSourceError8.error)
     }
 
     @Test
@@ -397,8 +410,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(result.error.error)
+        val remoteDataSourceError9 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError9)
+        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(remoteDataSourceError9.error)
     }
 
     // syncSingleSetting tests
@@ -433,8 +447,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Success<SyncResult, *>>(result)
-        assertIs<SyncResult.Success>(result.data)
-        assertEquals(2, result.data.newVersion)
+        val syncSuccess = result.data
+        assertIs<SyncResult.Success>(syncSuccess)
+        assertEquals(2, syncSuccess.newVersion)
     }
 
     @Test
@@ -472,8 +487,8 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Success<SyncResult, *>>(result)
-        assertIs<SyncResult.Conflict>(result.data)
         val conflict = result.data
+        assertIs<SyncResult.Conflict>(conflict)
         assertEquals("German", conflict.serverValue)
         assertEquals(2, conflict.serverVersion)
         assertEquals(3, conflict.newVersion)
@@ -503,11 +518,13 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.UnknownServiceError>(result.error.error)
+        val remoteDataSourceError10 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError10)
+        val unknownServiceError = remoteDataSourceError10.error
+        assertIs<RemoteDataSourceErrorV2.UnknownServiceError>(unknownServiceError)
         assertEquals(
             "Missing sync result for key: ${SettingKey.UI_LANGUAGE.key}",
-            result.error.error.reason.value,
+            unknownServiceError.reason.value,
         )
     }
 
@@ -581,8 +598,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(result.error.error)
+        val remoteDataSourceError11 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError11)
+        assertIs<RemoteDataSourceErrorV2.RateLimitExceeded>(remoteDataSourceError11.error)
     }
 
     @Test
@@ -614,8 +632,9 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.Timeout>(result.error.error)
+        val remoteDataSourceError12 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError12)
+        assertIs<RemoteDataSourceErrorV2.ServiceUnavailable.Timeout>(remoteDataSourceError12.error)
     }
 
     // Unexpected exception test
@@ -638,7 +657,8 @@ class RemoteSettingsDataSourceImplTest {
 
         // Then
         assertIs<ResultWithError.Failure<*, RemoteSettingsDataSourceError>>(result)
-        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(result.error)
-        assertIs<RemoteDataSourceErrorV2.UnknownServiceError>(result.error.error)
+        val remoteDataSourceError13 = result.error
+        assertIs<RemoteSettingsDataSourceError.RemoteDataSource>(remoteDataSourceError13)
+        assertIs<RemoteDataSourceErrorV2.UnknownServiceError>(remoteDataSourceError13.error)
     }
 }

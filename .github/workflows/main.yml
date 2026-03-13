@@ -290,14 +290,14 @@ jobs:
 
       - name: Generate Unit Coverage Report
         run: |
-          ./gradlew koverXmlReportMockDebug :core:domain:koverXmlReport
+          ./gradlew koverXmlReportMockDebug koverXmlReportAllJvmModules
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildFlavor=mock -PbuildType=debug
 
       - name: Upload Unit Coverage to Codecov (Unit)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/unit-report.xml,core/domain/build/reports/kover/report.xml
+          files: app/build/reports/kover/unit-report.xml,**/build/reports/kover/report.xml
           flags: unit
           fail_ci_if_error: true
 
@@ -305,28 +305,28 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/unit-report.xml,core/domain/build/reports/kover/report.xml
+          files: app/build/reports/kover/unit-report.xml,**/build/reports/kover/report.xml
           flags: local
           fail_ci_if_error: true
 
       - name: Generate Component Coverage Report
         run: |
-          ./gradlew koverXmlReportMockDebug
+          ./gradlew koverXmlReportMockDebug koverXmlReportAllJvmModules
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildFlavor=mock -PbuildType=debug
 
       - name: Upload Component Coverage to Codecov (Component)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/component-report.xml
+          files: app/build/reports/kover/component-report.xml,**/build/reports/kover/report.xml
           flags: component
           fail_ci_if_error: true
-          
+
       - name: Upload Component Coverage to Codecov (Robolectric)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/component-report.xml
+          files: app/build/reports/kover/component-report.xml,**/build/reports/kover/report.xml
           flags: robolectric
           fail_ci_if_error: true
 

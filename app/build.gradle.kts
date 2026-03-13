@@ -438,6 +438,21 @@ fun androidLibraryTestTasks(variant: String) = rootProject.subprojects
     .filter { it.plugins.hasPlugin("com.android.library") }
     .map { "${it.path}:test${variant.replaceFirstChar { c -> c.uppercase() }}UnitTest" }
 
+tasks.register("koverXmlReportAllJvmModules") {
+    group = "verification"
+    description = "Generate Kover XML coverage reports for all pure-JVM modules"
+    dependsOn(
+        rootProject.subprojects
+            .filter { sub ->
+                sub.plugins.hasPlugin("org.jetbrains.kotlin.jvm")
+                    && !sub.plugins.hasPlugin("com.android.application")
+                    && !sub.plugins.hasPlugin("com.android.library")
+                    && sub.path != ":build-logic"
+            }
+            .map { "${it.path}:koverXmlReport" },
+    )
+}
+
 tasks.register("testAllMockDebugUnitTests") {
     group = "verification"
     description = "Run mockDebug unit tests across all modules"

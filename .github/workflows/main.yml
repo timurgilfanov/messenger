@@ -78,7 +78,7 @@ jobs:
           exit 1
 
       - name: Run Architecture Tests
-        run: ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
+        run: ./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
 
       - name: Upload Architecture Test Report
         uses: actions/upload-artifact@v4
@@ -179,7 +179,7 @@ jobs:
           exit 1
 
       - name: Run Architecture Tests
-        run: ./gradlew testProductionReleaseUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
+        run: ./gradlew testAllProductionReleaseUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Architecture
 
       - name: Upload Architecture Test Report
         uses: actions/upload-artifact@v4
@@ -244,7 +244,7 @@ jobs:
         id: run_unit_tests
         continue-on-error: true
         run: |
-          ./gradlew testMockDebugUnitTest :core:domain:test -PtestCategory=timur.gilfanov.messenger.annotations.Unit -Pcoverage | tee unit-test.log
+          ./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Unit -Pcoverage | tee unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
@@ -265,7 +265,7 @@ jobs:
         id: run_component_tests
         continue-on-error: true
         run: |
-          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Component -Pcoverage | tee component-test.log
+          ./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Component -Pcoverage | tee component-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT

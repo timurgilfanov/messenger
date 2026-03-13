@@ -425,6 +425,37 @@ tasks.register("checkScreenshotSize") {
     }
 }
 
+fun jvmModuleTestTasks() = rootProject.subprojects
+    .filter { sub ->
+        sub.plugins.hasPlugin("org.jetbrains.kotlin.jvm") &&
+            !sub.plugins.hasPlugin("com.android.application") &&
+            !sub.plugins.hasPlugin("com.android.library") &&
+            sub.path != ":build-logic"
+    }
+    .map { "${it.path}:test" }
+
+fun androidLibraryTestTasks(variant: String) = rootProject.subprojects
+    .filter { it.plugins.hasPlugin("com.android.library") }
+    .map { "${it.path}:test${variant.replaceFirstChar { c -> c.uppercase() }}UnitTest" }
+
+tasks.register("testAllMockDebugUnitTests") {
+    group = "verification"
+    description = "Run mockDebug unit tests across all modules"
+    dependsOn(
+        jvmModuleTestTasks() + androidLibraryTestTasks("mockDebug") +
+            listOf("testMockDebugUnitTest"),
+    )
+}
+
+tasks.register("testAllProductionReleaseUnitTests") {
+    group = "verification"
+    description = "Run productionRelease unit tests across all modules"
+    dependsOn(
+        jvmModuleTestTasks() + androidLibraryTestTasks("productionRelease") +
+            listOf("testProductionReleaseUnitTest"),
+    )
+}
+
 tasks.register("preCommit") {
     group = "verification"
     description = "Run all pre-commit checks locally"
@@ -488,14 +519,7 @@ tasks.register("preCommit") {
                 "Component" to "🔩",
             )
 
-            val jvmTestTasks = rootProject.subprojects
-                .filter { sub ->
-                    sub.plugins.hasPlugin("org.jetbrains.kotlin.jvm") &&
-                        !sub.plugins.hasPlugin("com.android.application") &&
-                        !sub.plugins.hasPlugin("com.android.library") &&
-                        sub.path != ":build-logic"
-                }
-                .map { "${it.path}:test" }
+            val jvmTestTasks = jvmModuleTestTasks()
 
             categories.forEach { (category, emoji) ->
                 println("$emoji Running $category tests with coverage...")
@@ -524,10 +548,13 @@ tasks.register("preCommit") {
                 }
 
                 val androidProcess = ProcessBuilder(
-                    "./gradlew",
-                    "testMockDebugUnitTest",
-                    "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
-                    "-Pcoverage",
+                    listOf("./gradlew") +
+                        androidLibraryTestTasks("mockDebug") +
+                        listOf(
+                            "testMockDebugUnitTest",
+                            "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
+                            "-Pcoverage",
+                        ),
                 )
                     .directory(project.rootDir)
                     .redirectErrorStream(true)

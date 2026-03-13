@@ -5,10 +5,10 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(libs.versions.javaVersion.get().toInt())
 }
 
-ktlint { version.set("1.7.1") }
+ktlint { version.set(libs.versions.ktlintTool.get()) }
 
 detekt {
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))

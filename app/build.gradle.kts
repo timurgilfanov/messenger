@@ -19,12 +19,12 @@ roborazzi {
 
 android {
     namespace = "timur.gilfanov.messenger"
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "timur.gilfanov.messenger"
-        minSdk = 24
-        targetSdk = 35
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
@@ -65,7 +65,7 @@ android {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
+            languageVersion = JavaLanguageVersion.of(libs.versions.javaVersion.get())
         }
     }
 
@@ -123,7 +123,7 @@ composeCompiler {
 }
 
 ktlint {
-    version.set("1.7.1") // change default version of ktlint in ktlint gradle plugin
+    version.set(libs.versions.ktlintTool.get())
 }
 
 detekt {

@@ -52,7 +52,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Lint
-        run: ./gradlew lintMockDebug &> lint.log
+        run: ./gradlew lintAllMockDebug &> lint.log
         
       - name: Run Detekt
         id: detekt
@@ -153,7 +153,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Lint
-        run: ./gradlew lintProductionRelease &> lint.log
+        run: ./gradlew lintAllProductionRelease &> lint.log
         
       - name: Run Detekt
         id: detekt

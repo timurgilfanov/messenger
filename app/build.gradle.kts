@@ -456,13 +456,25 @@ tasks.register("preCommit") {
     }
 
     if (hasCodeChanges.get()) {
+        val moduleKtlint = rootProject.subprojects
+            .filter {
+                it.path != project.path &&
+                    it.plugins.hasPlugin("org.jlleitschuh.gradle.ktlint")
+            }
+            .map { "${it.path}:ktlintFormat" }
+        val moduleDetekt = rootProject.subprojects
+            .filter {
+                it.path != project.path && it.plugins.hasPlugin("io.gitlab.arturbosch.detekt")
+            }
+            .map { "${it.path}:detekt" }
+        val moduleAndroidLint = rootProject.subprojects
+            .filter { it.plugins.hasPlugin("com.android.library") }
+            .map { "${it.path}:lintMockDebug" }
         dependsOn(
-            "ktlintFormat",
-            ":core:domain:ktlintFormat",
-            "lintMockDebug",
-            "detekt",
-            ":core:domain:detekt",
-            "checkScreenshotSize",
+            listOf("ktlintFormat", "lintMockDebug", "detekt", "checkScreenshotSize") +
+                moduleKtlint +
+                moduleDetekt +
+                moduleAndroidLint,
         )
 
         doLast {
@@ -476,38 +488,42 @@ tasks.register("preCommit") {
                 "Component" to "🔩",
             )
 
+            val jvmTestTasks = rootProject.subprojects
+                .filter { sub ->
+                    sub.plugins.hasPlugin("org.jetbrains.kotlin.jvm") &&
+                        !sub.plugins.hasPlugin("com.android.application") &&
+                        !sub.plugins.hasPlugin("com.android.library") &&
+                        sub.path != ":build-logic"
+                }
+                .map { "${it.path}:test" }
+
             categories.forEach { (category, emoji) ->
                 println("$emoji Running $category tests with coverage...")
 
-                if (category == "Unit") {
-                    val domainProcess = ProcessBuilder(
-                        "./gradlew",
-                        ":core:domain:test",
-                        "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
+                if (jvmTestTasks.isNotEmpty()) {
+                    val jvmProcess = ProcessBuilder(
+                        listOf("./gradlew") + jvmTestTasks +
+                            listOf("-PtestCategory=timur.gilfanov.messenger.annotations.$category"),
                     )
                         .directory(project.rootDir)
                         .redirectErrorStream(true)
                         .start()
 
-                    val domainOutput = domainProcess.inputStream.bufferedReader().use {
-                        it.readText()
-                    }
-                    val domainExitCode = domainProcess.waitFor()
+                    val jvmOutput = jvmProcess.inputStream.bufferedReader().use { it.readText() }
+                    val jvmExitCode = jvmProcess.waitFor()
 
-                    if (domainExitCode != 0) {
+                    if (jvmExitCode != 0) {
                         val errorMessage = buildString {
-                            appendLine(
-                                ":core:domain $category tests failed with exit code $domainExitCode",
-                            )
+                            appendLine("JVM $category tests failed with exit code $jvmExitCode")
                             appendLine()
                             appendLine("Error output:")
-                            appendLine(domainOutput.takeLast(2000))
+                            appendLine(jvmOutput.takeLast(2000))
                         }
                         throw GradleException(errorMessage)
                     }
                 }
 
-                val process = ProcessBuilder(
+                val androidProcess = ProcessBuilder(
                     "./gradlew",
                     "testMockDebugUnitTest",
                     "-PtestCategory=timur.gilfanov.messenger.annotations.$category",
@@ -517,15 +533,17 @@ tasks.register("preCommit") {
                     .redirectErrorStream(true)
                     .start()
 
-                val output = process.inputStream.bufferedReader().use { it.readText() }
-                val exitCode = process.waitFor()
+                val androidOutput = androidProcess.inputStream.bufferedReader().use {
+                    it.readText()
+                }
+                val androidExitCode = androidProcess.waitFor()
 
-                if (exitCode != 0) {
+                if (androidExitCode != 0) {
                     val errorMessage = buildString {
-                        appendLine("$category tests failed with exit code $exitCode")
+                        appendLine("$category tests failed with exit code $androidExitCode")
                         appendLine()
                         appendLine("Error output:")
-                        appendLine(output.takeLast(2000))
+                        appendLine(androidOutput.takeLast(2000))
                     }
                     throw GradleException(errorMessage)
                 }

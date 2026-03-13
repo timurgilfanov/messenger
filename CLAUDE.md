@@ -110,3 +110,5 @@ app/src/main/java/timur/gilfanov/messenger/
 └── navigation/          # Navigation destinations
 ```
 
+### Self-Learning
+When you discover important project knowledge during implementation that is not already captured in this file or linked docs — such as new architectural patterns, non-obvious conventions, critical gotchas, or structural changes — propose an update to this CLAUDE.md or the relevant doc file. Present the proposed change to the user for approval before applying it.

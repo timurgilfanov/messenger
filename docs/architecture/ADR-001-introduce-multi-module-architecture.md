@@ -25,3 +25,6 @@ Negative:
 
 ## Alternatives Considered
 1. Keep single-module architecture – rejected because it does not scale well with parallel feature development and makes ownership boundaries unclear as the codebase grows.
+
+## Related decisions
+- [ADR-002](ADR-002-module-creation-strategy.md): Module creation strategy

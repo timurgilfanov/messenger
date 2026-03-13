@@ -6,6 +6,7 @@ on:
     tags: [ "v*" ]
     paths:
       - 'app/**'
+      - 'core/**'
       - 'build.gradle.kts'
       - 'gradle/**'
       - '.github/workflows/main.yml'
@@ -243,7 +244,7 @@ jobs:
         id: run_unit_tests
         continue-on-error: true
         run: |
-          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Unit -Pcoverage | tee unit-test.log
+          ./gradlew testMockDebugUnitTest :core:domain:test -PtestCategory=timur.gilfanov.messenger.annotations.Unit -Pcoverage | tee unit-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
@@ -289,22 +290,22 @@ jobs:
 
       - name: Generate Unit Coverage Report
         run: |
-          ./gradlew koverXmlReportMockDebug
+          ./gradlew koverXmlReportMockDebug :core:domain:koverXmlReport
           ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildFlavor=mock -PbuildType=debug
 
       - name: Upload Unit Coverage to Codecov (Unit)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/unit-report.xml
+          files: app/build/reports/kover/unit-report.xml,core/domain/build/reports/kover/report.xml
           flags: unit
           fail_ci_if_error: true
-          
+
       - name: Upload Unit Coverage to Codecov (Local)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/unit-report.xml
+          files: app/build/reports/kover/unit-report.xml,core/domain/build/reports/kover/report.xml
           flags: local
           fail_ci_if_error: true
 

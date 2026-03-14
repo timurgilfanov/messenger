@@ -1,4 +1,4 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
   - name: Issue Guidelines
     url: https://github.com/timurgilfanov/messenger/blob/main/docs/Issue-Guidelines.md

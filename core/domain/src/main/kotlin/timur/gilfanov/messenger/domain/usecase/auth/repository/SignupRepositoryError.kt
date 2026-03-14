@@ -15,8 +15,8 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
  * - [RemoteOperationFailed] - Remote operation failed
  */
 sealed interface SignupRepositoryError {
-    data object InvalidEmail : SignupRepositoryError, EmailValidationError
-    data object InvalidName : SignupRepositoryError, ProfileNameValidationError
+    data class InvalidEmail(val reason: EmailValidationError) : SignupRepositoryError
+    data class InvalidName(val reason: ProfileNameValidationError) : SignupRepositoryError
     data class LocalOperationFailed(val error: LocalStorageError) : SignupRepositoryError
     data class RemoteOperationFailed(val error: RemoteError) : SignupRepositoryError
 }

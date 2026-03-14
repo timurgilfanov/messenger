@@ -9,6 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Use cases with complex preconditions, non-standard return types (Flow), or side effects
 - Update existing KDocs when modifying documented code
 
+See `docs/Specification.md` for project-level business requirements, UX requirements, sequrity requirements, and non-functional requirements.
+
 ## Development Commands
 
 Full reference: `docs/development-commands.md`

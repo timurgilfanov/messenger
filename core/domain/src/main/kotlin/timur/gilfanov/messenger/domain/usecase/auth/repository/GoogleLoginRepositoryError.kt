@@ -9,6 +9,7 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
  * ## Logical Errors
  * - [InvalidToken] - The provided Google ID token is malformed or expired
  * - [AccountNotFound] - No account is associated with the Google identity
+ * - [AccountSuspended] - The account has been suspended
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed
@@ -17,6 +18,7 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 sealed interface GoogleLoginRepositoryError {
     data object InvalidToken : GoogleLoginRepositoryError
     data object AccountNotFound : GoogleLoginRepositoryError
+    data object AccountSuspended : GoogleLoginRepositoryError
     data class LocalOperationFailed(val error: LocalStorageError) : GoogleLoginRepositoryError
     data class RemoteOperationFailed(val error: RemoteError) : GoogleLoginRepositoryError
 }

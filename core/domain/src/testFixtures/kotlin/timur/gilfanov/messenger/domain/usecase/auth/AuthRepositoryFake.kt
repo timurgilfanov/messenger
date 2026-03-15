@@ -151,23 +151,20 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
 
     override suspend fun refreshToken(): ResultWithError<AuthTokens, RefreshRepositoryError> {
         val currentState = authStateFlow.value
+        if (currentState !is Authenticated) {
+            // When unauthenticated, refresh is not allowed. Do not consume scripted outcomes.
+            return ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
+        }
+
         val result = if (refreshQueue.isNotEmpty()) {
             refreshQueue.removeFirst()
         } else {
-            defaultRefreshTokenResult ?: run {
-                if (currentState is Authenticated) {
-                    ResultWithError.Success(nextTokens("refresh"))
-                } else {
-                    ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
-                }
-            }
+            defaultRefreshTokenResult ?: ResultWithError.Success(nextTokens("refresh"))
         }
 
         if (result is ResultWithError.Success) {
-            if (currentState is Authenticated) {
-                authStateFlow.value =
-                    currentState.copy(session = currentState.session.copy(tokens = result.data))
-            }
+            authStateFlow.value =
+                currentState.copy(session = currentState.session.copy(tokens = result.data))
         }
         return result
     }

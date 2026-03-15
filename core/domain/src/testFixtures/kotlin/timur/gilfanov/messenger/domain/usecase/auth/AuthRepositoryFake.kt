@@ -18,6 +18,7 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryE
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 
+@Suppress("TooManyFunctions") // it's ok for the Fake with enqueue results pattern
 class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRepository {
 
     private val authStateFlow = MutableStateFlow(initialAuthState)

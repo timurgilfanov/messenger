@@ -3,8 +3,6 @@ Closes #<issue-number>
 ## Summary
 Briefly describe what this PR does and why it is needed.
 
-## Context
-
 ## Changes
 - 
 
@@ -19,6 +17,9 @@ Describe how the changes were tested.
 
 ## Screenshots / Demo
 Add screenshots or recordings if this PR affects UI.
+
+## Acceptance criteria
+Copy them from the issue.
 
 ## Breaking Changes
 Describe any breaking changes introduced by this PR, if any.

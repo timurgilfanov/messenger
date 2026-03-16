@@ -62,6 +62,10 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(testFixtures(project(":core:domain")))
     testFixturesImplementation(project(":core:domain"))
+    // Compose runtime is required because the kotlin.compose plugin applies the Compose compiler
+    // to all source sets, including testFixtures which contains no Compose code.
+    testFixturesImplementation(platform(libs.androidx.compose.bom))
+    testFixturesImplementation("androidx.compose.runtime:runtime")
     testImplementation(project(":core:test"))
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)

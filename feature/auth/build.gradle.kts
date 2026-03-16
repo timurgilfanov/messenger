@@ -63,6 +63,11 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
+    // ========== Credentials ==========
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
     implementation(project(":core:ui"))

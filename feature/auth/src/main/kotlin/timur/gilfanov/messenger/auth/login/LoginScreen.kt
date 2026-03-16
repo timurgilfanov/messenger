@@ -14,20 +14,30 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
@@ -37,7 +47,6 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 fun LoginScreen(
     onNavigateToChatList: () -> Unit,
     onNavigateToSignup: () -> Unit,
-    onGoogleSignInClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
@@ -45,6 +54,8 @@ fun LoginScreen(
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val currentOnNavigateToChatList by rememberUpdatedState(onNavigateToChatList)
     val currentOnNavigateToSignup by rememberUpdatedState(onNavigateToSignup)
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -57,12 +68,37 @@ fun LoginScreen(
         }
     }
 
+    val handleGoogleSignIn: () -> Unit = {
+        scope.launch {
+            val credentialManager = CredentialManager.create(context)
+            val request = GetCredentialRequest(
+                listOf(
+                    GetGoogleIdOption.Builder()
+                        .setFilterByAuthorizedAccounts(false)
+                        .setServerClientId(context.getString(R.string.google_server_client_id))
+                        .build(),
+                ),
+            )
+            try {
+                val response = credentialManager.getCredential(context, request)
+                val credential = response.credential
+                if (credential is GoogleIdTokenCredential) {
+                    viewModel.submitGoogleSignIn(credential.idToken)
+                }
+            } catch (_: NoCredentialException) {
+            } catch (_: GetCredentialCancellationException) {
+            } catch (_: GetCredentialException) {
+                viewModel.onGoogleSignInFailed()
+            }
+        }
+    }
+
     LoginScreenContent(
         state = state,
         onEmailChange = viewModel::updateEmail,
         onPasswordChange = viewModel::updatePassword,
         onSubmitLogin = viewModel::submitLogin,
-        onGoogleSignInClick = onGoogleSignInClick,
+        onGoogleSignInClick = handleGoogleSignIn,
         onNavigateToSignup = { currentOnNavigateToSignup() },
         modifier = modifier,
     )
@@ -207,6 +243,7 @@ private fun LoginGeneralError.toDisplayString(): String = stringResource(
         LoginGeneralError.NetworkUnavailable -> R.string.login_error_network_unavailable
         LoginGeneralError.ServiceUnavailable -> R.string.login_error_service_unavailable
         LoginGeneralError.Unknown -> R.string.login_error_unknown
+        LoginGeneralError.GoogleSignInFailed -> R.string.login_error_google_sign_in_failed
     },
 )
 

@@ -22,4 +22,5 @@ sealed interface LoginGeneralError {
     data object NetworkUnavailable : LoginGeneralError
     data object ServiceUnavailable : LoginGeneralError
     data object Unknown : LoginGeneralError
+    data object GoogleSignInFailed : LoginGeneralError
 }

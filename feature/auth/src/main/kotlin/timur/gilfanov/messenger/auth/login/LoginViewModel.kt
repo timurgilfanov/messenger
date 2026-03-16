@@ -61,6 +61,10 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    fun onGoogleSignInFailed() {
+        _state.update { it.copy(generalError = LoginGeneralError.GoogleSignInFailed) }
+    }
+
     fun submitGoogleSignIn(idToken: String) {
         if (_state.value.isLoading) return
         viewModelScope.launch {

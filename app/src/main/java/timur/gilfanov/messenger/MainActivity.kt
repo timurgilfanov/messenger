@@ -119,7 +119,6 @@ fun MessengerApp() {
                         backStack.add(Main)
                     },
                     onNavigateToSignup = { backStack.add(Signup) },
-                    onGoogleSignInClick = { /* CredentialManager integration pending */ },
                 )
             }
             entry<Signup> {

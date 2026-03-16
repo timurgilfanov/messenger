@@ -19,6 +19,8 @@
     <string name="login_error_password_must_contain_numbers">Passwort muss mindestens %d Zahl(en) enthalten</string>
     <string name="login_error_password_must_contain_alphabet">Passwort muss mindestens %d Buchstaben enthalten</string>
 
+    <string name="google_server_client_id" translatable="false">TODO: replace with Web OAuth client ID</string>
+
     <!-- Login general errors -->
     <string name="login_error_invalid_credentials">Ungültige E-Mail oder falsches Passwort</string>
     <string name="login_error_email_not_verified">E-Mail nicht verifiziert. Bitte überprüfen Sie Ihren Posteingang.</string>
@@ -28,4 +30,5 @@
     <string name="login_error_network_unavailable">Keine Internetverbindung</string>
     <string name="login_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
     <string name="login_error_unknown">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+    <string name="login_error_google_sign_in_failed">Google-Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
 </resources>

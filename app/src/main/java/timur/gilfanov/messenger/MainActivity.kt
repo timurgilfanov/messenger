@@ -11,6 +11,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
+import timur.gilfanov.messenger.auth.login.LoginScreen
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
 import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
 import timur.gilfanov.messenger.navigation.Chat
@@ -19,13 +20,13 @@ import timur.gilfanov.messenger.navigation.Language
 import timur.gilfanov.messenger.navigation.Login
 import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.navigation.ProfileEdit
+import timur.gilfanov.messenger.navigation.Signup
 import timur.gilfanov.messenger.ui.activity.MainActivityViewModel
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
 import timur.gilfanov.messenger.ui.screen.main.MainScreen
 import timur.gilfanov.messenger.ui.screen.settings.LanguageScreen
-import timur.gilfanov.messenger.ui.screen.settings.LoginScreen
 import timur.gilfanov.messenger.ui.screen.settings.ProfileEditScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
@@ -112,7 +113,17 @@ fun MessengerApp() {
                 )
             }
             entry<Login> {
-                LoginScreen()
+                LoginScreen(
+                    onNavigateToChatList = {
+                        backStack.clear()
+                        backStack.add(Main)
+                    },
+                    onNavigateToSignup = { backStack.add(Signup) },
+                    onGoogleSignInClick = { /* CredentialManager integration pending */ },
+                )
+            }
+            entry<Signup> {
+                // SignupScreen pending implementation
             }
         },
     )

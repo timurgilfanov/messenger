@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kover)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -27,6 +29,10 @@ android {
         }
     }
 
+    testFixtures {
+        enable = true
+    }
+
     buildFeatures {
         compose = true
     }
@@ -46,11 +52,35 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
+
+    // Core
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    // ========== Dependency Injection ==========
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
 
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
     implementation(project(":core:ui"))
+    implementation(testFixtures(project(":core:domain")))
+    // Compose runtime is required because the kotlin.compose plugin applies the Compose compiler
+    // to all source sets, including testFixtures which contains no Compose code.
+    testFixturesImplementation(platform(libs.androidx.compose.bom))
+    testFixturesImplementation(libs.androidx.compose.runtime)
+    // lifecycle-viewmodel is not pulled in by lifecycle-runtime, so ViewModel supertype
+    // is missing from the testFixtures compile classpath without this explicit dependency.
+    testFixturesImplementation(libs.androidx.lifecycle.viewmodel)
+    testFixturesImplementation(project(":core:domain"))
+    testFixturesImplementation(testFixtures(project(":core:domain")))
     testImplementation(project(":core:test"))
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
     testImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(testFixtures(project(":core:domain")))
 

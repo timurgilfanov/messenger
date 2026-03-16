@@ -1,0 +1,31 @@
+<resources>
+    <!-- Login Screen -->
+    <string name="login_email_label">E-Mail</string>
+    <string name="login_password_label">Passwort</string>
+    <string name="login_sign_in_button">Anmelden</string>
+    <string name="login_sign_in_with_google_button">Mit Google anmelden</string>
+    <string name="login_create_account_button">Konto erstellen</string>
+
+    <!-- Login validation errors -->
+    <string name="login_error_blank_email">E-Mail darf nicht leer sein</string>
+    <string name="login_error_invalid_email_format">Ungültiges E-Mail-Format</string>
+    <string name="login_error_no_at_in_email">E-Mail muss @ enthalten</string>
+    <string name="login_error_email_too_long">E-Mail darf höchstens %d Zeichen lang sein</string>
+    <string name="login_error_no_domain_at_email">E-Mail muss eine Domain enthalten</string>
+    <string name="login_error_forbidden_character_in_email">Zeichen \'%s\' ist in der E-Mail nicht erlaubt</string>
+    <string name="login_error_password_too_short">Passwort muss mindestens %d Zeichen lang sein</string>
+    <string name="login_error_password_too_long">Passwort darf höchstens %d Zeichen lang sein</string>
+    <string name="login_error_forbidden_character_in_password">Zeichen \'%s\' ist im Passwort nicht erlaubt</string>
+    <string name="login_error_password_must_contain_numbers">Passwort muss mindestens %d Zahl(en) enthalten</string>
+    <string name="login_error_password_must_contain_alphabet">Passwort muss mindestens %d Buchstaben enthalten</string>
+
+    <!-- Login general errors -->
+    <string name="login_error_invalid_credentials">Ungültige E-Mail oder falsches Passwort</string>
+    <string name="login_error_email_not_verified">E-Mail nicht verifiziert. Bitte überprüfen Sie Ihren Posteingang.</string>
+    <string name="login_error_account_suspended">Ihr Konto wurde gesperrt</string>
+    <string name="login_error_account_not_found">Konto nicht gefunden</string>
+    <string name="login_error_invalid_token">Sitzung abgelaufen. Bitte melden Sie sich erneut an.</string>
+    <string name="login_error_network_unavailable">Keine Internetverbindung</string>
+    <string name="login_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
+    <string name="login_error_unknown">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+</resources>

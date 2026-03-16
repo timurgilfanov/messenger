@@ -51,6 +51,7 @@ Full strategy in `docs/Testing Strategy.md`.
 CI/CD pipeline details in `docs/ci-cd-pipeline.md`.
 - **Fakes over Mocks**: Use test doubles other than mock or spy by default. We test behaviour not implementation.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
+- **Turbine `cancelAndIgnoreRemainingEvents()`**: Only use it when there are genuinely unconsumed events to discard (e.g. after `advanceUntilIdle()` on a `StateFlow` that emitted further updates). Do not use it as a default `StateFlow` teardown — Turbine cancels the flow and asserts no unconsumed events automatically when the `test {}` block ends.
 
 ### Self-Learning
 When you discover important project knowledge during implementation that is not already captured in this file or linked docs — such as new architectural patterns, non-obvious conventions, critical gotchas, or structural changes — propose an update to this CLAUDE.md or the relevant doc file. Present the proposed change to the user for approval before applying it.

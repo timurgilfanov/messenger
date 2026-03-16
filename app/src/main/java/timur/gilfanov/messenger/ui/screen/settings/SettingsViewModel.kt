@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCase
+import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.onSuccess
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsError
@@ -28,6 +30,7 @@ private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val observeSettings: ObserveSettingsUseCase,
+    private val logoutUseCase: LogoutUseCase,
     private val logger: Logger,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -40,6 +43,18 @@ class SettingsViewModel @Inject constructor(
 
     private val _effects = Channel<SettingsSideEffects>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
+
+    fun logout() {
+        viewModelScope.launch {
+            logoutUseCase().fold(
+                onSuccess = { _effects.send(SettingsSideEffects.LoggedOut) },
+                onFailure = { error ->
+                    logger.i(TAG, "Logout failed: $error")
+                    _effects.send(SettingsSideEffects.LogoutFailed(error))
+                },
+            )
+        }
+    }
 
     init {
         viewModelScope.launch {
@@ -62,9 +77,11 @@ class SettingsViewModel @Inject constructor(
                                         )
                                         _effects.send(SettingsSideEffects.Unauthorized)
                                     }
+
                                     ObserveSettingsError.SettingsResetToDefaults -> {
                                         logger.i(TAG, "Settings were reset to defaults")
                                     }
+
                                     is ObserveSettingsError.LocalOperationFailed -> {
                                         logger.i(
                                             TAG,

@@ -50,6 +50,7 @@ Package organization in `docs/package-organization.md`.
 Full strategy in `docs/Testing Strategy.md`.
 CI/CD pipeline details in `docs/ci-cd-pipeline.md`.
 - **Fakes over Mocks**: Use test doubles other than mock or spy by default. We test behaviour not implementation.
+- **Test fixtures**: For both JVM and Android library modules, use native Gradle `testFixtures { enable = true }` to share test doubles across modules. Requires `android.experimental.enableTestFixturesKotlinSupport=true` in `gradle.properties` for Android libraries. Consume with `testImplementation(testFixtures(project(":feature:X")))`.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
 
 ### Self-Learning

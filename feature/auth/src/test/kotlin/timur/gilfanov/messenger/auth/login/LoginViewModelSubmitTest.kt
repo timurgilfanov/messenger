@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.auth.login
 import app.cash.turbine.test
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -157,7 +158,7 @@ class LoginViewModelSubmitTest {
             viewModel.submitLogin()
             val loadingState = awaitItem()
             assertIs<Boolean>(loadingState.isLoading)
-            assert(loadingState.isLoading)
+            assertTrue(loadingState.isLoading)
             advanceUntilIdle()
             cancelAndIgnoreRemainingEvents()
         }

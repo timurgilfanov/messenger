@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
@@ -168,6 +169,7 @@ private fun PasswordField(state: LoginUiState, onPasswordChange: (String) -> Uni
         value = state.password,
         onValueChange = onPasswordChange,
         label = { Text(stringResource(R.string.login_password_label)) },
+        visualTransformation = PasswordVisualTransformation(),
         isError = state.passwordError != null,
         supportingText = state.passwordError?.let { error ->
             {

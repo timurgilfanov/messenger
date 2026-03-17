@@ -44,11 +44,19 @@ class SettingsViewModel @Inject constructor(
     private val _effects = Channel<SettingsSideEffects>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
+    // Suppresses the Unauthorized side effect emitted by the settings observer when logout
+    // transitions auth state to Unauthenticated, preventing a double navigation to login.
+    // No synchronisation needed: Dispatchers.Main is single-threaded, so the flag is always set
+    // before logout() suspends and the settings observer gets a chance to run.
+    private var isLoggingOut = false
+
     fun logout() {
         viewModelScope.launch {
+            isLoggingOut = true
             logoutUseCase().fold(
                 onSuccess = { _effects.send(SettingsSideEffects.LoggedOut) },
                 onFailure = { error ->
+                    isLoggingOut = false
                     logger.i(TAG, "Logout failed: $error")
                     _effects.send(SettingsSideEffects.LogoutFailed(error))
                 },
@@ -71,11 +79,13 @@ class SettingsViewModel @Inject constructor(
                             .onFailure { error ->
                                 when (error) {
                                     ObserveSettingsError.Unauthorized -> {
-                                        logger.i(
-                                            TAG,
-                                            "Settings observation failed with Unauthorized error",
-                                        )
-                                        _effects.send(SettingsSideEffects.Unauthorized)
+                                        if (!isLoggingOut) {
+                                            logger.i(
+                                                TAG,
+                                                "Settings observation failed with Unauthorized error",
+                                            )
+                                            _effects.send(SettingsSideEffects.Unauthorized)
+                                        }
                                     }
 
                                     ObserveSettingsError.SettingsResetToDefaults -> {

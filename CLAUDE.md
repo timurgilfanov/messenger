@@ -31,6 +31,9 @@ This is an Android messenger application built with Kotlin and Jetpack Compose, 
 
 Package organization in `docs/package-organization.md`.
 
+### Architecture Records and Decisions
+Architecture Records (AR) and Architecture Decision Records (ADR) are kept in `docs/architecture/` and must be followed when implementing or reviewing code. Always check this directory for relevant records before making architectural decisions.
+
 ### Key Architectural Patterns
 - **Result Pattern**: `ResultWithError<T, E>` wrapper for handling success/failure states
 - **Use Case Pattern**: Each business operation is encapsulated in a dedicated use case class

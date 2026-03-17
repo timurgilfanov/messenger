@@ -16,6 +16,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.data.source.local.GetSettingError
 import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.GetUnsyncedSettingsError
@@ -24,7 +25,6 @@ import timur.gilfanov.messenger.data.source.local.TransformSettingError
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.local.UpsertSettingError
 import timur.gilfanov.messenger.data.source.remote.ChangeUiLanguageRemoteDataSourceError
-import timur.gilfanov.messenger.data.source.remote.RemoteDataSourceErrorV2
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettings
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
@@ -89,7 +89,7 @@ class SettingsRepositoryImplTest {
             setGetResponse(
                 ResultWithError.Failure(
                     RemoteSettingsDataSourceError.RemoteDataSource(
-                        RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
+                        RemoteDataSourceError.ServiceUnavailable.NetworkNotAvailable,
                     ),
                 ),
             )
@@ -292,7 +292,7 @@ class SettingsRepositoryImplTest {
         stub.setSyncSingleResponse(
             ResultWithError.Failure(
                 RemoteSettingsDataSourceError.RemoteDataSource(
-                    RemoteDataSourceErrorV2.ServerError,
+                    RemoteDataSourceError.ServerError,
                 ),
             ),
         )
@@ -374,7 +374,7 @@ class SettingsRepositoryImplTest {
         stub.setSyncSingleResponse(
             ResultWithError.Failure(
                 RemoteSettingsDataSourceError.RemoteDataSource(
-                    RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
+                    RemoteDataSourceError.ServiceUnavailable.NetworkNotAvailable,
                 ),
             ),
         )
@@ -448,7 +448,7 @@ class SettingsRepositoryImplTest {
         stub.setSyncBatchResponse(
             ResultWithError.Failure(
                 RemoteSettingsDataSourceError.RemoteDataSource(
-                    RemoteDataSourceErrorV2.ServerError,
+                    RemoteDataSourceError.ServerError,
                 ),
             ),
         )
@@ -485,7 +485,7 @@ class SettingsRepositoryImplTest {
         stub.setSyncBatchResponse(
             ResultWithError.Failure(
                 RemoteSettingsDataSourceError.RemoteDataSource(
-                    RemoteDataSourceErrorV2.ServerError,
+                    RemoteDataSourceError.ServerError,
                 ),
             ),
         )
@@ -947,7 +947,7 @@ class SettingsRepositoryImplTest {
         stub.setGetResponse(
             ResultWithError.Failure(
                 RemoteSettingsDataSourceError.RemoteDataSource(
-                    RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
+                    RemoteDataSourceError.ServiceUnavailable.NetworkNotAvailable,
                 ),
             ),
         )
@@ -1299,7 +1299,7 @@ class SettingsRepositoryImplTest {
             } else {
                 ResultWithError.Failure(
                     RemoteSettingsDataSourceError.RemoteDataSource(
-                        RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
+                        RemoteDataSourceError.ServiceUnavailable.NetworkNotAvailable,
                     ),
                 )
             }
@@ -1340,7 +1340,7 @@ class SettingsRepositoryImplTest {
                 } else {
                     ResultWithError.Failure(
                         RemoteSettingsDataSourceError.RemoteDataSource(
-                            RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
+                            RemoteDataSourceError.ServiceUnavailable.NetworkNotAvailable,
                         ),
                     )
                 }

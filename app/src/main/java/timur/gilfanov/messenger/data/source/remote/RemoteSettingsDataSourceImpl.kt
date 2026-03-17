@@ -16,6 +16,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
+import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.remote.dto.ApiErrorCode
 import timur.gilfanov.messenger.data.source.remote.dto.ApiResponse
@@ -125,7 +126,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
                     logger.e(TAG, "Sync response missing result for key: $key")
                     ResultWithError.Failure(
                         RemoteSettingsDataSourceError.RemoteDataSource(
-                            RemoteDataSourceErrorV2.UnknownServiceError(
+                            RemoteDataSourceError.UnknownServiceError(
                                 ErrorReason("Missing sync result for key: $key"),
                             ),
                         ),
@@ -202,34 +203,34 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
     } catch (e: SerializationException) {
         logger.e(TAG, "Failed to serialize/deserialize in $operationName", e)
         ResultWithError.Failure(
-            RemoteSettingsDataSourceError.RemoteDataSource(RemoteDataSourceErrorV2.ServerError),
+            RemoteSettingsDataSourceError.RemoteDataSource(RemoteDataSourceError.ServerError),
         )
     } catch (e: SocketTimeoutException) {
         logger.e(TAG, "Request timed out in $operationName", e)
         ResultWithError.Failure(
             RemoteSettingsDataSourceError.RemoteDataSource(
-                RemoteDataSourceErrorV2.ServiceUnavailable.Timeout,
+                RemoteDataSourceError.ServiceUnavailable.Timeout,
             ),
         )
     } catch (e: UnknownHostException) {
         logger.e(TAG, "Network not available in $operationName", e)
         ResultWithError.Failure(
             RemoteSettingsDataSourceError.RemoteDataSource(
-                RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable,
+                RemoteDataSourceError.ServiceUnavailable.NetworkNotAvailable,
             ),
         )
     } catch (e: ConnectException) {
         logger.e(TAG, "Server unreachable in $operationName", e)
         ResultWithError.Failure(
             RemoteSettingsDataSourceError.RemoteDataSource(
-                RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+                RemoteDataSourceError.ServiceUnavailable.ServerUnreachable,
             ),
         )
     } catch (e: IOException) {
         logger.e(TAG, "Network error in $operationName", e)
         ResultWithError.Failure(
             RemoteSettingsDataSourceError.RemoteDataSource(
-                RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+                RemoteDataSourceError.ServiceUnavailable.ServerUnreachable,
             ),
         )
     } catch (e: CancellationException) {
@@ -239,7 +240,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
         logger.e(TAG, "Unexpected error in $operationName", e)
         ResultWithError.Failure(
             RemoteSettingsDataSourceError.RemoteDataSource(
-                RemoteDataSourceErrorV2.UnknownServiceError(
+                RemoteDataSourceError.UnknownServiceError(
                     ErrorReason(e.message ?: "Unknown error"),
                 ),
             ),
@@ -266,13 +267,13 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
                 ApiErrorCode.NetworkNotAvailable,
                 -> error("Not relevant for settings. See #135")
 
-                is ApiErrorCode.CooldownActive -> RemoteDataSourceErrorV2.CooldownActive(
+                is ApiErrorCode.CooldownActive -> RemoteDataSourceError.CooldownActive(
                     remaining = response.error.code.remaining,
                 )
 
-                ApiErrorCode.RateLimitExceeded -> RemoteDataSourceErrorV2.RateLimitExceeded
+                ApiErrorCode.RateLimitExceeded -> RemoteDataSourceError.RateLimitExceeded
 
-                ApiErrorCode.ServerError -> RemoteDataSourceErrorV2.ServerError
+                ApiErrorCode.ServerError -> RemoteDataSourceError.ServerError
 
                 ApiErrorCode.ServerUnreachable,
                 ApiErrorCode.Unauthorized,
@@ -280,7 +281,7 @@ class RemoteSettingsDataSourceImpl @Inject constructor(
 
                 is ApiErrorCode.Unknown -> {
                     val reason = ErrorReason(response.error.message)
-                    RemoteDataSourceErrorV2.UnknownServiceError(reason)
+                    RemoteDataSourceError.UnknownServiceError(reason)
                 }
 
                 ApiErrorCode.UserBlocked -> error(

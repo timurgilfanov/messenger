@@ -328,6 +328,7 @@ dependencies {
     debugImplementation(testFixtures(project(":core:domain")))
 
     // ========== Module Dependencies ==========
+    implementation(project(":core:data"))
     implementation(project(":core:domain"))
     implementation(project(":core:ui"))
     testImplementation(project(":core:test"))

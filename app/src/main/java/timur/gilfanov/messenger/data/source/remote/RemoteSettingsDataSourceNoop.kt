@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.data.source.remote
 
 import javax.inject.Inject
+import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -14,7 +15,7 @@ import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
  */
 class RemoteSettingsDataSourceNoop @Inject constructor() : RemoteSettingsDataSource {
     private val unavailableError = RemoteSettingsDataSourceError.RemoteDataSource(
-        RemoteDataSourceErrorV2.UnknownServiceError(
+        RemoteDataSourceError.UnknownServiceError(
             ErrorReason("Remote settings API not implemented"),
         ),
     )

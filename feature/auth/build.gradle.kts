@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kover)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -53,6 +55,19 @@ dependencies {
     testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(testFixtures(project(":core:domain")))
+
+    // ========== Networking ==========
+    implementation(libs.ktor.client.core)
+    testImplementation(libs.ktor.client.mock)
+
+    // ========== Test Dependencies ==========
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    // ========== Dependency Injection ==========
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)

@@ -330,6 +330,7 @@ dependencies {
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
     implementation(project(":core:ui"))
+    implementation(project(":feature:auth"))
     testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(testFixtures(project(":core:domain")))

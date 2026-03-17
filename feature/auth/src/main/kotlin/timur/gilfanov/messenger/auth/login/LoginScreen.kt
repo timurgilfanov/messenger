@@ -278,6 +278,18 @@ private fun LoginScreenContentWithErrorsPreview() {
 
 @Preview
 @Composable
+private fun LoginScreenContentWithFilledFieldsPreview() {
+    Content(
+        darkTheme = false,
+        state = LoginUiState(
+            email = "user@example.com",
+            password = "Password1",
+        ),
+    )
+}
+
+@Preview
+@Composable
 private fun LoginScreenContentLoadingPreview() {
     Content(darkTheme = false, state = LoginUiState(isLoading = true))
 }

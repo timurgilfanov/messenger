@@ -9,7 +9,6 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.usecase.auth.AuthTokenStorage
 
 /**
  * Ktor plugin that transparently handles authentication for all HTTP requests.

@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.domain.usecase.auth
+package timur.gilfanov.messenger.auth
 
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 

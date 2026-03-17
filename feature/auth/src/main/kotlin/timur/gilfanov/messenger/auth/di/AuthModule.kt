@@ -7,11 +7,11 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import timur.gilfanov.messenger.auth.AuthInterceptor
+import timur.gilfanov.messenger.auth.AuthTokenStorage
 import timur.gilfanov.messenger.auth.TokenRefreshError
 import timur.gilfanov.messenger.auth.TokenRefreshUseCase
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.usecase.auth.AuthTokenStorage
 
 @Module
 @InstallIn(SingletonComponent::class)

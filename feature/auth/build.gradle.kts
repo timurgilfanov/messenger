@@ -29,6 +29,10 @@ android {
         }
     }
 
+    testFixtures {
+        enable = true
+    }
+
     buildFeatures {
         compose = true
     }
@@ -68,6 +72,15 @@ dependencies {
     // ========== Dependency Injection ==========
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    // ========== Module Dependencies ==========
+    implementation(project(":core:domain"))
+    implementation(testFixtures(project(":core:domain")))
+    testFixturesImplementation(project(":core:domain"))
+    // Compose runtime is required because the kotlin.compose plugin applies the Compose compiler
+    // to all source sets, including testFixtures which contains no Compose code.
+    testFixturesImplementation(platform(libs.androidx.compose.bom))
+    testFixturesImplementation(libs.androidx.compose.runtime)
 
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)

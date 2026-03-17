@@ -5,6 +5,9 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kover)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
 }
 
 android {
@@ -30,6 +33,10 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testFixtures {
+        enable = true
+    }
 }
 
 ktlint { version.set(libs.versions.ktlintTool.get()) }
@@ -49,10 +56,39 @@ dependencies {
 
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
+    implementation(project(":core:data"))
     implementation(project(":core:ui"))
     testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(testFixtures(project(":core:domain")))
+
+    // DI
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    kspAndroidTest(libs.hilt.compiler)
+    kspTest(libs.hilt.compiler)
+
+    // Networking
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.kotlinx.serialization.json)
+
+    // Security
+    implementation(libs.security.crypto)
+
+    // Test
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.ktor.client.mock)
+
+    // testFixtures deps
+    testFixturesImplementation(project(":core:domain"))
+    testFixturesImplementation(libs.kotlinx.coroutines.core)
+    testFixturesImplementation(platform(libs.androidx.compose.bom))
+    testFixturesImplementation(libs.androidx.compose.runtime)
 
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)

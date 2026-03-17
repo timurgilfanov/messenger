@@ -502,6 +502,7 @@ tasks.register("preCommit") {
             "app/",
             "build-logic/",
             "core/",
+            "feature/",
             "build.gradle.kts",
             "settings.gradle.kts",
             "gradle.properties",

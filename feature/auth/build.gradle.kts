@@ -38,10 +38,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    testFixtures {
-        enable = true
-    }
 }
 
 hilt {
@@ -152,6 +148,8 @@ dependencies {
     testFixturesImplementation(libs.kotlinx.coroutines.core)
     testFixturesImplementation(platform(libs.androidx.compose.bom))
     testFixturesImplementation(libs.androidx.compose.runtime)
+    testImplementation(testFixtures(project(":core:domain")))
+    androidTestImplementation(testFixtures(project(":core:domain")))
 
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)

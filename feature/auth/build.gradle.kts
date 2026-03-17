@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kover)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -27,6 +29,10 @@ android {
         }
     }
 
+    testFixtures {
+        enable = true
+    }
+
     buildFeatures {
         compose = true
     }
@@ -47,10 +53,23 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3)
 
+    // ========== Dependency Injection ==========
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
     implementation(project(":core:ui"))
+    implementation(testFixtures(project(":core:domain")))
+    testFixturesImplementation(project(":core:domain"))
+    // Compose runtime is required because the kotlin.compose plugin applies the Compose compiler
+    // to all source sets, including testFixtures which contains no Compose code.
+    testFixturesImplementation(platform(libs.androidx.compose.bom))
+    testFixturesImplementation(libs.androidx.compose.runtime)
     testImplementation(project(":core:test"))
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
     testImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(testFixtures(project(":core:domain")))
 

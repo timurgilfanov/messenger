@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCaseNoOp
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -39,6 +40,7 @@ class SettingsViewModelProcessDeathTest {
         )
         val viewModel = SettingsViewModel(
             observeSettings = ObserveSettingsUseCaseStub(settingsFlow),
+            logoutUseCase = LogoutUseCaseNoOp(),
             logger = NoOpLogger(),
             savedStateHandle = restoredState,
         )
@@ -57,6 +59,7 @@ class SettingsViewModelProcessDeathTest {
         )
         val viewModel = SettingsViewModel(
             observeSettings = ObserveSettingsUseCaseStub(settingsFlow),
+            logoutUseCase = LogoutUseCaseNoOp(),
             logger = NoOpLogger(),
             savedStateHandle = savedStateHandle,
         )

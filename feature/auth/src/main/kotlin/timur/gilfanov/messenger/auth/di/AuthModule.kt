@@ -10,11 +10,11 @@ import timur.gilfanov.messenger.auth.login.LoginWithCredentialsUseCaseImpl
 import timur.gilfanov.messenger.auth.login.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.auth.login.LoginWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthState.Authenticated
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
+import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.util.Logger

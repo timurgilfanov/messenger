@@ -15,6 +15,7 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.auth.login.LoginViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -146,6 +147,31 @@ class LoginViewModelSubmitTest {
         advanceUntilIdle()
         assertIs<LoginGeneralError.ServiceUnavailable>(viewModel.state.value.generalError)
     }
+
+    @Test
+    fun `repository InvalidEmail sets generalError Unknown`() = runTest {
+        val viewModel = createViewModel(
+            loginResult = Failure(
+                LoginRepositoryError.InvalidEmail(EmailValidationError.EmailNotExists),
+            ),
+        )
+        viewModel.submitLogin()
+        advanceUntilIdle()
+        assertIs<LoginGeneralError.Unknown>(viewModel.state.value.generalError)
+    }
+
+    @Test
+    fun `repository RemoteOperationFailed non-network sets generalError ServiceUnavailable`() =
+        runTest {
+            val viewModel = createViewModel(
+                loginResult = Failure(
+                    LoginRepositoryError.RemoteOperationFailed(RemoteError.Failed.ServiceDown),
+                ),
+            )
+            viewModel.submitLogin()
+            advanceUntilIdle()
+            assertIs<LoginGeneralError.ServiceUnavailable>(viewModel.state.value.generalError)
+        }
 
     @Test
     fun `isLoading is true while submit is in progress`() = runTest {

@@ -27,18 +27,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import androidx.credentials.exceptions.GetCredentialException
-import androidx.credentials.exceptions.NoCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -51,6 +44,7 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 fun LoginScreen(
     onNavigateToChatList: () -> Unit,
     onNavigateToSignup: () -> Unit,
+    googleSignInClient: GoogleSignInClient,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
@@ -72,37 +66,20 @@ fun LoginScreen(
         }
     }
 
-    val handleGoogleSignIn: () -> Unit = {
-        scope.launch {
-            val credentialManager = CredentialManager.create(context)
-            val request = GetCredentialRequest(
-                listOf(
-                    GetGoogleIdOption.Builder()
-                        .setFilterByAuthorizedAccounts(false)
-                        .setServerClientId(context.getString(R.string.google_server_client_id))
-                        .build(),
-                ),
-            )
-            try {
-                val response = credentialManager.getCredential(context, request)
-                val credential = response.credential
-                if (credential is GoogleIdTokenCredential) {
-                    viewModel.submitGoogleSignIn(credential.idToken)
-                }
-            } catch (_: NoCredentialException) {
-            } catch (_: GetCredentialCancellationException) {
-            } catch (_: GetCredentialException) {
-                viewModel.onGoogleSignInFailed()
-            }
-        }
-    }
-
     LoginScreenContent(
         state = state,
         onEmailChange = viewModel::updateEmail,
         onPasswordChange = viewModel::updatePassword,
         onSubmitLogin = viewModel::submitLogin,
-        onGoogleSignInClick = handleGoogleSignIn,
+        onGoogleSignInClick = {
+            scope.launch {
+                when (val result = googleSignInClient.signIn(context)) {
+                    is GoogleSignInResult.Success -> viewModel.submitGoogleSignIn(result.idToken)
+                    GoogleSignInResult.Cancelled -> Unit
+                    GoogleSignInResult.Failed -> viewModel.onGoogleSignInFailed()
+                }
+            }
+        },
         onNavigateToSignup = currentOnNavigateToSignup,
         modifier = modifier,
     )

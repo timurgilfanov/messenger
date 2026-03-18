@@ -5,6 +5,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import timur.gilfanov.messenger.auth.login.GoogleSignInClient
+import timur.gilfanov.messenger.auth.login.GoogleSignInClientImpl
 import timur.gilfanov.messenger.auth.login.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.login.LoginWithCredentialsUseCaseImpl
 import timur.gilfanov.messenger.auth.login.LoginWithGoogleUseCase
@@ -49,4 +51,9 @@ object AuthModule {
         repository: AuthRepository,
         logger: Logger,
     ): LoginWithGoogleUseCase = LoginWithGoogleUseCaseImpl(repository, logger)
+
+    @Provides
+    @Singleton
+    fun provideGoogleSignInClient(logger: Logger): GoogleSignInClient =
+        GoogleSignInClientImpl(logger)
 }

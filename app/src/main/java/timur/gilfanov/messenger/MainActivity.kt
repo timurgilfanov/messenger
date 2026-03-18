@@ -11,6 +11,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import timur.gilfanov.messenger.auth.login.GoogleSignInClient
 import timur.gilfanov.messenger.auth.login.LoginScreen
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
 import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
@@ -34,6 +36,9 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+    @Inject
+    lateinit var googleSignInClient: GoogleSignInClient
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -41,7 +46,7 @@ class MainActivity : AppCompatActivity() {
             hiltViewModel<MainActivityViewModel>() // needed only for locale observation
 
             MessengerTheme {
-                MessengerApp()
+                MessengerApp(googleSignInClient = googleSignInClient)
             }
         }
     }
@@ -49,7 +54,7 @@ class MainActivity : AppCompatActivity() {
 
 @Suppress("LongMethod") // todo keep entities in feature modules
 @Composable
-fun MessengerApp() {
+fun MessengerApp(googleSignInClient: GoogleSignInClient) {
     val currentUserId = "550e8400-e29b-41d4-a716-446655440000".toParticipantId()
 
     @Suppress("KotlinConstantConditions")
@@ -119,6 +124,7 @@ fun MessengerApp() {
                         backStack.add(Main)
                     },
                     onNavigateToSignup = { backStack.add(Signup) },
+                    googleSignInClient = googleSignInClient,
                 )
             }
             entry<Signup> {

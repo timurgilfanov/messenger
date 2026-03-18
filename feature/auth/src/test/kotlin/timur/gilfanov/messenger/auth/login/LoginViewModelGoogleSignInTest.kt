@@ -98,6 +98,13 @@ class LoginViewModelGoogleSignInTest {
     }
 
     @Test
+    fun `onGoogleSignInFailed sets generalError GoogleSignInFailed`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.onGoogleSignInFailed()
+        assertIs<LoginGeneralError.GoogleSignInFailed>(viewModel.state.value.generalError)
+    }
+
+    @Test
     fun `isLoading is true while google sign in is in progress`() = runTest {
         val viewModel = createViewModel()
 

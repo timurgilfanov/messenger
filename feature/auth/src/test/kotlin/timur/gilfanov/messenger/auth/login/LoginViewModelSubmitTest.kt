@@ -157,7 +157,6 @@ class LoginViewModelSubmitTest {
             awaitItem()
             viewModel.submitLogin()
             val loadingState = awaitItem()
-            assertIs<Boolean>(loadingState.isLoading)
             assertTrue(loadingState.isLoading)
             advanceUntilIdle()
             cancelAndIgnoreRemainingEvents()

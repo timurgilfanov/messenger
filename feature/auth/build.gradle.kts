@@ -68,10 +68,16 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
+    // ========== Dependency Injection ==========
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
     implementation(project(":core:ui"))
     implementation(testFixtures(project(":core:domain")))
+    testFixturesImplementation(project(":core:domain"))
+    testFixturesImplementation(testFixtures(project(":core:domain")))
     // Compose runtime is required because the kotlin.compose plugin applies the Compose compiler
     // to all source sets, including testFixtures which contains no Compose code.
     testFixturesImplementation(platform(libs.androidx.compose.bom))
@@ -79,8 +85,6 @@ dependencies {
     // lifecycle-viewmodel is not pulled in by lifecycle-runtime, so ViewModel supertype
     // is missing from the testFixtures compile classpath without this explicit dependency.
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel)
-    testFixturesImplementation(project(":core:domain"))
-    testFixturesImplementation(testFixtures(project(":core:domain")))
     testImplementation(project(":core:test"))
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)

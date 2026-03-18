@@ -331,8 +331,10 @@ dependencies {
     implementation(project(":feature:auth"))
     implementation(project(":core:domain"))
     implementation(project(":core:ui"))
+    implementation(project(":feature:auth"))
     testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
+    testImplementation(testFixtures(project(":feature:auth")))
     androidTestImplementation(testFixtures(project(":core:domain")))
 
     // ========== Dev Tool Dependencies ==========

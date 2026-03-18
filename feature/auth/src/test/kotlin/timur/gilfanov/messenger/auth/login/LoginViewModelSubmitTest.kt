@@ -149,7 +149,7 @@ class LoginViewModelSubmitTest {
     }
 
     @Test
-    fun `repository InvalidEmail sets generalError Unknown`() = runTest {
+    fun `repository InvalidEmail sets generalError InvalidEmail`() = runTest {
         val viewModel = createViewModel(
             loginResult = Failure(
                 LoginRepositoryError.InvalidEmail(EmailValidationError.EmailNotExists),
@@ -157,7 +157,7 @@ class LoginViewModelSubmitTest {
         )
         viewModel.submitLogin()
         advanceUntilIdle()
-        assertIs<LoginGeneralError.Unknown>(viewModel.state.value.generalError)
+        assertIs<LoginGeneralError.InvalidEmail>(viewModel.state.value.generalError)
     }
 
     @Test

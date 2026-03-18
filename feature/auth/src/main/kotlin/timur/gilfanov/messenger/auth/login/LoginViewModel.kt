@@ -107,7 +107,7 @@ private fun LoginUiState.withLoginError(error: LoginUseCaseError): LoginUiState 
 
     LoginUseCaseError.AccountSuspended -> copy(generalError = LoginGeneralError.AccountSuspended)
 
-    is LoginUseCaseError.InvalidEmail -> copy(generalError = LoginGeneralError.Unknown)
+    is LoginUseCaseError.InvalidEmail -> copy(generalError = LoginGeneralError.InvalidEmail)
 
     is LoginUseCaseError.LocalOperationFailed -> copy(
         generalError = LoginGeneralError.ServiceUnavailable,

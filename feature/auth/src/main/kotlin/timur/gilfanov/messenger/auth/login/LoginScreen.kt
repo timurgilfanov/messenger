@@ -251,6 +251,7 @@ private fun LoginGeneralError.toDisplayString(): String = stringResource(
         LoginGeneralError.InvalidToken -> R.string.login_error_invalid_token
         LoginGeneralError.NetworkUnavailable -> R.string.login_error_network_unavailable
         LoginGeneralError.ServiceUnavailable -> R.string.login_error_service_unavailable
+        LoginGeneralError.InvalidEmail -> R.string.login_error_invalid_email
         LoginGeneralError.Unknown -> R.string.login_error_unknown
         LoginGeneralError.GoogleSignInFailed -> R.string.login_error_google_sign_in_failed
     },

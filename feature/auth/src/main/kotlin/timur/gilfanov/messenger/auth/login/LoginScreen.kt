@@ -103,7 +103,7 @@ fun LoginScreen(
         onPasswordChange = viewModel::updatePassword,
         onSubmitLogin = viewModel::submitLogin,
         onGoogleSignInClick = handleGoogleSignIn,
-        onNavigateToSignup = { currentOnNavigateToSignup() },
+        onNavigateToSignup = currentOnNavigateToSignup,
         modifier = modifier,
     )
 }

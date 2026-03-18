@@ -3,12 +3,13 @@ package timur.gilfanov.messenger.releasecandidate
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTextExactly
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.waitUntilExactlyOneExists
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.Module
 import dagger.Provides
@@ -45,9 +46,9 @@ import timur.gilfanov.messenger.test.SettingsRepositoryStub
 import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
-@ReleaseCandidateTest
 @HiltAndroidTest
 @UninstallModules(RepositoryModule::class, TestUserModule::class)
+@ReleaseCandidateTest
 @RunWith(AndroidJUnit4::class)
 class MessageSendingReleaseCandidateTest {
 
@@ -65,7 +66,7 @@ class MessageSendingReleaseCandidateTest {
 
     @Module
     @InstallIn(SingletonComponent::class)
-    object NavigationTestRepositoryModule {
+    object MessageSendingRCTestRepositoryModule {
         private val repository = AndroidTestRepositoryWithRealImplementation(NON_EMPTY)
 
         @Provides
@@ -93,7 +94,7 @@ class MessageSendingReleaseCandidateTest {
 
     @Module
     @InstallIn(SingletonComponent::class)
-    object TestUserNavigationTestModule {
+    object TestUserMessageSendingRCModule {
         @Provides
         @Singleton
         @timur.gilfanov.messenger.di.TestUserId
@@ -106,16 +107,17 @@ class MessageSendingReleaseCandidateTest {
     }
 
     @Test
-    fun messageSending_completesSuccessfully() {
+    fun messageSending_fullUserJourney() {
         with(composeTestRule) {
             waitUntilExactlyOneExists(hasTestTag("chat_list"))
+            waitUntilExactlyOneExists(hasTestTag("chat_item_$ALICE_CHAT_ID"))
             onNodeWithTag("chat_item_$ALICE_CHAT_ID").performClick()
             waitUntilExactlyOneExists(hasTestTag("message_input"))
             val testMessage = "Hello, this is a test message!"
             onNodeWithTag("message_input").performTextInput(testMessage)
             onNodeWithTag("send_button").performClick()
             onNodeWithText("Type a message...").assertIsDisplayed()
-            waitUntilExactlyOneExists(hasText(testMessage))
+            waitUntilExactlyOneExists(hasTextExactly(testMessage))
         }
     }
 }

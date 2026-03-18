@@ -41,11 +41,11 @@ import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
+import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
-import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
@@ -175,8 +175,11 @@ class LoginFeatureTest {
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
             waitForIdle()
 
-            onNodeWithTag("login_email_field").assertTextEquals(TEST_EMAIL)
-            onNodeWithTag("login_password_field").assertExists()
+            val emailLabel = activity.getString(R.string.login_email_label)
+            val passwordLabel = activity.getString(R.string.login_password_label)
+            onNodeWithTag("login_email_field").assertTextEquals(emailLabel, TEST_EMAIL)
+            onNodeWithTag("login_password_field")
+                .assertTextEquals(passwordLabel, passwordLabel, "•".repeat(TEST_PASSWORD.length))
         }
     }
 
@@ -188,13 +191,17 @@ class LoginFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             onNodeWithTag("login_sign_in_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("login_email_error"))
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) {
+                onAllNodes(hasTestTag("login_email_error"), useUnmergedTree = true)
+                    .fetchSemanticsNodes().size == 1
+            }
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
             waitForIdle()
 
-            onNodeWithTag("login_email_error")
-                .assertTextEquals(activity.getString(R.string.login_error_blank_email))
+            val errorBlankEmail = activity.getString(R.string.login_error_blank_email)
+            onNodeWithTag("login_email_error", useUnmergedTree = true)
+                .assertTextEquals(errorBlankEmail)
         }
     }
 

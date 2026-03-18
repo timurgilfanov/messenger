@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.auth.validation
 
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -48,7 +49,7 @@ class CredentialsValidatorImplTest {
         val longEmail = "a".repeat(243) + "@example.com"
         val result = validator.validate(credentials(email = longEmail))
         val failure = assertIs<Failure<*, CredentialsValidationError.EmailTooLong>>(result)
-        assert(failure.error.maxLength == CredentialsValidatorImpl.MAX_EMAIL_LENGTH)
+        assertEquals(CredentialsValidatorImpl.MAX_EMAIL_LENGTH, failure.error.maxLength)
     }
 
     @Test
@@ -68,7 +69,7 @@ class CredentialsValidatorImplTest {
     fun `password shorter than 8 chars returns PasswordTooShort`() = runTest {
         val result = validator.validate(credentials(password = "Pass1"))
         val failure = assertIs<Failure<*, CredentialsValidationError.PasswordTooShort>>(result)
-        assert(failure.error.minLength == CredentialsValidatorImpl.MIN_PASSWORD_LENGTH)
+        assertEquals(CredentialsValidatorImpl.MIN_PASSWORD_LENGTH, failure.error.minLength)
     }
 
     @Test
@@ -76,7 +77,7 @@ class CredentialsValidatorImplTest {
         val longPassword = "P1" + "a".repeat(127)
         val result = validator.validate(credentials(password = longPassword))
         val failure = assertIs<Failure<*, CredentialsValidationError.PasswordTooLong>>(result)
-        assert(failure.error.maxLength == CredentialsValidatorImpl.MAX_PASSWORD_LENGTH)
+        assertEquals(CredentialsValidatorImpl.MAX_PASSWORD_LENGTH, failure.error.maxLength)
     }
 
     @Test
@@ -84,7 +85,7 @@ class CredentialsValidatorImplTest {
         val result = validator.validate(credentials(password = "PasswordA"))
         val failure =
             assertIs<Failure<*, CredentialsValidationError.PasswordMustContainNumbers>>(result)
-        assert(failure.error.minNumbers == 1)
+        assertEquals(1, failure.error.minNumbers)
     }
 
     @Test
@@ -92,7 +93,7 @@ class CredentialsValidatorImplTest {
         val result = validator.validate(credentials(password = "12345678"))
         val failure =
             assertIs<Failure<*, CredentialsValidationError.PasswordMustContainAlphabet>>(result)
-        assert(failure.error.minAlphabet == 1)
+        assertEquals(1, failure.error.minAlphabet)
     }
 
     @Test

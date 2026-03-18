@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.auth.login
 
 import app.cash.turbine.test
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -104,7 +105,7 @@ class LoginViewModelGoogleSignInTest {
             awaitItem()
             viewModel.submitGoogleSignIn(testIdToken)
             val loadingState = awaitItem()
-            assert(loadingState.isLoading)
+            assertTrue(loadingState.isLoading)
             advanceUntilIdle()
             cancelAndIgnoreRemainingEvents()
         }

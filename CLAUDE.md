@@ -57,5 +57,8 @@ CI/CD pipeline details in `docs/ci-cd-pipeline.md`.
 - **Test fixtures**: For both JVM and Android library modules, use native Gradle `testFixtures { enable = true }` to share test doubles across modules. Requires `android.experimental.enableTestFixturesKotlinSupport=true` in `gradle.properties` for Android libraries. Consume with `testImplementation(testFixtures(project(":feature:X")))`.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
 
+### GitHub Issues
+- Never add or remove the `agent` label on issues — it triggers paid automation
+
 ### Self-Learning
 When you discover important project knowledge during implementation that is not already captured in this file or linked docs — such as new architectural patterns, non-obvious conventions, critical gotchas, or structural changes — propose an update to this CLAUDE.md or the relevant doc file. Present the proposed change to the user for approval before applying it.

@@ -45,6 +45,7 @@ import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
+import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
@@ -99,6 +100,10 @@ class LoginFeatureTest {
             repository: AuthRepository,
             logger: Logger,
         ): LoginWithGoogleUseCase = LoginWithGoogleUseCaseImpl(repository, logger)
+
+        @Provides
+        @Singleton
+        fun provideLogger(): Logger = NoOpLogger()
 
         @Provides
         @Singleton

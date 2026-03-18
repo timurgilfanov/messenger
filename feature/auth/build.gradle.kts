@@ -15,6 +15,7 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
+        testInstrumentationRunner = "timur.gilfanov.messenger.HiltTestRunner"
     }
 
     java {
@@ -36,6 +37,10 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+hilt {
+    enableAggregatingTask = false
 }
 
 ktlint { version.set(libs.versions.ktlintTool.get()) }
@@ -94,6 +99,13 @@ dependencies {
     testImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(project(":core:androidTest"))
     androidTestImplementation(testFixtures(project(":core:domain")))
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    debugImplementation(libs.androidx.ui.test.manifest)
+    kspAndroidTest(libs.hilt.compiler)
 
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)

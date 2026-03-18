@@ -85,6 +85,7 @@ dependencies {
     // lifecycle-viewmodel is not pulled in by lifecycle-runtime, so ViewModel supertype
     // is missing from the testFixtures compile classpath without this explicit dependency.
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel)
+    testFixturesImplementation(libs.androidx.lifecycle.viewmodel.savedstate)
     testImplementation(project(":core:test"))
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)

@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.auth.login
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,20 +23,33 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 class LoginViewModel @Inject constructor(
     private val loginWithCredentials: LoginWithCredentialsUseCase,
     private val loginWithGoogle: LoginWithGoogleUseCase,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(LoginUiState())
+    private val _state = MutableStateFlow(
+        LoginUiState(
+            email = savedStateHandle[KEY_EMAIL] ?: "",
+            password = savedStateHandle[KEY_PASSWORD] ?: "",
+        ),
+    )
     val state = _state.asStateFlow()
 
     private val _effects = Channel<LoginSideEffects>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
     fun updateEmail(email: String) {
+        savedStateHandle[KEY_EMAIL] = email
         _state.update { it.copy(email = email, emailError = null) }
     }
 
     fun updatePassword(password: String) {
+        savedStateHandle[KEY_PASSWORD] = password
         _state.update { it.copy(password = password, passwordError = null) }
+    }
+
+    companion object {
+        private const val KEY_EMAIL = "email"
+        private const val KEY_PASSWORD = "password"
     }
 
     fun submitLogin() {

@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.auth.login
 
+import androidx.lifecycle.SavedStateHandle
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
@@ -15,6 +16,7 @@ object LoginViewModelTestFixtures {
         validatorError: CredentialsValidationError? = null,
         loginResult: ResultWithError<AuthSession, LoginRepositoryError>? = null,
         googleLoginResult: ResultWithError<AuthSession, GoogleLoginRepositoryError>? = null,
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
     ): LoginViewModel {
         val logger = NoOpLogger()
         val validator = CredentialsValidatorStub(validatorError)
@@ -30,6 +32,6 @@ object LoginViewModelTestFixtures {
         val loginWithCredentials = LoginWithCredentialsUseCaseImpl(validator, repository, logger)
         val loginWithGoogle = LoginWithGoogleUseCaseImpl(repository, logger)
 
-        return LoginViewModel(loginWithCredentials, loginWithGoogle)
+        return LoginViewModel(loginWithCredentials, loginWithGoogle, savedStateHandle)
     }
 }

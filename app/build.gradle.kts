@@ -335,6 +335,7 @@ dependencies {
     testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
     testImplementation(testFixtures(project(":feature:auth")))
+    androidTestImplementation(project(":core:androidTest"))
     androidTestImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(testFixtures(project(":feature:auth")))
 

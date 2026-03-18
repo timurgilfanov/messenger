@@ -130,6 +130,7 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 # Android Testing
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "test" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "test" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 

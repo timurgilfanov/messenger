@@ -113,13 +113,16 @@ fun LoginScreenContent(
             PasswordField(state, onPasswordChange)
 
             state.generalError?.let {
-                Text(text = it.toDisplayString())
+                Text(
+                    text = it.toDisplayString(),
+                    modifier = Modifier.testTag("login_general_error"),
+                )
             }
 
             Button(
                 onClick = onSubmitLogin,
                 enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("login_sign_in_button"),
             ) {
                 Text(stringResource(R.string.login_sign_in_button))
             }
@@ -127,7 +130,7 @@ fun LoginScreenContent(
             Button(
                 onClick = onGoogleSignInClick,
                 enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("login_google_sign_in_button"),
             ) {
                 Text(stringResource(R.string.login_sign_in_with_google_button))
             }
@@ -153,10 +156,13 @@ private fun PasswordField(state: LoginUiState, onPasswordChange: (String) -> Uni
         isError = state.passwordError != null,
         supportingText = state.passwordError?.let { error ->
             {
-                Text(error.toDisplayString())
+                Text(
+                    text = error.toDisplayString(),
+                    modifier = Modifier.testTag("login_password_error"),
+                )
             }
         },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("login_password_field"),
     )
 }
 
@@ -173,10 +179,13 @@ private fun EmailField(state: LoginUiState, onEmailChange: (String) -> Unit) {
         isError = state.emailError != null,
         supportingText = state.emailError?.let { error ->
             {
-                Text(error.toDisplayString())
+                Text(
+                    text = error.toDisplayString(),
+                    modifier = Modifier.testTag("login_email_error"),
+                )
             }
         },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("login_email_field"),
     )
 }
 

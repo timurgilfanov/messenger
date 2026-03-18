@@ -336,6 +336,7 @@ dependencies {
     testImplementation(testFixtures(project(":core:domain")))
     testImplementation(testFixtures(project(":feature:auth")))
     androidTestImplementation(testFixtures(project(":core:domain")))
+    androidTestImplementation(testFixtures(project(":feature:auth")))
 
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)

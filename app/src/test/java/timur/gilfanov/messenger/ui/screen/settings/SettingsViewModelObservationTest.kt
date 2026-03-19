@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCaseNoOp
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -38,6 +39,7 @@ class SettingsViewModelObservationTest {
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
     ): SettingsViewModel = SettingsViewModel(
         observeSettings = observeSettings,
+        logoutUseCase = LogoutUseCaseNoOp(),
         logger = NoOpLogger(),
         savedStateHandle = savedStateHandle,
     )

@@ -333,6 +333,8 @@ dependencies {
     implementation(project(":feature:auth"))
     testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
+    testImplementation(testFixtures(project(":feature:auth")))
+    androidTestImplementation(project(":core:androidTest"))
     androidTestImplementation(testFixtures(project(":core:domain")))
 
     // ========== Dev Tool Dependencies ==========
@@ -501,6 +503,7 @@ tasks.register("preCommit") {
             "app/",
             "build-logic/",
             "core/",
+            "feature/",
             "build.gradle.kts",
             "settings.gradle.kts",
             "gradle.properties",

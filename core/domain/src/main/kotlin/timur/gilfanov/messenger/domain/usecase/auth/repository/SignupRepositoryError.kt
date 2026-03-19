@@ -1,7 +1,7 @@
 package timur.gilfanov.messenger.domain.usecase.auth.repository
 
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
-import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
 
 /**
  * Errors for account signup repository operations.
@@ -20,5 +20,5 @@ sealed interface SignupRepositoryError {
     data class InvalidPassword(val reason: PasswordValidationError) : SignupRepositoryError
     data class InvalidName(val reason: ProfileNameValidationError) : SignupRepositoryError
     data class LocalOperationFailed(val error: LocalStorageError) : SignupRepositoryError
-    data class RemoteOperationFailed(val error: RemoteError) : SignupRepositoryError
+    data class RemoteOperationFailed(val error: UnauthRemoteError) : SignupRepositoryError
 }

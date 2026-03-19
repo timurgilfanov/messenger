@@ -22,13 +22,13 @@ class LoginViewModelProcessDeathTest {
     @Test
     fun `initial state restores email and password from saved state`() = runTest {
         val handle =
-            SavedStateHandle(mapOf("email" to "user@example.com", "password" to "Pass123!"))
+            SavedStateHandle(mapOf(EMAIL_KEY to SAMPLE_EMAIL, PASSWORD_KEY to SAMPLE_PASSWORD))
         val viewModel = createViewModel(savedStateHandle = handle)
 
         viewModel.state.test {
             val state = awaitItem()
-            assertEquals("user@example.com", state.email)
-            assertEquals("Pass123!", state.password)
+            assertEquals(SAMPLE_EMAIL, state.email)
+            assertEquals(SAMPLE_PASSWORD, state.password)
         }
     }
 
@@ -37,9 +37,9 @@ class LoginViewModelProcessDeathTest {
         val handle = SavedStateHandle()
         val viewModel = createViewModel(savedStateHandle = handle)
 
-        viewModel.updateEmail("user@example.com")
+        viewModel.updateEmail(SAMPLE_EMAIL)
 
-        assertEquals("user@example.com", handle.get<String>("email"))
+        assertEquals(SAMPLE_EMAIL, handle.get<String>(EMAIL_KEY))
     }
 
     @Test
@@ -47,8 +47,15 @@ class LoginViewModelProcessDeathTest {
         val handle = SavedStateHandle()
         val viewModel = createViewModel(savedStateHandle = handle)
 
-        viewModel.updatePassword("Pass123!")
+        viewModel.updatePassword(SAMPLE_PASSWORD)
 
-        assertEquals("Pass123!", handle.get<String>("password"))
+        assertEquals(SAMPLE_PASSWORD, handle.get<String>(PASSWORD_KEY))
+    }
+
+    private companion object {
+        const val EMAIL_KEY = "email"
+        const val PASSWORD_KEY = "password"
+        const val SAMPLE_EMAIL = "user@example.com"
+        const val SAMPLE_PASSWORD = "Pass123!"
     }
 }

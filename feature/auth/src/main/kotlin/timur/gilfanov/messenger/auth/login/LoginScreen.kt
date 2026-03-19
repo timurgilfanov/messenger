@@ -257,6 +257,11 @@ private fun PasswordField(
         onValueChange = onPasswordChange,
         label = { Text(stringResource(R.string.login_password_label)) },
         visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done,
+        ),
+        singleLine = true,
         isError = passwordError != null,
         supportingText = passwordError?.let { error ->
             {

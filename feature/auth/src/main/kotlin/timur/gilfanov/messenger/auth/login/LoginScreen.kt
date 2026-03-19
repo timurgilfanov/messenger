@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions")
+
 package timur.gilfanov.messenger.auth.login
 
 import android.content.Context
@@ -8,8 +10,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -75,8 +79,7 @@ fun LoginScreen(
                     LoginSideEffects.NavigateToChatList -> currentOnNavigateToChatList()
                     LoginSideEffects.NavigateToSignup -> currentOnNavigateToSignup()
                     LoginSideEffects.OpenAppSettings -> openAppSettings(context)
-                    LoginSideEffects.OpenStorageSettings ->
-                        context.startActivity(Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
+                    LoginSideEffects.OpenStorageSettings -> openStorageSettings(context)
                     is LoginSideEffects.ShowSnackbar -> scope.launch {
                         val message = effect.message
                         val actionLabel =
@@ -108,7 +111,10 @@ fun LoginScreen(
                 when (val result = googleSignInClient.signIn(context)) {
                     is GoogleSignInResult.Success -> viewModel.submitGoogleSignIn(result.idToken)
                     GoogleSignInResult.Cancelled -> Unit
-                    GoogleSignInResult.Failed -> viewModel.onGoogleSignInFailed()
+                    GoogleSignInResult.Failed -> snackbarHostState.showSnackbar(
+                        message = LoginSnackbarMessage.GoogleSignInFailed.toDisplayString(context),
+                        duration = SnackbarDuration.Long,
+                    )
                 }
             }
         },
@@ -184,9 +190,13 @@ private fun LoginForm(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        EmailField(state, onEmailChange)
+        EmailField(state.email, state.emailError?.toDisplayString(), onEmailChange)
 
-        PasswordField(state, onPasswordChange)
+        Spacer(modifier = Modifier.height(4.dp))
+
+        PasswordField(state.password, state.passwordError?.toDisplayString(), onPasswordChange)
+
+        Spacer(modifier = Modifier.height(4.dp))
 
         state.generalError?.let {
             Text(
@@ -194,6 +204,8 @@ private fun LoginForm(
                 modifier = Modifier.testTag("login_general_error"),
             )
         }
+
+        Spacer(modifier = Modifier.height(4.dp))
 
         Button(
             onClick = onSubmitLogin,
@@ -205,6 +217,8 @@ private fun LoginForm(
             Text(stringResource(R.string.login_sign_in_button))
         }
 
+        Spacer(modifier = Modifier.height(4.dp))
+
         Button(
             onClick = onGoogleSignInClick,
             enabled = !state.isLoading,
@@ -215,6 +229,8 @@ private fun LoginForm(
             Text(stringResource(R.string.login_sign_in_with_google_button))
         }
 
+        Spacer(modifier = Modifier.height(4.dp))
+
         TextButton(onClick = onNavigateToSignup) {
             Text(stringResource(R.string.login_create_account_button))
         }
@@ -222,17 +238,21 @@ private fun LoginForm(
 }
 
 @Composable
-private fun PasswordField(state: LoginUiState, onPasswordChange: (String) -> Unit) {
+private fun PasswordField(
+    password: String,
+    passwordError: String?,
+    onPasswordChange: (String) -> Unit,
+) {
     OutlinedTextField(
-        value = state.password,
+        value = password,
         onValueChange = onPasswordChange,
         label = { Text(stringResource(R.string.login_password_label)) },
         visualTransformation = PasswordVisualTransformation(),
-        isError = state.passwordError != null,
-        supportingText = state.passwordError?.let { error ->
+        isError = passwordError != null,
+        supportingText = passwordError?.let { error ->
             {
                 Text(
-                    text = error.toDisplayString(),
+                    text = error,
                     modifier = Modifier.testTag("login_password_error"),
                 )
             }
@@ -244,20 +264,20 @@ private fun PasswordField(state: LoginUiState, onPasswordChange: (String) -> Uni
 }
 
 @Composable
-private fun EmailField(state: LoginUiState, onEmailChange: (String) -> Unit) {
+private fun EmailField(email: String, emailError: String?, onEmailChange: (String) -> Unit) {
     OutlinedTextField(
-        value = state.email,
+        value = email,
         onValueChange = onEmailChange,
         label = { Text(stringResource(R.string.login_email_label)) },
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Email,
             imeAction = ImeAction.Next,
         ),
-        isError = state.emailError != null,
-        supportingText = state.emailError?.let { error ->
+        isError = emailError != null,
+        supportingText = emailError?.let { error ->
             {
                 Text(
-                    text = error.toDisplayString(),
+                    text = error,
                     modifier = Modifier.testTag("login_email_error"),
                 )
             }
@@ -355,6 +375,10 @@ private fun openAppSettings(context: Context) {
         data = Uri.fromParts("package", context.packageName, null)
     }
     context.startActivity(intent)
+}
+
+private fun openStorageSettings(context: Context) {
+    context.startActivity(Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
 }
 
 private const val SECONDS_PER_MINUTE = 60

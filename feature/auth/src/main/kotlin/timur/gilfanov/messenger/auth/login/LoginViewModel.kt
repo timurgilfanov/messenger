@@ -82,21 +82,30 @@ class LoginViewModel @Inject constructor(
             result.fold(
                 onSuccess = { _effects.send(LoginSideEffects.NavigateToChatList) },
                 onFailure = { error ->
-                    val snackbar = error.toSnackbarMessage()
-                    if (snackbar != null) {
-                        _effects.send(LoginSideEffects.ShowSnackbar(snackbar))
-                    } else {
-                        _state.update { it.withLoginError(error) }
+                    when (error) {
+                        is LoginUseCaseError.ValidationFailed -> handleValidationError(error)
+                        LoginUseCaseError.InvalidCredentials ->
+                            _state.update {
+                                it.copy(generalError = LoginGeneralError.InvalidCredentials)
+                            }
+                        LoginUseCaseError.EmailNotVerified ->
+                            _state.update {
+                                it.copy(generalError = LoginGeneralError.EmailNotVerified)
+                            }
+                        LoginUseCaseError.AccountSuspended ->
+                            _state.update {
+                                it.copy(generalError = LoginGeneralError.AccountSuspended)
+                            }
+                        is LoginUseCaseError.InvalidEmail ->
+                            _state.update { it.copy(generalError = LoginGeneralError.InvalidEmail) }
+                        is LoginUseCaseError.RemoteOperationFailed ->
+                            _effects.send(
+                                LoginSideEffects.ShowSnackbar(error.error.toSnackbarMessage()),
+                            )
+                        is LoginUseCaseError.LocalOperationFailed ->
+                            handleLocalStorageError(error.error)
                     }
                 },
-            )
-        }
-    }
-
-    fun onGoogleSignInFailed() {
-        viewModelScope.launch {
-            _effects.send(
-                LoginSideEffects.ShowSnackbar(LoginSnackbarMessage.GoogleSignInFailed),
             )
         }
     }
@@ -111,11 +120,23 @@ class LoginViewModel @Inject constructor(
             result.fold(
                 onSuccess = { _effects.send(LoginSideEffects.NavigateToChatList) },
                 onFailure = { error ->
-                    val snackbar = error.toSnackbarMessage()
-                    if (snackbar != null) {
-                        _effects.send(LoginSideEffects.ShowSnackbar(snackbar))
-                    } else {
-                        _state.update { it.withGoogleLoginError(error) }
+                    when (error) {
+                        GoogleLoginUseCaseError.InvalidToken ->
+                            _state.update { it.copy(generalError = LoginGeneralError.InvalidToken) }
+                        GoogleLoginUseCaseError.AccountNotFound ->
+                            _state.update {
+                                it.copy(generalError = LoginGeneralError.AccountNotFound)
+                            }
+                        GoogleLoginUseCaseError.AccountSuspended ->
+                            _state.update {
+                                it.copy(generalError = LoginGeneralError.AccountSuspended)
+                            }
+                        is GoogleLoginUseCaseError.RemoteOperationFailed ->
+                            _effects.send(
+                                LoginSideEffects.ShowSnackbar(error.error.toSnackbarMessage()),
+                            )
+                        is GoogleLoginUseCaseError.LocalOperationFailed ->
+                            handleLocalStorageError(error.error)
                     }
                 },
             )
@@ -140,30 +161,51 @@ class LoginViewModel @Inject constructor(
         _state.update { it.copy(blockingError = null) }
         viewModelScope.launch { _effects.send(LoginSideEffects.OpenStorageSettings) }
     }
-}
 
-private fun LoginUseCaseError.toSnackbarMessage(): LoginSnackbarMessage? = when (this) {
-    is LoginUseCaseError.RemoteOperationFailed -> error.toSnackbarMessage()
+    private fun handleValidationError(error: LoginUseCaseError.ValidationFailed) {
+        _state.update { state ->
+            when (val ve = error.error) {
+                is CredentialsValidationError.BlankEmail,
+                is CredentialsValidationError.NoAtInEmail,
+                is CredentialsValidationError.NoDomainAtEmail,
+                is CredentialsValidationError.EmailTooLong,
+                is CredentialsValidationError.InvalidEmailFormat,
+                is CredentialsValidationError.ForbiddenCharacterInEmail,
+                -> state.copy(emailError = ve)
+                is CredentialsValidationError.PasswordTooShort,
+                is CredentialsValidationError.PasswordTooLong,
+                is CredentialsValidationError.ForbiddenCharacterInPassword,
+                is CredentialsValidationError.PasswordMustContainNumbers,
+                is CredentialsValidationError.PasswordMustContainAlphabet,
+                -> state.copy(passwordError = ve)
+            }
+        }
+    }
 
-    is LoginUseCaseError.LocalOperationFailed -> error.toSnackbarMessage()
-
-    LoginUseCaseError.AccountSuspended,
-    LoginUseCaseError.EmailNotVerified,
-    LoginUseCaseError.InvalidCredentials,
-    is LoginUseCaseError.InvalidEmail,
-    is LoginUseCaseError.ValidationFailed,
-    -> null
-}
-
-private fun GoogleLoginUseCaseError.toSnackbarMessage(): LoginSnackbarMessage? = when (this) {
-    is GoogleLoginUseCaseError.RemoteOperationFailed -> error.toSnackbarMessage()
-
-    is GoogleLoginUseCaseError.LocalOperationFailed -> error.toSnackbarMessage()
-
-    GoogleLoginUseCaseError.AccountNotFound,
-    GoogleLoginUseCaseError.AccountSuspended,
-    GoogleLoginUseCaseError.InvalidToken,
-    -> null
+    private suspend fun handleLocalStorageError(error: LocalStorageError) {
+        when (error) {
+            LocalStorageError.StorageFull ->
+                _state.update { it.copy(blockingError = LoginBlockingError.StorageFull) }
+            LocalStorageError.Corrupted ->
+                _state.update { it.copy(blockingError = LoginBlockingError.StorageCorrupted) }
+            LocalStorageError.ReadOnly ->
+                _state.update { it.copy(blockingError = LoginBlockingError.StorageReadOnly) }
+            LocalStorageError.AccessDenied ->
+                _state.update { it.copy(blockingError = LoginBlockingError.StorageAccessDenied) }
+            LocalStorageError.TemporarilyUnavailable ->
+                _effects.send(
+                    LoginSideEffects.ShowSnackbar(
+                        LoginSnackbarMessage.StorageTemporarilyUnavailable,
+                    ),
+                )
+            is LocalStorageError.UnknownError ->
+                _effects.send(
+                    LoginSideEffects.ShowSnackbar(
+                        LoginSnackbarMessage.StorageTemporarilyUnavailable,
+                    ),
+                )
+        }
+    }
 }
 
 private fun UnauthRemoteError.toSnackbarMessage(): LoginSnackbarMessage = when (this) {
@@ -175,82 +217,4 @@ private fun UnauthRemoteError.toSnackbarMessage(): LoginSnackbarMessage = when (
     is RemoteError.Failed.UnknownServiceError,
     RemoteError.UnknownStatus.ServiceTimeout,
     -> LoginSnackbarMessage.ServiceUnavailable
-}
-
-private fun LocalStorageError.toSnackbarMessage(): LoginSnackbarMessage? = when (this) {
-    LocalStorageError.TemporarilyUnavailable -> LoginSnackbarMessage.StorageTemporarilyUnavailable
-
-    is LocalStorageError.UnknownError -> LoginSnackbarMessage.StorageTemporarilyUnavailable
-
-    LocalStorageError.AccessDenied,
-    LocalStorageError.Corrupted,
-    LocalStorageError.ReadOnly,
-    LocalStorageError.StorageFull,
-    -> null
-}
-
-private fun LoginUiState.withLoginError(error: LoginUseCaseError): LoginUiState = when (error) {
-    is LoginUseCaseError.ValidationFailed -> when (error.error) {
-        is CredentialsValidationError.BlankEmail,
-        is CredentialsValidationError.NoAtInEmail,
-        is CredentialsValidationError.NoDomainAtEmail,
-        is CredentialsValidationError.EmailTooLong,
-        is CredentialsValidationError.InvalidEmailFormat,
-        is CredentialsValidationError.ForbiddenCharacterInEmail,
-        -> copy(emailError = error.error)
-
-        is CredentialsValidationError.PasswordTooShort,
-        is CredentialsValidationError.PasswordTooLong,
-        is CredentialsValidationError.ForbiddenCharacterInPassword,
-        is CredentialsValidationError.PasswordMustContainNumbers,
-        is CredentialsValidationError.PasswordMustContainAlphabet,
-        -> copy(passwordError = error.error)
-    }
-
-    LoginUseCaseError.InvalidCredentials -> copy(
-        generalError = LoginGeneralError.InvalidCredentials,
-    )
-
-    LoginUseCaseError.EmailNotVerified -> copy(generalError = LoginGeneralError.EmailNotVerified)
-
-    LoginUseCaseError.AccountSuspended -> copy(generalError = LoginGeneralError.AccountSuspended)
-
-    is LoginUseCaseError.InvalidEmail -> copy(generalError = LoginGeneralError.InvalidEmail)
-
-    is LoginUseCaseError.LocalOperationFailed -> copy(
-        blockingError = error.error.toBlockingError(),
-    )
-
-    is LoginUseCaseError.RemoteOperationFailed -> this
-}
-
-private fun LoginUiState.withGoogleLoginError(error: GoogleLoginUseCaseError): LoginUiState =
-    when (error) {
-        GoogleLoginUseCaseError.InvalidToken -> copy(generalError = LoginGeneralError.InvalidToken)
-
-        GoogleLoginUseCaseError.AccountNotFound ->
-            copy(generalError = LoginGeneralError.AccountNotFound)
-
-        GoogleLoginUseCaseError.AccountSuspended ->
-            copy(generalError = LoginGeneralError.AccountSuspended)
-
-        is GoogleLoginUseCaseError.RemoteOperationFailed -> this
-
-        is GoogleLoginUseCaseError.LocalOperationFailed -> copy(
-            blockingError = error.error.toBlockingError(),
-        )
-    }
-
-private fun LocalStorageError.toBlockingError(): LoginBlockingError = when (this) {
-    LocalStorageError.StorageFull -> LoginBlockingError.StorageFull
-
-    LocalStorageError.Corrupted -> LoginBlockingError.StorageCorrupted
-
-    LocalStorageError.ReadOnly -> LoginBlockingError.StorageReadOnly
-
-    LocalStorageError.AccessDenied -> LoginBlockingError.StorageAccessDenied
-
-    LocalStorageError.TemporarilyUnavailable,
-    is LocalStorageError.UnknownError,
-    -> error("Snackbar-eligible storage error reached toBlockingError: $this")
 }

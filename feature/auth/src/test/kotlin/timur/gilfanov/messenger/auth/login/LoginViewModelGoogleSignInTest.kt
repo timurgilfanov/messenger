@@ -258,19 +258,6 @@ class LoginViewModelGoogleSignInTest {
     }
 
     @Test
-    fun `onGoogleSignInFailed emits ShowSnackbar GoogleSignInFailed`() = runTest {
-        val viewModel = createViewModel()
-
-        backgroundScope.launch { viewModel.state.collect {} }
-        viewModel.effects.test {
-            viewModel.onGoogleSignInFailed()
-            advanceUntilIdle()
-            val effect = assertIs<LoginSideEffects.ShowSnackbar>(awaitItem())
-            assertIs<LoginSnackbarMessage.GoogleSignInFailed>(effect.message)
-        }
-    }
-
-    @Test
     fun `isLoading is true while google sign in is in progress`() = runTest {
         val viewModel = createViewModel()
 

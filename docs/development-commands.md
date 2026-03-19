@@ -18,14 +18,16 @@
 ./gradlew :core:domain:test
 
 # Run instrumentation tests
-./gradlew connectedMockDebugAndroidTest
+./gradlew connectedDebugAndroidTest                        # all modules androidTest 
+./gradlew connectedMockDebugAndroidTest                    # :app androidTest
+./gradlew :feature:auth:connectedDebugAndroidTest          # :feature:auth androidTest
 
 # Run tests with coverage
 ./gradlew testAllMockDebugUnitTests -Pcoverage
 
 # Run a single test class
 ./gradlew testMockDebugUnitTest --tests "ClassName"
-./gradlew connectedMockDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=ClassName
+./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=ClassName
 
 # Run a single test method
 ./gradlew testMockDebugUnitTest --tests "ClassName.testMethodName"
@@ -35,7 +37,7 @@
 ./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Unit
 ./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Component
 ./gradlew testAllMockDebugUnitTests -PtestCategory=timur.gilfanov.messenger.annotations.Feature
-./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.messenger.annotations.FeatureTest
+./gradlew connectedDebugAndroidTest -Pannotation=timur.gilfanov.messenger.annotations.FeatureTest
 ./gradlew connectedMockDebugAndroidTest -Pannotation=timur.gilfanov.messenger.annotations.ApplicationTest
 
 # Exclude specific categories

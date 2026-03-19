@@ -93,7 +93,7 @@ jobs:
           check_name: "Architecture Test Results"
 
       - name: Build Mock Debug and AndroidTest APKs
-        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest
+        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest :feature:auth:assembleDebugAndroidTest
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -106,6 +106,12 @@ jobs:
         with:
           name: androidtest-apk
           path: app/build/outputs/apk/androidTest/mock/debug/app-mock-debug-androidTest.apk
+
+      - name: Upload feature-auth AndroidTest APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-auth-androidtest-apk
+          path: feature/auth/build/outputs/apk/androidTest/debug/auth-debug-androidTest.apk
 
       - name: Upload Kotlin class files
         uses: actions/upload-artifact@v4
@@ -434,6 +440,12 @@ jobs:
           name: androidtest-apk
           path: app/build/outputs/apk/androidTest/mock/debug
 
+      - name: Download feature-auth AndroidTest APK
+        uses: actions/download-artifact@v4
+        with:
+          name: feature-auth-androidtest-apk
+          path: feature/auth/build/outputs/apk/androidTest/debug
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -455,6 +467,24 @@ jobs:
             --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.messenger.annotations.FeatureTest \
             --directories-to-pull /sdcard/Download \
             --results-dir="" 2>&1 | tee emulator-run.log
+
+      - name: Run feature:auth Feature Instrumentation Tests on Emulators
+        run: |
+          gcloud firebase test android run \
+            --type instrumentation \
+            --app app/build/outputs/apk/mock/debug/app-mock-debug.apk \
+            --test feature/auth/build/outputs/apk/androidTest/debug/auth-debug-androidTest.apk \
+            --device model=Pixel2.arm,version=30 \
+            --timeout 5m \
+            --environment-variables coverage=true,coverageFile=/sdcard/Download/coverage.ec,annotation=timur.gilfanov.messenger.annotations.FeatureTest \
+            --directories-to-pull /sdcard/Download \
+            --results-dir="" 2>&1 | tee feature-auth-emulator-run.log
+
+      - name: Upload feature-auth Emulator Test Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-auth-emulator-test-log
+          path: feature-auth-emulator-run.log
 
       - name: Upload Feature Emulator Test Log
         uses: actions/upload-artifact@v4

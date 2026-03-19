@@ -32,6 +32,7 @@ class SettingsScreenContentTest {
                     settingsUiState = SettingsUiState.Loading,
                     onProfileEditClick = {},
                     onChangeLanguageClick = {},
+                    onLogoutClick = {},
                 )
             }
         }
@@ -49,6 +50,7 @@ class SettingsScreenContentTest {
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
                     onProfileEditClick = {},
                     onChangeLanguageClick = {},
+                    onLogoutClick = {},
                 )
             }
         }
@@ -65,6 +67,7 @@ class SettingsScreenContentTest {
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
                     onProfileEditClick = {},
                     onChangeLanguageClick = {},
+                    onLogoutClick = {},
                 )
             }
         }
@@ -81,6 +84,7 @@ class SettingsScreenContentTest {
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.German)),
                     onProfileEditClick = {},
                     onChangeLanguageClick = {},
+                    onLogoutClick = {},
                 )
             }
         }
@@ -99,6 +103,7 @@ class SettingsScreenContentTest {
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
                     onProfileEditClick = {},
                     onChangeLanguageClick = { languageClicked = true },
+                    onLogoutClick = {},
                 )
             }
         }

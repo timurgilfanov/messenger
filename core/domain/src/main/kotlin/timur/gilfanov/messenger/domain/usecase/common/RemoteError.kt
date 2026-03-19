@@ -3,6 +3,14 @@ package timur.gilfanov.messenger.domain.usecase.common
 import kotlin.time.Duration
 
 /**
+ * Subset of [RemoteError] that is valid for unauthenticated operations (login, signup).
+ *
+ * Excludes [RemoteError.Unauthenticated] and [RemoteError.InsufficientPermissions], which are
+ * logically impossible for operations that do not require an existing session.
+ */
+sealed interface UnauthRemoteError
+
+/**
  * Common error taxonomy for repository operations involving remote data.
  *
  * Introduced to remove duplication across multiple use cases that share similar error modes.
@@ -29,7 +37,9 @@ sealed interface RemoteError {
      * layers, such as network connectivity, service throttling, or unexpected infrastructure
      * issues.
      */
-    sealed interface Failed : RemoteError {
+    sealed interface Failed :
+        RemoteError,
+        UnauthRemoteError {
         /** No network connectivity at the moment of the operation attempt. */
         data object NetworkNotAvailable : Failed
 
@@ -51,7 +61,9 @@ sealed interface RemoteError {
      * The operation outcome is unknown (e.g., request timed out after being sent). Callers may need
      * to query status or re-attempt once the underlying condition clears.
      */
-    sealed interface UnknownStatus : RemoteError {
+    sealed interface UnknownStatus :
+        RemoteError,
+        UnauthRemoteError {
         /** Request timed out before the service confirmed success or failure. */
         data object ServiceTimeout : UnknownStatus
     }

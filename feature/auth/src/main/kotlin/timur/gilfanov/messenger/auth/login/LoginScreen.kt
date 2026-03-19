@@ -378,7 +378,11 @@ private fun openAppSettings(context: Context) {
 }
 
 private fun openStorageSettings(context: Context) {
-    context.startActivity(Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
+    val intent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
+    if (intent.resolveActivity(context.packageManager) == null) {
+        intent.action = Settings.ACTION_SETTINGS
+    }
+    context.startActivity(intent)
 }
 
 private const val SECONDS_PER_MINUTE = 60

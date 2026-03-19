@@ -11,6 +11,9 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import timur.gilfanov.messenger.auth.login.GoogleSignInClient
+import timur.gilfanov.messenger.auth.login.LoginScreen
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
 import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
 import timur.gilfanov.messenger.navigation.Chat
@@ -19,19 +22,22 @@ import timur.gilfanov.messenger.navigation.Language
 import timur.gilfanov.messenger.navigation.Login
 import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.navigation.ProfileEdit
+import timur.gilfanov.messenger.navigation.Signup
 import timur.gilfanov.messenger.ui.activity.MainActivityViewModel
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
 import timur.gilfanov.messenger.ui.screen.main.MainScreen
 import timur.gilfanov.messenger.ui.screen.settings.LanguageScreen
-import timur.gilfanov.messenger.ui.screen.settings.LoginScreen
 import timur.gilfanov.messenger.ui.screen.settings.ProfileEditScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 // todo move activity to ui.activity package
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var googleSignInClient: GoogleSignInClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,7 +46,7 @@ class MainActivity : AppCompatActivity() {
             hiltViewModel<MainActivityViewModel>() // needed only for locale observation
 
             MessengerTheme {
-                MessengerApp()
+                MessengerApp(googleSignInClient = googleSignInClient)
             }
         }
     }
@@ -48,7 +54,7 @@ class MainActivity : AppCompatActivity() {
 
 @Suppress("LongMethod") // todo keep entities in feature modules
 @Composable
-fun MessengerApp() {
+fun MessengerApp(googleSignInClient: GoogleSignInClient) {
     val currentUserId = "550e8400-e29b-41d4-a716-446655440000".toParticipantId()
 
     @Suppress("KotlinConstantConditions")
@@ -112,7 +118,17 @@ fun MessengerApp() {
                 )
             }
             entry<Login> {
-                LoginScreen()
+                LoginScreen(
+                    onNavigateToChatList = {
+                        backStack.clear()
+                        backStack.add(Main)
+                    },
+                    onNavigateToSignup = { backStack.add(Signup) },
+                    googleSignInClient = googleSignInClient,
+                )
+            }
+            entry<Signup> {
+                // SignupScreen pending implementation
             }
         },
     )

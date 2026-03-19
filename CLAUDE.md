@@ -45,7 +45,9 @@ Architecture Records (AR) and Architecture Decision Records (ADR) are kept in `d
   - Use cases make decisions based on sealed interface hierarchy, not cause inspection
   - Causes are extracted ONLY for logging and diagnostics
   - See `SyncAllPendingSettingsUseCase.kt` for reference implementation pattern
+  - Error dispatch helpers must be self-contained: each helper handles all its cases without assuming another helper has pre-filtered the input. Cross-coupled helpers (where one relies on the other to have already excluded certain cases) create silent dead branches and hidden `error()` guards — use flat dispatch instead
 - **MVI Pattern**: ViewModels expose a single read-only `StateFlow` for persistent UI state and a `Channel`-backed `Flow` for one-off side effects (navigation, toasts, input clearing)
+  - UI state must survive process termination: back the `StateFlow` with `SavedStateHandle` so state is restored after the process is killed and recreated
   - When a screen has overlapping async operations with business ordering invariants, apply AR-01: centralize all state commits in an `actor` with a `reduce` function (see `docs/architecture/AR-01-single-authority-for-ordering-rules.md`)
 - **Vertical Feature Delivery**: Features are developed and shipped as complete vertical units (domain + data + UI, fully tested) rather than partial horizontal layers across multiple features
 
@@ -53,7 +55,13 @@ Architecture Records (AR) and Architecture Decision Records (ADR) are kept in `d
 Full strategy in `docs/Testing Strategy.md`.
 CI/CD pipeline details in `docs/ci-cd-pipeline.md`.
 - **Fakes over Mocks**: Use test doubles other than mock or spy by default. We test behaviour not implementation.
+- **Test fixtures**: For both JVM and Android library modules, use native Gradle `testFixtures { enable = true }` to share test doubles across modules. Requires `android.experimental.enableTestFixturesKotlinSupport=true` in `gradle.properties` for Android libraries. Consume with `testImplementation(testFixtures(project(":feature:X")))`.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
+- **Turbine `cancelAndIgnoreRemainingEvents()`**: Only use it when there are genuinely unconsumed events to discard (e.g. after `advanceUntilIdle()` on a `StateFlow` that emitted further updates). Do not use it as a default `StateFlow` teardown — Turbine cancels the flow and asserts no unconsumed events automatically when the `test {}` block ends.
+- **`assertTrue` over `assert`**: Use `assertTrue` from `kotlin.test` for boolean assertions in tests. Kotlin's built-in `assert()` is a JVM assertion that can be silently disabled at runtime with `-da`.
+
+### GitHub Issues
+- Never add or remove the `agent` label on issues — it triggers paid automation
 
 ### Self-Learning
 When you discover important project knowledge during implementation that is not already captured in this file or linked docs — such as new architectural patterns, non-obvious conventions, critical gotchas, or structural changes — propose an update to this CLAUDE.md or the relevant doc file. Present the proposed change to the user for approval before applying it.

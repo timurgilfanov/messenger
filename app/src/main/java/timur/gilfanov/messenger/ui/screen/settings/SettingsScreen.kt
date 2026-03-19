@@ -68,6 +68,7 @@ fun SettingsScreen(
     val settingsUiState by settingsViewModel.state.collectAsStateWithLifecycle()
 
     val getSettingsErrorMessage = stringResource(R.string.settings_get_settings_failed)
+    val logoutFailedMessage = stringResource(R.string.settings_logout_failed)
 
     LaunchedEffect(settingsViewModel, lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -75,7 +76,14 @@ fun SettingsScreen(
                 when (it) {
                     is SettingsSideEffects.ObserveSettingsFailed ->
                         currentOnShowSnackbar(getSettingsErrorMessage)
+
                     SettingsSideEffects.Unauthorized -> currentOnAuthFailure()
+
+                    SettingsSideEffects.LoggedOut -> currentOnAuthFailure()
+
+                    is SettingsSideEffects.LogoutFailed -> currentOnShowSnackbar(
+                        logoutFailedMessage,
+                    )
                 }
             }
         }
@@ -85,16 +93,19 @@ fun SettingsScreen(
         settingsUiState = settingsUiState,
         onProfileEditClick = onProfileEditClick,
         onChangeLanguageClick = onChangeLanguageClick,
+        onLogoutClick = { settingsViewModel.logout() },
         modifier = modifier,
     )
 }
 
 @Composable
+@Suppress("LongParameterList") // it's ok for screen to have large number of effects handlers
 internal fun SettingsScreenContent(
     profileUiState: ProfileUiState,
     settingsUiState: SettingsUiState,
     onProfileEditClick: () -> Unit,
     onChangeLanguageClick: () -> Unit,
+    onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -109,6 +120,7 @@ internal fun SettingsScreenContent(
         SettingsContent(
             uiState = settingsUiState,
             onChangeLanguageClick = onChangeLanguageClick,
+            onLogoutClick = onLogoutClick,
         )
     }
 }
@@ -148,13 +160,16 @@ fun ProfileContent(
 fun SettingsContent(
     uiState: SettingsUiState,
     onChangeLanguageClick: () -> Unit,
+    onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
         is SettingsUiState.Loading -> SettingsLoadingContent(modifier)
+
         is SettingsUiState.Ready -> SettingsReadyContent(
             settings = uiState.settings,
             onChangeLanguageClick = onChangeLanguageClick,
+            onLogoutClick = onLogoutClick,
             modifier = modifier,
         )
     }
@@ -181,6 +196,7 @@ fun SettingsLoadingContent(modifier: Modifier = Modifier) {
 fun SettingsReadyContent(
     settings: SettingsUi,
     onChangeLanguageClick: () -> Unit,
+    onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -192,6 +208,12 @@ fun SettingsReadyContent(
             value = settings.language.toSettingsItem(),
             action = onChangeLanguageClick,
             modifier = Modifier.testTag("settings_language_item"),
+        )
+        SettingsListItem(
+            title = stringResource(R.string.settings_logout),
+            value = "",
+            action = onLogoutClick,
+            modifier = Modifier.testTag("settings_logout_item"),
         )
     }
 }
@@ -289,6 +311,7 @@ private fun Content(
             settingsUiState = settingsUiState,
             onProfileEditClick = {},
             onChangeLanguageClick = {},
+            onLogoutClick = {},
         )
     }
 }

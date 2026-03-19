@@ -1,0 +1,54 @@
+<resources>
+    <!-- Login Screen -->
+    <string name="login_email_label">E-Mail</string>
+    <string name="login_password_label">Passwort</string>
+    <string name="login_sign_in_button">Anmelden</string>
+    <string name="login_sign_in_with_google_button">Mit Google anmelden</string>
+    <string name="login_create_account_button">Konto erstellen</string>
+
+    <!-- Login validation errors -->
+    <string name="login_error_blank_email">E-Mail darf nicht leer sein</string>
+    <string name="login_error_invalid_email_format">Ungültiges E-Mail-Format</string>
+    <string name="login_error_no_at_in_email">E-Mail muss @ enthalten</string>
+    <string name="login_error_email_too_long">E-Mail darf höchstens %d Zeichen lang sein</string>
+    <string name="login_error_no_domain_at_email">E-Mail muss eine Domain enthalten</string>
+    <string name="login_error_forbidden_character_in_email">Zeichen \'%s\' ist in der E-Mail nicht erlaubt</string>
+    <string name="login_error_password_too_short">Passwort muss mindestens %d Zeichen lang sein</string>
+    <string name="login_error_password_too_long">Passwort darf höchstens %d Zeichen lang sein</string>
+    <string name="login_error_forbidden_character_in_password">Zeichen \'%s\' ist im Passwort nicht erlaubt</string>
+    <string name="login_error_password_must_contain_numbers">Passwort muss mindestens %d Zahl(en) enthalten</string>
+    <string name="login_error_password_must_contain_alphabet">Passwort muss mindestens %d Buchstaben enthalten</string>
+
+    <!-- Login blocking error titles -->
+    <string name="login_error_storage_full_title">Speicher voll</string>
+    <string name="login_error_storage_corrupted_title">Speicher beschädigt</string>
+    <string name="login_error_storage_read_only_title">Speicherfehler</string>
+    <string name="login_error_storage_access_denied_title">Zugriff verweigert</string>
+
+    <!-- Login blocking error messages -->
+    <string name="login_error_storage_full">Der Gerätespeicher ist voll. Geben Sie Speicherplatz frei, um fortzufahren.</string>
+    <string name="login_error_storage_corrupted">App-Daten sind beschädigt. Löschen Sie die App-Daten, um fortzufahren.</string>
+    <string name="login_error_storage_read_only">Der Speicher ist schreibgeschützt. Löschen Sie die App-Daten oder starten Sie die App neu.</string>
+    <string name="login_error_storage_access_denied">Speicherzugriff verweigert. Erteilen Sie die Berechtigung in den App-Einstellungen.</string>
+
+    <!-- Login blocking error action buttons -->
+    <string name="login_action_open_app_settings">App-Einstellungen öffnen</string>
+    <string name="login_action_open_storage_settings">Speichereinstellungen öffnen</string>
+
+    <!-- Login snackbar messages -->
+    <string name="login_action_retry">Wiederholen</string>
+    <string name="login_error_storage_temporarily_unavailable">Ein vorübergehendes Speicherproblem ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+    <string name="login_error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
+    <string name="login_error_network_unavailable">Keine Internetverbindung</string>
+    <string name="login_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
+    <string name="login_error_unknown">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+    <string name="login_error_google_sign_in_failed">Google-Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
+
+    <!-- Login general errors -->
+    <string name="login_error_invalid_credentials">Ungültige E-Mail oder falsches Passwort</string>
+    <string name="login_error_email_not_verified">E-Mail nicht verifiziert. Bitte überprüfen Sie Ihren Posteingang.</string>
+    <string name="login_error_account_suspended">Ihr Konto wurde gesperrt</string>
+    <string name="login_error_account_not_found">Konto nicht gefunden</string>
+    <string name="login_error_invalid_token">Sitzung abgelaufen. Bitte melden Sie sich erneut an.</string>
+    <string name="login_error_invalid_email">Diese E-Mail-Adresse kann nicht verwendet werden</string>
+</resources>

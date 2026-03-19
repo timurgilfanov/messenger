@@ -90,16 +90,24 @@ fun LoginScreen(
             isSigningInWithGoogle = true
             scope.launch {
                 when (val result = googleSignInClient.signIn(context)) {
-                    is GoogleSignInResult.Success -> viewModel.submitGoogleSignIn(result.idToken)
+                    is GoogleSignInResult.Success -> {
+                        viewModel.submitGoogleSignIn(result.idToken)
+                        isSigningInWithGoogle = false
+                    }
 
-                    GoogleSignInResult.Cancelled -> Unit
+                    GoogleSignInResult.Cancelled -> {
+                        isSigningInWithGoogle = false
+                    }
 
-                    GoogleSignInResult.Failed -> snackbarHostState.showSnackbar(
-                        message = LoginSnackbarMessage.GoogleSignInFailed.toDisplayString(context),
-                        duration = SnackbarDuration.Long,
-                    )
+                    GoogleSignInResult.Failed -> {
+                        isSigningInWithGoogle = false
+                        val msg = LoginSnackbarMessage.GoogleSignInFailed.toDisplayString(context)
+                        snackbarHostState.showSnackbar(
+                            message = msg,
+                            duration = SnackbarDuration.Long,
+                        )
+                    }
                 }
-                isSigningInWithGoogle = false
             }
         }
     }

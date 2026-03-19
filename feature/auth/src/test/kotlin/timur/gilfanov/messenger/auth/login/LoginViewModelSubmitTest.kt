@@ -297,9 +297,13 @@ class LoginViewModelSubmitTest {
         advanceUntilIdle()
         assertIs<LoginBlockingError.StorageFull>(viewModel.state.value.blockingError)
 
-        viewModel.retryLastAction()
-        advanceUntilIdle()
-        assertNull(viewModel.state.value.blockingError)
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            viewModel.retryLastAction()
+            advanceUntilIdle()
+            assertNull(viewModel.state.value.blockingError)
+            assertIs<LoginSideEffects.NavigateToChatList>(awaitItem())
+        }
     }
 
     @Test

@@ -1,0 +1,56 @@
+<resources>
+    <!-- Login Screen -->
+    <string name="login_email_label">Email</string>
+    <string name="login_password_label">Password</string>
+    <string name="login_sign_in_button">Sign In</string>
+    <string name="login_sign_in_with_google_button">Sign In with Google</string>
+    <string name="login_create_account_button">Create account</string>
+
+    <!-- Login validation errors -->
+    <string name="login_error_blank_email">Email must not be blank</string>
+    <string name="login_error_invalid_email_format">Invalid email format</string>
+    <string name="login_error_no_at_in_email">Email must contain @</string>
+    <string name="login_error_email_too_long">Email must be at most %d characters</string>
+    <string name="login_error_no_domain_at_email">Email must contain a domain</string>
+    <string name="login_error_forbidden_character_in_email">Character \'%s\' is not allowed in email</string>
+    <string name="login_error_password_too_short">Password must be at least %d characters</string>
+    <string name="login_error_password_too_long">Password must be at most %d characters</string>
+    <string name="login_error_forbidden_character_in_password">Character \'%s\' is not allowed in password</string>
+    <string name="login_error_password_must_contain_numbers">Password must contain at least %d number(s)</string>
+    <string name="login_error_password_must_contain_alphabet">Password must contain at least %d letter(s)</string>
+
+    <string name="google_server_client_id" translatable="false">TODO: replace with Web OAuth client ID</string>
+
+    <!-- Login blocking error titles -->
+    <string name="login_error_storage_full_title">Storage full</string>
+    <string name="login_error_storage_corrupted_title">Storage corrupted</string>
+    <string name="login_error_storage_read_only_title">Storage error</string>
+    <string name="login_error_storage_access_denied_title">Permission denied</string>
+
+    <!-- Login blocking error messages -->
+    <string name="login_error_storage_full">Device storage is full. Free up space to continue.</string>
+    <string name="login_error_storage_corrupted">App data is corrupted. Clear app data to continue.</string>
+    <string name="login_error_storage_read_only">Storage is in read-only mode. Clear app data or restart the app.</string>
+    <string name="login_error_storage_access_denied">Storage permission denied. Grant permission in app settings.</string>
+
+    <!-- Login blocking error action buttons -->
+    <string name="login_action_open_app_settings">Open App Settings</string>
+    <string name="login_action_open_storage_settings">Open Storage Settings</string>
+
+    <!-- Login snackbar messages -->
+    <string name="login_action_retry">Retry</string>
+    <string name="login_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
+    <string name="login_error_too_many_attempts">Too many attempts. Try again in %s.</string>
+    <string name="login_error_network_unavailable">No internet connection</string>
+    <string name="login_error_service_unavailable">Service unavailable. Try again later.</string>
+    <string name="login_error_unknown">Something went wrong. Please try again.</string>
+    <string name="login_error_google_sign_in_failed">Google Sign-In failed. Please try again.</string>
+
+    <!-- Login general errors -->
+    <string name="login_error_invalid_credentials">Invalid email or password</string>
+    <string name="login_error_email_not_verified">Email not verified. Please check your inbox.</string>
+    <string name="login_error_account_suspended">Your account has been suspended</string>
+    <string name="login_error_account_not_found">Account not found</string>
+    <string name="login_error_invalid_token">Session expired. Please sign in again.</string>
+    <string name="login_error_invalid_email">This email address cannot be used</string>
+</resources>

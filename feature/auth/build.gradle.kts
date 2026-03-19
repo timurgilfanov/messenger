@@ -63,24 +63,49 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui.tooling.preview)
-    debugImplementation(libs.androidx.ui.tooling)
 
     // Core
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    // ========== Dependency Injection ==========
+    // Credentials
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+
+    // ========== Third-party Runtime Libraries ==========
+    // Dependency Injection
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
-    // ========== Credentials ==========
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
+    // Google Identity
     implementation(libs.googleid)
 
-    // ========== Dependency Injection ==========
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
+    // Networking
+    implementation(libs.ktor.client.core)
+
+    // ========== Test Dependencies ==========
+    // Unit Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+
+    // Test Utilities
+    testImplementation(libs.ktor.client.mock)
+
+    // ========== Android Test Dependencies ==========
+    androidTestImplementation(project(":core:androidTest"))
+    androidTestImplementation(testFixtures(project(":core:domain")))
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    kspAndroidTest(libs.hilt.compiler)
+
+    // ========== Debug Dependencies ==========
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
@@ -98,20 +123,7 @@ dependencies {
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel)
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel.savedstate)
     testImplementation(project(":core:test"))
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlin.test)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.turbine)
     testImplementation(testFixtures(project(":core:domain")))
-    androidTestImplementation(project(":core:androidTest"))
-    androidTestImplementation(testFixtures(project(":core:domain")))
-    androidTestImplementation(libs.hilt.android.testing)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
-    debugImplementation(libs.androidx.ui.test.manifest)
-    kspAndroidTest(libs.hilt.compiler)
 
     // DI
     implementation(libs.hilt.android)

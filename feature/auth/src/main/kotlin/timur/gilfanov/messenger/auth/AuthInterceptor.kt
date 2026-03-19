@@ -7,8 +7,10 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorage
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
+import timur.gilfanov.messenger.domain.entity.onSuccess
 
 /**
  * Ktor plugin that transparently handles authentication for all HTTP requests.
@@ -26,7 +28,7 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
  *    exactly one refresh is performed; all callers wait for the same result.
  */
 class AuthInterceptor(
-    private val authTokenStorage: AuthTokenStorage,
+    private val authSessionStorage: AuthSessionStorage,
     private val tokenRefreshUseCase: TokenRefreshUseCase,
     private val scope: CoroutineScope,
 ) {
@@ -37,9 +39,10 @@ class AuthInterceptor(
 
     fun install(client: HttpClient) {
         client.plugin(HttpSend).intercept { request ->
-            val accessToken = authTokenStorage.getAccessToken()
-            if (accessToken != null) {
-                request.headers["Authorization"] = "Bearer $accessToken"
+            authSessionStorage.getAccessToken().onSuccess { accessToken ->
+                if (accessToken != null) {
+                    request.headers["Authorization"] = "Bearer $accessToken"
+                }
             }
 
             val call = execute(request)
@@ -53,12 +56,14 @@ class AuthInterceptor(
 
             when (result) {
                 is ResultWithError.Success -> {
-                    val newToken = authTokenStorage.getAccessToken()
-                    if (newToken != null) {
-                        request.headers["Authorization"] = "Bearer $newToken"
+                    authSessionStorage.getAccessToken().onSuccess { newToken ->
+                        if (newToken != null) {
+                            request.headers["Authorization"] = "Bearer $newToken"
+                        }
                     }
                     execute(request)
                 }
+
                 is ResultWithError.Failure -> call
             }
         }

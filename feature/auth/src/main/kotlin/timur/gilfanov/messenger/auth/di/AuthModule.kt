@@ -7,9 +7,9 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import timur.gilfanov.messenger.auth.AuthInterceptor
-import timur.gilfanov.messenger.auth.AuthTokenStorage
 import timur.gilfanov.messenger.auth.TokenRefreshError
 import timur.gilfanov.messenger.auth.TokenRefreshUseCase
+import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorage
 import timur.gilfanov.messenger.auth.login.GoogleSignInClient
 import timur.gilfanov.messenger.auth.login.GoogleSignInClientImpl
 import timur.gilfanov.messenger.auth.login.LoginWithCredentialsUseCase
@@ -21,7 +21,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthState.Authenticated
-import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
@@ -33,22 +32,13 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideAuthTokenStorage(): AuthTokenStorage = object : AuthTokenStorage {
-        override suspend fun getAccessToken(): String? = null
-        override suspend fun getRefreshToken(): String? = null
-        override suspend fun saveTokens(tokens: AuthTokens) = Unit
-        override suspend fun clearTokens() = Unit
-    }
-
-    @Provides
-    @Singleton
     fun provideTokenRefreshUseCase(): TokenRefreshUseCase =
         TokenRefreshUseCase { ResultWithError.Failure(TokenRefreshError.SessionExpired) }
 
     @Provides
     @Singleton
     fun provideAuthInterceptor(
-        authTokenStorage: AuthTokenStorage,
+        authSessionStorage: AuthSessionStorage,
         tokenRefreshUseCase: TokenRefreshUseCase,
         scope: CoroutineScope,
     ): AuthInterceptor = AuthInterceptor(authTokenStorage, tokenRefreshUseCase, scope)

@@ -5,6 +5,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -248,9 +249,9 @@ class LoginFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             onNodeWithTag("login_google_sign_in_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("login_general_error"))
-            onNodeWithTag("login_general_error")
-                .assertTextEquals(activity.getString(R.string.login_error_google_sign_in_failed))
+            waitUntilExactlyOneExists(
+                hasText(activity.getString(R.string.login_error_google_sign_in_failed)),
+            )
         }
     }
 

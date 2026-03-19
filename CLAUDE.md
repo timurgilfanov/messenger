@@ -45,6 +45,7 @@ Architecture Records (AR) and Architecture Decision Records (ADR) are kept in `d
   - Use cases make decisions based on sealed interface hierarchy, not cause inspection
   - Causes are extracted ONLY for logging and diagnostics
   - See `SyncAllPendingSettingsUseCase.kt` for reference implementation pattern
+  - Error dispatch helpers must be self-contained: each helper handles all its cases without assuming another helper has pre-filtered the input. Cross-coupled helpers (where one relies on the other to have already excluded certain cases) create silent dead branches and hidden `error()` guards — use flat dispatch instead
 - **MVI Pattern**: ViewModels expose a single read-only `StateFlow` for persistent UI state and a `Channel`-backed `Flow` for one-off side effects (navigation, toasts, input clearing)
   - UI state must survive process termination: back the `StateFlow` with `SavedStateHandle` so state is restored after the process is killed and recreated
   - When a screen has overlapping async operations with business ordering invariants, apply AR-01: centralize all state commits in an `actor` with a `reduce` function (see `docs/architecture/AR-01-single-authority-for-ordering-rules.md`)

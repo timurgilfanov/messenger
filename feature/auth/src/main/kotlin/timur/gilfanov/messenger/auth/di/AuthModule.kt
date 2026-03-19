@@ -18,12 +18,8 @@ import timur.gilfanov.messenger.auth.login.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.auth.login.LoginWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
-import timur.gilfanov.messenger.domain.entity.auth.AuthSession
-import timur.gilfanov.messenger.domain.entity.auth.AuthState.Authenticated
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.util.Logger
 
 @Module
@@ -41,15 +37,7 @@ object AuthModule {
         authSessionStorage: AuthSessionStorage,
         tokenRefreshUseCase: TokenRefreshUseCase,
         scope: CoroutineScope,
-    ): AuthInterceptor = AuthInterceptor(authTokenStorage, tokenRefreshUseCase, scope)
-
-    @Provides
-    @Singleton
-    fun provideAuthRepository(): AuthRepository = AuthRepositoryFake(
-        initialAuthState = Authenticated(
-            AuthSession(AuthTokens("stub-access", "stub-refresh"), AuthProvider.EMAIL),
-        ),
-    )
+    ): AuthInterceptor = AuthInterceptor(authSessionStorage, tokenRefreshUseCase, scope)
 
     @Provides
     @Singleton

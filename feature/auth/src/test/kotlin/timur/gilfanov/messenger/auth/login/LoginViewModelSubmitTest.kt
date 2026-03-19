@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -125,27 +126,106 @@ class LoginViewModelSubmitTest {
     }
 
     @Test
-    fun `repository NetworkNotAvailable sets generalError NetworkUnavailable`() = runTest {
+    fun `repository NetworkNotAvailable emits ShowSnackbar NetworkUnavailable`() = runTest {
         val viewModel = createViewModel(
             loginResult = Failure(
                 LoginRepositoryError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
             ),
         )
-        viewModel.submitLogin()
-        advanceUntilIdle()
-        assertIs<LoginGeneralError.NetworkUnavailable>(viewModel.state.value.generalError)
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            viewModel.submitLogin()
+            advanceUntilIdle()
+            val effect = assertIs<LoginSideEffects.ShowSnackbar>(awaitItem())
+            assertIs<LoginSnackbarMessage.NetworkUnavailable>(effect.message)
+        }
     }
 
     @Test
-    fun `repository LocalOperationFailed sets generalError ServiceUnavailable`() = runTest {
+    fun `repository local TemporarilyUnavailable emits ShowSnackbar`() = runTest {
         val viewModel = createViewModel(
             loginResult = Failure(
-                LoginRepositoryError.LocalOperationFailed(LocalStorageError.TemporarilyUnavailable),
+                LoginRepositoryError.LocalOperationFailed(
+                    LocalStorageError.TemporarilyUnavailable,
+                ),
+            ),
+        )
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            viewModel.submitLogin()
+            advanceUntilIdle()
+            val effect = assertIs<LoginSideEffects.ShowSnackbar>(awaitItem())
+            assertIs<LoginSnackbarMessage.StorageTemporarilyUnavailable>(effect.message)
+        }
+    }
+
+    @Test
+    fun `repository LocalOperationFailed StorageFull sets blockingError StorageFull`() = runTest {
+        val viewModel = createViewModel(
+            loginResult = Failure(
+                LoginRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
             ),
         )
         viewModel.submitLogin()
         advanceUntilIdle()
-        assertIs<LoginGeneralError.ServiceUnavailable>(viewModel.state.value.generalError)
+        assertIs<LoginBlockingError.StorageFull>(viewModel.state.value.blockingError)
+    }
+
+    @Test
+    fun `repository LocalOperationFailed Corrupted sets blockingError Corrupted`() = runTest {
+        val viewModel = createViewModel(
+            loginResult = Failure(
+                LoginRepositoryError.LocalOperationFailed(LocalStorageError.Corrupted),
+            ),
+        )
+        viewModel.submitLogin()
+        advanceUntilIdle()
+        assertIs<LoginBlockingError.StorageCorrupted>(viewModel.state.value.blockingError)
+    }
+
+    @Test
+    fun `repository LocalOperationFailed ReadOnly sets blockingError ReadOnly`() = runTest {
+        val viewModel = createViewModel(
+            loginResult = Failure(
+                LoginRepositoryError.LocalOperationFailed(LocalStorageError.ReadOnly),
+            ),
+        )
+        viewModel.submitLogin()
+        advanceUntilIdle()
+        assertIs<LoginBlockingError.StorageReadOnly>(viewModel.state.value.blockingError)
+    }
+
+    @Test
+    fun `repository LocalOperationFailed AccessDenied sets blockingError AccessDenied`() = runTest {
+        val viewModel = createViewModel(
+            loginResult = Failure(
+                LoginRepositoryError.LocalOperationFailed(LocalStorageError.AccessDenied),
+            ),
+        )
+        viewModel.submitLogin()
+        advanceUntilIdle()
+        assertIs<LoginBlockingError.StorageAccessDenied>(viewModel.state.value.blockingError)
+    }
+
+    @Test
+    fun `repository LocalOperationFailed UnknownError emits ShowSnackbar`() = runTest {
+        val viewModel = createViewModel(
+            loginResult = Failure(
+                LoginRepositoryError.LocalOperationFailed(
+                    LocalStorageError.UnknownError(RuntimeException("test")),
+                ),
+            ),
+        )
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            viewModel.submitLogin()
+            advanceUntilIdle()
+            val effect = assertIs<LoginSideEffects.ShowSnackbar>(awaitItem())
+            assertIs<LoginSnackbarMessage.StorageTemporarilyUnavailable>(effect.message)
+        }
     }
 
     @Test
@@ -161,17 +241,62 @@ class LoginViewModelSubmitTest {
     }
 
     @Test
-    fun `repository RemoteOperationFailed non-network sets generalError ServiceUnavailable`() =
+    fun `repository RemoteOperationFailed non-network emits ShowSnackbar ServiceUnavailable`() =
         runTest {
             val viewModel = createViewModel(
                 loginResult = Failure(
                     LoginRepositoryError.RemoteOperationFailed(RemoteError.Failed.ServiceDown),
                 ),
             )
-            viewModel.submitLogin()
-            advanceUntilIdle()
-            assertIs<LoginGeneralError.ServiceUnavailable>(viewModel.state.value.generalError)
+
+            backgroundScope.launch { viewModel.state.collect {} }
+            viewModel.effects.test {
+                viewModel.submitLogin()
+                advanceUntilIdle()
+                val effect = assertIs<LoginSideEffects.ShowSnackbar>(awaitItem())
+                assertIs<LoginSnackbarMessage.ServiceUnavailable>(effect.message)
+            }
         }
+
+    @Test
+    fun `repository Cooldown emits ShowSnackbar TooManyAttempts with remaining duration`() =
+        runTest {
+            val remaining = 5.minutes
+            val viewModel = createViewModel(
+                loginResult = Failure(
+                    LoginRepositoryError.RemoteOperationFailed(
+                        RemoteError.Failed.Cooldown(remaining),
+                    ),
+                ),
+            )
+
+            backgroundScope.launch { viewModel.state.collect {} }
+            viewModel.effects.test {
+                viewModel.submitLogin()
+                advanceUntilIdle()
+                val effect = assertIs<LoginSideEffects.ShowSnackbar>(awaitItem())
+                val message = assertIs<LoginSnackbarMessage.TooManyAttempts>(effect.message)
+                assertTrue(message.remaining == remaining)
+            }
+        }
+
+    @Test
+    fun `retryLastAction after credentials login clears blockingError and retries`() = runTest {
+        val viewModel = createViewModel(
+            loginResult = Failure(
+                LoginRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
+            ),
+        )
+        viewModel.updateEmail("user@example.com")
+        viewModel.updatePassword("Password1")
+        viewModel.submitLogin()
+        advanceUntilIdle()
+        assertIs<LoginBlockingError.StorageFull>(viewModel.state.value.blockingError)
+
+        viewModel.retryLastAction()
+        advanceUntilIdle()
+        assertNull(viewModel.state.value.blockingError)
+    }
 
     @Test
     fun `isLoading is true while submit is in progress`() = runTest {

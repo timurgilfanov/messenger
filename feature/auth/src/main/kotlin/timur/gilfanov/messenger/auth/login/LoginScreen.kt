@@ -1,5 +1,9 @@
 package timur.gilfanov.messenger.auth.login
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,11 +16,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -56,6 +66,7 @@ fun LoginScreen(
     val currentOnNavigateToSignup by rememberUpdatedState(onNavigateToSignup)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -63,6 +74,24 @@ fun LoginScreen(
                 when (effect) {
                     LoginSideEffects.NavigateToChatList -> currentOnNavigateToChatList()
                     LoginSideEffects.NavigateToSignup -> currentOnNavigateToSignup()
+                    LoginSideEffects.OpenAppSettings -> openAppSettings(context)
+                    LoginSideEffects.OpenStorageSettings ->
+                        context.startActivity(Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS))
+                    is LoginSideEffects.ShowSnackbar -> scope.launch {
+                        val message = effect.message
+                        val actionLabel =
+                            if (message is LoginSnackbarMessage.StorageTemporarilyUnavailable) {
+                                context.getString(R.string.login_action_retry)
+                            } else {
+                                null
+                            }
+                        val result = snackbarHostState.showSnackbar(
+                            message = message.toDisplayString(context),
+                            actionLabel = actionLabel,
+                            duration = SnackbarDuration.Long,
+                        )
+                        if (result == SnackbarResult.ActionPerformed) viewModel.retryLastAction()
+                    }
                 }
             }.collect()
         }
@@ -70,6 +99,7 @@ fun LoginScreen(
 
     LoginScreenContent(
         state = state,
+        snackbarHostState = snackbarHostState,
         onEmailChange = viewModel::updateEmail,
         onPasswordChange = viewModel::updatePassword,
         onSubmitLogin = viewModel::submitLogin,
@@ -83,6 +113,8 @@ fun LoginScreen(
             }
         },
         onNavigateToSignup = currentOnNavigateToSignup,
+        onOpenAppSettings = viewModel::onOpenAppSettingsClick,
+        onOpenStorageSettings = viewModel::onOpenStorageSettingsClick,
         modifier = modifier,
     )
 }
@@ -91,11 +123,14 @@ fun LoginScreen(
 @Composable
 fun LoginScreenContent(
     state: LoginUiState,
+    snackbarHostState: SnackbarHostState,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onSubmitLogin: () -> Unit,
     onGoogleSignInClick: () -> Unit,
     onNavigateToSignup: () -> Unit,
+    onOpenAppSettings: () -> Unit,
+    onOpenStorageSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -104,47 +139,84 @@ fun LoginScreenContent(
             .background(MaterialTheme.colorScheme.background)
             .testTag("login_screen"),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            EmailField(state, onEmailChange)
-
-            PasswordField(state, onPasswordChange)
-
-            state.generalError?.let {
-                Text(
-                    text = it.toDisplayString(),
-                    modifier = Modifier.testTag("login_general_error"),
-                )
-            }
-
-            Button(
-                onClick = onSubmitLogin,
-                enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth().testTag("login_sign_in_button"),
-            ) {
-                Text(stringResource(R.string.login_sign_in_button))
-            }
-
-            Button(
-                onClick = onGoogleSignInClick,
-                enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth().testTag("login_google_sign_in_button"),
-            ) {
-                Text(stringResource(R.string.login_sign_in_with_google_button))
-            }
-
-            TextButton(onClick = onNavigateToSignup) {
-                Text(stringResource(R.string.login_create_account_button))
-            }
-        }
+        LoginForm(
+            state = state,
+            onEmailChange = onEmailChange,
+            onPasswordChange = onPasswordChange,
+            onSubmitLogin = onSubmitLogin,
+            onGoogleSignInClick = onGoogleSignInClick,
+            onNavigateToSignup = onNavigateToSignup,
+        )
 
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) { data -> Snackbar(snackbarData = data) }
+    }
+
+    state.blockingError?.let { error ->
+        BlockingErrorDialog(
+            error = error,
+            onOpenAppSettings = onOpenAppSettings,
+            onOpenStorageSettings = onOpenStorageSettings,
+        )
+    }
+}
+
+@Suppress("LongParameterList") // mirrors LoginScreenContent drilling
+@Composable
+private fun LoginForm(
+    state: LoginUiState,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onSubmitLogin: () -> Unit,
+    onGoogleSignInClick: () -> Unit,
+    onNavigateToSignup: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        EmailField(state, onEmailChange)
+
+        PasswordField(state, onPasswordChange)
+
+        state.generalError?.let {
+            Text(
+                text = it.toDisplayString(),
+                modifier = Modifier.testTag("login_general_error"),
+            )
+        }
+
+        Button(
+            onClick = onSubmitLogin,
+            enabled = !state.isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("login_sign_in_button"),
+        ) {
+            Text(stringResource(R.string.login_sign_in_button))
+        }
+
+        Button(
+            onClick = onGoogleSignInClick,
+            enabled = !state.isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("login_google_sign_in_button"),
+        ) {
+            Text(stringResource(R.string.login_sign_in_with_google_button))
+        }
+
+        TextButton(onClick = onNavigateToSignup) {
+            Text(stringResource(R.string.login_create_account_button))
         }
     }
 }
@@ -165,7 +237,9 @@ private fun PasswordField(state: LoginUiState, onPasswordChange: (String) -> Uni
                 )
             }
         },
-        modifier = Modifier.fillMaxWidth().testTag("login_password_field"),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("login_password_field"),
     )
 }
 
@@ -188,7 +262,9 @@ private fun EmailField(state: LoginUiState, onEmailChange: (String) -> Unit) {
                 )
             }
         },
-        modifier = Modifier.fillMaxWidth().testTag("login_email_field"),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("login_email_field"),
     )
 }
 
@@ -231,20 +307,57 @@ private fun CredentialsValidationError.toDisplayString(): String = when (this) {
 }
 
 @Composable
-private fun LoginGeneralError.toDisplayString(): String = stringResource(
-    when (this) {
-        LoginGeneralError.InvalidCredentials -> R.string.login_error_invalid_credentials
-        LoginGeneralError.EmailNotVerified -> R.string.login_error_email_not_verified
-        LoginGeneralError.AccountSuspended -> R.string.login_error_account_suspended
-        LoginGeneralError.AccountNotFound -> R.string.login_error_account_not_found
-        LoginGeneralError.InvalidToken -> R.string.login_error_invalid_token
-        LoginGeneralError.NetworkUnavailable -> R.string.login_error_network_unavailable
-        LoginGeneralError.ServiceUnavailable -> R.string.login_error_service_unavailable
-        LoginGeneralError.InvalidEmail -> R.string.login_error_invalid_email
-        LoginGeneralError.Unknown -> R.string.login_error_unknown
-        LoginGeneralError.GoogleSignInFailed -> R.string.login_error_google_sign_in_failed
-    },
-)
+private fun LoginGeneralError.toDisplayString(): String = when (this) {
+    LoginGeneralError.InvalidCredentials -> stringResource(R.string.login_error_invalid_credentials)
+
+    LoginGeneralError.EmailNotVerified -> stringResource(R.string.login_error_email_not_verified)
+
+    LoginGeneralError.AccountSuspended -> stringResource(R.string.login_error_account_suspended)
+
+    LoginGeneralError.AccountNotFound -> stringResource(R.string.login_error_account_not_found)
+
+    LoginGeneralError.InvalidToken -> stringResource(R.string.login_error_invalid_token)
+
+    LoginGeneralError.InvalidEmail -> stringResource(R.string.login_error_invalid_email)
+}
+
+private fun LoginSnackbarMessage.toDisplayString(context: Context): String = when (this) {
+    LoginSnackbarMessage.NetworkUnavailable ->
+        context.getString(R.string.login_error_network_unavailable)
+
+    LoginSnackbarMessage.ServiceUnavailable ->
+        context.getString(R.string.login_error_service_unavailable)
+
+    LoginSnackbarMessage.Unknown ->
+        context.getString(R.string.login_error_unknown)
+
+    LoginSnackbarMessage.GoogleSignInFailed ->
+        context.getString(R.string.login_error_google_sign_in_failed)
+
+    LoginSnackbarMessage.StorageTemporarilyUnavailable ->
+        context.getString(R.string.login_error_storage_temporarily_unavailable)
+
+    is LoginSnackbarMessage.TooManyAttempts -> {
+        val totalSeconds = remaining.inWholeSeconds
+        val minutes = totalSeconds / SECONDS_PER_MINUTE
+        val seconds = totalSeconds % SECONDS_PER_MINUTE
+        val formatted = when {
+            minutes > 0 && seconds > 0 -> "${minutes}m ${seconds}s"
+            minutes > 0 -> "${minutes}m"
+            else -> "${seconds}s"
+        }
+        context.getString(R.string.login_error_too_many_attempts, formatted)
+    }
+}
+
+private fun openAppSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        data = Uri.fromParts("package", context.packageName, null)
+    }
+    context.startActivity(intent)
+}
+
+private const val SECONDS_PER_MINUTE = 60
 
 @Preview
 @Composable
@@ -291,16 +404,41 @@ private fun LoginScreenContentLoadingPreview() {
     Content(darkTheme = false, state = LoginUiState(isLoading = true))
 }
 
+@Preview
+@Composable
+private fun LoginScreenContentGeneralErrorPreview() {
+    Content(
+        darkTheme = false,
+        state = LoginUiState(
+            email = "user@example.com",
+            password = "Password1",
+            generalError = LoginGeneralError.InvalidCredentials,
+        ),
+    )
+}
+
+@Preview
+@Composable
+private fun LoginScreenContentBlockingErrorPreview() {
+    Content(
+        darkTheme = false,
+        state = LoginUiState(blockingError = LoginBlockingError.StorageAccessDenied),
+    )
+}
+
 @Composable
 private fun Content(darkTheme: Boolean, state: LoginUiState = LoginUiState()) {
     MessengerTheme(darkTheme = darkTheme) {
         LoginScreenContent(
             state = state,
+            snackbarHostState = remember { SnackbarHostState() },
             onEmailChange = {},
             onPasswordChange = {},
             onSubmitLogin = {},
             onGoogleSignInClick = {},
             onNavigateToSignup = {},
+            onOpenAppSettings = {},
+            onOpenStorageSettings = {},
         )
     }
 }

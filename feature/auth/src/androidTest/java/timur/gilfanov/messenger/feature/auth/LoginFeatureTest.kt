@@ -46,6 +46,7 @@ import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
@@ -285,6 +286,27 @@ class LoginFeatureTest {
             waitUntilExactlyOneExists(hasTestTag("login_general_error"))
             onNodeWithTag("login_general_error")
                 .assertTextEquals(activity.getString(R.string.login_error_account_suspended))
+        }
+    }
+
+    @Test
+    fun loginScreen_localOperationFailed_storageFull_showsBlockingDialog() {
+        (authRepository as AuthRepositoryFake).enqueueLoginWithCredentialsResult(
+            ResultWithError.Failure(
+                LoginRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
+            ),
+        )
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("login_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("login_sign_in_button").performClick()
+            waitUntilExactlyOneExists(hasTestTag("login_blocking_error_dialog"))
+            onNodeWithTag("login_blocking_error_action_button")
+                .assertTextEquals(activity.getString(R.string.login_action_open_storage_settings))
         }
     }
 }

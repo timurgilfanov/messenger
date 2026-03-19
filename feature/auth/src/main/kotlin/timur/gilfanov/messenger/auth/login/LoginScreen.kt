@@ -30,9 +30,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -51,6 +53,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -68,16 +71,70 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val currentOnNavigateToChatList by rememberUpdatedState(onNavigateToChatList)
     val currentOnNavigateToSignup by rememberUpdatedState(onNavigateToSignup)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    var isSigningInWithGoogle by remember { mutableStateOf(false) }
 
+    LoginEffectHandler(
+        effects = viewModel.effects,
+        snackbarHostState = snackbarHostState,
+        onNavigateToChatList = onNavigateToChatList,
+        onNavigateToSignup = onNavigateToSignup,
+        onRetry = viewModel::retryLastAction,
+    )
+
+    val onGoogleSignInClick: () -> Unit = {
+        if (!isSigningInWithGoogle) {
+            isSigningInWithGoogle = true
+            scope.launch {
+                when (val result = googleSignInClient.signIn(context)) {
+                    is GoogleSignInResult.Success -> viewModel.submitGoogleSignIn(result.idToken)
+
+                    GoogleSignInResult.Cancelled -> Unit
+
+                    GoogleSignInResult.Failed -> snackbarHostState.showSnackbar(
+                        message = LoginSnackbarMessage.GoogleSignInFailed.toDisplayString(context),
+                        duration = SnackbarDuration.Long,
+                    )
+                }
+                isSigningInWithGoogle = false
+            }
+        }
+    }
+    LoginScreenContent(
+        state = state,
+        snackbarHostState = snackbarHostState,
+        onEmailChange = viewModel::updateEmail,
+        onPasswordChange = viewModel::updatePassword,
+        onSubmitLogin = viewModel::submitLogin,
+        onGoogleSignInClick = onGoogleSignInClick,
+        isSigningInWithGoogle = isSigningInWithGoogle,
+        onNavigateToSignup = currentOnNavigateToSignup,
+        onOpenAppSettings = viewModel::onOpenAppSettingsClick,
+        onOpenStorageSettings = viewModel::onOpenStorageSettingsClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun LoginEffectHandler(
+    effects: Flow<LoginSideEffects>,
+    snackbarHostState: SnackbarHostState,
+    onNavigateToChatList: () -> Unit,
+    onNavigateToSignup: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val currentOnNavigateToChatList by rememberUpdatedState(onNavigateToChatList)
+    val currentOnNavigateToSignup by rememberUpdatedState(onNavigateToSignup)
+    val currentOnRetry by rememberUpdatedState(onRetry)
     LaunchedEffect(lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            viewModel.effects.onEach { effect ->
+            effects.onEach { effect ->
                 when (effect) {
                     LoginSideEffects.NavigateToChatList -> currentOnNavigateToChatList()
 
@@ -100,38 +157,12 @@ fun LoginScreen(
                             actionLabel = actionLabel,
                             duration = SnackbarDuration.Long,
                         )
-                        if (result == SnackbarResult.ActionPerformed) viewModel.retryLastAction()
+                        if (result == SnackbarResult.ActionPerformed) currentOnRetry()
                     }
                 }
             }.collect()
         }
     }
-
-    LoginScreenContent(
-        state = state,
-        snackbarHostState = snackbarHostState,
-        onEmailChange = viewModel::updateEmail,
-        onPasswordChange = viewModel::updatePassword,
-        onSubmitLogin = viewModel::submitLogin,
-        onGoogleSignInClick = {
-            scope.launch {
-                when (val result = googleSignInClient.signIn(context)) {
-                    is GoogleSignInResult.Success -> viewModel.submitGoogleSignIn(result.idToken)
-
-                    GoogleSignInResult.Cancelled -> Unit
-
-                    GoogleSignInResult.Failed -> snackbarHostState.showSnackbar(
-                        message = LoginSnackbarMessage.GoogleSignInFailed.toDisplayString(context),
-                        duration = SnackbarDuration.Long,
-                    )
-                }
-            }
-        },
-        onNavigateToSignup = currentOnNavigateToSignup,
-        onOpenAppSettings = viewModel::onOpenAppSettingsClick,
-        onOpenStorageSettings = viewModel::onOpenStorageSettingsClick,
-        modifier = modifier,
-    )
 }
 
 @Suppress("LongParameterList") // Compose property drilling is preferred over wrapper objects
@@ -143,6 +174,7 @@ fun LoginScreenContent(
     onPasswordChange: (String) -> Unit,
     onSubmitLogin: () -> Unit,
     onGoogleSignInClick: () -> Unit,
+    isSigningInWithGoogle: Boolean,
     onNavigateToSignup: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onOpenStorageSettings: () -> Unit,
@@ -160,6 +192,7 @@ fun LoginScreenContent(
             onPasswordChange = onPasswordChange,
             onSubmitLogin = onSubmitLogin,
             onGoogleSignInClick = onGoogleSignInClick,
+            isSigningInWithGoogle = isSigningInWithGoogle,
             onNavigateToSignup = onNavigateToSignup,
         )
 
@@ -190,6 +223,7 @@ private fun LoginForm(
     onPasswordChange: (String) -> Unit,
     onSubmitLogin: () -> Unit,
     onGoogleSignInClick: () -> Unit,
+    isSigningInWithGoogle: Boolean,
     onNavigateToSignup: () -> Unit,
 ) {
     Column(
@@ -230,7 +264,7 @@ private fun LoginForm(
 
         Button(
             onClick = onGoogleSignInClick,
-            enabled = !state.isLoading,
+            enabled = !state.isLoading && !isSigningInWithGoogle,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("login_google_sign_in_button"),
@@ -523,6 +557,7 @@ private fun ContentWithSnackbar(message: String) {
             onPasswordChange = {},
             onSubmitLogin = {},
             onGoogleSignInClick = {},
+            isSigningInWithGoogle = false,
             onNavigateToSignup = {},
             onOpenAppSettings = {},
             onOpenStorageSettings = {},
@@ -540,6 +575,7 @@ private fun Content(darkTheme: Boolean, state: LoginUiState = LoginUiState()) {
             onPasswordChange = {},
             onSubmitLogin = {},
             onGoogleSignInClick = {},
+            isSigningInWithGoogle = false,
             onNavigateToSignup = {},
             onOpenAppSettings = {},
             onOpenStorageSettings = {},

@@ -1,19 +1,23 @@
 package timur.gilfanov.messenger.auth.login
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.auth.login.LoginViewModelTestFixtures.createViewModel
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
@@ -311,6 +315,33 @@ class LoginViewModelSubmitTest {
             assertTrue(loadingState.isLoading)
             advanceUntilIdle()
             cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `second submitLogin while first is in progress is ignored`() = runTest {
+        val deferred = CompletableDeferred<Unit>()
+        val viewModel = LoginViewModel(
+            loginWithCredentials = {
+                deferred.await()
+                ResultWithError.Success(Unit)
+            },
+            loginWithGoogle = { ResultWithError.Success(Unit) },
+            savedStateHandle = SavedStateHandle(),
+        )
+        viewModel.updateEmail("user@example.com")
+        viewModel.updatePassword("Password1")
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            viewModel.submitLogin()
+            runCurrent()
+            assertTrue(viewModel.state.value.isLoading)
+            viewModel.submitLogin()
+            deferred.complete(Unit)
+            advanceUntilIdle()
+            assertIs<LoginSideEffects.NavigateToChatList>(awaitItem())
+            expectNoEvents()
         }
     }
 }

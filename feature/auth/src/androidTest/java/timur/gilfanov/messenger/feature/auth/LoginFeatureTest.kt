@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.feature.auth
 
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -118,7 +119,7 @@ class LoginFeatureTest {
 
     @After
     fun tearDown() {
-        LoginTestModule.googleSignInClient.result = GoogleSignInResult.Cancelled
+        LoginTestModule.googleSignInClient.reset()
     }
 
     @Test
@@ -286,6 +287,20 @@ class LoginFeatureTest {
             waitUntilExactlyOneExists(hasTestTag("login_general_error"))
             onNodeWithTag("login_general_error")
                 .assertTextEquals(activity.getString(R.string.login_error_account_suspended))
+        }
+    }
+
+    @Test
+    fun loginScreen_rapidTapGoogleSignIn_buttonBecomesDisabled() {
+        LoginTestModule.googleSignInClient.shouldSuspend = true
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("login_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("login_google_sign_in_button").performClick()
+            waitForIdle()
+            onNodeWithTag("login_google_sign_in_button").assertIsNotEnabled()
         }
     }
 

@@ -328,7 +328,7 @@ dependencies {
     debugImplementation(testFixtures(project(":core:domain")))
 
     // ========== Module Dependencies ==========
-    implementation(project(":feature:auth"))
+    implementation(project(":core:data"))
     implementation(project(":core:domain"))
     implementation(project(":core:ui"))
     implementation(project(":feature:auth"))

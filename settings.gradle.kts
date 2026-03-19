@@ -23,6 +23,7 @@ rootProject.name = "Messenger"
 include(":app")
 include(":build-logic")
 include(":core:androidTest")
+include(":core:data")
 include(":core:domain")
 include(":core:test")
 include(":core:ui")

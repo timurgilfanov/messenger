@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.remote
 
+import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 /**
@@ -65,7 +66,7 @@ sealed interface RemoteSettingsDataSourceError {
      *
      * @property error The underlying remote data source error
      */
-    data class RemoteDataSource(val error: RemoteDataSourceErrorV2) : RemoteSettingsDataSourceError
+    data class RemoteDataSource(val error: RemoteDataSourceError) : RemoteSettingsDataSourceError
 }
 
 fun RemoteSettingsDataSourceError.toRemoteError(): RemoteError = when (this) {
@@ -80,22 +81,22 @@ fun RemoteSettingsDataSourceError.toRemoteError(): RemoteError = when (this) {
 
     is RemoteSettingsDataSourceError.RemoteDataSource ->
         when (error) {
-            is RemoteDataSourceErrorV2.CooldownActive ->
+            is RemoteDataSourceError.CooldownActive ->
                 RemoteError.Failed.Cooldown(error.remaining)
 
-            RemoteDataSourceErrorV2.RateLimitExceeded,
-            RemoteDataSourceErrorV2.ServerError,
-            RemoteDataSourceErrorV2.ServiceUnavailable.ServerUnreachable,
+            RemoteDataSourceError.RateLimitExceeded,
+            RemoteDataSourceError.ServerError,
+            RemoteDataSourceError.ServiceUnavailable.ServerUnreachable,
             ->
                 RemoteError.Failed.ServiceDown
 
-            RemoteDataSourceErrorV2.ServiceUnavailable.Timeout ->
+            RemoteDataSourceError.ServiceUnavailable.Timeout ->
                 RemoteError.UnknownStatus.ServiceTimeout
 
-            RemoteDataSourceErrorV2.ServiceUnavailable.NetworkNotAvailable ->
+            RemoteDataSourceError.ServiceUnavailable.NetworkNotAvailable ->
                 RemoteError.Failed.NetworkNotAvailable
 
-            is RemoteDataSourceErrorV2.UnknownServiceError ->
+            is RemoteDataSourceError.UnknownServiceError ->
                 RemoteError.Failed.UnknownServiceError(cause = error.reason)
         }
 }

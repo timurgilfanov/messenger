@@ -48,6 +48,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -77,9 +80,13 @@ fun LoginScreen(
             viewModel.effects.onEach { effect ->
                 when (effect) {
                     LoginSideEffects.NavigateToChatList -> currentOnNavigateToChatList()
+
                     LoginSideEffects.NavigateToSignup -> currentOnNavigateToSignup()
+
                     LoginSideEffects.OpenAppSettings -> openAppSettings(context)
+
                     LoginSideEffects.OpenStorageSettings -> openStorageSettings(context)
+
                     is LoginSideEffects.ShowSnackbar -> scope.launch {
                         val message = effect.message
                         val actionLabel =
@@ -110,7 +117,9 @@ fun LoginScreen(
             scope.launch {
                 when (val result = googleSignInClient.signIn(context)) {
                     is GoogleSignInResult.Success -> viewModel.submitGoogleSignIn(result.idToken)
+
                     GoogleSignInResult.Cancelled -> Unit
+
                     GoogleSignInResult.Failed -> snackbarHostState.showSnackbar(
                         message = LoginSnackbarMessage.GoogleSignInFailed.toDisplayString(context),
                         duration = SnackbarDuration.Long,
@@ -329,15 +338,10 @@ private fun CredentialsValidationError.toDisplayString(): String = when (this) {
 @Composable
 private fun LoginGeneralError.toDisplayString(): String = when (this) {
     LoginGeneralError.InvalidCredentials -> stringResource(R.string.login_error_invalid_credentials)
-
     LoginGeneralError.EmailNotVerified -> stringResource(R.string.login_error_email_not_verified)
-
     LoginGeneralError.AccountSuspended -> stringResource(R.string.login_error_account_suspended)
-
     LoginGeneralError.AccountNotFound -> stringResource(R.string.login_error_account_not_found)
-
     LoginGeneralError.InvalidToken -> stringResource(R.string.login_error_invalid_token)
-
     LoginGeneralError.InvalidEmail -> stringResource(R.string.login_error_invalid_email)
 }
 
@@ -357,17 +361,43 @@ private fun LoginSnackbarMessage.toDisplayString(context: Context): String = whe
     LoginSnackbarMessage.StorageTemporarilyUnavailable ->
         context.getString(R.string.login_error_storage_temporarily_unavailable)
 
-    is LoginSnackbarMessage.TooManyAttempts -> {
-        val totalSeconds = remaining.inWholeSeconds
-        val minutes = totalSeconds / SECONDS_PER_MINUTE
-        val seconds = totalSeconds % SECONDS_PER_MINUTE
-        val formatted = when {
-            minutes > 0 && seconds > 0 -> "${minutes}m ${seconds}s"
-            minutes > 0 -> "${minutes}m"
-            else -> "${seconds}s"
-        }
-        context.getString(R.string.login_error_too_many_attempts, formatted)
+    is LoginSnackbarMessage.TooManyAttempts -> tooManyAttemptsDisplayString(context, remaining)
+}
+
+private fun tooManyAttemptsDisplayString(context: Context, remaining: Duration): String {
+    val totalSeconds = remaining.inWholeSeconds
+    val minutes = totalSeconds / SECONDS_PER_MINUTE
+    val seconds = totalSeconds % SECONDS_PER_MINUTE
+    val formatted = when {
+        minutes > 0 && seconds > 0 ->
+            "${
+                context.resources.getQuantityString(
+                    R.plurals.login_cooldown_minutes,
+                    minutes.toInt(),
+                    minutes,
+                )
+            } " +
+                context.resources.getQuantityString(
+                    R.plurals.login_cooldown_seconds,
+                    seconds.toInt(),
+                    seconds,
+                )
+
+        minutes > 0 ->
+            context.resources.getQuantityString(
+                R.plurals.login_cooldown_minutes,
+                minutes.toInt(),
+                minutes,
+            )
+
+        else ->
+            context.resources.getQuantityString(
+                R.plurals.login_cooldown_seconds,
+                seconds.toInt(),
+                seconds,
+            )
     }
+    return context.getString(R.string.login_error_too_many_attempts, formatted)
 }
 
 private fun openAppSettings(context: Context) {
@@ -452,6 +482,47 @@ private fun LoginScreenContentBlockingErrorPreview() {
         darkTheme = false,
         state = LoginUiState(blockingError = LoginBlockingError.StorageAccessDenied),
     )
+}
+
+@Preview(locale = "")
+@Composable
+private fun LoginScreenContentTooManyAttemptsEnPreview() {
+    val context = LocalContext.current
+    ContentWithSnackbar(
+        message = LoginSnackbarMessage.TooManyAttempts(0.seconds)
+            .toDisplayString(context),
+    )
+}
+
+@Preview(locale = "de")
+@Composable
+private fun LoginScreenContentTooManyAttemptsDePreview() {
+    val context = LocalContext.current
+    ContentWithSnackbar(
+        message = LoginSnackbarMessage.TooManyAttempts(3.minutes + 45.seconds)
+            .toDisplayString(context),
+    )
+}
+
+@Composable
+private fun ContentWithSnackbar(message: String) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(message) {
+        snackbarHostState.showSnackbar(message = message, duration = SnackbarDuration.Indefinite)
+    }
+    MessengerTheme(darkTheme = false) {
+        LoginScreenContent(
+            state = LoginUiState(),
+            snackbarHostState = snackbarHostState,
+            onEmailChange = {},
+            onPasswordChange = {},
+            onSubmitLogin = {},
+            onGoogleSignInClick = {},
+            onNavigateToSignup = {},
+            onOpenAppSettings = {},
+            onOpenStorageSettings = {},
+        )
+    }
 }
 
 @Composable

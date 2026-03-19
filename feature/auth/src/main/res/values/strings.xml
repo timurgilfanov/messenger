@@ -19,7 +19,7 @@
     <string name="login_error_password_must_contain_numbers">Password must contain at least %d number(s)</string>
     <string name="login_error_password_must_contain_alphabet">Password must contain at least %d letter(s)</string>
 
-    <string name="google_server_client_id" translatable="false">954783563995-llnm7in939j1011t0hmcm8br7sja2ivp.apps.googleusercontent.com</string>
+    <string name="google_server_client_id" translatable="false">954783563995-s2vqh91na4he5lad90srq57mrv64bium.apps.googleusercontent.com</string>
 
     <!-- Login blocking error titles -->
     <string name="login_error_storage_full_title">Storage full</string>

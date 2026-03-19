@@ -78,6 +78,14 @@ dependencies {
 
     // Networking
     implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+
+    // Kotlin Extensions
+    implementation(libs.kotlinx.serialization.json)
+
+    // Security
+    implementation(libs.security.crypto)
 
     // ========== Test Dependencies ==========
     // Unit Testing
@@ -88,6 +96,7 @@ dependencies {
 
     // Test Utilities
     testImplementation(libs.ktor.client.mock)
+    kspTest(libs.hilt.compiler)
 
     // ========== Android Test Dependencies ==========
     androidTestImplementation(project(":core:androidTest"))
@@ -108,6 +117,8 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
     implementation(testFixtures(project(":core:domain")))
+    testImplementation(project(":core:test"))
+    testImplementation(testFixtures(project(":core:domain")))
     testFixturesImplementation(project(":core:domain"))
     testFixturesImplementation(testFixtures(project(":core:domain")))
     // Compose runtime is required because the kotlin.compose plugin applies the Compose compiler
@@ -118,38 +129,7 @@ dependencies {
     // is missing from the testFixtures compile classpath without this explicit dependency.
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel)
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel.savedstate)
-    testImplementation(project(":core:test"))
-    testImplementation(testFixtures(project(":core:domain")))
-
-    // DI
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    kspAndroidTest(libs.hilt.compiler)
-    kspTest(libs.hilt.compiler)
-
-    // Networking
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.kotlinx.serialization.json)
-
-    // Security
-    implementation(libs.security.crypto)
-
-    // Test
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlin.test)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.turbine)
-    testImplementation(libs.ktor.client.mock)
-
-    // testFixtures deps
-    testFixturesImplementation(project(":core:domain"))
     testFixturesImplementation(libs.kotlinx.coroutines.core)
-    testFixturesImplementation(platform(libs.androidx.compose.bom))
-    testFixturesImplementation(libs.androidx.compose.runtime)
-    testImplementation(testFixtures(project(":core:domain")))
-    androidTestImplementation(testFixtures(project(":core:domain")))
 
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)

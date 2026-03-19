@@ -77,12 +77,16 @@ class LoginFeatureTest {
     @Module
     @InstallIn(SingletonComponent::class)
     object LoginTestModule {
-        val repository = AuthRepositoryFake(initialAuthState = Unauthenticated)
+        // Shared across tests because Hilt modules must be objects and tests need to mutate the
+        // stub (e.g. shouldSuspend = true) before the Hilt component is built — which happens
+        // when the activity launches, before @Before runs. tearDown calls reset() to prevent
+        // state from leaking into the next test.
         val googleSignInClient = GoogleSignInClientStub()
 
         @Provides
         @Singleton
-        fun provideAuthRepository(): AuthRepository = repository
+        fun provideAuthRepository(): AuthRepository =
+            AuthRepositoryFake(initialAuthState = Unauthenticated)
 
         @Provides
         @Singleton

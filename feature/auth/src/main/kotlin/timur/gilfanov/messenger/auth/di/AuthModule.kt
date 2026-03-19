@@ -11,7 +11,6 @@ import timur.gilfanov.messenger.auth.AuthTokenStorage
 import timur.gilfanov.messenger.auth.TokenRefreshError
 import timur.gilfanov.messenger.auth.TokenRefreshUseCase
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthState.Authenticated
@@ -44,7 +43,7 @@ object AuthModule {
         tokenRefreshUseCase: TokenRefreshUseCase,
         scope: CoroutineScope,
     ): AuthInterceptor = AuthInterceptor(authTokenStorage, tokenRefreshUseCase, scope)
-    
+
     @Provides
     @Singleton
     fun provideAuthRepository(): AuthRepository = AuthRepositoryFake(

@@ -22,6 +22,7 @@ import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import timur.gilfanov.messenger.BuildConfig
+import timur.gilfanov.messenger.auth.AuthInterceptor
 
 /**
  * Qualifier for the base URL configuration
@@ -98,6 +99,7 @@ object NetworkModule {
         json: Json,
         @BaseUrl baseUrl: String,
         logger: timur.gilfanov.messenger.util.Logger,
+        authInterceptor: AuthInterceptor,
     ): HttpClient = HttpClient(engine) {
         // Default request configuration
         defaultRequest {
@@ -135,7 +137,7 @@ object NetworkModule {
                 level = LogLevel.ALL
             }
         }
-    }
+    }.also { authInterceptor.install(it) }
 
     /**
      * Provides a mock HTTP client for testing.

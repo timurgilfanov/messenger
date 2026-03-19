@@ -2,7 +2,7 @@ package timur.gilfanov.messenger.auth.login
 
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
-import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
 
 /**
  * Errors for [LoginWithGoogleUseCase].
@@ -21,7 +21,7 @@ sealed interface GoogleLoginUseCaseError {
     data object AccountNotFound : GoogleLoginUseCaseError
     data object AccountSuspended : GoogleLoginUseCaseError
     data class LocalOperationFailed(val error: LocalStorageError) : GoogleLoginUseCaseError
-    data class RemoteOperationFailed(val error: RemoteError) : GoogleLoginUseCaseError
+    data class RemoteOperationFailed(val error: UnauthRemoteError) : GoogleLoginUseCaseError
 }
 
 internal fun GoogleLoginRepositoryError.toUseCaseError(): GoogleLoginUseCaseError = when (this) {

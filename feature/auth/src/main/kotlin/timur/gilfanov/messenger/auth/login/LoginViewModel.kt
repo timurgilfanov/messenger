@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timur.gilfanov.messenger.auth.login.LoginSnackbarMessage.TooManyAttempts
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
@@ -19,6 +20,7 @@ import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidat
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
@@ -142,26 +144,49 @@ class LoginViewModel @Inject constructor(
 
 private fun LoginUseCaseError.toSnackbarMessage(): LoginSnackbarMessage? = when (this) {
     is LoginUseCaseError.RemoteOperationFailed -> error.toSnackbarMessage()
+
     is LoginUseCaseError.LocalOperationFailed -> error.toSnackbarMessage()
-    else -> null
+
+    LoginUseCaseError.AccountSuspended,
+    LoginUseCaseError.EmailNotVerified,
+    LoginUseCaseError.InvalidCredentials,
+    is LoginUseCaseError.InvalidEmail,
+    is LoginUseCaseError.ValidationFailed,
+    -> null
 }
 
 private fun GoogleLoginUseCaseError.toSnackbarMessage(): LoginSnackbarMessage? = when (this) {
     is GoogleLoginUseCaseError.RemoteOperationFailed -> error.toSnackbarMessage()
+
     is GoogleLoginUseCaseError.LocalOperationFailed -> error.toSnackbarMessage()
-    else -> null
+
+    GoogleLoginUseCaseError.AccountNotFound,
+    GoogleLoginUseCaseError.AccountSuspended,
+    GoogleLoginUseCaseError.InvalidToken,
+    -> null
 }
 
-private fun RemoteError.toSnackbarMessage(): LoginSnackbarMessage = when (this) {
+private fun UnauthRemoteError.toSnackbarMessage(): LoginSnackbarMessage = when (this) {
     RemoteError.Failed.NetworkNotAvailable -> LoginSnackbarMessage.NetworkUnavailable
-    is RemoteError.Failed.Cooldown -> LoginSnackbarMessage.TooManyAttempts(remaining)
-    else -> LoginSnackbarMessage.ServiceUnavailable
+
+    is RemoteError.Failed.Cooldown -> TooManyAttempts(remaining)
+
+    RemoteError.Failed.ServiceDown,
+    is RemoteError.Failed.UnknownServiceError,
+    RemoteError.UnknownStatus.ServiceTimeout,
+    -> LoginSnackbarMessage.ServiceUnavailable
 }
 
 private fun LocalStorageError.toSnackbarMessage(): LoginSnackbarMessage? = when (this) {
     LocalStorageError.TemporarilyUnavailable -> LoginSnackbarMessage.StorageTemporarilyUnavailable
+
     is LocalStorageError.UnknownError -> LoginSnackbarMessage.StorageTemporarilyUnavailable
-    else -> null
+
+    LocalStorageError.AccessDenied,
+    LocalStorageError.Corrupted,
+    LocalStorageError.ReadOnly,
+    LocalStorageError.StorageFull,
+    -> null
 }
 
 private fun LoginUiState.withLoginError(error: LoginUseCaseError): LoginUiState = when (error) {

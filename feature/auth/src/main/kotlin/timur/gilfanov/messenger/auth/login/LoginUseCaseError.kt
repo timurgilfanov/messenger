@@ -4,7 +4,7 @@ import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidat
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
-import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
 
 /**
  * Errors for [LoginWithCredentialsUseCase].
@@ -29,7 +29,7 @@ sealed interface LoginUseCaseError {
     data object AccountSuspended : LoginUseCaseError
     data class InvalidEmail(val reason: EmailValidationError) : LoginUseCaseError
     data class LocalOperationFailed(val error: LocalStorageError) : LoginUseCaseError
-    data class RemoteOperationFailed(val error: RemoteError) : LoginUseCaseError
+    data class RemoteOperationFailed(val error: UnauthRemoteError) : LoginUseCaseError
 }
 
 internal fun LoginRepositoryError.toUseCaseError(): LoginUseCaseError = when (this) {

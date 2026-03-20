@@ -185,12 +185,12 @@ class RemoteAuthDataSourceImpl @Inject constructor(
         CODE_EMAIL_NOT_EXISTS -> RegisterError.InvalidEmail(EmailValidationError.EmailNotExists)
         CODE_PASSWORD_TOO_SHORT -> RegisterError.InvalidPassword(
             PasswordValidationError.PasswordTooShort(
-                apiError.details?.get("min_length")?.toIntOrNull() ?: 0,
+                apiError.details?.get("min_length")?.toIntOrNull(),
             ),
         )
         CODE_PASSWORD_TOO_LONG -> RegisterError.InvalidPassword(
             PasswordValidationError.PasswordTooLong(
-                apiError.details?.get("max_length")?.toIntOrNull() ?: 0,
+                apiError.details?.get("max_length")?.toIntOrNull(),
             ),
         )
         CODE_INVALID_NAME -> RegisterError.InvalidName(

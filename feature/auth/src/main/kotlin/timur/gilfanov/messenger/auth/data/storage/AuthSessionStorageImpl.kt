@@ -19,6 +19,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.spec.GCMParameterSpec
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
@@ -28,6 +29,11 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 private const val ANDROID_KEY_STORE = "AndroidKeyStore"
 
 private const val TRANSFORMATION = "AES/GCM/NoPadding"
+
+private inline fun <T> runCatchingCancellable(block: () -> T): Result<T> =
+    runCatching(block).also { result ->
+        result.exceptionOrNull()?.let { if (it is CancellationException) throw it }
+    }
 
 @Singleton
 class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val context: Context) :
@@ -106,12 +112,12 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
     }
 
     override suspend fun getAccessToken(): ResultWithError<String?, AuthSessionStorageError> =
-        runCatching {
+        runCatchingCancellable {
             dataStore.data.first()[keyAccessToken]?.let { decrypt(it) }
         }.toResult()
 
     override suspend fun getRefreshToken(): ResultWithError<String?, AuthSessionStorageError> =
-        runCatching {
+        runCatchingCancellable {
             dataStore.data.first()[keyRefreshToken]?.let { decrypt(it) }
         }.toResult()
 
@@ -119,15 +125,15 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
         AuthProvider?,
         AuthSessionStorageError,
         > =
-        runCatching {
+        runCatchingCancellable {
             dataStore.data.first()[keyAuthProvider]?.let {
-                runCatching { AuthProvider.valueOf(it) }.getOrNull()
+                runCatchingCancellable { AuthProvider.valueOf(it) }.getOrNull()
             }
         }.toResult()
 
     override suspend fun saveTokens(
         tokens: AuthTokens,
-    ): ResultWithError<Unit, AuthSessionStorageError> = runCatching {
+    ): ResultWithError<Unit, AuthSessionStorageError> = runCatchingCancellable {
         dataStore.edit {
             it[keyAccessToken] = encrypt(tokens.accessToken)
             it[keyRefreshToken] = encrypt(tokens.refreshToken)
@@ -137,7 +143,7 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
 
     override suspend fun saveSession(
         session: AuthSession,
-    ): ResultWithError<Unit, AuthSessionStorageError> = runCatching {
+    ): ResultWithError<Unit, AuthSessionStorageError> = runCatchingCancellable {
         dataStore.edit {
             it[keyAccessToken] = encrypt(session.tokens.accessToken)
             it[keyRefreshToken] = encrypt(session.tokens.refreshToken)
@@ -147,7 +153,7 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
     }.toResult()
 
     override suspend fun clearSession(): ResultWithError<Unit, AuthSessionStorageError> =
-        runCatching {
+        runCatchingCancellable {
             dataStore.edit { it.clear() }
             Unit
         }.toResult()

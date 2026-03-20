@@ -86,7 +86,11 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
         keyStore.load(null)
         val secretKey = keyStore.getKey(KEYSTORE_ALIAS, null)
 
-        val encrypted = Base64.decode(encoded, Base64.NO_WRAP)
+        val encrypted = try {
+            Base64.decode(encoded, Base64.NO_WRAP)
+        } catch (e: IllegalArgumentException) {
+            throw GeneralSecurityException(e)
+        }
         val iv = encrypted.sliceArray(0 until IV_SIZE)
         val ciphertext = encrypted.sliceArray(IV_SIZE until encrypted.size)
 

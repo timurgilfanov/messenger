@@ -17,6 +17,7 @@ import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorage
 import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorageError
 import timur.gilfanov.messenger.auth.di.ApplicationScope
 import timur.gilfanov.messenger.data.remote.toRemoteError
+import timur.gilfanov.messenger.data.remote.toUnauthRemoteError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
@@ -249,7 +250,7 @@ private fun mapLoginWithCredentialsError(error: LoginWithCredentialsError): Logi
         LoginWithCredentialsError.AccountSuspended -> LoginRepositoryError.AccountSuspended
 
         is LoginWithCredentialsError.RemoteDataSource ->
-            LoginRepositoryError.RemoteOperationFailed(error.error.toRemoteError())
+            LoginRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
     }
 
 private fun mapLoginWithGoogleError(error: LoginWithGoogleError): GoogleLoginRepositoryError =
@@ -261,7 +262,7 @@ private fun mapLoginWithGoogleError(error: LoginWithGoogleError): GoogleLoginRep
         LoginWithGoogleError.AccountSuspended -> GoogleLoginRepositoryError.AccountSuspended
 
         is LoginWithGoogleError.RemoteDataSource ->
-            GoogleLoginRepositoryError.RemoteOperationFailed(error.error.toRemoteError())
+            GoogleLoginRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
     }
 
 private fun mapSignupError(error: RegisterError): SignupRepositoryError = when (error) {
@@ -272,7 +273,7 @@ private fun mapSignupError(error: RegisterError): SignupRepositoryError = when (
     is RegisterError.InvalidName -> SignupRepositoryError.InvalidName(error.reason)
 
     is RegisterError.RemoteDataSource ->
-        SignupRepositoryError.RemoteOperationFailed(error.error.toRemoteError())
+        SignupRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
 }
 
 private fun mapRefreshError(error: RefreshError): RefreshRepositoryError = when (error) {

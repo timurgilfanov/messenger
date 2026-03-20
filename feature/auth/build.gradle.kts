@@ -38,6 +38,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 hilt {
@@ -67,6 +73,9 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
 
+    // Data Storage
+    implementation(libs.androidx.datastore.preferences)
+
     // ========== Third-party Runtime Libraries ==========
     // Dependency Injection
     implementation(libs.hilt.android)
@@ -84,15 +93,15 @@ dependencies {
     // Kotlin Extensions
     implementation(libs.kotlinx.serialization.json)
 
-    // Security
-    implementation(libs.security.crypto)
-
     // ========== Test Dependencies ==========
     // Unit Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.junit)
+    testImplementation(libs.androidx.test.core)
 
     // Test Utilities
     testImplementation(libs.ktor.client.mock)
@@ -103,6 +112,7 @@ dependencies {
     androidTestImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(libs.hilt.android.testing)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.kotlin.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.kotlinx.coroutines.test)

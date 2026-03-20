@@ -3,7 +3,7 @@ package timur.gilfanov.messenger.auth.data.storage
 /**
  * Errors for local auth session storage operations.
  *
- * - [AccessDenied] - SecurityException from EncryptedSharedPreferences
+ * - [AccessDenied] - SecurityException from keystore or cipher operations
  * - [KeystoreUnavailable] - Android Keystore is locked or unavailable
  * - [DataCorrupted] - Decryption failed, possibly due to key rotation
  * - [UnknownError] - Unexpected error with preserved cause

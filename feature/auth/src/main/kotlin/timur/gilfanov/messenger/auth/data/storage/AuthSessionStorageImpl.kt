@@ -1,13 +1,27 @@
 package timur.gilfanov.messenger.auth.data.storage
 
 import android.content.Context
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
+import android.security.keystore.KeyProperties
+import android.util.Base64
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStoreFile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
 import java.security.GeneralSecurityException
+import java.security.KeyStore
+import java.security.KeyStoreException
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.spec.GCMParameterSpec
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
@@ -19,36 +33,88 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
 
     companion object {
         private const val FILE_NAME = "auth_session"
-        private const val KEY_ACCESS_TOKEN = "access_token"
-        private const val KEY_REFRESH_TOKEN = "refresh_token"
-        private const val KEY_AUTH_PROVIDER = "auth_provider"
+        private const val KEYSTORE_ALIAS = "auth_session_key"
+        private const val KEY_SIZE_BITS = 256
+        private const val GCM_TAG_LENGTH = 128
+        private const val IV_SIZE = 12
     }
 
-    private val prefs by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        EncryptedSharedPreferences.create(
-            context,
-            FILE_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+    private val dataStore: DataStore<Preferences> by lazy {
+        PreferenceDataStoreFactory.create { context.preferencesDataStoreFile(FILE_NAME) }
+    }
+
+    private val keyAccessToken = stringPreferencesKey("access_token")
+    private val keyRefreshToken = stringPreferencesKey("refresh_token")
+    private val keyAuthProvider = stringPreferencesKey("auth_provider")
+
+    private fun ensureKeyExists() {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        if (!keyStore.containsAlias(KEYSTORE_ALIAS)) {
+            val keyGenerator = KeyGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES,
+                "AndroidKeyStore",
+            )
+            val keySpec = KeyGenParameterSpec.Builder(
+                KEYSTORE_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
+            )
+                .setKeySize(KEY_SIZE_BITS)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .build()
+            keyGenerator.init(keySpec)
+            keyGenerator.generateKey()
+        }
+    }
+
+    private fun encrypt(plaintext: String): String {
+        ensureKeyExists()
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        val secretKey = keyStore.getKey(KEYSTORE_ALIAS, null)
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+        val iv = cipher.iv
+        val ciphertext = cipher.doFinal(plaintext.toByteArray())
+        val encrypted = iv + ciphertext
+        return Base64.encodeToString(encrypted, Base64.NO_WRAP)
+    }
+
+    private fun decrypt(encoded: String): String {
+        ensureKeyExists()
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        val secretKey = keyStore.getKey(KEYSTORE_ALIAS, null)
+
+        val encrypted = Base64.decode(encoded, Base64.NO_WRAP)
+        val iv = encrypted.sliceArray(0 until IV_SIZE)
+        val ciphertext = encrypted.sliceArray(IV_SIZE until encrypted.size)
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
+        val plaintext = cipher.doFinal(ciphertext)
+        return String(plaintext)
     }
 
     override suspend fun getAccessToken(): ResultWithError<String?, AuthSessionStorageError> =
-        runCatching { prefs.getString(KEY_ACCESS_TOKEN, null) }.toResult()
+        runCatching {
+            dataStore.data.first()[keyAccessToken]?.let { decrypt(it) }
+        }.toResult()
 
     override suspend fun getRefreshToken(): ResultWithError<String?, AuthSessionStorageError> =
-        runCatching { prefs.getString(KEY_REFRESH_TOKEN, null) }.toResult()
+        runCatching {
+            dataStore.data.first()[keyRefreshToken]?.let { decrypt(it) }
+        }.toResult()
 
     override suspend fun getAuthProvider(): ResultWithError<
         AuthProvider?,
         AuthSessionStorageError,
         > =
         runCatching {
-            prefs.getString(KEY_AUTH_PROVIDER, null)?.let {
+            dataStore.data.first()[keyAuthProvider]?.let {
                 runCatching { AuthProvider.valueOf(it) }.getOrNull()
             }
         }.toResult()
@@ -56,29 +122,28 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
     override suspend fun saveTokens(
         tokens: AuthTokens,
     ): ResultWithError<Unit, AuthSessionStorageError> = runCatching {
-        prefs.edit()
-            .putString(KEY_ACCESS_TOKEN, tokens.accessToken)
-            .putString(KEY_REFRESH_TOKEN, tokens.refreshToken)
-            .apply()
+        dataStore.edit {
+            it[keyAccessToken] = encrypt(tokens.accessToken)
+            it[keyRefreshToken] = encrypt(tokens.refreshToken)
+        }
+        Unit
     }.toResult()
 
     override suspend fun saveSession(
         session: AuthSession,
     ): ResultWithError<Unit, AuthSessionStorageError> = runCatching {
-        prefs.edit()
-            .putString(KEY_ACCESS_TOKEN, session.tokens.accessToken)
-            .putString(KEY_REFRESH_TOKEN, session.tokens.refreshToken)
-            .putString(KEY_AUTH_PROVIDER, session.provider.name)
-            .apply()
+        dataStore.edit {
+            it[keyAccessToken] = encrypt(session.tokens.accessToken)
+            it[keyRefreshToken] = encrypt(session.tokens.refreshToken)
+            it[keyAuthProvider] = session.provider.name
+        }
+        Unit
     }.toResult()
 
     override suspend fun clearSession(): ResultWithError<Unit, AuthSessionStorageError> =
         runCatching {
-            prefs.edit()
-                .remove(KEY_ACCESS_TOKEN)
-                .remove(KEY_REFRESH_TOKEN)
-                .remove(KEY_AUTH_PROVIDER)
-                .apply()
+            dataStore.edit { it.clear() }
+            Unit
         }.toResult()
 
     private fun <T> Result<T>.toResult(): ResultWithError<T, AuthSessionStorageError> = fold(

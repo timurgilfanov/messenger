@@ -12,10 +12,6 @@ import timur.gilfanov.messenger.auth.TokenRefreshError
 import timur.gilfanov.messenger.auth.TokenRefreshUseCase
 import timur.gilfanov.messenger.auth.login.GoogleSignInClient
 import timur.gilfanov.messenger.auth.login.GoogleSignInClientImpl
-import timur.gilfanov.messenger.auth.login.LoginWithCredentialsUseCase
-import timur.gilfanov.messenger.auth.login.LoginWithCredentialsUseCaseImpl
-import timur.gilfanov.messenger.auth.login.LoginWithGoogleUseCase
-import timur.gilfanov.messenger.auth.login.LoginWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
@@ -64,21 +60,6 @@ object AuthModule {
     @Provides
     @Singleton
     fun provideCredentialsValidator(): CredentialsValidator = CredentialsValidatorImpl()
-
-    @Provides
-    @Singleton
-    fun provideLoginWithCredentialsUseCase(
-        validator: CredentialsValidator,
-        repository: AuthRepository,
-        logger: Logger,
-    ): LoginWithCredentialsUseCase = LoginWithCredentialsUseCaseImpl(validator, repository, logger)
-
-    @Provides
-    @Singleton
-    fun provideLoginWithGoogleUseCase(
-        repository: AuthRepository,
-        logger: Logger,
-    ): LoginWithGoogleUseCase = LoginWithGoogleUseCaseImpl(repository, logger)
 
     @Provides
     @Singleton

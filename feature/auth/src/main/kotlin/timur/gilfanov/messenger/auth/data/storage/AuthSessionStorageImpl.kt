@@ -25,6 +25,10 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 
+private const val ANDROID_KEY_STORE = "AndroidKeyStore"
+
+private const val TRANSFORMATION = "AES/GCM/NoPadding"
+
 @Singleton
 class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val context: Context) :
     AuthSessionStorage {
@@ -46,12 +50,12 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
     private val keyAuthProvider = stringPreferencesKey("auth_provider")
 
     private fun ensureKeyExists() {
-        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE)
         keyStore.load(null)
         if (!keyStore.containsAlias(KEYSTORE_ALIAS)) {
             val keyGenerator = KeyGenerator.getInstance(
                 KeyProperties.KEY_ALGORITHM_AES,
-                "AndroidKeyStore",
+                ANDROID_KEY_STORE,
             )
             val keySpec = KeyGenParameterSpec.Builder(
                 KEYSTORE_ALIAS,
@@ -68,11 +72,11 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
 
     private fun encrypt(plaintext: String): String {
         ensureKeyExists()
-        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE)
         keyStore.load(null)
         val secretKey = keyStore.getKey(KEYSTORE_ALIAS, null)
 
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey)
         val iv = cipher.iv
         val ciphertext = cipher.doFinal(plaintext.toByteArray())
@@ -82,7 +86,7 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
 
     private fun decrypt(encoded: String): String {
         ensureKeyExists()
-        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE)
         keyStore.load(null)
         val secretKey = keyStore.getKey(KEYSTORE_ALIAS, null)
 
@@ -94,7 +98,7 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
         val iv = encrypted.sliceArray(0 until IV_SIZE)
         val ciphertext = encrypted.sliceArray(IV_SIZE until encrypted.size)
 
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val cipher = Cipher.getInstance(TRANSFORMATION)
         val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
         cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
         val plaintext = cipher.doFinal(ciphertext)

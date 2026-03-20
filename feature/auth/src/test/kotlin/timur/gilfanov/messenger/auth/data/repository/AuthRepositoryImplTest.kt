@@ -42,7 +42,7 @@ class AuthRepositoryImplTest {
         scope: kotlinx.coroutines.CoroutineScope,
     ) = AuthRepositoryImpl(
         remoteDataSource = remoteDataSource,
-        sessionStorage = sessionStorage,
+        localDataSource = sessionStorage,
         coroutineScope = scope,
         logger = NoOpLogger(),
     )

@@ -38,7 +38,7 @@ import timur.gilfanov.messenger.util.Logger
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val remoteDataSource: RemoteAuthDataSource,
-    private val sessionStorage: LocalAuthDataSource,
+    private val localDataSource: LocalAuthDataSource,
     @ApplicationScope private val coroutineScope: CoroutineScope,
     private val logger: Logger,
 ) : AuthRepository {
@@ -55,21 +55,21 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     private suspend fun restoreAuthState() {
-        val accessToken = sessionStorage.getAccessToken().fold(
+        val accessToken = localDataSource.getAccessToken().fold(
             onSuccess = { it },
             onFailure = { e ->
                 logger.e(TAG, "Failed to restore access token: $e")
                 null
             },
         )
-        val refreshToken = sessionStorage.getRefreshToken().fold(
+        val refreshToken = localDataSource.getRefreshToken().fold(
             onSuccess = { it },
             onFailure = { e ->
                 logger.e(TAG, "Failed to restore refresh token: $e")
                 null
             },
         )
-        val provider = sessionStorage.getAuthProvider().fold(
+        val provider = localDataSource.getAuthProvider().fold(
             onSuccess = { it },
             onFailure = { e ->
                 logger.e(TAG, "Failed to restore auth provider: $e")
@@ -92,7 +92,7 @@ class AuthRepositoryImpl @Inject constructor(
         remoteDataSource.loginWithCredentials(credentials).fold(
             onSuccess = { tokens ->
                 val session = AuthSession(tokens = tokens, provider = AuthProvider.EMAIL)
-                sessionStorage.saveSession(session).fold(
+                localDataSource.saveSession(session).fold(
                     onSuccess = {
                         _authState.value = AuthState.Authenticated(session)
                         ResultWithError.Success(session)
@@ -116,7 +116,7 @@ class AuthRepositoryImpl @Inject constructor(
         remoteDataSource.loginWithGoogle(idToken).fold(
             onSuccess = { tokens ->
                 val session = AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE)
-                sessionStorage.saveSession(session).fold(
+                localDataSource.saveSession(session).fold(
                     onSuccess = {
                         _authState.value = AuthState.Authenticated(session)
                         ResultWithError.Success(session)
@@ -143,7 +143,7 @@ class AuthRepositoryImpl @Inject constructor(
         remoteDataSource.register(credentials, name).fold(
             onSuccess = { tokens ->
                 val session = AuthSession(tokens = tokens, provider = AuthProvider.EMAIL)
-                sessionStorage.saveSession(session).fold(
+                localDataSource.saveSession(session).fold(
                     onSuccess = {
                         _authState.value = AuthState.Authenticated(session)
                         ResultWithError.Success(session)
@@ -162,7 +162,7 @@ class AuthRepositoryImpl @Inject constructor(
         )
 
     override suspend fun logout(): ResultWithError<Unit, LogoutRepositoryError> {
-        val accessToken = sessionStorage.getAccessToken().fold(
+        val accessToken = localDataSource.getAccessToken().fold(
             onSuccess = { it },
             onFailure = { null },
         )
@@ -177,7 +177,7 @@ class AuthRepositoryImpl @Inject constructor(
         } else {
             null
         }
-        sessionStorage.clearSession().fold(
+        localDataSource.clearSession().fold(
             onSuccess = {},
             onFailure = { storageError ->
                 logger.e(TAG, "Failed to clear session on logout: $storageError")
@@ -192,14 +192,14 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun refreshToken(): ResultWithError<AuthTokens, RefreshRepositoryError> =
-        sessionStorage.getRefreshToken().fold(
+        localDataSource.getRefreshToken().fold(
             onSuccess = { refreshToken ->
                 if (refreshToken == null) {
                     ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
                 } else {
                     remoteDataSource.refresh(refreshToken).fold(
                         onSuccess = { newTokens ->
-                            sessionStorage.saveTokens(newTokens).fold(
+                            localDataSource.saveTokens(newTokens).fold(
                                 onSuccess = {
                                     val currentState = _authState.value
                                     if (currentState is AuthState.Authenticated) {

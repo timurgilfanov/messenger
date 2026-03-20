@@ -23,6 +23,7 @@ import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.auth.AuthInterceptor
+import timur.gilfanov.messenger.auth.di.UnauthenticatedHttpClient
 
 /**
  * Qualifier for the base URL configuration
@@ -91,6 +92,7 @@ object NetworkModule {
     /**
      * Provides the main HTTP client for production use.
      * Configured with retry, timeout, logging, and JSON content negotiation.
+     * Includes authentication interceptor for automatic token injection.
      */
     @Provides
     @Singleton
@@ -100,35 +102,49 @@ object NetworkModule {
         @BaseUrl baseUrl: String,
         logger: timur.gilfanov.messenger.util.Logger,
         authInterceptor: AuthInterceptor,
+    ): HttpClient = httpClient(engine, json, baseUrl, logger).also { authInterceptor.install(it) }
+
+    /**
+     * Provides an HTTP client without authentication interceptor.
+     * Used by RemoteAuthDataSource to avoid infinite recursion when refreshing tokens.
+     * Shares the same configuration as the main HTTP client (engine, JSON, baseUrl, timeouts, logging)
+     * but omits AuthInterceptor.install().
+     */
+    @Provides
+    @Singleton
+    @UnauthenticatedHttpClient
+    fun provideUnauthenticatedHttpClient(
+        engine: HttpClientEngine,
+        json: Json,
+        @BaseUrl baseUrl: String,
+        logger: timur.gilfanov.messenger.util.Logger,
+    ): HttpClient = httpClient(engine, json, baseUrl, logger)
+
+    private fun httpClient(
+        engine: HttpClientEngine,
+        json: Json,
+        baseUrl: String,
+        logger: timur.gilfanov.messenger.util.Logger,
     ): HttpClient = HttpClient(engine) {
-        // Default request configuration
         defaultRequest {
-            url(baseUrl)
+            this.url(baseUrl)
             contentType(ContentType.Application.Json)
         }
-
-        // Retry configuration
-        install(HttpRequestRetry) {
+        this.install(HttpRequestRetry) {
             retryOnServerErrors(maxRetries = 3)
             retryOnException(maxRetries = 3, retryOnTimeout = true)
             exponentialDelay()
         }
-
-        // Timeout configuration
-        install(HttpTimeout) {
+        this.install(HttpTimeout) {
             requestTimeoutMillis = REQUEST_TIMEOUT_MILLIS
             connectTimeoutMillis = CONNECT_TIMEOUT_MILLIS
             socketTimeoutMillis = SOCKET_TIMEOUT_MILLIS
         }
-
-        // JSON content negotiation
-        install(ContentNegotiation) {
+        this.install(ContentNegotiation) {
             json(json)
         }
-
-        // Logging configuration (only in debug builds)
         if (BuildConfig.DEBUG) {
-            install(Logging) {
+            this.install(Logging) {
                 this.logger = object : Logger {
                     override fun log(message: String) {
                         logger.d("NetworkModule", message)
@@ -137,7 +153,7 @@ object NetworkModule {
                 level = LogLevel.ALL
             }
         }
-    }.also { authInterceptor.install(it) }
+    }
 
     /**
      * Provides a mock HTTP client for testing.

@@ -15,6 +15,7 @@ import timur.gilfanov.messenger.auth.data.source.remote.dto.CredentialsLoginRequ
 import timur.gilfanov.messenger.auth.data.source.remote.dto.GoogleLoginRequestDto
 import timur.gilfanov.messenger.auth.data.source.remote.dto.RefreshRequestDto
 import timur.gilfanov.messenger.auth.data.source.remote.dto.RegisterRequestDto
+import timur.gilfanov.messenger.auth.di.UnauthenticatedHttpClient
 import timur.gilfanov.messenger.data.remote.ApiError
 import timur.gilfanov.messenger.data.remote.ApiResponse
 import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
@@ -32,7 +33,7 @@ import timur.gilfanov.messenger.util.Logger
 @Suppress("TooManyFunctions")
 @Singleton
 class RemoteAuthDataSourceImpl @Inject constructor(
-    private val httpClient: HttpClient,
+    @UnauthenticatedHttpClient private val httpClient: HttpClient,
     private val logger: Logger,
 ) : RemoteAuthDataSource {
 

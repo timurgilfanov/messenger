@@ -6,13 +6,13 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceFake
 import timur.gilfanov.messenger.auth.data.source.remote.LoginWithCredentialsError
 import timur.gilfanov.messenger.auth.data.source.remote.LogoutError
 import timur.gilfanov.messenger.auth.data.source.remote.RefreshError
 import timur.gilfanov.messenger.auth.data.source.remote.RegisterError
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSourceFake
-import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorageError
-import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorageFake
 import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
@@ -38,7 +38,7 @@ class AuthRepositoryImplTest {
 
     private fun createRepo(
         remoteDataSource: RemoteAuthDataSourceFake = RemoteAuthDataSourceFake(),
-        sessionStorage: AuthSessionStorageFake = AuthSessionStorageFake(),
+        sessionStorage: LocalAuthDataSourceFake = LocalAuthDataSourceFake(),
         scope: kotlinx.coroutines.CoroutineScope,
     ) = AuthRepositoryImpl(
         remoteDataSource = remoteDataSource,
@@ -50,7 +50,7 @@ class AuthRepositoryImplTest {
     @Test
     fun `loginWithCredentials success stores session and sets Authenticated EMAIL provider`() =
         runTest {
-            val storage = AuthSessionStorageFake()
+            val storage = LocalAuthDataSourceFake()
             val repo = createRepo(sessionStorage = storage, scope = this)
             advanceUntilIdle()
 
@@ -70,7 +70,7 @@ class AuthRepositoryImplTest {
         remote.enqueueLoginWithCredentials(
             ResultWithError.Failure(LoginWithCredentialsError.InvalidCredentials),
         )
-        val storage = AuthSessionStorageFake()
+        val storage = LocalAuthDataSourceFake()
         val repo = createRepo(remoteDataSource = remote, sessionStorage = storage, scope = this)
         advanceUntilIdle()
 
@@ -82,9 +82,9 @@ class AuthRepositoryImplTest {
 
     @Test
     fun `loginWithCredentials storage failure returns LocalOperationFailed`() = runTest {
-        val storage = AuthSessionStorageFake()
+        val storage = LocalAuthDataSourceFake()
         storage.enqueueSaveSession(
-            ResultWithError.Failure(AuthSessionStorageError.AccessDenied),
+            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
         )
         val repo = createRepo(sessionStorage = storage, scope = this)
         advanceUntilIdle()
@@ -98,7 +98,7 @@ class AuthRepositoryImplTest {
     @Test
     fun `loginWithGoogle success stores session and sets Authenticated GOOGLE provider`() =
         runTest {
-            val storage = AuthSessionStorageFake()
+            val storage = LocalAuthDataSourceFake()
             val repo = createRepo(sessionStorage = storage, scope = this)
             advanceUntilIdle()
 
@@ -114,7 +114,7 @@ class AuthRepositoryImplTest {
 
     @Test
     fun `signup success session saved and authState is Authenticated`() = runTest {
-        val storage = AuthSessionStorageFake()
+        val storage = LocalAuthDataSourceFake()
         val repo = createRepo(sessionStorage = storage, scope = this)
         advanceUntilIdle()
 
@@ -144,7 +144,7 @@ class AuthRepositoryImplTest {
 
     @Test
     fun `logout success tokens cleared and authState is Unauthenticated`() = runTest {
-        val storage = AuthSessionStorageFake()
+        val storage = LocalAuthDataSourceFake()
         val remote = RemoteAuthDataSourceFake()
         val repo = createRepo(remoteDataSource = remote, sessionStorage = storage, scope = this)
         repo.loginWithCredentials(credentials)
@@ -161,7 +161,7 @@ class AuthRepositoryImplTest {
 
     @Test
     fun `logout remote failure clears session and returns RemoteOperationFailed`() = runTest {
-        val storage = AuthSessionStorageFake()
+        val storage = LocalAuthDataSourceFake()
         val remote = RemoteAuthDataSourceFake()
         val repo = createRepo(remoteDataSource = remote, sessionStorage = storage, scope = this)
         repo.loginWithCredentials(credentials)
@@ -187,7 +187,7 @@ class AuthRepositoryImplTest {
 
     @Test
     fun `refreshToken success new tokens saved and authState updated`() = runTest {
-        val storage = AuthSessionStorageFake()
+        val storage = LocalAuthDataSourceFake()
         val repo = createRepo(sessionStorage = storage, scope = this)
         repo.loginWithCredentials(credentials)
         advanceUntilIdle()
@@ -205,7 +205,7 @@ class AuthRepositoryImplTest {
 
     @Test
     fun `refreshToken TokenExpired returns error and storage unchanged`() = runTest {
-        val storage = AuthSessionStorageFake()
+        val storage = LocalAuthDataSourceFake()
         val repo = createRepo(sessionStorage = storage, scope = this)
         repo.loginWithCredentials(credentials)
         advanceUntilIdle()
@@ -225,15 +225,15 @@ class AuthRepositoryImplTest {
 
     @Test
     fun `initial auth state restored from storage when session exists`() = runTest {
-        val storage = AuthSessionStorageFake()
+        val storage = LocalAuthDataSourceFake()
         storage.enqueueGetAccessToken(
-            ResultWithError.Success<String?, AuthSessionStorageError>("access-token"),
+            ResultWithError.Success<String?, LocalAuthDataSourceError>("access-token"),
         )
         storage.enqueueGetRefreshToken(
-            ResultWithError.Success<String?, AuthSessionStorageError>("refresh-token"),
+            ResultWithError.Success<String?, LocalAuthDataSourceError>("refresh-token"),
         )
         storage.enqueueGetAuthProvider(
-            ResultWithError.Success<AuthProvider?, AuthSessionStorageError>(AuthProvider.EMAIL),
+            ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>(AuthProvider.EMAIL),
         )
 
         val repo = createRepo(sessionStorage = storage, scope = this)

@@ -1,60 +1,60 @@
-package timur.gilfanov.messenger.auth.data.storage
+package timur.gilfanov.messenger.auth.data.source.local
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 
-class AuthSessionStorageFake : AuthSessionStorage {
+class LocalAuthDataSourceFake : LocalAuthDataSource {
 
     private var accessToken: String? = null
     private var refreshToken: String? = null
     private var authProvider: AuthProvider? = null
 
     private val getAccessTokenQueue =
-        ArrayDeque<ResultWithError<String?, AuthSessionStorageError>>()
+        ArrayDeque<ResultWithError<String?, LocalAuthDataSourceError>>()
     private val getRefreshTokenQueue =
-        ArrayDeque<ResultWithError<String?, AuthSessionStorageError>>()
+        ArrayDeque<ResultWithError<String?, LocalAuthDataSourceError>>()
     private val getAuthProviderQueue =
-        ArrayDeque<ResultWithError<AuthProvider?, AuthSessionStorageError>>()
-    private val saveTokensQueue = ArrayDeque<ResultWithError<Unit, AuthSessionStorageError>>()
-    private val saveSessionQueue = ArrayDeque<ResultWithError<Unit, AuthSessionStorageError>>()
-    private val clearSessionQueue = ArrayDeque<ResultWithError<Unit, AuthSessionStorageError>>()
+        ArrayDeque<ResultWithError<AuthProvider?, LocalAuthDataSourceError>>()
+    private val saveTokensQueue = ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
+    private val saveSessionQueue = ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
+    private val clearSessionQueue = ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
 
-    fun enqueueGetAccessToken(vararg results: ResultWithError<String?, AuthSessionStorageError>) {
+    fun enqueueGetAccessToken(vararg results: ResultWithError<String?, LocalAuthDataSourceError>) {
         results.forEach { getAccessTokenQueue.addLast(it) }
     }
 
-    fun enqueueGetRefreshToken(vararg results: ResultWithError<String?, AuthSessionStorageError>) {
+    fun enqueueGetRefreshToken(vararg results: ResultWithError<String?, LocalAuthDataSourceError>) {
         results.forEach { getRefreshTokenQueue.addLast(it) }
     }
 
     fun enqueueGetAuthProvider(
-        vararg results: ResultWithError<AuthProvider?, AuthSessionStorageError>,
+        vararg results: ResultWithError<AuthProvider?, LocalAuthDataSourceError>,
     ) {
         results.forEach { getAuthProviderQueue.addLast(it) }
     }
 
-    fun enqueueSaveTokens(vararg results: ResultWithError<Unit, AuthSessionStorageError>) {
+    fun enqueueSaveTokens(vararg results: ResultWithError<Unit, LocalAuthDataSourceError>) {
         results.forEach { saveTokensQueue.addLast(it) }
     }
 
-    fun enqueueSaveSession(vararg results: ResultWithError<Unit, AuthSessionStorageError>) {
+    fun enqueueSaveSession(vararg results: ResultWithError<Unit, LocalAuthDataSourceError>) {
         results.forEach { saveSessionQueue.addLast(it) }
     }
 
-    fun enqueueClearSession(vararg results: ResultWithError<Unit, AuthSessionStorageError>) {
+    fun enqueueClearSession(vararg results: ResultWithError<Unit, LocalAuthDataSourceError>) {
         results.forEach { clearSessionQueue.addLast(it) }
     }
 
-    override suspend fun getAccessToken(): ResultWithError<String?, AuthSessionStorageError> =
+    override suspend fun getAccessToken(): ResultWithError<String?, LocalAuthDataSourceError> =
         if (getAccessTokenQueue.isNotEmpty()) {
             getAccessTokenQueue.removeFirst()
         } else {
             ResultWithError.Success(accessToken)
         }
 
-    override suspend fun getRefreshToken(): ResultWithError<String?, AuthSessionStorageError> =
+    override suspend fun getRefreshToken(): ResultWithError<String?, LocalAuthDataSourceError> =
         if (getRefreshTokenQueue.isNotEmpty()) {
             getRefreshTokenQueue.removeFirst()
         } else {
@@ -63,7 +63,7 @@ class AuthSessionStorageFake : AuthSessionStorage {
 
     override suspend fun getAuthProvider(): ResultWithError<
         AuthProvider?,
-        AuthSessionStorageError,
+        LocalAuthDataSourceError,
         > =
         if (getAuthProviderQueue.isNotEmpty()) {
             getAuthProviderQueue.removeFirst()
@@ -73,7 +73,7 @@ class AuthSessionStorageFake : AuthSessionStorage {
 
     override suspend fun saveTokens(
         tokens: AuthTokens,
-    ): ResultWithError<Unit, AuthSessionStorageError> {
+    ): ResultWithError<Unit, LocalAuthDataSourceError> {
         val result = if (saveTokensQueue.isNotEmpty()) {
             saveTokensQueue.removeFirst()
         } else {
@@ -90,7 +90,7 @@ class AuthSessionStorageFake : AuthSessionStorage {
 
     override suspend fun saveSession(
         session: AuthSession,
-    ): ResultWithError<Unit, AuthSessionStorageError> {
+    ): ResultWithError<Unit, LocalAuthDataSourceError> {
         val result = if (saveSessionQueue.isNotEmpty()) {
             saveSessionQueue.removeFirst()
         } else {
@@ -106,7 +106,7 @@ class AuthSessionStorageFake : AuthSessionStorage {
         return result
     }
 
-    override suspend fun clearSession(): ResultWithError<Unit, AuthSessionStorageError> {
+    override suspend fun clearSession(): ResultWithError<Unit, LocalAuthDataSourceError> {
         val result = if (clearSessionQueue.isNotEmpty()) {
             clearSessionQueue.removeFirst()
         } else {

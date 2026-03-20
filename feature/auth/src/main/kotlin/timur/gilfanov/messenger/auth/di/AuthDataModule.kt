@@ -10,10 +10,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import timur.gilfanov.messenger.auth.data.repository.AuthRepositoryImpl
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceImpl
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSourceImpl
-import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorage
-import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorageImpl
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 
 @Module
@@ -30,7 +30,7 @@ abstract class AuthDataModule {
 
     @Binds
     @Singleton
-    abstract fun bindAuthSessionStorage(impl: AuthSessionStorageImpl): AuthSessionStorage
+    abstract fun bindLocalAuthDataSource(impl: LocalAuthDataSourceImpl): LocalAuthDataSource
 
     companion object {
         @Provides

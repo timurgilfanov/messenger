@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.data.storage
+package timur.gilfanov.messenger.auth.data.source.local
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -20,15 +20,15 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 
 @RunWith(AndroidJUnit4::class)
 @FeatureTest
-class AuthSessionStorageImplTest {
+class LocalAuthDataSourceImplTest {
 
     companion object {
-        private var storage: AuthSessionStorageImpl? = null
+        private var storage: LocalAuthDataSourceImpl? = null
 
-        private fun getStorage(): AuthSessionStorageImpl {
+        private fun getStorage(): LocalAuthDataSourceImpl {
             if (storage == null) {
                 val context = ApplicationProvider.getApplicationContext<Context>()
-                storage = AuthSessionStorageImpl(context)
+                storage = LocalAuthDataSourceImpl(context)
             }
             return storage!!
         }
@@ -54,12 +54,12 @@ class AuthSessionStorageImplTest {
 
         // When
         val saveResult = getStorage().saveSession(session)
-        assertIs<ResultWithError.Success<Unit, AuthSessionStorageError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
 
         val getResult = getStorage().getAccessToken()
 
         // Then
-        assertIs<ResultWithError.Success<String?, AuthSessionStorageError>>(getResult)
+        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getResult)
         assertEquals("access-token-1", getResult.data)
     }
 
@@ -71,12 +71,12 @@ class AuthSessionStorageImplTest {
 
         // When
         val saveResult = getStorage().saveSession(session)
-        assertIs<ResultWithError.Success<Unit, AuthSessionStorageError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
 
         val getResult = getStorage().getRefreshToken()
 
         // Then
-        assertIs<ResultWithError.Success<String?, AuthSessionStorageError>>(getResult)
+        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getResult)
         assertEquals("refresh-token-1", getResult.data)
     }
 
@@ -88,12 +88,12 @@ class AuthSessionStorageImplTest {
 
         // When
         val saveResult = getStorage().saveSession(session)
-        assertIs<ResultWithError.Success<Unit, AuthSessionStorageError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
 
         val getResult = getStorage().getAuthProvider()
 
         // Then
-        assertIs<ResultWithError.Success<AuthProvider?, AuthSessionStorageError>>(getResult)
+        assertIs<ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>>(getResult)
         assertEquals(AuthProvider.GOOGLE, getResult.data)
     }
 
@@ -104,19 +104,19 @@ class AuthSessionStorageImplTest {
         val initialTokens = AuthTokens("access-token-1", "refresh-token-1")
         val initialSession = AuthSession(initialTokens, AuthProvider.EMAIL)
         val saveSessionResult = getStorage().saveSession(initialSession)
-        assertIs<ResultWithError.Success<Unit, AuthSessionStorageError>>(saveSessionResult)
+        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveSessionResult)
 
         // When
         val newTokens = AuthTokens("access-token-2", "refresh-token-2")
         val saveResult = getStorage().saveTokens(newTokens)
-        assertIs<ResultWithError.Success<Unit, AuthSessionStorageError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
 
         val getAccessResult = getStorage().getAccessToken()
         val getRefreshResult = getStorage().getRefreshToken()
 
         // Then
-        assertIs<ResultWithError.Success<String?, AuthSessionStorageError>>(getAccessResult)
-        assertIs<ResultWithError.Success<String?, AuthSessionStorageError>>(getRefreshResult)
+        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getAccessResult)
+        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getRefreshResult)
         assertEquals("access-token-2", getAccessResult.data)
         assertEquals("refresh-token-2", getRefreshResult.data)
     }
@@ -127,16 +127,18 @@ class AuthSessionStorageImplTest {
         val initialTokens = AuthTokens("access-token-1", "refresh-token-1")
         val initialSession = AuthSession(initialTokens, AuthProvider.EMAIL)
         val saveSessionResult = getStorage().saveSession(initialSession)
-        assertIs<ResultWithError.Success<Unit, AuthSessionStorageError>>(saveSessionResult)
+        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveSessionResult)
 
         // When
         val newTokens = AuthTokens("access-token-2", "refresh-token-2")
         val saveTokensResult = getStorage().saveTokens(newTokens)
-        assertIs<ResultWithError.Success<Unit, AuthSessionStorageError>>(saveTokensResult)
+        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveTokensResult)
         val getProviderResult = getStorage().getAuthProvider()
 
         // Then
-        assertIs<ResultWithError.Success<AuthProvider?, AuthSessionStorageError>>(getProviderResult)
+        assertIs<ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>>(
+            getProviderResult,
+        )
         assertEquals(AuthProvider.EMAIL, getProviderResult.data)
     }
 
@@ -147,7 +149,7 @@ class AuthSessionStorageImplTest {
         val tokens = AuthTokens("access-token-1", "refresh-token-1")
         val session = AuthSession(tokens, AuthProvider.EMAIL)
         val saveResult = getStorage().saveSession(session)
-        assertIs<ResultWithError.Success<Unit, AuthSessionStorageError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
 
         // When
         val clearResult = getStorage().clearSession()
@@ -156,10 +158,12 @@ class AuthSessionStorageImplTest {
         val getProviderResult = getStorage().getAuthProvider()
 
         // Then
-        assertIs<ResultWithError.Success<Unit, AuthSessionStorageError>>(clearResult)
-        assertIs<ResultWithError.Success<String?, AuthSessionStorageError>>(getAccessResult)
-        assertIs<ResultWithError.Success<String?, AuthSessionStorageError>>(getRefreshResult)
-        assertIs<ResultWithError.Success<AuthProvider?, AuthSessionStorageError>>(getProviderResult)
+        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(clearResult)
+        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getAccessResult)
+        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getRefreshResult)
+        assertIs<ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>>(
+            getProviderResult,
+        )
         assertNull(getAccessResult.data)
         assertNull(getRefreshResult.data)
         assertNull(getProviderResult.data)

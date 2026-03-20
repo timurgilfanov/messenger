@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.data.storage
+package timur.gilfanov.messenger.auth.data.source.local
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
@@ -23,17 +23,17 @@ import timur.gilfanov.messenger.testutil.MainDispatcherRule
 @Config(sdk = [33])
 @Category(Component::class)
 @OptIn(ExperimentalCoroutinesApi::class)
-class AuthSessionStorageImplTest {
+class LocalAuthDataSourceImplTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var storage: AuthSessionStorageImpl
+    private lateinit var storage: LocalAuthDataSourceImpl
 
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        storage = AuthSessionStorageImpl(context)
+        storage = LocalAuthDataSourceImpl(context)
         runBlocking {
             val clearResult = storage.clearSession()
             assertTrue(
@@ -49,7 +49,7 @@ class AuthSessionStorageImplTest {
         val result = storage.getAccessToken()
 
         // Then
-        assertIs<ResultWithError.Success<String?, AuthSessionStorageError>>(result)
+        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(result)
         assertNull(result.data)
     }
 
@@ -59,7 +59,7 @@ class AuthSessionStorageImplTest {
         val result = storage.getRefreshToken()
 
         // Then
-        assertIs<ResultWithError.Success<String?, AuthSessionStorageError>>(result)
+        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(result)
         assertNull(result.data)
     }
 
@@ -69,7 +69,7 @@ class AuthSessionStorageImplTest {
         val result = storage.getAuthProvider()
 
         // Then
-        assertIs<ResultWithError.Success<AuthProvider?, AuthSessionStorageError>>(result)
+        assertIs<ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>>(result)
         assertNull(result.data)
     }
 

@@ -7,14 +7,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
 import timur.gilfanov.messenger.auth.data.source.remote.LoginWithCredentialsError
 import timur.gilfanov.messenger.auth.data.source.remote.LoginWithGoogleError
 import timur.gilfanov.messenger.auth.data.source.remote.LogoutError
 import timur.gilfanov.messenger.auth.data.source.remote.RefreshError
 import timur.gilfanov.messenger.auth.data.source.remote.RegisterError
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSource
-import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorage
-import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorageError
 import timur.gilfanov.messenger.auth.di.ApplicationScope
 import timur.gilfanov.messenger.data.remote.toRemoteError
 import timur.gilfanov.messenger.data.remote.toUnauthRemoteError
@@ -38,7 +38,7 @@ import timur.gilfanov.messenger.util.Logger
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val remoteDataSource: RemoteAuthDataSource,
-    private val sessionStorage: AuthSessionStorage,
+    private val sessionStorage: LocalAuthDataSource,
     @ApplicationScope private val coroutineScope: CoroutineScope,
     private val logger: Logger,
 ) : AuthRepository {
@@ -234,11 +234,11 @@ class AuthRepositoryImpl @Inject constructor(
         )
 }
 
-private fun AuthSessionStorageError.toLocalError(): LocalStorageError = when (this) {
-    AuthSessionStorageError.AccessDenied -> LocalStorageError.AccessDenied
-    AuthSessionStorageError.KeystoreUnavailable -> LocalStorageError.TemporarilyUnavailable
-    AuthSessionStorageError.DataCorrupted -> LocalStorageError.Corrupted
-    is AuthSessionStorageError.UnknownError -> LocalStorageError.UnknownError(cause)
+private fun LocalAuthDataSourceError.toLocalError(): LocalStorageError = when (this) {
+    LocalAuthDataSourceError.AccessDenied -> LocalStorageError.AccessDenied
+    LocalAuthDataSourceError.KeystoreUnavailable -> LocalStorageError.TemporarilyUnavailable
+    LocalAuthDataSourceError.DataCorrupted -> LocalStorageError.Corrupted
+    is LocalAuthDataSourceError.UnknownError -> LocalStorageError.UnknownError(cause)
 }
 
 private fun mapLoginWithCredentialsError(error: LoginWithCredentialsError): LoginRepositoryError =

@@ -7,7 +7,7 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
-import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorage
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.onSuccess
@@ -28,7 +28,7 @@ import timur.gilfanov.messenger.domain.entity.onSuccess
  *    exactly one refresh is performed; all callers wait for the same result.
  */
 class AuthInterceptor(
-    private val authSessionStorage: AuthSessionStorage,
+    private val authSessionStorage: LocalAuthDataSource,
     private val tokenRefreshUseCase: TokenRefreshUseCase,
     private val scope: CoroutineScope,
 ) {

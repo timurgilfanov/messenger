@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.data.storage
+package timur.gilfanov.messenger.auth.data.source.local
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
@@ -36,8 +36,9 @@ private inline fun <T> runCatchingCancellable(block: () -> T): Result<T> =
     }
 
 @Singleton
-class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val context: Context) :
-    AuthSessionStorage {
+class LocalAuthDataSourceImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
+) : LocalAuthDataSource {
 
     companion object {
         private const val FILE_NAME = "auth_session"
@@ -111,19 +112,19 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
         return String(plaintext)
     }
 
-    override suspend fun getAccessToken(): ResultWithError<String?, AuthSessionStorageError> =
+    override suspend fun getAccessToken(): ResultWithError<String?, LocalAuthDataSourceError> =
         runCatchingCancellable {
             dataStore.data.first()[keyAccessToken]?.let { decrypt(it) }
         }.toResult()
 
-    override suspend fun getRefreshToken(): ResultWithError<String?, AuthSessionStorageError> =
+    override suspend fun getRefreshToken(): ResultWithError<String?, LocalAuthDataSourceError> =
         runCatchingCancellable {
             dataStore.data.first()[keyRefreshToken]?.let { decrypt(it) }
         }.toResult()
 
     override suspend fun getAuthProvider(): ResultWithError<
         AuthProvider?,
-        AuthSessionStorageError,
+        LocalAuthDataSourceError,
         > =
         runCatchingCancellable {
             dataStore.data.first()[keyAuthProvider]?.let {
@@ -133,7 +134,7 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
 
     override suspend fun saveTokens(
         tokens: AuthTokens,
-    ): ResultWithError<Unit, AuthSessionStorageError> = runCatchingCancellable {
+    ): ResultWithError<Unit, LocalAuthDataSourceError> = runCatchingCancellable {
         dataStore.edit {
             it[keyAccessToken] = encrypt(tokens.accessToken)
             it[keyRefreshToken] = encrypt(tokens.refreshToken)
@@ -143,7 +144,7 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
 
     override suspend fun saveSession(
         session: AuthSession,
-    ): ResultWithError<Unit, AuthSessionStorageError> = runCatchingCancellable {
+    ): ResultWithError<Unit, LocalAuthDataSourceError> = runCatchingCancellable {
         dataStore.edit {
             it[keyAccessToken] = encrypt(session.tokens.accessToken)
             it[keyRefreshToken] = encrypt(session.tokens.refreshToken)
@@ -152,28 +153,28 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
         Unit
     }.toResult()
 
-    override suspend fun clearSession(): ResultWithError<Unit, AuthSessionStorageError> =
+    override suspend fun clearSession(): ResultWithError<Unit, LocalAuthDataSourceError> =
         runCatchingCancellable {
             dataStore.edit { it.clear() }
             Unit
         }.toResult()
 
-    private fun <T> Result<T>.toResult(): ResultWithError<T, AuthSessionStorageError> = fold(
+    private fun <T> Result<T>.toResult(): ResultWithError<T, LocalAuthDataSourceError> = fold(
         onSuccess = { ResultWithError.Success(it) },
         onFailure = { e ->
             val error = when (e) {
                 // Listed before GeneralSecurityException (its parent) so keystore access failures
                 // (getInstance, load, containsAlias, getKey) are not misclassified as DataCorrupted.
-                is KeyStoreException -> AuthSessionStorageError.KeystoreUnavailable
+                is KeyStoreException -> LocalAuthDataSourceError.KeystoreUnavailable
 
                 // Crypto operation failed: BadPaddingException from cipher.doFinal() means the
                 // ciphertext is tampered or was encrypted with a different key.
-                is GeneralSecurityException -> AuthSessionStorageError.DataCorrupted
+                is GeneralSecurityException -> LocalAuthDataSourceError.DataCorrupted
 
                 // OS-level permission denial for keystore access, unrelated to crypto state.
-                is SecurityException -> AuthSessionStorageError.AccessDenied
+                is SecurityException -> LocalAuthDataSourceError.AccessDenied
 
-                else -> AuthSessionStorageError.UnknownError(e)
+                else -> LocalAuthDataSourceError.UnknownError(e)
             }
             ResultWithError.Failure(error)
         },

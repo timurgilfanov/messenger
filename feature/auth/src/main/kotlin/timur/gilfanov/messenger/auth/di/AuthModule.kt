@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import timur.gilfanov.messenger.auth.AuthInterceptor
 import timur.gilfanov.messenger.auth.TokenRefreshError
 import timur.gilfanov.messenger.auth.TokenRefreshUseCase
-import timur.gilfanov.messenger.auth.data.storage.AuthSessionStorage
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.auth.login.GoogleSignInClient
 import timur.gilfanov.messenger.auth.login.GoogleSignInClientImpl
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
@@ -29,7 +29,7 @@ object AuthModule {
     @Provides
     @Singleton
     fun provideAuthInterceptor(
-        authSessionStorage: AuthSessionStorage,
+        authSessionStorage: LocalAuthDataSource,
         tokenRefreshUseCase: TokenRefreshUseCase,
         scope: CoroutineScope,
     ): AuthInterceptor = AuthInterceptor(authSessionStorage, tokenRefreshUseCase, scope)

@@ -15,7 +15,6 @@ import timur.gilfanov.messenger.auth.login.GoogleSignInClientImpl
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.util.Logger
 
 @Module

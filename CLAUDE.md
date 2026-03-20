@@ -11,6 +11,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 See `docs/Specification.md` for project-level business requirements, UX requirements, sequrity requirements, and non-functional requirements.
 
+## Dependencies
+- When adding a new dependency, verify it is not deprecated and use the latest stable version (no alpha, beta, RC, or SNAPSHOT unless explicitly approved)
+
 ## Development Commands
 
 Full reference: `docs/development-commands.md`

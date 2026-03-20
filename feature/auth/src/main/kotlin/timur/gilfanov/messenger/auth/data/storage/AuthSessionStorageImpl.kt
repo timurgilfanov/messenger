@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.auth.data.storage
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.datastore.core.DataStore
@@ -12,7 +11,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.IOException
 import java.security.GeneralSecurityException
 import java.security.KeyStore
 import java.security.KeyStoreException
@@ -150,9 +148,17 @@ class AuthSessionStorageImpl @Inject constructor(@ApplicationContext private val
         onSuccess = { ResultWithError.Success(it) },
         onFailure = { e ->
             val error = when (e) {
-                is SecurityException -> AuthSessionStorageError.AccessDenied
+                // Listed before GeneralSecurityException (its parent) so keystore access failures
+                // (getInstance, load, containsAlias, getKey) are not misclassified as DataCorrupted.
+                is KeyStoreException -> AuthSessionStorageError.KeystoreUnavailable
+
+                // Crypto operation failed: BadPaddingException from cipher.doFinal() means the
+                // ciphertext is tampered or was encrypted with a different key.
                 is GeneralSecurityException -> AuthSessionStorageError.DataCorrupted
-                is IOException -> AuthSessionStorageError.UnknownError(e)
+
+                // OS-level permission denial for keystore access, unrelated to crypto state.
+                is SecurityException -> AuthSessionStorageError.AccessDenied
+
                 else -> AuthSessionStorageError.UnknownError(e)
             }
             ResultWithError.Failure(error)

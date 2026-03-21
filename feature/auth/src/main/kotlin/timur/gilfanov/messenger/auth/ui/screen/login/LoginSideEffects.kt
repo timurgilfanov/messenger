@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.login
+package timur.gilfanov.messenger.auth.ui.screen.login
 
 sealed interface LoginSideEffects {
     data object NavigateToChatList : LoginSideEffects

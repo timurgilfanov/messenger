@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth
+package timur.gilfanov.messenger.auth.domain.usecase
 
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
@@ -23,9 +23,12 @@ sealed interface TokenRefreshError {
 
 internal fun RefreshRepositoryError.toUseCaseError(): TokenRefreshError = when (this) {
     is RefreshRepositoryError.TokenExpired -> TokenRefreshError.SessionExpired
+
     is RefreshRepositoryError.SessionRevoked -> TokenRefreshError.SessionExpired
+
     is RefreshRepositoryError.LocalOperationFailed ->
         TokenRefreshError.LocalOperationFailed(error)
+
     is RefreshRepositoryError.RemoteOperationFailed ->
         TokenRefreshError.RemoteOperationFailed(error)
 }

@@ -7,6 +7,8 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
+import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCase
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 
@@ -59,6 +61,7 @@ class AuthInterceptor(
                     }
                     execute(request)
                 }
+
                 is ResultWithError.Failure -> call
             }
         }

@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.login
+package timur.gilfanov.messenger.auth.ui
 
 import android.content.Context
 import androidx.credentials.CredentialManager
@@ -29,6 +29,7 @@ class GoogleSignInClientImpl(private val logger: Logger) : GoogleSignInClient {
             val response = credentialManager.getCredential(context, request)
             when (val credential = response.credential) {
                 is CustomCredential -> parseCustomCredential(credential)
+
                 else -> {
                     logger.e(TAG, "Unexpected type of credential")
                     GoogleSignInResult.Failed

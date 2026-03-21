@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.login
+package timur.gilfanov.messenger.auth.ui.screen.login
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -11,7 +11,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import timur.gilfanov.messenger.auth.login.LoginSnackbarMessage.TooManyAttempts
+import timur.gilfanov.messenger.auth.domain.usecase.GoogleLoginUseCaseError
+import timur.gilfanov.messenger.auth.domain.usecase.LoginUseCaseError
+import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
@@ -84,24 +87,30 @@ class LoginViewModel @Inject constructor(
                 onFailure = { error ->
                     when (error) {
                         is LoginUseCaseError.ValidationFailed -> handleValidationError(error)
+
                         LoginUseCaseError.InvalidCredentials ->
                             _state.update {
                                 it.copy(generalError = LoginGeneralError.InvalidCredentials)
                             }
+
                         LoginUseCaseError.EmailNotVerified ->
                             _state.update {
                                 it.copy(generalError = LoginGeneralError.EmailNotVerified)
                             }
+
                         LoginUseCaseError.AccountSuspended ->
                             _state.update {
                                 it.copy(generalError = LoginGeneralError.AccountSuspended)
                             }
+
                         is LoginUseCaseError.InvalidEmail ->
                             _state.update { it.copy(generalError = LoginGeneralError.InvalidEmail) }
+
                         is LoginUseCaseError.RemoteOperationFailed ->
                             _effects.send(
                                 LoginSideEffects.ShowSnackbar(error.error.toSnackbarMessage()),
                             )
+
                         is LoginUseCaseError.LocalOperationFailed ->
                             handleLocalStorageError(error.error)
                     }
@@ -123,18 +132,22 @@ class LoginViewModel @Inject constructor(
                     when (error) {
                         GoogleLoginUseCaseError.InvalidToken ->
                             _state.update { it.copy(generalError = LoginGeneralError.InvalidToken) }
+
                         GoogleLoginUseCaseError.AccountNotFound ->
                             _state.update {
                                 it.copy(generalError = LoginGeneralError.AccountNotFound)
                             }
+
                         GoogleLoginUseCaseError.AccountSuspended ->
                             _state.update {
                                 it.copy(generalError = LoginGeneralError.AccountSuspended)
                             }
+
                         is GoogleLoginUseCaseError.RemoteOperationFailed ->
                             _effects.send(
                                 LoginSideEffects.ShowSnackbar(error.error.toSnackbarMessage()),
                             )
+
                         is GoogleLoginUseCaseError.LocalOperationFailed ->
                             handleLocalStorageError(error.error)
                     }
@@ -172,6 +185,7 @@ class LoginViewModel @Inject constructor(
                 is CredentialsValidationError.InvalidEmailFormat,
                 is CredentialsValidationError.ForbiddenCharacterInEmail,
                 -> state.copy(emailError = ve)
+
                 is CredentialsValidationError.PasswordTooShort,
                 is CredentialsValidationError.PasswordTooLong,
                 is CredentialsValidationError.ForbiddenCharacterInPassword,
@@ -186,18 +200,23 @@ class LoginViewModel @Inject constructor(
         when (error) {
             LocalStorageError.StorageFull ->
                 _state.update { it.copy(blockingError = LoginBlockingError.StorageFull) }
+
             LocalStorageError.Corrupted ->
                 _state.update { it.copy(blockingError = LoginBlockingError.StorageCorrupted) }
+
             LocalStorageError.ReadOnly ->
                 _state.update { it.copy(blockingError = LoginBlockingError.StorageReadOnly) }
+
             LocalStorageError.AccessDenied ->
                 _state.update { it.copy(blockingError = LoginBlockingError.StorageAccessDenied) }
+
             LocalStorageError.TemporarilyUnavailable ->
                 _effects.send(
                     LoginSideEffects.ShowSnackbar(
                         LoginSnackbarMessage.StorageTemporarilyUnavailable,
                     ),
                 )
+
             is LocalStorageError.UnknownError ->
                 _effects.send(
                     LoginSideEffects.ShowSnackbar(
@@ -211,7 +230,7 @@ class LoginViewModel @Inject constructor(
 private fun UnauthRemoteError.toSnackbarMessage(): LoginSnackbarMessage = when (this) {
     RemoteError.Failed.NetworkNotAvailable -> LoginSnackbarMessage.NetworkUnavailable
 
-    is RemoteError.Failed.Cooldown -> TooManyAttempts(remaining)
+    is RemoteError.Failed.Cooldown -> LoginSnackbarMessage.TooManyAttempts(remaining)
 
     RemoteError.Failed.ServiceDown,
     is RemoteError.Failed.UnknownServiceError,

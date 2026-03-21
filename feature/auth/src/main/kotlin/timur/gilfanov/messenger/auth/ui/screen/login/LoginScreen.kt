@@ -1,6 +1,6 @@
 @file:Suppress("TooManyFunctions")
 
-package timur.gilfanov.messenger.auth.login
+package timur.gilfanov.messenger.auth.ui.screen.login
 
 import android.content.Context
 import android.content.Intent
@@ -58,6 +58,9 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
+import timur.gilfanov.messenger.auth.ui.BlockingErrorDialog
+import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
+import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme

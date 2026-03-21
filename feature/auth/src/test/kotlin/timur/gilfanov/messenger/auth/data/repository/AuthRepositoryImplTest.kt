@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.auth.data.repository
 
 import app.cash.turbine.test
 import kotlin.test.assertIs
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -31,6 +32,7 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepository
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class AuthRepositoryImplTest {
 
@@ -169,7 +171,7 @@ class AuthRepositoryImplTest {
 
         val result = repo.logout()
 
-        assertIs<ResultWithError.Success<kotlin.Unit, *>>(result)
+        assertIs<ResultWithError.Success<Unit, *>>(result)
         repo.authState.test {
             assertIs<AuthState.Unauthenticated>(awaitItem())
             cancelAndIgnoreRemainingEvents()
@@ -185,7 +187,7 @@ class AuthRepositoryImplTest {
         advanceUntilIdle()
 
         remote.enqueueLogout(
-            ResultWithError.Failure<kotlin.Unit, LogoutError>(
+            ResultWithError.Failure<Unit, LogoutError>(
                 LogoutError.RemoteDataSource(
                     RemoteDataSourceError.ServerError,
                 ),
@@ -194,7 +196,7 @@ class AuthRepositoryImplTest {
         val result = repo.logout()
 
         val failure =
-            assertIs<ResultWithError.Failure<kotlin.Unit, LogoutRepositoryError>>(result)
+            assertIs<ResultWithError.Failure<Unit, LogoutRepositoryError>>(result)
         assertIs<LogoutRepositoryError.RemoteOperationFailed>(failure.error)
         repo.authState.test {
             assertIs<AuthState.Unauthenticated>(awaitItem())
@@ -243,15 +245,9 @@ class AuthRepositoryImplTest {
     @Test
     fun `initial auth state restored from storage when session exists`() = runTest {
         val storage = LocalAuthDataSourceFake()
-        storage.enqueueGetAccessToken(
-            ResultWithError.Success<String?, LocalAuthDataSourceError>("access-token"),
-        )
-        storage.enqueueGetRefreshToken(
-            ResultWithError.Success<String?, LocalAuthDataSourceError>("refresh-token"),
-        )
-        storage.enqueueGetAuthProvider(
-            ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>(AuthProvider.EMAIL),
-        )
+        storage.enqueueGetAccessToken(ResultWithError.Success("access-token"))
+        storage.enqueueGetRefreshToken(ResultWithError.Success("refresh-token"))
+        storage.enqueueGetAuthProvider(ResultWithError.Success(AuthProvider.EMAIL))
 
         val repo = createRepo(sessionStorage = storage, scope = this)
         advanceUntilIdle()

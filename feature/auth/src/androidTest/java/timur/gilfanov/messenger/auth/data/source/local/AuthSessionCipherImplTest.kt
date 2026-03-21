@@ -26,7 +26,7 @@ class AuthSessionCipherImplTest {
         val decryptedResult = cipher.decrypt(encrypted)
 
         assertEquals(
-            ResultWithError.Success<String, AuthSessionCipherError>("token-value-1"),
+            ResultWithError.Success("token-value-1"),
             decryptedResult,
         )
     }

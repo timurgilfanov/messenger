@@ -4,6 +4,8 @@ import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
+import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCaseImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession

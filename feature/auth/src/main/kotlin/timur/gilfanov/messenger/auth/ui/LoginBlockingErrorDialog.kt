@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.login
+package timur.gilfanov.messenger.auth.ui
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import timur.gilfanov.messenger.auth.R
+import timur.gilfanov.messenger.auth.ui.screen.login.LoginBlockingError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 private data class BlockingErrorResources(

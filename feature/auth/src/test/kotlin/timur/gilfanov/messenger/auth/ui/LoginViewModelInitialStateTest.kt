@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.login
+package timur.gilfanov.messenger.auth.ui
 
 import app.cash.turbine.test
 import kotlin.test.assertEquals
@@ -10,7 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
-import timur.gilfanov.messenger.auth.login.LoginViewModelTestFixtures.createViewModel
+import timur.gilfanov.messenger.auth.ui.LoginViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(ExperimentalCoroutinesApi::class)

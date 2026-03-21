@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.login
+package timur.gilfanov.messenger.auth.ui.screen.login
 
 import androidx.compose.runtime.Immutable
 import kotlin.time.Duration

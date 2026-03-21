@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger
+package timur.gilfanov.messenger.ui.activity
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -12,8 +12,9 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-import timur.gilfanov.messenger.auth.login.GoogleSignInClient
-import timur.gilfanov.messenger.auth.login.LoginScreen
+import timur.gilfanov.messenger.BuildConfig
+import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
+import timur.gilfanov.messenger.auth.ui.screen.login.LoginScreen
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
 import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
 import timur.gilfanov.messenger.navigation.Chat
@@ -23,7 +24,6 @@ import timur.gilfanov.messenger.navigation.Login
 import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.navigation.ProfileEdit
 import timur.gilfanov.messenger.navigation.Signup
-import timur.gilfanov.messenger.ui.activity.MainActivityViewModel
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
@@ -32,7 +32,6 @@ import timur.gilfanov.messenger.ui.screen.settings.LanguageScreen
 import timur.gilfanov.messenger.ui.screen.settings.ProfileEditScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
-// todo move activity to ui.activity package
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 

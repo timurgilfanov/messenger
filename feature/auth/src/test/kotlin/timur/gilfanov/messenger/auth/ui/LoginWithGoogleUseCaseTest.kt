@@ -1,9 +1,11 @@
-package timur.gilfanov.messenger.auth.login
+package timur.gilfanov.messenger.auth.ui
 
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.auth.domain.usecase.GoogleLoginUseCaseError
+import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession

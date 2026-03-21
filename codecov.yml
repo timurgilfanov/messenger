@@ -24,6 +24,7 @@ component_management:
       name: "Domain Use Cases"
       paths:
         - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/usecase/**"
+        - "feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/domain/usecase/**"
 
     - component_id: chat_feature
       name: "Chat Feature"
@@ -42,22 +43,32 @@ component_management:
       name: "UI Screens"
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/ui/screen/**"
+        - "feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/ui/screen/**"
     
     - component_id: ui_theme
       name: "UI Theme"
       paths:
-        - "app/src/main/java/timur/gilfanov/messenger/ui/theme/**"
+        - "core/ui/src/main/java/timur/gilfanov/messenger/ui/theme/**"
     
     - component_id: data_layer
       name: "Data Layer"
       paths:
         - "app/src/main/java/timur/gilfanov/messenger/data/**"
+        - "core/data/src/main/kotlin/timur/gilfanov/messenger/data/**"
+        - "feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/data/**"
     
     - component_id: validation_logic
       name: "Validation Logic"
       paths:
         - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/entity/chat/validation/**"
         - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/entity/message/validation/**"
+        - "core/domain/src/main/kotlin/timur/gilfanov/messenger/domain/entity/auth/validation/**"
+        - "feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/validation/**"
+
+    - component_id: auth_feature
+      name: "Auth Feature"
+      paths:
+        - "feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/**"
     
     - component_id: application_core
       name: "Application Core"

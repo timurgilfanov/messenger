@@ -194,5 +194,5 @@ private fun Throwable.toCipherError(): AuthSessionCipherError = when (this) {
     is KeyStoreException -> AuthSessionCipherError.KeystoreUnavailable
     is GeneralSecurityException -> AuthSessionCipherError.KeystoreUnavailable
     is SecurityException -> AuthSessionCipherError.AccessDenied
-    else -> AuthSessionCipherError.Unexpected(this)
+    else -> AuthSessionCipherError.UnknownError(this)
 }

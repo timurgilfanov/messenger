@@ -25,11 +25,11 @@ interface AuthSessionCipher {
  * - [AccessDenied] - OS-level permission denial for keystore access
  * - [KeystoreUnavailable] - Android Keystore is locked or unavailable
  * - [DataCorrupted] - Stored encrypted payload is invalid or cannot be decrypted
- * - [Unexpected] - Unexpected error with preserved cause
+ * - [UnknownError] - Unexpected error with preserved cause
  */
 sealed interface AuthSessionCipherError {
     data object AccessDenied : AuthSessionCipherError
     data object KeystoreUnavailable : AuthSessionCipherError
     data object DataCorrupted : AuthSessionCipherError
-    data class Unexpected(val cause: Throwable) : AuthSessionCipherError
+    data class UnknownError(val cause: Throwable) : AuthSessionCipherError
 }

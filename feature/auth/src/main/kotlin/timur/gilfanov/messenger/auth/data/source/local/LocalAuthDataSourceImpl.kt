@@ -178,7 +178,7 @@ private fun AuthSessionCipherError.toLocalError(): LocalAuthDataSourceError = wh
     AuthSessionCipherError.AccessDenied -> LocalAuthDataSourceError.AccessDenied
     AuthSessionCipherError.KeystoreUnavailable -> LocalAuthDataSourceError.KeystoreUnavailable
     AuthSessionCipherError.DataCorrupted -> LocalAuthDataSourceError.DataCorrupted
-    is AuthSessionCipherError.Unexpected -> LocalAuthDataSourceError.UnknownError(cause)
+    is AuthSessionCipherError.UnknownError -> LocalAuthDataSourceError.UnknownError(cause)
 }
 
 private fun Throwable.toLocalAuthDataSourceError(): LocalAuthDataSourceError {

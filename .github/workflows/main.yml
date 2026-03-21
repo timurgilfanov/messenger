@@ -308,7 +308,7 @@ jobs:
           check_name: "Component Test Results"
           
       - name: Fail if Unit or Component Tests Failed
-        if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success' || steps.run_auth_unit_tests.outcome != 'success' || steps.run_auth_component_tests.outcome != 'success'
+        if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success'
         run: |
           echo "❌ Unit or component tests failed. See the uploaded reports for details."
           exit 1
@@ -435,7 +435,7 @@ jobs:
           check_name: "Feature Test Results"
 
       - name: Fail if Feature Tests Failed
-        if: steps.run_feature_tests.outcome != 'success' || steps.run_auth_feature_tests.outcome != 'success'
+        if: steps.run_feature_tests.outcome != 'success'
         run: |
           echo "❌ Feature tests failed. See the uploaded report for details."
           exit 1

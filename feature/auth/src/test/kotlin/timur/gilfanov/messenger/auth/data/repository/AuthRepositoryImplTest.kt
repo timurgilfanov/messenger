@@ -29,6 +29,7 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryEr
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class AuthRepositoryImplTest {
@@ -93,6 +94,22 @@ class AuthRepositoryImplTest {
 
         val failure = assertIs<ResultWithError.Failure<AuthSession, LoginRepositoryError>>(result)
         assertIs<LoginRepositoryError.LocalOperationFailed>(failure.error)
+    }
+
+    @Test
+    fun `loginWithCredentials storage full maps to LocalStorageError StorageFull`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueSaveSession(
+            ResultWithError.Failure(LocalAuthDataSourceError.StorageFull),
+        )
+        val repo = createRepo(sessionStorage = storage, scope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithCredentials(credentials)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, LoginRepositoryError>>(result)
+        val error = assertIs<LoginRepositoryError.LocalOperationFailed>(failure.error)
+        assertIs<LocalStorageError.StorageFull>(error.error)
     }
 
     @Test

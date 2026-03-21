@@ -1,6 +1,9 @@
 package timur.gilfanov.messenger.auth.data.source.local
 
 import android.content.Context
+import android.system.ErrnoException
+import android.system.OsConstants
+import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
@@ -151,7 +154,7 @@ class LocalAuthDataSourceImplTest {
     }
 
     @Test
-    fun `getAccessToken maps DataStore read failure to UnknownError`() = runTest {
+    fun `getAccessToken maps DataStore read failure to TemporarilyUnavailable`() = runTest {
         storage = LocalAuthDataSourceImpl(
             DataStoreFake(dataStore = dataStore, readError = true),
             cipher,
@@ -159,13 +162,33 @@ class LocalAuthDataSourceImplTest {
 
         val result = storage.getAccessToken()
 
-        assertIs<ResultWithError.Failure<String?, LocalAuthDataSourceError>>(result)
-        val error = assertIs<LocalAuthDataSourceError.UnknownError>(result.error)
-        assertIs<IOException>(error.cause)
+        assertEquals(
+            ResultWithError.Failure<String?, LocalAuthDataSourceError>(
+                LocalAuthDataSourceError.TemporarilyUnavailable,
+            ),
+            result,
+        )
     }
 
     @Test
-    fun `saveSession maps DataStore write failure to UnknownError`() = runTest {
+    fun `getAccessToken maps DataStore corruption to DataCorrupted`() = runTest {
+        storage = LocalAuthDataSourceImpl(
+            DataStoreFake(dataStore = dataStore, readThrowable = CorruptionException("broken")),
+            cipher,
+        )
+
+        val result = storage.getAccessToken()
+
+        assertEquals(
+            ResultWithError.Failure<String?, LocalAuthDataSourceError>(
+                LocalAuthDataSourceError.DataCorrupted,
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `saveSession maps DataStore write failure to TemporarilyUnavailable`() = runTest {
         storage = LocalAuthDataSourceImpl(
             DataStoreFake(dataStore = dataStore, writeError = true),
             cipher,
@@ -178,9 +201,93 @@ class LocalAuthDataSourceImplTest {
             ),
         )
 
-        assertIs<ResultWithError.Failure<Unit, LocalAuthDataSourceError>>(result)
-        val error = assertIs<LocalAuthDataSourceError.UnknownError>(result.error)
-        assertIs<IOException>(error.cause)
+        assertEquals(
+            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
+                LocalAuthDataSourceError.TemporarilyUnavailable,
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `saveSession maps DataStore no space left to StorageFull`() = runTest {
+        storage = LocalAuthDataSourceImpl(
+            DataStoreFake(
+                dataStore = dataStore,
+                writeThrowable = IOException(
+                    "Write data fake exception",
+                    ErrnoException("write", OsConstants.ENOSPC),
+                ),
+            ),
+            cipher,
+        )
+
+        val result = storage.saveSession(
+            AuthSession(
+                tokens = AuthTokens("access", "refresh"),
+                provider = AuthProvider.EMAIL,
+            ),
+        )
+
+        assertEquals(
+            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
+                LocalAuthDataSourceError.StorageFull,
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `saveSession maps DataStore read only file system to ReadOnly`() = runTest {
+        storage = LocalAuthDataSourceImpl(
+            DataStoreFake(
+                dataStore = dataStore,
+                writeThrowable = IOException(
+                    "Write data fake exception",
+                    ErrnoException("write", OsConstants.EROFS),
+                ),
+            ),
+            cipher,
+        )
+
+        val result = storage.saveSession(
+            AuthSession(
+                tokens = AuthTokens("access", "refresh"),
+                provider = AuthProvider.EMAIL,
+            ),
+        )
+
+        assertEquals(
+            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
+                LocalAuthDataSourceError.ReadOnly,
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `saveSession maps DataStore security failure to AccessDenied`() = runTest {
+        storage = LocalAuthDataSourceImpl(
+            DataStoreFake(
+                dataStore = dataStore,
+                writeThrowable = SecurityException("permission denied"),
+            ),
+            cipher,
+        )
+
+        val result = storage.saveSession(
+            AuthSession(
+                tokens = AuthTokens("access", "refresh"),
+                provider = AuthProvider.EMAIL,
+            ),
+        )
+
+        assertEquals(
+            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
+                LocalAuthDataSourceError.AccessDenied,
+            ),
+            result,
+        )
     }
 }
 
@@ -199,10 +306,13 @@ private class DataStoreFake(
     private val dataStore: DataStore<Preferences>,
     private val readError: Boolean = false,
     private val writeError: Boolean = false,
+    private val readThrowable: Throwable? = null,
+    private val writeThrowable: Throwable? = null,
 ) : DataStore<Preferences> {
 
     override val data: Flow<Preferences>
         get() = dataStore.data.map {
+            readThrowable?.let { throwable -> throw throwable }
             if (readError) {
                 throw IOException("Read data fake exception")
             }
@@ -210,6 +320,7 @@ private class DataStoreFake(
         }
 
     override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences {
+        writeThrowable?.let { throwable -> throw throwable }
         if (writeError) throw IOException("Write data fake exception")
         return dataStore.updateData(transform)
     }

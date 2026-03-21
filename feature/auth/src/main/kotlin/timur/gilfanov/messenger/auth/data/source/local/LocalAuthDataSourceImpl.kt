@@ -1,6 +1,9 @@
 package timur.gilfanov.messenger.auth.data.source.local
 
 import android.content.Context
+import android.system.ErrnoException
+import android.system.OsConstants
+import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -8,6 +11,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -141,7 +145,7 @@ class LocalAuthDataSourceImpl internal constructor(
         onSuccess = { ResultWithError.Success(it) },
         onFailure = { error ->
             if (error is CancellationException) throw error
-            ResultWithError.Failure(LocalAuthDataSourceError.UnknownError(error))
+            ResultWithError.Failure(error.toLocalAuthDataSourceError())
         },
     )
 
@@ -155,7 +159,7 @@ class LocalAuthDataSourceImpl internal constructor(
         onSuccess = { ResultWithError.Success(Unit) },
         onFailure = { error ->
             if (error is CancellationException) throw error
-            ResultWithError.Failure(LocalAuthDataSourceError.UnknownError(error))
+            ResultWithError.Failure(error.toLocalAuthDataSourceError())
         },
     )
 }
@@ -176,3 +180,47 @@ private fun AuthSessionCipherError.toLocalError(): LocalAuthDataSourceError = wh
     AuthSessionCipherError.DataCorrupted -> LocalAuthDataSourceError.DataCorrupted
     is AuthSessionCipherError.Unexpected -> LocalAuthDataSourceError.UnknownError(cause)
 }
+
+private fun Throwable.toLocalAuthDataSourceError(): LocalAuthDataSourceError {
+    val causes = generateSequence(this) { it.cause }.toList()
+
+    return when {
+        causes.any { it is CorruptionException } -> LocalAuthDataSourceError.DataCorrupted
+        causes.any(::isStorageFullThrowable) -> LocalAuthDataSourceError.StorageFull
+        causes.any(::isReadOnlyThrowable) -> LocalAuthDataSourceError.ReadOnly
+        causes.any(::isAccessDeniedThrowable) -> LocalAuthDataSourceError.AccessDenied
+        causes.any { it is IOException } -> LocalAuthDataSourceError.TemporarilyUnavailable
+        else -> LocalAuthDataSourceError.UnknownError(this)
+    }
+}
+
+private fun isStorageFullThrowable(throwable: Throwable): Boolean =
+    isErrnoThrowable(throwable, OsConstants.ENOSPC) ||
+        throwable.message.containsAnyIgnoreCase(
+            "no space left on device",
+            "enospc",
+            "disk full",
+        )
+
+private fun isReadOnlyThrowable(throwable: Throwable): Boolean =
+    isErrnoThrowable(throwable, OsConstants.EROFS) ||
+        throwable.message.containsAnyIgnoreCase(
+            "read-only file system",
+            "erofs",
+        )
+
+private fun isAccessDeniedThrowable(throwable: Throwable): Boolean =
+    throwable is SecurityException ||
+        isErrnoThrowable(throwable, OsConstants.EACCES, OsConstants.EPERM) ||
+        throwable.message.containsAnyIgnoreCase(
+            "permission denied",
+            "operation not permitted",
+            "eacces",
+            "eperm",
+        )
+
+private fun isErrnoThrowable(throwable: Throwable, vararg errnoValues: Int): Boolean =
+    throwable is ErrnoException && errnoValues.any { throwable.errno == it }
+
+private fun String?.containsAnyIgnoreCase(vararg values: String): Boolean =
+    this != null && values.any { contains(it, ignoreCase = true) }

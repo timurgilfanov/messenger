@@ -237,6 +237,9 @@ class AuthRepositoryImpl @Inject constructor(
 private fun LocalAuthDataSourceError.toLocalError(): LocalStorageError = when (this) {
     LocalAuthDataSourceError.AccessDenied -> LocalStorageError.AccessDenied
     LocalAuthDataSourceError.KeystoreUnavailable -> LocalStorageError.TemporarilyUnavailable
+    LocalAuthDataSourceError.TemporarilyUnavailable -> LocalStorageError.TemporarilyUnavailable
+    LocalAuthDataSourceError.StorageFull -> LocalStorageError.StorageFull
+    LocalAuthDataSourceError.ReadOnly -> LocalStorageError.ReadOnly
     LocalAuthDataSourceError.DataCorrupted -> LocalStorageError.Corrupted
     is LocalAuthDataSourceError.UnknownError -> LocalStorageError.UnknownError(cause)
 }

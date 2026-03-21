@@ -63,7 +63,6 @@ class AuthRepositoryImplTest {
             kotlin.test.assertEquals(AuthProvider.EMAIL, result.data.provider)
             repo.authState.test {
                 assertIs<AuthState.Authenticated>(awaitItem())
-                cancelAndIgnoreRemainingEvents()
             }
         }
 
@@ -127,7 +126,6 @@ class AuthRepositoryImplTest {
             kotlin.test.assertEquals(AuthProvider.GOOGLE, result.data.provider)
             repo.authState.test {
                 assertIs<AuthState.Authenticated>(awaitItem())
-                cancelAndIgnoreRemainingEvents()
             }
         }
 
@@ -142,7 +140,6 @@ class AuthRepositoryImplTest {
         assertIs<ResultWithError.Success<AuthSession, *>>(result)
         repo.authState.test {
             assertIs<AuthState.Authenticated>(awaitItem())
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -174,7 +171,6 @@ class AuthRepositoryImplTest {
         assertIs<ResultWithError.Success<Unit, *>>(result)
         repo.authState.test {
             assertIs<AuthState.Unauthenticated>(awaitItem())
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -200,7 +196,6 @@ class AuthRepositoryImplTest {
         assertIs<LogoutRepositoryError.RemoteOperationFailed>(failure.error)
         repo.authState.test {
             assertIs<AuthState.Unauthenticated>(awaitItem())
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -254,7 +249,6 @@ class AuthRepositoryImplTest {
 
         repo.authState.test {
             assertIs<AuthState.Authenticated>(awaitItem())
-            cancelAndIgnoreRemainingEvents()
         }
     }
 }

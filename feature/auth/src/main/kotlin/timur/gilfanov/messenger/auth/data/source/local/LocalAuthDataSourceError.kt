@@ -5,8 +5,7 @@ package timur.gilfanov.messenger.auth.data.source.local
  *
  * - [AccessDenied] - OS-level permission denial for keystore access
  * - [KeystoreUnavailable] - Android Keystore is locked or unavailable
- * - [DataCorrupted] - Decryption failed; ciphertext is tampered or was encrypted with a different
- * key. Only produced by read operations.
+ * - [DataCorrupted] - Stored auth data is invalid or cannot be decrypted
  * - [UnknownError] - Unexpected error with preserved cause
  */
 sealed interface LocalAuthDataSourceError {

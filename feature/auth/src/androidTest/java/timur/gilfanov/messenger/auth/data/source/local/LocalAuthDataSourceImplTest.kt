@@ -28,7 +28,7 @@ class LocalAuthDataSourceImplTest {
         private fun getStorage(): LocalAuthDataSourceImpl {
             if (storage == null) {
                 val context = ApplicationProvider.getApplicationContext<Context>()
-                storage = LocalAuthDataSourceImpl(context)
+                storage = LocalAuthDataSourceImpl(context, AuthSessionCipherImpl())
             }
             return storage!!
         }

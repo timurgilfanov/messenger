@@ -19,6 +19,12 @@ android {
         testInstrumentationRunner = "timur.gilfanov.messenger.HiltTestRunner"
     }
 
+    buildTypes {
+        debug {
+            enableAndroidTestCoverage = project.hasProperty("coverage")
+        }
+    }
+
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(libs.versions.javaVersion.get())

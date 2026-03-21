@@ -4,12 +4,12 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
+import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCaseImpl
+import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCaseImpl
-import timur.gilfanov.messenger.auth.login.LoginWithCredentialsUseCase
-import timur.gilfanov.messenger.auth.login.LoginWithCredentialsUseCaseImpl
-import timur.gilfanov.messenger.auth.login.LoginWithGoogleUseCase
-import timur.gilfanov.messenger.auth.login.LoginWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.util.Logger

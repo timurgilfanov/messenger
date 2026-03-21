@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.login
+package timur.gilfanov.messenger.auth.ui
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
@@ -16,7 +16,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
-import timur.gilfanov.messenger.auth.login.LoginViewModelTestFixtures.createViewModel
+import timur.gilfanov.messenger.auth.ui.LoginViewModelTestFixtures.createViewModel
+import timur.gilfanov.messenger.auth.ui.screen.login.LoginBlockingError
+import timur.gilfanov.messenger.auth.ui.screen.login.LoginGeneralError
+import timur.gilfanov.messenger.auth.ui.screen.login.LoginSideEffects
+import timur.gilfanov.messenger.auth.ui.screen.login.LoginSnackbarMessage
+import timur.gilfanov.messenger.auth.ui.screen.login.LoginViewModel
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError

@@ -478,6 +478,19 @@ tasks.register("koverXmlReportAllJvmModules") {
     )
 }
 
+tasks.register("koverXmlReportAllAndroidLibraryModules") {
+    group = "verification"
+    description = "Generate Kover XML coverage reports for all Android library modules"
+    dependsOn(
+        rootProject.subprojects
+            .filter { sub ->
+                sub.plugins.hasPlugin("com.android.library") &&
+                    sub.plugins.hasPlugin("org.jetbrains.kotlinx.kover")
+            }
+            .map { "${it.path}:koverXmlReportDebug" },
+    )
+}
+
 tasks.register("testAllMockDebugUnitTests") {
     group = "verification"
     description = "Run mockDebug unit tests across all modules"

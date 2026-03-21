@@ -637,9 +637,8 @@ jobs:
                                  -print0 | xargs -0)          
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating emulator coverage report using Gradle task..."
-            echo "$PHONE_COVERAGE_FILES"
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
-            echo "$COVERAGE_FILES_COMMA"
+            echo $COVERAGE_FILES_COMMA
             ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=mock -PbuildType=debug  &> feature-jacoco.log
 
             # Copy generated report to expected location

@@ -262,16 +262,22 @@ jobs:
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
           
-      - name: Upload Unit Test Report
+      - name: Upload Unit Test Report (:app)
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-report
           path: app/build/reports/tests/testMockDebugUnitTest
+
+      - name: Upload Unit Test Report (:feature:auth)
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-unit-test-report
+          path: feature/auth/reports/tests/testDebugUnitTest
           
       - name: Publish Unit Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml,**/build/test-results/testDebugUnitTest/*.xml
           check_name: "Unit Test Results"
           
       - name: Run Component Tests
@@ -283,34 +289,41 @@ jobs:
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
 
-      - name: Upload Component Test Report
+      - name: Upload Component Test Report (:app)
         uses: actions/upload-artifact@v4
         with:
           name: component-test-report
           path: app/build/reports/tests/testMockDebugUnitTest
 
+      - name: Upload Component Test Report (:feature:auth)
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-component-test-report
+          path: feature/auth/build/reports/tests/testDebugUnitTest
+
       - name: Publish Component Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml,**/build/test-results/testDebugUnitTest/*.xml
           check_name: "Component Test Results"
           
       - name: Fail if Unit or Component Tests Failed
-        if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success'
+        if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success' || steps.run_auth_unit_tests.outcome != 'success' || steps.run_auth_component_tests.outcome != 'success'
         run: |
           echo "❌ Unit or component tests failed. See the uploaded reports for details."
           exit 1
 
       - name: Generate Unit Coverage Report
         run: |
-          ./gradlew koverXmlReportMockDebug koverXmlReportAllJvmModules koverXmlReportAllAndroidLibraryModules
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :app:koverXmlReportMockDebug :app:koverXmlReportAllJvmModules :app:koverXmlReportAllAndroidLibraryModules
+          ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildType=debug
 
       - name: Upload Unit Coverage to Codecov (Unit)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/unit-report.xml,**/build/reports/kover/report.xml,**/build/reports/kover/reportDebug.xml
+          files: app/build/reports/kover/unit-report.xml,**/build/reports/kover/unit-report.xml
           flags: unit
           fail_ci_if_error: true
 
@@ -318,20 +331,21 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/unit-report.xml,**/build/reports/kover/report.xml,**/build/reports/kover/reportDebug.xml
+          files: app/build/reports/kover/unit-report.xml,**/build/reports/kover/unit-report.xml
           flags: local
           fail_ci_if_error: true
 
       - name: Generate Component Coverage Report
         run: |
-          ./gradlew koverXmlReportMockDebug koverXmlReportAllJvmModules koverXmlReportAllAndroidLibraryModules
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :app:koverXmlReportMockDebug :app:koverXmlReportAllJvmModules :app:koverXmlReportAllAndroidLibraryModules
+          ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildType=debug
 
       - name: Upload Component Coverage to Codecov (Component)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/component-report.xml,**/build/reports/kover/report.xml,**/build/reports/kover/reportDebug.xml
+          files: app/build/reports/kover/component-report.xml,**/build/reports/kover/component-report.xml
           flags: component
           fail_ci_if_error: true
 
@@ -339,15 +353,21 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/component-report.xml,**/build/reports/kover/report.xml,**/build/reports/kover/reportDebug.xml
+          files: app/build/reports/kover/component-report.xml,**/build/reports/kover/component-report.xml
           flags: robolectric
           fail_ci_if_error: true
 
-      - name: Upload Kover Unit and Component XML Report
+      - name: Upload Kover Unit and Component XML Report (:app)
         uses: actions/upload-artifact@v4
         with:
           name: unit-component-report
           path: app/build/reports/kover/reportMockDebug.xml
+
+      - name: Upload Kover Unit and Component XML Report (:feature:auth)
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-unit-component-report
+          path: feature/auth/build/reports/kover/reportDebug.xml
 
   screenshot-tests:
     if: github.event_name == 'pull_request'
@@ -387,22 +407,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run Feature Tests (:app)
+      - name: Run Feature Tests
         id: run_feature_tests
         continue-on-error: true
         run: |
-          ./gradlew testMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Feature -Pcoverage | tee feature-test.log
+          ./gradlew testAllMockDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Feature -Pcoverage | tee feature-test.log
           EXIT=${PIPESTATUS[0]}
           [ $EXIT -eq 0 ] || cat feature-test.log
-          exit $EXIT
-
-      - name: Run Feature Tests (:feature:auth)
-        id: run_auth_feature_tests
-        continue-on-error: true
-        run: |
-          ./gradlew :feature:auth:testDebugUnitTest -PtestCategory=timur.gilfanov.messenger.annotations.Feature -Pcoverage | tee auth-feature-test.log
-          EXIT=${PIPESTATUS[0]}
-          [ $EXIT -eq 0 ] || cat auth-feature-test.log
           exit $EXIT
 
       - name: Upload Feature Test Report (:app)
@@ -431,8 +442,8 @@ jobs:
 
       - name: Generate Feature Coverage Report
         run: |
-          ./gradlew app:koverXmlReportMockDebug app:koverXmlReportAllJvmModules app:koverXmlReportAllAndroidLibraryModules
-          ./gradlew app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :app:koverXmlReportMockDebug :app:koverXmlReportAllJvmModules :app:koverXmlReportAllAndroidLibraryModules
+          ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildFlavor=mock -PbuildType=debug
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildType=debug
 
       - name: Upload Feature Coverage to Codecov (Feature)

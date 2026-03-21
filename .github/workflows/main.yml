@@ -262,23 +262,32 @@ jobs:
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
           
-      - name: Upload Unit Test Report (:app)
+      - name: Upload Unit Test Report
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-report
-          path: app/build/reports/tests/testMockDebugUnitTest
-
-      - name: Upload Unit Test Report (:feature:auth)
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-unit-test-report
-          path: feature/auth/reports/tests/testDebugUnitTest
+          path: |
+            app/build/reports/tests/testMockDebugUnitTest
+            core/domain/build/reports/tests/test
+            feature/auth/reports/tests/testDebugUnitTest
           
-      - name: Publish Unit Test Results
+      - name: Publish Unit Test Results (:app)
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml,**/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Unit Test Results"
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
+          check_name: "Unit Test Results (:app)"
+
+      - name: Publish Unit Test Results (:core:domain)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: core/domain/build/test-results/test/*.xml
+          check_name: "Unit Test Results (:core:domain)"
+
+      - name: Publish Unit Test Results (:feature:auth)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Unit Test Results (:feature:auth)"
           
       - name: Run Component Tests
         id: run_component_tests
@@ -289,23 +298,32 @@ jobs:
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
 
-      - name: Upload Component Test Report (:app)
+      - name: Upload Component Test Report
         uses: actions/upload-artifact@v4
         with:
           name: component-test-report
-          path: app/build/reports/tests/testMockDebugUnitTest
+          path: |
+            app/build/reports/tests/testMockDebugUnitTest
+            core/domain/build/reports/tests/test
+            feature/auth/build/reports/tests/testDebugUnitTest
 
-      - name: Upload Component Test Report (:feature:auth)
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-component-test-report
-          path: feature/auth/build/reports/tests/testDebugUnitTest
-
-      - name: Publish Component Test Results
+      - name: Publish Component Test Results (:app)
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml,**/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Component Test Results"
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
+          check_name: "Component Test Results (:app)"
+
+      - name: Publish Component Test Results (:core:domain)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: core/domain/build/test-results/test/*.xml
+          check_name: "Component Test Results (:core:domain)"
+
+      - name: Publish Component Test Results (:feature:auth)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Component Test Results (:feature:auth)"
           
       - name: Fail if Unit or Component Tests Failed
         if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success'
@@ -317,6 +335,7 @@ jobs:
         run: |
           ./gradlew :app:koverXmlReportMockDebug :app:koverXmlReportAllJvmModules :app:koverXmlReportAllAndroidLibraryModules
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :core:domain:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildType=debug
 
       - name: Upload Unit Coverage to Codecov (Unit)
@@ -339,6 +358,7 @@ jobs:
         run: |
           ./gradlew :app:koverXmlReportMockDebug :app:koverXmlReportAllJvmModules :app:koverXmlReportAllAndroidLibraryModules
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :core:domain:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildType=debug
 
       - name: Upload Component Coverage to Codecov (Component)
@@ -357,17 +377,14 @@ jobs:
           flags: robolectric
           fail_ci_if_error: true
 
-      - name: Upload Kover Unit and Component XML Report (:app)
+      - name: Upload Kover Unit and Component XML Report
         uses: actions/upload-artifact@v4
         with:
           name: unit-component-report
-          path: app/build/reports/kover/reportMockDebug.xml
-
-      - name: Upload Kover Unit and Component XML Report (:feature:auth)
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-unit-component-report
-          path: feature/auth/build/reports/kover/reportDebug.xml
+          path: |
+            app/build/reports/kover/reportMockDebug.xml
+            core/domain/build/reports/kover/report.xml
+            feature/auth/build/reports/kover/reportDebug.xml
 
   screenshot-tests:
     if: github.event_name == 'pull_request'
@@ -416,23 +433,25 @@ jobs:
           [ $EXIT -eq 0 ] || cat feature-test.log
           exit $EXIT
 
-      - name: Upload Feature Test Report (:app)
+      - name: Upload Feature Test Report
         uses: actions/upload-artifact@v4
         with:
           name: feature-test-report
-          path: app/build/reports/tests/testMockDebugUnitTest
+          path: |
+            app/build/reports/tests/testMockDebugUnitTest
+            feature/auth/build/reports/tests/testDebugUnitTest
 
-      - name: Upload Feature Test Report (:feature:auth)
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-feature-test-report
-          path: feature/auth/build/reports/tests/testDebugUnitTest
-
-      - name: Publish Feature Test Results
+      - name: Publish Feature Test Results (:app)
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml,**/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Feature Test Results"
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
+          check_name: "Feature Test Results (:app)"
+
+      - name: Publish Feature Test Results (:feature:auth)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Feature Test Results (:feature:auth)"
 
       - name: Fail if Feature Tests Failed
         if: steps.run_feature_tests.outcome != 'success'
@@ -599,11 +618,17 @@ jobs:
             emulator-testlab-results/
             feature-auth-emulator-testlab-results/
 
-      - name: Publish Feature Emulator Test Results
+      - name: Publish Feature Emulator Test Results (:app)
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: emulator-testlab-results/**/*.xml,feature-auth-emulator-testlab-results/**/*.xml
-          check_name: "Feature Instrumentation Test Results (Emulator)"
+          report_paths: emulator-testlab-results/**/*.xml
+          check_name: "Feature Instrumentation Test Results (Emulator, :app)"
+
+      - name: Publish Feature Emulator Test Results (:feature:auth)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature-auth-emulator-testlab-results/**/*.xml
+          check_name: "Feature Instrumentation Test Results (Emulator, :feature:auth)"
 
       - name: Download Kotlin class files for emulator coverage
         uses: actions/download-artifact@v4

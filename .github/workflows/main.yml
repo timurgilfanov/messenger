@@ -293,11 +293,17 @@ jobs:
             app/build/reports/tests/testMockDebugUnitTest
             feature/auth/build/reports/tests/testDebugUnitTest
 
-      - name: Publish Component Test Results
+      - name: Publish App Component Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml,**/build/test-results/testDebugUnitTest/*.xml
-          check_name: "Component Test Results"
+          report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
+          check_name: "App Component Test Results"
+
+      - name: Publish Auth Component Test Results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Auth Component Test Results"
           
       - name: Fail if Unit or Component Tests Failed
         if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success'

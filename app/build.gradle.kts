@@ -225,7 +225,9 @@ tasks.register<JacocoReport>("jacocoExternalCoverageReport") {
         ) {
             exclude(excludePatterns)
         } + fileTree(
-            featureAuthProject.layout.buildDirectory.dir("intermediates/javac/$buildVariant/classes"),
+            featureAuthProject.layout.buildDirectory.dir(
+                "intermediates/javac/$buildVariant/classes",
+            ),
         ) {
             exclude(excludePatterns)
         },

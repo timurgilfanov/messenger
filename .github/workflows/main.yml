@@ -655,25 +655,12 @@ jobs:
           if [ -n "$PHONE_COVERAGE_FILES" ]; then
             echo "Generating emulator coverage report using Gradle task..."
             COVERAGE_FILES_COMMA=$(echo "$PHONE_COVERAGE_FILES" | tr ' ' ',')
-            echo $COVERAGE_FILES_COMMA
-            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=mock -PbuildType=debug  &> feature-jacoco.log
+            ./gradlew :app:jacocoExternalCoverageReport -PexternalCoverageFiles="$COVERAGE_FILES_COMMA" -PbuildFlavor=mock -PbuildType=debug
 
             # Copy generated report to expected location
             cp app/build/reports/jacoco/firebaseTestLab/jacocoTestReport.xml coverage-reports/feature-emulator-phone-report.xml
             rm -rf app/build/reports/jacoco/firebaseTestLab
-          fi      
-          
-      - name: Upload Feature JaCoCo Log
-        uses: actions/upload-artifact@v4
-        with:
-          name: feature-jacoco-log
-          path: feature-jacoco.log
-
-      - name: Upload Feature Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: feature-coverage-report
-          path: coverage-reports/feature-emulator-phone-report.xml
+          fi        
 
       - name: Upload Feature Emulator Phone Coverage to Codecov (feature)
         uses: codecov/codecov-action@v4

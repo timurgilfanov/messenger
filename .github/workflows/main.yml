@@ -93,7 +93,7 @@ jobs:
           check_name: "Architecture Test Results"
 
       - name: Build Mock Debug and AndroidTest APKs
-        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest :feature:auth:assembleDebugAndroidTest
+        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest :feature:auth:assembleMockDebug :feature:auth:assembleDebugAndroidTest
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4

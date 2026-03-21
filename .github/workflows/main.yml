@@ -568,12 +568,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: feature-emulator-test-results
-          path: emulator-testlab-results/
+          path: |
+            emulator-testlab-results/
+            feature-auth-emulator-testlab-results/
 
       - name: Publish Feature Emulator Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: emulator-testlab-results/**/*.xml
+          report_paths: emulator-testlab-results/**/*.xml,feature-auth-emulator-testlab-results/**/*.xml
           check_name: "Feature Instrumentation Test Results (Emulator)"
 
       - name: Download Kotlin class files for emulator coverage

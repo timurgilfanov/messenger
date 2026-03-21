@@ -93,7 +93,7 @@ jobs:
           check_name: "Architecture Test Results"
 
       - name: Build Mock Debug and AndroidTest APKs
-        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest :feature:auth:assembleMockDebug :feature:auth:assembleDebugAndroidTest
+        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest :feature:auth:assembleDebug :feature:auth:assembleDebugAndroidTest
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -123,7 +123,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: feature-auth-kotlin-classfiles
-          path: feature/auth/build/tmp/kotlin-classes/mockDebug
+          path: feature/auth/build/tmp/kotlin-classes/debug
 
   build-production:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -585,7 +585,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: feature-auth-kotlin-classfiles
-          path: feature/auth/build/tmp/kotlin-classes/mockDebug
+          path: feature/auth/build/tmp/kotlin-classes/debug
 
       - name: Generate Emulator Coverage Reports
         run: |

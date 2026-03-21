@@ -262,17 +262,13 @@ jobs:
           [ $EXIT -eq 0 ] || cat unit-test.log
           exit $EXIT
           
-      - name: Upload Unit Test Report (:app)
+      - name: Upload Unit Test Report
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-report
-          path: app/build/reports/tests/testMockDebugUnitTest
-
-      - name: Upload Unit Test Report (:feature:auth)
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-unit-test-report
-          path: feature/auth/reports/tests/testDebugUnitTest
+          path: |
+            app/build/reports/tests/testMockDebugUnitTest
+            feature/auth/reports/tests/testDebugUnitTest
           
       - name: Publish Unit Test Results
         uses: mikepenz/action-junit-report@v4
@@ -289,17 +285,13 @@ jobs:
           [ $EXIT -eq 0 ] || cat component-test.log
           exit $EXIT
 
-      - name: Upload Component Test Report (:app)
+      - name: Upload Component Test Report
         uses: actions/upload-artifact@v4
         with:
           name: component-test-report
-          path: app/build/reports/tests/testMockDebugUnitTest
-
-      - name: Upload Component Test Report (:feature:auth)
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-component-test-report
-          path: feature/auth/build/reports/tests/testDebugUnitTest
+          path: |
+            app/build/reports/tests/testMockDebugUnitTest
+            feature/auth/build/reports/tests/testDebugUnitTest
 
       - name: Publish Component Test Results
         uses: mikepenz/action-junit-report@v4
@@ -308,7 +300,7 @@ jobs:
           check_name: "Component Test Results"
           
       - name: Fail if Unit or Component Tests Failed
-        if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success' || steps.run_auth_unit_tests.outcome != 'success' || steps.run_auth_component_tests.outcome != 'success'
+        if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success'
         run: |
           echo "❌ Unit or component tests failed. See the uploaded reports for details."
           exit 1
@@ -357,17 +349,13 @@ jobs:
           flags: robolectric
           fail_ci_if_error: true
 
-      - name: Upload Kover Unit and Component XML Report (:app)
+      - name: Upload Kover Unit and Component XML Report
         uses: actions/upload-artifact@v4
         with:
           name: unit-component-report
-          path: app/build/reports/kover/reportMockDebug.xml
-
-      - name: Upload Kover Unit and Component XML Report (:feature:auth)
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-unit-component-report
-          path: feature/auth/build/reports/kover/reportDebug.xml
+          path: |
+            app/build/reports/kover/reportMockDebug.xml
+            feature/auth/build/reports/kover/reportDebug.xml
 
   screenshot-tests:
     if: github.event_name == 'pull_request'
@@ -416,17 +404,13 @@ jobs:
           [ $EXIT -eq 0 ] || cat feature-test.log
           exit $EXIT
 
-      - name: Upload Feature Test Report (:app)
+      - name: Upload Feature Test Report
         uses: actions/upload-artifact@v4
         with:
           name: feature-test-report
-          path: app/build/reports/tests/testMockDebugUnitTest
-
-      - name: Upload Feature Test Report (:feature:auth)
-        uses: actions/upload-artifact@v4
-        with:
-          name: auth-feature-test-report
-          path: feature/auth/build/reports/tests/testDebugUnitTest
+          path: |
+            app/build/reports/tests/testMockDebugUnitTest
+            feature/auth/build/reports/tests/testDebugUnitTest
 
       - name: Publish Feature Test Results
         uses: mikepenz/action-junit-report@v4
@@ -435,7 +419,7 @@ jobs:
           check_name: "Feature Test Results"
 
       - name: Fail if Feature Tests Failed
-        if: steps.run_feature_tests.outcome != 'success' || steps.run_auth_feature_tests.outcome != 'success'
+        if: steps.run_feature_tests.outcome != 'success'
         run: |
           echo "❌ Feature tests failed. See the uploaded report for details."
           exit 1

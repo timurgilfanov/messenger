@@ -416,14 +416,15 @@ jobs:
 
       - name: Generate Feature Coverage Report
         run: |
-          ./gradlew koverXmlReportMockDebug koverXmlReportAllJvmModules koverXmlReportAllAndroidLibraryModules
-          ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew app:koverXmlReportMockDebug app:koverXmlReportAllJvmModules app:koverXmlReportAllAndroidLibraryModules
+          ./gradlew app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildType=debug
 
       - name: Upload Feature Coverage to Codecov (Feature)
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/feature-report.xml,**/build/reports/kover/report.xml,**/build/reports/kover/reportDebug.xml
+          files: app/build/reports/kover/feature-report.xml,**/build/reports/kover/feature-report.xml
           flags: feature
           fail_ci_if_error: true
           
@@ -431,7 +432,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: app/build/reports/kover/feature-report.xml,**/build/reports/kover/report.xml,**/build/reports/kover/reportDebug.xml
+          files: app/build/reports/kover/feature-report.xml,**/build/reports/kover/feature-report.xml
           flags: local
           fail_ci_if_error: true
 

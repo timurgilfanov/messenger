@@ -416,7 +416,7 @@ tasks.register("generateCategorySpecificReports") {
             } else {
                 throw GradleException(
                     "Coverage report file not found: ${sourceReportFile.absolutePath}. " +
-                        "Run './gradlew koverXmlReportMockDebug' first.",
+                        "Generate coverage report first.",
                 )
             }
         }

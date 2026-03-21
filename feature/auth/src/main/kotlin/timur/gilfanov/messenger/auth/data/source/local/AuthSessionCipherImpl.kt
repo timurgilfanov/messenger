@@ -122,7 +122,6 @@ class AuthSessionCipherImpl @Inject constructor() : AuthSessionCipher {
             .build()
         keyGenerator.init(keySpec)
         keyGenerator.generateKey()
-        Unit
     }
 
     private fun createEncryptCipher(
@@ -168,6 +167,7 @@ class AuthSessionCipherImpl @Inject constructor() : AuthSessionCipher {
             when (error) {
                 is GeneralSecurityException ->
                     ResultWithError.Failure(AuthSessionCipherError.DataCorrupted)
+
                 else -> ResultWithError.Failure(error.toCipherError())
             }
         }

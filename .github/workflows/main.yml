@@ -268,6 +268,7 @@ jobs:
           name: unit-test-report
           path: |
             app/build/reports/tests/testMockDebugUnitTest
+            core/domain/build/reports/tests/test
             feature/auth/reports/tests/testDebugUnitTest
           
       - name: Publish Unit Test Results (:app)
@@ -275,6 +276,12 @@ jobs:
         with:
           report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
           check_name: "Unit Test Results (:app)"
+
+      - name: Publish Unit Test Results (:core:domain)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: core/domain/build/test-results/test/*.xml
+          check_name: "Unit Test Results (:core:domain)"
 
       - name: Publish Unit Test Results (:feature:auth)
         uses: mikepenz/action-junit-report@v4
@@ -297,6 +304,7 @@ jobs:
           name: component-test-report
           path: |
             app/build/reports/tests/testMockDebugUnitTest
+            core/domain/build/reports/tests/test
             feature/auth/build/reports/tests/testDebugUnitTest
 
       - name: Publish Component Test Results (:app)
@@ -304,6 +312,12 @@ jobs:
         with:
           report_paths: app/build/test-results/testMockDebugUnitTest/*.xml
           check_name: "Component Test Results (:app)"
+
+      - name: Publish Component Test Results (:core:domain)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: core/domain/build/test-results/test/*.xml
+          check_name: "Component Test Results (:core:domain)"
 
       - name: Publish Component Test Results (:feature:auth)
         uses: mikepenz/action-junit-report@v4
@@ -321,6 +335,7 @@ jobs:
         run: |
           ./gradlew :app:koverXmlReportMockDebug :app:koverXmlReportAllJvmModules :app:koverXmlReportAllAndroidLibraryModules
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :core:domain:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildType=debug
 
       - name: Upload Unit Coverage to Codecov (Unit)
@@ -343,6 +358,7 @@ jobs:
         run: |
           ./gradlew :app:koverXmlReportMockDebug :app:koverXmlReportAllJvmModules :app:koverXmlReportAllAndroidLibraryModules
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildFlavor=mock -PbuildType=debug
+          ./gradlew :core:domain:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildType=debug
 
       - name: Upload Component Coverage to Codecov (Component)
@@ -367,6 +383,7 @@ jobs:
           name: unit-component-report
           path: |
             app/build/reports/kover/reportMockDebug.xml
+            core/domain/build/reports/kover/report.xml
             feature/auth/build/reports/kover/reportDebug.xml
 
   screenshot-tests:

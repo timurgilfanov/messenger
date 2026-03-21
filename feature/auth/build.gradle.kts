@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kover)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
 }
 
 android {
@@ -37,6 +38,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 hilt {
@@ -66,6 +73,9 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
 
+    // Data Storage
+    implementation(libs.androidx.datastore.preferences)
+
     // ========== Third-party Runtime Libraries ==========
     // Dependency Injection
     implementation(libs.hilt.android)
@@ -77,6 +87,11 @@ dependencies {
 
     // Networking
     implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+
+    // Kotlin Extensions
+    implementation(libs.kotlinx.serialization.json)
 
     // ========== Test Dependencies ==========
     // Unit Testing
@@ -84,15 +99,20 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.junit)
+    testImplementation(libs.androidx.test.core)
 
     // Test Utilities
     testImplementation(libs.ktor.client.mock)
+    kspTest(libs.hilt.compiler)
 
     // ========== Android Test Dependencies ==========
     androidTestImplementation(project(":core:androidTest"))
     androidTestImplementation(testFixtures(project(":core:domain")))
     androidTestImplementation(libs.hilt.android.testing)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.kotlin.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.kotlinx.coroutines.test)
@@ -104,8 +124,11 @@ dependencies {
 
     // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
+    implementation(project(":core:data"))
     implementation(project(":core:ui"))
     implementation(testFixtures(project(":core:domain")))
+    testImplementation(project(":core:test"))
+    testImplementation(testFixtures(project(":core:domain")))
     testFixturesImplementation(project(":core:domain"))
     testFixturesImplementation(testFixtures(project(":core:domain")))
     // Compose runtime is required because the kotlin.compose plugin applies the Compose compiler
@@ -116,8 +139,7 @@ dependencies {
     // is missing from the testFixtures compile classpath without this explicit dependency.
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel)
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel.savedstate)
-    testImplementation(project(":core:test"))
-    testImplementation(testFixtures(project(":core:domain")))
+    testFixturesImplementation(libs.kotlinx.coroutines.core)
 
     // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)

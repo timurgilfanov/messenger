@@ -7,6 +7,7 @@ on:
     paths:
       - 'app/**'
       - 'core/**'
+      - 'feature/**'
       - 'build.gradle.kts'
       - 'gradle/**'
       - '.github/workflows/main.yml'
@@ -93,7 +94,7 @@ jobs:
           check_name: "Architecture Test Results"
 
       - name: Build Mock Debug and AndroidTest APKs
-        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest :feature:auth:assembleDebugAndroidTest
+        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest :feature:auth:assembleDebug :feature:auth:assembleDebugAndroidTest
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -118,6 +119,12 @@ jobs:
         with:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/mockDebug
+
+      - name: Upload feature-auth Kotlin class files
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-auth-kotlin-classfiles
+          path: feature/auth/build/tmp/kotlin-classes/debug
 
   build-production:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -507,6 +514,21 @@ jobs:
           echo "RESULTS_URL=$BUCKET_PATH" >> "$GITHUB_ENV"
           echo "✅ RESULTS_URL set to $BUCKET_PATH"
 
+      - name: Extract feature-auth Firebase Results Path
+        id: extract-feature-auth-results
+        run: |
+          CONSOLE_URL=$(grep 'Raw results will be stored in' feature-auth-emulator-run.log | awk '{print $NF}' | tr -d '[]')
+          if [ -z "$CONSOLE_URL" ]; then
+            echo "❌ Failed to extract CONSOLE_URL from feature-auth-emulator-run.log"; exit 1
+          fi
+          # Convert to gs:// URL
+          BUCKET_PATH=$(echo "$CONSOLE_URL" | sed 's|https://console.developers.google.com/storage/browser/|gs://|')
+          if [ -z "$BUCKET_PATH" ]; then
+            echo "❌ Failed to convert CONSOLE_URL to BUCKET_PATH"; exit 1
+          fi
+          echo "FEATURE_AUTH_RESULTS_URL=$BUCKET_PATH" >> "$GITHUB_ENV"
+          echo "✅ FEATURE_AUTH_RESULTS_URL set to $BUCKET_PATH"
+
       - name: Download results from Firebase Test Lab
         run: |
           if [ -z "$RESULTS_URL" ]; then
@@ -515,14 +537,30 @@ jobs:
           mkdir -p emulator-testlab-results
           gsutil -m cp -r $RESULTS_URL emulator-testlab-results/        
 
+      - name: Download feature-auth results from Firebase Test Lab
+        run: |
+          if [ -z "$FEATURE_AUTH_RESULTS_URL" ]; then
+            echo "❌ FEATURE_AUTH_RESULTS_URL is not set"; exit 1
+          fi
+          mkdir -p feature-auth-emulator-testlab-results
+          gsutil -m cp -r $FEATURE_AUTH_RESULTS_URL feature-auth-emulator-testlab-results/
+
       - name: Sanitize all subdirectory names to remove colons
         run: |
-          for dir in emulator-testlab-results/*; do
-            base=$(basename "$dir")
-            safe=$(echo "$base" | tr ':' '_')
-            if [ "$base" != "$safe" ]; then
-              mv "emulator-testlab-results/$base" "emulator-testlab-results/$safe"
+          for base in emulator-testlab-results feature-auth-emulator-testlab-results; do
+            if [ ! -d "$base" ]; then
+              continue
             fi
+            for dir in "$base"/*; do
+              if [ ! -e "$dir" ]; then
+                continue
+              fi
+              name=$(basename "$dir")
+              safe=$(echo "$name" | tr ':' '_')
+              if [ "$name" != "$safe" ]; then
+                mv "$base/$name" "$base/$safe"
+              fi
+            done
           done
 
       # Needs sanitized path without colons
@@ -530,12 +568,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: feature-emulator-test-results
-          path: emulator-testlab-results/
+          path: |
+            emulator-testlab-results/
+            feature-auth-emulator-testlab-results/
 
       - name: Publish Feature Emulator Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: emulator-testlab-results/**/*.xml
+          report_paths: emulator-testlab-results/**/*.xml,feature-auth-emulator-testlab-results/**/*.xml
           check_name: "Feature Instrumentation Test Results (Emulator)"
 
       - name: Download Kotlin class files for emulator coverage
@@ -544,13 +584,20 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/mockDebug
 
+      - name: Download feature-auth Kotlin class files for emulator coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: feature-auth-kotlin-classfiles
+          path: feature/auth/build/tmp/kotlin-classes/debug
+
       - name: Generate Emulator Coverage Reports
         run: |
           # Create directory for coverage reports
           mkdir -p coverage-reports
 
           # Find emulator coverage files 
-          PHONE_COVERAGE_FILES=$(find emulator-testlab-results \
+          RESULT_DIRS="emulator-testlab-results feature-auth-emulator-testlab-results"
+          PHONE_COVERAGE_FILES=$(find $RESULT_DIRS \
                                  -path "*/artifacts/sdcard/Download/coverage.ec" \
                                  -print0 | xargs -0)          
           if [ -n "$PHONE_COVERAGE_FILES" ]; then

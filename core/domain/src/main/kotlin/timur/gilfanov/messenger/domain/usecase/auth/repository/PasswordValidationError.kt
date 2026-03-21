@@ -9,8 +9,8 @@ package timur.gilfanov.messenger.domain.usecase.auth.repository
  * not on the sub-type.
  */
 sealed interface PasswordValidationError {
-    data class PasswordTooShort(val minLength: Int) : PasswordValidationError
-    data class PasswordTooLong(val maxLength: Int) : PasswordValidationError
+    data class PasswordTooShort(val minLength: Int?) : PasswordValidationError
+    data class PasswordTooLong(val maxLength: Int?) : PasswordValidationError
     data class ForbiddenCharacterInPassword(val character: Char) : PasswordValidationError
     data class PasswordMustContainNumbers(val minNumbers: Int) : PasswordValidationError
     data class PasswordMustContainAlphabet(val minAlphabet: Int) : PasswordValidationError

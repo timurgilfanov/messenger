@@ -36,7 +36,7 @@ class AuthInterceptorTest {
 
     private fun buildClient(
         mockEngine: MockEngine,
-        authTokenStorage: AuthTokenStorageFake,
+        authTokenStorage: LocalAuthDataSourceFake,
         tokenRefreshUseCase: TokenRefreshUseCase,
         scope: TestScope,
     ): HttpClient {
@@ -48,7 +48,7 @@ class AuthInterceptorTest {
 
     @Test
     fun `when access token is stored then request has Authorization Bearer header`() = runTest {
-        val authTokenStorage = AuthTokenStorageFake().apply {
+        val authTokenStorage = LocalAuthDataSourceFake().apply {
             accessToken = "test-access-token"
         }
         var capturedHeader: String? = null
@@ -70,7 +70,7 @@ class AuthInterceptorTest {
 
     @Test
     fun `when no access token then request has no Authorization header`() = runTest {
-        val authTokenStorage = AuthTokenStorageFake()
+        val authTokenStorage = LocalAuthDataSourceFake()
         var capturedHeader: String? = "should-be-cleared"
         val mockEngine = MockEngine { request ->
             capturedHeader = request.headers["Authorization"]
@@ -90,7 +90,7 @@ class AuthInterceptorTest {
 
     @Test
     fun `when response is 200 then no token refresh occurs`() = runTest {
-        val authTokenStorage = AuthTokenStorageFake()
+        val authTokenStorage = LocalAuthDataSourceFake()
         var refreshCallCount = 0
         val mockEngine = MockEngine { respond("OK", HttpStatusCode.OK) }
         val client = buildClient(
@@ -110,7 +110,7 @@ class AuthInterceptorTest {
 
     @Test
     fun `when 401 and refresh succeeds then retries request with new access token`() = runTest {
-        val authTokenStorage = AuthTokenStorageFake().apply {
+        val authTokenStorage = LocalAuthDataSourceFake().apply {
             accessToken = "old-access-token"
         }
         val requestHeaders = mutableListOf<String?>()
@@ -152,7 +152,7 @@ class AuthInterceptorTest {
     @Test
     fun `when 401 and refresh returns SessionExpired then returns original 401 without retry`() =
         runTest {
-            val authTokenStorage = AuthTokenStorageFake().apply {
+            val authTokenStorage = LocalAuthDataSourceFake().apply {
                 accessToken = "old-access-token"
             }
             var callCount = 0
@@ -177,7 +177,7 @@ class AuthInterceptorTest {
 
     @Test
     fun `when 401 and LocalOperationFailed then returns original 401 without retry`() = runTest {
-        val authTokenStorage = AuthTokenStorageFake().apply {
+        val authTokenStorage = LocalAuthDataSourceFake().apply {
             accessToken = "old-access-token"
         }
         var callCount = 0
@@ -204,7 +204,7 @@ class AuthInterceptorTest {
 
     @Test
     fun `when 401 and RemoteOperationFailed then returns original 401 without retry`() = runTest {
-        val authTokenStorage = AuthTokenStorageFake().apply {
+        val authTokenStorage = LocalAuthDataSourceFake().apply {
             accessToken = "old-access-token"
         }
         var callCount = 0
@@ -241,7 +241,7 @@ class AuthInterceptorTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `when concurrent 401 responses then tokenRefreshUseCase is invoked only once`() = runTest {
-        val authTokenStorage = AuthTokenStorageFake().apply {
+        val authTokenStorage = LocalAuthDataSourceFake().apply {
             accessToken = "old-access-token"
         }
         val refreshInvocationCount = AtomicInteger(0)

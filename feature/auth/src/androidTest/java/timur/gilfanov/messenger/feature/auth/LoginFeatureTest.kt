@@ -30,6 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.messenger.annotations.FeatureTest
 import timur.gilfanov.messenger.auth.R
+import timur.gilfanov.messenger.auth.di.AuthDataModule
 import timur.gilfanov.messenger.auth.di.AuthModule
 import timur.gilfanov.messenger.auth.di.AuthViewModelModule
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
@@ -54,7 +55,7 @@ import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-@UninstallModules(AuthModule::class, AuthViewModelModule::class)
+@UninstallModules(AuthModule::class, AuthViewModelModule::class, AuthDataModule::class)
 @FeatureTest
 @RunWith(AndroidJUnit4::class)
 class LoginFeatureTest {

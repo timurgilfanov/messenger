@@ -187,7 +187,16 @@ tasks.register<JacocoReport>("jacocoExternalCoverageReport") {
         html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/firebaseTestLab/html"))
     }
 
-    sourceDirectories.setFrom(files("$projectDir/src/main/java"))
+    val featureAuthProject = project(":feature:auth")
+    val featureAuthSourceDirs = listOf(
+        featureAuthProject.projectDir.resolve("src/main/java"),
+        featureAuthProject.projectDir.resolve("src/main/kotlin"),
+    ).filter { it.exists() }
+    val sourceDirs = mutableListOf(
+        file("$projectDir/src/main/java"),
+        file("$projectDir/src/main/kotlin"),
+    ).apply { addAll(featureAuthSourceDirs) }
+    sourceDirectories.setFrom(sourceDirs)
     val excludePatterns = listOf(
         // Hilt generated classes
         "**/*Hilt_*",
@@ -206,12 +215,27 @@ tasks.register<JacocoReport>("jacocoExternalCoverageReport") {
         "**/*Preview*",
         "**/*PreviewKt*",
     )
+    val featureAuthVariants = listOf(buildVariant, "debug").distinct()
+    val featureAuthFileTrees = featureAuthVariants.flatMap { variant ->
+        listOf(
+            fileTree(featureAuthProject.layout.buildDirectory.dir("tmp/kotlin-classes/$variant")) {
+                exclude(excludePatterns)
+            },
+            fileTree(
+                featureAuthProject.layout.buildDirectory.dir(
+                    "intermediates/javac/$variant/classes",
+                ),
+            ) {
+                exclude(excludePatterns)
+            },
+        )
+    }
     classDirectories.setFrom(
         fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/$buildVariant")) {
             exclude(excludePatterns)
         } + fileTree(layout.buildDirectory.dir("intermediates/javac/$buildVariant/classes")) {
             exclude(excludePatterns)
-        },
+        } + featureAuthFileTrees,
     )
 
     // External coverage files passed via parameter

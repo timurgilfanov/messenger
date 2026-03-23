@@ -11,6 +11,8 @@ class RemoteAuthDataSourceFake : RemoteAuthDataSource {
         ArrayDeque<ResultWithError<AuthTokens, LoginWithCredentialsError>>()
     private val loginWithGoogleQueue =
         ArrayDeque<ResultWithError<AuthTokens, LoginWithGoogleError>>()
+    private val signupWithGoogleQueue =
+        ArrayDeque<ResultWithError<AuthTokens, SignupWithGoogleError>>()
     private val registerQueue = ArrayDeque<ResultWithError<AuthTokens, RegisterError>>()
     private val refreshQueue = ArrayDeque<ResultWithError<AuthTokens, RefreshError>>()
     private val logoutQueue = ArrayDeque<ResultWithError<Unit, LogoutError>>()
@@ -33,6 +35,12 @@ class RemoteAuthDataSourceFake : RemoteAuthDataSource {
 
     fun enqueueLoginWithGoogle(vararg results: ResultWithError<AuthTokens, LoginWithGoogleError>) {
         results.forEach { loginWithGoogleQueue.addLast(it) }
+    }
+
+    fun enqueueSignupWithGoogle(
+        vararg results: ResultWithError<AuthTokens, SignupWithGoogleError>,
+    ) {
+        results.forEach { signupWithGoogleQueue.addLast(it) }
     }
 
     fun enqueueRegister(vararg results: ResultWithError<AuthTokens, RegisterError>) {
@@ -63,6 +71,16 @@ class RemoteAuthDataSourceFake : RemoteAuthDataSource {
     } else {
         ResultWithError.Success(nextTokens("google"))
     }
+
+    override suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthTokens, SignupWithGoogleError> =
+        if (signupWithGoogleQueue.isNotEmpty()) {
+            signupWithGoogleQueue.removeFirst()
+        } else {
+            ResultWithError.Success(nextTokens("google-signup"))
+        }
 
     override suspend fun register(
         credentials: Credentials,

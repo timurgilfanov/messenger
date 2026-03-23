@@ -19,6 +19,10 @@ interface RemoteAuthDataSource {
     suspend fun loginWithGoogle(
         idToken: GoogleIdToken,
     ): ResultWithError<AuthTokens, LoginWithGoogleError>
+    suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthTokens, SignupWithGoogleError>
     suspend fun register(
         credentials: Credentials,
         name: String,

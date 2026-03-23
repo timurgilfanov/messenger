@@ -13,6 +13,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import timur.gilfanov.messenger.auth.data.source.remote.dto.AuthTokensDto
 import timur.gilfanov.messenger.auth.data.source.remote.dto.CredentialsLoginRequestDto
 import timur.gilfanov.messenger.auth.data.source.remote.dto.GoogleLoginRequestDto
+import timur.gilfanov.messenger.auth.data.source.remote.dto.GoogleSignupRequestDto
 import timur.gilfanov.messenger.auth.data.source.remote.dto.RefreshRequestDto
 import timur.gilfanov.messenger.auth.data.source.remote.dto.RegisterRequestDto
 import timur.gilfanov.messenger.auth.di.UnauthenticatedHttpClient
@@ -44,6 +45,7 @@ class RemoteAuthDataSourceImpl @Inject constructor(
         private const val CODE_ACCOUNT_SUSPENDED = "ACCOUNT_SUSPENDED"
         private const val CODE_INVALID_TOKEN = "INVALID_TOKEN"
         private const val CODE_ACCOUNT_NOT_FOUND = "ACCOUNT_NOT_FOUND"
+        private const val CODE_ACCOUNT_ALREADY_EXISTS = "ACCOUNT_ALREADY_EXISTS"
         private const val CODE_EMAIL_TAKEN = "EMAIL_TAKEN"
         private const val CODE_EMAIL_NOT_EXISTS = "EMAIL_NOT_EXISTS"
         private const val CODE_PASSWORD_TOO_SHORT = "PASSWORD_TOO_SHORT"
@@ -96,6 +98,28 @@ class RemoteAuthDataSourceImpl @Inject constructor(
             ResultWithError.Success(data.toDomain())
         } else {
             ResultWithError.Failure(mapLoginWithGoogleError(response.error))
+        }
+    }
+
+    override suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthTokens, SignupWithGoogleError> = executeRemoteRequest(
+        TAG,
+        "signupWithGoogle",
+        logger,
+        SignupWithGoogleError::RemoteDataSource,
+    ) {
+        val response: ApiResponse<AuthTokensDto> =
+            httpClient.post(AuthApiRoutes.GOOGLE_REGISTER) {
+                contentType(ContentType.Application.Json)
+                setBody(GoogleSignupRequestDto(idToken.value, name))
+            }.body()
+        val data = response.data
+        if (response.success && data != null) {
+            ResultWithError.Success(data.toDomain())
+        } else {
+            ResultWithError.Failure(mapSignupWithGoogleError(response.error))
         }
     }
 
@@ -170,6 +194,16 @@ class RemoteAuthDataSourceImpl @Inject constructor(
             CODE_EMAIL_NOT_VERIFIED -> LoginWithCredentialsError.EmailNotVerified
             CODE_ACCOUNT_SUSPENDED -> LoginWithCredentialsError.AccountSuspended
             else -> LoginWithCredentialsError.RemoteDataSource(infraError(apiError))
+        }
+
+    private fun mapSignupWithGoogleError(apiError: ApiError?): SignupWithGoogleError =
+        when (apiError?.code) {
+            CODE_INVALID_TOKEN -> SignupWithGoogleError.InvalidToken
+            CODE_ACCOUNT_ALREADY_EXISTS -> SignupWithGoogleError.AccountAlreadyExists
+            CODE_INVALID_NAME -> SignupWithGoogleError.InvalidName(
+                ProfileNameValidationError.UnknownRuleViolation(apiError.message),
+            )
+            else -> SignupWithGoogleError.RemoteDataSource(infraError(apiError))
         }
 
     private fun mapLoginWithGoogleError(apiError: ApiError?): LoginWithGoogleError =

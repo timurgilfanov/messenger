@@ -53,4 +53,40 @@
     <string name="login_error_account_not_found">Account not found</string>
     <string name="login_error_invalid_token">Session expired. Please sign in again.</string>
     <string name="login_error_invalid_email">This email address cannot be used</string>
+
+    <!-- Signup Screen -->
+    <string name="signup_name_label">Name</string>
+    <string name="signup_sign_up_with_google_button">Sign Up with Google</string>
+    <string name="signup_already_have_account_button">Already have an account? Sign in</string>
+
+    <!-- Signup validation errors -->
+    <string name="signup_error_name_length_out_of_bounds">Name must be between %1$d and %2$d characters</string>
+
+    <!-- Signup blocking error titles -->
+    <string name="signup_error_storage_full_title">Storage full</string>
+    <string name="signup_error_storage_corrupted_title">Storage corrupted</string>
+    <string name="signup_error_storage_read_only_title">Storage error</string>
+    <string name="signup_error_storage_access_denied_title">Permission denied</string>
+
+    <!-- Signup blocking error messages -->
+    <string name="signup_error_storage_full">Device storage is full. Free up space to continue.</string>
+    <string name="signup_error_storage_corrupted">App data is corrupted. Clear app data to continue.</string>
+    <string name="signup_error_storage_read_only">Storage is in read-only mode. Clear app data or restart the app.</string>
+    <string name="signup_error_storage_access_denied">Storage permission denied. Grant permission in app settings.</string>
+
+    <!-- Signup blocking error action buttons -->
+    <string name="signup_action_open_app_settings">Open App Settings</string>
+    <string name="signup_action_open_storage_settings">Open Storage Settings</string>
+
+    <!-- Signup snackbar messages -->
+    <string name="signup_action_retry">Retry</string>
+    <string name="signup_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
+    <string name="signup_error_too_many_attempts">Too many attempts. Try again in %s.</string>
+    <string name="signup_error_network_unavailable">No internet connection</string>
+    <string name="signup_error_service_unavailable">Service unavailable. Try again later.</string>
+    <string name="signup_error_google_sign_up_failed">Google Sign-Up failed. Please try again.</string>
+
+    <!-- Signup general errors -->
+    <string name="signup_error_invalid_token">Session expired. Please try again.</string>
+    <string name="signup_error_account_already_exists">An account with this Google identity already exists</string>
 </resources>

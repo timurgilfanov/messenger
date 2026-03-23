@@ -15,6 +15,7 @@ import javax.inject.Inject
 import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginScreen
+import timur.gilfanov.messenger.auth.ui.screen.signup.SignupScreen
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
 import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
 import timur.gilfanov.messenger.navigation.Chat
@@ -127,7 +128,14 @@ fun MessengerApp(googleSignInClient: GoogleSignInClient) {
                 )
             }
             entry<Signup> {
-                // SignupScreen pending implementation
+                SignupScreen(
+                    onNavigateToChatList = {
+                        backStack.clear()
+                        backStack.add(Main)
+                    },
+                    onNavigateBack = { backStack.removeLastOrNull() },
+                    googleSignInClient = googleSignInClient,
+                )
             }
         },
     )

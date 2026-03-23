@@ -92,14 +92,14 @@ Implement a signup with Google flow. The user sees a signup screen with a name i
 - Create: `feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/domain/usecase/SignupWithGoogleUseCaseImpl.kt`
 - Create: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/domain/usecase/SignupWithGoogleUseCaseTest.kt`
 
-- [ ] Create `ProfileNameValidator` as a `fun interface` with `validate(name: String): ResultWithError<Unit, ProfileNameValidationError>` — KDoc noting it is a contract interface
-- [ ] Create `ProfileNameValidatorImpl` with client-side checks: blank/empty → `LengthOutOfBounds`, length min/max bounds matching server expectations
-- [ ] Create `ProfileNameValidatorStub` in testFixtures matching `CredentialsValidatorStub` pattern
-- [ ] Create `SignupWithGoogleUseCaseError`: `InvalidToken`, `AccountAlreadyExists`, `InvalidName(reason: ProfileNameValidationError)`, `LocalOperationFailed(error: LocalStorageError)`, `RemoteOperationFailed(error: UnauthRemoteError)` — KDoc with Logical Errors / Data Source Errors sections; include internal `GoogleSignupRepositoryError.toUseCaseError()` extension
-- [ ] Create `SignupWithGoogleUseCase` as a `fun interface` taking `(idToken: GoogleIdToken, name: String): ResultWithError<Unit, SignupWithGoogleUseCaseError>`
-- [ ] Create `SignupWithGoogleUseCaseImpl`: validate name via `ProfileNameValidator`, call `repository.signupWithGoogle(idToken, name)`, map errors, log failures — following `LoginWithGoogleUseCaseImpl`
-- [ ] Write `SignupWithGoogleUseCaseTest` covering: name validation failure, success, each `GoogleSignupRepositoryError` variant mapped correctly
-- [ ] run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 4
+- [x] Create `ProfileNameValidator` as a `fun interface` with `validate(name: String): ResultWithError<Unit, ProfileNameValidationError>` — KDoc noting it is a contract interface
+- [x] Create `ProfileNameValidatorImpl` with client-side checks: blank/empty → `LengthOutOfBounds`, length min/max bounds matching server expectations
+- [x] Create `ProfileNameValidatorStub` in testFixtures matching `CredentialsValidatorStub` pattern
+- [x] Create `SignupWithGoogleUseCaseError`: `InvalidToken`, `AccountAlreadyExists`, `InvalidName(reason: ProfileNameValidationError)`, `LocalOperationFailed(error: LocalStorageError)`, `RemoteOperationFailed(error: UnauthRemoteError)` — KDoc with Logical Errors / Data Source Errors sections; include internal `GoogleSignupRepositoryError.toUseCaseError()` extension
+- [x] Create `SignupWithGoogleUseCase` as a `fun interface` taking `(idToken: GoogleIdToken, name: String): ResultWithError<Unit, SignupWithGoogleUseCaseError>`
+- [x] Create `SignupWithGoogleUseCaseImpl`: validate name via `ProfileNameValidator`, call `repository.signupWithGoogle(idToken, name)`, map errors, log failures — following `LoginWithGoogleUseCaseImpl`
+- [x] Write `SignupWithGoogleUseCaseTest` covering: name validation failure, success, each `GoogleSignupRepositoryError` variant mapped correctly
+- [x] run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 4
 
 ### Task 4: ViewModel, UI, Wiring, and Feature Test
 

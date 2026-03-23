@@ -74,12 +74,12 @@ Implement a signup with Google flow. The user sees a signup screen with a name i
 - Modify: `core/domain/src/testFixtures/kotlin/timur/gilfanov/messenger/domain/usecase/auth/AuthRepositoryFake.kt`
 - Create: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/data/repository/AuthRepositorySignupWithGoogleTest.kt`
 
-- [ ] Create `GoogleSignupRepositoryError`: `InvalidToken`, `AccountAlreadyExists`, `InvalidName(reason: ProfileNameValidationError)`, `LocalOperationFailed(error: LocalStorageError)`, `RemoteOperationFailed(error: UnauthRemoteError)` — KDoc following `GoogleLoginRepositoryError`
-- [ ] Add `signupWithGoogle(idToken: GoogleIdToken, name: String): ResultWithError<AuthSession, GoogleSignupRepositoryError>` to `AuthRepository` interface
-- [ ] Implement `signupWithGoogle` in `AuthRepositoryImpl`: call `remoteDataSource.signupWithGoogle()`, save session with `AuthProvider.GOOGLE`, update `_authState`, map errors via private `mapSignupWithGoogleError()` — same structure as `loginWithGoogle`
-- [ ] Add `signupWithGoogleQueue`, `defaultSignupWithGoogleResult`, `enqueueSignupWithGoogleResult()`, and `signupWithGoogle()` override to `AuthRepositoryFake` following the existing queue pattern
-- [ ] Write `AuthRepositorySignupWithGoogleTest` covering: success (state updated, session saved), each `SignupWithGoogleError` variant mapped, local storage failure
-- [ ] run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 3
+- [x] Create `GoogleSignupRepositoryError`: `InvalidToken`, `AccountAlreadyExists`, `InvalidName(reason: ProfileNameValidationError)`, `LocalOperationFailed(error: LocalStorageError)`, `RemoteOperationFailed(error: UnauthRemoteError)` — KDoc following `GoogleLoginRepositoryError`
+- [x] Add `signupWithGoogle(idToken: GoogleIdToken, name: String): ResultWithError<AuthSession, GoogleSignupRepositoryError>` to `AuthRepository` interface
+- [x] Implement `signupWithGoogle` in `AuthRepositoryImpl`: call `remoteDataSource.signupWithGoogle()`, save session with `AuthProvider.GOOGLE`, update `_authState`, map errors via private `mapSignupWithGoogleError()` — same structure as `loginWithGoogle`
+- [x] Add `signupWithGoogleQueue`, `defaultSignupWithGoogleResult`, `enqueueSignupWithGoogleResult()`, and `signupWithGoogle()` override to `AuthRepositoryFake` following the existing queue pattern
+- [x] Write `AuthRepositorySignupWithGoogleTest` covering: success (state updated, session saved), each `SignupWithGoogleError` variant mapped, local storage failure
+- [x] run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 3
 
 ### Task 3: Use Case Layer
 

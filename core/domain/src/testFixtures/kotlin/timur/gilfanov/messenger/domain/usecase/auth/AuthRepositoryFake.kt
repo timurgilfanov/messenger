@@ -13,6 +13,7 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
@@ -29,6 +30,8 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
         ArrayDeque<ResultWithError<AuthSession, LoginRepositoryError>>()
     private val loginWithGoogleQueue =
         ArrayDeque<ResultWithError<AuthSession, GoogleLoginRepositoryError>>()
+    private val signupWithGoogleQueue =
+        ArrayDeque<ResultWithError<AuthSession, GoogleSignupRepositoryError>>()
     private val signupQueue = ArrayDeque<ResultWithError<AuthSession, SignupRepositoryError>>()
     private val logoutQueue = ArrayDeque<ResultWithError<Unit, LogoutRepositoryError>>()
     private val refreshQueue = ArrayDeque<ResultWithError<AuthTokens, RefreshRepositoryError>>()
@@ -36,6 +39,8 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
     var defaultLoginWithCredentialsResult: ResultWithError<AuthSession, LoginRepositoryError>? =
         null
     var defaultLoginWithGoogleResult: ResultWithError<AuthSession, GoogleLoginRepositoryError>? =
+        null
+    var defaultSignupWithGoogleResult: ResultWithError<AuthSession, GoogleSignupRepositoryError>? =
         null
     var defaultSignupResult: ResultWithError<AuthSession, SignupRepositoryError>? = null
     var defaultLogoutResult: ResultWithError<Unit, LogoutRepositoryError>? = null
@@ -53,6 +58,12 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
         vararg results: ResultWithError<AuthSession, GoogleLoginRepositoryError>,
     ) {
         results.forEach { loginWithGoogleQueue.addLast(it) }
+    }
+
+    fun enqueueSignupWithGoogleResult(
+        vararg results: ResultWithError<AuthSession, GoogleSignupRepositoryError>,
+    ) {
+        results.forEach { signupWithGoogleQueue.addLast(it) }
     }
 
     fun enqueueSignupResult(vararg results: ResultWithError<AuthSession, SignupRepositoryError>) {
@@ -107,6 +118,26 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
             defaultLoginWithGoogleResult ?: ResultWithError.Success(
                 AuthSession(
                     tokens = nextTokens("google-login"),
+                    provider = AuthProvider.GOOGLE,
+                ),
+            )
+        }
+        if (result is ResultWithError.Success) {
+            authStateFlow.value = Authenticated(result.data)
+        }
+        return result
+    }
+
+    override suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthSession, GoogleSignupRepositoryError> {
+        val result = if (signupWithGoogleQueue.isNotEmpty()) {
+            signupWithGoogleQueue.removeFirst()
+        } else {
+            defaultSignupWithGoogleResult ?: ResultWithError.Success(
+                AuthSession(
+                    tokens = nextTokens("google-signup"),
                     provider = AuthProvider.GOOGLE,
                 ),
             )

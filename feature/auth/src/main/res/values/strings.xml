@@ -56,6 +56,9 @@
 
     <!-- Signup Screen -->
     <string name="signup_name_label">Name</string>
+    <string name="signup_email_label">Email</string>
+    <string name="signup_password_label">Password</string>
+    <string name="signup_sign_up_button">Sign Up</string>
     <string name="signup_sign_up_with_google_button">Sign Up with Google</string>
     <string name="signup_already_have_account_button">Already have an account? Sign in</string>
 
@@ -91,4 +94,7 @@
     <!-- Signup general errors -->
     <string name="signup_error_invalid_token">Session expired. Please try again.</string>
     <string name="signup_error_account_already_exists">An account with this Google identity already exists</string>
+    <string name="signup_error_email_taken">An account with this email already exists</string>
+    <string name="signup_error_invalid_email_server">This email address cannot be used</string>
+    <string name="signup_error_invalid_password_server">Password does not meet requirements</string>
 </resources>

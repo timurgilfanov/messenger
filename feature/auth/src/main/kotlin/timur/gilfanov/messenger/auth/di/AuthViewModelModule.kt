@@ -10,6 +10,8 @@ import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCaseImpl
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseImpl
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
@@ -48,4 +50,13 @@ object AuthViewModelModule {
         repository: AuthRepository,
         logger: Logger,
     ): SignupWithGoogleUseCase = SignupWithGoogleUseCaseImpl(nameValidator, repository, logger)
+
+    @Provides
+    fun provideSignupWithCredentialsUseCase(
+        validator: CredentialsValidator,
+        nameValidator: ProfileNameValidator,
+        repository: AuthRepository,
+        logger: Logger,
+    ): SignupWithCredentialsUseCase =
+        SignupWithCredentialsUseCaseImpl(validator, nameValidator, repository, logger)
 }

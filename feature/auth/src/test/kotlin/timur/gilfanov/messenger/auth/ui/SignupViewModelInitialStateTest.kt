@@ -27,8 +27,12 @@ class SignupViewModelInitialStateTest {
         viewModel.state.test {
             val state = awaitItem()
             assertEquals("", state.name)
+            assertEquals("", state.email)
+            assertEquals("", state.password)
             assertFalse(state.isLoading)
             assertNull(state.nameError)
+            assertNull(state.emailError)
+            assertNull(state.passwordError)
             assertNull(state.generalError)
             assertNull(state.blockingError)
         }

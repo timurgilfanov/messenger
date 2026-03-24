@@ -54,6 +54,9 @@
 
     <!-- Signup Screen -->
     <string name="signup_name_label">Name</string>
+    <string name="signup_email_label">E-Mail</string>
+    <string name="signup_password_label">Passwort</string>
+    <string name="signup_sign_up_button">Registrieren</string>
     <string name="signup_sign_up_with_google_button">Mit Google registrieren</string>
     <string name="signup_already_have_account_button">Bereits ein Konto? Anmelden</string>
 
@@ -89,4 +92,7 @@
     <!-- Signup general errors -->
     <string name="signup_error_invalid_token">Sitzung abgelaufen. Bitte versuchen Sie es erneut.</string>
     <string name="signup_error_account_already_exists">Ein Konto mit dieser Google-Identität existiert bereits</string>
+    <string name="signup_error_email_taken">Ein Konto mit dieser E-Mail-Adresse existiert bereits</string>
+    <string name="signup_error_invalid_email_server">Diese E-Mail-Adresse kann nicht verwendet werden</string>
+    <string name="signup_error_invalid_password_server">Das Passwort erfüllt nicht die Anforderungen</string>
 </resources>

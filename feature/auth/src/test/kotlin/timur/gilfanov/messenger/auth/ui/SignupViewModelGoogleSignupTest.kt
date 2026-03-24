@@ -56,7 +56,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup InvalidToken sets generalError InvalidToken`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(GoogleSignupRepositoryError.InvalidToken),
+            signupWithGoogleResult = Failure(GoogleSignupRepositoryError.InvalidToken),
         )
         viewModel.submitSignupWithGoogle(testIdToken)
         advanceUntilIdle()
@@ -66,7 +66,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup AccountAlreadyExists sets generalError AccountAlreadyExists`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(GoogleSignupRepositoryError.AccountAlreadyExists),
+            signupWithGoogleResult = Failure(GoogleSignupRepositoryError.AccountAlreadyExists),
         )
         viewModel.submitSignupWithGoogle(testIdToken)
         advanceUntilIdle()
@@ -81,7 +81,9 @@ class SignupViewModelGoogleSignupTest {
             max = 50,
         )
         val viewModel = createViewModel(
-            signupResult = Failure(GoogleSignupRepositoryError.InvalidName(validationError)),
+            signupWithGoogleResult = Failure(
+                GoogleSignupRepositoryError.InvalidName(validationError),
+            ),
         )
         viewModel.updateName("a".repeat(100))
         viewModel.submitSignupWithGoogle(testIdToken)
@@ -92,7 +94,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup NetworkNotAvailable emits ShowSnackbar NetworkUnavailable`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.RemoteOperationFailed(
                     RemoteError.Failed.NetworkNotAvailable,
                 ),
@@ -111,7 +113,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup ServiceDown emits ShowSnackbar ServiceUnavailable`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.RemoteOperationFailed(
                     RemoteError.Failed.ServiceDown,
                 ),
@@ -130,7 +132,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup UnknownServiceError emits ShowSnackbar ServiceUnavailable`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.RemoteOperationFailed(
                     RemoteError.Failed.UnknownServiceError(ErrorReason("test error")),
                 ),
@@ -149,7 +151,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup ServiceTimeout emits ShowSnackbar ServiceUnavailable`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.RemoteOperationFailed(
                     RemoteError.UnknownStatus.ServiceTimeout,
                 ),
@@ -170,7 +172,7 @@ class SignupViewModelGoogleSignupTest {
         runTest {
             val remaining = 3.minutes
             val viewModel = createViewModel(
-                signupResult = Failure(
+                signupWithGoogleResult = Failure(
                     GoogleSignupRepositoryError.RemoteOperationFailed(
                         RemoteError.Failed.Cooldown(remaining),
                     ),
@@ -190,7 +192,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup local TemporarilyUnavailable emits ShowSnackbar`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.LocalOperationFailed(
                     LocalStorageError.TemporarilyUnavailable,
                 ),
@@ -209,7 +211,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup local UnknownError emits ShowSnackbar`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.LocalOperationFailed(
                     LocalStorageError.UnknownError(RuntimeException("test")),
                 ),
@@ -229,7 +231,7 @@ class SignupViewModelGoogleSignupTest {
     fun `google signup LocalOperationFailed StorageFull sets blockingError StorageFull`() =
         runTest {
             val viewModel = createViewModel(
-                signupResult = Failure(
+                signupWithGoogleResult = Failure(
                     GoogleSignupRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
                 ),
             )
@@ -241,7 +243,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup LocalOperationFailed Corrupted sets blockingError Corrupted`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.LocalOperationFailed(LocalStorageError.Corrupted),
             ),
         )
@@ -253,7 +255,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `google signup LocalOperationFailed ReadOnly sets blockingError ReadOnly`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.LocalOperationFailed(LocalStorageError.ReadOnly),
             ),
         )
@@ -266,7 +268,7 @@ class SignupViewModelGoogleSignupTest {
     fun `google signup LocalOperationFailed AccessDenied sets blockingError AccessDenied`() =
         runTest {
             val viewModel = createViewModel(
-                signupResult = Failure(
+                signupWithGoogleResult = Failure(
                     GoogleSignupRepositoryError.LocalOperationFailed(
                         LocalStorageError.AccessDenied,
                     ),
@@ -300,6 +302,7 @@ class SignupViewModelGoogleSignupTest {
                 deferred.await()
                 ResultWithError.Success(Unit)
             },
+            signupWithCredentials = { _, _ -> error("Not used") },
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -319,7 +322,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `onOpenAppSettingsClick clears blockingError and emits OpenAppSettings`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.LocalOperationFailed(LocalStorageError.Corrupted),
             ),
         )
@@ -339,7 +342,7 @@ class SignupViewModelGoogleSignupTest {
     fun `onOpenStorageSettingsClick clears blockingError and emits OpenStorageSettings`() =
         runTest {
             val viewModel = createViewModel(
-                signupResult = Failure(
+                signupWithGoogleResult = Failure(
                     GoogleSignupRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
                 ),
             )
@@ -358,7 +361,7 @@ class SignupViewModelGoogleSignupTest {
     @Test
     fun `retryLastAction after google signup clears blockingError and retries`() = runTest {
         val viewModel = createViewModel(
-            signupResult = Failure(
+            signupWithGoogleResult = Failure(
                 GoogleSignupRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
             ),
         )
@@ -387,6 +390,7 @@ class SignupViewModelGoogleSignupTest {
                     ResultWithError.Success(Unit)
                 }
             },
+            signupWithCredentials = { _, _ -> error("Not used") },
             savedStateHandle = SavedStateHandle(),
         )
         viewModel.submitSignupWithGoogle(testIdToken)

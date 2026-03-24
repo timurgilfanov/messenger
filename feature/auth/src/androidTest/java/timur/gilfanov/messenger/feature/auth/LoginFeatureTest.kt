@@ -37,6 +37,7 @@ import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCaseImpl
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCaseImpl
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClientStub
@@ -119,6 +120,11 @@ class LoginFeatureTest {
         @Singleton
         fun provideSignupWithGoogleUseCase(): SignupWithGoogleUseCase =
             SignupWithGoogleUseCase { _, _ -> error("Not used in login tests") }
+
+        @Provides
+        @Singleton
+        fun provideSignupWithCredentialsUseCase(): SignupWithCredentialsUseCase =
+            SignupWithCredentialsUseCase { _, _ -> error("Not used in login tests") }
 
         @Provides
         @Singleton

@@ -32,6 +32,7 @@ import timur.gilfanov.messenger.auth.di.AuthModule
 import timur.gilfanov.messenger.auth.di.AuthViewModelModule
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
@@ -59,6 +60,8 @@ class SignupFeatureTest {
     companion object {
         private const val SCREEN_LOAD_TIMEOUT_MILLIS = 5_000L
         private const val TEST_NAME = "Alice Smith"
+        private const val TEST_EMAIL = "alice@example.com"
+        private const val TEST_PASSWORD = "Password1"
         private const val TEST_GOOGLE_ID_TOKEN = "google-id-token"
     }
 
@@ -79,6 +82,7 @@ class SignupFeatureTest {
         // when the activity launches, before @Before runs. tearDown calls reset() to prevent
         // state from leaking into the next test.
         val googleSignInClient = GoogleSignInClientStub()
+        val signupWithCredentialsUseCase = SignupWithCredentialsUseCaseStub()
 
         @Provides
         @Singleton
@@ -96,6 +100,11 @@ class SignupFeatureTest {
             repository: AuthRepository,
             logger: Logger,
         ): SignupWithGoogleUseCase = SignupWithGoogleUseCaseImpl(nameValidator, repository, logger)
+
+        @Provides
+        @Singleton
+        fun provideSignupWithCredentialsUseCase(): SignupWithCredentialsUseCase =
+            signupWithCredentialsUseCase
 
         @Provides
         @Singleton
@@ -124,6 +133,7 @@ class SignupFeatureTest {
     @After
     fun tearDown() {
         SignupTestModule.googleSignInClient.reset()
+        SignupTestModule.signupWithCredentialsUseCase.reset()
     }
 
     @Test
@@ -134,6 +144,17 @@ class SignupFeatureTest {
         )
         composeTestRule.onNodeWithTag("signup_name_field").assertExists()
         composeTestRule.onNodeWithTag("signup_google_sign_up_button").assertExists()
+    }
+
+    @Test
+    fun signupScreen_displaysCredentialsFormElements() {
+        composeTestRule.waitUntilExactlyOneExists(
+            hasTestTag("signup_screen"),
+            timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+        )
+        composeTestRule.onNodeWithTag("signup_email_field").assertExists()
+        composeTestRule.onNodeWithTag("signup_password_field").assertExists()
+        composeTestRule.onNodeWithTag("signup_credentials_sign_up_button").assertExists()
     }
 
     @Test
@@ -164,6 +185,23 @@ class SignupFeatureTest {
 
             val nameLabel = activity.getString(R.string.signup_name_label)
             onNodeWithTag("signup_name_field").assertTextEquals(nameLabel, TEST_NAME)
+        }
+    }
+
+    @Test
+    fun signupScreen_preservesEmailOnRotation() {
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
+
+            activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            waitForIdle()
+
+            val emailLabel = activity.getString(R.string.signup_email_label)
+            onNodeWithTag("signup_email_field").assertTextEquals(emailLabel, TEST_EMAIL)
         }
     }
 
@@ -211,6 +249,54 @@ class SignupFeatureTest {
             onNodeWithTag("signup_google_sign_up_button").performClick()
             waitForIdle()
             onNodeWithTag("signup_google_sign_up_button").assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun signupScreen_credentialsSignupSuccess_navigatesToChatList() {
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
+            onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("signup_credentials_sign_up_button").performClick()
+            waitUntilDoesNotExist(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+        }
+    }
+
+    @Test
+    fun signupScreen_credentialsSignupClientEmailError_showsEmailFieldError() {
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("signup_credentials_sign_up_button").performClick()
+            waitUntilExactlyOneExists(hasTestTag("signup_email_error"))
+            onNodeWithTag("signup_email_error").assertExists()
+        }
+    }
+
+    @Test
+    fun signupScreen_credentialsSignup_buttonDisabledWhileLoading() {
+        SignupTestModule.signupWithCredentialsUseCase.shouldSuspend = true
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
+            onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("signup_credentials_sign_up_button").performClick()
+            waitForIdle()
+            onNodeWithTag("signup_credentials_sign_up_button").assertIsNotEnabled()
         }
     }
 

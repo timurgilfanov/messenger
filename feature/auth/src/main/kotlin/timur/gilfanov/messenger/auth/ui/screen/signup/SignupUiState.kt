@@ -2,13 +2,20 @@ package timur.gilfanov.messenger.auth.ui.screen.signup
 
 import androidx.compose.runtime.Immutable
 import kotlin.time.Duration
+import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 
 @Immutable
 data class SignupUiState(
     val name: String = "",
+    val email: String = "",
+    val password: String = "",
     val isLoading: Boolean = false,
     val nameError: ProfileNameValidationError? = null,
+    val emailError: CredentialsValidationError? = null,
+    val passwordError: CredentialsValidationError? = null,
     val generalError: SignupGeneralError? = null,
     val blockingError: SignupBlockingError? = null,
 )
@@ -17,6 +24,8 @@ data class SignupUiState(
 sealed interface SignupGeneralError {
     data object InvalidToken : SignupGeneralError
     data object AccountAlreadyExists : SignupGeneralError
+    data class InvalidEmail(val reason: EmailValidationError) : SignupGeneralError
+    data class InvalidPassword(val reason: PasswordValidationError) : SignupGeneralError
 }
 
 @Immutable

@@ -40,8 +40,54 @@ class SignupViewModelProcessDeathTest {
         assertEquals(SAMPLE_NAME, handle.get<String>(NAME_KEY))
     }
 
+    @Test
+    fun `initial state restores email from saved state`() = runTest {
+        val handle = SavedStateHandle(mapOf(EMAIL_KEY to SAMPLE_EMAIL))
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertEquals(SAMPLE_EMAIL, state.email)
+        }
+    }
+
+    @Test
+    fun `updateEmail saves email to saved state handle`() = runTest {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.updateEmail(SAMPLE_EMAIL)
+
+        assertEquals(SAMPLE_EMAIL, handle.get<String>(EMAIL_KEY))
+    }
+
+    @Test
+    fun `initial state restores password from saved state`() = runTest {
+        val handle = SavedStateHandle(mapOf(PASSWORD_KEY to SAMPLE_PASSWORD))
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertEquals(SAMPLE_PASSWORD, state.password)
+        }
+    }
+
+    @Test
+    fun `updatePassword saves password to saved state handle`() = runTest {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.updatePassword(SAMPLE_PASSWORD)
+
+        assertEquals(SAMPLE_PASSWORD, handle.get<String>(PASSWORD_KEY))
+    }
+
     private companion object {
         const val NAME_KEY = "name"
+        const val EMAIL_KEY = "email"
+        const val PASSWORD_KEY = "password"
         const val SAMPLE_NAME = "Alice Smith"
+        const val SAMPLE_EMAIL = "alice@example.com"
+        const val SAMPLE_PASSWORD = "Password1"
     }
 }

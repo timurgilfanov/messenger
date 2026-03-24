@@ -11,9 +11,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseError
+import timur.gilfanov.messenger.domain.entity.auth.Credentials
+import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
+import timur.gilfanov.messenger.domain.entity.auth.Password
+import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -22,12 +28,15 @@ import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
 @HiltViewModel
 class SignupViewModel @Inject constructor(
     private val signupWithGoogle: SignupWithGoogleUseCase,
+    private val signupWithCredentials: SignupWithCredentialsUseCase,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
         SignupUiState(
             name = savedStateHandle[KEY_NAME] ?: "",
+            email = savedStateHandle[KEY_EMAIL] ?: "",
+            password = savedStateHandle[KEY_PASSWORD] ?: "",
         ),
     )
     val state = _state.asStateFlow()
@@ -35,10 +44,17 @@ class SignupViewModel @Inject constructor(
     private val _effects = Channel<SignupSideEffects>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
-    private var lastIdToken: String? = null
+    private sealed interface LastSignupAction {
+        data object Credentials : LastSignupAction
+        data class Google(val idToken: String) : LastSignupAction
+    }
+
+    private var lastSignupAction: LastSignupAction? = null
 
     companion object {
         private const val KEY_NAME = "name"
+        private const val KEY_EMAIL = "email"
+        private const val KEY_PASSWORD = "password"
     }
 
     fun updateName(name: String) {
@@ -46,9 +62,19 @@ class SignupViewModel @Inject constructor(
         _state.update { it.copy(name = name, nameError = null) }
     }
 
+    fun updateEmail(email: String) {
+        savedStateHandle[KEY_EMAIL] = email
+        _state.update { it.copy(email = email, emailError = null) }
+    }
+
+    fun updatePassword(password: String) {
+        savedStateHandle[KEY_PASSWORD] = password
+        _state.update { it.copy(password = password, passwordError = null) }
+    }
+
     fun submitSignupWithGoogle(idToken: String) {
         if (_state.value.isLoading) return
-        lastIdToken = idToken
+        lastSignupAction = LastSignupAction.Google(idToken)
         _state.update { it.copy(isLoading = true, generalError = null, nameError = null) }
         viewModelScope.launch {
             val currentName = _state.value.name
@@ -84,10 +110,68 @@ class SignupViewModel @Inject constructor(
         }
     }
 
+    fun submitSignupWithCredentials() {
+        if (_state.value.isLoading) return
+        lastSignupAction = LastSignupAction.Credentials
+        _state.update {
+            it.copy(
+                isLoading = true,
+                emailError = null,
+                passwordError = null,
+                generalError = null,
+                nameError = null,
+            )
+        }
+        viewModelScope.launch {
+            val currentState = _state.value
+            val credentials =
+                Credentials(Email(currentState.email), Password(currentState.password))
+            val result = signupWithCredentials(credentials, currentState.name)
+            _state.update { it.copy(isLoading = false) }
+            result.fold(
+                onSuccess = { _effects.send(SignupSideEffects.NavigateToChatList) },
+                onFailure = { error ->
+                    when (error) {
+                        is SignupWithCredentialsUseCaseError.ValidationFailed ->
+                            handleValidationError(error)
+
+                        is SignupWithCredentialsUseCaseError.InvalidName ->
+                            _state.update { it.copy(nameError = error.reason) }
+
+                        is SignupWithCredentialsUseCaseError.InvalidEmail ->
+                            _state.update {
+                                it.copy(
+                                    generalError = SignupGeneralError.InvalidEmail(error.reason),
+                                )
+                            }
+
+                        is SignupWithCredentialsUseCaseError.InvalidPassword ->
+                            _state.update {
+                                it.copy(
+                                    generalError = SignupGeneralError.InvalidPassword(error.reason),
+                                )
+                            }
+
+                        is SignupWithCredentialsUseCaseError.RemoteOperationFailed ->
+                            _effects.send(
+                                SignupSideEffects.ShowSnackbar(error.error.toSnackbarMessage()),
+                            )
+
+                        is SignupWithCredentialsUseCaseError.LocalOperationFailed ->
+                            handleLocalStorageError(error.error)
+                    }
+                },
+            )
+        }
+    }
+
     fun retryLastAction() {
-        val idToken = lastIdToken ?: return
         _state.update { it.copy(blockingError = null) }
-        submitSignupWithGoogle(idToken)
+        when (val action = lastSignupAction) {
+            is LastSignupAction.Credentials -> submitSignupWithCredentials()
+            is LastSignupAction.Google -> submitSignupWithGoogle(action.idToken)
+            null -> Unit
+        }
     }
 
     fun onOpenAppSettingsClick() {
@@ -98,6 +182,27 @@ class SignupViewModel @Inject constructor(
     fun onOpenStorageSettingsClick() {
         _state.update { it.copy(blockingError = null) }
         viewModelScope.launch { _effects.send(SignupSideEffects.OpenStorageSettings) }
+    }
+
+    private fun handleValidationError(error: SignupWithCredentialsUseCaseError.ValidationFailed) {
+        _state.update { state ->
+            when (val ve = error.error) {
+                is CredentialsValidationError.BlankEmail,
+                is CredentialsValidationError.NoAtInEmail,
+                is CredentialsValidationError.NoDomainAtEmail,
+                is CredentialsValidationError.EmailTooLong,
+                is CredentialsValidationError.InvalidEmailFormat,
+                is CredentialsValidationError.ForbiddenCharacterInEmail,
+                -> state.copy(emailError = ve)
+
+                is CredentialsValidationError.PasswordTooShort,
+                is CredentialsValidationError.PasswordTooLong,
+                is CredentialsValidationError.ForbiddenCharacterInPassword,
+                is CredentialsValidationError.PasswordMustContainNumbers,
+                is CredentialsValidationError.PasswordMustContainAlphabet,
+                -> state.copy(passwordError = ve)
+            }
+        }
     }
 
     private suspend fun handleLocalStorageError(error: LocalStorageError) {

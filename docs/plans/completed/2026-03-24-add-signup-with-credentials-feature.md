@@ -90,9 +90,9 @@ Implement email/password signup. The data layer (remote `register()` endpoint, `
 
 ### Task 4: Verify Acceptance Criteria
 
-- [ ] run `./gradlew :feature:auth:testDebugUnitTest`
+- [x] run `./gradlew :feature:auth:testDebugUnitTest`
 
 ### Task 5: Update Documentation
 
-- [ ] Update `CLAUDE.md` if new patterns were introduced
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Update `CLAUDE.md` if new patterns were introduced
+- [x] Move this plan to `docs/plans/completed/`

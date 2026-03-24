@@ -3,6 +3,8 @@ package timur.gilfanov.messenger.auth.ui
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -20,7 +22,7 @@ class LoginViewModelProcessDeathTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `initial state restores email and password from saved state`() = runTest {
+    fun `initial state restores email from saved state, password starts empty`() = runTest {
         val handle =
             SavedStateHandle(mapOf(EMAIL_KEY to SAMPLE_EMAIL, PASSWORD_KEY to SAMPLE_PASSWORD))
         val viewModel = createViewModel(savedStateHandle = handle)
@@ -28,7 +30,8 @@ class LoginViewModelProcessDeathTest {
         viewModel.state.test {
             val state = awaitItem()
             assertEquals(SAMPLE_EMAIL, state.email)
-            assertEquals(SAMPLE_PASSWORD, state.password)
+            assertEquals("", state.password)
+            assertFalse(state.isSubmitEnabled)
         }
     }
 
@@ -43,13 +46,13 @@ class LoginViewModelProcessDeathTest {
     }
 
     @Test
-    fun `updatePassword saves password to saved state handle`() = runTest {
+    fun `updatePassword does not save password to saved state handle`() = runTest {
         val handle = SavedStateHandle()
         val viewModel = createViewModel(savedStateHandle = handle)
 
         viewModel.updatePassword(SAMPLE_PASSWORD)
 
-        assertEquals(SAMPLE_PASSWORD, handle.get<String>(PASSWORD_KEY))
+        assertNull(handle.get<String>(PASSWORD_KEY))
     }
 
     private companion object {

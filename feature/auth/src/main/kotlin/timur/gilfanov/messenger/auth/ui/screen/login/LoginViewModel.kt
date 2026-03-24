@@ -38,13 +38,9 @@ class LoginViewModel @Inject constructor(
     private val _state = MutableStateFlow(
         run {
             val email: String = savedStateHandle[KEY_EMAIL] ?: ""
-            val password: String = savedStateHandle[KEY_PASSWORD] ?: ""
             LoginUiState(
                 email = email,
-                password = password,
-                isCredentialsValid = credentialsValidator.validate(
-                    Credentials(Email(email), Password(password)),
-                ) is ResultWithError.Success,
+                isCredentialsValid = false,
             )
         },
     )
@@ -72,7 +68,6 @@ class LoginViewModel @Inject constructor(
     }
 
     fun updatePassword(password: String) {
-        savedStateHandle[KEY_PASSWORD] = password
         val currentEmail = _state.value.email
         val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
@@ -88,7 +83,6 @@ class LoginViewModel @Inject constructor(
 
     companion object {
         private const val KEY_EMAIL = "email"
-        private const val KEY_PASSWORD = "password"
     }
 
     fun submitLogin() {

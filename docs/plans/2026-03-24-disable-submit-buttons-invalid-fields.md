@@ -45,21 +45,21 @@ enabled state. Screens use these properties directly.
 - Modify: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/ui/SignupViewModelInitialStateTest.kt`
 - Create: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/ui/SignupViewModelButtonStateTest.kt`
 
-- [ ] Add `isNameValid: Boolean = false` and `isCredentialsValid: Boolean = false` to `SignupUiState`
-- [ ] Add computed properties to `SignupUiState`:
+- [x] Add `isNameValid: Boolean = false` and `isCredentialsValid: Boolean = false` to `SignupUiState`
+- [x] Add computed properties to `SignupUiState`:
   - `val isGoogleSubmitEnabled: Boolean get() = !isLoading && isNameValid`
   - `val isCredentialsSubmitEnabled: Boolean get() = !isLoading && isNameValid && isCredentialsValid`
-- [ ] Add `ProfileNameValidator` and `CredentialsValidator` constructor params to `SignupViewModel` (Hilt injects both automatically)
-- [ ] Compute initial `isNameValid` and `isCredentialsValid` in the `_state` initializer using saved state handle values and both validators
-- [ ] Update `updateName` to call `profileNameValidator.validate(name)` and include `isNameValid` result in the `copy()`
-- [ ] Update `updateEmail` to call `credentialsValidator.validate(Credentials(Email(email), Password(currentPassword)))` and include `isCredentialsValid` result in the `copy()`
-- [ ] Update `updatePassword` to call `credentialsValidator.validate(Credentials(Email(currentEmail), Password(password)))` and include `isCredentialsValid` result in the `copy()`
-- [ ] Update credentials submit button in `SignupScreen`: `enabled = state.isCredentialsSubmitEnabled`
-- [ ] Update Google submit button in `SignupScreen`: `enabled = state.isGoogleSubmitEnabled && !isSigningUpWithGoogle`
-- [ ] Add `viewModelNameValidator: ProfileNameValidator = ProfileNameValidatorImpl()` and `viewModelCredentialsValidator: CredentialsValidator = CredentialsValidatorImpl()` params to `SignupViewModelTestFixtures.createViewModel()` and pass them to `SignupViewModel` constructor
-- [ ] Add `assertFalse(state.isGoogleSubmitEnabled)` and `assertFalse(state.isCredentialsSubmitEnabled)` to `SignupViewModelInitialStateTest`
-- [ ] Create `SignupViewModelButtonStateTest` using default `createViewModel()` (real validators); test cases: all empty → both disabled; valid name only → only Google enabled; valid credentials (no name) → both disabled; valid name + valid email but invalid password → Google enabled only; all valid → both enabled; loading state → both disabled
-- [ ] Run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 2
+- [x] Add `ProfileNameValidator` and `CredentialsValidator` constructor params to `SignupViewModel` (Hilt injects both automatically)
+- [x] Compute initial `isNameValid` and `isCredentialsValid` in the `_state` initializer using saved state handle values and both validators
+- [x] Update `updateName` to call `profileNameValidator.validate(name)` and include `isNameValid` result in the `copy()`
+- [x] Update `updateEmail` to call `credentialsValidator.validate(Credentials(Email(email), Password(currentPassword)))` and include `isCredentialsValid` result in the `copy()`
+- [x] Update `updatePassword` to call `credentialsValidator.validate(Credentials(Email(currentEmail), Password(password)))` and include `isCredentialsValid` result in the `copy()`
+- [x] Update credentials submit button in `SignupScreen`: `enabled = state.isCredentialsSubmitEnabled`
+- [x] Update Google submit button in `SignupScreen`: `enabled = state.isGoogleSubmitEnabled && !isSigningUpWithGoogle`
+- [x] Add `viewModelNameValidator: ProfileNameValidator = ProfileNameValidatorImpl()` and `viewModelCredentialsValidator: CredentialsValidator = CredentialsValidatorImpl()` params to `SignupViewModelTestFixtures.createViewModel()` and pass them to `SignupViewModel` constructor
+- [x] Add `assertFalse(state.isGoogleSubmitEnabled)` and `assertFalse(state.isCredentialsSubmitEnabled)` to `SignupViewModelInitialStateTest`
+- [x] Create `SignupViewModelButtonStateTest` using default `createViewModel()` (real validators); test cases: all empty → both disabled; valid name only → only Google enabled; valid credentials (no name) → both disabled; valid name + valid email but invalid password → Google enabled only; all valid → both enabled; loading state → both disabled
+- [x] Run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 2
 
 ### Task 2: LoginScreen — add button enable state
 

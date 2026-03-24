@@ -22,6 +22,8 @@ import timur.gilfanov.messenger.auth.ui.screen.signup.SignupGeneralError
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupSideEffects
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupSnackbarMessage
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupViewModel
+import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
+import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
@@ -311,6 +313,8 @@ class SignupViewModelCredentialsSignupTest {
                 ResultWithError.Success(Unit)
             },
             savedStateHandle = SavedStateHandle(),
+            profileNameValidator = ProfileNameValidatorImpl(),
+            credentialsValidator = CredentialsValidatorImpl(),
         )
 
         backgroundScope.launch { viewModel.state.collect {} }

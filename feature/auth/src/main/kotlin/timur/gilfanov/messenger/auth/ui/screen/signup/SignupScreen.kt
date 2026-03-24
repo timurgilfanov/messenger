@@ -265,7 +265,7 @@ private fun SignupForm(
 
         Button(
             onClick = onCredentialsSignUpClick,
-            enabled = !state.isLoading,
+            enabled = state.isCredentialsSubmitEnabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("signup_credentials_sign_up_button"),
@@ -277,7 +277,7 @@ private fun SignupForm(
 
         Button(
             onClick = onGoogleSignUpClick,
-            enabled = !state.isLoading && !isSigningUpWithGoogle,
+            enabled = state.isGoogleSubmitEnabled && !isSigningUpWithGoogle,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("signup_google_sign_up_button"),

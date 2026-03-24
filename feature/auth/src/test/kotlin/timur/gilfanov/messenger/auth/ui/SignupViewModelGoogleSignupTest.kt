@@ -23,6 +23,8 @@ import timur.gilfanov.messenger.auth.ui.screen.signup.SignupGeneralError
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupSideEffects
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupSnackbarMessage
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupViewModel
+import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
+import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
@@ -304,6 +306,8 @@ class SignupViewModelGoogleSignupTest {
             },
             signupWithCredentials = { _, _ -> error("Not used") },
             savedStateHandle = SavedStateHandle(),
+            profileNameValidator = ProfileNameValidatorImpl(),
+            credentialsValidator = CredentialsValidatorImpl(),
         )
 
         backgroundScope.launch { viewModel.state.collect {} }
@@ -392,6 +396,8 @@ class SignupViewModelGoogleSignupTest {
             },
             signupWithCredentials = { _, _ -> error("Not used") },
             savedStateHandle = SavedStateHandle(),
+            profileNameValidator = ProfileNameValidatorImpl(),
+            credentialsValidator = CredentialsValidatorImpl(),
         )
         viewModel.submitSignupWithGoogle(testIdToken)
         advanceUntilIdle()

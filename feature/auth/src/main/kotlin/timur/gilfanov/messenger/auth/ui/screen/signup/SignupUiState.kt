@@ -13,12 +13,17 @@ data class SignupUiState(
     val email: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
+    val isNameValid: Boolean = false,
+    val isCredentialsValid: Boolean = false,
     val nameError: ProfileNameValidationError? = null,
     val emailError: CredentialsValidationError? = null,
     val passwordError: CredentialsValidationError? = null,
     val generalError: SignupGeneralError? = null,
     val blockingError: SignupBlockingError? = null,
-)
+) {
+    val isGoogleSubmitEnabled: Boolean get() = !isLoading && isNameValid
+    val isCredentialsSubmitEnabled: Boolean get() = !isLoading && isNameValid && isCredentialsValid
+}
 
 @Immutable
 sealed interface SignupGeneralError {

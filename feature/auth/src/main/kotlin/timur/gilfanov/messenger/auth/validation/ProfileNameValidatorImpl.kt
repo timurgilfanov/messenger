@@ -14,7 +14,7 @@ class ProfileNameValidatorImpl : ProfileNameValidator {
         name.isBlank() || name.length < MIN_NAME_LENGTH ->
             ResultWithError.Failure(
                 ProfileNameValidationError.LengthOutOfBounds(
-                    length = name.trim().length,
+                    length = name.length,
                     min = MIN_NAME_LENGTH,
                     max = MAX_NAME_LENGTH,
                 ),

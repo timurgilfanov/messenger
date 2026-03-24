@@ -36,7 +36,6 @@ class SignupViewModel @Inject constructor(
         SignupUiState(
             name = savedStateHandle[KEY_NAME] ?: "",
             email = savedStateHandle[KEY_EMAIL] ?: "",
-            password = savedStateHandle[KEY_PASSWORD] ?: "",
         ),
     )
     val state = _state.asStateFlow()
@@ -54,7 +53,6 @@ class SignupViewModel @Inject constructor(
     companion object {
         private const val KEY_NAME = "name"
         private const val KEY_EMAIL = "email"
-        private const val KEY_PASSWORD = "password"
     }
 
     fun updateName(name: String) {
@@ -68,7 +66,6 @@ class SignupViewModel @Inject constructor(
     }
 
     fun updatePassword(password: String) {
-        savedStateHandle[KEY_PASSWORD] = password
         _state.update { it.copy(password = password, passwordError = null) }
     }
 

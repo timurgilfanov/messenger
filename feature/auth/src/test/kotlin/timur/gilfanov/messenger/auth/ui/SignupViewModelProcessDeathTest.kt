@@ -62,24 +62,24 @@ class SignupViewModelProcessDeathTest {
     }
 
     @Test
-    fun `initial state restores password from saved state`() = runTest {
+    fun `password is not restored from saved state after process death`() = runTest {
         val handle = SavedStateHandle(mapOf(PASSWORD_KEY to SAMPLE_PASSWORD))
         val viewModel = createViewModel(savedStateHandle = handle)
 
         viewModel.state.test {
             val state = awaitItem()
-            assertEquals(SAMPLE_PASSWORD, state.password)
+            assertEquals("", state.password)
         }
     }
 
     @Test
-    fun `updatePassword saves password to saved state handle`() = runTest {
+    fun `updatePassword does not save password to saved state handle`() = runTest {
         val handle = SavedStateHandle()
         val viewModel = createViewModel(savedStateHandle = handle)
 
         viewModel.updatePassword(SAMPLE_PASSWORD)
 
-        assertEquals(SAMPLE_PASSWORD, handle.get<String>(PASSWORD_KEY))
+        assertEquals(null, handle.get<String>(PASSWORD_KEY))
     }
 
     private companion object {

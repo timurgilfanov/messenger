@@ -8,10 +8,12 @@ import timur.gilfanov.messenger.domain.entity.auth.Credentials
 
 class SignupWithCredentialsUseCaseStub : SignupWithCredentialsUseCase {
     var shouldSuspend: Boolean = false
+    var result: ResultWithError<Unit, SignupWithCredentialsUseCaseError>? = null
     private var pendingSignup: CompletableDeferred<Unit>? = null
 
     fun reset() {
         shouldSuspend = false
+        result = null
         pendingSignup?.cancel()
         pendingSignup = null
     }
@@ -25,6 +27,6 @@ class SignupWithCredentialsUseCaseStub : SignupWithCredentialsUseCase {
             pendingSignup = deferred
             deferred.await()
         }
-        return ResultWithError.Success(Unit)
+        return result ?: ResultWithError.Success(Unit)
     }
 }

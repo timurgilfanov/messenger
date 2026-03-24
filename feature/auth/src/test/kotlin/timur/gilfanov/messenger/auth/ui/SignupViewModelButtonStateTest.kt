@@ -80,6 +80,7 @@ class SignupViewModelButtonStateTest {
         viewModel.updateName("Alice")
         viewModel.updateEmail("user@example.com")
         viewModel.updatePassword("password1")
+        viewModel.updateConfirmPassword("password1")
 
         viewModel.state.test {
             val state = awaitItem()
@@ -95,6 +96,7 @@ class SignupViewModelButtonStateTest {
         viewModel.updateName("Alice")
         viewModel.updateEmail("user@example.com")
         viewModel.updatePassword("password1")
+        viewModel.updateConfirmPassword("password1")
 
         viewModel.state.test {
             skipItems(1)
@@ -115,6 +117,7 @@ class SignupViewModelButtonStateTest {
         viewModel.updateName("Alice")
         viewModel.updateEmail("user@example.com")
         viewModel.updatePassword("password1")
+        viewModel.updateConfirmPassword("password1")
 
         viewModel.state.test {
             skipItems(1)
@@ -130,6 +133,58 @@ class SignupViewModelButtonStateTest {
             val finalState = awaitItem()
             assertTrue(finalState.isGoogleSubmitEnabled)
             assertTrue(finalState.isCredentialsSubmitEnabled)
+        }
+    }
+
+    @Test
+    fun `valid credentials with mismatched confirm password - credentials button disabled`() =
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.updateName("Alice")
+            viewModel.updateEmail("user@example.com")
+            viewModel.updatePassword("password1")
+            viewModel.updateConfirmPassword("password2")
+
+            viewModel.state.test {
+                val state = awaitItem()
+                assertTrue(state.isGoogleSubmitEnabled)
+                assertFalse(state.isCredentialsSubmitEnabled)
+            }
+        }
+
+    @Test
+    fun `valid credentials after confirm password matches - credentials button enabled`() =
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.updateName("Alice")
+            viewModel.updateEmail("user@example.com")
+            viewModel.updatePassword("password1")
+            viewModel.updateConfirmPassword("password2")
+            viewModel.updateConfirmPassword("password1")
+
+            viewModel.state.test {
+                val state = awaitItem()
+                assertTrue(state.isGoogleSubmitEnabled)
+                assertTrue(state.isCredentialsSubmitEnabled)
+            }
+        }
+
+    @Test
+    fun `credentials button disabled when confirm password cleared after match`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateName("Alice")
+        viewModel.updateEmail("user@example.com")
+        viewModel.updatePassword("password1")
+        viewModel.updateConfirmPassword("password1")
+        viewModel.updateConfirmPassword("")
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertTrue(state.isGoogleSubmitEnabled)
+            assertFalse(state.isCredentialsSubmitEnabled)
         }
     }
 }

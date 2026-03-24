@@ -12,9 +12,11 @@ data class SignupUiState(
     val name: String = "",
     val email: String = "",
     val password: String = "",
+    val confirmPassword: String = "",
     val isLoading: Boolean = false,
     val isNameValid: Boolean = false,
     val isCredentialsValid: Boolean = false,
+    val isPasswordConfirmed: Boolean = false,
     val nameError: ProfileNameValidationError? = null,
     val emailError: CredentialsValidationError? = null,
     val passwordError: CredentialsValidationError? = null,
@@ -22,7 +24,8 @@ data class SignupUiState(
     val blockingError: SignupBlockingError? = null,
 ) {
     val isGoogleSubmitEnabled: Boolean get() = !isLoading && isNameValid
-    val isCredentialsSubmitEnabled: Boolean get() = !isLoading && isNameValid && isCredentialsValid
+    val isCredentialsSubmitEnabled: Boolean
+        get() = !isLoading && isNameValid && isCredentialsValid && isPasswordConfirmed
 }
 
 @Immutable

@@ -90,11 +90,24 @@ class SignupViewModel @Inject constructor(
         val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
         ) is ResultWithError.Success
+        val currentConfirmPassword = _state.value.confirmPassword
+        val isPasswordConfirmed = password == currentConfirmPassword
         _state.update {
             it.copy(
                 password = password,
                 passwordError = null,
                 isCredentialsValid = isCredentialsValid,
+                isPasswordConfirmed = isPasswordConfirmed,
+            )
+        }
+    }
+
+    fun updateConfirmPassword(confirmPassword: String) {
+        val isPasswordConfirmed = confirmPassword == _state.value.password
+        _state.update {
+            it.copy(
+                confirmPassword = confirmPassword,
+                isPasswordConfirmed = isPasswordConfirmed,
             )
         }
     }
@@ -160,7 +173,7 @@ class SignupViewModel @Inject constructor(
                 onFailure = { error ->
                     when (error) {
                         is SignupWithCredentialsUseCaseError.ValidationFailed ->
-                            handleValidationError(error)
+                            _state.update { state -> state.applyValidationError(error) }
 
                         is SignupWithCredentialsUseCaseError.InvalidName ->
                             _state.update { it.copy(nameError = error.reason) }
@@ -211,27 +224,6 @@ class SignupViewModel @Inject constructor(
         viewModelScope.launch { _effects.send(SignupSideEffects.OpenStorageSettings) }
     }
 
-    private fun handleValidationError(error: SignupWithCredentialsUseCaseError.ValidationFailed) {
-        _state.update { state ->
-            when (val ve = error.error) {
-                is CredentialsValidationError.BlankEmail,
-                is CredentialsValidationError.NoAtInEmail,
-                is CredentialsValidationError.NoDomainAtEmail,
-                is CredentialsValidationError.EmailTooLong,
-                is CredentialsValidationError.InvalidEmailFormat,
-                is CredentialsValidationError.ForbiddenCharacterInEmail,
-                -> state.copy(emailError = ve)
-
-                is CredentialsValidationError.PasswordTooShort,
-                is CredentialsValidationError.PasswordTooLong,
-                is CredentialsValidationError.ForbiddenCharacterInPassword,
-                is CredentialsValidationError.PasswordMustContainNumbers,
-                is CredentialsValidationError.PasswordMustContainAlphabet,
-                -> state.copy(passwordError = ve)
-            }
-        }
-    }
-
     private suspend fun handleLocalStorageError(error: LocalStorageError) {
         when (error) {
             LocalStorageError.StorageFull ->
@@ -261,6 +253,25 @@ class SignupViewModel @Inject constructor(
                 )
         }
     }
+}
+
+private fun SignupUiState.applyValidationError(
+    error: SignupWithCredentialsUseCaseError.ValidationFailed,
+): SignupUiState = when (val ve = error.error) {
+    is CredentialsValidationError.BlankEmail,
+    is CredentialsValidationError.NoAtInEmail,
+    is CredentialsValidationError.NoDomainAtEmail,
+    is CredentialsValidationError.EmailTooLong,
+    is CredentialsValidationError.InvalidEmailFormat,
+    is CredentialsValidationError.ForbiddenCharacterInEmail,
+    -> copy(emailError = ve)
+
+    is CredentialsValidationError.PasswordTooShort,
+    is CredentialsValidationError.PasswordTooLong,
+    is CredentialsValidationError.ForbiddenCharacterInPassword,
+    is CredentialsValidationError.PasswordMustContainNumbers,
+    is CredentialsValidationError.PasswordMustContainAlphabet,
+    -> copy(passwordError = ve)
 }
 
 private fun UnauthRemoteError.toSnackbarMessage(): SignupSnackbarMessage = when (this) {

@@ -27,14 +27,14 @@ Add a "Confirm Password" `OutlinedTextField` to the Signup screen that validates
 - Modify: `feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/ui/screen/signup/SignupViewModel.kt`
 - Modify: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/ui/SignupViewModelButtonStateTest.kt`
 
-- [ ] Add `confirmPassword: String = ""` to `SignupUiState` (not backed by `SavedStateHandle`, same security reason as `password`)
-- [ ] Add `isPasswordConfirmed: Boolean = false` to `SignupUiState`
-- [ ] Update `isCredentialsSubmitEnabled` to `!isLoading && isNameValid && isCredentialsValid && isPasswordConfirmed`
-- [ ] Add `updateConfirmPassword(confirmPassword: String)` to `SignupViewModel`: computes `isPasswordConfirmed = confirmPassword == _state.value.password`, updates state with new `confirmPassword` and `isPasswordConfirmed`
-- [ ] Update `updatePassword()` to also recompute `isPasswordConfirmed` against current `confirmPassword` in state
-- [ ] Update existing tests that set "all valid" state (`all valid - both buttons enabled`, `loading state - both buttons disabled`, `both buttons re-enabled after loading completes`) to also call `viewModel.updateConfirmPassword("password1")`
-- [ ] Add new tests: `valid credentials with mismatched confirm password - credentials button disabled`, `valid credentials after confirm password matches - credentials button enabled`, `credentials button disabled when confirm password cleared after match`
-- [ ] Run `./gradlew :feature:auth:testDebugUnitTest` — must pass before Task 2
+- [x] Add `confirmPassword: String = ""` to `SignupUiState` (not backed by `SavedStateHandle`, same security reason as `password`)
+- [x] Add `isPasswordConfirmed: Boolean = false` to `SignupUiState`
+- [x] Update `isCredentialsSubmitEnabled` to `!isLoading && isNameValid && isCredentialsValid && isPasswordConfirmed`
+- [x] Add `updateConfirmPassword(confirmPassword: String)` to `SignupViewModel`: computes `isPasswordConfirmed = confirmPassword == _state.value.password`, updates state with new `confirmPassword` and `isPasswordConfirmed`
+- [x] Update `updatePassword()` to also recompute `isPasswordConfirmed` against current `confirmPassword` in state
+- [x] Update existing tests that set "all valid" state (`all valid - both buttons enabled`, `loading state - both buttons disabled`, `both buttons re-enabled after loading completes`) to also call `viewModel.updateConfirmPassword("password1")`
+- [x] Add new tests: `valid credentials with mismatched confirm password - credentials button disabled`, `valid credentials after confirm password matches - credentials button enabled`, `credentials button disabled when confirm password cleared after match`
+- [x] Run `./gradlew :feature:auth:testDebugUnitTest` — must pass before Task 2
 
 ### Task 2: Add Confirm Password Field to SignupScreen
 

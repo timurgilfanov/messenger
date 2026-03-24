@@ -141,5 +141,5 @@ Implement a signup with Google flow. The user sees a signup screen with a name i
 
 ### Task 6: Update Documentation
 
-- [ ] Update `CLAUDE.md` if new patterns were introduced (e.g. `ProfileNameValidator` location)
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Update `CLAUDE.md` if new patterns were introduced (e.g. `ProfileNameValidator` location)
+- [x] Move this plan to `docs/plans/completed/`

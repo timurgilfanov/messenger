@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -81,6 +82,28 @@ class LoginViewModelButtonStateTest {
             val loadingState = awaitItem()
             assertFalse(loadingState.isSubmitEnabled)
             cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `button re-enabled after loading completes`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateEmail("user@example.com")
+        viewModel.updatePassword("password1")
+
+        viewModel.state.test {
+            skipItems(1)
+
+            viewModel.submitLogin()
+
+            val loadingState = awaitItem()
+            assertFalse(loadingState.isSubmitEnabled)
+
+            advanceUntilIdle()
+
+            val finalState = awaitItem()
+            assertTrue(finalState.isSubmitEnabled)
         }
     }
 }

@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -104,6 +105,31 @@ class SignupViewModelButtonStateTest {
             assertFalse(loadingState.isGoogleSubmitEnabled)
             assertFalse(loadingState.isCredentialsSubmitEnabled)
             cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `both buttons re-enabled after loading completes`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateName("Alice")
+        viewModel.updateEmail("user@example.com")
+        viewModel.updatePassword("password1")
+
+        viewModel.state.test {
+            skipItems(1)
+
+            viewModel.submitSignupWithCredentials()
+
+            val loadingState = awaitItem()
+            assertFalse(loadingState.isGoogleSubmitEnabled)
+            assertFalse(loadingState.isCredentialsSubmitEnabled)
+
+            advanceUntilIdle()
+
+            val finalState = awaitItem()
+            assertTrue(finalState.isGoogleSubmitEnabled)
+            assertTrue(finalState.isCredentialsSubmitEnabled)
         }
     }
 }

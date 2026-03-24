@@ -47,4 +47,4 @@ Add a "Confirm Password" `OutlinedTextField` to the Signup screen that validates
 
 ### Task 3: Update documentation
 
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Move this plan to `docs/plans/completed/`

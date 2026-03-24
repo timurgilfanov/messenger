@@ -92,24 +92,23 @@ class AuthRepositorySignupTest {
         }
 
     @Test
-    fun `signup InvalidEmail EmailNotExists returns InvalidEmail with EmailNotExists`() =
-        runTest {
-            val remote = RemoteAuthDataSourceFake()
-            remote.enqueueRegister(
-                ResultWithError.Failure(
-                    RegisterError.InvalidEmail(EmailValidationError.EmailNotExists),
-                ),
-            )
-            val repo = createRepo(remoteDataSource = remote, scope = this)
-            advanceUntilIdle()
+    fun `signup InvalidEmail EmailNotExists returns InvalidEmail with EmailNotExists`() = runTest {
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueRegister(
+            ResultWithError.Failure(
+                RegisterError.InvalidEmail(EmailValidationError.EmailNotExists),
+            ),
+        )
+        val repo = createRepo(remoteDataSource = remote, scope = this)
+        advanceUntilIdle()
 
-            val result = repo.signup(credentials, name)
+        val result = repo.signup(credentials, name)
 
-            val failure =
-                assertIs<ResultWithError.Failure<AuthSession, SignupRepositoryError>>(result)
-            val error = assertIs<SignupRepositoryError.InvalidEmail>(failure.error)
-            assertIs<EmailValidationError.EmailNotExists>(error.reason)
-        }
+        val failure =
+            assertIs<ResultWithError.Failure<AuthSession, SignupRepositoryError>>(result)
+        val error = assertIs<SignupRepositoryError.InvalidEmail>(failure.error)
+        assertIs<EmailValidationError.EmailNotExists>(error.reason)
+    }
 
     @Test
     fun `signup InvalidPassword returns InvalidPassword error with reason preserved`() = runTest {
@@ -163,22 +162,21 @@ class AuthRepositorySignupTest {
     }
 
     @Test
-    fun `signup local storage AccessDenied maps to LocalOperationFailed AccessDenied`() =
-        runTest {
-            val storage = LocalAuthDataSourceFake()
-            storage.enqueueSaveSession(
-                ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
-            )
-            val repo = createRepo(sessionStorage = storage, scope = this)
-            advanceUntilIdle()
+    fun `signup local storage AccessDenied maps to LocalOperationFailed AccessDenied`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueSaveSession(
+            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+        )
+        val repo = createRepo(sessionStorage = storage, scope = this)
+        advanceUntilIdle()
 
-            val result = repo.signup(credentials, name)
+        val result = repo.signup(credentials, name)
 
-            val failure =
-                assertIs<ResultWithError.Failure<AuthSession, SignupRepositoryError>>(result)
-            val error = assertIs<SignupRepositoryError.LocalOperationFailed>(failure.error)
-            assertIs<LocalStorageError.AccessDenied>(error.error)
-        }
+        val failure =
+            assertIs<ResultWithError.Failure<AuthSession, SignupRepositoryError>>(result)
+        val error = assertIs<SignupRepositoryError.LocalOperationFailed>(failure.error)
+        assertIs<LocalStorageError.AccessDenied>(error.error)
+    }
 
     @Test
     fun `signup local storage StorageFull failure returns LocalOperationFailed with StorageFull`() =

@@ -55,11 +55,11 @@ Implement email/password signup. The data layer (remote `register()` endpoint, `
 - Create: `feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/domain/usecase/SignupWithCredentialsUseCaseImpl.kt`
 - Create: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/domain/usecase/SignupWithCredentialsUseCaseTest.kt`
 
-- [ ] Create `SignupWithCredentialsUseCase` as `fun interface` with `suspend operator fun invoke(credentials: Credentials, name: String): ResultWithError<Unit, SignupWithCredentialsUseCaseError>`
-- [ ] Create `SignupWithCredentialsUseCaseError`: `ValidationFailed(error: CredentialsValidationError)`, `InvalidName(reason: ProfileNameValidationError)`, `InvalidEmail(reason: EmailValidationError)`, `InvalidPassword(reason: PasswordValidationError)`, `LocalOperationFailed(error: LocalStorageError)`, `RemoteOperationFailed(error: UnauthRemoteError)` — KDoc with Validation / Logical / Data Source Error sections; include internal `SignupRepositoryError.toUseCaseError()` extension
-- [ ] Create `SignupWithCredentialsUseCaseImpl(validator: CredentialsValidator, nameValidator: ProfileNameValidator, repository: AuthRepository, logger: Logger)`: validate credentials first (→ `ValidationFailed`), then name (→ `InvalidName`), then call `repository.signup(credentials, name)`, map errors, log failures — follow `LoginWithCredentialsUseCaseImpl` + `SignupWithGoogleUseCaseImpl` patterns
-- [ ] Write `SignupWithCredentialsUseCaseTest`: credentials validation failure returns `ValidationFailed`; name validation failure returns `InvalidName`; success; each `SignupRepositoryError` variant maps correctly — follow `LoginWithCredentialsUseCaseTest` + `SignupWithGoogleUseCaseTest` patterns
-- [ ] run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 3
+- [x] Create `SignupWithCredentialsUseCase` as `fun interface` with `suspend operator fun invoke(credentials: Credentials, name: String): ResultWithError<Unit, SignupWithCredentialsUseCaseError>`
+- [x] Create `SignupWithCredentialsUseCaseError`: `ValidationFailed(error: CredentialsValidationError)`, `InvalidName(reason: ProfileNameValidationError)`, `InvalidEmail(reason: EmailValidationError)`, `InvalidPassword(reason: PasswordValidationError)`, `LocalOperationFailed(error: LocalStorageError)`, `RemoteOperationFailed(error: UnauthRemoteError)` — KDoc with Validation / Logical / Data Source Error sections; include internal `SignupRepositoryError.toUseCaseError()` extension
+- [x] Create `SignupWithCredentialsUseCaseImpl(validator: CredentialsValidator, nameValidator: ProfileNameValidator, repository: AuthRepository, logger: Logger)`: validate credentials first (→ `ValidationFailed`), then name (→ `InvalidName`), then call `repository.signup(credentials, name)`, map errors, log failures — follow `LoginWithCredentialsUseCaseImpl` + `SignupWithGoogleUseCaseImpl` patterns
+- [x] Write `SignupWithCredentialsUseCaseTest`: credentials validation failure returns `ValidationFailed`; name validation failure returns `InvalidName`; success; each `SignupRepositoryError` variant maps correctly — follow `LoginWithCredentialsUseCaseTest` + `SignupWithGoogleUseCaseTest` patterns
+- [x] run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 3
 
 ### Task 3: ViewModel, UI, Wiring, and Feature Test
 

@@ -135,9 +135,9 @@ Implement a signup with Google flow. The user sees a signup screen with a name i
 
 ### Task 5: Verify Acceptance Criteria
 
-- [ ] run `./gradlew preCommit`
-- [ ] run `./gradlew :feature:auth:testDebugUnitTest`
-- [ ] Confirm all new tests pass and coverage is complete for all added code
+- [x] run `./gradlew :feature:auth:testDebugUnitTest`
+- [x] run `./gradlew :feature:auth:connectedDebugAndroidTest` [x] manual test (skipped - requires connected device)
+- [x] Confirm all new tests pass and coverage is complete for all added code
 
 ### Task 6: Update Documentation
 

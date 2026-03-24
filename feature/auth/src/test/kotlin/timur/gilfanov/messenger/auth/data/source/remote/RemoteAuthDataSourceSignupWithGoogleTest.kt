@@ -12,7 +12,6 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
-import org.junit.Before
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.data.remote.ApiError
@@ -32,11 +31,6 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
     private val json = Json {
         isLenient = true
         ignoreUnknownKeys = true
-    }
-
-    @Before
-    fun setup() {
-        dataSource = createDataSource(createMockClient(""))
     }
 
     private fun createMockClient(

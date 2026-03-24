@@ -86,5 +86,5 @@ enabled state. Screens use these properties directly.
 
 ### Task 3: Final verification
 
-- [ ] Run `./gradlew :feature:auth:testDebugUnitTest`
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Run `./gradlew :feature:auth:testDebugUnitTest`
+- [x] Move this plan to `docs/plans/completed/`

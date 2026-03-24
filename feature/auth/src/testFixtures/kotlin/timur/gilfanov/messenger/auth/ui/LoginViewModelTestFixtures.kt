@@ -38,6 +38,11 @@ object LoginViewModelTestFixtures {
         val loginWithCredentials = LoginWithCredentialsUseCaseImpl(validator, repository, logger)
         val loginWithGoogle = LoginWithGoogleUseCaseImpl(repository, logger)
 
-        return LoginViewModel(loginWithCredentials, loginWithGoogle, savedStateHandle, viewModelCredentialsValidator)
+        return LoginViewModel(
+            loginWithCredentials,
+            loginWithGoogle,
+            savedStateHandle,
+            viewModelCredentialsValidator,
+        )
     }
 }

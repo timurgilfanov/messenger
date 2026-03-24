@@ -30,6 +30,8 @@ import timur.gilfanov.messenger.auth.R
 import timur.gilfanov.messenger.auth.di.AuthDataModule
 import timur.gilfanov.messenger.auth.di.AuthModule
 import timur.gilfanov.messenger.auth.di.AuthViewModelModule
+import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
@@ -72,6 +74,10 @@ class SignupFeatureTest {
     @Module
     @InstallIn(SingletonComponent::class)
     object SignupTestModule {
+        // Shared across tests because Hilt modules must be objects and tests need to mutate the
+        // stub (e.g. shouldSuspend = true) before the Hilt component is built — which happens
+        // when the activity launches, before @Before runs. tearDown calls reset() to prevent
+        // state from leaking into the next test.
         val googleSignInClient = GoogleSignInClientStub()
 
         @Provides
@@ -94,6 +100,16 @@ class SignupFeatureTest {
         @Provides
         @Singleton
         fun provideLogger(): Logger = NoOpLogger()
+
+        @Provides
+        @Singleton
+        fun provideLoginWithCredentialsUseCase(): LoginWithCredentialsUseCase =
+            LoginWithCredentialsUseCase { error("Not used in signup tests") }
+
+        @Provides
+        @Singleton
+        fun provideLoginWithGoogleUseCase(): LoginWithGoogleUseCase =
+            LoginWithGoogleUseCase { error("Not used in signup tests") }
 
         @Provides
         @Singleton

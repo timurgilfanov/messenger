@@ -118,6 +118,7 @@ fun SignupScreen(
         onNameChange = viewModel::updateName,
         onEmailChange = viewModel::updateEmail,
         onPasswordChange = viewModel::updatePassword,
+        onConfirmPasswordChange = viewModel::updateConfirmPassword,
         onCredentialsSignUpClick = viewModel::submitSignupWithCredentials,
         onGoogleSignUpClick = onGoogleSignUpClick,
         isSigningUpWithGoogle = isSigningUpWithGoogle,
@@ -179,6 +180,7 @@ fun SignupScreenContent(
     onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
     onCredentialsSignUpClick: () -> Unit,
     onGoogleSignUpClick: () -> Unit,
     isSigningUpWithGoogle: Boolean,
@@ -198,6 +200,7 @@ fun SignupScreenContent(
             onNameChange = onNameChange,
             onEmailChange = onEmailChange,
             onPasswordChange = onPasswordChange,
+            onConfirmPasswordChange = onConfirmPasswordChange,
             onCredentialsSignUpClick = onCredentialsSignUpClick,
             onGoogleSignUpClick = onGoogleSignUpClick,
             isSigningUpWithGoogle = isSigningUpWithGoogle,
@@ -230,6 +233,7 @@ private fun SignupForm(
     onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
     onCredentialsSignUpClick: () -> Unit,
     onGoogleSignUpClick: () -> Unit,
     isSigningUpWithGoogle: Boolean,
@@ -251,6 +255,10 @@ private fun SignupForm(
         Spacer(modifier = Modifier.height(4.dp))
 
         PasswordField(state.password, state.passwordError?.toDisplayString(), onPasswordChange)
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        ConfirmPasswordField(state.confirmPassword, onConfirmPasswordChange)
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -369,6 +377,27 @@ private fun PasswordField(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("signup_password_field"),
+    )
+}
+
+@Composable
+private fun ConfirmPasswordField(
+    confirmPassword: String,
+    onConfirmPasswordChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = confirmPassword,
+        onValueChange = onConfirmPasswordChange,
+        label = { Text(stringResource(R.string.signup_confirm_password_label)) },
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done,
+        ),
+        singleLine = true,
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("signup_confirm_password_field"),
     )
 }
 
@@ -604,6 +633,7 @@ private fun Content(darkTheme: Boolean, state: SignupUiState = SignupUiState()) 
             onNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
+            onConfirmPasswordChange = {},
             onCredentialsSignUpClick = {},
             onGoogleSignUpClick = {},
             isSigningUpWithGoogle = false,

@@ -41,9 +41,9 @@ Add a "Confirm Password" `OutlinedTextField` to the Signup screen that validates
 **Files:**
 - Modify: `feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/ui/screen/signup/SignupScreen.kt`
 
-- [ ] Add confirm password `OutlinedTextField` below the password field, using the same password visual transformation (masking) as the password field
-- [ ] Wire `onValueChange` to `viewModel.updateConfirmPassword()`
-- [ ] Run `./gradlew :feature:auth:testDebugUnitTest` — must pass before Task 3
+- [x] Add confirm password `OutlinedTextField` below the password field, using the same password visual transformation (masking) as the password field
+- [x] Wire `onValueChange` to `viewModel.updateConfirmPassword()`
+- [x] Run `./gradlew :feature:auth:testDebugUnitTest` — must pass before Task 3
 
 ### Task 3: Update documentation
 

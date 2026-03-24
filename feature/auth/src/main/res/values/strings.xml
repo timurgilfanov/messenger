@@ -58,6 +58,7 @@
     <string name="signup_name_label">Name</string>
     <string name="signup_email_label">Email</string>
     <string name="signup_password_label">Password</string>
+    <string name="signup_confirm_password_label">Confirm Password</string>
     <string name="signup_sign_up_button">Sign Up</string>
     <string name="signup_sign_up_with_google_button">Sign Up with Google</string>
     <string name="signup_already_have_account_button">Already have an account? Sign in</string>

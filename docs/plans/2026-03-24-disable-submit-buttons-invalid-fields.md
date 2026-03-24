@@ -71,18 +71,18 @@ enabled state. Screens use these properties directly.
 - Modify: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/ui/LoginViewModelInitialStateTest.kt`
 - Create: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/ui/LoginViewModelButtonStateTest.kt`
 
-- [ ] Add `isCredentialsValid: Boolean = false` to `LoginUiState`
-- [ ] Add computed property `val isSubmitEnabled: Boolean get() = !isLoading && isCredentialsValid`
-- [ ] Add `CredentialsValidator` constructor param to `LoginViewModel` (Hilt injects automatically)
-- [ ] Compute initial `isCredentialsValid` in the `_state` initializer from saved state handle values
-- [ ] Update `updateEmail` to call `credentialsValidator.validate(Credentials(Email(email), Password(currentPassword)))` and include `isCredentialsValid` in the `copy()`
-- [ ] Update `updatePassword` to call `credentialsValidator.validate(Credentials(Email(currentEmail), Password(password)))` and include `isCredentialsValid` in the `copy()`
-- [ ] Update credentials sign-in button in `LoginScreen`: `enabled = state.isSubmitEnabled`
-- [ ] Google sign-in button is not gated on field validation — leave it unchanged
-- [ ] Add `viewModelCredentialsValidator: CredentialsValidator = CredentialsValidatorImpl()` param to `LoginViewModelTestFixtures.createViewModel()` and pass it to `LoginViewModel` constructor
-- [ ] Add `assertFalse(state.isSubmitEnabled)` to `LoginViewModelInitialStateTest`
-- [ ] Create `LoginViewModelButtonStateTest` using default `createViewModel()` (real validators); test cases: both empty → disabled; valid email only → disabled; valid password only → disabled; both valid → enabled; loading state → disabled
-- [ ] Run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 3
+- [x] Add `isCredentialsValid: Boolean = false` to `LoginUiState`
+- [x] Add computed property `val isSubmitEnabled: Boolean get() = !isLoading && isCredentialsValid`
+- [x] Add `CredentialsValidator` constructor param to `LoginViewModel` (Hilt injects automatically)
+- [x] Compute initial `isCredentialsValid` in the `_state` initializer from saved state handle values
+- [x] Update `updateEmail` to call `credentialsValidator.validate(Credentials(Email(email), Password(currentPassword)))` and include `isCredentialsValid` in the `copy()`
+- [x] Update `updatePassword` to call `credentialsValidator.validate(Credentials(Email(currentEmail), Password(password)))` and include `isCredentialsValid` in the `copy()`
+- [x] Update credentials sign-in button in `LoginScreen`: `enabled = state.isSubmitEnabled`
+- [x] Google sign-in button is not gated on field validation — leave it unchanged
+- [x] Add `viewModelCredentialsValidator: CredentialsValidator = CredentialsValidatorImpl()` param to `LoginViewModelTestFixtures.createViewModel()` and pass it to `LoginViewModel` constructor
+- [x] Add `assertFalse(state.isSubmitEnabled)` to `LoginViewModelInitialStateTest`
+- [x] Create `LoginViewModelButtonStateTest` using default `createViewModel()` (real validators); test cases: both empty → disabled; valid email only → disabled; valid password only → disabled; both valid → enabled; loading state → disabled
+- [x] Run `./gradlew :feature:auth:testDebugUnitTest` — must pass before task 3
 
 ### Task 3: Final verification
 

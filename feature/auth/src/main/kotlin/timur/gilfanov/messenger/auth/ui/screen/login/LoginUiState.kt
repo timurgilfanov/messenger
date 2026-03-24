@@ -9,11 +9,14 @@ data class LoginUiState(
     val email: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
+    val isCredentialsValid: Boolean = false,
     val emailError: CredentialsValidationError? = null,
     val passwordError: CredentialsValidationError? = null,
     val generalError: LoginGeneralError? = null,
     val blockingError: LoginBlockingError? = null,
-)
+) {
+    val isSubmitEnabled: Boolean get() = !isLoading && isCredentialsValid
+}
 
 @Immutable
 sealed interface LoginGeneralError {

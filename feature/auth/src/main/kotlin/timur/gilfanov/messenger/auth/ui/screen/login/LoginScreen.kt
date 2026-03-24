@@ -263,7 +263,7 @@ private fun LoginForm(
 
         Button(
             onClick = onSubmitLogin,
-            enabled = !state.isLoading,
+            enabled = state.isSubmitEnabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("login_sign_in_button"),

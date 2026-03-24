@@ -55,7 +55,6 @@ import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
-import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
@@ -344,23 +343,14 @@ private fun ProfileNameValidationError.toDisplayString(): String = when (this) {
         stringResource(R.string.signup_error_name_length_out_of_bounds, min, max)
 
     is ProfileNameValidationError.ForbiddenCharacter ->
-        stringResource(
-            R.string.signup_error_name_length_out_of_bounds,
-            ProfileNameValidatorImpl.MIN_NAME_LENGTH,
-            ProfileNameValidatorImpl.MAX_NAME_LENGTH,
-        )
+        stringResource(R.string.signup_error_name_forbidden_character)
 
     is ProfileNameValidationError.PlatformPolicyViolation.Pornography,
     is ProfileNameValidationError.PlatformPolicyViolation.Violence,
     is ProfileNameValidationError.PlatformPolicyViolation.IllegalSubstance,
-    -> stringResource(R.string.signup_error_account_already_exists)
+    -> stringResource(R.string.signup_error_name_policy_violation)
 
-    is ProfileNameValidationError.UnknownRuleViolation ->
-        stringResource(
-            R.string.signup_error_name_length_out_of_bounds,
-            ProfileNameValidatorImpl.MIN_NAME_LENGTH,
-            ProfileNameValidatorImpl.MAX_NAME_LENGTH,
-        )
+    is ProfileNameValidationError.UnknownRuleViolation -> reason
 }
 
 @Composable
@@ -368,13 +358,6 @@ private fun SignupGeneralError.toDisplayString(): String = when (this) {
     SignupGeneralError.InvalidToken -> stringResource(R.string.signup_error_invalid_token)
     SignupGeneralError.AccountAlreadyExists ->
         stringResource(R.string.signup_error_account_already_exists)
-
-    SignupGeneralError.InvalidName ->
-        stringResource(
-            R.string.signup_error_name_length_out_of_bounds,
-            ProfileNameValidatorImpl.MIN_NAME_LENGTH,
-            ProfileNameValidatorImpl.MAX_NAME_LENGTH,
-        )
 }
 
 private fun SignupSnackbarMessage.toDisplayString(context: Context): String = when (this) {

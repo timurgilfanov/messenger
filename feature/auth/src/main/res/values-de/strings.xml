@@ -59,6 +59,8 @@
 
     <!-- Signup validation errors -->
     <string name="signup_error_name_length_out_of_bounds">Name muss zwischen %1$d und %2$d Zeichen lang sein</string>
+    <string name="signup_error_name_forbidden_character">Name enthält verbotene Zeichen</string>
+    <string name="signup_error_name_policy_violation">Name verstößt gegen die Inhaltsrichtlinien</string>
 
     <!-- Signup blocking error titles -->
     <string name="signup_error_storage_full_title">Speicher voll</string>

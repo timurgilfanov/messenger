@@ -49,8 +49,8 @@ class SignupViewModel @Inject constructor(
     fun submitSignupWithGoogle(idToken: String) {
         if (_state.value.isLoading) return
         lastIdToken = idToken
+        _state.update { it.copy(isLoading = true, generalError = null, nameError = null) }
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, generalError = null, nameError = null) }
             val currentName = _state.value.name
             val result = signupWithGoogle(GoogleIdToken(idToken), currentName)
             _state.update { it.copy(isLoading = false) }
@@ -85,8 +85,8 @@ class SignupViewModel @Inject constructor(
     }
 
     fun retryLastAction() {
-        _state.update { it.copy(blockingError = null) }
         val idToken = lastIdToken ?: return
+        _state.update { it.copy(blockingError = null) }
         submitSignupWithGoogle(idToken)
     }
 

@@ -61,6 +61,8 @@
 
     <!-- Signup validation errors -->
     <string name="signup_error_name_length_out_of_bounds">Name must be between %1$d and %2$d characters</string>
+    <string name="signup_error_name_forbidden_character">Name contains forbidden characters</string>
+    <string name="signup_error_name_policy_violation">Name violates content policy</string>
 
     <!-- Signup blocking error titles -->
     <string name="signup_error_storage_full_title">Storage full</string>

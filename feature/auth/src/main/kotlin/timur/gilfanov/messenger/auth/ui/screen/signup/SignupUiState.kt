@@ -17,7 +17,6 @@ data class SignupUiState(
 sealed interface SignupGeneralError {
     data object InvalidToken : SignupGeneralError
     data object AccountAlreadyExists : SignupGeneralError
-    data object InvalidName : SignupGeneralError
 }
 
 @Immutable

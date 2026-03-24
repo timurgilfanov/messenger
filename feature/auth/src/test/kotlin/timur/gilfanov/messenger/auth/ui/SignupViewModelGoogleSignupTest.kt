@@ -16,6 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseError
 import timur.gilfanov.messenger.auth.ui.SignupViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupBlockingError
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupGeneralError
@@ -26,6 +27,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -112,6 +114,44 @@ class SignupViewModelGoogleSignupTest {
             signupResult = Failure(
                 GoogleSignupRepositoryError.RemoteOperationFailed(
                     RemoteError.Failed.ServiceDown,
+                ),
+            ),
+        )
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            viewModel.submitSignupWithGoogle(testIdToken)
+            advanceUntilIdle()
+            val effect = assertIs<SignupSideEffects.ShowSnackbar>(awaitItem())
+            assertIs<SignupSnackbarMessage.ServiceUnavailable>(effect.message)
+        }
+    }
+
+    @Test
+    fun `google signup UnknownServiceError emits ShowSnackbar ServiceUnavailable`() = runTest {
+        val viewModel = createViewModel(
+            signupResult = Failure(
+                GoogleSignupRepositoryError.RemoteOperationFailed(
+                    RemoteError.Failed.UnknownServiceError(ErrorReason("test error")),
+                ),
+            ),
+        )
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            viewModel.submitSignupWithGoogle(testIdToken)
+            advanceUntilIdle()
+            val effect = assertIs<SignupSideEffects.ShowSnackbar>(awaitItem())
+            assertIs<SignupSnackbarMessage.ServiceUnavailable>(effect.message)
+        }
+    }
+
+    @Test
+    fun `google signup ServiceTimeout emits ShowSnackbar ServiceUnavailable`() = runTest {
+        val viewModel = createViewModel(
+            signupResult = Failure(
+                GoogleSignupRepositoryError.RemoteOperationFailed(
+                    RemoteError.UnknownStatus.ServiceTimeout,
                 ),
             ),
         )
@@ -247,7 +287,8 @@ class SignupViewModelGoogleSignupTest {
             val loadingState = awaitItem()
             assertTrue(loadingState.isLoading)
             advanceUntilIdle()
-            cancelAndIgnoreRemainingEvents()
+            val doneState = awaitItem()
+            assertTrue(!doneState.isLoading)
         }
     }
 
@@ -328,5 +369,35 @@ class SignupViewModelGoogleSignupTest {
         viewModel.retryLastAction()
         advanceUntilIdle()
         assertNull(viewModel.state.value.blockingError)
+    }
+
+    @Test
+    fun `retryLastAction success emits NavigateToChatList`() = runTest {
+        var callCount = 0
+        val viewModel = SignupViewModel(
+            signupWithGoogle = { _, _ ->
+                callCount++
+                if (callCount == 1) {
+                    Failure(
+                        SignupWithGoogleUseCaseError.LocalOperationFailed(
+                            LocalStorageError.StorageFull,
+                        ),
+                    )
+                } else {
+                    ResultWithError.Success(Unit)
+                }
+            },
+            savedStateHandle = SavedStateHandle(),
+        )
+        viewModel.submitSignupWithGoogle(testIdToken)
+        advanceUntilIdle()
+        assertIs<SignupBlockingError.StorageFull>(viewModel.state.value.blockingError)
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        viewModel.effects.test {
+            viewModel.retryLastAction()
+            advanceUntilIdle()
+            assertIs<SignupSideEffects.NavigateToChatList>(awaitItem())
+        }
     }
 }

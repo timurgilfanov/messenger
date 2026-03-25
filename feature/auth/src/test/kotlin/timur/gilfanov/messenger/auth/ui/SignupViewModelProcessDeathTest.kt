@@ -82,10 +82,32 @@ class SignupViewModelProcessDeathTest {
         assertEquals(null, handle.get<String>(PASSWORD_KEY))
     }
 
+    @Test
+    fun `confirm password is not restored from saved state after process death`() = runTest {
+        val handle = SavedStateHandle(mapOf(CONFIRM_PASSWORD_KEY to SAMPLE_PASSWORD))
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertEquals("", state.confirmPassword)
+        }
+    }
+
+    @Test
+    fun `updateConfirmPassword does not save confirm password to saved state handle`() = runTest {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.updateConfirmPassword(SAMPLE_PASSWORD)
+
+        assertEquals(null, handle.get<String>(CONFIRM_PASSWORD_KEY))
+    }
+
     private companion object {
         const val NAME_KEY = "name"
         const val EMAIL_KEY = "email"
         const val PASSWORD_KEY = "password"
+        const val CONFIRM_PASSWORD_KEY = "confirmPassword"
         const val SAMPLE_NAME = "Alice Smith"
         const val SAMPLE_EMAIL = "alice@example.com"
         const val SAMPLE_PASSWORD = "Password1"

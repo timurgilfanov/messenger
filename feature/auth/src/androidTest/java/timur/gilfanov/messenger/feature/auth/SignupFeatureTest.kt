@@ -156,6 +156,7 @@ class SignupFeatureTest {
         )
         composeTestRule.onNodeWithTag("signup_email_field").assertExists()
         composeTestRule.onNodeWithTag("signup_password_field").assertExists()
+        composeTestRule.onNodeWithTag("signup_confirm_password_field").assertExists()
         composeTestRule.onNodeWithTag("signup_credentials_sign_up_button").assertExists()
     }
 
@@ -264,6 +265,7 @@ class SignupFeatureTest {
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
             onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
             onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("signup_confirm_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("signup_credentials_sign_up_button").performClick()
             waitUntilDoesNotExist(
                 hasTestTag("signup_screen"),
@@ -284,6 +286,10 @@ class SignupFeatureTest {
                 hasTestTag("signup_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
+            onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("signup_confirm_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("signup_credentials_sign_up_button").performClick()
             waitUntilExactlyOneExists(hasTestTag("signup_email_error"))
             onNodeWithTag("signup_email_error")
@@ -302,6 +308,7 @@ class SignupFeatureTest {
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
             onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
             onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("signup_confirm_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("signup_credentials_sign_up_button").performClick()
             waitForIdle()
             onNodeWithTag("signup_credentials_sign_up_button").assertIsNotEnabled()

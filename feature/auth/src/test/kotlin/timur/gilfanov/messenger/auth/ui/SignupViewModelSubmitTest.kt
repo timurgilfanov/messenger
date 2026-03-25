@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.auth.ui
 
+import app.cash.turbine.test
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,6 +24,19 @@ class SignupViewModelSubmitTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val testIdToken = "test-google-id-token"
+
+    @Test
+    fun `retryLastAction with no prior submit is a no-op`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.effects.test {
+            viewModel.retryLastAction()
+            advanceUntilIdle()
+            assertNull(viewModel.state.value.blockingError)
+            assertFalse(viewModel.state.value.isLoading)
+            expectNoEvents()
+        }
+    }
 
     @Test
     fun `name validation failure sets nameError`() = runTest {

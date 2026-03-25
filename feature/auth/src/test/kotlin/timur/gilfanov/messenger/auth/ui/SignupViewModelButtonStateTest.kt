@@ -172,6 +172,24 @@ class SignupViewModelButtonStateTest {
         }
 
     @Test
+    fun `credentials button disabled when password changes to not match confirm password`() =
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.updateName("Alice")
+            viewModel.updateEmail("user@example.com")
+            viewModel.updatePassword("password1")
+            viewModel.updateConfirmPassword("password1")
+            viewModel.updatePassword("password2")
+
+            viewModel.state.test {
+                val state = awaitItem()
+                assertTrue(state.isGoogleSubmitEnabled)
+                assertFalse(state.isCredentialsSubmitEnabled)
+            }
+        }
+
+    @Test
     fun `credentials button disabled when confirm password cleared after match`() = runTest {
         val viewModel = createViewModel()
 

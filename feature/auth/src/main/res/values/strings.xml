@@ -69,7 +69,6 @@
     <string name="auth_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
     <string name="auth_error_network_unavailable">No internet connection</string>
     <string name="auth_error_service_unavailable">Service unavailable. Try again later.</string>
-    <string name="auth_error_unknown">Something went wrong. Please try again.</string>
     <string name="auth_error_google_sign_in_failed">Google Sign-In failed. Please try again.</string>
     <string name="auth_error_too_many_attempts">Too many attempts. Try again in %s.</string>
     <string name="auth_action_retry">Retry</string>

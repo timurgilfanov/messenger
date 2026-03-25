@@ -400,9 +400,6 @@ private fun LoginSnackbarMessage.toDisplayString(context: Context): String = whe
     LoginSnackbarMessage.ServiceUnavailable ->
         context.getString(R.string.auth_error_service_unavailable)
 
-    LoginSnackbarMessage.Unknown ->
-        context.getString(R.string.auth_error_unknown)
-
     LoginSnackbarMessage.GoogleSignInFailed ->
         context.getString(R.string.auth_error_google_sign_in_failed)
 

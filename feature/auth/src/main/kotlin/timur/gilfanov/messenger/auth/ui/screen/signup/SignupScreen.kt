@@ -3,9 +3,6 @@
 package timur.gilfanov.messenger.auth.ui.screen.signup
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,6 +55,8 @@ import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
+import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
+import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
 import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
@@ -154,7 +153,7 @@ private fun SignupEffectHandler(
                         val message = effect.message
                         val actionLabel =
                             if (message is SignupSnackbarMessage.StorageTemporarilyUnavailable) {
-                                context.getString(R.string.signup_action_retry)
+                                context.getString(R.string.snackbar_action_retry)
                             } else {
                                 null
                             }
@@ -380,27 +379,27 @@ private data class SignupBlockingErrorResources(
 
 private fun SignupBlockingError.toResources(): SignupBlockingErrorResources = when (this) {
     SignupBlockingError.StorageFull -> SignupBlockingErrorResources(
-        R.string.signup_error_storage_full_title,
-        R.string.signup_error_storage_full,
-        R.string.signup_action_open_storage_settings,
+        R.string.dialog_error_storage_full_title,
+        R.string.dialog_error_storage_full,
+        R.string.dialog_action_open_storage_settings,
     )
 
     SignupBlockingError.StorageCorrupted -> SignupBlockingErrorResources(
-        R.string.signup_error_storage_corrupted_title,
-        R.string.signup_error_storage_corrupted,
-        R.string.signup_action_open_app_settings,
+        R.string.dialog_error_storage_corrupted_title,
+        R.string.dialog_error_storage_corrupted,
+        R.string.dialog_action_open_app_settings,
     )
 
     SignupBlockingError.StorageReadOnly -> SignupBlockingErrorResources(
-        R.string.signup_error_storage_read_only_title,
-        R.string.signup_error_storage_read_only,
-        R.string.signup_action_open_app_settings,
+        R.string.dialog_error_storage_read_only_title,
+        R.string.dialog_error_storage_read_only,
+        R.string.dialog_action_open_app_settings,
     )
 
     SignupBlockingError.StorageAccessDenied -> SignupBlockingErrorResources(
-        R.string.signup_error_storage_access_denied_title,
-        R.string.signup_error_storage_access_denied,
-        R.string.signup_action_open_app_settings,
+        R.string.dialog_error_storage_access_denied_title,
+        R.string.dialog_error_storage_access_denied,
+        R.string.dialog_action_open_app_settings,
     )
 }
 
@@ -501,33 +500,18 @@ private fun SignupGeneralError.toDisplayString(): String = when (this) {
 
 private fun SignupSnackbarMessage.toDisplayString(context: Context): String = when (this) {
     SignupSnackbarMessage.NetworkUnavailable ->
-        context.getString(R.string.signup_error_network_unavailable)
+        context.getString(R.string.snackbar_error_network_unavailable)
 
     SignupSnackbarMessage.ServiceUnavailable ->
-        context.getString(R.string.signup_error_service_unavailable)
+        context.getString(R.string.snackbar_error_service_unavailable)
 
     SignupSnackbarMessage.GoogleSignUpFailed ->
-        context.getString(R.string.signup_error_google_sign_up_failed)
+        context.getString(R.string.snackbar_error_google_sign_in_failed)
 
     SignupSnackbarMessage.StorageTemporarilyUnavailable ->
-        context.getString(R.string.signup_error_storage_temporarily_unavailable)
+        context.getString(R.string.snackbar_error_storage_temporarily_unavailable)
 
     is SignupSnackbarMessage.TooManyAttempts -> tooManyAttemptsDisplayString(context, remaining)
-}
-
-private fun openAppSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-        data = Uri.fromParts("package", context.packageName, null)
-    }
-    context.startActivity(intent)
-}
-
-private fun openStorageSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
-    if (intent.resolveActivity(context.packageManager) == null) {
-        intent.action = Settings.ACTION_SETTINGS
-    }
-    context.startActivity(intent)
 }
 
 @Preview

@@ -54,7 +54,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
-import timur.gilfanov.messenger.auth.ui.BlockingErrorDialog
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
@@ -217,7 +216,7 @@ fun LoginScreenContent(
     }
 
     state.blockingError?.let { error ->
-        BlockingErrorDialog(
+        LoginBlockingErrorDialog(
             error = error,
             onOpenAppSettings = onOpenAppSettings,
             onOpenStorageSettings = onOpenStorageSettings,

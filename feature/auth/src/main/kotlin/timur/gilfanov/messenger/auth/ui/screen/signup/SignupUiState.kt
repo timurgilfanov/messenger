@@ -32,7 +32,7 @@ sealed interface SignupGeneralError {
 sealed interface SignupSnackbarMessage {
     data object NetworkUnavailable : SignupSnackbarMessage
     data object ServiceUnavailable : SignupSnackbarMessage
-    data object GoogleSignUpFailed : SignupSnackbarMessage
+    data object GoogleSignInFailed : SignupSnackbarMessage
     data object StorageTemporarilyUnavailable : SignupSnackbarMessage
     data class TooManyAttempts(val remaining: Duration) : SignupSnackbarMessage
 }

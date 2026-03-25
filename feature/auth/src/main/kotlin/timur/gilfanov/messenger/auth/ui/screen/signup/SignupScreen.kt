@@ -99,7 +99,7 @@ fun SignupScreen(
 
                     GoogleSignInResult.Failed -> {
                         isSigningUpWithGoogle = false
-                        val msg = SignupSnackbarMessage.GoogleSignUpFailed.toDisplayString(context)
+                        val msg = SignupSnackbarMessage.GoogleSignInFailed.toDisplayString(context)
                         snackbarHostState.showSnackbar(
                             message = msg,
                             duration = SnackbarDuration.Long,
@@ -443,7 +443,7 @@ private fun SignupSnackbarMessage.toDisplayString(context: Context): String = wh
     SignupSnackbarMessage.ServiceUnavailable ->
         context.getString(R.string.snackbar_error_service_unavailable)
 
-    SignupSnackbarMessage.GoogleSignUpFailed ->
+    SignupSnackbarMessage.GoogleSignInFailed ->
         context.getString(R.string.snackbar_error_google_sign_in_failed)
 
     SignupSnackbarMessage.StorageTemporarilyUnavailable ->

@@ -20,27 +20,27 @@ private data class BlockingErrorResources(
 
 private fun LoginBlockingError.toResources(): BlockingErrorResources = when (this) {
     LoginBlockingError.StorageFull -> BlockingErrorResources(
-        R.string.login_error_storage_full_title,
-        R.string.login_error_storage_full,
-        R.string.login_action_open_storage_settings,
+        R.string.dialog_error_storage_full_title,
+        R.string.dialog_error_storage_full,
+        R.string.dialog_action_open_storage_settings,
     )
 
     LoginBlockingError.StorageCorrupted -> BlockingErrorResources(
-        R.string.login_error_storage_corrupted_title,
-        R.string.login_error_storage_corrupted,
-        R.string.login_action_open_app_settings,
+        R.string.dialog_error_storage_corrupted_title,
+        R.string.dialog_error_storage_corrupted,
+        R.string.dialog_action_open_app_settings,
     )
 
     LoginBlockingError.StorageReadOnly -> BlockingErrorResources(
-        R.string.login_error_storage_read_only_title,
-        R.string.login_error_storage_read_only,
-        R.string.login_action_open_app_settings,
+        R.string.dialog_error_storage_read_only_title,
+        R.string.dialog_error_storage_read_only,
+        R.string.dialog_action_open_app_settings,
     )
 
     LoginBlockingError.StorageAccessDenied -> BlockingErrorResources(
-        R.string.login_error_storage_access_denied_title,
-        R.string.login_error_storage_access_denied,
-        R.string.login_action_open_app_settings,
+        R.string.dialog_error_storage_access_denied_title,
+        R.string.dialog_error_storage_access_denied,
+        R.string.dialog_action_open_app_settings,
     )
 }
 

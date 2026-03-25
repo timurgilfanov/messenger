@@ -39,5 +39,5 @@ internal fun tooManyAttemptsDisplayString(context: Context, remaining: Duration)
                 seconds,
             )
     }
-    return context.getString(R.string.error_too_many_attempts, formatted)
+    return context.getString(R.string.snackbar_error_too_many_attempts, formatted)
 }

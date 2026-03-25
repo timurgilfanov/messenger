@@ -40,7 +40,6 @@
     <!-- Login snackbar messages -->
     <string name="login_action_retry">Retry</string>
     <string name="login_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
-    <string name="login_error_too_many_attempts">Too many attempts. Try again in %s.</string>
     <string name="login_error_network_unavailable">No internet connection</string>
     <string name="login_error_service_unavailable">Service unavailable. Try again later.</string>
     <string name="login_error_unknown">Something went wrong. Please try again.</string>
@@ -86,7 +85,6 @@
     <!-- Signup snackbar messages -->
     <string name="signup_action_retry">Retry</string>
     <string name="signup_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
-    <string name="signup_error_too_many_attempts">Too many attempts. Try again in %s.</string>
     <string name="signup_error_network_unavailable">No internet connection</string>
     <string name="signup_error_service_unavailable">Service unavailable. Try again later.</string>
     <string name="signup_error_google_sign_up_failed">Google Sign-Up failed. Please try again.</string>
@@ -97,4 +95,7 @@
     <string name="signup_error_email_taken">An account with this email already exists</string>
     <string name="signup_error_invalid_email_server">This email address cannot be used</string>
     <string name="signup_error_invalid_password_server">Password does not meet requirements</string>
+
+    <!-- UI utils -->
+    <string name="error_too_many_attempts">Too many attempts. Try again in %s.</string>
 </resources>

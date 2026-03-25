@@ -1,18 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <plurals name="login_cooldown_minutes">
+    <plurals name="cooldown_minutes">
         <item quantity="one">%d minute</item>
         <item quantity="other">%d minutes</item>
     </plurals>
-    <plurals name="login_cooldown_seconds">
-        <item quantity="one">%d second</item>
-        <item quantity="other">%d seconds</item>
-    </plurals>
-    <plurals name="signup_cooldown_minutes">
-        <item quantity="one">%d minute</item>
-        <item quantity="other">%d minutes</item>
-    </plurals>
-    <plurals name="signup_cooldown_seconds">
+    <plurals name="cooldown_seconds">
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>
     </plurals>

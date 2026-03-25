@@ -38,7 +38,6 @@
     <!-- Login snackbar messages -->
     <string name="login_action_retry">Wiederholen</string>
     <string name="login_error_storage_temporarily_unavailable">Ein vorübergehendes Speicherproblem ist aufgetreten. Bitte versuchen Sie es erneut.</string>
-    <string name="login_error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
     <string name="login_error_network_unavailable">Keine Internetverbindung</string>
     <string name="login_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
     <string name="login_error_unknown">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
@@ -84,7 +83,6 @@
     <!-- Signup snackbar messages -->
     <string name="signup_action_retry">Wiederholen</string>
     <string name="signup_error_storage_temporarily_unavailable">Ein vorübergehendes Speicherproblem ist aufgetreten. Bitte versuchen Sie es erneut.</string>
-    <string name="signup_error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
     <string name="signup_error_network_unavailable">Keine Internetverbindung</string>
     <string name="signup_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
     <string name="signup_error_google_sign_up_failed">Google-Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
@@ -95,4 +93,7 @@
     <string name="signup_error_email_taken">Ein Konto mit dieser E-Mail-Adresse existiert bereits</string>
     <string name="signup_error_invalid_email_server">Diese E-Mail-Adresse kann nicht verwendet werden</string>
     <string name="signup_error_invalid_password_server">Das Passwort erfüllt nicht die Anforderungen</string>
+
+    <!-- UI utils -->
+    <string name="error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
 </resources>

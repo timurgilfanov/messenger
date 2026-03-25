@@ -285,8 +285,11 @@ class SignupFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             onNodeWithTag("signup_credentials_sign_up_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("signup_email_error"))
-            onNodeWithTag("signup_email_error")
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) {
+                onAllNodes(hasTestTag("signup_email_error"), useUnmergedTree = true)
+                    .fetchSemanticsNodes().size == 1
+            }
+            onNodeWithTag("signup_email_error", useUnmergedTree = true)
                 .assertTextEquals(activity.getString(R.string.login_error_blank_email))
         }
     }

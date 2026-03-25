@@ -50,27 +50,27 @@
     <string name="signup_error_invalid_password_server">The password does not meet requirements</string>
 
     <!-- Dialog error titles -->
-    <string name="dialog_error_storage_full_title">Storage full</string>
-    <string name="dialog_error_storage_corrupted_title">Storage corrupted</string>
-    <string name="dialog_error_storage_read_only_title">Storage error</string>
-    <string name="dialog_error_storage_access_denied_title">Permission denied</string>
+    <string name="auth_error_storage_full_title">Storage full</string>
+    <string name="auth_error_storage_corrupted_title">Storage corrupted</string>
+    <string name="auth_error_storage_read_only_title">Storage error</string>
+    <string name="auth_error_storage_access_denied_title">Permission denied</string>
 
     <!-- Dialog error messages -->
-    <string name="dialog_error_storage_full">Device storage is full. Free up space to continue.</string>
-    <string name="dialog_error_storage_corrupted">App data is corrupted. Clear app data to continue.</string>
-    <string name="dialog_error_storage_read_only">Storage is in read-only mode. Clear app data or restart the app.</string>
-    <string name="dialog_error_storage_access_denied">Storage permission denied. Grant permission in app settings.</string>
+    <string name="auth_error_storage_full">Device storage is full. Free up space to continue.</string>
+    <string name="auth_error_storage_corrupted">App data is corrupted. Clear app data to continue.</string>
+    <string name="auth_error_storage_read_only">Storage is in read-only mode. Clear app data or restart the app.</string>
+    <string name="auth_error_storage_access_denied">Storage permission denied. Grant permission in app settings.</string>
 
     <!-- Dialog error action buttons -->
-    <string name="dialog_action_open_app_settings">Open App Settings</string>
-    <string name="dialog_action_open_storage_settings">Open Storage Settings</string>
+    <string name="auth_action_open_app_settings">Open App Settings</string>
+    <string name="auth_action_open_storage_settings">Open Storage Settings</string>
 
     <!-- Snackbar messages -->
-    <string name="snackbar_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
-    <string name="snackbar_error_network_unavailable">No internet connection</string>
-    <string name="snackbar_error_service_unavailable">Service unavailable. Try again later.</string>
-    <string name="snackbar_error_unknown">Something went wrong. Please try again.</string>
-    <string name="snackbar_error_google_sign_in_failed">Google Sign-In failed. Please try again.</string>
-    <string name="snackbar_error_too_many_attempts">Too many attempts. Try again in %s.</string>
-    <string name="snackbar_action_retry">Retry</string>
+    <string name="auth_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
+    <string name="auth_error_network_unavailable">No internet connection</string>
+    <string name="auth_error_service_unavailable">Service unavailable. Try again later.</string>
+    <string name="auth_error_unknown">Something went wrong. Please try again.</string>
+    <string name="auth_error_google_sign_in_failed">Google Sign-In failed. Please try again.</string>
+    <string name="auth_error_too_many_attempts">Too many attempts. Try again in %s.</string>
+    <string name="auth_action_retry">Retry</string>
 </resources>

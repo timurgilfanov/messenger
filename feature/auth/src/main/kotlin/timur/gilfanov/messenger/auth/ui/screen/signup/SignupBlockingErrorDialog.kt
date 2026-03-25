@@ -17,27 +17,27 @@ private data class SignupBlockingErrorResources(
 
 private fun SignupBlockingError.toResources(): SignupBlockingErrorResources = when (this) {
     SignupBlockingError.StorageFull -> SignupBlockingErrorResources(
-        R.string.dialog_error_storage_full_title,
-        R.string.dialog_error_storage_full,
-        R.string.dialog_action_open_storage_settings,
+        R.string.auth_error_storage_full_title,
+        R.string.auth_error_storage_full,
+        R.string.auth_action_open_storage_settings,
     )
 
     SignupBlockingError.StorageCorrupted -> SignupBlockingErrorResources(
-        R.string.dialog_error_storage_corrupted_title,
-        R.string.dialog_error_storage_corrupted,
-        R.string.dialog_action_open_app_settings,
+        R.string.auth_error_storage_corrupted_title,
+        R.string.auth_error_storage_corrupted,
+        R.string.auth_action_open_app_settings,
     )
 
     SignupBlockingError.StorageReadOnly -> SignupBlockingErrorResources(
-        R.string.dialog_error_storage_read_only_title,
-        R.string.dialog_error_storage_read_only,
-        R.string.dialog_action_open_app_settings,
+        R.string.auth_error_storage_read_only_title,
+        R.string.auth_error_storage_read_only,
+        R.string.auth_action_open_app_settings,
     )
 
     SignupBlockingError.StorageAccessDenied -> SignupBlockingErrorResources(
-        R.string.dialog_error_storage_access_denied_title,
-        R.string.dialog_error_storage_access_denied,
-        R.string.dialog_action_open_app_settings,
+        R.string.auth_error_storage_access_denied_title,
+        R.string.auth_error_storage_access_denied,
+        R.string.auth_action_open_app_settings,
     )
 }
 

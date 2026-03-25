@@ -152,7 +152,7 @@ private fun SignupEffectHandler(
                         val message = effect.message
                         val actionLabel =
                             if (message is SignupSnackbarMessage.StorageTemporarilyUnavailable) {
-                                context.getString(R.string.snackbar_action_retry)
+                                context.getString(R.string.auth_action_retry)
                             } else {
                                 null
                             }
@@ -438,16 +438,16 @@ private fun SignupGeneralError.toDisplayString(): String = when (this) {
 
 private fun SignupSnackbarMessage.toDisplayString(context: Context): String = when (this) {
     SignupSnackbarMessage.NetworkUnavailable ->
-        context.getString(R.string.snackbar_error_network_unavailable)
+        context.getString(R.string.auth_error_network_unavailable)
 
     SignupSnackbarMessage.ServiceUnavailable ->
-        context.getString(R.string.snackbar_error_service_unavailable)
+        context.getString(R.string.auth_error_service_unavailable)
 
     SignupSnackbarMessage.GoogleSignInFailed ->
-        context.getString(R.string.snackbar_error_google_sign_in_failed)
+        context.getString(R.string.auth_error_google_sign_in_failed)
 
     SignupSnackbarMessage.StorageTemporarilyUnavailable ->
-        context.getString(R.string.snackbar_error_storage_temporarily_unavailable)
+        context.getString(R.string.auth_error_storage_temporarily_unavailable)
 
     is SignupSnackbarMessage.TooManyAttempts -> tooManyAttemptsDisplayString(context, remaining)
 }

@@ -48,27 +48,27 @@
     <string name="signup_error_invalid_password_server">Das Passwort erfüllt nicht die Anforderungen</string>
 
     <!-- Dialog error titles -->
-    <string name="dialog_error_storage_full_title">Speicher voll</string>
-    <string name="dialog_error_storage_corrupted_title">Speicher beschädigt</string>
-    <string name="dialog_error_storage_read_only_title">Speicherfehler</string>
-    <string name="dialog_error_storage_access_denied_title">Zugriff verweigert</string>
+    <string name="auth_error_storage_full_title">Speicher voll</string>
+    <string name="auth_error_storage_corrupted_title">Speicher beschädigt</string>
+    <string name="auth_error_storage_read_only_title">Speicherfehler</string>
+    <string name="auth_error_storage_access_denied_title">Zugriff verweigert</string>
 
     <!-- Dialog error messages -->
-    <string name="dialog_error_storage_full">Der Gerätespeicher ist voll. Geben Sie Speicherplatz frei, um fortzufahren.</string>
-    <string name="dialog_error_storage_corrupted">App-Daten sind beschädigt. Löschen Sie die App-Daten, um fortzufahren.</string>
-    <string name="dialog_error_storage_read_only">Der Speicher ist schreibgeschützt. Löschen Sie die App-Daten oder starten Sie die App neu.</string>
-    <string name="dialog_error_storage_access_denied">Speicherzugriff verweigert. Erteilen Sie die Berechtigung in den App-Einstellungen.</string>
+    <string name="auth_error_storage_full">Der Gerätespeicher ist voll. Geben Sie Speicherplatz frei, um fortzufahren.</string>
+    <string name="auth_error_storage_corrupted">App-Daten sind beschädigt. Löschen Sie die App-Daten, um fortzufahren.</string>
+    <string name="auth_error_storage_read_only">Der Speicher ist schreibgeschützt. Löschen Sie die App-Daten oder starten Sie die App neu.</string>
+    <string name="auth_error_storage_access_denied">Speicherzugriff verweigert. Erteilen Sie die Berechtigung in den App-Einstellungen.</string>
 
     <!-- Dialog error action buttons -->
-    <string name="dialog_action_open_app_settings">App-Einstellungen öffnen</string>
-    <string name="dialog_action_open_storage_settings">Speichereinstellungen öffnen</string>
+    <string name="auth_action_open_app_settings">App-Einstellungen öffnen</string>
+    <string name="auth_action_open_storage_settings">Speichereinstellungen öffnen</string>
 
     <!-- Snackbar messages -->
-    <string name="snackbar_error_storage_temporarily_unavailable">Ein vorübergehendes Speicherproblem ist aufgetreten. Bitte versuchen Sie es erneut.</string>
-    <string name="snackbar_error_network_unavailable">Keine Internetverbindung</string>
-    <string name="snackbar_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
-    <string name="snackbar_error_unknown">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
-    <string name="snackbar_error_google_sign_in_failed">Google-Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
-    <string name="snackbar_error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
-    <string name="snackbar_action_retry">Wiederholen</string>
+    <string name="auth_error_storage_temporarily_unavailable">Ein vorübergehendes Speicherproblem ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+    <string name="auth_error_network_unavailable">Keine Internetverbindung</string>
+    <string name="auth_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
+    <string name="auth_error_unknown">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+    <string name="auth_error_google_sign_in_failed">Google-Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
+    <string name="auth_error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
+    <string name="auth_action_retry">Wiederholen</string>
 </resources>

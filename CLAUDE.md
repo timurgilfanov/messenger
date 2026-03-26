@@ -36,7 +36,7 @@ Architecture Records (AR) and Architecture Decision Records (ADR) are kept in `d
 ### Key Architectural Patterns
 - **Result Pattern**: `ResultWithError<T, E>` wrapper for handling success/failure states
 - **Use Case Pattern**: Each business operation is encapsulated in a dedicated use case class
-- **Validation Pattern**: Separate validator classes with specific error types; feature-specific validators (interface + implementation) live in the feature module's `validation` package (e.g., `feature/auth/.../auth/validation/`); validator interfaces are `fun interface` so test stubs can be lambdas; the corresponding validation error sealed interface lives in `core/domain` when referenced by repository error types (e.g., `ProfileNameValidationError` in `...domain.usecase.auth.repository`), or in the feature module when purely feature-internal
+- **Validation Pattern**: Separate validator classes with specific error types; feature-specific validators (interface + implementation) live in the feature module's `domain/validation` package (e.g., `feature/auth/.../auth/domain/validation/`); validator interfaces are `fun interface` so test stubs can be lambdas; the corresponding validation error sealed interface lives in `core/domain` when referenced by repository error types (e.g., `ProfileNameValidationError` in `...domain.usecase.auth.repository`), or in the feature module when purely feature-internal
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
 - **Error Handling Pattern**: Repository errors follow a consistent cause preservation contract:
   - All `Unknown` error cases are `data class UnknownError(val cause: Throwable)` with non-nullable cause, never `data object`

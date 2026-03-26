@@ -467,6 +467,21 @@ private fun SignupScreenContentDarkPreview() {
 
 @Preview
 @Composable
+private fun SignupScreenContentWithFilledFieldsPreview() {
+    Content(
+        darkTheme = false,
+        state = SignupUiState(
+            name = "John Doe",
+            email = "user@example.com",
+            password = "Password1",
+            isNameValid = true,
+            isCredentialsValid = true,
+        ),
+    )
+}
+
+@Preview
+@Composable
 private fun SignupScreenContentLoadingPreview() {
     Content(darkTheme = false, state = SignupUiState(isLoading = true))
 }
@@ -476,7 +491,11 @@ private fun SignupScreenContentLoadingPreview() {
 private fun SignupScreenContentGeneralErrorPreview() {
     Content(
         darkTheme = false,
-        state = SignupUiState(generalError = SignupGeneralError.AccountAlreadyExists),
+        state = SignupUiState(
+            name = "John Doe",
+            isNameValid = true,
+            generalError = SignupGeneralError.AccountAlreadyExists,
+        ),
     )
 }
 

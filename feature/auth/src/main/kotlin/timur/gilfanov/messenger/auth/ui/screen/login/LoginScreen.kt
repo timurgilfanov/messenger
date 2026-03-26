@@ -3,9 +3,6 @@
 package timur.gilfanov.messenger.auth.ui.screen.login
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,7 +47,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.Flow
@@ -58,9 +54,11 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
-import timur.gilfanov.messenger.auth.ui.BlockingErrorDialog
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
+import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
+import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
+import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
@@ -159,7 +157,7 @@ private fun LoginEffectHandler(
                         val message = effect.message
                         val actionLabel =
                             if (message is LoginSnackbarMessage.StorageTemporarilyUnavailable) {
-                                context.getString(R.string.login_action_retry)
+                                context.getString(R.string.auth_action_retry)
                             } else {
                                 null
                             }
@@ -218,7 +216,7 @@ fun LoginScreenContent(
     }
 
     state.blockingError?.let { error ->
-        BlockingErrorDialog(
+        LoginBlockingErrorDialog(
             error = error,
             onOpenAppSettings = onOpenAppSettings,
             onOpenStorageSettings = onOpenStorageSettings,
@@ -397,75 +395,22 @@ private fun LoginGeneralError.toDisplayString(): String = when (this) {
 
 private fun LoginSnackbarMessage.toDisplayString(context: Context): String = when (this) {
     LoginSnackbarMessage.NetworkUnavailable ->
-        context.getString(R.string.login_error_network_unavailable)
+        context.getString(R.string.auth_error_network_unavailable)
 
     LoginSnackbarMessage.ServiceUnavailable ->
-        context.getString(R.string.login_error_service_unavailable)
+        context.getString(R.string.auth_error_service_unavailable)
 
     LoginSnackbarMessage.Unknown ->
-        context.getString(R.string.login_error_unknown)
+        context.getString(R.string.auth_error_unknown)
 
     LoginSnackbarMessage.GoogleSignInFailed ->
-        context.getString(R.string.login_error_google_sign_in_failed)
+        context.getString(R.string.auth_error_google_sign_in_failed)
 
     LoginSnackbarMessage.StorageTemporarilyUnavailable ->
-        context.getString(R.string.login_error_storage_temporarily_unavailable)
+        context.getString(R.string.auth_error_storage_temporarily_unavailable)
 
     is LoginSnackbarMessage.TooManyAttempts -> tooManyAttemptsDisplayString(context, remaining)
 }
-
-private fun tooManyAttemptsDisplayString(context: Context, remaining: Duration): String {
-    val totalSeconds = remaining.inWholeSeconds
-    val minutes = totalSeconds / SECONDS_PER_MINUTE
-    val seconds = totalSeconds % SECONDS_PER_MINUTE
-    val formatted = when {
-        minutes > 0 && seconds > 0 ->
-            "${
-                context.resources.getQuantityString(
-                    R.plurals.login_cooldown_minutes,
-                    minutes.toInt(),
-                    minutes,
-                )
-            } " +
-                context.resources.getQuantityString(
-                    R.plurals.login_cooldown_seconds,
-                    seconds.toInt(),
-                    seconds,
-                )
-
-        minutes > 0 ->
-            context.resources.getQuantityString(
-                R.plurals.login_cooldown_minutes,
-                minutes.toInt(),
-                minutes,
-            )
-
-        else ->
-            context.resources.getQuantityString(
-                R.plurals.login_cooldown_seconds,
-                seconds.toInt(),
-                seconds,
-            )
-    }
-    return context.getString(R.string.login_error_too_many_attempts, formatted)
-}
-
-private fun openAppSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-        data = Uri.fromParts("package", context.packageName, null)
-    }
-    context.startActivity(intent)
-}
-
-private fun openStorageSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
-    if (intent.resolveActivity(context.packageManager) == null) {
-        intent.action = Settings.ACTION_SETTINGS
-    }
-    context.startActivity(intent)
-}
-
-private const val SECONDS_PER_MINUTE = 60
 
 @Preview
 @Composable

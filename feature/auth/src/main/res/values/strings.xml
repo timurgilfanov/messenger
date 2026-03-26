@@ -21,31 +21,6 @@
 
     <string name="google_server_client_id" translatable="false">954783563995-s2vqh91na4he5lad90srq57mrv64bium.apps.googleusercontent.com</string>
 
-    <!-- Login blocking error titles -->
-    <string name="login_error_storage_full_title">Storage full</string>
-    <string name="login_error_storage_corrupted_title">Storage corrupted</string>
-    <string name="login_error_storage_read_only_title">Storage error</string>
-    <string name="login_error_storage_access_denied_title">Permission denied</string>
-
-    <!-- Login blocking error messages -->
-    <string name="login_error_storage_full">Device storage is full. Free up space to continue.</string>
-    <string name="login_error_storage_corrupted">App data is corrupted. Clear app data to continue.</string>
-    <string name="login_error_storage_read_only">Storage is in read-only mode. Clear app data or restart the app.</string>
-    <string name="login_error_storage_access_denied">Storage permission denied. Grant permission in app settings.</string>
-
-    <!-- Login blocking error action buttons -->
-    <string name="login_action_open_app_settings">Open App Settings</string>
-    <string name="login_action_open_storage_settings">Open Storage Settings</string>
-
-    <!-- Login snackbar messages -->
-    <string name="login_action_retry">Retry</string>
-    <string name="login_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
-    <string name="login_error_too_many_attempts">Too many attempts. Try again in %s.</string>
-    <string name="login_error_network_unavailable">No internet connection</string>
-    <string name="login_error_service_unavailable">Service unavailable. Try again later.</string>
-    <string name="login_error_unknown">Something went wrong. Please try again.</string>
-    <string name="login_error_google_sign_in_failed">Google Sign-In failed. Please try again.</string>
-
     <!-- Login general errors -->
     <string name="login_error_invalid_credentials">Invalid email or password</string>
     <string name="login_error_email_not_verified">Email not verified. Please check your inbox.</string>
@@ -66,35 +41,37 @@
     <string name="signup_error_name_length_out_of_bounds">Name must be between %1$d and %2$d characters</string>
     <string name="signup_error_name_forbidden_character">Name contains forbidden characters</string>
     <string name="signup_error_name_policy_violation">Name violates content policy</string>
-
-    <!-- Signup blocking error titles -->
-    <string name="signup_error_storage_full_title">Storage full</string>
-    <string name="signup_error_storage_corrupted_title">Storage corrupted</string>
-    <string name="signup_error_storage_read_only_title">Storage error</string>
-    <string name="signup_error_storage_access_denied_title">Permission denied</string>
-
-    <!-- Signup blocking error messages -->
-    <string name="signup_error_storage_full">Device storage is full. Free up space to continue.</string>
-    <string name="signup_error_storage_corrupted">App data is corrupted. Clear app data to continue.</string>
-    <string name="signup_error_storage_read_only">Storage is in read-only mode. Clear app data or restart the app.</string>
-    <string name="signup_error_storage_access_denied">Storage permission denied. Grant permission in app settings.</string>
-
-    <!-- Signup blocking error action buttons -->
-    <string name="signup_action_open_app_settings">Open App Settings</string>
-    <string name="signup_action_open_storage_settings">Open Storage Settings</string>
-
-    <!-- Signup snackbar messages -->
-    <string name="signup_action_retry">Retry</string>
-    <string name="signup_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
-    <string name="signup_error_too_many_attempts">Too many attempts. Try again in %s.</string>
-    <string name="signup_error_network_unavailable">No internet connection</string>
-    <string name="signup_error_service_unavailable">Service unavailable. Try again later.</string>
-    <string name="signup_error_google_sign_up_failed">Google Sign-Up failed. Please try again.</string>
+    <string name="signup_error_name_unknown_rule">Name is not allowed. Please choose a different name.</string>
 
     <!-- Signup general errors -->
     <string name="signup_error_invalid_token">Session expired. Please try again.</string>
     <string name="signup_error_account_already_exists">An account with this Google identity already exists</string>
     <string name="signup_error_email_taken">An account with this email already exists</string>
     <string name="signup_error_invalid_email_server">This email address cannot be used</string>
-    <string name="signup_error_invalid_password_server">Password does not meet requirements</string>
+    <string name="signup_error_invalid_password_server">The password does not meet requirements</string>
+
+    <!-- Dialog error titles -->
+    <string name="auth_error_storage_full_title">Storage full</string>
+    <string name="auth_error_storage_corrupted_title">Storage corrupted</string>
+    <string name="auth_error_storage_read_only_title">Storage error</string>
+    <string name="auth_error_storage_access_denied_title">Permission denied</string>
+
+    <!-- Dialog error messages -->
+    <string name="auth_error_storage_full">Device storage is full. Free up space to continue.</string>
+    <string name="auth_error_storage_corrupted">App data is corrupted. Clear app data to continue.</string>
+    <string name="auth_error_storage_read_only">Storage is in read-only mode. Clear app data or restart the app.</string>
+    <string name="auth_error_storage_access_denied">Storage permission denied. Grant permission in app settings.</string>
+
+    <!-- Dialog error action buttons -->
+    <string name="auth_action_open_app_settings">Open App Settings</string>
+    <string name="auth_action_open_storage_settings">Open Storage Settings</string>
+
+    <!-- Snackbar messages -->
+    <string name="auth_error_storage_temporarily_unavailable">A temporary storage issue occurred. Please try again.</string>
+    <string name="auth_error_network_unavailable">No internet connection</string>
+    <string name="auth_error_service_unavailable">Service unavailable. Try again later.</string>
+    <string name="auth_error_unknown">Something went wrong. Please try again.</string>
+    <string name="auth_error_google_sign_in_failed">Google Sign-In failed. Please try again.</string>
+    <string name="auth_error_too_many_attempts">Too many attempts. Try again in %s.</string>
+    <string name="auth_action_retry">Retry</string>
 </resources>

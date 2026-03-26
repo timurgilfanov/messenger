@@ -23,7 +23,7 @@ class SignupScreenTestActivity : ComponentActivity() {
         setContent {
             MessengerTheme {
                 SignupScreen(
-                    onNavigateToChatList = {},
+                    onNavigateToChatList = { finish() },
                     onNavigateBack = {},
                     googleSignInClient = googleSignInClient,
                     modifier = Modifier.fillMaxSize(),

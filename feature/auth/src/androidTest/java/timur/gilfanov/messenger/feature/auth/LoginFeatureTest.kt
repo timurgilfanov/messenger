@@ -44,6 +44,8 @@ import timur.gilfanov.messenger.auth.ui.GoogleSignInClientStub
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.LoginScreenTestActivity
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
+import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
+import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
@@ -115,6 +117,10 @@ class LoginFeatureTest {
         @Provides
         @Singleton
         fun provideLogger(): Logger = NoOpLogger()
+
+        @Provides
+        @Singleton
+        fun provideProfileNameValidator(): ProfileNameValidator = ProfileNameValidatorImpl()
 
         @Provides
         @Singleton

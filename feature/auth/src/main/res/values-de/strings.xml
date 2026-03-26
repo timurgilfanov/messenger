@@ -19,31 +19,6 @@
     <string name="login_error_password_must_contain_numbers">Passwort muss mindestens %d Zahl(en) enthalten</string>
     <string name="login_error_password_must_contain_alphabet">Passwort muss mindestens %d Buchstaben enthalten</string>
 
-    <!-- Login blocking error titles -->
-    <string name="login_error_storage_full_title">Speicher voll</string>
-    <string name="login_error_storage_corrupted_title">Speicher beschädigt</string>
-    <string name="login_error_storage_read_only_title">Speicherfehler</string>
-    <string name="login_error_storage_access_denied_title">Zugriff verweigert</string>
-
-    <!-- Login blocking error messages -->
-    <string name="login_error_storage_full">Der Gerätespeicher ist voll. Geben Sie Speicherplatz frei, um fortzufahren.</string>
-    <string name="login_error_storage_corrupted">App-Daten sind beschädigt. Löschen Sie die App-Daten, um fortzufahren.</string>
-    <string name="login_error_storage_read_only">Der Speicher ist schreibgeschützt. Löschen Sie die App-Daten oder starten Sie die App neu.</string>
-    <string name="login_error_storage_access_denied">Speicherzugriff verweigert. Erteilen Sie die Berechtigung in den App-Einstellungen.</string>
-
-    <!-- Login blocking error action buttons -->
-    <string name="login_action_open_app_settings">App-Einstellungen öffnen</string>
-    <string name="login_action_open_storage_settings">Speichereinstellungen öffnen</string>
-
-    <!-- Login snackbar messages -->
-    <string name="login_action_retry">Wiederholen</string>
-    <string name="login_error_storage_temporarily_unavailable">Ein vorübergehendes Speicherproblem ist aufgetreten. Bitte versuchen Sie es erneut.</string>
-    <string name="login_error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
-    <string name="login_error_network_unavailable">Keine Internetverbindung</string>
-    <string name="login_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
-    <string name="login_error_unknown">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
-    <string name="login_error_google_sign_in_failed">Google-Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
-
     <!-- Login general errors -->
     <string name="login_error_invalid_credentials">Ungültige E-Mail oder falsches Passwort</string>
     <string name="login_error_email_not_verified">E-Mail nicht verifiziert. Bitte überprüfen Sie Ihren Posteingang.</string>
@@ -65,30 +40,7 @@
     <string name="signup_error_name_length_out_of_bounds">Name muss zwischen %1$d und %2$d Zeichen lang sein</string>
     <string name="signup_error_name_forbidden_character">Name enthält verbotene Zeichen</string>
     <string name="signup_error_name_policy_violation">Name verstößt gegen die Inhaltsrichtlinien</string>
-
-    <!-- Signup blocking error titles -->
-    <string name="signup_error_storage_full_title">Speicher voll</string>
-    <string name="signup_error_storage_corrupted_title">Speicher beschädigt</string>
-    <string name="signup_error_storage_read_only_title">Speicherfehler</string>
-    <string name="signup_error_storage_access_denied_title">Zugriff verweigert</string>
-
-    <!-- Signup blocking error messages -->
-    <string name="signup_error_storage_full">Der Gerätespeicher ist voll. Geben Sie Speicherplatz frei, um fortzufahren.</string>
-    <string name="signup_error_storage_corrupted">App-Daten sind beschädigt. Löschen Sie die App-Daten, um fortzufahren.</string>
-    <string name="signup_error_storage_read_only">Der Speicher ist schreibgeschützt. Löschen Sie die App-Daten oder starten Sie die App neu.</string>
-    <string name="signup_error_storage_access_denied">Speicherzugriff verweigert. Erteilen Sie die Berechtigung in den App-Einstellungen.</string>
-
-    <!-- Signup blocking error action buttons -->
-    <string name="signup_action_open_app_settings">App-Einstellungen öffnen</string>
-    <string name="signup_action_open_storage_settings">Speichereinstellungen öffnen</string>
-
-    <!-- Signup snackbar messages -->
-    <string name="signup_action_retry">Wiederholen</string>
-    <string name="signup_error_storage_temporarily_unavailable">Ein vorübergehendes Speicherproblem ist aufgetreten. Bitte versuchen Sie es erneut.</string>
-    <string name="signup_error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
-    <string name="signup_error_network_unavailable">Keine Internetverbindung</string>
-    <string name="signup_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
-    <string name="signup_error_google_sign_up_failed">Google-Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
+    <string name="signup_error_name_unknown_rule">Dieser Name ist nicht erlaubt. Bitte wählen Sie einen anderen Namen.</string>
 
     <!-- Signup general errors -->
     <string name="signup_error_invalid_token">Sitzung abgelaufen. Bitte versuchen Sie es erneut.</string>
@@ -96,4 +48,29 @@
     <string name="signup_error_email_taken">Ein Konto mit dieser E-Mail-Adresse existiert bereits</string>
     <string name="signup_error_invalid_email_server">Diese E-Mail-Adresse kann nicht verwendet werden</string>
     <string name="signup_error_invalid_password_server">Das Passwort erfüllt nicht die Anforderungen</string>
+
+    <!-- Dialog error titles -->
+    <string name="auth_error_storage_full_title">Speicher voll</string>
+    <string name="auth_error_storage_corrupted_title">Speicher beschädigt</string>
+    <string name="auth_error_storage_read_only_title">Speicherfehler</string>
+    <string name="auth_error_storage_access_denied_title">Zugriff verweigert</string>
+
+    <!-- Dialog error messages -->
+    <string name="auth_error_storage_full">Der Gerätespeicher ist voll. Geben Sie Speicherplatz frei, um fortzufahren.</string>
+    <string name="auth_error_storage_corrupted">App-Daten sind beschädigt. Löschen Sie die App-Daten, um fortzufahren.</string>
+    <string name="auth_error_storage_read_only">Der Speicher ist schreibgeschützt. Löschen Sie die App-Daten oder starten Sie die App neu.</string>
+    <string name="auth_error_storage_access_denied">Speicherzugriff verweigert. Erteilen Sie die Berechtigung in den App-Einstellungen.</string>
+
+    <!-- Dialog error action buttons -->
+    <string name="auth_action_open_app_settings">App-Einstellungen öffnen</string>
+    <string name="auth_action_open_storage_settings">Speichereinstellungen öffnen</string>
+
+    <!-- Snackbar messages -->
+    <string name="auth_error_storage_temporarily_unavailable">Ein vorübergehendes Speicherproblem ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+    <string name="auth_error_network_unavailable">Keine Internetverbindung</string>
+    <string name="auth_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
+    <string name="auth_error_unknown">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
+    <string name="auth_error_google_sign_in_failed">Google-Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
+    <string name="auth_error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
+    <string name="auth_action_retry">Wiederholen</string>
 </resources>

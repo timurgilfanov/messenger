@@ -3,9 +3,6 @@
 package timur.gilfanov.messenger.auth.ui.screen.signup
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -51,7 +47,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import kotlin.time.Duration
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
@@ -59,6 +54,9 @@ import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
+import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
+import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
+import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
@@ -101,7 +99,7 @@ fun SignupScreen(
 
                     GoogleSignInResult.Failed -> {
                         isSigningUpWithGoogle = false
-                        val msg = SignupSnackbarMessage.GoogleSignUpFailed.toDisplayString(context)
+                        val msg = SignupSnackbarMessage.GoogleSignInFailed.toDisplayString(context)
                         snackbarHostState.showSnackbar(
                             message = msg,
                             duration = SnackbarDuration.Long,
@@ -155,7 +153,7 @@ private fun SignupEffectHandler(
                         val message = effect.message
                         val actionLabel =
                             if (message is SignupSnackbarMessage.StorageTemporarilyUnavailable) {
-                                context.getString(R.string.signup_action_retry)
+                                context.getString(R.string.auth_action_retry)
                             } else {
                                 null
                             }
@@ -401,67 +399,6 @@ private fun ConfirmPasswordField(
     )
 }
 
-private data class SignupBlockingErrorResources(
-    val titleRes: Int,
-    val messageRes: Int,
-    val actionLabelRes: Int,
-)
-
-private fun SignupBlockingError.toResources(): SignupBlockingErrorResources = when (this) {
-    SignupBlockingError.StorageFull -> SignupBlockingErrorResources(
-        R.string.signup_error_storage_full_title,
-        R.string.signup_error_storage_full,
-        R.string.signup_action_open_storage_settings,
-    )
-
-    SignupBlockingError.StorageCorrupted -> SignupBlockingErrorResources(
-        R.string.signup_error_storage_corrupted_title,
-        R.string.signup_error_storage_corrupted,
-        R.string.signup_action_open_app_settings,
-    )
-
-    SignupBlockingError.StorageReadOnly -> SignupBlockingErrorResources(
-        R.string.signup_error_storage_read_only_title,
-        R.string.signup_error_storage_read_only,
-        R.string.signup_action_open_app_settings,
-    )
-
-    SignupBlockingError.StorageAccessDenied -> SignupBlockingErrorResources(
-        R.string.signup_error_storage_access_denied_title,
-        R.string.signup_error_storage_access_denied,
-        R.string.signup_action_open_app_settings,
-    )
-}
-
-@Composable
-private fun SignupBlockingErrorDialog(
-    error: SignupBlockingError,
-    onOpenAppSettings: () -> Unit,
-    onOpenStorageSettings: () -> Unit,
-) {
-    val res = error.toResources()
-    val onClick = when (error) {
-        SignupBlockingError.StorageFull -> onOpenStorageSettings
-
-        SignupBlockingError.StorageCorrupted,
-        SignupBlockingError.StorageReadOnly,
-        SignupBlockingError.StorageAccessDenied,
-        -> onOpenAppSettings
-    }
-    AlertDialog(
-        onDismissRequest = {},
-        title = { Text(stringResource(res.titleRes)) },
-        text = { Text(stringResource(res.messageRes)) },
-        confirmButton = {
-            TextButton(
-                onClick = onClick,
-                modifier = Modifier.testTag("signup_blocking_error_action_button"),
-            ) { Text(stringResource(res.actionLabelRes)) }
-        },
-        modifier = Modifier.testTag("signup_blocking_error_dialog"),
-    )
-}
-
 @Composable
 private fun ProfileNameValidationError.toDisplayString(): String = when (this) {
     is ProfileNameValidationError.LengthOutOfBounds ->
@@ -475,7 +412,8 @@ private fun ProfileNameValidationError.toDisplayString(): String = when (this) {
     is ProfileNameValidationError.PlatformPolicyViolation.IllegalSubstance,
     -> stringResource(R.string.signup_error_name_policy_violation)
 
-    is ProfileNameValidationError.UnknownRuleViolation -> reason
+    is ProfileNameValidationError.UnknownRuleViolation ->
+        stringResource(R.string.signup_error_name_unknown_rule)
 }
 
 @Composable
@@ -530,72 +468,19 @@ private fun SignupGeneralError.toDisplayString(): String = when (this) {
 
 private fun SignupSnackbarMessage.toDisplayString(context: Context): String = when (this) {
     SignupSnackbarMessage.NetworkUnavailable ->
-        context.getString(R.string.signup_error_network_unavailable)
+        context.getString(R.string.auth_error_network_unavailable)
 
     SignupSnackbarMessage.ServiceUnavailable ->
-        context.getString(R.string.signup_error_service_unavailable)
+        context.getString(R.string.auth_error_service_unavailable)
 
-    SignupSnackbarMessage.GoogleSignUpFailed ->
-        context.getString(R.string.signup_error_google_sign_up_failed)
+    SignupSnackbarMessage.GoogleSignInFailed ->
+        context.getString(R.string.auth_error_google_sign_in_failed)
 
     SignupSnackbarMessage.StorageTemporarilyUnavailable ->
-        context.getString(R.string.signup_error_storage_temporarily_unavailable)
+        context.getString(R.string.auth_error_storage_temporarily_unavailable)
 
     is SignupSnackbarMessage.TooManyAttempts -> tooManyAttemptsDisplayString(context, remaining)
 }
-
-private fun tooManyAttemptsDisplayString(context: Context, remaining: Duration): String {
-    val totalSeconds = remaining.inWholeSeconds
-    val minutes = totalSeconds / SECONDS_PER_MINUTE
-    val seconds = totalSeconds % SECONDS_PER_MINUTE
-    val formatted = when {
-        minutes > 0 && seconds > 0 ->
-            "${
-                context.resources.getQuantityString(
-                    R.plurals.signup_cooldown_minutes,
-                    minutes.toInt(),
-                    minutes,
-                )
-            } " +
-                context.resources.getQuantityString(
-                    R.plurals.signup_cooldown_seconds,
-                    seconds.toInt(),
-                    seconds,
-                )
-
-        minutes > 0 ->
-            context.resources.getQuantityString(
-                R.plurals.signup_cooldown_minutes,
-                minutes.toInt(),
-                minutes,
-            )
-
-        else ->
-            context.resources.getQuantityString(
-                R.plurals.signup_cooldown_seconds,
-                seconds.toInt(),
-                seconds,
-            )
-    }
-    return context.getString(R.string.signup_error_too_many_attempts, formatted)
-}
-
-private fun openAppSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-        data = Uri.fromParts("package", context.packageName, null)
-    }
-    context.startActivity(intent)
-}
-
-private fun openStorageSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
-    if (intent.resolveActivity(context.packageManager) == null) {
-        intent.action = Settings.ACTION_SETTINGS
-    }
-    context.startActivity(intent)
-}
-
-private const val SECONDS_PER_MINUTE = 60
 
 @Preview
 @Composable

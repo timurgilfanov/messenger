@@ -291,8 +291,11 @@ class SignupFeatureTest {
             onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("signup_confirm_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("signup_credentials_sign_up_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("signup_email_error"))
-            onNodeWithTag("signup_email_error")
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) {
+                onAllNodes(hasTestTag("signup_email_error"), useUnmergedTree = true)
+                    .fetchSemanticsNodes().size == 1
+            }
+            onNodeWithTag("signup_email_error", useUnmergedTree = true)
                 .assertTextEquals(activity.getString(R.string.login_error_blank_email))
         }
     }
@@ -334,7 +337,7 @@ class SignupFeatureTest {
             waitUntilExactlyOneExists(hasTestTag("signup_blocking_error_dialog"))
             onNodeWithTag("signup_blocking_error_action_button")
                 .assertTextEquals(
-                    activity.getString(R.string.signup_action_open_storage_settings),
+                    activity.getString(R.string.auth_action_open_storage_settings),
                 )
         }
     }
@@ -349,7 +352,7 @@ class SignupFeatureTest {
             )
             onNodeWithTag("signup_google_sign_up_button").performClick()
             waitUntilExactlyOneExists(
-                hasText(activity.getString(R.string.signup_error_google_sign_up_failed)),
+                hasText(activity.getString(R.string.auth_error_google_sign_in_failed)),
             )
         }
     }

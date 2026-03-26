@@ -46,7 +46,7 @@ class LoginViewModelProcessDeathTest {
     @Test
     fun `saved state handle do not store password`() = runTest {
         val handle = SavedStateHandle()
-        val viewModel = SignupViewModelTestFixtures.createViewModel(savedStateHandle = handle)
+        val viewModel = createViewModel(savedStateHandle = handle)
 
         viewModel.updatePassword(SAMPLE_PASSWORD)
 

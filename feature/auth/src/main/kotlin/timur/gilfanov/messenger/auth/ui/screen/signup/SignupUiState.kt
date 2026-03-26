@@ -26,6 +26,9 @@ data class SignupUiState(
     val isGoogleSubmitEnabled: Boolean get() = !isLoading && isNameValid
     val isCredentialsSubmitEnabled: Boolean
         get() = !isLoading && isNameValid && isCredentialsValid && isPasswordConfirmed
+    val isPasswordMismatched: Boolean
+        get() = !isPasswordConfirmed && password.trim().length == confirmPassword.trim().length &&
+            password.isNotBlank()
 }
 
 @Immutable

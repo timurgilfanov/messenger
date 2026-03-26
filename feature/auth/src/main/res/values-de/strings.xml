@@ -41,6 +41,7 @@
     <string name="signup_error_name_forbidden_character">Name enthält verbotene Zeichen</string>
     <string name="signup_error_name_policy_violation">Name verstößt gegen die Inhaltsrichtlinien</string>
     <string name="signup_error_name_unknown_rule">Dieser Name ist nicht erlaubt. Bitte wählen Sie einen anderen Namen.</string>
+    <string name="signup_error_password_mismatch">Passwörter stimmen nicht überein</string>
 
     <!-- Signup general errors -->
     <string name="signup_error_invalid_token">Sitzung abgelaufen. Bitte versuchen Sie es erneut.</string>

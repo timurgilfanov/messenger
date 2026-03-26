@@ -256,7 +256,11 @@ private fun SignupForm(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        ConfirmPasswordField(state.confirmPassword, onConfirmPasswordChange)
+        ConfirmPasswordField(
+            confirmPassword = state.confirmPassword,
+            isPasswordMismatch = state.isPasswordMismatched,
+            onConfirmPasswordChange = onConfirmPasswordChange,
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -381,6 +385,7 @@ private fun PasswordField(
 @Composable
 private fun ConfirmPasswordField(
     confirmPassword: String,
+    isPasswordMismatch: Boolean,
     onConfirmPasswordChange: (String) -> Unit,
 ) {
     OutlinedTextField(
@@ -393,6 +398,12 @@ private fun ConfirmPasswordField(
             imeAction = ImeAction.Done,
         ),
         singleLine = true,
+        isError = isPasswordMismatch,
+        supportingText = if (isPasswordMismatch) {
+            { Text(stringResource(R.string.signup_error_password_mismatch)) }
+        } else {
+            null
+        },
         modifier = Modifier
             .fillMaxWidth()
             .testTag("signup_confirm_password_field"),
@@ -455,12 +466,14 @@ private fun SignupGeneralError.toDisplayString(): String = when (this) {
     SignupGeneralError.InvalidToken -> stringResource(R.string.signup_error_invalid_token)
     SignupGeneralError.AccountAlreadyExists ->
         stringResource(R.string.signup_error_account_already_exists)
+
     is SignupGeneralError.InvalidEmail -> when (reason) {
         EmailValidationError.EmailTaken -> stringResource(R.string.signup_error_email_taken)
         EmailValidationError.EmailNotExists,
         is EmailValidationError.UnknownRuleViolation,
         -> stringResource(R.string.signup_error_invalid_email_server)
     }
+
     is SignupGeneralError.InvalidPassword -> stringResource(
         R.string.signup_error_invalid_password_server,
     )
@@ -500,6 +513,8 @@ private const val EMAIL = "user@example.com"
 
 private const val PASSWORD = "Password1"
 
+private const val PASSWORD_2 = "Password2"
+
 @Preview
 @Composable
 private fun SignupScreenContentWithFilledFieldsPreview() {
@@ -532,6 +547,23 @@ private fun SignupScreenContentGeneralErrorPreview() {
             name = NAME,
             isNameValid = true,
             generalError = SignupGeneralError.AccountAlreadyExists,
+        ),
+    )
+}
+
+@Preview
+@Composable
+private fun SignupScreenContentPasswordMismatchedPreview() {
+    Content(
+        darkTheme = false,
+        state = SignupUiState(
+            name = NAME,
+            email = EMAIL,
+            password = PASSWORD,
+            confirmPassword = PASSWORD_2,
+            isNameValid = true,
+            isCredentialsValid = true,
+            isPasswordConfirmed = false,
         ),
     )
 }

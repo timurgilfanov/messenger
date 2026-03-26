@@ -44,7 +44,7 @@ class LoginViewModelProcessDeathTest {
     }
 
     @Test
-    fun `saved state handle do not store password`() = runTest {
+    fun `saved state handle does not store password`() = runTest {
         val handle = SavedStateHandle()
         val viewModel = createViewModel(savedStateHandle = handle)
 

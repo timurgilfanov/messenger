@@ -32,7 +32,6 @@ sealed interface LoginGeneralError {
 sealed interface LoginSnackbarMessage {
     data object NetworkUnavailable : LoginSnackbarMessage
     data object ServiceUnavailable : LoginSnackbarMessage
-    data object Unknown : LoginSnackbarMessage
     data object GoogleSignInFailed : LoginSnackbarMessage
     data object StorageTemporarilyUnavailable : LoginSnackbarMessage
     data class TooManyAttempts(val remaining: Duration) : LoginSnackbarMessage

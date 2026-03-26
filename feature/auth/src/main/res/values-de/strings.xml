@@ -70,7 +70,6 @@
     <string name="auth_error_storage_temporarily_unavailable">Ein vorübergehendes Speicherproblem ist aufgetreten. Bitte versuchen Sie es erneut.</string>
     <string name="auth_error_network_unavailable">Keine Internetverbindung</string>
     <string name="auth_error_service_unavailable">Dienst nicht verfügbar. Versuchen Sie es später erneut.</string>
-    <string name="auth_error_unknown">Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</string>
     <string name="auth_error_google_sign_in_failed">Google-Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.</string>
     <string name="auth_error_too_many_attempts">Zu viele Versuche. Versuchen Sie es in %s erneut.</string>
     <string name="auth_action_retry">Wiederholen</string>

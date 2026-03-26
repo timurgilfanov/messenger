@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.auth.ui
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -309,6 +310,19 @@ class LoginViewModelSubmitTest {
             advanceUntilIdle()
             assertNull(viewModel.state.value.blockingError)
             assertIs<LoginSideEffects.NavigateToChatList>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `retryLastAction with no prior submit is a no-op`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.effects.test {
+            viewModel.retryLastAction()
+            advanceUntilIdle()
+            assertNull(viewModel.state.value.blockingError)
+            assertFalse(viewModel.state.value.isLoading)
+            expectNoEvents()
         }
     }
 

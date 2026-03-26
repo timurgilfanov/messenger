@@ -29,6 +29,7 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
 
 @HiltViewModel
+@Suppress("TooManyFunctions") // a lot of actions required in this ViewModel
 class SignupViewModel @Inject constructor(
     private val signupWithGoogle: SignupWithGoogleUseCase,
     private val signupWithCredentials: SignupWithCredentialsUseCase,
@@ -90,11 +91,24 @@ class SignupViewModel @Inject constructor(
         val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
         ) is ResultWithError.Success
+        val currentConfirmPassword = _state.value.confirmPassword
+        val isPasswordConfirmed = password == currentConfirmPassword
         _state.update {
             it.copy(
                 password = password,
                 passwordError = null,
                 isCredentialsValid = isCredentialsValid,
+                isPasswordConfirmed = isPasswordConfirmed,
+            )
+        }
+    }
+
+    fun updateConfirmPassword(confirmPassword: String) {
+        val isPasswordConfirmed = confirmPassword == _state.value.password
+        _state.update {
+            it.copy(
+                confirmPassword = confirmPassword,
+                isPasswordConfirmed = isPasswordConfirmed,
             )
         }
     }

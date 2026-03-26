@@ -43,8 +43,19 @@ class LoginViewModelProcessDeathTest {
         assertEquals(SAMPLE_EMAIL, handle.get<String>(EMAIL_KEY))
     }
 
+    @Test
+    fun `saved state handle does not store password`() = runTest {
+        val handle = SavedStateHandle()
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.updatePassword(SAMPLE_PASSWORD)
+
+        assertEquals(0, handle.keys().size)
+    }
+
     private companion object {
         const val EMAIL_KEY = "email"
         const val SAMPLE_EMAIL = "user@example.com"
+        const val SAMPLE_PASSWORD = "Password1"
     }
 }

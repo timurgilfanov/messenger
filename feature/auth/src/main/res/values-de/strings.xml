@@ -31,6 +31,7 @@
     <string name="signup_name_label">Name</string>
     <string name="signup_email_label">E-Mail</string>
     <string name="signup_password_label">Passwort</string>
+    <string name="signup_confirm_password_label">Passwort bestätigen</string>
     <string name="signup_sign_up_button">Registrieren</string>
     <string name="signup_sign_up_with_google_button">Mit Google registrieren</string>
     <string name="signup_already_have_account_button">Bereits ein Konto? Anmelden</string>
@@ -40,6 +41,7 @@
     <string name="signup_error_name_forbidden_character">Name enthält verbotene Zeichen</string>
     <string name="signup_error_name_policy_violation">Name verstößt gegen die Inhaltsrichtlinien</string>
     <string name="signup_error_name_unknown_rule">Dieser Name ist nicht erlaubt. Bitte wählen Sie einen anderen Namen.</string>
+    <string name="signup_error_password_mismatch">Passwörter stimmen nicht überein</string>
 
     <!-- Signup general errors -->
     <string name="signup_error_invalid_token">Sitzung abgelaufen. Bitte versuchen Sie es erneut.</string>

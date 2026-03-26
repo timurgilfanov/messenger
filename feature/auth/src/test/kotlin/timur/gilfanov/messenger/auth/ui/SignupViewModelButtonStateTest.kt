@@ -13,6 +13,12 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.auth.ui.SignupViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
+private const val VALID_NAME = "Alice"
+private const val VALID_EMAIL = "user@example.com"
+private const val VALID_PASSWORD = "password1"
+private const val VALID_PASSWORD_2 = "password2"
+private const val INVALID_SHORT_PASSWORD = "short"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class SignupViewModelButtonStateTest {
@@ -35,7 +41,7 @@ class SignupViewModelButtonStateTest {
     fun `valid name only - only Google enabled`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateName("Alice")
+        viewModel.updateName(VALID_NAME)
 
         viewModel.state.test {
             val state = awaitItem()
@@ -48,8 +54,8 @@ class SignupViewModelButtonStateTest {
     fun `valid credentials but no name - both disabled`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateEmail("user@example.com")
-        viewModel.updatePassword("password1")
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
 
         viewModel.state.test {
             val state = awaitItem()
@@ -62,9 +68,9 @@ class SignupViewModelButtonStateTest {
     fun `valid name and valid email but invalid password - only Google enabled`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateName("Alice")
-        viewModel.updateEmail("user@example.com")
-        viewModel.updatePassword("short")
+        viewModel.updateName(VALID_NAME)
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(INVALID_SHORT_PASSWORD)
 
         viewModel.state.test {
             val state = awaitItem()
@@ -77,10 +83,10 @@ class SignupViewModelButtonStateTest {
     fun `all valid - both buttons enabled`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateName("Alice")
-        viewModel.updateEmail("user@example.com")
-        viewModel.updatePassword("password1")
-        viewModel.updateConfirmPassword("password1")
+        viewModel.updateName(VALID_NAME)
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
+        viewModel.updateConfirmPassword(VALID_PASSWORD)
 
         viewModel.state.test {
             val state = awaitItem()
@@ -93,10 +99,10 @@ class SignupViewModelButtonStateTest {
     fun `loading state - both buttons disabled`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateName("Alice")
-        viewModel.updateEmail("user@example.com")
-        viewModel.updatePassword("password1")
-        viewModel.updateConfirmPassword("password1")
+        viewModel.updateName(VALID_NAME)
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
+        viewModel.updateConfirmPassword(VALID_PASSWORD)
 
         viewModel.state.test {
             skipItems(1)
@@ -114,10 +120,10 @@ class SignupViewModelButtonStateTest {
     fun `both buttons re-enabled after loading completes`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateName("Alice")
-        viewModel.updateEmail("user@example.com")
-        viewModel.updatePassword("password1")
-        viewModel.updateConfirmPassword("password1")
+        viewModel.updateName(VALID_NAME)
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
+        viewModel.updateConfirmPassword(VALID_PASSWORD)
 
         viewModel.state.test {
             skipItems(1)
@@ -141,10 +147,10 @@ class SignupViewModelButtonStateTest {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.updateName("Alice")
-            viewModel.updateEmail("user@example.com")
-            viewModel.updatePassword("password1")
-            viewModel.updateConfirmPassword("password2")
+            viewModel.updateName(VALID_NAME)
+            viewModel.updateEmail(VALID_EMAIL)
+            viewModel.updatePassword(VALID_PASSWORD)
+            viewModel.updateConfirmPassword(VALID_PASSWORD_2)
 
             viewModel.state.test {
                 val state = awaitItem()
@@ -158,11 +164,11 @@ class SignupViewModelButtonStateTest {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.updateName("Alice")
-            viewModel.updateEmail("user@example.com")
-            viewModel.updatePassword("password1")
-            viewModel.updateConfirmPassword("password2")
-            viewModel.updateConfirmPassword("password1")
+            viewModel.updateName(VALID_NAME)
+            viewModel.updateEmail(VALID_EMAIL)
+            viewModel.updatePassword(VALID_PASSWORD)
+            viewModel.updateConfirmPassword(VALID_PASSWORD_2)
+            viewModel.updateConfirmPassword(VALID_PASSWORD)
 
             viewModel.state.test {
                 val state = awaitItem()
@@ -176,11 +182,11 @@ class SignupViewModelButtonStateTest {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.updateName("Alice")
-            viewModel.updateEmail("user@example.com")
-            viewModel.updatePassword("password1")
-            viewModel.updateConfirmPassword("password1")
-            viewModel.updatePassword("password2")
+            viewModel.updateName(VALID_NAME)
+            viewModel.updateEmail(VALID_EMAIL)
+            viewModel.updatePassword(VALID_PASSWORD)
+            viewModel.updateConfirmPassword(VALID_PASSWORD)
+            viewModel.updatePassword(VALID_PASSWORD_2)
 
             viewModel.state.test {
                 val state = awaitItem()
@@ -193,10 +199,10 @@ class SignupViewModelButtonStateTest {
     fun `credentials button disabled when confirm password cleared after match`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateName("Alice")
-        viewModel.updateEmail("user@example.com")
-        viewModel.updatePassword("password1")
-        viewModel.updateConfirmPassword("password1")
+        viewModel.updateName(VALID_NAME)
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
+        viewModel.updateConfirmPassword(VALID_PASSWORD)
         viewModel.updateConfirmPassword("")
 
         viewModel.state.test {

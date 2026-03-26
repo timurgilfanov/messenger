@@ -15,14 +15,14 @@ import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseError
-import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
+import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.auth.Password
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError

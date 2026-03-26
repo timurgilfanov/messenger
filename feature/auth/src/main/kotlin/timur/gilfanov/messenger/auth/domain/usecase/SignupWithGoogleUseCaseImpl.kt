@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.auth.domain.usecase
 
-import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
+import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.fold

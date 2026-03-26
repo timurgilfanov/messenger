@@ -54,13 +54,13 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
 import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
 import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
-import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable

@@ -17,6 +17,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.auth.ui.LoginViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginBlockingError
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginGeneralError
@@ -25,8 +27,6 @@ import timur.gilfanov.messenger.auth.ui.screen.login.LoginSnackbarMessage
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginViewModel
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError

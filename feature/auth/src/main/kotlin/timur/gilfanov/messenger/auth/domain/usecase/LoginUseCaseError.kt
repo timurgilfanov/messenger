@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.auth.domain.usecase
 
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError

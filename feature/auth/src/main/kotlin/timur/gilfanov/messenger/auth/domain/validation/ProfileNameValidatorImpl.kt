@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.validation
+package timur.gilfanov.messenger.auth.domain.validation
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError

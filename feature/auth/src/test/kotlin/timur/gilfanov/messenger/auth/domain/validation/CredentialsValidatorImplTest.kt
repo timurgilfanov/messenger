@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.validation
+package timur.gilfanov.messenger.auth.domain.validation
 
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -10,7 +10,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.Password
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class CredentialsValidatorImplTest {

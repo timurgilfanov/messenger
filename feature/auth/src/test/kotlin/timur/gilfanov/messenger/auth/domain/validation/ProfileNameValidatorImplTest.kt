@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.validation
+package timur.gilfanov.messenger.auth.domain.validation
 
 import kotlin.test.assertIs
 import org.junit.Test

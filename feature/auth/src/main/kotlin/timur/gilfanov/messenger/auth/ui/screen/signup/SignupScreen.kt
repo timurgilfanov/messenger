@@ -364,7 +364,7 @@ private fun PasswordField(
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
-            imeAction = ImeAction.Done,
+            imeAction = ImeAction.Next,
         ),
         singleLine = true,
         isError = passwordError != null,
@@ -400,7 +400,12 @@ private fun ConfirmPasswordField(
         singleLine = true,
         isError = isPasswordMismatch,
         supportingText = if (isPasswordMismatch) {
-            { Text(stringResource(R.string.signup_error_password_mismatch)) }
+            {
+                Text(
+                    text = stringResource(R.string.signup_error_password_mismatch),
+                    modifier = Modifier.testTag("signup_confirm_password_error"),
+                )
+            }
         } else {
             null
         },

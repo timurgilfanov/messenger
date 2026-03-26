@@ -2,5 +2,6 @@
 
     <application>
         <activity android:name="timur.gilfanov.messenger.auth.ui.LoginScreenTestActivity" />
+        <activity android:name="timur.gilfanov.messenger.auth.ui.SignupScreenTestActivity" />
     </application>
 </manifest>

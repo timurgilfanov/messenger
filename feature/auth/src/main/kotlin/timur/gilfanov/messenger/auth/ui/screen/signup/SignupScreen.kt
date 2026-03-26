@@ -1,6 +1,6 @@
 @file:Suppress("TooManyFunctions")
 
-package timur.gilfanov.messenger.auth.ui.screen.login
+package timur.gilfanov.messenger.auth.ui.screen.signup
 
 import android.content.Context
 import androidx.compose.foundation.background
@@ -47,8 +47,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
@@ -59,50 +57,49 @@ import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
 import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
 import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
-import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
-fun LoginScreen(
+fun SignupScreen(
     onNavigateToChatList: () -> Unit,
-    onNavigateToSignup: () -> Unit,
+    onNavigateBack: () -> Unit,
     googleSignInClient: GoogleSignInClient,
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = hiltViewModel(),
+    viewModel: SignupViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val currentOnNavigateToSignup by rememberUpdatedState(onNavigateToSignup)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    var isSigningInWithGoogle by remember { mutableStateOf(false) }
+    var isSigningUpWithGoogle by remember { mutableStateOf(false) }
 
-    LoginEffectHandler(
+    SignupEffectHandler(
         effects = viewModel.effects,
         snackbarHostState = snackbarHostState,
         onNavigateToChatList = onNavigateToChatList,
-        onNavigateToSignup = onNavigateToSignup,
         onRetry = viewModel::retryLastAction,
     )
 
-    val onGoogleSignInClick: () -> Unit = {
-        if (!isSigningInWithGoogle) {
-            isSigningInWithGoogle = true
+    val onGoogleSignUpClick: () -> Unit = {
+        if (!isSigningUpWithGoogle) {
+            isSigningUpWithGoogle = true
             scope.launch {
                 when (val result = googleSignInClient.signIn(context)) {
                     is GoogleSignInResult.Success -> {
-                        viewModel.submitGoogleSignIn(result.idToken)
-                        isSigningInWithGoogle = false
+                        viewModel.submitSignupWithGoogle(result.idToken)
+                        isSigningUpWithGoogle = false
                     }
 
                     GoogleSignInResult.Cancelled -> {
-                        isSigningInWithGoogle = false
+                        isSigningUpWithGoogle = false
                     }
 
                     GoogleSignInResult.Failed -> {
-                        isSigningInWithGoogle = false
-                        val msg = LoginSnackbarMessage.GoogleSignInFailed.toDisplayString(context)
+                        isSigningUpWithGoogle = false
+                        val msg = SignupSnackbarMessage.GoogleSignInFailed.toDisplayString(context)
                         snackbarHostState.showSnackbar(
                             message = msg,
                             duration = SnackbarDuration.Long,
@@ -112,15 +109,17 @@ fun LoginScreen(
             }
         }
     }
-    LoginScreenContent(
+
+    SignupScreenContent(
         state = state,
         snackbarHostState = snackbarHostState,
+        onNameChange = viewModel::updateName,
         onEmailChange = viewModel::updateEmail,
         onPasswordChange = viewModel::updatePassword,
-        onSubmitLogin = viewModel::submitLogin,
-        onGoogleSignInClick = onGoogleSignInClick,
-        isSigningInWithGoogle = isSigningInWithGoogle,
-        onNavigateToSignup = currentOnNavigateToSignup,
+        onCredentialsSignUpClick = viewModel::submitSignupWithCredentials,
+        onGoogleSignUpClick = onGoogleSignUpClick,
+        isSigningUpWithGoogle = isSigningUpWithGoogle,
+        onNavigateBack = onNavigateBack,
         onOpenAppSettings = viewModel::onOpenAppSettingsClick,
         onOpenStorageSettings = viewModel::onOpenStorageSettingsClick,
         modifier = modifier,
@@ -128,35 +127,31 @@ fun LoginScreen(
 }
 
 @Composable
-private fun LoginEffectHandler(
-    effects: Flow<LoginSideEffects>,
+private fun SignupEffectHandler(
+    effects: Flow<SignupSideEffects>,
     snackbarHostState: SnackbarHostState,
     onNavigateToChatList: () -> Unit,
-    onNavigateToSignup: () -> Unit,
     onRetry: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val currentOnNavigateToChatList by rememberUpdatedState(onNavigateToChatList)
-    val currentOnNavigateToSignup by rememberUpdatedState(onNavigateToSignup)
     val currentOnRetry by rememberUpdatedState(onRetry)
     LaunchedEffect(lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             effects.onEach { effect ->
                 when (effect) {
-                    LoginSideEffects.NavigateToChatList -> currentOnNavigateToChatList()
+                    SignupSideEffects.NavigateToChatList -> currentOnNavigateToChatList()
 
-                    LoginSideEffects.NavigateToSignup -> currentOnNavigateToSignup()
+                    SignupSideEffects.OpenAppSettings -> openAppSettings(context)
 
-                    LoginSideEffects.OpenAppSettings -> openAppSettings(context)
+                    SignupSideEffects.OpenStorageSettings -> openStorageSettings(context)
 
-                    LoginSideEffects.OpenStorageSettings -> openStorageSettings(context)
-
-                    is LoginSideEffects.ShowSnackbar -> scope.launch {
+                    is SignupSideEffects.ShowSnackbar -> scope.launch {
                         val message = effect.message
                         val actionLabel =
-                            if (message is LoginSnackbarMessage.StorageTemporarilyUnavailable) {
+                            if (message is SignupSnackbarMessage.StorageTemporarilyUnavailable) {
                                 context.getString(R.string.auth_action_retry)
                             } else {
                                 null
@@ -174,17 +169,18 @@ private fun LoginEffectHandler(
     }
 }
 
-@Suppress("LongParameterList") // Compose property drilling is preferred over wrapper objects
+@Suppress("LongParameterList")
 @Composable
-fun LoginScreenContent(
-    state: LoginUiState,
+fun SignupScreenContent(
+    state: SignupUiState,
     snackbarHostState: SnackbarHostState,
+    onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onSubmitLogin: () -> Unit,
-    onGoogleSignInClick: () -> Unit,
-    isSigningInWithGoogle: Boolean,
-    onNavigateToSignup: () -> Unit,
+    onCredentialsSignUpClick: () -> Unit,
+    onGoogleSignUpClick: () -> Unit,
+    isSigningUpWithGoogle: Boolean,
+    onNavigateBack: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onOpenStorageSettings: () -> Unit,
     modifier: Modifier = Modifier,
@@ -193,16 +189,17 @@ fun LoginScreenContent(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .testTag("login_screen"),
+            .testTag("signup_screen"),
     ) {
-        LoginForm(
+        SignupForm(
             state = state,
+            onNameChange = onNameChange,
             onEmailChange = onEmailChange,
             onPasswordChange = onPasswordChange,
-            onSubmitLogin = onSubmitLogin,
-            onGoogleSignInClick = onGoogleSignInClick,
-            isSigningInWithGoogle = isSigningInWithGoogle,
-            onNavigateToSignup = onNavigateToSignup,
+            onCredentialsSignUpClick = onCredentialsSignUpClick,
+            onGoogleSignUpClick = onGoogleSignUpClick,
+            isSigningUpWithGoogle = isSigningUpWithGoogle,
+            onNavigateBack = onNavigateBack,
         )
 
         if (state.isLoading) {
@@ -216,7 +213,7 @@ fun LoginScreenContent(
     }
 
     state.blockingError?.let { error ->
-        LoginBlockingErrorDialog(
+        SignupBlockingErrorDialog(
             error = error,
             onOpenAppSettings = onOpenAppSettings,
             onOpenStorageSettings = onOpenStorageSettings,
@@ -224,16 +221,17 @@ fun LoginScreenContent(
     }
 }
 
-@Suppress("LongParameterList") // mirrors LoginScreenContent drilling
+@Suppress("LongParameterList")
 @Composable
-private fun LoginForm(
-    state: LoginUiState,
+private fun SignupForm(
+    state: SignupUiState,
+    onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onSubmitLogin: () -> Unit,
-    onGoogleSignInClick: () -> Unit,
-    isSigningInWithGoogle: Boolean,
-    onNavigateToSignup: () -> Unit,
+    onCredentialsSignUpClick: () -> Unit,
+    onGoogleSignUpClick: () -> Unit,
+    isSigningUpWithGoogle: Boolean,
+    onNavigateBack: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -242,6 +240,10 @@ private fun LoginForm(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        NameField(state.name, state.nameError?.toDisplayString(), onNameChange)
+
+        Spacer(modifier = Modifier.height(4.dp))
+
         EmailField(state.email, state.emailError?.toDisplayString(), onEmailChange)
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -253,40 +255,88 @@ private fun LoginForm(
         state.generalError?.let {
             Text(
                 text = it.toDisplayString(),
-                modifier = Modifier.testTag("login_general_error"),
+                modifier = Modifier.testTag("signup_general_error"),
             )
         }
 
         Spacer(modifier = Modifier.height(4.dp))
 
         Button(
-            onClick = onSubmitLogin,
+            onClick = onCredentialsSignUpClick,
             enabled = !state.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("login_sign_in_button"),
+                .testTag("signup_credentials_sign_up_button"),
         ) {
-            Text(stringResource(R.string.login_sign_in_button))
+            Text(stringResource(R.string.signup_sign_up_button))
         }
 
         Spacer(modifier = Modifier.height(4.dp))
 
         Button(
-            onClick = onGoogleSignInClick,
-            enabled = !state.isLoading && !isSigningInWithGoogle,
+            onClick = onGoogleSignUpClick,
+            enabled = !state.isLoading && !isSigningUpWithGoogle,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("login_google_sign_in_button"),
+                .testTag("signup_google_sign_up_button"),
         ) {
-            Text(stringResource(R.string.login_sign_in_with_google_button))
+            Text(stringResource(R.string.signup_sign_up_with_google_button))
         }
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        TextButton(onClick = onNavigateToSignup) {
-            Text(stringResource(R.string.login_create_account_button))
+        TextButton(onClick = onNavigateBack) {
+            Text(stringResource(R.string.signup_already_have_account_button))
         }
     }
+}
+
+@Composable
+private fun NameField(name: String, nameError: String?, onNameChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = name,
+        onValueChange = onNameChange,
+        label = { Text(stringResource(R.string.signup_name_label)) },
+        singleLine = true,
+        isError = nameError != null,
+        supportingText = nameError?.let { error ->
+            {
+                Text(
+                    text = error,
+                    modifier = Modifier.testTag("signup_name_error"),
+                )
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("signup_name_field"),
+    )
+}
+
+@Composable
+private fun EmailField(email: String, emailError: String?, onEmailChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = email,
+        onValueChange = onEmailChange,
+        label = { Text(stringResource(R.string.signup_email_label)) },
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next,
+        ),
+        singleLine = true,
+        isError = emailError != null,
+        supportingText = emailError?.let { error ->
+            {
+                Text(
+                    text = error,
+                    modifier = Modifier.testTag("signup_email_error"),
+                )
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("signup_email_field"),
+    )
 }
 
 @Composable
@@ -298,7 +348,7 @@ private fun PasswordField(
     OutlinedTextField(
         value = password,
         onValueChange = onPasswordChange,
-        label = { Text(stringResource(R.string.login_password_label)) },
+        label = { Text(stringResource(R.string.signup_password_label)) },
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
@@ -310,59 +360,47 @@ private fun PasswordField(
             {
                 Text(
                     text = error,
-                    modifier = Modifier.testTag("login_password_error"),
+                    modifier = Modifier.testTag("signup_password_error"),
                 )
             }
         },
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("login_password_field"),
+            .testTag("signup_password_field"),
     )
 }
 
 @Composable
-private fun EmailField(email: String, emailError: String?, onEmailChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = email,
-        onValueChange = onEmailChange,
-        label = { Text(stringResource(R.string.login_email_label)) },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Email,
-            imeAction = ImeAction.Next,
-        ),
-        isError = emailError != null,
-        supportingText = emailError?.let { error ->
-            {
-                Text(
-                    text = error,
-                    modifier = Modifier.testTag("login_email_error"),
-                )
-            }
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("login_email_field"),
-    )
+private fun ProfileNameValidationError.toDisplayString(): String = when (this) {
+    is ProfileNameValidationError.LengthOutOfBounds ->
+        stringResource(R.string.signup_error_name_length_out_of_bounds, min, max)
+
+    is ProfileNameValidationError.ForbiddenCharacter ->
+        stringResource(R.string.signup_error_name_forbidden_character)
+
+    is ProfileNameValidationError.PlatformPolicyViolation.Pornography,
+    is ProfileNameValidationError.PlatformPolicyViolation.Violence,
+    is ProfileNameValidationError.PlatformPolicyViolation.IllegalSubstance,
+    -> stringResource(R.string.signup_error_name_policy_violation)
+
+    is ProfileNameValidationError.UnknownRuleViolation ->
+        stringResource(R.string.signup_error_name_unknown_rule)
 }
 
 @Composable
 private fun CredentialsValidationError.toDisplayString(): String = when (this) {
     CredentialsValidationError.BlankEmail -> stringResource(R.string.login_error_blank_email)
 
-    CredentialsValidationError.InvalidEmailFormat -> stringResource(
-        R.string.login_error_invalid_email_format,
-    )
+    CredentialsValidationError.InvalidEmailFormat ->
+        stringResource(R.string.login_error_invalid_email_format)
 
     CredentialsValidationError.NoAtInEmail -> stringResource(R.string.login_error_no_at_in_email)
 
-    is CredentialsValidationError.EmailTooLong -> stringResource(
-        R.string.login_error_email_too_long,
-        maxLength,
-    )
+    is CredentialsValidationError.EmailTooLong ->
+        stringResource(R.string.login_error_email_too_long, maxLength)
 
-    CredentialsValidationError.NoDomainAtEmail -> stringResource(
-        R.string.login_error_no_domain_at_email,
-    )
+    CredentialsValidationError.NoDomainAtEmail ->
+        stringResource(R.string.login_error_no_domain_at_email)
 
     is CredentialsValidationError.ForbiddenCharacterInEmail ->
         stringResource(R.string.login_error_forbidden_character_in_email, character)
@@ -384,155 +422,77 @@ private fun CredentialsValidationError.toDisplayString(): String = when (this) {
 }
 
 @Composable
-private fun LoginGeneralError.toDisplayString(): String = when (this) {
-    LoginGeneralError.InvalidCredentials -> stringResource(R.string.login_error_invalid_credentials)
-    LoginGeneralError.EmailNotVerified -> stringResource(R.string.login_error_email_not_verified)
-    LoginGeneralError.AccountSuspended -> stringResource(R.string.login_error_account_suspended)
-    LoginGeneralError.AccountNotFound -> stringResource(R.string.login_error_account_not_found)
-    LoginGeneralError.InvalidToken -> stringResource(R.string.login_error_invalid_token)
-    LoginGeneralError.InvalidEmail -> stringResource(R.string.login_error_invalid_email)
+private fun SignupGeneralError.toDisplayString(): String = when (this) {
+    SignupGeneralError.InvalidToken -> stringResource(R.string.signup_error_invalid_token)
+    SignupGeneralError.AccountAlreadyExists ->
+        stringResource(R.string.signup_error_account_already_exists)
+    is SignupGeneralError.InvalidEmail -> when (reason) {
+        EmailValidationError.EmailTaken -> stringResource(R.string.signup_error_email_taken)
+        EmailValidationError.EmailNotExists,
+        is EmailValidationError.UnknownRuleViolation,
+        -> stringResource(R.string.signup_error_invalid_email_server)
+    }
+    is SignupGeneralError.InvalidPassword -> stringResource(
+        R.string.signup_error_invalid_password_server,
+    )
 }
 
-private fun LoginSnackbarMessage.toDisplayString(context: Context): String = when (this) {
-    LoginSnackbarMessage.NetworkUnavailable ->
+private fun SignupSnackbarMessage.toDisplayString(context: Context): String = when (this) {
+    SignupSnackbarMessage.NetworkUnavailable ->
         context.getString(R.string.auth_error_network_unavailable)
 
-    LoginSnackbarMessage.ServiceUnavailable ->
+    SignupSnackbarMessage.ServiceUnavailable ->
         context.getString(R.string.auth_error_service_unavailable)
 
-    LoginSnackbarMessage.Unknown ->
-        context.getString(R.string.auth_error_unknown)
-
-    LoginSnackbarMessage.GoogleSignInFailed ->
+    SignupSnackbarMessage.GoogleSignInFailed ->
         context.getString(R.string.auth_error_google_sign_in_failed)
 
-    LoginSnackbarMessage.StorageTemporarilyUnavailable ->
+    SignupSnackbarMessage.StorageTemporarilyUnavailable ->
         context.getString(R.string.auth_error_storage_temporarily_unavailable)
 
-    is LoginSnackbarMessage.TooManyAttempts -> tooManyAttemptsDisplayString(context, remaining)
+    is SignupSnackbarMessage.TooManyAttempts -> tooManyAttemptsDisplayString(context, remaining)
 }
 
 @Preview
 @Composable
-private fun LoginScreenContentLightPreview() {
+private fun SignupScreenContentLightPreview() {
     Content(darkTheme = false)
 }
 
 @Preview
 @Composable
-private fun LoginScreenContentDarkPreview() {
+private fun SignupScreenContentDarkPreview() {
     Content(darkTheme = true)
 }
 
 @Preview
 @Composable
-private fun LoginScreenContentWithErrorsPreview() {
-    Content(
-        darkTheme = false,
-        state = LoginUiState(
-            email = "bad-email",
-            emailError = CredentialsValidationError.InvalidEmailFormat,
-            passwordError = CredentialsValidationError.PasswordTooShort(
-                CredentialsValidatorImpl.MIN_PASSWORD_LENGTH,
-            ),
-        ),
-    )
+private fun SignupScreenContentLoadingPreview() {
+    Content(darkTheme = false, state = SignupUiState(isLoading = true))
 }
 
 @Preview
 @Composable
-private fun LoginScreenContentWithFilledFieldsPreview() {
+private fun SignupScreenContentGeneralErrorPreview() {
     Content(
         darkTheme = false,
-        state = LoginUiState(
-            email = "user@example.com",
-            password = "Password1",
-        ),
-    )
-}
-
-@Preview
-@Composable
-private fun LoginScreenContentLoadingPreview() {
-    Content(darkTheme = false, state = LoginUiState(isLoading = true))
-}
-
-@Preview
-@Composable
-private fun LoginScreenContentGeneralErrorPreview() {
-    Content(
-        darkTheme = false,
-        state = LoginUiState(
-            email = "user@example.com",
-            password = "Password1",
-            generalError = LoginGeneralError.InvalidCredentials,
-        ),
-    )
-}
-
-@Preview
-@Composable
-private fun LoginScreenContentBlockingErrorPreview() {
-    Content(
-        darkTheme = false,
-        state = LoginUiState(blockingError = LoginBlockingError.StorageAccessDenied),
-    )
-}
-
-@Preview(locale = "")
-@Composable
-private fun LoginScreenContentTooManyAttemptsEnPreview() {
-    val context = LocalContext.current
-    ContentWithSnackbar(
-        message = LoginSnackbarMessage.TooManyAttempts(0.seconds)
-            .toDisplayString(context),
-    )
-}
-
-@Preview(locale = "de")
-@Composable
-private fun LoginScreenContentTooManyAttemptsDePreview() {
-    val context = LocalContext.current
-    ContentWithSnackbar(
-        message = LoginSnackbarMessage.TooManyAttempts(3.minutes + 45.seconds)
-            .toDisplayString(context),
+        state = SignupUiState(generalError = SignupGeneralError.AccountAlreadyExists),
     )
 }
 
 @Composable
-private fun ContentWithSnackbar(message: String) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(message) {
-        snackbarHostState.showSnackbar(message = message, duration = SnackbarDuration.Indefinite)
-    }
-    MessengerTheme(darkTheme = false) {
-        LoginScreenContent(
-            state = LoginUiState(),
-            snackbarHostState = snackbarHostState,
-            onEmailChange = {},
-            onPasswordChange = {},
-            onSubmitLogin = {},
-            onGoogleSignInClick = {},
-            isSigningInWithGoogle = false,
-            onNavigateToSignup = {},
-            onOpenAppSettings = {},
-            onOpenStorageSettings = {},
-        )
-    }
-}
-
-@Composable
-private fun Content(darkTheme: Boolean, state: LoginUiState = LoginUiState()) {
+private fun Content(darkTheme: Boolean, state: SignupUiState = SignupUiState()) {
     MessengerTheme(darkTheme = darkTheme) {
-        LoginScreenContent(
+        SignupScreenContent(
             state = state,
             snackbarHostState = remember { SnackbarHostState() },
+            onNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
-            onSubmitLogin = {},
-            onGoogleSignInClick = {},
-            isSigningInWithGoogle = false,
-            onNavigateToSignup = {},
+            onCredentialsSignUpClick = {},
+            onGoogleSignUpClick = {},
+            isSigningUpWithGoogle = false,
+            onNavigateBack = {},
             onOpenAppSettings = {},
             onOpenStorageSettings = {},
         )

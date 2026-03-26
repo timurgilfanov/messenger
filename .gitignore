@@ -38,3 +38,6 @@ review
 
 # Kotlin generated files
 .kotlin
+
+# ralphex progress logs
+.ralphex/progress/

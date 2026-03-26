@@ -1,4 +1,4 @@
-package timur.gilfanov.messenger.auth.ui
+package timur.gilfanov.messenger.auth.ui.screen.login
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -9,7 +9,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import timur.gilfanov.messenger.auth.R
-import timur.gilfanov.messenger.auth.ui.screen.login.LoginBlockingError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 private data class BlockingErrorResources(
@@ -20,32 +19,32 @@ private data class BlockingErrorResources(
 
 private fun LoginBlockingError.toResources(): BlockingErrorResources = when (this) {
     LoginBlockingError.StorageFull -> BlockingErrorResources(
-        R.string.login_error_storage_full_title,
-        R.string.login_error_storage_full,
-        R.string.login_action_open_storage_settings,
+        R.string.auth_error_storage_full_title,
+        R.string.auth_error_storage_full,
+        R.string.auth_action_open_storage_settings,
     )
 
     LoginBlockingError.StorageCorrupted -> BlockingErrorResources(
-        R.string.login_error_storage_corrupted_title,
-        R.string.login_error_storage_corrupted,
-        R.string.login_action_open_app_settings,
+        R.string.auth_error_storage_corrupted_title,
+        R.string.auth_error_storage_corrupted,
+        R.string.auth_action_open_app_settings,
     )
 
     LoginBlockingError.StorageReadOnly -> BlockingErrorResources(
-        R.string.login_error_storage_read_only_title,
-        R.string.login_error_storage_read_only,
-        R.string.login_action_open_app_settings,
+        R.string.auth_error_storage_read_only_title,
+        R.string.auth_error_storage_read_only,
+        R.string.auth_action_open_app_settings,
     )
 
     LoginBlockingError.StorageAccessDenied -> BlockingErrorResources(
-        R.string.login_error_storage_access_denied_title,
-        R.string.login_error_storage_access_denied,
-        R.string.login_action_open_app_settings,
+        R.string.auth_error_storage_access_denied_title,
+        R.string.auth_error_storage_access_denied,
+        R.string.auth_action_open_app_settings,
     )
 }
 
 @Composable
-internal fun BlockingErrorDialog(
+internal fun LoginBlockingErrorDialog(
     error: LoginBlockingError,
     onOpenAppSettings: () -> Unit,
     onOpenStorageSettings: () -> Unit,
@@ -75,9 +74,9 @@ internal fun BlockingErrorDialog(
 
 @Preview
 @Composable
-private fun BlockingErrorDialogStorageFullPreview() {
+private fun LoginBlockingErrorDialogStorageFullPreview() {
     MessengerTheme {
-        BlockingErrorDialog(
+        LoginBlockingErrorDialog(
             error = LoginBlockingError.StorageFull,
             onOpenAppSettings = {},
             onOpenStorageSettings = {},
@@ -87,9 +86,9 @@ private fun BlockingErrorDialogStorageFullPreview() {
 
 @Preview
 @Composable
-private fun BlockingErrorDialogCorruptedPreview() {
+private fun LoginBlockingErrorDialogCorruptedPreview() {
     MessengerTheme {
-        BlockingErrorDialog(
+        LoginBlockingErrorDialog(
             error = LoginBlockingError.StorageCorrupted,
             onOpenAppSettings = {},
             onOpenStorageSettings = {},
@@ -99,9 +98,9 @@ private fun BlockingErrorDialogCorruptedPreview() {
 
 @Preview
 @Composable
-private fun BlockingErrorDialogReadOnlyPreview() {
+private fun LoginBlockingErrorDialogReadOnlyPreview() {
     MessengerTheme {
-        BlockingErrorDialog(
+        LoginBlockingErrorDialog(
             error = LoginBlockingError.StorageReadOnly,
             onOpenAppSettings = {},
             onOpenStorageSettings = {},
@@ -111,9 +110,9 @@ private fun BlockingErrorDialogReadOnlyPreview() {
 
 @Preview
 @Composable
-private fun BlockingErrorDialogAccessDeniedPreview() {
+private fun LoginBlockingErrorDialogAccessDeniedPreview() {
     MessengerTheme {
-        BlockingErrorDialog(
+        LoginBlockingErrorDialog(
             error = LoginBlockingError.StorageAccessDenied,
             onOpenAppSettings = {},
             onOpenStorageSettings = {},

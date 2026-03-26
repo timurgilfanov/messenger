@@ -10,6 +10,9 @@ data class CredentialsLoginRequestDto(val email: String, val password: String)
 data class GoogleLoginRequestDto(val idToken: String)
 
 @Serializable
+data class GoogleSignupRequestDto(val idToken: String, val name: String)
+
+@Serializable
 data class RegisterRequestDto(val email: String, val password: String, val name: String)
 
 @Serializable

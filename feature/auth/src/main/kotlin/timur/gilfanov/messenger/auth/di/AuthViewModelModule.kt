@@ -10,6 +10,12 @@ import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCaseImpl
 import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCaseImpl
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseImpl
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseImpl
+import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
+import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.util.Logger
@@ -34,4 +40,23 @@ object AuthViewModelModule {
     @Provides
     fun provideLogoutUseCase(authRepository: AuthRepository, logger: Logger): LogoutUseCase =
         LogoutUseCaseImpl(authRepository, logger)
+
+    @Provides
+    fun provideProfileNameValidator(): ProfileNameValidator = ProfileNameValidatorImpl()
+
+    @Provides
+    fun provideSignupWithGoogleUseCase(
+        nameValidator: ProfileNameValidator,
+        repository: AuthRepository,
+        logger: Logger,
+    ): SignupWithGoogleUseCase = SignupWithGoogleUseCaseImpl(nameValidator, repository, logger)
+
+    @Provides
+    fun provideSignupWithCredentialsUseCase(
+        validator: CredentialsValidator,
+        nameValidator: ProfileNameValidator,
+        repository: AuthRepository,
+        logger: Logger,
+    ): SignupWithCredentialsUseCase =
+        SignupWithCredentialsUseCaseImpl(validator, nameValidator, repository, logger)
 }

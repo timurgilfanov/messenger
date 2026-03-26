@@ -9,7 +9,7 @@ import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
  * Remote data source for authentication operations.
  *
  * Each method maps server errors to typed [LoginWithCredentialsError], [LoginWithGoogleError],
- * [RegisterError], [RefreshError], or [LogoutError].
+ * [SignupWithGoogleError], [RegisterError], [RefreshError], or [LogoutError].
  * Infrastructure failures are wrapped in the `RemoteDataSource` variant of each error type.
  */
 interface RemoteAuthDataSource {
@@ -19,6 +19,10 @@ interface RemoteAuthDataSource {
     suspend fun loginWithGoogle(
         idToken: GoogleIdToken,
     ): ResultWithError<AuthTokens, LoginWithGoogleError>
+    suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthTokens, SignupWithGoogleError>
     suspend fun register(
         credentials: Credentials,
         name: String,

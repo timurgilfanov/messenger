@@ -15,6 +15,7 @@ import timur.gilfanov.messenger.auth.data.source.remote.LogoutError
 import timur.gilfanov.messenger.auth.data.source.remote.RefreshError
 import timur.gilfanov.messenger.auth.data.source.remote.RegisterError
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSource
+import timur.gilfanov.messenger.auth.data.source.remote.SignupWithGoogleError
 import timur.gilfanov.messenger.auth.di.ApplicationScope
 import timur.gilfanov.messenger.data.remote.toRemoteError
 import timur.gilfanov.messenger.data.remote.toUnauthRemoteError
@@ -28,6 +29,7 @@ import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
@@ -133,6 +135,33 @@ class AuthRepositoryImpl @Inject constructor(
             },
             onFailure = { error ->
                 ResultWithError.Failure(mapLoginWithGoogleError(error))
+            },
+        )
+
+    override suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthSession, GoogleSignupRepositoryError> =
+        remoteDataSource.signupWithGoogle(idToken, name).fold(
+            onSuccess = { tokens ->
+                val session = AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE)
+                localDataSource.saveSession(session).fold(
+                    onSuccess = {
+                        _authState.value = AuthState.Authenticated(session)
+                        ResultWithError.Success(session)
+                    },
+                    onFailure = { storageError ->
+                        logger.e(TAG, "Failed to save session after Google signup: $storageError")
+                        ResultWithError.Failure(
+                            GoogleSignupRepositoryError.LocalOperationFailed(
+                                storageError.toLocalError(),
+                            ),
+                        )
+                    },
+                )
+            },
+            onFailure = { error ->
+                ResultWithError.Failure(mapSignupWithGoogleError(error))
             },
         )
 
@@ -266,6 +295,20 @@ private fun mapLoginWithGoogleError(error: LoginWithGoogleError): GoogleLoginRep
 
         is LoginWithGoogleError.RemoteDataSource ->
             GoogleLoginRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
+    }
+
+private fun mapSignupWithGoogleError(error: SignupWithGoogleError): GoogleSignupRepositoryError =
+    when (error) {
+        SignupWithGoogleError.InvalidToken -> GoogleSignupRepositoryError.InvalidToken
+
+        SignupWithGoogleError.AccountAlreadyExists ->
+            GoogleSignupRepositoryError.AccountAlreadyExists
+
+        is SignupWithGoogleError.InvalidName ->
+            GoogleSignupRepositoryError.InvalidName(error.reason)
+
+        is SignupWithGoogleError.RemoteDataSource ->
+            GoogleSignupRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
     }
 
 private fun mapSignupError(error: RegisterError): SignupRepositoryError = when (error) {

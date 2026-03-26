@@ -37,6 +37,8 @@ import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCaseImpl
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCaseImpl
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClientStub
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
@@ -113,6 +115,16 @@ class LoginFeatureTest {
         @Provides
         @Singleton
         fun provideLogger(): Logger = NoOpLogger()
+
+        @Provides
+        @Singleton
+        fun provideSignupWithGoogleUseCase(): SignupWithGoogleUseCase =
+            SignupWithGoogleUseCase { _, _ -> error("Not used in login tests") }
+
+        @Provides
+        @Singleton
+        fun provideSignupWithCredentialsUseCase(): SignupWithCredentialsUseCase =
+            SignupWithCredentialsUseCase { _, _ -> error("Not used in login tests") }
 
         @Provides
         @Singleton
@@ -256,7 +268,7 @@ class LoginFeatureTest {
             )
             onNodeWithTag("login_google_sign_in_button").performClick()
             waitUntilExactlyOneExists(
-                hasText(activity.getString(R.string.login_error_google_sign_in_failed)),
+                hasText(activity.getString(R.string.auth_error_google_sign_in_failed)),
             )
         }
     }
@@ -328,7 +340,7 @@ class LoginFeatureTest {
             onNodeWithTag("login_sign_in_button").performClick()
             waitUntilExactlyOneExists(hasTestTag("login_blocking_error_dialog"))
             onNodeWithTag("login_blocking_error_action_button")
-                .assertTextEquals(activity.getString(R.string.login_action_open_storage_settings))
+                .assertTextEquals(activity.getString(R.string.auth_action_open_storage_settings))
         }
     }
 }

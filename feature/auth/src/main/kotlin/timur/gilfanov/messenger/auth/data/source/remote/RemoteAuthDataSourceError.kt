@@ -36,6 +36,16 @@ sealed interface RegisterError {
 }
 
 /**
+ * Errors for [RemoteAuthDataSource.signupWithGoogle].
+ */
+sealed interface SignupWithGoogleError {
+    data object InvalidToken : SignupWithGoogleError
+    data object AccountAlreadyExists : SignupWithGoogleError
+    data class InvalidName(val reason: ProfileNameValidationError) : SignupWithGoogleError
+    data class RemoteDataSource(val error: RemoteDataSourceError) : SignupWithGoogleError
+}
+
+/**
  * Errors for [RemoteAuthDataSource.refresh].
  */
 sealed interface RefreshError {

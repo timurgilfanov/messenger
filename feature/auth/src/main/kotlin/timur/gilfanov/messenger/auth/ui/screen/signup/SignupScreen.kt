@@ -263,7 +263,7 @@ private fun SignupForm(
 
         Button(
             onClick = onCredentialsSignUpClick,
-            enabled = !state.isLoading,
+            enabled = state.isCredentialsSubmitEnabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("signup_credentials_sign_up_button"),
@@ -275,7 +275,7 @@ private fun SignupForm(
 
         Button(
             onClick = onGoogleSignUpClick,
-            enabled = !state.isLoading && !isSigningUpWithGoogle,
+            enabled = state.isGoogleSubmitEnabled && !isSigningUpWithGoogle,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("signup_google_sign_up_button"),
@@ -383,7 +383,8 @@ private fun ProfileNameValidationError.toDisplayString(): String = when (this) {
     is ProfileNameValidationError.PlatformPolicyViolation.IllegalSubstance,
     -> stringResource(R.string.signup_error_name_policy_violation)
 
-    is ProfileNameValidationError.UnknownRuleViolation -> reason
+    is ProfileNameValidationError.UnknownRuleViolation ->
+        stringResource(R.string.signup_error_name_unknown_rule)
 }
 
 @Composable
@@ -466,6 +467,21 @@ private fun SignupScreenContentDarkPreview() {
 
 @Preview
 @Composable
+private fun SignupScreenContentWithFilledFieldsPreview() {
+    Content(
+        darkTheme = false,
+        state = SignupUiState(
+            name = "John Doe",
+            email = "user@example.com",
+            password = "Password1",
+            isNameValid = true,
+            isCredentialsValid = true,
+        ),
+    )
+}
+
+@Preview
+@Composable
 private fun SignupScreenContentLoadingPreview() {
     Content(darkTheme = false, state = SignupUiState(isLoading = true))
 }
@@ -475,7 +491,11 @@ private fun SignupScreenContentLoadingPreview() {
 private fun SignupScreenContentGeneralErrorPreview() {
     Content(
         darkTheme = false,
-        state = SignupUiState(generalError = SignupGeneralError.AccountAlreadyExists),
+        state = SignupUiState(
+            name = "John Doe",
+            isNameValid = true,
+            generalError = SignupGeneralError.AccountAlreadyExists,
+        ),
     )
 }
 

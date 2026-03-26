@@ -261,7 +261,7 @@ private fun LoginForm(
 
         Button(
             onClick = onSubmitLogin,
-            enabled = !state.isLoading,
+            enabled = state.isSubmitEnabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("login_sign_in_button"),
@@ -444,6 +444,7 @@ private fun LoginScreenContentWithFilledFieldsPreview() {
         state = LoginUiState(
             email = "user@example.com",
             password = "Password1",
+            isCredentialsValid = true,
         ),
     )
 }

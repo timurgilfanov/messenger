@@ -41,6 +41,7 @@
     <string name="signup_error_name_length_out_of_bounds">Name must be between %1$d and %2$d characters</string>
     <string name="signup_error_name_forbidden_character">Name contains forbidden characters</string>
     <string name="signup_error_name_policy_violation">Name violates content policy</string>
+    <string name="signup_error_name_unknown_rule">Name is not allowed. Please choose a different name.</string>
 
     <!-- Signup general errors -->
     <string name="signup_error_invalid_token">Session expired. Please try again.</string>

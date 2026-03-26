@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.auth.ui
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -25,6 +26,7 @@ import timur.gilfanov.messenger.auth.ui.screen.login.LoginViewModel
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
@@ -312,6 +314,19 @@ class LoginViewModelSubmitTest {
     }
 
     @Test
+    fun `retryLastAction with no prior submit is a no-op`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.effects.test {
+            viewModel.retryLastAction()
+            advanceUntilIdle()
+            assertNull(viewModel.state.value.blockingError)
+            assertFalse(viewModel.state.value.isLoading)
+            expectNoEvents()
+        }
+    }
+
+    @Test
     fun `isLoading is true while submit is in progress`() = runTest {
         val viewModel = createViewModel()
         viewModel.updateEmail("user@example.com")
@@ -337,6 +352,7 @@ class LoginViewModelSubmitTest {
             },
             loginWithGoogle = { ResultWithError.Success(Unit) },
             savedStateHandle = SavedStateHandle(),
+            credentialsValidator = CredentialsValidatorStub(null),
         )
         viewModel.updateEmail("user@example.com")
         viewModel.updatePassword("Password1")

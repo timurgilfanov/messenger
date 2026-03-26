@@ -40,11 +40,13 @@ import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClientStub
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.SignupScreenTestActivity
+import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
 import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
@@ -94,6 +96,10 @@ class SignupFeatureTest {
         @Provides
         @Singleton
         fun provideProfileNameValidator(): ProfileNameValidator = ProfileNameValidatorImpl()
+
+        @Provides
+        @Singleton
+        fun provideCredentialsValidator(): CredentialsValidator = CredentialsValidatorImpl()
 
         @Provides
         @Singleton
@@ -284,6 +290,9 @@ class SignupFeatureTest {
                 hasTestTag("signup_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
+            onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("signup_credentials_sign_up_button").performClick()
             waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) {
                 onAllNodes(hasTestTag("signup_email_error"), useUnmergedTree = true)
@@ -343,6 +352,7 @@ class SignupFeatureTest {
                 hasTestTag("signup_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
             onNodeWithTag("signup_google_sign_up_button").performClick()
             waitUntilExactlyOneExists(
                 hasText(activity.getString(R.string.auth_error_google_sign_in_failed)),

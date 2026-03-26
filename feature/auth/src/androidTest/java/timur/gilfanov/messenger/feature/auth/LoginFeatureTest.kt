@@ -44,6 +44,8 @@ import timur.gilfanov.messenger.auth.ui.GoogleSignInClientStub
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.LoginScreenTestActivity
 import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
+import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
+import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
@@ -115,6 +117,10 @@ class LoginFeatureTest {
         @Provides
         @Singleton
         fun provideLogger(): Logger = NoOpLogger()
+
+        @Provides
+        @Singleton
+        fun provideProfileNameValidator(): ProfileNameValidator = ProfileNameValidatorImpl()
 
         @Provides
         @Singleton
@@ -205,24 +211,27 @@ class LoginFeatureTest {
     }
 
     @Test
-    fun loginScreen_preservesValidationErrorOnRotation() {
+    fun loginScreen_preservesErrorOnRotation() {
+        (authRepository as AuthRepositoryFake).enqueueLoginWithCredentialsResult(
+            ResultWithError.Failure(LoginRepositoryError.InvalidCredentials),
+        )
         with(composeTestRule) {
             waitUntilExactlyOneExists(
                 hasTestTag("login_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("login_sign_in_button").performClick()
-            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) {
-                onAllNodes(hasTestTag("login_email_error"), useUnmergedTree = true)
-                    .fetchSemanticsNodes().size == 1
-            }
+            waitUntilExactlyOneExists(hasTestTag("login_general_error"))
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
             waitForIdle()
 
-            val errorBlankEmail = activity.getString(R.string.login_error_blank_email)
-            onNodeWithTag("login_email_error", useUnmergedTree = true)
-                .assertTextEquals(errorBlankEmail)
+            val errorInvalidCredentials =
+                activity.getString(R.string.login_error_invalid_credentials)
+            onNodeWithTag("login_general_error")
+                .assertTextEquals(errorInvalidCredentials)
         }
     }
 

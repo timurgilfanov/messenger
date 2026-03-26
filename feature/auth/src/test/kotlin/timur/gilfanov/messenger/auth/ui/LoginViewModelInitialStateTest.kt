@@ -29,6 +29,7 @@ class LoginViewModelInitialStateTest {
             assertEquals("", state.email)
             assertEquals("", state.password)
             assertFalse(state.isLoading)
+            assertFalse(state.isSubmitEnabled)
             assertNull(state.emailError)
             assertNull(state.passwordError)
             assertNull(state.generalError)

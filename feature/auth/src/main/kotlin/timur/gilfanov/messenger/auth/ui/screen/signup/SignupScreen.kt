@@ -383,7 +383,8 @@ private fun ProfileNameValidationError.toDisplayString(): String = when (this) {
     is ProfileNameValidationError.PlatformPolicyViolation.IllegalSubstance,
     -> stringResource(R.string.signup_error_name_policy_violation)
 
-    is ProfileNameValidationError.UnknownRuleViolation -> reason
+    is ProfileNameValidationError.UnknownRuleViolation ->
+        stringResource(R.string.signup_error_name_unknown_rule)
 }
 
 @Composable

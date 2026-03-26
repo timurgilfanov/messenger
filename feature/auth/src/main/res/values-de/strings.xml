@@ -39,6 +39,7 @@
     <string name="signup_error_name_length_out_of_bounds">Name muss zwischen %1$d und %2$d Zeichen lang sein</string>
     <string name="signup_error_name_forbidden_character">Name enthält verbotene Zeichen</string>
     <string name="signup_error_name_policy_violation">Name verstößt gegen die Inhaltsrichtlinien</string>
+    <string name="signup_error_name_unknown_rule">Dieser Name ist nicht erlaubt. Bitte wählen Sie einen anderen Namen.</string>
 
     <!-- Signup general errors -->
     <string name="signup_error_invalid_token">Sitzung abgelaufen. Bitte versuchen Sie es erneut.</string>

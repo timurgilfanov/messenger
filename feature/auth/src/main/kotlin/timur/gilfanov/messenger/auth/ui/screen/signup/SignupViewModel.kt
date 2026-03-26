@@ -29,6 +29,7 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
 
 @HiltViewModel
+@Suppress("TooManyFunctions") // a lot of actions required in this ViewModel
 class SignupViewModel @Inject constructor(
     private val signupWithGoogle: SignupWithGoogleUseCase,
     private val signupWithCredentials: SignupWithCredentialsUseCase,
@@ -135,7 +136,7 @@ class SignupViewModel @Inject constructor(
                             }
 
                         is SignupWithGoogleUseCaseError.InvalidName ->
-                            _state.update { it.copy(nameError = error.reason) }
+                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
 
                         is SignupWithGoogleUseCaseError.RemoteOperationFailed ->
                             _effects.send(
@@ -173,15 +174,16 @@ class SignupViewModel @Inject constructor(
                 onFailure = { error ->
                     when (error) {
                         is SignupWithCredentialsUseCaseError.ValidationFailed ->
-                            _state.update { state -> state.applyValidationError(error) }
+                            handleValidationError(error)
 
                         is SignupWithCredentialsUseCaseError.InvalidName ->
-                            _state.update { it.copy(nameError = error.reason) }
+                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
 
                         is SignupWithCredentialsUseCaseError.InvalidEmail ->
                             _state.update {
                                 it.copy(
                                     generalError = SignupGeneralError.InvalidEmail(error.reason),
+                                    isCredentialsValid = false,
                                 )
                             }
 
@@ -189,6 +191,7 @@ class SignupViewModel @Inject constructor(
                             _state.update {
                                 it.copy(
                                     generalError = SignupGeneralError.InvalidPassword(error.reason),
+                                    isCredentialsValid = false,
                                 )
                             }
 
@@ -224,6 +227,27 @@ class SignupViewModel @Inject constructor(
         viewModelScope.launch { _effects.send(SignupSideEffects.OpenStorageSettings) }
     }
 
+    private fun handleValidationError(error: SignupWithCredentialsUseCaseError.ValidationFailed) {
+        _state.update { state ->
+            when (val ve = error.error) {
+                is CredentialsValidationError.BlankEmail,
+                is CredentialsValidationError.NoAtInEmail,
+                is CredentialsValidationError.NoDomainAtEmail,
+                is CredentialsValidationError.EmailTooLong,
+                is CredentialsValidationError.InvalidEmailFormat,
+                is CredentialsValidationError.ForbiddenCharacterInEmail,
+                -> state.copy(emailError = ve, isCredentialsValid = false)
+
+                is CredentialsValidationError.PasswordTooShort,
+                is CredentialsValidationError.PasswordTooLong,
+                is CredentialsValidationError.ForbiddenCharacterInPassword,
+                is CredentialsValidationError.PasswordMustContainNumbers,
+                is CredentialsValidationError.PasswordMustContainAlphabet,
+                -> state.copy(passwordError = ve, isCredentialsValid = false)
+            }
+        }
+    }
+
     private suspend fun handleLocalStorageError(error: LocalStorageError) {
         when (error) {
             LocalStorageError.StorageFull ->
@@ -253,25 +277,6 @@ class SignupViewModel @Inject constructor(
                 )
         }
     }
-}
-
-private fun SignupUiState.applyValidationError(
-    error: SignupWithCredentialsUseCaseError.ValidationFailed,
-): SignupUiState = when (val ve = error.error) {
-    is CredentialsValidationError.BlankEmail,
-    is CredentialsValidationError.NoAtInEmail,
-    is CredentialsValidationError.NoDomainAtEmail,
-    is CredentialsValidationError.EmailTooLong,
-    is CredentialsValidationError.InvalidEmailFormat,
-    is CredentialsValidationError.ForbiddenCharacterInEmail,
-    -> copy(emailError = ve)
-
-    is CredentialsValidationError.PasswordTooShort,
-    is CredentialsValidationError.PasswordTooLong,
-    is CredentialsValidationError.ForbiddenCharacterInPassword,
-    is CredentialsValidationError.PasswordMustContainNumbers,
-    is CredentialsValidationError.PasswordMustContainAlphabet,
-    -> copy(passwordError = ve)
 }
 
 private fun UnauthRemoteError.toSnackbarMessage(): SignupSnackbarMessage = when (this) {

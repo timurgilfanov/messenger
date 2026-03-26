@@ -112,7 +112,10 @@ class LoginViewModel @Inject constructor(
 
                         LoginUseCaseError.InvalidCredentials ->
                             _state.update {
-                                it.copy(generalError = LoginGeneralError.InvalidCredentials)
+                                it.copy(
+                                    generalError = LoginGeneralError.InvalidCredentials,
+                                    isCredentialsValid = false,
+                                )
                             }
 
                         LoginUseCaseError.EmailNotVerified ->
@@ -126,7 +129,12 @@ class LoginViewModel @Inject constructor(
                             }
 
                         is LoginUseCaseError.InvalidEmail ->
-                            _state.update { it.copy(generalError = LoginGeneralError.InvalidEmail) }
+                            _state.update {
+                                it.copy(
+                                    generalError = LoginGeneralError.InvalidEmail,
+                                    isCredentialsValid = false,
+                                )
+                            }
 
                         is LoginUseCaseError.RemoteOperationFailed ->
                             _effects.send(
@@ -208,14 +216,14 @@ class LoginViewModel @Inject constructor(
                 is CredentialsValidationError.EmailTooLong,
                 is CredentialsValidationError.InvalidEmailFormat,
                 is CredentialsValidationError.ForbiddenCharacterInEmail,
-                -> state.copy(emailError = ve)
+                -> state.copy(emailError = ve, isCredentialsValid = false)
 
                 is CredentialsValidationError.PasswordTooShort,
                 is CredentialsValidationError.PasswordTooLong,
                 is CredentialsValidationError.ForbiddenCharacterInPassword,
                 is CredentialsValidationError.PasswordMustContainNumbers,
                 is CredentialsValidationError.PasswordMustContainAlphabet,
-                -> state.copy(passwordError = ve)
+                -> state.copy(passwordError = ve, isCredentialsValid = false)
             }
         }
     }

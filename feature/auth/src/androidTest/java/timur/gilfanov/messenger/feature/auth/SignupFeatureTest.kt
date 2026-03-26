@@ -40,11 +40,13 @@ import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClientStub
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.SignupScreenTestActivity
+import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
 import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
@@ -94,6 +96,10 @@ class SignupFeatureTest {
         @Provides
         @Singleton
         fun provideProfileNameValidator(): ProfileNameValidator = ProfileNameValidatorImpl()
+
+        @Provides
+        @Singleton
+        fun provideCredentialsValidator(): CredentialsValidator = CredentialsValidatorImpl()
 
         @Provides
         @Singleton

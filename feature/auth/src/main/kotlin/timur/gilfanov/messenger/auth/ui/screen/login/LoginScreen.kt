@@ -447,6 +447,7 @@ private fun LoginScreenContentWithFilledFieldsPreview() {
         state = LoginUiState(
             email = "user@example.com",
             password = "Password1",
+            isCredentialsValid = true,
         ),
     )
 }

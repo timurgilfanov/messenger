@@ -122,7 +122,7 @@ class SignupViewModel @Inject constructor(
                             }
 
                         is SignupWithGoogleUseCaseError.InvalidName ->
-                            _state.update { it.copy(nameError = error.reason) }
+                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
 
                         is SignupWithGoogleUseCaseError.RemoteOperationFailed ->
                             _effects.send(
@@ -163,12 +163,13 @@ class SignupViewModel @Inject constructor(
                             handleValidationError(error)
 
                         is SignupWithCredentialsUseCaseError.InvalidName ->
-                            _state.update { it.copy(nameError = error.reason) }
+                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
 
                         is SignupWithCredentialsUseCaseError.InvalidEmail ->
                             _state.update {
                                 it.copy(
                                     generalError = SignupGeneralError.InvalidEmail(error.reason),
+                                    isCredentialsValid = false,
                                 )
                             }
 
@@ -176,6 +177,7 @@ class SignupViewModel @Inject constructor(
                             _state.update {
                                 it.copy(
                                     generalError = SignupGeneralError.InvalidPassword(error.reason),
+                                    isCredentialsValid = false,
                                 )
                             }
 
@@ -220,14 +222,14 @@ class SignupViewModel @Inject constructor(
                 is CredentialsValidationError.EmailTooLong,
                 is CredentialsValidationError.InvalidEmailFormat,
                 is CredentialsValidationError.ForbiddenCharacterInEmail,
-                -> state.copy(emailError = ve)
+                -> state.copy(emailError = ve, isCredentialsValid = false)
 
                 is CredentialsValidationError.PasswordTooShort,
                 is CredentialsValidationError.PasswordTooLong,
                 is CredentialsValidationError.ForbiddenCharacterInPassword,
                 is CredentialsValidationError.PasswordMustContainNumbers,
                 is CredentialsValidationError.PasswordMustContainAlphabet,
-                -> state.copy(passwordError = ve)
+                -> state.copy(passwordError = ve, isCredentialsValid = false)
             }
         }
     }

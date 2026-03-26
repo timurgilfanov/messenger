@@ -290,6 +290,9 @@ class SignupFeatureTest {
                 hasTestTag("signup_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
+            onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("signup_credentials_sign_up_button").performClick()
             waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) {
                 onAllNodes(hasTestTag("signup_email_error"), useUnmergedTree = true)
@@ -349,6 +352,7 @@ class SignupFeatureTest {
                 hasTestTag("signup_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
             onNodeWithTag("signup_google_sign_up_button").performClick()
             waitUntilExactlyOneExists(
                 hasText(activity.getString(R.string.auth_error_google_sign_in_failed)),

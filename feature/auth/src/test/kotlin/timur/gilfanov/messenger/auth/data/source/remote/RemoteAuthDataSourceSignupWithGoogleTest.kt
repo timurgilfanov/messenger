@@ -26,8 +26,6 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValida
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class RemoteAuthDataSourceSignupWithGoogleTest {
 
-    private lateinit var dataSource: RemoteAuthDataSourceImpl
-
     private val json = Json {
         isLenient = true
         ignoreUnknownKeys = true
@@ -79,7 +77,7 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
     @Test
     fun `signupWithGoogle success returns AuthTokens`() = runTest {
-        dataSource = createDataSource(createMockClient(successResponse()))
+        val dataSource = createDataSource(createMockClient(successResponse()))
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("valid-token"), "Alice")
 
@@ -88,7 +86,7 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
     @Test
     fun `signupWithGoogle INVALID_TOKEN returns InvalidToken`() = runTest {
-        dataSource = createDataSource(createMockClient(errorResponse("INVALID_TOKEN")))
+        val dataSource = createDataSource(createMockClient(errorResponse("INVALID_TOKEN")))
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("bad-token"), "Alice")
 
@@ -98,7 +96,7 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
     @Test
     fun `signupWithGoogle ACCOUNT_ALREADY_EXISTS returns AccountAlreadyExists`() = runTest {
-        dataSource = createDataSource(createMockClient(errorResponse("ACCOUNT_ALREADY_EXISTS")))
+        val dataSource = createDataSource(createMockClient(errorResponse("ACCOUNT_ALREADY_EXISTS")))
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("valid-token"), "Alice")
 
@@ -108,7 +106,7 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
     @Test
     fun `signupWithGoogle INVALID_NAME returns InvalidName`() = runTest {
-        dataSource =
+        val dataSource =
             createDataSource(createMockClient(errorResponse("INVALID_NAME", "Name is invalid")))
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("valid-token"), "!!")
@@ -121,7 +119,7 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
     @Test
     fun `signupWithGoogle unknown error returns RemoteDataSource`() = runTest {
-        dataSource = createDataSource(createMockClient(errorResponse("SERVER_ERROR")))
+        val dataSource = createDataSource(createMockClient(errorResponse("SERVER_ERROR")))
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("valid-token"), "Alice")
 
@@ -137,7 +135,7 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
         val responseBody = json.encodeToString(
             ApiResponse<Unit>(data = null, success = false, error = null),
         )
-        dataSource = createDataSource(createMockClient(responseBody))
+        val dataSource = createDataSource(createMockClient(responseBody))
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("valid-token"), "Alice")
 

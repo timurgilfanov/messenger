@@ -33,6 +33,7 @@
     <string name="signup_name_label">Name</string>
     <string name="signup_email_label">Email</string>
     <string name="signup_password_label">Password</string>
+    <string name="signup_confirm_password_label">Confirm Password</string>
     <string name="signup_sign_up_button">Sign Up</string>
     <string name="signup_sign_up_with_google_button">Sign Up with Google</string>
     <string name="signup_already_have_account_button">Already have an account? Sign in</string>
@@ -42,6 +43,7 @@
     <string name="signup_error_name_forbidden_character">Name contains forbidden characters</string>
     <string name="signup_error_name_policy_violation">Name violates content policy</string>
     <string name="signup_error_name_unknown_rule">Name is not allowed. Please choose a different name.</string>
+    <string name="signup_error_password_mismatch">Passwords do not match</string>
 
     <!-- Signup general errors -->
     <string name="signup_error_invalid_token">Session expired. Please try again.</string>

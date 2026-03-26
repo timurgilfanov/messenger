@@ -116,6 +116,7 @@ fun SignupScreen(
         onNameChange = viewModel::updateName,
         onEmailChange = viewModel::updateEmail,
         onPasswordChange = viewModel::updatePassword,
+        onConfirmPasswordChange = viewModel::updateConfirmPassword,
         onCredentialsSignUpClick = viewModel::submitSignupWithCredentials,
         onGoogleSignUpClick = onGoogleSignUpClick,
         isSigningUpWithGoogle = isSigningUpWithGoogle,
@@ -177,6 +178,7 @@ fun SignupScreenContent(
     onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
     onCredentialsSignUpClick: () -> Unit,
     onGoogleSignUpClick: () -> Unit,
     isSigningUpWithGoogle: Boolean,
@@ -196,6 +198,7 @@ fun SignupScreenContent(
             onNameChange = onNameChange,
             onEmailChange = onEmailChange,
             onPasswordChange = onPasswordChange,
+            onConfirmPasswordChange = onConfirmPasswordChange,
             onCredentialsSignUpClick = onCredentialsSignUpClick,
             onGoogleSignUpClick = onGoogleSignUpClick,
             isSigningUpWithGoogle = isSigningUpWithGoogle,
@@ -228,6 +231,7 @@ private fun SignupForm(
     onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
     onCredentialsSignUpClick: () -> Unit,
     onGoogleSignUpClick: () -> Unit,
     isSigningUpWithGoogle: Boolean,
@@ -249,6 +253,14 @@ private fun SignupForm(
         Spacer(modifier = Modifier.height(4.dp))
 
         PasswordField(state.password, state.passwordError?.toDisplayString(), onPasswordChange)
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        ConfirmPasswordField(
+            confirmPassword = state.confirmPassword,
+            isPasswordMismatch = state.isPasswordMismatched,
+            onConfirmPasswordChange = onConfirmPasswordChange,
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -352,7 +364,7 @@ private fun PasswordField(
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
-            imeAction = ImeAction.Done,
+            imeAction = ImeAction.Next,
         ),
         singleLine = true,
         isError = passwordError != null,
@@ -367,6 +379,39 @@ private fun PasswordField(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("signup_password_field"),
+    )
+}
+
+@Composable
+private fun ConfirmPasswordField(
+    confirmPassword: String,
+    isPasswordMismatch: Boolean,
+    onConfirmPasswordChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = confirmPassword,
+        onValueChange = onConfirmPasswordChange,
+        label = { Text(stringResource(R.string.signup_confirm_password_label)) },
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done,
+        ),
+        singleLine = true,
+        isError = isPasswordMismatch,
+        supportingText = if (isPasswordMismatch) {
+            {
+                Text(
+                    text = stringResource(R.string.signup_error_password_mismatch),
+                    modifier = Modifier.testTag("signup_confirm_password_error"),
+                )
+            }
+        } else {
+            null
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("signup_confirm_password_field"),
     )
 }
 
@@ -426,12 +471,14 @@ private fun SignupGeneralError.toDisplayString(): String = when (this) {
     SignupGeneralError.InvalidToken -> stringResource(R.string.signup_error_invalid_token)
     SignupGeneralError.AccountAlreadyExists ->
         stringResource(R.string.signup_error_account_already_exists)
+
     is SignupGeneralError.InvalidEmail -> when (reason) {
         EmailValidationError.EmailTaken -> stringResource(R.string.signup_error_email_taken)
         EmailValidationError.EmailNotExists,
         is EmailValidationError.UnknownRuleViolation,
         -> stringResource(R.string.signup_error_invalid_email_server)
     }
+
     is SignupGeneralError.InvalidPassword -> stringResource(
         R.string.signup_error_invalid_password_server,
     )
@@ -465,17 +512,27 @@ private fun SignupScreenContentDarkPreview() {
     Content(darkTheme = true)
 }
 
+private const val NAME = "John Doe"
+
+private const val EMAIL = "user@example.com"
+
+private const val PASSWORD = "Password1"
+
+private const val PASSWORD_2 = "Password2"
+
 @Preview
 @Composable
 private fun SignupScreenContentWithFilledFieldsPreview() {
     Content(
         darkTheme = false,
         state = SignupUiState(
-            name = "John Doe",
-            email = "user@example.com",
-            password = "Password1",
+            name = NAME,
+            email = EMAIL,
+            password = PASSWORD,
+            confirmPassword = PASSWORD,
             isNameValid = true,
             isCredentialsValid = true,
+            isPasswordConfirmed = true,
         ),
     )
 }
@@ -492,9 +549,26 @@ private fun SignupScreenContentGeneralErrorPreview() {
     Content(
         darkTheme = false,
         state = SignupUiState(
-            name = "John Doe",
+            name = NAME,
             isNameValid = true,
             generalError = SignupGeneralError.AccountAlreadyExists,
+        ),
+    )
+}
+
+@Preview
+@Composable
+private fun SignupScreenContentPasswordMismatchedPreview() {
+    Content(
+        darkTheme = false,
+        state = SignupUiState(
+            name = NAME,
+            email = EMAIL,
+            password = PASSWORD,
+            confirmPassword = PASSWORD_2,
+            isNameValid = true,
+            isCredentialsValid = true,
+            isPasswordConfirmed = false,
         ),
     )
 }
@@ -508,6 +582,7 @@ private fun Content(darkTheme: Boolean, state: SignupUiState = SignupUiState()) 
             onNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
+            onConfirmPasswordChange = {},
             onCredentialsSignUpClick = {},
             onGoogleSignUpClick = {},
             isSigningUpWithGoogle = false,

@@ -13,6 +13,9 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.auth.ui.LoginViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
+private const val VALID_EMAIL = "user@example.com"
+private const val VALID_PASSWORD = "password1"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class LoginViewModelButtonStateTest {
@@ -34,7 +37,7 @@ class LoginViewModelButtonStateTest {
     fun `valid email only - button disabled`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateEmail("user@example.com")
+        viewModel.updateEmail(VALID_EMAIL)
 
         viewModel.state.test {
             val state = awaitItem()
@@ -46,7 +49,7 @@ class LoginViewModelButtonStateTest {
     fun `valid password only - button disabled`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updatePassword("password1")
+        viewModel.updatePassword(VALID_PASSWORD)
 
         viewModel.state.test {
             val state = awaitItem()
@@ -58,8 +61,8 @@ class LoginViewModelButtonStateTest {
     fun `both valid - button enabled`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateEmail("user@example.com")
-        viewModel.updatePassword("password1")
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
 
         viewModel.state.test {
             val state = awaitItem()
@@ -71,8 +74,8 @@ class LoginViewModelButtonStateTest {
     fun `loading state - button disabled`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateEmail("user@example.com")
-        viewModel.updatePassword("password1")
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
 
         viewModel.state.test {
             skipItems(1)
@@ -89,8 +92,8 @@ class LoginViewModelButtonStateTest {
     fun `button re-enabled after loading completes`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateEmail("user@example.com")
-        viewModel.updatePassword("password1")
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
 
         viewModel.state.test {
             skipItems(1)

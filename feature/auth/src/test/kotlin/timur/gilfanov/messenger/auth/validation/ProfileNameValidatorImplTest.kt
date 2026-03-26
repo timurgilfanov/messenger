@@ -27,7 +27,7 @@ class ProfileNameValidatorImplTest {
 
     @Test
     fun `name at minimum length returns success`() {
-        val result = validator.validate("A")
+        val result = validator.validate("A".repeat(ProfileNameValidatorImpl.MIN_NAME_LENGTH))
         assertIs<Success<Unit, *>>(result)
     }
 

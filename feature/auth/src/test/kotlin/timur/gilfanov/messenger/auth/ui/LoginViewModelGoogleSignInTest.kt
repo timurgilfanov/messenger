@@ -24,6 +24,7 @@ import timur.gilfanov.messenger.auth.ui.screen.login.LoginSnackbarMessage
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginViewModel
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
+import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -290,6 +291,7 @@ class LoginViewModelGoogleSignInTest {
                 ResultWithError.Success(Unit)
             },
             savedStateHandle = SavedStateHandle(),
+            credentialsValidator = CredentialsValidatorStub(null),
         )
 
         backgroundScope.launch { viewModel.state.collect {} }

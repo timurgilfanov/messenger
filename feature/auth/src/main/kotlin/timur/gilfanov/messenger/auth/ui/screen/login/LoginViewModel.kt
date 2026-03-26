@@ -15,11 +15,13 @@ import timur.gilfanov.messenger.auth.domain.usecase.GoogleLoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -30,13 +32,17 @@ class LoginViewModel @Inject constructor(
     private val loginWithCredentials: LoginWithCredentialsUseCase,
     private val loginWithGoogle: LoginWithGoogleUseCase,
     private val savedStateHandle: SavedStateHandle,
+    private val credentialsValidator: CredentialsValidator,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
-        LoginUiState(
-            email = savedStateHandle[KEY_EMAIL] ?: "",
-            password = savedStateHandle[KEY_PASSWORD] ?: "",
-        ),
+        run {
+            val email: String = savedStateHandle[KEY_EMAIL] ?: ""
+            LoginUiState(
+                email = email,
+                isCredentialsValid = false,
+            )
+        },
     )
     val state = _state.asStateFlow()
 
@@ -52,21 +58,37 @@ class LoginViewModel @Inject constructor(
 
     fun updateEmail(email: String) {
         savedStateHandle[KEY_EMAIL] = email
-        _state.update { it.copy(email = email, emailError = null) }
+        val currentPassword = _state.value.password
+        val isCredentialsValid = credentialsValidator.validate(
+            Credentials(Email(email), Password(currentPassword)),
+        ) is ResultWithError.Success
+        _state.update {
+            it.copy(email = email, emailError = null, isCredentialsValid = isCredentialsValid)
+        }
     }
 
     fun updatePassword(password: String) {
-        savedStateHandle[KEY_PASSWORD] = password
-        _state.update { it.copy(password = password, passwordError = null) }
+        val currentEmail = _state.value.email
+        val isCredentialsValid = credentialsValidator.validate(
+            Credentials(Email(currentEmail), Password(password)),
+        ) is ResultWithError.Success
+        _state.update {
+            it.copy(
+                password = password,
+                passwordError = null,
+                isCredentialsValid = isCredentialsValid,
+            )
+        }
     }
 
     companion object {
         private const val KEY_EMAIL = "email"
-        private const val KEY_PASSWORD = "password"
     }
 
     fun submitLogin() {
-        if (_state.value.isLoading) return
+        if (_state.value.isLoading) {
+            return
+        }
         lastLoginAction = LastLoginAction.Credentials
         viewModelScope.launch {
             _state.update {
@@ -90,7 +112,10 @@ class LoginViewModel @Inject constructor(
 
                         LoginUseCaseError.InvalidCredentials ->
                             _state.update {
-                                it.copy(generalError = LoginGeneralError.InvalidCredentials)
+                                it.copy(
+                                    generalError = LoginGeneralError.InvalidCredentials,
+                                    isCredentialsValid = false,
+                                )
                             }
 
                         LoginUseCaseError.EmailNotVerified ->
@@ -104,7 +129,12 @@ class LoginViewModel @Inject constructor(
                             }
 
                         is LoginUseCaseError.InvalidEmail ->
-                            _state.update { it.copy(generalError = LoginGeneralError.InvalidEmail) }
+                            _state.update {
+                                it.copy(
+                                    generalError = LoginGeneralError.InvalidEmail,
+                                    isCredentialsValid = false,
+                                )
+                            }
 
                         is LoginUseCaseError.RemoteOperationFailed ->
                             _effects.send(
@@ -120,7 +150,9 @@ class LoginViewModel @Inject constructor(
     }
 
     fun submitGoogleSignIn(idToken: String) {
-        if (_state.value.isLoading) return
+        if (_state.value.isLoading) {
+            return
+        }
         lastLoginAction = LastLoginAction.Google(idToken)
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, generalError = null) }
@@ -184,14 +216,14 @@ class LoginViewModel @Inject constructor(
                 is CredentialsValidationError.EmailTooLong,
                 is CredentialsValidationError.InvalidEmailFormat,
                 is CredentialsValidationError.ForbiddenCharacterInEmail,
-                -> state.copy(emailError = ve)
+                -> state.copy(emailError = ve, isCredentialsValid = false)
 
                 is CredentialsValidationError.PasswordTooShort,
                 is CredentialsValidationError.PasswordTooLong,
                 is CredentialsValidationError.ForbiddenCharacterInPassword,
                 is CredentialsValidationError.PasswordMustContainNumbers,
                 is CredentialsValidationError.PasswordMustContainAlphabet,
-                -> state.copy(passwordError = ve)
+                -> state.copy(passwordError = ve, isCredentialsValid = false)
             }
         }
     }

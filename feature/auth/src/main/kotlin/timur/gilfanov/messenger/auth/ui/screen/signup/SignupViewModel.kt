@@ -15,11 +15,14 @@ import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseError
+import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -30,13 +33,23 @@ class SignupViewModel @Inject constructor(
     private val signupWithGoogle: SignupWithGoogleUseCase,
     private val signupWithCredentials: SignupWithCredentialsUseCase,
     private val savedStateHandle: SavedStateHandle,
+    private val profileNameValidator: ProfileNameValidator,
+    private val credentialsValidator: CredentialsValidator,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
-        SignupUiState(
-            name = savedStateHandle[KEY_NAME] ?: "",
-            email = savedStateHandle[KEY_EMAIL] ?: "",
-        ),
+        run {
+            val name: String = savedStateHandle[KEY_NAME] ?: ""
+            val email: String = savedStateHandle[KEY_EMAIL] ?: ""
+            SignupUiState(
+                name = name,
+                email = email,
+                isNameValid = profileNameValidator.validate(name) is ResultWithError.Success,
+                isCredentialsValid = credentialsValidator.validate(
+                    Credentials(Email(email), Password("")),
+                ) is ResultWithError.Success,
+            )
+        },
     )
     val state = _state.asStateFlow()
 
@@ -57,16 +70,33 @@ class SignupViewModel @Inject constructor(
 
     fun updateName(name: String) {
         savedStateHandle[KEY_NAME] = name
-        _state.update { it.copy(name = name, nameError = null) }
+        val isNameValid = profileNameValidator.validate(name) is ResultWithError.Success
+        _state.update { it.copy(name = name, nameError = null, isNameValid = isNameValid) }
     }
 
     fun updateEmail(email: String) {
         savedStateHandle[KEY_EMAIL] = email
-        _state.update { it.copy(email = email, emailError = null) }
+        val currentPassword = _state.value.password
+        val isCredentialsValid = credentialsValidator.validate(
+            Credentials(Email(email), Password(currentPassword)),
+        ) is ResultWithError.Success
+        _state.update {
+            it.copy(email = email, emailError = null, isCredentialsValid = isCredentialsValid)
+        }
     }
 
     fun updatePassword(password: String) {
-        _state.update { it.copy(password = password, passwordError = null) }
+        val currentEmail = _state.value.email
+        val isCredentialsValid = credentialsValidator.validate(
+            Credentials(Email(currentEmail), Password(password)),
+        ) is ResultWithError.Success
+        _state.update {
+            it.copy(
+                password = password,
+                passwordError = null,
+                isCredentialsValid = isCredentialsValid,
+            )
+        }
     }
 
     fun submitSignupWithGoogle(idToken: String) {
@@ -92,7 +122,7 @@ class SignupViewModel @Inject constructor(
                             }
 
                         is SignupWithGoogleUseCaseError.InvalidName ->
-                            _state.update { it.copy(nameError = error.reason) }
+                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
 
                         is SignupWithGoogleUseCaseError.RemoteOperationFailed ->
                             _effects.send(
@@ -133,12 +163,13 @@ class SignupViewModel @Inject constructor(
                             handleValidationError(error)
 
                         is SignupWithCredentialsUseCaseError.InvalidName ->
-                            _state.update { it.copy(nameError = error.reason) }
+                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
 
                         is SignupWithCredentialsUseCaseError.InvalidEmail ->
                             _state.update {
                                 it.copy(
                                     generalError = SignupGeneralError.InvalidEmail(error.reason),
+                                    isCredentialsValid = false,
                                 )
                             }
 
@@ -146,6 +177,7 @@ class SignupViewModel @Inject constructor(
                             _state.update {
                                 it.copy(
                                     generalError = SignupGeneralError.InvalidPassword(error.reason),
+                                    isCredentialsValid = false,
                                 )
                             }
 
@@ -190,14 +222,14 @@ class SignupViewModel @Inject constructor(
                 is CredentialsValidationError.EmailTooLong,
                 is CredentialsValidationError.InvalidEmailFormat,
                 is CredentialsValidationError.ForbiddenCharacterInEmail,
-                -> state.copy(emailError = ve)
+                -> state.copy(emailError = ve, isCredentialsValid = false)
 
                 is CredentialsValidationError.PasswordTooShort,
                 is CredentialsValidationError.PasswordTooLong,
                 is CredentialsValidationError.ForbiddenCharacterInPassword,
                 is CredentialsValidationError.PasswordMustContainNumbers,
                 is CredentialsValidationError.PasswordMustContainAlphabet,
-                -> state.copy(passwordError = ve)
+                -> state.copy(passwordError = ve, isCredentialsValid = false)
             }
         }
     }

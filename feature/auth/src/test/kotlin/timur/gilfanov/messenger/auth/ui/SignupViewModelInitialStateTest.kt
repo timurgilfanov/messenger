@@ -30,6 +30,8 @@ class SignupViewModelInitialStateTest {
             assertEquals("", state.email)
             assertEquals("", state.password)
             assertFalse(state.isLoading)
+            assertFalse(state.isGoogleSubmitEnabled)
+            assertFalse(state.isCredentialsSubmitEnabled)
             assertNull(state.nameError)
             assertNull(state.emailError)
             assertNull(state.passwordError)

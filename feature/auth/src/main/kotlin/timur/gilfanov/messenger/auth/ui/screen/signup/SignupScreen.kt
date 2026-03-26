@@ -494,17 +494,25 @@ private fun SignupScreenContentDarkPreview() {
     Content(darkTheme = true)
 }
 
+private const val NAME = "John Doe"
+
+private const val EMAIL = "user@example.com"
+
+private const val PASSWORD = "Password1"
+
 @Preview
 @Composable
 private fun SignupScreenContentWithFilledFieldsPreview() {
     Content(
         darkTheme = false,
         state = SignupUiState(
-            name = "John Doe",
-            email = "user@example.com",
-            password = "Password1",
+            name = NAME,
+            email = EMAIL,
+            password = PASSWORD,
+            confirmPassword = PASSWORD,
             isNameValid = true,
             isCredentialsValid = true,
+            isPasswordConfirmed = true,
         ),
     )
 }
@@ -521,7 +529,7 @@ private fun SignupScreenContentGeneralErrorPreview() {
     Content(
         darkTheme = false,
         state = SignupUiState(
-            name = "John Doe",
+            name = NAME,
             isNameValid = true,
             generalError = SignupGeneralError.AccountAlreadyExists,
         ),

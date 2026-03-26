@@ -10,11 +10,11 @@ import timur.gilfanov.messenger.auth.AuthInterceptor
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCase
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClientImpl
-import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 import timur.gilfanov.messenger.util.Logger
 
 @Module

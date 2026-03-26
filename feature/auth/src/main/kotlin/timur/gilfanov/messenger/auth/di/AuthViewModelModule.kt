@@ -14,9 +14,9 @@ import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseImpl
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseImpl
-import timur.gilfanov.messenger.auth.validation.ProfileNameValidator
-import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
+import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
+import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.util.Logger
 

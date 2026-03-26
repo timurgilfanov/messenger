@@ -4,7 +4,7 @@ import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorStub
+import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidatorStub
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession

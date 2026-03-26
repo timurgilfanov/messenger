@@ -1,9 +1,7 @@
-package timur.gilfanov.messenger.auth.validation
+package timur.gilfanov.messenger.auth.domain.validation
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
 
 class CredentialsValidatorImpl : CredentialsValidator {
 

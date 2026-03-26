@@ -2,7 +2,7 @@ package timur.gilfanov.messenger.auth.ui.screen.login
 
 import androidx.compose.runtime.Immutable
 import kotlin.time.Duration
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 
 @Immutable
 data class LoginUiState(

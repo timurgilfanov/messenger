@@ -17,14 +17,14 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
+import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.auth.ui.SignupViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupBlockingError
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupGeneralError
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupSideEffects
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupSnackbarMessage
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupViewModel
-import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
-import timur.gilfanov.messenger.auth.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError

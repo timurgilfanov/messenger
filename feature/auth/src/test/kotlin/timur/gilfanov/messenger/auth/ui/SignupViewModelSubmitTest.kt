@@ -12,11 +12,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.ui.SignupViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupBlockingError
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupSideEffects
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError

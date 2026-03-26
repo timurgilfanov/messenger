@@ -3,13 +3,13 @@ package timur.gilfanov.messenger.auth.ui
 import androidx.lifecycle.SavedStateHandle
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCaseImpl
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCaseImpl
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginViewModel
-import timur.gilfanov.messenger.auth.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidator
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError

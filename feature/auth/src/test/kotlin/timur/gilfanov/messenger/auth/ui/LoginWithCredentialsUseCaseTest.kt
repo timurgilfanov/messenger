@@ -6,14 +6,14 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.auth.domain.usecase.LoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCaseImpl
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.Password
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidationError
-import timur.gilfanov.messenger.domain.entity.auth.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError

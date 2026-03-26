@@ -356,6 +356,7 @@ class SignupFeatureTest {
                 hasTestTag("signup_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
             onNodeWithTag("signup_google_sign_up_button").performClick()
             waitUntilExactlyOneExists(
                 hasText(activity.getString(R.string.auth_error_google_sign_in_failed)),

@@ -13,7 +13,6 @@ sealed interface EmailValidationUseCaseError {
     data object NoAtInEmail : EmailValidationUseCaseError
     data class EmailTooLong(val maxLength: Int) : EmailValidationUseCaseError
     data object NoDomainAtEmail : EmailValidationUseCaseError
-    data class ForbiddenCharacterInEmail(val character: Char) : EmailValidationUseCaseError
     data object EmailTaken : EmailValidationUseCaseError
     data object EmailNotExists : EmailValidationUseCaseError
     data class UnknownRuleViolation(val reason: String) : EmailValidationUseCaseError

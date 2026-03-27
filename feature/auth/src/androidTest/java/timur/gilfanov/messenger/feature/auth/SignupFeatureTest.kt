@@ -30,13 +30,13 @@ import timur.gilfanov.messenger.auth.R
 import timur.gilfanov.messenger.auth.di.AuthDataModule
 import timur.gilfanov.messenger.auth.di.AuthModule
 import timur.gilfanov.messenger.auth.di.AuthViewModelModule
+import timur.gilfanov.messenger.auth.domain.usecase.EmailValidationUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseImpl
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
@@ -283,8 +283,8 @@ class SignupFeatureTest {
     @Test
     fun signupScreen_credentialsSignupClientEmailError_showsEmailFieldError() {
         SignupTestModule.signupWithCredentialsUseCase.result = ResultWithError.Failure(
-            SignupWithCredentialsUseCaseError.ValidationFailed(
-                CredentialsValidationError.BlankEmail,
+            SignupWithCredentialsUseCaseError.InvalidEmail(
+                EmailValidationUseCaseError.BlankEmail,
             ),
         )
         with(composeTestRule) {

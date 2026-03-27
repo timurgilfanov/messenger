@@ -447,9 +447,6 @@ private fun EmailValidationUseCaseError.toDisplayString(): String = when (this) 
     EmailValidationUseCaseError.NoDomainAtEmail ->
         stringResource(R.string.login_error_no_domain_at_email)
 
-    is EmailValidationUseCaseError.ForbiddenCharacterInEmail ->
-        stringResource(R.string.login_error_forbidden_character_in_email, character)
-
     EmailValidationUseCaseError.EmailTaken -> stringResource(R.string.signup_error_email_taken)
 
     EmailValidationUseCaseError.EmailNotExists,

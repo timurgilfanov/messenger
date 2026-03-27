@@ -13,13 +13,11 @@ sealed interface CredentialsValidationError : ValidationError {
         data object NoAtInEmail : Email
         data class EmailTooLong(val maxLength: Int) : Email
         data object NoDomainAtEmail : Email
-        data class ForbiddenCharacterInEmail(val character: Char) : Email
     }
 
     sealed interface Password : CredentialsValidationError {
         data class PasswordTooShort(val minLength: Int) : Password
         data class PasswordTooLong(val maxLength: Int) : Password
-        data class ForbiddenCharacterInPassword(val character: Char) : Password
         data class PasswordMustContainNumbers(val minNumbers: Int) : Password
         data class PasswordMustContainAlphabet(val minAlphabet: Int) : Password
     }

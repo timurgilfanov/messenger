@@ -56,8 +56,6 @@ internal fun CredentialsValidationError.Email.toUseCaseError(): EmailValidationU
             EmailValidationUseCaseError.EmailTooLong(maxLength)
         CredentialsValidationError.Email.NoDomainAtEmail ->
             EmailValidationUseCaseError.NoDomainAtEmail
-        is CredentialsValidationError.Email.ForbiddenCharacterInEmail ->
-            EmailValidationUseCaseError.ForbiddenCharacterInEmail(character)
     }
 
 internal fun CredentialsValidationError.Password.toUseCaseError(): PasswordValidationUseCaseError =
@@ -66,8 +64,6 @@ internal fun CredentialsValidationError.Password.toUseCaseError(): PasswordValid
             PasswordValidationUseCaseError.PasswordTooShort(minLength)
         is CredentialsValidationError.Password.PasswordTooLong ->
             PasswordValidationUseCaseError.PasswordTooLong(maxLength)
-        is CredentialsValidationError.Password.ForbiddenCharacterInPassword ->
-            PasswordValidationUseCaseError.ForbiddenCharacterInPassword(character)
         is CredentialsValidationError.Password.PasswordMustContainNumbers ->
             PasswordValidationUseCaseError.PasswordMustContainNumbers(minNumbers)
         is CredentialsValidationError.Password.PasswordMustContainAlphabet ->

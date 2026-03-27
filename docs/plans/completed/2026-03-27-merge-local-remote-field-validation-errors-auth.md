@@ -74,12 +74,12 @@ No externally observable behavior changes except #314's UX fix.
 
 ### Task 3: Verify acceptance criteria
 
-- [ ] run `./gradlew :feature:auth:assembleDebugAndroidTest`
-- [ ] Confirm `LoginGeneralError` no longer has `InvalidEmail` variant
-- [ ] Confirm `SignupGeneralError` no longer has `InvalidEmail` or `InvalidPassword` variants
-- [ ] Confirm `CredentialsValidationError` has nested `Email` and `Password` subtypes
-- [ ] Confirm `ValidationFailed` is removed from both use case error types
+- [x] run `./gradlew :feature:auth:assembleDebugAndroidTest`
+- [x] Confirm `LoginGeneralError` no longer has `InvalidEmail` variant
+- [x] Confirm `SignupGeneralError` no longer has `InvalidEmail` or `InvalidPassword` variants
+- [x] Confirm `CredentialsValidationError` has nested `Email` and `Password` subtypes
+- [x] Confirm `ValidationFailed` is removed from both use case error types
 
 ### Task 4: Update documentation
 
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Move this plan to `docs/plans/completed/`

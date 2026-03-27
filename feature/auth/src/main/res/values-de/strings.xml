@@ -12,7 +12,6 @@
     <string name="login_error_no_at_in_email">E-Mail muss @ enthalten</string>
     <string name="login_error_email_too_long">E-Mail darf höchstens %d Zeichen lang sein</string>
     <string name="login_error_no_domain_at_email">E-Mail muss eine Domain enthalten</string>
-    <string name="login_error_forbidden_character_in_email">Zeichen \'%s\' ist in der E-Mail nicht erlaubt</string>
     <string name="login_error_password_too_short">Passwort muss mindestens %d Zeichen lang sein</string>
     <string name="login_error_password_too_long">Passwort darf höchstens %d Zeichen lang sein</string>
     <string name="login_error_forbidden_character_in_password">Zeichen \'%s\' ist im Passwort nicht erlaubt</string>

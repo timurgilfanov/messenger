@@ -5,17 +5,22 @@ import timur.gilfanov.messenger.domain.entity.ValidationError
 /**
  * Validation errors for [timur.gilfanov.messenger.domain.entity.auth.Credentials].
  */
-sealed class CredentialsValidationError : ValidationError {
-    data object BlankEmail : CredentialsValidationError()
-    data object InvalidEmailFormat : CredentialsValidationError()
-    data object NoAtInEmail : CredentialsValidationError()
-    data class EmailTooLong(val maxLength: Int) : CredentialsValidationError()
-    data object NoDomainAtEmail : CredentialsValidationError()
-    data class ForbiddenCharacterInEmail(val character: Char) : CredentialsValidationError()
+sealed interface CredentialsValidationError : ValidationError {
 
-    data class PasswordTooShort(val minLength: Int) : CredentialsValidationError()
-    data class PasswordTooLong(val maxLength: Int) : CredentialsValidationError()
-    data class ForbiddenCharacterInPassword(val character: Char) : CredentialsValidationError()
-    data class PasswordMustContainNumbers(val minNumbers: Int) : CredentialsValidationError()
-    data class PasswordMustContainAlphabet(val minAlphabet: Int) : CredentialsValidationError()
+    sealed interface Email : CredentialsValidationError {
+        data object BlankEmail : Email
+        data object InvalidEmailFormat : Email
+        data object NoAtInEmail : Email
+        data class EmailTooLong(val maxLength: Int) : Email
+        data object NoDomainAtEmail : Email
+        data class ForbiddenCharacterInEmail(val character: Char) : Email
+    }
+
+    sealed interface Password : CredentialsValidationError {
+        data class PasswordTooShort(val minLength: Int) : Password
+        data class PasswordTooLong(val maxLength: Int) : Password
+        data class ForbiddenCharacterInPassword(val character: Char) : Password
+        data class PasswordMustContainNumbers(val minNumbers: Int) : Password
+        data class PasswordMustContainAlphabet(val minAlphabet: Int) : Password
+    }
 }

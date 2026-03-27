@@ -12,6 +12,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.auth.domain.usecase.EmailValidationUseCaseError
+import timur.gilfanov.messenger.auth.domain.usecase.PasswordValidationUseCaseError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.ui.SignupViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupBlockingError
@@ -66,12 +68,12 @@ class SignupViewModelSubmitTest {
     @Test
     fun `updateEmail clears emailError`() = runTest {
         val viewModel = createViewModel(
-            credentialsValidatorError = CredentialsValidationError.BlankEmail,
+            credentialsValidatorError = CredentialsValidationError.Email.BlankEmail,
         )
 
         viewModel.submitSignupWithCredentials()
         advanceUntilIdle()
-        assertIs<CredentialsValidationError.BlankEmail>(viewModel.state.value.emailError)
+        assertIs<EmailValidationUseCaseError.BlankEmail>(viewModel.state.value.emailError)
 
         viewModel.updateEmail("user@example.com")
         assertNull(viewModel.state.value.emailError)
@@ -80,12 +82,14 @@ class SignupViewModelSubmitTest {
     @Test
     fun `updatePassword clears passwordError`() = runTest {
         val viewModel = createViewModel(
-            credentialsValidatorError = CredentialsValidationError.PasswordTooShort(8),
+            credentialsValidatorError = CredentialsValidationError.Password.PasswordTooShort(8),
         )
 
         viewModel.submitSignupWithCredentials()
         advanceUntilIdle()
-        assertIs<CredentialsValidationError.PasswordTooShort>(viewModel.state.value.passwordError)
+        assertIs<PasswordValidationUseCaseError.PasswordTooShort>(
+            viewModel.state.value.passwordError,
+        )
 
         viewModel.updatePassword("Password1")
         assertNull(viewModel.state.value.passwordError)

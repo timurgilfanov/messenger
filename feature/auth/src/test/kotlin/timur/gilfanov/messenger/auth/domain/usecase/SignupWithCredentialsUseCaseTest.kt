@@ -44,13 +44,14 @@ class SignupWithCredentialsUseCaseTest {
     }
 
     @Test
-    fun `when credentials validation fails then returns ValidationFailed`() = runTest {
-        val validationError = CredentialsValidationError.BlankEmail
-        val useCase = createUseCase(credentialsValidatorError = validationError)
+    fun `when email validation fails then returns InvalidEmail`() = runTest {
+        val useCase = createUseCase(
+            credentialsValidatorError = CredentialsValidationError.Email.BlankEmail,
+        )
         val result = useCase(credentials, validName)
         val failure = assertIs<Failure<*, SignupWithCredentialsUseCaseError>>(result)
-        val error = assertIs<SignupWithCredentialsUseCaseError.ValidationFailed>(failure.error)
-        assertIs<CredentialsValidationError.BlankEmail>(error.error)
+        val error = assertIs<SignupWithCredentialsUseCaseError.InvalidEmail>(failure.error)
+        assertIs<EmailValidationUseCaseError.BlankEmail>(error.reason)
     }
 
     @Test
@@ -80,7 +81,7 @@ class SignupWithCredentialsUseCaseTest {
         val result = useCase(credentials, validName)
         val failure = assertIs<Failure<*, SignupWithCredentialsUseCaseError>>(result)
         val error = assertIs<SignupWithCredentialsUseCaseError.InvalidEmail>(failure.error)
-        assertIs<EmailValidationError.EmailTaken>(error.reason)
+        assertIs<EmailValidationUseCaseError.EmailTaken>(error.reason)
     }
 
     @Test
@@ -92,7 +93,7 @@ class SignupWithCredentialsUseCaseTest {
         val result = useCase(credentials, validName)
         val failure = assertIs<Failure<*, SignupWithCredentialsUseCaseError>>(result)
         val error = assertIs<SignupWithCredentialsUseCaseError.InvalidPassword>(failure.error)
-        assertIs<PasswordValidationError.PasswordTooShort>(error.reason)
+        assertIs<PasswordValidationUseCaseError.PasswordTooShort>(error.reason)
     }
 
     @Test

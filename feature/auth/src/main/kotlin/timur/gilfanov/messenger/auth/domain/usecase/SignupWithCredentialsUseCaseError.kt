@@ -1,7 +1,5 @@
 package timur.gilfanov.messenger.auth.domain.usecase
 
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
@@ -12,26 +10,24 @@ import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
  * Errors for [SignupWithCredentialsUseCase].
  *
  * ## Validation Errors
- * - [ValidationFailed] - Client-side credential validation failed; contains the specific error
+ * - [InvalidEmail] - Email failed local or server-side validation
+ * - [InvalidPassword] - Password failed local or server-side validation
  *
  * ## Logical Errors
  * - [InvalidName] - The provided profile name failed client-side or server-side validation
- * - [InvalidEmail] - The email was rejected by the server
- * - [InvalidPassword] - The password was rejected by the server
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed
  * - [RemoteOperationFailed] - Remote operation failed
  */
 sealed interface SignupWithCredentialsUseCaseError {
-    data class ValidationFailed(val error: CredentialsValidationError) :
+    data class InvalidEmail(val reason: EmailValidationUseCaseError) :
+        SignupWithCredentialsUseCaseError
+
+    data class InvalidPassword(val reason: PasswordValidationUseCaseError) :
         SignupWithCredentialsUseCaseError
 
     data class InvalidName(val reason: ProfileNameValidationError) :
-        SignupWithCredentialsUseCaseError
-
-    data class InvalidEmail(val reason: EmailValidationError) : SignupWithCredentialsUseCaseError
-    data class InvalidPassword(val reason: PasswordValidationError) :
         SignupWithCredentialsUseCaseError
 
     data class LocalOperationFailed(val error: LocalStorageError) :
@@ -44,10 +40,10 @@ sealed interface SignupWithCredentialsUseCaseError {
 internal fun SignupRepositoryError.toUseCaseError(): SignupWithCredentialsUseCaseError =
     when (this) {
         is SignupRepositoryError.InvalidEmail ->
-            SignupWithCredentialsUseCaseError.InvalidEmail(reason)
+            SignupWithCredentialsUseCaseError.InvalidEmail(reason.toEmailUseCaseError())
 
         is SignupRepositoryError.InvalidPassword ->
-            SignupWithCredentialsUseCaseError.InvalidPassword(reason)
+            SignupWithCredentialsUseCaseError.InvalidPassword(reason.toPasswordUseCaseError())
 
         is SignupRepositoryError.InvalidName ->
             SignupWithCredentialsUseCaseError.InvalidName(reason)
@@ -57,4 +53,20 @@ internal fun SignupRepositoryError.toUseCaseError(): SignupWithCredentialsUseCas
 
         is SignupRepositoryError.RemoteOperationFailed ->
             SignupWithCredentialsUseCaseError.RemoteOperationFailed(error)
+    }
+
+internal fun PasswordValidationError.toPasswordUseCaseError(): PasswordValidationUseCaseError =
+    when (this) {
+        is PasswordValidationError.PasswordTooShort ->
+            PasswordValidationUseCaseError.PasswordTooShort(minLength)
+        is PasswordValidationError.PasswordTooLong ->
+            PasswordValidationUseCaseError.PasswordTooLong(maxLength)
+        is PasswordValidationError.ForbiddenCharacterInPassword ->
+            PasswordValidationUseCaseError.ForbiddenCharacterInPassword(character)
+        is PasswordValidationError.PasswordMustContainNumbers ->
+            PasswordValidationUseCaseError.PasswordMustContainNumbers(minNumbers)
+        is PasswordValidationError.PasswordMustContainAlphabet ->
+            PasswordValidationUseCaseError.PasswordMustContainAlphabet(minAlphabet)
+        is PasswordValidationError.UnknownRuleViolation ->
+            PasswordValidationUseCaseError.UnknownRuleViolation(reason)
     }

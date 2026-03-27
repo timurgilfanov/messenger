@@ -4,9 +4,12 @@ import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.auth.domain.usecase.EmailValidationUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCaseImpl
+import timur.gilfanov.messenger.auth.domain.usecase.PasswordValidationUseCaseError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -39,15 +42,27 @@ class LoginWithCredentialsUseCaseTest {
     }
 
     @Test
-    fun `when validation fails then returns ValidationFailed`() = runTest {
-        val validationError = CredentialsValidationError.BlankEmail
-        val useCase = createUseCase(validatorError = validationError)
+    fun `when email validation fails then returns InvalidEmail`() = runTest {
+        val useCase = createUseCase(
+            validatorError = CredentialsValidationError.Email.BlankEmail,
+        )
         val result = useCase(credentials)
         val failure = assertIs<Failure<*, LoginUseCaseError>>(result)
-        assertIs<LoginUseCaseError.ValidationFailed>(failure.error)
-        assertIs<CredentialsValidationError.BlankEmail>(
-            (failure.error as LoginUseCaseError.ValidationFailed).error,
+        val error = assertIs<LoginUseCaseError.InvalidEmail>(failure.error)
+        assertIs<EmailValidationUseCaseError.BlankEmail>(error.reason)
+    }
+
+    @Test
+    fun `when password validation fails then returns InvalidPassword`() = runTest {
+        val useCase = createUseCase(
+            validatorError = CredentialsValidationError.Password.PasswordTooShort(
+                CredentialsValidatorImpl.MIN_PASSWORD_LENGTH,
+            ),
         )
+        val result = useCase(credentials)
+        val failure = assertIs<Failure<*, LoginUseCaseError>>(result)
+        val error = assertIs<LoginUseCaseError.InvalidPassword>(failure.error)
+        assertIs<PasswordValidationUseCaseError.PasswordTooShort>(error.reason)
     }
 
     @Test

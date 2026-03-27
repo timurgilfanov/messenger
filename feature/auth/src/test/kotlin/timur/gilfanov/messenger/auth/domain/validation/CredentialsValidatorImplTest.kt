@@ -28,46 +28,47 @@ class CredentialsValidatorImplTest {
     @Test
     fun `blank email returns BlankEmail`() = runTest {
         val result = validator.validate(credentials(email = "  "))
-        assertIs<Failure<*, CredentialsValidationError.BlankEmail>>(result)
+        assertIs<Failure<*, CredentialsValidationError.Email.BlankEmail>>(result)
     }
 
     @Test
     fun `email without at returns NoAtInEmail`() = runTest {
         val result = validator.validate(credentials(email = "userexample.com"))
-        assertIs<Failure<*, CredentialsValidationError.NoAtInEmail>>(result)
+        assertIs<Failure<*, CredentialsValidationError.Email.NoAtInEmail>>(result)
     }
 
     @Test
     fun `email with nothing after at returns NoDomainAtEmail`() = runTest {
         val result = validator.validate(credentials(email = "user@"))
-        assertIs<Failure<*, CredentialsValidationError.NoDomainAtEmail>>(result)
+        assertIs<Failure<*, CredentialsValidationError.Email.NoDomainAtEmail>>(result)
     }
 
     @Test
     fun `email longer than 254 chars returns EmailTooLong`() = runTest {
         val longEmail = "a".repeat(243) + "@example.com"
         val result = validator.validate(credentials(email = longEmail))
-        val failure = assertIs<Failure<*, CredentialsValidationError.EmailTooLong>>(result)
+        val failure = assertIs<Failure<*, CredentialsValidationError.Email.EmailTooLong>>(result)
         assertEquals(CredentialsValidatorImpl.MAX_EMAIL_LENGTH, failure.error.maxLength)
     }
 
     @Test
     fun `email with invalid format returns InvalidEmailFormat`() = runTest {
         val result = validator.validate(credentials(email = "user@.com"))
-        assertIs<Failure<*, CredentialsValidationError.InvalidEmailFormat>>(result)
+        assertIs<Failure<*, CredentialsValidationError.Email.InvalidEmailFormat>>(result)
     }
 
     @Test
     fun `email errors take priority over password errors`() = runTest {
         val result = validator.validate(credentials(email = "bad", password = "bad"))
-        assertIs<Failure<*, CredentialsValidationError>>(result)
-        assertIs<CredentialsValidationError.NoAtInEmail>(result.error)
+        assertIs<Failure<*, CredentialsValidationError.Email>>(result)
+        assertIs<CredentialsValidationError.Email.NoAtInEmail>(result.error)
     }
 
     @Test
     fun `password shorter than 8 chars returns PasswordTooShort`() = runTest {
         val result = validator.validate(credentials(password = "Pass1"))
-        val failure = assertIs<Failure<*, CredentialsValidationError.PasswordTooShort>>(result)
+        val failure =
+            assertIs<Failure<*, CredentialsValidationError.Password.PasswordTooShort>>(result)
         assertEquals(CredentialsValidatorImpl.MIN_PASSWORD_LENGTH, failure.error.minLength)
     }
 
@@ -75,7 +76,8 @@ class CredentialsValidatorImplTest {
     fun `password longer than 128 chars returns PasswordTooLong`() = runTest {
         val longPassword = "P1" + "a".repeat(127)
         val result = validator.validate(credentials(password = longPassword))
-        val failure = assertIs<Failure<*, CredentialsValidationError.PasswordTooLong>>(result)
+        val failure =
+            assertIs<Failure<*, CredentialsValidationError.Password.PasswordTooLong>>(result)
         assertEquals(CredentialsValidatorImpl.MAX_PASSWORD_LENGTH, failure.error.maxLength)
     }
 
@@ -83,7 +85,9 @@ class CredentialsValidatorImplTest {
     fun `password without digit returns PasswordMustContainNumbers`() = runTest {
         val result = validator.validate(credentials(password = "PasswordA"))
         val failure =
-            assertIs<Failure<*, CredentialsValidationError.PasswordMustContainNumbers>>(result)
+            assertIs<Failure<*, CredentialsValidationError.Password.PasswordMustContainNumbers>>(
+                result,
+            )
         assertEquals(1, failure.error.minNumbers)
     }
 
@@ -91,7 +95,9 @@ class CredentialsValidatorImplTest {
     fun `password without letter returns PasswordMustContainAlphabet`() = runTest {
         val result = validator.validate(credentials(password = "12345678"))
         val failure =
-            assertIs<Failure<*, CredentialsValidationError.PasswordMustContainAlphabet>>(result)
+            assertIs<Failure<*, CredentialsValidationError.Password.PasswordMustContainAlphabet>>(
+                result,
+            )
         assertEquals(1, failure.error.minAlphabet)
     }
 

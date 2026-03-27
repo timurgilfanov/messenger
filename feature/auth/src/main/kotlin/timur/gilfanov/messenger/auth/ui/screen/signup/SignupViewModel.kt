@@ -15,7 +15,6 @@ import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseError
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -173,27 +172,18 @@ class SignupViewModel @Inject constructor(
                 onSuccess = { _effects.send(SignupSideEffects.NavigateToChatList) },
                 onFailure = { error ->
                     when (error) {
-                        is SignupWithCredentialsUseCaseError.ValidationFailed ->
-                            handleValidationError(error)
-
-                        is SignupWithCredentialsUseCaseError.InvalidName ->
-                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
-
                         is SignupWithCredentialsUseCaseError.InvalidEmail ->
                             _state.update {
-                                it.copy(
-                                    generalError = SignupGeneralError.InvalidEmail(error.reason),
-                                    isCredentialsValid = false,
-                                )
+                                it.copy(emailError = error.reason, isCredentialsValid = false)
                             }
 
                         is SignupWithCredentialsUseCaseError.InvalidPassword ->
                             _state.update {
-                                it.copy(
-                                    generalError = SignupGeneralError.InvalidPassword(error.reason),
-                                    isCredentialsValid = false,
-                                )
+                                it.copy(passwordError = error.reason, isCredentialsValid = false)
                             }
+
+                        is SignupWithCredentialsUseCaseError.InvalidName ->
+                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
 
                         is SignupWithCredentialsUseCaseError.RemoteOperationFailed ->
                             _effects.send(
@@ -225,27 +215,6 @@ class SignupViewModel @Inject constructor(
     fun onOpenStorageSettingsClick() {
         _state.update { it.copy(blockingError = null) }
         viewModelScope.launch { _effects.send(SignupSideEffects.OpenStorageSettings) }
-    }
-
-    private fun handleValidationError(error: SignupWithCredentialsUseCaseError.ValidationFailed) {
-        _state.update { state ->
-            when (val ve = error.error) {
-                is CredentialsValidationError.BlankEmail,
-                is CredentialsValidationError.NoAtInEmail,
-                is CredentialsValidationError.NoDomainAtEmail,
-                is CredentialsValidationError.EmailTooLong,
-                is CredentialsValidationError.InvalidEmailFormat,
-                is CredentialsValidationError.ForbiddenCharacterInEmail,
-                -> state.copy(emailError = ve, isCredentialsValid = false)
-
-                is CredentialsValidationError.PasswordTooShort,
-                is CredentialsValidationError.PasswordTooLong,
-                is CredentialsValidationError.ForbiddenCharacterInPassword,
-                is CredentialsValidationError.PasswordMustContainNumbers,
-                is CredentialsValidationError.PasswordMustContainAlphabet,
-                -> state.copy(passwordError = ve, isCredentialsValid = false)
-            }
-        }
     }
 
     private suspend fun handleLocalStorageError(error: LocalStorageError) {

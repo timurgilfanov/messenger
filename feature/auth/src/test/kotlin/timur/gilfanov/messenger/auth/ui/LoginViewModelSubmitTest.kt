@@ -17,6 +17,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.auth.domain.usecase.EmailValidationUseCaseError
+import timur.gilfanov.messenger.auth.domain.usecase.PasswordValidationUseCaseError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorStub
 import timur.gilfanov.messenger.auth.ui.LoginViewModelTestFixtures.createViewModel
@@ -57,13 +59,13 @@ class LoginViewModelSubmitTest {
     @Test
     fun `submit with blank email sets emailError`() = runTest {
         val viewModel = createViewModel(
-            validatorError = CredentialsValidationError.BlankEmail,
+            validatorError = CredentialsValidationError.Email.BlankEmail,
         )
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
             viewModel.submitLogin()
             advanceUntilIdle()
-            assertIs<CredentialsValidationError.BlankEmail>(viewModel.state.value.emailError)
+            assertIs<EmailValidationUseCaseError.BlankEmail>(viewModel.state.value.emailError)
             expectNoEvents()
         }
     }
@@ -71,13 +73,13 @@ class LoginViewModelSubmitTest {
     @Test
     fun `submit with short password sets passwordError`() = runTest {
         val viewModel = createViewModel(
-            validatorError = CredentialsValidationError.PasswordTooShort(8),
+            validatorError = CredentialsValidationError.Password.PasswordTooShort(8),
         )
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
             viewModel.submitLogin()
             advanceUntilIdle()
-            assertIs<CredentialsValidationError.PasswordTooShort>(
+            assertIs<PasswordValidationUseCaseError.PasswordTooShort>(
                 viewModel.state.value.passwordError,
             )
             expectNoEvents()
@@ -87,7 +89,7 @@ class LoginViewModelSubmitTest {
     @Test
     fun `updateEmail clears emailError`() = runTest {
         val viewModel = createViewModel(
-            validatorError = CredentialsValidationError.BlankEmail,
+            validatorError = CredentialsValidationError.Email.BlankEmail,
         )
         viewModel.submitLogin()
         advanceUntilIdle()
@@ -98,7 +100,7 @@ class LoginViewModelSubmitTest {
     @Test
     fun `updatePassword clears passwordError`() = runTest {
         val viewModel = createViewModel(
-            validatorError = CredentialsValidationError.PasswordTooShort(8),
+            validatorError = CredentialsValidationError.Password.PasswordTooShort(8),
         )
         viewModel.submitLogin()
         advanceUntilIdle()
@@ -240,7 +242,7 @@ class LoginViewModelSubmitTest {
     }
 
     @Test
-    fun `repository InvalidEmail sets generalError InvalidEmail`() = runTest {
+    fun `repository InvalidEmail sets emailError EmailNotExists`() = runTest {
         val viewModel = createViewModel(
             loginResult = Failure(
                 LoginRepositoryError.InvalidEmail(EmailValidationError.EmailNotExists),
@@ -248,7 +250,7 @@ class LoginViewModelSubmitTest {
         )
         viewModel.submitLogin()
         advanceUntilIdle()
-        assertIs<LoginGeneralError.InvalidEmail>(viewModel.state.value.generalError)
+        assertIs<EmailValidationUseCaseError.EmailNotExists>(viewModel.state.value.emailError)
     }
 
     @Test

@@ -54,7 +54,8 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
+import timur.gilfanov.messenger.auth.domain.usecase.EmailValidationUseCaseError
+import timur.gilfanov.messenger.auth.domain.usecase.PasswordValidationUseCaseError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
@@ -346,41 +347,56 @@ private fun EmailField(email: String, emailError: String?, onEmailChange: (Strin
 }
 
 @Composable
-private fun CredentialsValidationError.toDisplayString(): String = when (this) {
-    CredentialsValidationError.BlankEmail -> stringResource(R.string.login_error_blank_email)
+private fun EmailValidationUseCaseError.toDisplayString(): String = when (this) {
+    EmailValidationUseCaseError.BlankEmail -> stringResource(R.string.login_error_blank_email)
 
-    CredentialsValidationError.InvalidEmailFormat -> stringResource(
+    EmailValidationUseCaseError.InvalidEmailFormat -> stringResource(
         R.string.login_error_invalid_email_format,
     )
 
-    CredentialsValidationError.NoAtInEmail -> stringResource(R.string.login_error_no_at_in_email)
+    EmailValidationUseCaseError.NoAtInEmail -> stringResource(R.string.login_error_no_at_in_email)
 
-    is CredentialsValidationError.EmailTooLong -> stringResource(
+    is EmailValidationUseCaseError.EmailTooLong -> stringResource(
         R.string.login_error_email_too_long,
         maxLength,
     )
 
-    CredentialsValidationError.NoDomainAtEmail -> stringResource(
+    EmailValidationUseCaseError.NoDomainAtEmail -> stringResource(
         R.string.login_error_no_domain_at_email,
     )
 
-    is CredentialsValidationError.ForbiddenCharacterInEmail ->
+    is EmailValidationUseCaseError.ForbiddenCharacterInEmail ->
         stringResource(R.string.login_error_forbidden_character_in_email, character)
 
-    is CredentialsValidationError.PasswordTooShort ->
-        stringResource(R.string.login_error_password_too_short, minLength)
+    EmailValidationUseCaseError.EmailTaken,
+    EmailValidationUseCaseError.EmailNotExists,
+    is EmailValidationUseCaseError.UnknownRuleViolation,
+    -> stringResource(R.string.login_error_invalid_email)
+}
 
-    is CredentialsValidationError.PasswordTooLong ->
-        stringResource(R.string.login_error_password_too_long, maxLength)
+@Composable
+private fun PasswordValidationUseCaseError.toDisplayString(): String = when (this) {
+    is PasswordValidationUseCaseError.PasswordTooShort -> when (val len = minLength) {
+        null -> stringResource(R.string.signup_error_invalid_password_server)
+        else -> stringResource(R.string.login_error_password_too_short, len)
+    }
 
-    is CredentialsValidationError.ForbiddenCharacterInPassword ->
+    is PasswordValidationUseCaseError.PasswordTooLong -> when (val len = maxLength) {
+        null -> stringResource(R.string.signup_error_invalid_password_server)
+        else -> stringResource(R.string.login_error_password_too_long, len)
+    }
+
+    is PasswordValidationUseCaseError.ForbiddenCharacterInPassword ->
         stringResource(R.string.login_error_forbidden_character_in_password, character)
 
-    is CredentialsValidationError.PasswordMustContainNumbers ->
+    is PasswordValidationUseCaseError.PasswordMustContainNumbers ->
         stringResource(R.string.login_error_password_must_contain_numbers, minNumbers)
 
-    is CredentialsValidationError.PasswordMustContainAlphabet ->
+    is PasswordValidationUseCaseError.PasswordMustContainAlphabet ->
         stringResource(R.string.login_error_password_must_contain_alphabet, minAlphabet)
+
+    is PasswordValidationUseCaseError.UnknownRuleViolation ->
+        stringResource(R.string.signup_error_invalid_password_server)
 }
 
 @Composable
@@ -390,7 +406,6 @@ private fun LoginGeneralError.toDisplayString(): String = when (this) {
     LoginGeneralError.AccountSuspended -> stringResource(R.string.login_error_account_suspended)
     LoginGeneralError.AccountNotFound -> stringResource(R.string.login_error_account_not_found)
     LoginGeneralError.InvalidToken -> stringResource(R.string.login_error_invalid_token)
-    LoginGeneralError.InvalidEmail -> stringResource(R.string.login_error_invalid_email)
 }
 
 private fun LoginSnackbarMessage.toDisplayString(context: Context): String = when (this) {
@@ -428,8 +443,8 @@ private fun LoginScreenContentWithErrorsPreview() {
         darkTheme = false,
         state = LoginUiState(
             email = "bad-email",
-            emailError = CredentialsValidationError.InvalidEmailFormat,
-            passwordError = CredentialsValidationError.PasswordTooShort(
+            emailError = EmailValidationUseCaseError.InvalidEmailFormat,
+            passwordError = PasswordValidationUseCaseError.PasswordTooShort(
                 CredentialsValidatorImpl.MIN_PASSWORD_LENGTH,
             ),
         ),

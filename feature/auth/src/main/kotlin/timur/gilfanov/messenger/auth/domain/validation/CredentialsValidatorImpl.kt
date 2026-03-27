@@ -20,34 +20,43 @@ class CredentialsValidatorImpl : CredentialsValidator {
         return validatePassword(credentials.password.value)
     }
 
-    private fun validateEmail(email: String): ResultWithError<Unit, CredentialsValidationError> =
-        when {
-            email.isBlank() -> ResultWithError.Failure(CredentialsValidationError.BlankEmail)
-            !email.contains('@') -> ResultWithError.Failure(CredentialsValidationError.NoAtInEmail)
-            email.substringAfter('@').isEmpty() ->
-                ResultWithError.Failure(CredentialsValidationError.NoDomainAtEmail)
-            email.length > MAX_EMAIL_LENGTH ->
-                ResultWithError.Failure(CredentialsValidationError.EmailTooLong(MAX_EMAIL_LENGTH))
-            !EMAIL_REGEX.matches(email) ->
-                ResultWithError.Failure(CredentialsValidationError.InvalidEmailFormat)
-            else -> ResultWithError.Success(Unit)
-        }
+    private fun validateEmail(
+        email: String,
+    ): ResultWithError<Unit, CredentialsValidationError.Email> = when {
+        email.isBlank() ->
+            ResultWithError.Failure(CredentialsValidationError.Email.BlankEmail)
+        !email.contains('@') ->
+            ResultWithError.Failure(CredentialsValidationError.Email.NoAtInEmail)
+        email.substringAfter('@').isEmpty() ->
+            ResultWithError.Failure(CredentialsValidationError.Email.NoDomainAtEmail)
+        email.length > MAX_EMAIL_LENGTH ->
+            ResultWithError.Failure(
+                CredentialsValidationError.Email.EmailTooLong(MAX_EMAIL_LENGTH),
+            )
+        !EMAIL_REGEX.matches(email) ->
+            ResultWithError.Failure(CredentialsValidationError.Email.InvalidEmailFormat)
+        else -> ResultWithError.Success(Unit)
+    }
 
     private fun validatePassword(
         password: String,
-    ): ResultWithError<Unit, CredentialsValidationError> = when {
+    ): ResultWithError<Unit, CredentialsValidationError.Password> = when {
         password.length < MIN_PASSWORD_LENGTH ->
             ResultWithError.Failure(
-                CredentialsValidationError.PasswordTooShort(MIN_PASSWORD_LENGTH),
+                CredentialsValidationError.Password.PasswordTooShort(MIN_PASSWORD_LENGTH),
             )
         password.length > MAX_PASSWORD_LENGTH ->
             ResultWithError.Failure(
-                CredentialsValidationError.PasswordTooLong(MAX_PASSWORD_LENGTH),
+                CredentialsValidationError.Password.PasswordTooLong(MAX_PASSWORD_LENGTH),
             )
         password.none { it.isDigit() } ->
-            ResultWithError.Failure(CredentialsValidationError.PasswordMustContainNumbers(1))
+            ResultWithError.Failure(
+                CredentialsValidationError.Password.PasswordMustContainNumbers(1),
+            )
         password.none { it.isLetter() } ->
-            ResultWithError.Failure(CredentialsValidationError.PasswordMustContainAlphabet(1))
+            ResultWithError.Failure(
+                CredentialsValidationError.Password.PasswordMustContainAlphabet(1),
+            )
         else -> ResultWithError.Success(Unit)
     }
 }

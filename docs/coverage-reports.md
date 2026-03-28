@@ -22,21 +22,21 @@ The CI/CD pipeline provides **two-dimensional coverage analysis** using both Cod
 ## Codecov Components (Which code was tested)
 
 ### Domain Layer Components
-- `domain_entities` - Core business entities (Chat, Message, Participant)
-- `domain_usecases` - Business logic operations
-- `validation_logic` - Entity validation rules
+- `domain_entities` - Domain entities shared across the architecture
+- `domain_usecases` - Use case contracts and implementations across core and feature modules
+- `validation_logic` - Validation code across domain and feature modules
 
 ### Feature-Based Components
 - `chat_feature` - Chat-related entities, use cases, and UI
 - `message_feature` - Message-related entities and use cases
+- `auth_feature` - Auth feature code across data, domain, and UI layers
 
 ### UI Layer Components
-- `ui_screens` - Compose screens and ViewModels
-- `ui_theme` - Theme and styling components
+- `ui_screens` - Screens and ViewModels across app and feature modules
+- `ui_theme` - Shared theme and styling code in `:core:ui`
 
 ### Architecture Components
-- `data_layer` - Repository implementations
-- `dependency_injection` - Hilt modules
+- `data_layer` - Cross-module repositories, data sources, DTOs, and transport models
 - `application_core` - MainActivity and Application class
 
 ## Two-Dimensional Analysis

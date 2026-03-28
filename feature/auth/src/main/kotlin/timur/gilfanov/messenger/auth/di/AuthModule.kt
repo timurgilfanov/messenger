@@ -5,12 +5,17 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
-import timur.gilfanov.messenger.domain.entity.auth.AuthSession
-import timur.gilfanov.messenger.domain.entity.auth.AuthState.Authenticated
-import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
+import kotlinx.coroutines.CoroutineScope
+import timur.gilfanov.messenger.auth.AuthInterceptor
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
+import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
+import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCase
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
+import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
+import timur.gilfanov.messenger.auth.ui.GoogleSignInClientImpl
+import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.util.Logger
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -18,9 +23,23 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(): AuthRepository = AuthRepositoryFake(
-        initialAuthState = Authenticated(
-            AuthSession(AuthTokens("stub-access", "stub-refresh"), AuthProvider.EMAIL),
-        ),
-    )
+    fun provideTokenRefreshUseCase(): TokenRefreshUseCase =
+        TokenRefreshUseCase { ResultWithError.Failure(TokenRefreshError.SessionExpired) }
+
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(
+        authSessionStorage: LocalAuthDataSource,
+        tokenRefreshUseCase: TokenRefreshUseCase,
+        scope: CoroutineScope,
+    ): AuthInterceptor = AuthInterceptor(authSessionStorage, tokenRefreshUseCase, scope)
+
+    @Provides
+    @Singleton
+    fun provideCredentialsValidator(): CredentialsValidator = CredentialsValidatorImpl()
+
+    @Provides
+    @Singleton
+    fun provideGoogleSignInClient(logger: Logger): GoogleSignInClient =
+        GoogleSignInClientImpl(logger)
 }

@@ -8,6 +8,7 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
@@ -29,6 +30,11 @@ interface AuthRepository {
     suspend fun loginWithGoogle(
         idToken: GoogleIdToken,
     ): ResultWithError<AuthSession, GoogleLoginRepositoryError>
+
+    suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthSession, GoogleSignupRepositoryError>
 
     suspend fun signup(
         credentials: Credentials,

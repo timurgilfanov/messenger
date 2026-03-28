@@ -1,7 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 - Do not generate inline comments or code comments
 - Generate KDoc only where the contract is not obvious from the type signature alone:
   - Interfaces and their members that define contracts between layers (repositories, data sources, validators, services)
@@ -10,6 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Update existing KDocs when modifying documented code
 
 See `docs/Specification.md` for project-level business requirements, UX requirements, sequrity requirements, and non-functional requirements.
+
+## Dependencies
+- When adding a new dependency, verify it is not deprecated and use the latest stable version (no alpha, beta, RC, or SNAPSHOT unless explicitly approved)
 
 ## Development Commands
 
@@ -37,7 +36,7 @@ Architecture Records (AR) and Architecture Decision Records (ADR) are kept in `d
 ### Key Architectural Patterns
 - **Result Pattern**: `ResultWithError<T, E>` wrapper for handling success/failure states
 - **Use Case Pattern**: Each business operation is encapsulated in a dedicated use case class
-- **Validation Pattern**: Separate validator classes with specific error types
+- **Validation Pattern**: Separate validator classes with specific error types; feature-specific validators (interface + implementation) live in the feature module's `domain/validation` package (e.g., `feature/auth/.../auth/domain/validation/`); validator interfaces are `fun interface` so test stubs can be lambdas; the corresponding validation error sealed interface lives in `core/domain` when referenced by repository error types (e.g., `ProfileNameValidationError` in `...domain.usecase.auth.repository`), or in the feature module when purely feature-internal
 - **Immutable Collections**: Uses `kotlinx-collections-immutable` for thread-safe data structures
 - **Error Handling Pattern**: Repository errors follow a consistent cause preservation contract:
   - All `Unknown` error cases are `data class UnknownError(val cause: Throwable)` with non-nullable cause, never `data object`
@@ -45,9 +44,12 @@ Architecture Records (AR) and Architecture Decision Records (ADR) are kept in `d
   - Use cases make decisions based on sealed interface hierarchy, not cause inspection
   - Causes are extracted ONLY for logging and diagnostics
   - See `SyncAllPendingSettingsUseCase.kt` for reference implementation pattern
+  - Error dispatch helpers must be self-contained: each helper handles all its cases without assuming another helper has pre-filtered the input. Cross-coupled helpers (where one relies on the other to have already excluded certain cases) create silent dead branches and hidden `error()` guards — use flat dispatch instead
 - **MVI Pattern**: ViewModels expose a single read-only `StateFlow` for persistent UI state and a `Channel`-backed `Flow` for one-off side effects (navigation, toasts, input clearing)
   - UI state must survive process termination: back the `StateFlow` with `SavedStateHandle` so state is restored after the process is killed and recreated
   - When a screen has overlapping async operations with business ordering invariants, apply AR-01: centralize all state commits in an `actor` with a `reduce` function (see `docs/architecture/AR-01-single-authority-for-ordering-rules.md`)
+  - When a ViewModel supports multiple submit paths (e.g., credentials and Google), track the last attempted action via a private `sealed interface Last<ScreenName>Action` (e.g., `LastLoginAction`, `LastSignupAction`) and a matching `var last<ScreenName>Action` field; `retryLastAction()` dispatches on it to re-invoke the correct path
+  - Button-enabled state is exposed as a computed `val` on `UiState` (e.g., `val isSubmitEnabled: Boolean get() = !isLoading && isCredentialsValid`). The ViewModel calls injected validators on every field update and stores the boolean result (e.g., `isCredentialsValid`, `isNameValid`) in state; the computed property combines these with `!isLoading`. Passwords are intentionally not persisted to `SavedStateHandle` for security — the computed property falls back to disabled on process death until the user re-enters the password fields
 - **Vertical Feature Delivery**: Features are developed and shipped as complete vertical units (domain + data + UI, fully tested) rather than partial horizontal layers across multiple features
 
 ### Testing

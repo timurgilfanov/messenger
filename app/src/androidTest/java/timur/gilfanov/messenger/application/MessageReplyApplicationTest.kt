@@ -28,7 +28,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import timur.gilfanov.messenger.MainActivity
 import timur.gilfanov.messenger.annotations.ApplicationTest
 import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
 import timur.gilfanov.messenger.data.repository.LocaleRepositoryImpl
@@ -46,6 +45,7 @@ import timur.gilfanov.messenger.test.AndroidTestDataHelper.MESSAGE_3_TIME
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
 import timur.gilfanov.messenger.test.RepositoryCleanupRule
 import timur.gilfanov.messenger.test.SettingsRepositoryStub
+import timur.gilfanov.messenger.ui.activity.MainActivity
 import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)

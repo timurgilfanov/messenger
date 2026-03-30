@@ -12,13 +12,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
-import timur.gilfanov.messenger.auth.domain.usecase.EmailValidationUseCaseError
-import timur.gilfanov.messenger.auth.domain.usecase.PasswordValidationUseCaseError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.ui.SignupViewModelTestFixtures.createViewModel
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupBlockingError
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupSideEffects
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
@@ -68,12 +68,14 @@ class SignupViewModelSubmitTest {
     @Test
     fun `updateEmail clears emailError`() = runTest {
         val viewModel = createViewModel(
-            credentialsValidatorError = CredentialsValidationError.Email.BlankEmail,
+            credentialsValidatorError = CredentialsValidationError.Email(
+                EmailValidationError.BlankEmail,
+            ),
         )
 
         viewModel.submitSignupWithCredentials()
         advanceUntilIdle()
-        assertIs<EmailValidationUseCaseError.BlankEmail>(viewModel.state.value.emailError)
+        assertIs<EmailValidationError.BlankEmail>(viewModel.state.value.emailError)
 
         viewModel.updateEmail("user@example.com")
         assertNull(viewModel.state.value.emailError)
@@ -82,12 +84,14 @@ class SignupViewModelSubmitTest {
     @Test
     fun `updatePassword clears passwordError`() = runTest {
         val viewModel = createViewModel(
-            credentialsValidatorError = CredentialsValidationError.Password.PasswordTooShort(8),
+            credentialsValidatorError = CredentialsValidationError.Password(
+                PasswordValidationError.PasswordTooShort(8),
+            ),
         )
 
         viewModel.submitSignupWithCredentials()
         advanceUntilIdle()
-        assertIs<PasswordValidationUseCaseError.PasswordTooShort>(
+        assertIs<PasswordValidationError.PasswordTooShort>(
             viewModel.state.value.passwordError,
         )
 

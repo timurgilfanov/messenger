@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.auth.domain.usecase
 
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
@@ -21,18 +22,13 @@ import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
  * - [RemoteOperationFailed] - Remote operation failed
  */
 sealed interface SignupWithCredentialsUseCaseError {
-    data class InvalidEmail(val reason: EmailValidationUseCaseError) :
+    data class InvalidEmail(val reason: SignupEmailError) : SignupWithCredentialsUseCaseError
+    data class InvalidPassword(val reason: PasswordValidationError) :
         SignupWithCredentialsUseCaseError
-
-    data class InvalidPassword(val reason: PasswordValidationUseCaseError) :
-        SignupWithCredentialsUseCaseError
-
     data class InvalidName(val reason: ProfileNameValidationError) :
         SignupWithCredentialsUseCaseError
-
     data class LocalOperationFailed(val error: LocalStorageError) :
         SignupWithCredentialsUseCaseError
-
     data class RemoteOperationFailed(val error: UnauthRemoteError) :
         SignupWithCredentialsUseCaseError
 }
@@ -40,10 +36,10 @@ sealed interface SignupWithCredentialsUseCaseError {
 internal fun SignupRepositoryError.toUseCaseError(): SignupWithCredentialsUseCaseError =
     when (this) {
         is SignupRepositoryError.InvalidEmail ->
-            SignupWithCredentialsUseCaseError.InvalidEmail(reason.toEmailUseCaseError())
+            SignupWithCredentialsUseCaseError.InvalidEmail(reason)
 
         is SignupRepositoryError.InvalidPassword ->
-            SignupWithCredentialsUseCaseError.InvalidPassword(reason.toPasswordUseCaseError())
+            SignupWithCredentialsUseCaseError.InvalidPassword(reason)
 
         is SignupRepositoryError.InvalidName ->
             SignupWithCredentialsUseCaseError.InvalidName(reason)
@@ -53,20 +49,4 @@ internal fun SignupRepositoryError.toUseCaseError(): SignupWithCredentialsUseCas
 
         is SignupRepositoryError.RemoteOperationFailed ->
             SignupWithCredentialsUseCaseError.RemoteOperationFailed(error)
-    }
-
-internal fun PasswordValidationError.toPasswordUseCaseError(): PasswordValidationUseCaseError =
-    when (this) {
-        is PasswordValidationError.PasswordTooShort ->
-            PasswordValidationUseCaseError.PasswordTooShort(minLength)
-        is PasswordValidationError.PasswordTooLong ->
-            PasswordValidationUseCaseError.PasswordTooLong(maxLength)
-        is PasswordValidationError.ForbiddenCharacterInPassword ->
-            PasswordValidationUseCaseError.ForbiddenCharacterInPassword(character)
-        is PasswordValidationError.PasswordMustContainNumbers ->
-            PasswordValidationUseCaseError.PasswordMustContainNumbers(minNumbers)
-        is PasswordValidationError.PasswordMustContainAlphabet ->
-            PasswordValidationUseCaseError.PasswordMustContainAlphabet(minAlphabet)
-        is PasswordValidationError.UnknownRuleViolation ->
-            PasswordValidationUseCaseError.UnknownRuleViolation(reason)
     }

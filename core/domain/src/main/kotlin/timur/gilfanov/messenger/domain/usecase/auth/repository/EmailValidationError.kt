@@ -1,15 +1,18 @@
 package timur.gilfanov.messenger.domain.usecase.auth.repository
 
 /**
- * Server-side email validation errors returned by auth operations.
+ * Email format validation errors returned by local validators.
  *
- * Used as a detail type within repository error variants (e.g., [SignupRepositoryError.InvalidEmail],
- * [LoginRepositoryError.InvalidEmail]) to describe why the email was rejected.
- * These are display-only — use cases branch on the parent repository error variant,
- * not on the sub-type.
+ * Implements both [LoginEmailError] and [SignupEmailError] so instances flow into both login
+ * and signup use cases without any mapping. These errors describe structural problems with the
+ * email string itself, independent of server-side account state.
  */
-sealed interface EmailValidationError {
-    data object EmailTaken : EmailValidationError
-    data object EmailNotExists : EmailValidationError
-    data class UnknownRuleViolation(val reason: String) : EmailValidationError
+sealed interface EmailValidationError :
+    LoginEmailError,
+    SignupEmailError {
+    data object BlankEmail : EmailValidationError
+    data object InvalidEmailFormat : EmailValidationError
+    data object NoAtInEmail : EmailValidationError
+    data class EmailTooLong(val maxLength: Int) : EmailValidationError
+    data object NoDomainAtEmail : EmailValidationError
 }

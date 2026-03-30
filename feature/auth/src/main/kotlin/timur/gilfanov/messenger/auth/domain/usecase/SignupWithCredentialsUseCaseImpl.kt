@@ -45,9 +45,9 @@ class SignupWithCredentialsUseCaseImpl(
         if (credResult is ResultWithError.Failure) {
             return when (val error = credResult.error) {
                 is CredentialsValidationError.Email ->
-                    SignupWithCredentialsUseCaseError.InvalidEmail(error.toUseCaseError())
+                    SignupWithCredentialsUseCaseError.InvalidEmail(error.reason)
                 is CredentialsValidationError.Password ->
-                    SignupWithCredentialsUseCaseError.InvalidPassword(error.toUseCaseError())
+                    SignupWithCredentialsUseCaseError.InvalidPassword(error.reason)
             }
         }
         val nameResult = nameValidator.validate(name)

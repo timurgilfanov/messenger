@@ -2,9 +2,9 @@ package timur.gilfanov.messenger.auth.ui.screen.signup
 
 import androidx.compose.runtime.Immutable
 import kotlin.time.Duration
-import timur.gilfanov.messenger.auth.domain.usecase.EmailValidationUseCaseError
-import timur.gilfanov.messenger.auth.domain.usecase.PasswordValidationUseCaseError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 
 @Immutable
 data class SignupUiState(
@@ -17,14 +17,15 @@ data class SignupUiState(
     val isCredentialsValid: Boolean = false,
     val isPasswordConfirmed: Boolean = false,
     val nameError: ProfileNameValidationError? = null,
-    val emailError: EmailValidationUseCaseError? = null,
-    val passwordError: PasswordValidationUseCaseError? = null,
+    val emailError: SignupEmailError? = null,
+    val passwordError: PasswordValidationError? = null,
     val generalError: SignupGeneralError? = null,
     val blockingError: SignupBlockingError? = null,
 ) {
     val isGoogleSubmitEnabled: Boolean get() = !isLoading && isNameValid
     val isCredentialsSubmitEnabled: Boolean
-        get() = !isLoading && isNameValid && isCredentialsValid && isPasswordConfirmed
+        get() = !isLoading && isNameValid && isCredentialsValid && isPasswordConfirmed &&
+            emailError == null && passwordError == null
     val isPasswordMismatched: Boolean
         get() = !isPasswordConfirmed && password.trim().length == confirmPassword.trim().length &&
             password.isNotBlank()

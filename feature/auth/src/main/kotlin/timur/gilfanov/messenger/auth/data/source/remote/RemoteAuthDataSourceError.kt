@@ -1,9 +1,9 @@
 package timur.gilfanov.messenger.auth.data.source.remote
 
 import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 
 /**
  * Errors for [RemoteAuthDataSource.loginWithCredentials].
@@ -29,7 +29,7 @@ sealed interface LoginWithGoogleError {
  * Errors for [RemoteAuthDataSource.register].
  */
 sealed interface RegisterError {
-    data class InvalidEmail(val reason: EmailValidationError) : RegisterError
+    data class InvalidEmail(val reason: SignupEmailError) : RegisterError
     data class InvalidPassword(val reason: PasswordValidationError) : RegisterError
     data class InvalidName(val reason: ProfileNameValidationError) : RegisterError
     data class RemoteDataSource(val error: RemoteDataSourceError) : RegisterError

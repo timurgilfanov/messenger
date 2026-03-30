@@ -25,10 +25,10 @@ import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 
@@ -147,7 +147,7 @@ class AuthRepositoryImplTest {
     fun `signup InvalidEmail returns error`() = runTest {
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueRegister(
-            ResultWithError.Failure(RegisterError.InvalidEmail(EmailValidationError.EmailTaken)),
+            ResultWithError.Failure(RegisterError.InvalidEmail(SignupEmailError.EmailTaken)),
         )
         val repo = createRepo(remoteDataSource = remote, scope = this)
         advanceUntilIdle()

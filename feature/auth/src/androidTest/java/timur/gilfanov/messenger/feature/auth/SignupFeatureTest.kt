@@ -30,7 +30,6 @@ import timur.gilfanov.messenger.auth.R
 import timur.gilfanov.messenger.auth.di.AuthDataModule
 import timur.gilfanov.messenger.auth.di.AuthModule
 import timur.gilfanov.messenger.auth.di.AuthViewModelModule
-import timur.gilfanov.messenger.auth.domain.usecase.EmailValidationUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
@@ -50,6 +49,7 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.util.Logger
@@ -284,7 +284,7 @@ class SignupFeatureTest {
     fun signupScreen_credentialsSignupClientEmailError_showsEmailFieldError() {
         SignupTestModule.signupWithCredentialsUseCase.result = ResultWithError.Failure(
             SignupWithCredentialsUseCaseError.InvalidEmail(
-                EmailValidationUseCaseError.BlankEmail,
+                EmailValidationError.BlankEmail,
             ),
         )
         with(composeTestRule) {
@@ -302,7 +302,7 @@ class SignupFeatureTest {
                     .fetchSemanticsNodes().size == 1
             }
             onNodeWithTag("signup_email_error", useUnmergedTree = true)
-                .assertTextEquals(activity.getString(R.string.login_error_blank_email))
+                .assertTextEquals(activity.getString(R.string.auth_error_blank_email))
         }
     }
 

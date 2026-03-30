@@ -7,7 +7,7 @@ import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
  * Errors for account signup repository operations.
  *
  * ## Logical Errors
- * - [InvalidEmail] - The email was rejected by the server; see [EmailValidationError] for detail
+ * - [InvalidEmail] - The email was rejected by the server; see [SignupEmailError] for detail
  * - [InvalidPassword] - The password was rejected by the server; see [PasswordValidationError] for detail
  * - [InvalidName] - The profile name was rejected by the server; see [ProfileNameValidationError] for detail
  *
@@ -16,7 +16,7 @@ import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
  * - [RemoteOperationFailed] - Remote operation failed
  */
 sealed interface SignupRepositoryError {
-    data class InvalidEmail(val reason: EmailValidationError) : SignupRepositoryError
+    data class InvalidEmail(val reason: SignupEmailError) : SignupRepositoryError
     data class InvalidPassword(val reason: PasswordValidationError) : SignupRepositoryError
     data class InvalidName(val reason: ProfileNameValidationError) : SignupRepositoryError
     data class LocalOperationFailed(val error: LocalStorageError) : SignupRepositoryError

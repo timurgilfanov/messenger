@@ -25,11 +25,9 @@ class LoginWithCredentialsUseCaseImpl(
         if (validationResult is ResultWithError.Failure) {
             return when (val error = validationResult.error) {
                 is CredentialsValidationError.Email ->
-                    ResultWithError.Failure(LoginUseCaseError.InvalidEmail(error.toUseCaseError()))
+                    ResultWithError.Failure(LoginUseCaseError.InvalidEmail(error.reason))
                 is CredentialsValidationError.Password ->
-                    ResultWithError.Failure(
-                        LoginUseCaseError.InvalidPassword(error.toUseCaseError()),
-                    )
+                    ResultWithError.Failure(LoginUseCaseError.InvalidPassword(error.reason))
             }
         }
         return repository.loginWithCredentials(credentials).fold(

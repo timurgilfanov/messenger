@@ -16,8 +16,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
-import timur.gilfanov.messenger.auth.domain.usecase.EmailValidationUseCaseError
-import timur.gilfanov.messenger.auth.domain.usecase.PasswordValidationUseCaseError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidatorImpl
@@ -32,6 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationEr
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -59,14 +58,17 @@ class SignupViewModelCredentialsSignupTest {
     @Test
     fun `email validation failure sets emailError`() = runTest {
         val viewModel = createViewModel(
-            credentialsValidatorError = CredentialsValidationError.Email.BlankEmail,
+            credentialsValidatorError = CredentialsValidationError.Email(
+                EmailValidationError.BlankEmail,
+            ),
         )
 
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
             viewModel.submitSignupWithCredentials()
             advanceUntilIdle()
-            assertIs<EmailValidationUseCaseError.BlankEmail>(viewModel.state.value.emailError)
+            assertIs<EmailValidationError.BlankEmail>(viewModel.state.value.emailError)
+            assertNull(viewModel.state.value.generalError)
             expectNoEvents()
         }
     }
@@ -74,16 +76,19 @@ class SignupViewModelCredentialsSignupTest {
     @Test
     fun `password validation failure sets passwordError`() = runTest {
         val viewModel = createViewModel(
-            credentialsValidatorError = CredentialsValidationError.Password.PasswordTooShort(8),
+            credentialsValidatorError = CredentialsValidationError.Password(
+                PasswordValidationError.PasswordTooShort(8),
+            ),
         )
 
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
             viewModel.submitSignupWithCredentials()
             advanceUntilIdle()
-            assertIs<PasswordValidationUseCaseError.PasswordTooShort>(
+            assertIs<PasswordValidationError.PasswordTooShort>(
                 viewModel.state.value.passwordError,
             )
+            assertNull(viewModel.state.value.generalError)
             expectNoEvents()
         }
     }
@@ -116,14 +121,15 @@ class SignupViewModelCredentialsSignupTest {
     fun `InvalidEmail server sets emailError EmailTaken`() = runTest {
         val viewModel = createViewModel(
             signupWithCredentialsResult = Failure(
-                SignupRepositoryError.InvalidEmail(EmailValidationError.EmailTaken),
+                SignupRepositoryError.InvalidEmail(SignupEmailError.EmailTaken),
             ),
         )
 
         viewModel.submitSignupWithCredentials()
         advanceUntilIdle()
 
-        assertIs<EmailValidationUseCaseError.EmailTaken>(viewModel.state.value.emailError)
+        assertIs<SignupEmailError.EmailTaken>(viewModel.state.value.emailError)
+        assertNull(viewModel.state.value.generalError)
     }
 
     @Test
@@ -137,9 +143,10 @@ class SignupViewModelCredentialsSignupTest {
         viewModel.submitSignupWithCredentials()
         advanceUntilIdle()
 
-        assertIs<PasswordValidationUseCaseError.PasswordTooShort>(
+        assertIs<PasswordValidationError.PasswordTooShort>(
             viewModel.state.value.passwordError,
         )
+        assertNull(viewModel.state.value.generalError)
     }
 
     @Test

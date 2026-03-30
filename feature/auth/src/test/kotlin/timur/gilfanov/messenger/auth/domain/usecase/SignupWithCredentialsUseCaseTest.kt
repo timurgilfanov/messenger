@@ -18,6 +18,7 @@ import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -46,12 +47,27 @@ class SignupWithCredentialsUseCaseTest {
     @Test
     fun `when email validation fails then returns InvalidEmail`() = runTest {
         val useCase = createUseCase(
-            credentialsValidatorError = CredentialsValidationError.Email.BlankEmail,
+            credentialsValidatorError = CredentialsValidationError.Email(
+                EmailValidationError.BlankEmail,
+            ),
         )
         val result = useCase(credentials, validName)
         val failure = assertIs<Failure<*, SignupWithCredentialsUseCaseError>>(result)
         val error = assertIs<SignupWithCredentialsUseCaseError.InvalidEmail>(failure.error)
-        assertIs<EmailValidationUseCaseError.BlankEmail>(error.reason)
+        assertIs<EmailValidationError.BlankEmail>(error.reason)
+    }
+
+    @Test
+    fun `when password validation fails then returns InvalidPassword`() = runTest {
+        val useCase = createUseCase(
+            credentialsValidatorError = CredentialsValidationError.Password(
+                PasswordValidationError.PasswordTooShort(8),
+            ),
+        )
+        val result = useCase(credentials, validName)
+        val failure = assertIs<Failure<*, SignupWithCredentialsUseCaseError>>(result)
+        val error = assertIs<SignupWithCredentialsUseCaseError.InvalidPassword>(failure.error)
+        assertIs<PasswordValidationError.PasswordTooShort>(error.reason)
     }
 
     @Test
@@ -74,14 +90,14 @@ class SignupWithCredentialsUseCaseTest {
 
     @Test
     fun `when repository returns InvalidEmail then returns InvalidEmail`() = runTest {
-        val emailError = EmailValidationError.EmailTaken
+        val emailError = SignupEmailError.EmailTaken
         val useCase = createUseCase(
             repositoryResult = Failure(SignupRepositoryError.InvalidEmail(emailError)),
         )
         val result = useCase(credentials, validName)
         val failure = assertIs<Failure<*, SignupWithCredentialsUseCaseError>>(result)
         val error = assertIs<SignupWithCredentialsUseCaseError.InvalidEmail>(failure.error)
-        assertIs<EmailValidationUseCaseError.EmailTaken>(error.reason)
+        assertIs<SignupEmailError.EmailTaken>(error.reason)
     }
 
     @Test
@@ -93,7 +109,7 @@ class SignupWithCredentialsUseCaseTest {
         val result = useCase(credentials, validName)
         val failure = assertIs<Failure<*, SignupWithCredentialsUseCaseError>>(result)
         val error = assertIs<SignupWithCredentialsUseCaseError.InvalidPassword>(failure.error)
-        assertIs<PasswordValidationUseCaseError.PasswordTooShort>(error.reason)
+        assertIs<PasswordValidationError.PasswordTooShort>(error.reason)
     }
 
     @Test

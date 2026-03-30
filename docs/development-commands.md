@@ -46,12 +46,10 @@
 # Pre-commit checks
 ./gradlew preCommit                   # Run all pre-commit checks (checks staged files)
                                       # IMPORTANT: Run this before committing when changes are ready for compilation and testing
-./gradlew preCommit -Pforce           # Run all checks unconditionally (CI / agent)
+./gradlew preCommit -Pforce           # Run all checks unconditionally
 ```
 
 ## Code Quality
-- Do not generate comments
-- Run code quality checks and auto corrections after code editing
 ```bash
 # Auto-format code with ktlint and use detekt to static analysis with autocorrection
 ./gradlew ktlintFormat detekt --auto-correct
@@ -74,12 +72,4 @@
 
 # Generate category-specific coverage reports
 ./gradlew koverXmlReportMockDebug && ./gradlew generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit
-```
-
-## Codecov Components
-Components are configured in `codecov.yml` and automatically organize coverage by code paths:
-```bash
-# Components are path-based and work automatically with any coverage upload
-# No special commands needed - just run tests with coverage and upload to Codecov
-# View component coverage in Codecov dashboard under "Components" tab
 ```

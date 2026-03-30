@@ -1,31 +1,6 @@
-- Do not generate inline comments or code comments
-- Generate KDoc only where the contract is not obvious from the type signature alone:
-  - Interfaces and their members that define contracts between layers (repositories, data sources, validators, services)
-  - Sealed error/validation hierarchies
-  - Use cases with complex preconditions, non-standard return types (Flow), or side effects
-- Update existing KDocs when modifying documented code
-
 See `docs/Specification.md` for project-level business requirements, UX requirements, sequrity requirements, and non-functional requirements.
 
-## Dependencies
-- When adding a new dependency, verify it is not deprecated and use the latest stable version (no alpha, beta, RC, or SNAPSHOT unless explicitly approved)
-
-## Development Commands
-
-Full reference: `docs/development-commands.md`
-
-- Run code quality checks and auto corrections after code editing
-```bash
-./gradlew preCommit                   # Pre-commit checks (formatting + lint + detekt + tests)
-./gradlew ktlintFormat detekt --auto-correct  # Auto-format and static analysis
-./gradlew testMockDebugUnitTest       # Run unit tests
-```
-
-### Coverage Reports
-See `docs/coverage-reports.md` for detailed coverage configuration, Codecov components, and test-specific flags.
-
 ## Architecture Overview
-
 This is an Android messenger application built with Kotlin and Jetpack Compose, following Clean Architecture principles with a domain-driven design approach.
 
 Package organization in `docs/package-organization.md`.
@@ -52,17 +27,48 @@ Architecture Records (AR) and Architecture Decision Records (ADR) are kept in `d
   - Button-enabled state is exposed as a computed `val` on `UiState` (e.g., `val isSubmitEnabled: Boolean get() = !isLoading && isCredentialsValid`). The ViewModel calls injected validators on every field update and stores the boolean result (e.g., `isCredentialsValid`, `isNameValid`) in state; the computed property combines these with `!isLoading`. Passwords are intentionally not persisted to `SavedStateHandle` for security — the computed property falls back to disabled on process death until the user re-enters the password fields
 - **Vertical Feature Delivery**: Features are developed and shipped as complete vertical units (domain + data + UI, fully tested) rather than partial horizontal layers across multiple features
 
-### Testing
+## KDoc
+- Do not generate inline comments or code comments
+- Generate KDoc only where the contract is not obvious from the type signature alone:
+  - Interfaces and their members that define contracts between layers (repositories, data sources, validators, services)
+  - Sealed error/validation hierarchies
+  - Use cases with complex preconditions, non-standard return types (Flow), or side effects
+- Update existing KDocs when modifying documented code
+
+## Dependencies
+- When adding a new dependency, verify it is not deprecated and use the latest stable version (no alpha, beta, RC, or SNAPSHOT unless explicitly approved)
+
+## Testing
 Full strategy in `docs/Testing Strategy.md`.
-CI/CD pipeline details in `docs/ci-cd-pipeline.md`.
 - **Fakes over Mocks**: Use test doubles other than mock or spy by default. We test behaviour not implementation.
 - **Test fixtures**: For both JVM and Android library modules, use native Gradle `testFixtures { enable = true }` to share test doubles across modules. Requires `android.experimental.enableTestFixturesKotlinSupport=true` in `gradle.properties` for Android libraries. Consume with `testImplementation(testFixtures(project(":feature:X")))`.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
 - **Turbine `cancelAndIgnoreRemainingEvents()`**: Only use it when there are genuinely unconsumed events to discard (e.g. after `advanceUntilIdle()` on a `StateFlow` that emitted further updates). Do not use it as a default `StateFlow` teardown — Turbine cancels the flow and asserts no unconsumed events automatically when the `test {}` block ends.
 - **`assertTrue` over `assert`**: Use `assertTrue` from `kotlin.test` for boolean assertions in tests. Kotlin's built-in `assert()` is a JVM assertion that can be silently disabled at runtime with `-da`.
 
-### GitHub Issues
-- Never add or remove the `agent` label on issues — it triggers paid automation
+## Workflows
+- After editing any source file: run `./gradlew ktlintFormat detekt --auto-correct`
 
-### Self-Learning
+### Tests running
+- When a specific test fails — isolate before running the full suite: run `./gradlew <module>:<TestTask> --tests "ClassName.testMethodName"`.
+  - `:app` → `MockDebug` variant; Android library (e.g. `:feature:auth`) → `Debug`; pure JVM → no variant
+  - Instrumented: `connected<Variant>AndroidTest`; Android unit: `test<Variant>UnitTest`; JVM: `test`
+  - Category filter: `-Pannotation=timur.gilfanov.messenger.annotations.<Category>Test` (instrumented) or `-PtestCategory=timur.gilfanov.messenger.annotations.<Category>` (JVM). Categories explained in `docs/Testing Strategy.md`.
+- When Android emulator needed run `$ANDROID_HOME/emulator/emulator -list-avds` to get a list of available emulators and run `$ANDROID_HOME/emulator/emulator -avd <name> -no-boot-anim` in background process to launch a emulator. 
+
+## GitHub
+### Issue creation
+- Never add or remove the `agent` label on issues — it triggers paid automation.
+- Follow relevant template in `.github/ISSUE_TEMPLATE`. Ask a user whitch template to choose if can not decide.
+- Check for relevant labels, milestones and relation to existent issues.
+- Get an approval from user befere create an issue. In approval request show issue text and meta-data.
+
+### PR creation
+- Follow template in `.github/pull_request_template.md`.
+
+## CI/CD
+- CI/CD pipeline details in `docs/ci-cd-pipeline.md`.
+- See `docs/coverage-reports.md` for detailed coverage configuration, Codecov components, and test-specific flags.
+
+## Self-Learning
 When you discover important project knowledge during implementation that is not already captured in this file or linked docs — such as new architectural patterns, non-obvious conventions, critical gotchas, or structural changes — propose an update to this CLAUDE.md or the relevant doc file. Present the proposed change to the user for approval before applying it.

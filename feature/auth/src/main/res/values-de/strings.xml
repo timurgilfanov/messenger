@@ -12,6 +12,7 @@
     <string name="auth_error_no_at_in_email">E-Mail muss @ enthalten</string>
     <string name="auth_error_email_too_long">E-Mail darf höchstens %d Zeichen lang sein</string>
     <string name="auth_error_no_domain_at_email">E-Mail muss eine Domain enthalten</string>
+    <string name="auth_error_invalid_password_server">Das Passwort erfüllt nicht die Anforderungen</string>
     <string name="auth_error_password_too_short">Passwort muss mindestens %d Zeichen lang sein</string>
     <string name="auth_error_password_too_long">Passwort darf höchstens %d Zeichen lang sein</string>
     <string name="auth_error_forbidden_character_in_password">Zeichen \'%s\' ist im Passwort nicht erlaubt</string>
@@ -53,7 +54,6 @@
     <string name="signup_error_account_already_exists">Ein Konto mit dieser Google-Identität existiert bereits</string>
     <string name="signup_error_email_taken">Ein Konto mit dieser E-Mail-Adresse existiert bereits</string>
     <string name="signup_error_invalid_email_server">Diese E-Mail-Adresse kann nicht verwendet werden</string>
-    <string name="signup_error_invalid_password_server">Das Passwort erfüllt nicht die Anforderungen</string>
 
     <!-- Dialog error titles -->
     <string name="auth_error_storage_full_title">Speicher voll</string>

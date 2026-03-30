@@ -12,6 +12,7 @@
     <string name="auth_error_no_at_in_email">Email must contain @</string>
     <string name="auth_error_email_too_long">Email must be at most %d characters</string>
     <string name="auth_error_no_domain_at_email">Email must contain a domain</string>
+    <string name="auth_error_invalid_password_server">The password does not meet requirements</string>
     <string name="auth_error_password_too_short">Password must be at least %d characters</string>
     <string name="auth_error_password_too_long">Password must be at most %d characters</string>
     <string name="auth_error_forbidden_character_in_password">Character \'%s\' is not allowed in password</string>
@@ -55,7 +56,6 @@
     <string name="signup_error_account_already_exists">An account with this Google identity already exists</string>
     <string name="signup_error_email_taken">An account with this email already exists</string>
     <string name="signup_error_invalid_email_server">This email address cannot be used</string>
-    <string name="signup_error_invalid_password_server">The password does not meet requirements</string>
 
     <!-- Dialog error titles -->
     <string name="auth_error_storage_full_title">Storage full</string>

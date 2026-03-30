@@ -370,12 +370,12 @@ private fun LoginEmailError.toDisplayString(): String = when (this) {
 @Composable
 private fun PasswordValidationError.toDisplayString(): String = when (this) {
     is PasswordValidationError.PasswordTooShort -> when (val len = minLength) {
-        null -> stringResource(R.string.signup_error_invalid_password_server)
+        null -> stringResource(R.string.auth_error_invalid_password_server)
         else -> stringResource(R.string.auth_error_password_too_short, len)
     }
 
     is PasswordValidationError.PasswordTooLong -> when (val len = maxLength) {
-        null -> stringResource(R.string.signup_error_invalid_password_server)
+        null -> stringResource(R.string.auth_error_invalid_password_server)
         else -> stringResource(R.string.auth_error_password_too_long, len)
     }
 
@@ -389,7 +389,7 @@ private fun PasswordValidationError.toDisplayString(): String = when (this) {
         pluralStringResource(R.plurals.auth_error_password_must_contain_alphabet, minAlphabet, minAlphabet)
 
     is PasswordValidationError.UnknownRuleViolation ->
-        stringResource(R.string.signup_error_invalid_password_server)
+        stringResource(R.string.auth_error_invalid_password_server)
 }
 
 @Composable

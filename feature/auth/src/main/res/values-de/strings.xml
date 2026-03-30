@@ -15,8 +15,14 @@
     <string name="auth_error_password_too_short">Passwort muss mindestens %d Zeichen lang sein</string>
     <string name="auth_error_password_too_long">Passwort darf höchstens %d Zeichen lang sein</string>
     <string name="auth_error_forbidden_character_in_password">Zeichen \'%s\' ist im Passwort nicht erlaubt</string>
-    <string name="auth_error_password_must_contain_numbers">Passwort muss mindestens %d Zahl(en) enthalten</string>
-    <string name="auth_error_password_must_contain_alphabet">Passwort muss mindestens %d Buchstaben enthalten</string>
+    <plurals name="auth_error_password_must_contain_numbers">
+        <item quantity="one">Passwort muss mindestens 1 Zahl enthalten</item>
+        <item quantity="other">Passwort muss mindestens %d Zahlen enthalten</item>
+    </plurals>
+    <plurals name="auth_error_password_must_contain_alphabet">
+        <item quantity="one">Passwort muss mindestens 1 Buchstabe enthalten</item>
+        <item quantity="other">Passwort muss mindestens %d Buchstaben enthalten</item>
+    </plurals>
 
     <!-- Login general errors -->
     <string name="login_error_invalid_credentials">Ungültige E-Mail oder falsches Passwort</string>

@@ -469,10 +469,10 @@ private fun PasswordValidationError.toDisplayString(): String = when (this) {
         stringResource(R.string.auth_error_forbidden_character_in_password, character)
 
     is PasswordValidationError.PasswordMustContainNumbers ->
-        stringResource(R.string.auth_error_password_must_contain_numbers, minNumbers)
+        pluralStringResource(R.plurals.auth_error_password_must_contain_numbers, minNumbers, minNumbers)
 
     is PasswordValidationError.PasswordMustContainAlphabet ->
-        stringResource(R.string.auth_error_password_must_contain_alphabet, minAlphabet)
+        pluralStringResource(R.plurals.auth_error_password_must_contain_alphabet, minAlphabet, minAlphabet)
 
     is PasswordValidationError.UnknownRuleViolation ->
         stringResource(R.string.signup_error_invalid_password_server)

@@ -50,9 +50,10 @@ Full strategy in `docs/Testing Strategy.md`.
 - After editing any source file: run `./gradlew ktlintFormat detekt --auto-correct`
 
 ### Tests running
-- When a specific test fails — isolate before running the full suite: run `./gradlew <module>:<TestTask> --tests "ClassName.testMethodName"`.
+- When a specific test fails — isolate before running the full suite: run `./gradlew <module>:<TestTask> <Isolation>`.
   - `:app` → `MockDebug` variant; Android library (e.g. `:feature:auth`) → `Debug`; pure JVM → no variant
   - Instrumented: `connected<Variant>AndroidTest`; Android unit: `test<Variant>UnitTest`; JVM: `test`
+  - Isolation for class or test: `--tests "ClassName.testMethodName"` for Android unit or JVM; `-Pandroid.testInstrumentationRunnerArguments.class=ClassName` for instrumented.
   - Category filter: `-Pannotation=timur.gilfanov.messenger.annotations.<Category>Test` (instrumented) or `-PtestCategory=timur.gilfanov.messenger.annotations.<Category>` (JVM). Categories explained in `docs/Testing Strategy.md`.
 - When Android emulator needed run `$ANDROID_HOME/emulator/emulator -list-avds` to get a list of available emulators and run `$ANDROID_HOME/emulator/emulator -avd <name> -no-boot-anim` in background process to launch a emulator. 
 

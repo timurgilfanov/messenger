@@ -23,7 +23,7 @@ import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
@@ -107,14 +107,14 @@ class RemoteAuthDataSourceRegisterTest {
     }
 
     @Test
-    fun `register EMAIL_NOT_EXISTS returns InvalidEmail with UnknownRuleViolation`() = runTest {
+    fun `register EMAIL_NOT_EXISTS returns InvalidEmail with EmailUnknownError`() = runTest {
         val dataSource = createDataSource(createMockClient(errorResponse("EMAIL_NOT_EXISTS")))
 
         val result = dataSource.register(credentials, name)
 
         assertIs<ResultWithError.Failure<*, RegisterError>>(result)
         val error = assertIs<RegisterError.InvalidEmail>(result.error)
-        assertIs<EmailValidationError.UnknownRuleViolation>(error.reason)
+        assertIs<EmailUnknownError>(error.reason)
     }
 
     @Test

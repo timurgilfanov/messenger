@@ -20,7 +20,7 @@ import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
@@ -93,14 +93,12 @@ class AuthRepositorySignupTest {
         }
 
     @Test
-    fun `signup InvalidEmail UnknownRuleViolation returns InvalidEmail with UnknownRuleViolation`() =
+    fun `signup InvalidEmail EmailUnknownError returns InvalidEmail with EmailUnknownError`() =
         runTest {
             val remote = RemoteAuthDataSourceFake()
             remote.enqueueRegister(
                 ResultWithError.Failure(
-                    RegisterError.InvalidEmail(
-                        EmailValidationError.UnknownRuleViolation("EMAIL_NOT_EXISTS"),
-                    ),
+                    RegisterError.InvalidEmail(EmailUnknownError("EMAIL_NOT_EXISTS")),
                 ),
             )
             val repo = createRepo(remoteDataSource = remote, scope = this)
@@ -111,7 +109,7 @@ class AuthRepositorySignupTest {
             val failure =
                 assertIs<ResultWithError.Failure<AuthSession, SignupRepositoryError>>(result)
             val error = assertIs<SignupRepositoryError.InvalidEmail>(failure.error)
-            assertIs<EmailValidationError.UnknownRuleViolation>(error.reason)
+            assertIs<EmailUnknownError>(error.reason)
         }
 
     @Test

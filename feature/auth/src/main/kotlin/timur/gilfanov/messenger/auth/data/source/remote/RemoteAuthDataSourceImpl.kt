@@ -25,7 +25,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
@@ -218,7 +218,7 @@ class RemoteAuthDataSourceImpl @Inject constructor(
     private fun mapRegisterError(apiError: ApiError?): RegisterError = when (apiError?.code) {
         CODE_EMAIL_TAKEN -> RegisterError.InvalidEmail(SignupEmailError.EmailTaken)
         CODE_EMAIL_NOT_EXISTS -> RegisterError.InvalidEmail(
-            EmailUnknownError(CODE_EMAIL_NOT_EXISTS),
+            EmailValidationError.UnknownRuleViolation(CODE_EMAIL_NOT_EXISTS),
         )
         CODE_PASSWORD_TOO_SHORT -> RegisterError.InvalidPassword(
             PasswordValidationError.PasswordTooShort(

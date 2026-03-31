@@ -61,7 +61,6 @@ import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
 import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
 import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
@@ -363,8 +362,8 @@ private fun LoginEmailError.toDisplayString(): String = when (this) {
 
     EmailValidationError.NoDomainAtEmail -> stringResource(R.string.auth_error_no_domain_at_email)
 
+    is EmailValidationError.UnknownRuleViolation,
     LoginEmailError.EmailNotExists,
-    is EmailUnknownError,
     -> stringResource(R.string.login_error_invalid_email)
 }
 

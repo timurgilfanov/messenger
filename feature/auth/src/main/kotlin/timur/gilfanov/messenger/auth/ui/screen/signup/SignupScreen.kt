@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,10 +56,10 @@ import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
 import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
+import timur.gilfanov.messenger.auth.ui.utils.toDisplayString
 import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
-import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
@@ -452,39 +451,6 @@ private fun SignupEmailError.toDisplayString(): String = when (this) {
     SignupEmailError.EmailTaken -> stringResource(R.string.signup_error_email_taken)
 
     is EmailUnknownError -> stringResource(R.string.signup_error_invalid_email_server)
-}
-
-@Composable
-private fun PasswordValidationError.toDisplayString(): String = when (this) {
-    is PasswordValidationError.PasswordTooShort -> when (val len = minLength) {
-        null -> stringResource(R.string.auth_error_invalid_password_server)
-        else -> stringResource(R.string.auth_error_password_too_short, len)
-    }
-
-    is PasswordValidationError.PasswordTooLong -> when (val len = maxLength) {
-        null -> stringResource(R.string.auth_error_invalid_password_server)
-        else -> stringResource(R.string.auth_error_password_too_long, len)
-    }
-
-    is PasswordValidationError.ForbiddenCharacterInPassword ->
-        stringResource(R.string.auth_error_forbidden_character_in_password, character)
-
-    is PasswordValidationError.PasswordMustContainNumbers ->
-        pluralStringResource(
-            R.plurals.auth_error_password_must_contain_numbers,
-            minNumbers,
-            minNumbers,
-        )
-
-    is PasswordValidationError.PasswordMustContainAlphabet ->
-        pluralStringResource(
-            R.plurals.auth_error_password_must_contain_alphabet,
-            minAlphabet,
-            minAlphabet,
-        )
-
-    is PasswordValidationError.UnknownRuleViolation ->
-        stringResource(R.string.auth_error_invalid_password_server)
 }
 
 @Composable

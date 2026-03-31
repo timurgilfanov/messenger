@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
 import app.cash.turbine.test
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.flow.flow
@@ -14,7 +13,6 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
@@ -28,7 +26,6 @@ class ObserveUiLanguageUseCaseTest {
     private val testSession = AuthSession(
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
-        userId = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
     )
     private val logger = NoOpLogger()
 

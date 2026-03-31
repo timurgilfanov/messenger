@@ -6,13 +6,11 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 
 class LocalAuthDataSourceFake : LocalAuthDataSource {
     var accessToken: String? = null
     var refreshToken: String? = null
     var authProvider: AuthProvider? = null
-    var userId: UserId? = null
 
     override suspend fun getAccessToken(): ResultWithError<String?, LocalAuthDataSourceError> =
         ResultWithError.Success(accessToken)
@@ -25,9 +23,6 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         LocalAuthDataSourceError,
         > =
         ResultWithError.Success(authProvider)
-
-    override suspend fun getUserId(): ResultWithError<UserId?, LocalAuthDataSourceError> =
-        ResultWithError.Success(userId)
 
     override suspend fun saveTokens(
         tokens: AuthTokens,
@@ -43,7 +38,6 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         accessToken = session.tokens.accessToken
         refreshToken = session.tokens.refreshToken
         authProvider = session.provider
-        userId = session.userId
         return ResultWithError.Success(Unit)
     }
 
@@ -51,7 +45,6 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         accessToken = null
         refreshToken = null
         authProvider = null
-        userId = null
         return ResultWithError.Success(Unit)
     }
 }

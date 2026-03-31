@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.ui.screen.settings
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,7 +15,6 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Profile
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
@@ -29,8 +27,6 @@ class ProfileViewModelObservationTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val testUserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
-
     private fun createViewModel(
         flow: kotlinx.coroutines.flow.Flow<ResultWithError<Profile, ObserveProfileError>>,
     ) = ProfileViewModel(
@@ -42,7 +38,7 @@ class ProfileViewModelObservationTest {
     @Test
     fun `initial state is Loading`() {
         val viewModel = createViewModel(
-            flowOf(ResultWithError.Success(Profile(testUserId, "Timur", null))),
+            flowOf(ResultWithError.Success(Profile("Timur", null))),
         )
 
         assertIs<ProfileUiState.Loading>(viewModel.state.value)
@@ -51,7 +47,7 @@ class ProfileViewModelObservationTest {
     @Test
     fun `transitions to Ready on successful observation`() = runTest {
         val viewModel = createViewModel(
-            flowOf(ResultWithError.Success(Profile(testUserId, "Timur", null))),
+            flowOf(ResultWithError.Success(Profile("Timur", null))),
         )
 
         viewModel.state.test {
@@ -66,7 +62,7 @@ class ProfileViewModelObservationTest {
     @Test
     fun `state updates on subsequent profile changes`() = runTest {
         val profileFlow = MutableStateFlow<ResultWithError<Profile, ObserveProfileError>>(
-            ResultWithError.Success(Profile(testUserId, "Timur", null)),
+            ResultWithError.Success(Profile("Timur", null)),
         )
         val viewModel = createViewModel(profileFlow)
 
@@ -78,7 +74,7 @@ class ProfileViewModelObservationTest {
             )
 
             profileFlow.update {
-                ResultWithError.Success(Profile(testUserId, "Alex", null))
+                ResultWithError.Success(Profile("Alex", null))
             }
 
             assertEquals(

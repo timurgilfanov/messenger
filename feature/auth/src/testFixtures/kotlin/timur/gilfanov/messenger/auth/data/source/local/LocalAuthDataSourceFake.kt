@@ -4,14 +4,12 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 
 class LocalAuthDataSourceFake : LocalAuthDataSource {
 
     private var accessToken: String? = null
     private var refreshToken: String? = null
     private var authProvider: AuthProvider? = null
-    private var userId: UserId? = null
 
     private val getAccessTokenQueue =
         ArrayDeque<ResultWithError<String?, LocalAuthDataSourceError>>()
@@ -19,8 +17,6 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         ArrayDeque<ResultWithError<String?, LocalAuthDataSourceError>>()
     private val getAuthProviderQueue =
         ArrayDeque<ResultWithError<AuthProvider?, LocalAuthDataSourceError>>()
-    private val getUserIdQueue =
-        ArrayDeque<ResultWithError<UserId?, LocalAuthDataSourceError>>()
     private val saveTokensQueue = ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
     private val saveSessionQueue = ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
     private val clearSessionQueue = ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
@@ -37,10 +33,6 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         vararg results: ResultWithError<AuthProvider?, LocalAuthDataSourceError>,
     ) {
         results.forEach { getAuthProviderQueue.addLast(it) }
-    }
-
-    fun enqueueGetUserId(vararg results: ResultWithError<UserId?, LocalAuthDataSourceError>) {
-        results.forEach { getUserIdQueue.addLast(it) }
     }
 
     fun enqueueSaveTokens(vararg results: ResultWithError<Unit, LocalAuthDataSourceError>) {
@@ -79,13 +71,6 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
             ResultWithError.Success(authProvider)
         }
 
-    override suspend fun getUserId(): ResultWithError<UserId?, LocalAuthDataSourceError> =
-        if (getUserIdQueue.isNotEmpty()) {
-            getUserIdQueue.removeFirst()
-        } else {
-            ResultWithError.Success(userId)
-        }
-
     override suspend fun saveTokens(
         tokens: AuthTokens,
     ): ResultWithError<Unit, LocalAuthDataSourceError> {
@@ -117,7 +102,6 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
             accessToken = session.tokens.accessToken
             refreshToken = session.tokens.refreshToken
             authProvider = session.provider
-            userId = session.userId
         }
         return result
     }
@@ -134,7 +118,6 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
             accessToken = null
             refreshToken = null
             authProvider = null
-            userId = null
         }
         return result
     }

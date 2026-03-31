@@ -26,8 +26,6 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 @Category(Unit::class)
 class AuthRepositoryFakeTest {
 
-    private val testUserId = AuthRepositoryFake.TEST_USER_ID
-
     @Test
     fun `loginWithCredentials updates authState`() = runTest {
         val repository = AuthRepositoryFake()
@@ -63,7 +61,6 @@ class AuthRepositoryFakeTest {
         val session = AuthSession(
             tokens = AuthTokens(accessToken = "tokenA", refreshToken = "tokenR"),
             provider = AuthProvider.GOOGLE,
-            userId = testUserId,
         )
         val repository = AuthRepositoryFake().apply {
             defaultLoginWithGoogleResult = ResultWithError.Success(session)
@@ -79,7 +76,6 @@ class AuthRepositoryFakeTest {
         val initialSession = AuthSession(
             tokens = AuthTokens(accessToken = "oldA", refreshToken = "oldR"),
             provider = AuthProvider.EMAIL,
-            userId = testUserId,
         )
         val repository = AuthRepositoryFake(initialSession)
 
@@ -96,7 +92,6 @@ class AuthRepositoryFakeTest {
         val session = AuthSession(
             tokens = AuthTokens(accessToken = "access", refreshToken = "refresh"),
             provider = AuthProvider.EMAIL,
-            userId = testUserId,
         )
         val repository = AuthRepositoryFake().apply {
             defaultSignupResult = ResultWithError.Success(session)
@@ -113,7 +108,6 @@ class AuthRepositoryFakeTest {
         val initialSession = AuthSession(
             tokens = AuthTokens(accessToken = "a1", refreshToken = "r1"),
             provider = AuthProvider.EMAIL,
-            userId = testUserId,
         )
         val repository = AuthRepositoryFake(initialSession)
 
@@ -127,7 +121,6 @@ class AuthRepositoryFakeTest {
         val initialSession = AuthSession(
             tokens = AuthTokens(accessToken = "a1", refreshToken = "r1"),
             provider = AuthProvider.EMAIL,
-            userId = testUserId,
         )
         val repository = AuthRepositoryFake(initialSession).apply {
             defaultLogoutResult =
@@ -147,12 +140,10 @@ class AuthRepositoryFakeTest {
             val session1 = AuthSession(
                 tokens = AuthTokens(accessToken = "a1", refreshToken = "r1"),
                 provider = AuthProvider.EMAIL,
-                userId = testUserId,
             )
             val session2 = AuthSession(
                 tokens = AuthTokens(accessToken = "a2", refreshToken = "r2"),
                 provider = AuthProvider.EMAIL,
-                userId = testUserId,
             )
             val repository = AuthRepositoryFake().apply {
                 defaultLoginWithCredentialsResult =
@@ -185,12 +176,10 @@ class AuthRepositoryFakeTest {
             val session1 = AuthSession(
                 tokens = AuthTokens(accessToken = "ga1", refreshToken = "gr1"),
                 provider = AuthProvider.GOOGLE,
-                userId = testUserId,
             )
             val session2 = AuthSession(
                 tokens = AuthTokens(accessToken = "ga2", refreshToken = "gr2"),
                 provider = AuthProvider.GOOGLE,
-                userId = testUserId,
             )
             val repository = AuthRepositoryFake().apply {
                 defaultLoginWithGoogleResult =
@@ -222,7 +211,6 @@ class AuthRepositoryFakeTest {
             val initialSession = AuthSession(
                 tokens = AuthTokens(accessToken = "a1", refreshToken = "r1"),
                 provider = AuthProvider.EMAIL,
-                userId = testUserId,
             )
             val newTokens = AuthTokens(accessToken = "a2", refreshToken = "r2")
             val repository = AuthRepositoryFake(initialSession).apply {

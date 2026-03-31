@@ -20,7 +20,6 @@ class ObserveProfileUseCaseImpl(private val authRepository: AuthRepository) :
                     flowOf(
                         ResultWithError.Success(
                             Profile(
-                                id = state.session.userId,
                                 name = "Timur",
                                 pictureUrl = null,
                             ),

@@ -1,12 +1,10 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
-import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
@@ -22,11 +20,9 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepos
 
 object LanguageViewModelTestFixtures {
 
-    private val TEST_USER_ID = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
     private val TEST_SESSION = AuthSession(
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
-        userId = TEST_USER_ID,
     )
 
     fun createTestSettings(language: UiLanguage = UiLanguage.English): Settings = Settings(

@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.domain.usecase.auth
 
-import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +12,6 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
@@ -88,10 +86,6 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
 
     private var tokenCounter: Int = 0
 
-    companion object {
-        val TEST_USER_ID = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
-    }
-
     private fun nextTokens(prefix: String): AuthTokens {
         tokenCounter += 1
         return AuthTokens(
@@ -110,7 +104,6 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
                 AuthSession(
                     tokens = nextTokens("credentials-login"),
                     provider = AuthProvider.EMAIL,
-                    userId = TEST_USER_ID,
                 ),
             )
         }
@@ -130,7 +123,6 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
                 AuthSession(
                     tokens = nextTokens("google-login"),
                     provider = AuthProvider.GOOGLE,
-                    userId = TEST_USER_ID,
                 ),
             )
         }
@@ -151,7 +143,6 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
                 AuthSession(
                     tokens = nextTokens("google-signup"),
                     provider = AuthProvider.GOOGLE,
-                    userId = TEST_USER_ID,
                 ),
             )
         }
@@ -172,7 +163,6 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
                 AuthSession(
                     tokens = nextTokens("signup"),
                     provider = AuthProvider.EMAIL,
-                    userId = TEST_USER_ID,
                 ),
             )
         }

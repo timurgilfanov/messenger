@@ -9,7 +9,6 @@ import android.database.sqlite.SQLiteFullException
 import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
@@ -25,7 +24,6 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDaoFake
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -43,7 +41,7 @@ class LocalSettingsDataSourceImplExceptionTest {
     private lateinit var wrappedDao: SettingsDaoFake
     private lateinit var dataSource: LocalSettingsDataSource
 
-    private val testUserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+    private val testUserKey = UserKey("user-key-1")
 
     @Before
     fun setup() {
@@ -64,7 +62,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteDatabaseCorruptException("database corrupted")
 
         // When
-        val result = dataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val result = dataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         // Then
         assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(result)
@@ -78,7 +76,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteAccessPermException("access denied")
 
         // When
-        val result = dataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val result = dataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         // Then
         assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(result)
@@ -92,7 +90,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.failNextNCalls = 4
 
         // When
-        val result = dataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val result = dataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         // Then
         assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(result)
@@ -104,7 +102,7 @@ class LocalSettingsDataSourceImplExceptionTest {
     fun `getSetting returns UnknownError on unmapped SQLiteException`() = runTest {
         wrappedDao.simulateDatabaseError = SQLiteException("unknown")
 
-        val result = dataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val result = dataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(result)
         assertIs<GetSettingError.UnknownError>(result.error)
@@ -115,11 +113,11 @@ class LocalSettingsDataSourceImplExceptionTest {
     fun `getSetting succeeds after 2 lock retries`() = runTest {
         // Given - fail first 2 attempts, succeed on 3rd
         wrappedDao.failNextNCalls = 2
-        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        val entity = createSettingEntity(testUserKey, SettingKey.UI_LANGUAGE, "en")
         databaseRule.database.settingsDao().upsert(entity)
 
         // When
-        val result = dataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val result = dataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         // Then
         assertIs<ResultWithError.Success<TypedLocalSetting, GetSettingError>>(result)
@@ -136,7 +134,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         val setting = createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English)
 
         // When
-        val result = dataSource.upsert(testUserId, setting)
+        val result = dataSource.upsert(testUserKey, setting)
 
         // Then
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
@@ -151,7 +149,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         val setting = createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English)
 
         // When
-        val result = dataSource.upsert(testUserId, setting)
+        val result = dataSource.upsert(testUserKey, setting)
 
         // Then
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
@@ -166,7 +164,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         val setting = createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English)
 
         // When
-        val result = dataSource.upsert(testUserId, setting)
+        val result = dataSource.upsert(testUserKey, setting)
 
         // Then
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
@@ -181,7 +179,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         val setting = createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English)
 
         // When
-        val result = dataSource.upsert(testUserId, setting)
+        val result = dataSource.upsert(testUserKey, setting)
 
         // Then
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
@@ -196,7 +194,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         val setting = createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English)
 
         // When
-        val result = dataSource.upsert(testUserId, setting)
+        val result = dataSource.upsert(testUserKey, setting)
 
         // Then
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
@@ -209,7 +207,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteException("unknown")
         val setting = createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English)
 
-        val result = dataSource.upsert(testUserId, setting)
+        val result = dataSource.upsert(testUserKey, setting)
 
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
         assertIs<UpsertSettingError.UnknownError>(result.error)
@@ -223,7 +221,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         val setting = createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English)
 
         // When
-        val result = dataSource.upsert(testUserId, setting)
+        val result = dataSource.upsert(testUserKey, setting)
 
         // Then
         assertIs<ResultWithError.Success<Unit, UpsertSettingError>>(result)
@@ -238,7 +236,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         val settings = listOf(createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English))
 
         // When
-        val result = dataSource.upsert(testUserId, settings)
+        val result = dataSource.upsert(testUserKey, settings)
 
         // Then
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
@@ -255,7 +253,7 @@ class LocalSettingsDataSourceImplExceptionTest {
                 listOf(createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English))
 
             // When
-            val result = dataSource.upsert(testUserId, settings)
+            val result = dataSource.upsert(testUserKey, settings)
 
             // Then
             assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
@@ -270,7 +268,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         val settings = listOf(createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English))
 
         // When
-        val result = dataSource.upsert(testUserId, settings)
+        val result = dataSource.upsert(testUserKey, settings)
 
         // Then
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
@@ -285,7 +283,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         val settings = listOf(createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English))
 
         // When
-        val result = dataSource.upsert(testUserId, settings)
+        val result = dataSource.upsert(testUserKey, settings)
 
         // Then
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
@@ -298,7 +296,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteException("unknown")
         val settings = listOf(createTypedLocalSetting(SettingKey.UI_LANGUAGE, UiLanguage.English))
 
-        val result = dataSource.upsert(testUserId, settings)
+        val result = dataSource.upsert(testUserKey, settings)
 
         assertIs<ResultWithError.Failure<Unit, UpsertSettingError>>(result)
         assertIs<UpsertSettingError.UnknownError>(result.error)
@@ -309,13 +307,13 @@ class LocalSettingsDataSourceImplExceptionTest {
     @Test
     fun `transform returns StorageFull on SQLiteFullException`() = runTest {
         // Given
-        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        val entity = createSettingEntity(testUserKey, SettingKey.UI_LANGUAGE, "en")
         databaseRule.database.settingsDao().upsert(entity)
 
         wrappedDao.simulateDatabaseError = SQLiteFullException("storage full")
 
         // When
-        val result = dataSource.transform(testUserId) { it }
+        val result = dataSource.transform(testUserKey) { it }
 
         // Then
         assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
@@ -325,13 +323,13 @@ class LocalSettingsDataSourceImplExceptionTest {
     @Test
     fun `transform returns DatabaseCorrupted on SQLiteDatabaseCorruptException`() = runTest {
         // Given
-        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        val entity = createSettingEntity(testUserKey, SettingKey.UI_LANGUAGE, "en")
         databaseRule.database.settingsDao().upsert(entity)
 
         wrappedDao.simulateDatabaseError = SQLiteDatabaseCorruptException("corrupted")
 
         // When
-        val result = dataSource.transform(testUserId) { it }
+        val result = dataSource.transform(testUserKey) { it }
 
         // Then
         assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
@@ -341,13 +339,13 @@ class LocalSettingsDataSourceImplExceptionTest {
     @Test
     fun `transform returns AccessDenied on SQLiteAccessPermException`() = runTest {
         // Given
-        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        val entity = createSettingEntity(testUserKey, SettingKey.UI_LANGUAGE, "en")
         databaseRule.database.settingsDao().upsert(entity)
 
         wrappedDao.simulateDatabaseError = SQLiteAccessPermException("access denied")
 
         // When
-        val result = dataSource.transform(testUserId) { it }
+        val result = dataSource.transform(testUserKey) { it }
 
         // Then
         assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
@@ -357,13 +355,13 @@ class LocalSettingsDataSourceImplExceptionTest {
     @Test
     fun `transform returns ReadOnlyDatabase on SQLiteReadOnlyDatabaseException`() = runTest {
         // Given
-        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        val entity = createSettingEntity(testUserKey, SettingKey.UI_LANGUAGE, "en")
         databaseRule.database.settingsDao().upsert(entity)
 
         wrappedDao.simulateDatabaseError = SQLiteReadOnlyDatabaseException("read only")
 
         // When
-        val result = dataSource.transform(testUserId) { it }
+        val result = dataSource.transform(testUserKey) { it }
 
         // Then
         assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
@@ -374,13 +372,13 @@ class LocalSettingsDataSourceImplExceptionTest {
     fun `transform returns ConcurrentModificationError on SQLiteDatabaseLockedException`() =
         runTest {
             // Given
-            val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+            val entity = createSettingEntity(testUserKey, SettingKey.UI_LANGUAGE, "en")
             databaseRule.database.settingsDao().upsert(entity)
 
             wrappedDao.simulateDatabaseError = SQLiteDatabaseLockedException("locked")
 
             // When
-            val result = dataSource.transform(testUserId) { it }
+            val result = dataSource.transform(testUserKey) { it }
 
             // Then
             assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
@@ -390,13 +388,13 @@ class LocalSettingsDataSourceImplExceptionTest {
     @Test
     fun `transform returns DiskIOError on SQLiteDiskIOException`() = runTest {
         // Given
-        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        val entity = createSettingEntity(testUserKey, SettingKey.UI_LANGUAGE, "en")
         databaseRule.database.settingsDao().upsert(entity)
 
         wrappedDao.simulateDatabaseError = SQLiteDiskIOException("disk IO error")
 
         // When
-        val result = dataSource.transform(testUserId) { it }
+        val result = dataSource.transform(testUserKey) { it }
 
         // Then
         assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
@@ -405,11 +403,11 @@ class LocalSettingsDataSourceImplExceptionTest {
 
     @Test
     fun `transform returns UnknownError on unmapped SQLiteException`() = runTest {
-        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        val entity = createSettingEntity(testUserKey, SettingKey.UI_LANGUAGE, "en")
         databaseRule.database.settingsDao().upsert(entity)
         wrappedDao.simulateDatabaseError = SQLiteException("unknown")
 
-        val result = dataSource.transform(testUserId) { it }
+        val result = dataSource.transform(testUserKey) { it }
 
         assertIs<ResultWithError.Failure<Unit, TransformSettingError>>(result)
         assertIs<TransformSettingError.UnknownError>(result.error)
@@ -417,14 +415,14 @@ class LocalSettingsDataSourceImplExceptionTest {
 
     @Test
     fun `transform retries load on lock and succeeds`() = runTest {
-        val entity = createSettingEntity(testUserId, SettingKey.UI_LANGUAGE, "en")
+        val entity = createSettingEntity(testUserKey, SettingKey.UI_LANGUAGE, "en")
         databaseRule.database.settingsDao().upsert(entity)
         wrappedDao.enqueueErrors(
             SQLiteDatabaseLockedException("locked"),
             SQLiteDatabaseLockedException("locked"),
         )
 
-        val result = dataSource.transform(testUserId) { it }
+        val result = dataSource.transform(testUserKey) { it }
 
         assertIs<ResultWithError.Success<Unit, TransformSettingError>>(result)
         assertTrue(wrappedDao.callCount >= 3) // two failures + success + upsert call
@@ -438,7 +436,7 @@ class LocalSettingsDataSourceImplExceptionTest {
             wrappedDao.simulateDatabaseError = SQLiteDatabaseCorruptException("corrupted")
 
             // When
-            val result = dataSource.getUnsyncedSettings(testUserId)
+            val result = dataSource.getUnsyncedSettings(testUserKey)
 
             // Then
             assertIs<ResultWithError.Failure<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(
@@ -454,7 +452,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteAccessPermException("access denied")
 
         // When
-        val result = dataSource.getUnsyncedSettings(testUserId)
+        val result = dataSource.getUnsyncedSettings(testUserKey)
 
         // Then
         assertIs<ResultWithError.Failure<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
@@ -468,7 +466,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.failNextNCalls = 4
 
         // When
-        val result = dataSource.getUnsyncedSettings(testUserId)
+        val result = dataSource.getUnsyncedSettings(testUserKey)
 
         // Then
         assertIs<ResultWithError.Failure<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
@@ -480,7 +478,7 @@ class LocalSettingsDataSourceImplExceptionTest {
     fun `getUnsyncedSettings returns UnknownError on unmapped SQLiteException`() = runTest {
         wrappedDao.simulateDatabaseError = SQLiteException("unknown")
 
-        val result = dataSource.getUnsyncedSettings(testUserId)
+        val result = dataSource.getUnsyncedSettings(testUserKey)
 
         assertIs<ResultWithError.Failure<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
         assertIs<GetUnsyncedSettingsError.UnknownError>(result.error)
@@ -492,7 +490,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         // Given
         wrappedDao.failNextNCalls = 2
         val entity = createSettingEntity(
-            testUserId,
+            testUserKey,
             SettingKey.UI_LANGUAGE,
             "en",
             localVersion = 2,
@@ -501,7 +499,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         databaseRule.database.settingsDao().upsert(entity)
 
         // When
-        val result = dataSource.getUnsyncedSettings(testUserId)
+        val result = dataSource.getUnsyncedSettings(testUserKey)
 
         // Then
         assertIs<ResultWithError.Success<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
@@ -516,7 +514,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteFullException("storage full")
 
         // When/Then
-        dataSource.observe(testUserId).test {
+        dataSource.observe(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
                 result,
@@ -535,7 +533,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteDatabaseCorruptException("corrupted")
 
         // When/Then
-        dataSource.observe(testUserId).test {
+        dataSource.observe(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
                 result,
@@ -554,7 +552,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteAccessPermException("access denied")
 
         // When/Then
-        dataSource.observe(testUserId).test {
+        dataSource.observe(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
                 result,
@@ -573,7 +571,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.simulateDatabaseError = SQLiteReadOnlyDatabaseException("read only")
 
         // When/Then
-        dataSource.observe(testUserId).test {
+        dataSource.observe(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
                 result,
@@ -592,7 +590,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         wrappedDao.failNextNCalls = 4 // Fail initial + 3 retries
 
         // When/Then
-        dataSource.observe(testUserId).test {
+        dataSource.observe(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
                 result,
@@ -609,7 +607,7 @@ class LocalSettingsDataSourceImplExceptionTest {
     fun `observe emits UnknownError on unmapped SQLiteException`() = runTest {
         wrappedDao.simulateDatabaseError = SQLiteException("unknown")
 
-        dataSource.observe(testUserId).test {
+        dataSource.observe(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
                 result,
@@ -622,14 +620,14 @@ class LocalSettingsDataSourceImplExceptionTest {
     @Test
     fun `observe retries after disk error and emits success`() = runTest {
         val entity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.German.toStorageValue(),
         )
         databaseRule.database.settingsDao().upsert(entity)
         wrappedDao.enqueueErrors(SQLiteDiskIOException("disk error"))
 
-        dataSource.observe(testUserId).test {
+        dataSource.observe(testUserKey).test {
             val emission = awaitItem()
             assertIs<ResultWithError.Success<LocalSettings, *>>(emission)
             assertEquals(UiLanguage.German, emission.data.uiLanguage.value)
@@ -638,7 +636,7 @@ class LocalSettingsDataSourceImplExceptionTest {
 
     @Suppress("LongParameterList")
     private fun createSettingEntity(
-        userId: UserId,
+        userKey: UserKey,
         key: SettingKey,
         value: String,
         localVersion: Int = 1,
@@ -646,7 +644,7 @@ class LocalSettingsDataSourceImplExceptionTest {
         serverVersion: Int = 0,
         modifiedAt: Long = 0L,
     ): SettingEntity = SettingEntity(
-        userId = userId.id.toString(),
+        userKey = userKey.key,
         key = key.key,
         value = value,
         localVersion = localVersion,

@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.auth.data.repository
 
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -28,7 +27,6 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.fold
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
@@ -80,37 +78,22 @@ class AuthRepositoryImpl @Inject constructor(
                 null
             },
         )
-        val userId = localDataSource.getUserId().fold(
-            onSuccess = { it ?: UserId(UUID.randomUUID()) },
-            onFailure = { e ->
-                logger.e(TAG, "Failed to restore user id: $e")
-                UserId(UUID.randomUUID())
-            },
-        )
         if (accessToken != null && refreshToken != null && provider != null) {
             _authState.value = AuthState.Authenticated(
                 AuthSession(
                     tokens = AuthTokens(accessToken, refreshToken),
                     provider = provider,
-                    userId = userId,
                 ),
             )
         }
     }
-
-    private suspend fun getOrGenerateUserId(): UserId = localDataSource.getUserId().fold(
-        onSuccess = { it ?: UserId(UUID.randomUUID()) },
-        onFailure = { UserId(UUID.randomUUID()) },
-    )
 
     override suspend fun loginWithCredentials(
         credentials: Credentials,
     ): ResultWithError<AuthSession, LoginRepositoryError> =
         remoteDataSource.loginWithCredentials(credentials).fold(
             onSuccess = { tokens ->
-                val userId = getOrGenerateUserId()
-                val session =
-                    AuthSession(tokens = tokens, provider = AuthProvider.EMAIL, userId = userId)
+                val session = AuthSession(tokens = tokens, provider = AuthProvider.EMAIL)
                 localDataSource.saveSession(session).fold(
                     onSuccess = {
                         _authState.value = AuthState.Authenticated(session)
@@ -134,9 +117,7 @@ class AuthRepositoryImpl @Inject constructor(
     ): ResultWithError<AuthSession, GoogleLoginRepositoryError> =
         remoteDataSource.loginWithGoogle(idToken).fold(
             onSuccess = { tokens ->
-                val userId = getOrGenerateUserId()
-                val session =
-                    AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE, userId = userId)
+                val session = AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE)
                 localDataSource.saveSession(session).fold(
                     onSuccess = {
                         _authState.value = AuthState.Authenticated(session)
@@ -163,9 +144,7 @@ class AuthRepositoryImpl @Inject constructor(
     ): ResultWithError<AuthSession, GoogleSignupRepositoryError> =
         remoteDataSource.signupWithGoogle(idToken, name).fold(
             onSuccess = { tokens ->
-                val userId = getOrGenerateUserId()
-                val session =
-                    AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE, userId = userId)
+                val session = AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE)
                 localDataSource.saveSession(session).fold(
                     onSuccess = {
                         _authState.value = AuthState.Authenticated(session)
@@ -192,9 +171,7 @@ class AuthRepositoryImpl @Inject constructor(
     ): ResultWithError<AuthSession, SignupRepositoryError> =
         remoteDataSource.register(credentials, name).fold(
             onSuccess = { tokens ->
-                val userId = getOrGenerateUserId()
-                val session =
-                    AuthSession(tokens = tokens, provider = AuthProvider.EMAIL, userId = userId)
+                val session = AuthSession(tokens = tokens, provider = AuthProvider.EMAIL)
                 localDataSource.saveSession(session).fold(
                     onSuccess = {
                         _authState.value = AuthState.Authenticated(session)

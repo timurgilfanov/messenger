@@ -26,7 +26,7 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
         ChatParticipantCrossRef::class,
         SettingEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -46,13 +45,12 @@ class LocalSettingsDataSourceFake(
     }
 
     override fun observe(
-        userId: UserId,
+        userKey: UserKey,
     ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>> {
         observeError?.let { return flowOf(ResultWithError.Failure(it)) }
 
-        val userIdString = userId.id.toString()
         return settings.map { map ->
-            val entities = map.values.filter { it.userId == userIdString }
+            val entities = map.values.filter { it.userKey == userKey.key }
             if (entities.isEmpty()) {
                 ResultWithError.Failure(GetSettingsLocalDataSourceError.NoSettings)
             } else {
@@ -62,13 +60,12 @@ class LocalSettingsDataSourceFake(
     }
 
     override suspend fun getSetting(
-        userId: UserId,
+        userKey: UserKey,
         key: SettingKey,
     ): ResultWithError<TypedLocalSetting, GetSettingError> {
         getSettingError?.let { return ResultWithError.Failure(it) }
 
-        val userIdString = userId.id.toString()
-        val entity = settings.value[Pair(userIdString, key.key)]
+        val entity = settings.value[Pair(userKey.key, key.key)]
         return if (entity != null) {
             ResultWithError.Success(entity.toTypedLocalSetting(defaultSettings))
         } else {
@@ -77,26 +74,25 @@ class LocalSettingsDataSourceFake(
     }
 
     override suspend fun upsert(
-        userId: UserId,
+        userKey: UserKey,
         setting: TypedLocalSetting,
     ): ResultWithError<Unit, UpsertSettingError> {
         upsertError?.let { return ResultWithError.Failure(it) }
 
-        val entity = setting.toSettingEntity(userId)
+        val entity = setting.toSettingEntity(userKey)
         settings.update { map ->
-            map + (Pair(entity.userId, entity.key) to entity)
+            map + (Pair(entity.userKey, entity.key) to entity)
         }
         return ResultWithError.Success(Unit)
     }
 
     override suspend fun transform(
-        userId: UserId,
+        userKey: UserKey,
         transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, TransformSettingError> {
         transformError?.let { return ResultWithError.Failure(it) }
 
-        val userIdString = userId.id.toString()
-        val entities = settings.value.values.filter { it.userId == userIdString }
+        val entities = settings.value.values.filter { it.userKey == userKey.key }
 
         if (entities.isEmpty()) {
             return ResultWithError.Failure(TransformSettingError.SettingsNotFound)
@@ -104,7 +100,7 @@ class LocalSettingsDataSourceFake(
 
         val localSettings = LocalSettings.fromEntities(entities, defaultSettings)
         val transformedLocalSettings = transform(localSettings)
-        val transformedEntities = transformedLocalSettings.toSettingEntities(userId)
+        val transformedEntities = transformedLocalSettings.toSettingEntities(userKey)
 
         val now = System.currentTimeMillis()
         settings.update { map ->
@@ -123,7 +119,7 @@ class LocalSettingsDataSourceFake(
                 } else {
                     initial
                 }
-                updatedMap = updatedMap + (Pair(entity.userId, entity.key) to entity)
+                updatedMap = updatedMap + (Pair(entity.userKey, entity.key) to entity)
             }
             updatedMap
         }
@@ -132,29 +128,28 @@ class LocalSettingsDataSourceFake(
     }
 
     override suspend fun getUnsyncedSettings(
-        userId: UserId,
+        userKey: UserKey,
     ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError> {
         getUnsyncedError?.let { return ResultWithError.Failure(it) }
 
-        val userIdString = userId.id.toString()
         val unsyncedEntities = settings.value.values.filter {
-            it.userId == userIdString && it.localVersion > it.syncedVersion
+            it.userKey == userKey.key && it.localVersion > it.syncedVersion
         }
         val typedSettings = unsyncedEntities.map { it.toTypedLocalSetting(defaultSettings) }
         return ResultWithError.Success(typedSettings)
     }
 
     override suspend fun upsert(
-        userId: UserId,
+        userKey: UserKey,
         settings: List<TypedLocalSetting>,
     ): ResultWithError<Unit, UpsertSettingError> {
         upsertError?.let { return ResultWithError.Failure(it) }
 
-        val entities = settings.map { it.toSettingEntity(userId) }
+        val entities = settings.map { it.toSettingEntity(userKey) }
         this.settings.update { map ->
             var updatedMap = map
             entities.forEach { entity ->
-                updatedMap = updatedMap + (Pair(entity.userId, entity.key) to entity)
+                updatedMap = updatedMap + (Pair(entity.userKey, entity.key) to entity)
             }
             updatedMap
         }
@@ -184,9 +179,9 @@ private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSet
         null -> error("Unknown setting key: ${this.key}")
     }
 
-private fun TypedLocalSetting.toSettingEntity(userId: UserId): SettingEntity = when (this) {
+private fun TypedLocalSetting.toSettingEntity(userKey: UserKey): SettingEntity = when (this) {
     is TypedLocalSetting.UiLanguage -> SettingEntity(
-        userId = userId.id.toString(),
+        userKey = userKey.key,
         key = this.key.key,
         value = this.setting.value.toStorageValue(),
         localVersion = this.setting.localVersion,

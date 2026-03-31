@@ -7,7 +7,6 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Instant
@@ -22,6 +21,7 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceImpl
+import timur.gilfanov.messenger.data.source.local.UserKey
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSettingsChangeSuccess
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSettingsSyncConflict
@@ -31,7 +31,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -59,11 +58,9 @@ class SettingsRepositoryIntegrationTest {
 
     private val logger = TestLogger()
 
-    private val testUserId = UserId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
     private val testSession = AuthSession(
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
-        userId = testUserId,
     )
     private val testTimestamp = Instant.parse("2024-01-15T10:30:00Z")
     private val defaultSettings = Settings(uiLanguage = UiLanguage.English)
@@ -75,7 +72,7 @@ class SettingsRepositoryIntegrationTest {
     }
 
     private val syncSchedulerStub = object : SettingsSyncScheduler {
-        override fun scheduleSettingSync(userId: UserId, key: SettingKey) = Unit
+        override fun scheduleSettingSync(userKey: UserKey, key: SettingKey) = Unit
         override fun schedulePeriodicSync() = Unit
     }
 
@@ -126,7 +123,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Pre-insert settings into database
         val settingEntity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = "test-refresh",
             key = "ui_language",
             value = "German",
             localVersion = 1,
@@ -152,7 +149,7 @@ class SettingsRepositoryIntegrationTest {
         // Given - Pre-populate local settings and mock successful change
         var syncScheduled = false
         val customSyncScheduler = object : SettingsSyncScheduler {
-            override fun scheduleSettingSync(userId: UserId, key: SettingKey) {
+            override fun scheduleSettingSync(userKey: UserKey, key: SettingKey) {
                 syncScheduled = true
             }
 
@@ -174,7 +171,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Pre-insert settings
         val settingEntity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = "test-refresh",
             key = "ui_language",
             value = "English",
             localVersion = 1,
@@ -220,7 +217,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Pre-insert unsynced setting (localVersion > syncedVersion)
         val settingEntity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = "test-refresh",
             key = "ui_language",
             value = "German",
             localVersion = 2,
@@ -238,7 +235,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Verify local setting updated with new server version
         val updatedEntity = databaseRule.database.settingsDao()
-            .get(testUserId.id.toString(), "ui_language")
+            .get("test-refresh", "ui_language")
         assertEquals(2, updatedEntity?.serverVersion)
         assertEquals(2, updatedEntity?.syncedVersion)
     }
@@ -266,7 +263,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Pre-insert local setting
         val settingEntity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = "test-refresh",
             key = "ui_language",
             value = "English",
             localVersion = 2,
@@ -284,7 +281,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Verify local setting updated to server value
         val updatedEntity = databaseRule.database.settingsDao()
-            .get(testUserId.id.toString(), "ui_language")
+            .get("test-refresh", "ui_language")
         assertEquals("German", updatedEntity?.value)
     }
 

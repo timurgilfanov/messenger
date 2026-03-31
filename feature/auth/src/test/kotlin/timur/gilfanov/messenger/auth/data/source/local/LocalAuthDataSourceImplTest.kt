@@ -34,7 +34,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @RunWith(AndroidJUnit4::class)
@@ -129,7 +128,6 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.GOOGLE,
-                userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
             ),
         )
 
@@ -200,7 +198,6 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.EMAIL,
-                userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
             ),
         )
 
@@ -229,7 +226,6 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.EMAIL,
-                userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
             ),
         )
 
@@ -258,7 +254,6 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.EMAIL,
-                userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
             ),
         )
 
@@ -284,7 +279,6 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.EMAIL,
-                userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
             ),
         )
 

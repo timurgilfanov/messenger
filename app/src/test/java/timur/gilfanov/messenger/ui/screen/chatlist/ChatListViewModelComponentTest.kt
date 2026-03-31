@@ -29,7 +29,6 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.profile.Profile
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.FlowChatListUseCase
@@ -49,7 +48,7 @@ class ChatListViewModelComponentTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val testUserId = UUID.randomUUID()
-    private val testProfile = Profile(UserId(testUserId), "Test User", null)
+    private val testProfile = Profile("Test User", null)
     private val testObserveProfileUseCase: ObserveProfileUseCase =
         ObserveProfileUseCaseStub(flowOf(Success(testProfile)))
     private val testLogger = NoOpLogger()

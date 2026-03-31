@@ -5,16 +5,17 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.get
 import io.ktor.http.HttpStatusCode
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
@@ -23,7 +24,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -130,7 +130,6 @@ class AuthInterceptorTest {
             AuthSession(
                 tokens = AuthTokens("old-access-token", "old-refresh-token"),
                 provider = AuthProvider.EMAIL,
-                userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
             ),
         )
         authRepositoryFake.enqueueRefreshTokenResult(ResultWithError.Success(newTokens))
@@ -233,13 +232,10 @@ class AuthInterceptorTest {
     }
 
     /**
-     * [delay] keeps the refresh deferred active long enough for all coroutines to coalesce on it
-     * before it completes. Without it, the refresh would finish in the same scheduling turn as the
-     * first coroutine, and subsequent coroutines would each start their own refresh.
-     *
-     * [kotlinx.coroutines.test.StandardTestDispatcher] runs all coroutines on a single thread, so
-     * the refresh lock is never actually contended here. This test only verifies the
-     * [kotlinx.coroutines.Deferred.isActive] coalescing logic, not the thread-safety of the lock.
+     * Requests that reach the interceptor while a refresh is already in progress must await the
+     * same refresh deferred instead of starting their own refresh. The test controls the refresh
+     * completion explicitly so request overlap does not depend on Ktor engine scheduling details or
+     * wall-clock timing.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
@@ -248,6 +244,7 @@ class AuthInterceptorTest {
             accessToken = "old-access-token"
         }
         val refreshInvocationCount = AtomicInteger(0)
+        val releaseRefresh = CompletableDeferred<Unit>()
         val mockEngine = MockEngine {
             respond("Unauthorized", HttpStatusCode.Unauthorized)
         }
@@ -255,15 +252,23 @@ class AuthInterceptorTest {
             mockEngine = mockEngine,
             authTokenStorage = authTokenStorage,
             tokenRefreshUseCase = {
-                delay(100)
                 refreshInvocationCount.incrementAndGet()
+                releaseRefresh.await()
                 ResultWithError.Failure(TokenRefreshError.SessionExpired)
             },
             scope = this,
         )
 
-        repeat(10) { launch { client.get("/test") } }
-        advanceUntilIdle()
+        val jobs = List(10) {
+            launch { client.get("/test") }
+        }
+
+        while (refreshInvocationCount.get() == 0) {
+            yield()
+        }
+        runCurrent()
+        releaseRefresh.complete(Unit)
+        jobs.joinAll()
 
         assertEquals(1, refreshInvocationCount.get())
     }

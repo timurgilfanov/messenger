@@ -48,6 +48,7 @@ Full strategy in `docs/Testing Strategy.md`.
 
 ## Workflows
 - After editing any source file: run `./gradlew ktlintFormat detekt --auto-correct`
+- Do not modify static analysis configuration files (e.g. `detekt*.yml`, `.editorconfig`, `ktlint` config) without explicit confirmation from the user.
 
 ### Tests running
 - When a specific test fails — isolate before running the full suite: run `./gradlew <module>:<TestTask> <Isolation>`.

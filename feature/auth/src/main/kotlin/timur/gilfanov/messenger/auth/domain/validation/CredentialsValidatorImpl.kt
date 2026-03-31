@@ -67,13 +67,13 @@ class CredentialsValidatorImpl : CredentialsValidator {
                     PasswordValidationError.PasswordTooLong(MAX_PASSWORD_LENGTH),
                 ),
             )
-        password.none { it.isDigit() } ->
+        password.count { it.isDigit() } < MIN_NUMBERS_IN_PASSWORD ->
             ResultWithError.Failure(
                 CredentialsValidationError.Password(
                     PasswordValidationError.PasswordMustContainNumbers(MIN_NUMBERS_IN_PASSWORD),
                 ),
             )
-        password.none { it.isLetter() } ->
+        password.count { it.isLetter() } < MIN_ALPHABET_IN_PASSWORD ->
             ResultWithError.Failure(
                 CredentialsValidationError.Password(
                     PasswordValidationError.PasswordMustContainAlphabet(MIN_ALPHABET_IN_PASSWORD),

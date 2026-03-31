@@ -5,6 +5,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.mapError
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.toUserScopeKey
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
@@ -36,7 +37,7 @@ class ChangeUiLanguageUseCase(
     ): ResultWithError<Unit, ChangeUiLanguageError> =
         when (val state = authRepository.authState.first()) {
             is AuthState.Authenticated ->
-                settingsRepository.changeUiLanguage(state.session, newUiLanguage)
+                settingsRepository.changeUiLanguage(state.session.toUserScopeKey(), newUiLanguage)
                     .mapError { error ->
                         logger.e(
                             TAG,

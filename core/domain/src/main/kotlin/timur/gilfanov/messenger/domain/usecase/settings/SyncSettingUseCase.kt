@@ -5,6 +5,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
+import timur.gilfanov.messenger.domain.toUserScopeKey
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
@@ -24,7 +25,7 @@ class SyncSettingUseCase(
     suspend operator fun invoke(key: SettingKey): ResultWithError<Unit, SyncSettingError> =
         when (val state = authRepository.authState.first()) {
             is AuthState.Authenticated ->
-                settingsRepository.syncSetting(state.session, key).fold(
+                settingsRepository.syncSetting(state.session.toUserScopeKey(), key).fold(
                     onSuccess = { ResultWithError.Success(Unit) },
                     onFailure = { error ->
                         logger.e(

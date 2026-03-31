@@ -3,8 +3,8 @@ package timur.gilfanov.messenger.domain.usecase.settings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
@@ -38,7 +38,7 @@ class SettingsRepositoryStub(
     )
 
     override fun observeSettings(
-        session: AuthSession,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> = settingsFlow
 
     override fun observeConflicts(): Flow<SettingsConflictEvent> {
@@ -46,18 +46,18 @@ class SettingsRepositoryStub(
     }
 
     override suspend fun changeUiLanguage(
-        session: AuthSession,
+        userKey: UserScopeKey,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = changeLanguage
 
     override suspend fun syncSetting(
-        session: AuthSession,
+        userKey: UserScopeKey,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError> =
         syncSettingResult ?: error("syncSetting not configured for this test")
 
     override suspend fun syncAllPendingSettings(
-        session: AuthSession,
+        userKey: UserScopeKey,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError> =
         syncAllResult ?: error("syncAllPendingSettings not configured for this test")
 }

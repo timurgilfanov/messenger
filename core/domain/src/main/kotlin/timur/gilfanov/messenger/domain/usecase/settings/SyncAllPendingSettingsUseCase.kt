@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.first
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.fold
+import timur.gilfanov.messenger.domain.toUserScopeKey
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
@@ -23,7 +24,7 @@ class SyncAllPendingSettingsUseCase(
     suspend operator fun invoke(): ResultWithError<Unit, SyncAllPendingSettingsError> =
         when (val state = authRepository.authState.first()) {
             is AuthState.Authenticated ->
-                settingsRepository.syncAllPendingSettings(state.session).fold(
+                settingsRepository.syncAllPendingSettings(state.session.toUserScopeKey()).fold(
                     onSuccess = { ResultWithError.Success(Unit) },
                     onFailure = { error ->
                         logger.e(TAG, "Repository syncAllPendingSettings failed: $error")

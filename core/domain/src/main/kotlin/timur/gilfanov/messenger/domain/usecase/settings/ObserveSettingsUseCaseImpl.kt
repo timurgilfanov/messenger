@@ -9,6 +9,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.bimap
 import timur.gilfanov.messenger.domain.entity.settings.Settings
+import timur.gilfanov.messenger.domain.toUserScopeKey
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
@@ -27,7 +28,7 @@ class ObserveSettingsUseCaseImpl(
         authRepository.authState.flatMapLatest { state ->
             when (state) {
                 is AuthState.Authenticated ->
-                    settingsRepository.observeSettings(state.session)
+                    settingsRepository.observeSettings(state.session.toUserScopeKey())
                         .map { settingsResult ->
                             settingsResult.bimap(
                                 onSuccess = { settings ->

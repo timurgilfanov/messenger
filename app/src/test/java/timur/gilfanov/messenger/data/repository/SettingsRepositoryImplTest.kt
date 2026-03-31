@@ -37,9 +37,6 @@ import timur.gilfanov.messenger.data.source.remote.TypedSettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.UpdateSettingsRemoteDataSourceError
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
-import timur.gilfanov.messenger.domain.entity.auth.AuthSession
-import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -60,10 +57,6 @@ private const val INVALID_UI_LANGUAGE = "abc"
 class SettingsRepositoryImplTest {
 
     private val testUserKey = UserScopeKey("test-refresh")
-    private val session = AuthSession(
-        tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
-        provider = AuthProvider.EMAIL,
-    )
 
     private lateinit var localDataSource: LocalSettingsDataSourceFake
     private lateinit var remoteDataSourceFake: RemoteSettingsDataSourceFake
@@ -116,7 +109,7 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `observeSettings returns default settings when no entities exist`() = runTest {
-        repository.observeSettings(session).test {
+        repository.observeSettings(testUserKey).test {
             val result1 = awaitItem()
             assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(result1)
             assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(result1.error)
@@ -138,7 +131,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserKey, setting)
 
-        repository.observeSettings(session).test {
+        repository.observeSettings(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
             assertEquals(UiLanguage.German, result.data.uiLanguage)
@@ -156,7 +149,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserKey, existingSetting)
 
-        val result = repository.changeUiLanguage(session, UiLanguage.German)
+        val result = repository.changeUiLanguage(testUserKey, UiLanguage.German)
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
 
@@ -179,7 +172,7 @@ class SettingsRepositoryImplTest {
         )
         localDataSource.upsert(testUserKey, setting)
 
-        val outcome = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+        val outcome = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
     }
@@ -208,7 +201,7 @@ class SettingsRepositoryImplTest {
             ResultWithError.Success(SyncResult.Success(newVersion = 2)),
         )
 
-        val outcome = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+        val outcome = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
@@ -244,7 +237,7 @@ class SettingsRepositoryImplTest {
         }
 
         repository.observeConflicts().test {
-            val outcome = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+            val outcome = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
             assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
@@ -296,7 +289,7 @@ class SettingsRepositoryImplTest {
             ),
         )
 
-        val outcome = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+        val outcome = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<Unit, *>>(outcome)
 
@@ -336,7 +329,7 @@ class SettingsRepositoryImplTest {
         cases.forEach { (source, expected) ->
             localDataSource.setGetSettingBehavior(source)
 
-            val result = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+            val result = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
             assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
             assertEquals(expected::class, result.error::class)
@@ -378,7 +371,7 @@ class SettingsRepositoryImplTest {
             ),
         )
 
-        val result = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
         val syncSettingError0 = result.error
@@ -388,7 +381,7 @@ class SettingsRepositoryImplTest {
 
     @Test
     fun `syncAllPendingSettings returns Success when no unsynced settings`() = runTest {
-        val outcome = repository.syncAllPendingSettings(session)
+        val outcome = repository.syncAllPendingSettings(testUserKey)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
     }
@@ -414,7 +407,7 @@ class SettingsRepositoryImplTest {
             )
         }
 
-        val outcome = repository.syncAllPendingSettings(session)
+        val outcome = repository.syncAllPendingSettings(testUserKey)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
 
@@ -452,7 +445,7 @@ class SettingsRepositoryImplTest {
             ),
         )
 
-        val outcome = repository.syncAllPendingSettings(session)
+        val outcome = repository.syncAllPendingSettings(testUserKey)
 
         assertIs<ResultWithError.Failure<Unit, *>>(outcome)
 
@@ -489,7 +482,7 @@ class SettingsRepositoryImplTest {
             ),
         )
 
-        val result = repository.syncAllPendingSettings(session)
+        val result = repository.syncAllPendingSettings(testUserKey)
 
         assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
         val syncAllError0 = result.error
@@ -522,7 +515,7 @@ class SettingsRepositoryImplTest {
         }
 
         repository.observeConflicts().test {
-            val result = repository.syncAllPendingSettings(session)
+            val result = repository.syncAllPendingSettings(testUserKey)
 
             assertIs<ResultWithError.Success<Unit, *>>(result)
 
@@ -577,7 +570,7 @@ class SettingsRepositoryImplTest {
         cases.forEach { (source, expected) ->
             localDataSource.setGetUnsyncedBehavior(source)
 
-            val result = repository.syncAllPendingSettings(session)
+            val result = repository.syncAllPendingSettings(testUserKey)
 
             assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
             assertEquals(expected::class, result.error::class)
@@ -618,7 +611,7 @@ class SettingsRepositoryImplTest {
             )
         }
 
-        val result = repository.syncAllPendingSettings(session)
+        val result = repository.syncAllPendingSettings(testUserKey)
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
         val setting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
@@ -656,7 +649,7 @@ class SettingsRepositoryImplTest {
             }
             localDataSource.setUpsertBehavior(UpsertSettingError.StorageFull)
 
-            val result = repository.syncAllPendingSettings(session)
+            val result = repository.syncAllPendingSettings(testUserKey)
 
             assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
             val syncAllError1 = result.error
@@ -684,7 +677,7 @@ class SettingsRepositoryImplTest {
             }
             localDataSource.setUpsertBehavior(UpsertSettingError.ReadOnlyDatabase)
 
-            val result = repository.syncAllPendingSettings(session)
+            val result = repository.syncAllPendingSettings(testUserKey)
 
             assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
             val syncAllError2 = result.error
@@ -712,7 +705,7 @@ class SettingsRepositoryImplTest {
             }
             localDataSource.setGetSettingBehavior(GetSettingError.AccessDenied)
 
-            val result = repository.syncAllPendingSettings(session)
+            val result = repository.syncAllPendingSettings(testUserKey)
 
             assertIs<ResultWithError.Failure<Unit, SyncAllSettingsRepositoryError>>(result)
             val syncAllError3 = result.error
@@ -741,7 +734,7 @@ class SettingsRepositoryImplTest {
             defaultSettings = Settings(uiLanguage = UiLanguage.English),
         )
 
-        repoWithRemote.observeSettings(session).test {
+        repoWithRemote.observeSettings(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
             assertEquals(UiLanguage.German, result.data.uiLanguage)
@@ -792,7 +785,7 @@ class SettingsRepositoryImplTest {
                 defaultSettings = defaultSettings,
             )
 
-            repo.observeSettings(session).test {
+            repo.observeSettings(testUserKey).test {
                 val result = awaitItem()
                 assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(result)
                 val error = result.error
@@ -831,7 +824,7 @@ class SettingsRepositoryImplTest {
                 defaultSettings = Settings(uiLanguage = UiLanguage.English),
             )
 
-            val result = repoWithRemote.changeUiLanguage(session, UiLanguage.German)
+            val result = repoWithRemote.changeUiLanguage(testUserKey, UiLanguage.German)
 
             assertIs<ResultWithError.Success<Unit, *>>(result)
 
@@ -861,7 +854,7 @@ class SettingsRepositoryImplTest {
             localDataSource.clear()
             localDataSource.setTransformBehavior(transformError)
 
-            val result = repository.changeUiLanguage(session, UiLanguage.German)
+            val result = repository.changeUiLanguage(testUserKey, UiLanguage.German)
 
             assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
             val error = result.error
@@ -898,7 +891,7 @@ class SettingsRepositoryImplTest {
             defaultSettings = Settings(uiLanguage = UiLanguage.English),
         )
 
-        val result = repoWithRemote.changeUiLanguage(session, UiLanguage.German)
+        val result = repoWithRemote.changeUiLanguage(testUserKey, UiLanguage.German)
 
         assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
         val error = result.error
@@ -930,7 +923,7 @@ class SettingsRepositoryImplTest {
                 defaultSettings = Settings(uiLanguage = UiLanguage.English),
             )
 
-            val result = repoWithRemote.changeUiLanguage(session, UiLanguage.English)
+            val result = repoWithRemote.changeUiLanguage(testUserKey, UiLanguage.English)
 
             assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
             val error = result.error
@@ -959,7 +952,7 @@ class SettingsRepositoryImplTest {
             defaultSettings = defaultSettings,
         )
 
-        val result = repoWithRemote.changeUiLanguage(session, UiLanguage.German)
+        val result = repoWithRemote.changeUiLanguage(testUserKey, UiLanguage.German)
 
         assertIs<ResultWithError.Failure<Unit, ChangeLanguageRepositoryError>>(result)
         val error = result.error
@@ -970,7 +963,7 @@ class SettingsRepositoryImplTest {
     @Test
     fun `changeUiLanguage with no local and no remote creates default then applies change`() =
         runTest {
-            val result = repository.changeUiLanguage(session, UiLanguage.German)
+            val result = repository.changeUiLanguage(testUserKey, UiLanguage.German)
 
             assertIs<ResultWithError.Success<Unit, *>>(result)
 
@@ -1030,7 +1023,7 @@ class SettingsRepositoryImplTest {
                 defaultSettings = Settings(uiLanguage = UiLanguage.English),
             )
 
-            repoWithInvalidRemote.observeSettings(session).test {
+            repoWithInvalidRemote.observeSettings(testUserKey).test {
                 val result = awaitItem()
                 assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
                 assertEquals(
@@ -1069,7 +1062,7 @@ class SettingsRepositoryImplTest {
             defaultSettings = Settings(uiLanguage = UiLanguage.German),
         )
 
-        repoWithRemote.observeSettings(session).test {
+        repoWithRemote.observeSettings(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
             assertEquals(UiLanguage.German, result.data.uiLanguage)
@@ -1133,7 +1126,7 @@ class SettingsRepositoryImplTest {
                 defaultSettings = Settings(uiLanguage = UiLanguage.English),
             )
 
-            val result = repoWithInvalidRemote.changeUiLanguage(session, UiLanguage.German)
+            val result = repoWithInvalidRemote.changeUiLanguage(testUserKey, UiLanguage.German)
 
             assertIs<ResultWithError.Success<Unit, ChangeLanguageRepositoryError>>(result)
 
@@ -1180,7 +1173,7 @@ class SettingsRepositoryImplTest {
             )
         }
 
-        val result = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
         val localSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
@@ -1216,7 +1209,7 @@ class SettingsRepositoryImplTest {
             ResultWithError.Success(SyncResult.Success(newVersion = 2))
         }
 
-        val result = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
         val localSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
@@ -1261,7 +1254,7 @@ class SettingsRepositoryImplTest {
             )
         }
 
-        val result = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
         val localSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
@@ -1304,7 +1297,7 @@ class SettingsRepositoryImplTest {
             }
         }
 
-        val result = repository.syncAllPendingSettings(session)
+        val result = repository.syncAllPendingSettings(testUserKey)
 
         assertIs<ResultWithError.Success<Unit, *>>(result)
         val langSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
@@ -1345,7 +1338,7 @@ class SettingsRepositoryImplTest {
                 }
             }
 
-            val result = repository.syncAllPendingSettings(session)
+            val result = repository.syncAllPendingSettings(testUserKey)
 
             assertIs<ResultWithError.Success<Unit, *>>(result)
             val firstSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
@@ -1375,7 +1368,7 @@ class SettingsRepositoryImplTest {
 
         localDataSource.setUpsertBehavior(UpsertSettingError.DiskIOError)
 
-        val result = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
         val syncSettingError1 = result.error
@@ -1411,7 +1404,7 @@ class SettingsRepositoryImplTest {
 
         localDataSource.setUpsertBehavior(UpsertSettingError.StorageFull)
 
-        val result = repository.syncSetting(session, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         assertIs<ResultWithError.Failure<Unit, SyncSettingRepositoryError>>(result)
         val syncSettingError2 = result.error

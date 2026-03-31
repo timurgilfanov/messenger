@@ -34,6 +34,7 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.domain.toUserScopeKey
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -62,6 +63,7 @@ class SettingsRepositoryIntegrationTest {
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
     )
+    private val testUserKey = testSession.toUserScopeKey()
     private val testTimestamp = Instant.parse("2024-01-15T10:30:00Z")
     private val defaultSettings = Settings(uiLanguage = UiLanguage.English)
 
@@ -91,7 +93,7 @@ class SettingsRepositoryIntegrationTest {
             )
 
             // When/Then - should get default settings after recovery
-            repository.observeSettings(testSession).test {
+            repository.observeSettings(testUserKey).test {
                 // First emission may be SettingsResetToDefaults or Success with defaults
                 val result = awaitItem()
                 // After recovery, we should eventually get settings (either default or recovered)
@@ -134,7 +136,7 @@ class SettingsRepositoryIntegrationTest {
         databaseRule.database.settingsDao().upsert(settingEntity)
 
         // When/Then
-        repository.observeSettings(testSession).test {
+        repository.observeSettings(testUserKey).test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(result)
             assertEquals(UiLanguage.German, result.data.uiLanguage)
@@ -182,13 +184,13 @@ class SettingsRepositoryIntegrationTest {
         databaseRule.database.settingsDao().upsert(settingEntity)
 
         // When
-        val result = repository.changeUiLanguage(testSession, UiLanguage.German)
+        val result = repository.changeUiLanguage(testUserKey, UiLanguage.German)
 
         // Then
         assertIs<ResultWithError.Success<Unit, *>>(result)
 
         // Verify local settings updated
-        repository.observeSettings(testSession).test {
+        repository.observeSettings(testUserKey).test {
             val settingsResult = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(settingsResult)
             assertEquals(UiLanguage.German, settingsResult.data.uiLanguage)
@@ -228,7 +230,7 @@ class SettingsRepositoryIntegrationTest {
         databaseRule.database.settingsDao().upsert(settingEntity)
 
         // When
-        val result = repository.syncSetting(testSession, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         // Then
         assertIs<ResultWithError.Success<Unit, *>>(result)
@@ -274,7 +276,7 @@ class SettingsRepositoryIntegrationTest {
         databaseRule.database.settingsDao().upsert(settingEntity)
 
         // When
-        val result = repository.syncSetting(testSession, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         // Then - Sync should succeed even with conflict (LWW resolution)
         assertIs<ResultWithError.Success<Unit, *>>(result)

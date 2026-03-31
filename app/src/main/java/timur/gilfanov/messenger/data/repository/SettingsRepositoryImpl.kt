@@ -27,7 +27,6 @@ import timur.gilfanov.messenger.data.source.remote.SyncResult
 import timur.gilfanov.messenger.data.source.remote.toRemoteError
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.fold
 import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
@@ -102,26 +101,25 @@ class SettingsRepositoryImpl @Inject constructor(
     override fun observeConflicts(): Flow<SettingsConflictEvent> = conflictEvents.asSharedFlow()
 
     override fun observeSettings(
-        session: AuthSession,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
-        localDataSource.observe(session.userKey)
+        localDataSource.observe(userKey)
             .map { result ->
                 result.fold(
                     onSuccess = {
                         ResultWithError.Success(it.toDomain())
                     },
                     onFailure = { error ->
-                        handleObserveFailure(session, error)
+                        handleObserveFailure(userKey, error)
                     },
                 )
             }
             .distinctUntilChanged()
 
     override suspend fun changeUiLanguage(
-        session: AuthSession,
+        userKey: UserScopeKey,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> {
-        val userKey = session.userKey
         val key = SettingKey.UI_LANGUAGE
 
         return localDataSource.transform(userKey) { localSettings ->
@@ -135,13 +133,13 @@ class SettingsRepositoryImpl @Inject constructor(
             },
 
             onFailure = { error ->
-                handleLanguageTransformError(session, language, error)
+                handleLanguageTransformError(userKey, language, error)
             },
         )
     }
 
     private suspend fun handleLanguageTransformError(
-        session: AuthSession,
+        userKey: UserScopeKey,
         language: UiLanguage,
         error: TransformSettingError,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = when (error) {
@@ -150,12 +148,12 @@ class SettingsRepositoryImpl @Inject constructor(
                 TAG,
                 "Settings not found locally while changing UI language",
             )
-            recoverSettings(session).fold(
+            recoverSettings(userKey).fold(
                 onSuccess = {
-                    changeUiLanguage(session, language)
+                    changeUiLanguage(userKey, language)
                 },
                 onFailure = { recoverError ->
-                    handleRecoverSettingsError(session, language, recoverError)
+                    handleRecoverSettingsError(userKey, language, recoverError)
                 },
             )
         }
@@ -207,7 +205,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     private suspend fun handleRecoverSettingsError(
-        session: AuthSession,
+        userKey: UserScopeKey,
         language: UiLanguage,
         error: GetSettingsRepositoryError,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = when (error) {
@@ -216,7 +214,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 TAG,
                 "Settings reset to defaults during language change, retrying",
             )
-            changeUiLanguage(session, language)
+            changeUiLanguage(userKey, language)
         }
 
         is GetSettingsRepositoryError.LocalOperationFailed -> {
@@ -241,10 +239,10 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     private suspend fun handleObserveFailure(
-        session: AuthSession,
+        userKey: UserScopeKey,
         error: GetSettingsLocalDataSourceError,
     ): ResultWithError<Settings, GetSettingsRepositoryError> = when (error) {
-        GetSettingsLocalDataSourceError.NoSettings -> recoverSettings(session)
+        GetSettingsLocalDataSourceError.NoSettings -> recoverSettings(userKey)
 
         GetSettingsLocalDataSourceError.Recoverable.AccessDenied ->
             logObserveFailure(
@@ -310,10 +308,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     @Suppress("ReturnCount")
     override suspend fun syncSetting(
-        session: AuthSession,
+        userKey: UserScopeKey,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError> {
-        val localSetting = localDataSource.getSetting(session.userKey, key).fold(
+        val localSetting = localDataSource.getSetting(userKey, key).fold(
             onSuccess = { it },
             onFailure = { error ->
                 val mapped = error.toSyncError(logger, TAG, "syncSetting:getSetting")
@@ -329,7 +327,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
         return remoteDataSource.syncSingleSetting(request).fold(
             onSuccess = { syncResult ->
-                handleSingleSyncResult(session, localSetting, syncResult)
+                handleSingleSyncResult(userKey, localSetting, syncResult)
             },
             onFailure = { error ->
                 val mappedRemoteError = error.toRemoteError()
@@ -347,12 +345,12 @@ class SettingsRepositoryImpl @Inject constructor(
 
     @Suppress("ReturnCount")
     private suspend fun handleSingleSyncResult(
-        session: AuthSession,
+        userKey: UserScopeKey,
         localSetting: TypedLocalSetting,
         syncResult: SyncResult,
     ): ResultWithError<Unit, SyncSettingRepositoryError> = when (syncResult) {
         is SyncResult.Success -> {
-            val currentSetting = localDataSource.getSetting(session.userKey, localSetting.key).fold(
+            val currentSetting = localDataSource.getSetting(userKey, localSetting.key).fold(
                 onSuccess = { it },
                 onFailure = { error ->
                     return ResultWithError.Failure(
@@ -375,13 +373,13 @@ class SettingsRepositoryImpl @Inject constructor(
                     )
                 }
                 upsertSingleSyncResult(
-                    session.userKey,
+                    userKey,
                     updatedSetting,
                     "syncSetting:upsertConcurrentSuccess",
                 )
             } else {
                 upsertSingleSyncResult(
-                    userKey = session.userKey,
+                    userKey = userKey,
                     updatedSetting = localSetting.markLocalSync(
                         newServerVersion = syncResult.newVersion,
                     ),
@@ -391,7 +389,7 @@ class SettingsRepositoryImpl @Inject constructor(
         }
 
         is SyncResult.Conflict -> handleSingleSyncConflict(
-            session = session,
+            userKey = userKey,
             localSetting = localSetting,
             syncResult = syncResult,
         )
@@ -399,11 +397,11 @@ class SettingsRepositoryImpl @Inject constructor(
 
     @Suppress("ReturnCount")
     private suspend fun handleSingleSyncConflict(
-        session: AuthSession,
+        userKey: UserScopeKey,
         localSetting: TypedLocalSetting,
         syncResult: SyncResult.Conflict,
     ): ResultWithError<Unit, SyncSettingRepositoryError> {
-        val currentSetting = localDataSource.getSetting(session.userKey, localSetting.key).fold(
+        val currentSetting = localDataSource.getSetting(userKey, localSetting.key).fold(
             onSuccess = { it },
             onFailure = { error ->
                 return ResultWithError.Failure(
@@ -425,7 +423,7 @@ class SettingsRepositoryImpl @Inject constructor(
                     ),
                 )
             }
-            return localDataSource.upsert(session.userKey, updatedSetting)
+            return localDataSource.upsert(userKey, updatedSetting)
                 .foldWithErrorMapping(
                     onSuccess = { ResultWithError.Success(Unit) },
                     onFailure = { error ->
@@ -436,7 +434,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
         val resolution = localSetting.acceptServerState(syncResult)
         return localDataSource.upsert(
-            session.userKey,
+            userKey,
             resolution.updatedSetting,
         ).foldWithErrorMapping(
             onSuccess = {
@@ -471,9 +469,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     @Suppress("ReturnCount")
     override suspend fun syncAllPendingSettings(
-        session: AuthSession,
+        userKey: UserScopeKey,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError> {
-        val unsyncedSettings = localDataSource.getUnsyncedSettings(session.userKey).fold(
+        val unsyncedSettings = localDataSource.getUnsyncedSettings(userKey).fold(
             onSuccess = { it },
             onFailure = { error ->
                 val mapped = error.toBatchSyncError(
@@ -495,7 +493,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
         return remoteDataSource.syncBatch(requests).fold(
             onSuccess = { results ->
-                handleBatchSyncResults(session, unsyncedSettings, results)
+                handleBatchSyncResults(userKey, unsyncedSettings, results)
             },
             onFailure = { error ->
                 val mappedRemoteError = error.toRemoteError()
@@ -509,7 +507,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     @Suppress("LongMethod", "NestedBlockDepth")
     private suspend fun handleBatchSyncResults(
-        session: AuthSession,
+        userKey: UserScopeKey,
         unsyncedSettings: List<TypedLocalSetting>,
         results: Map<String, SyncResult>,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError> {
@@ -523,7 +521,7 @@ class SettingsRepositoryImpl @Inject constructor(
             val error = when (result) {
                 is SyncResult.Success -> {
                     val currentSetting = localDataSource.getSetting(
-                        session.userKey,
+                        userKey,
                         localSetting.key,
                     ).fold(
                         onSuccess = { it },
@@ -561,7 +559,7 @@ class SettingsRepositoryImpl @Inject constructor(
                     }
 
                     localDataSource.upsert(
-                        userKey = session.userKey,
+                        userKey = userKey,
                         setting = updatedSetting,
                     ).fold(
                         onSuccess = { null },
@@ -576,7 +574,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 }
 
                 is SyncResult.Conflict -> handleBatchConflict(
-                    session = session,
+                    userKey = userKey,
                     localSetting = localSetting,
                     syncResult = result,
                 )
@@ -593,12 +591,12 @@ class SettingsRepositoryImpl @Inject constructor(
 
     @Suppress("ReturnCount")
     private suspend fun handleBatchConflict(
-        session: AuthSession,
+        userKey: UserScopeKey,
         localSetting: TypedLocalSetting,
         syncResult: SyncResult.Conflict,
     ): LocalStorageError? {
         val currentSetting = localDataSource.getSetting(
-            session.userKey,
+            userKey,
             localSetting.key,
         ).fold(
             onSuccess = { it },
@@ -621,7 +619,7 @@ class SettingsRepositoryImpl @Inject constructor(
                     ),
                 )
             }
-            return localDataSource.upsert(session.userKey, updatedSetting).fold(
+            return localDataSource.upsert(userKey, updatedSetting).fold(
                 onSuccess = { null },
                 onFailure = { error ->
                     error.toBatchSyncError(logger, TAG, "syncAllPending:upsertConcurrentConflict")
@@ -631,7 +629,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
         val resolution = localSetting.acceptServerState(syncResult)
         return localDataSource.upsert(
-            session.userKey,
+            userKey,
             resolution.updatedSetting,
         ).fold(
             onSuccess = {
@@ -652,7 +650,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     private suspend fun recoverSettings(
-        session: AuthSession,
+        userKey: UserScopeKey,
     ): ResultWithError<Settings, GetSettingsRepositoryError> = remoteDataSource.get().fold(
         onSuccess = { remoteSettings ->
             val uiLanguageSetting: LocalSetting<UiLanguage> =
@@ -687,7 +685,7 @@ class SettingsRepositoryImpl @Inject constructor(
             val typedSettings = listOf(
                 TypedLocalSetting.UiLanguage(setting = uiLanguageSetting),
             )
-            localDataSource.upsert(session.userKey, typedSettings).foldWithErrorMapping(
+            localDataSource.upsert(userKey, typedSettings).foldWithErrorMapping(
                 onSuccess = { ResultWithError.Success(localSettings.toDomain()) },
                 onFailure = { error ->
                     error.toGetSettingsRepositoryError("recoverSettings:upsertLocal")
@@ -697,7 +695,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
         onFailure = { remoteError ->
             logger.e(TAG, "Remote recovery failed, falling back to defaults: $remoteError")
-            upsertDefaultSettings(session.userKey)
+            upsertDefaultSettings(userKey)
         },
     )
 
@@ -749,8 +747,6 @@ class SettingsRepositoryImpl @Inject constructor(
         )
     }
 }
-
-private val AuthSession.userKey get() = UserScopeKey(tokens.refreshToken)
 
 private val TypedLocalSetting.requiresSync get() = setting.localVersion != setting.syncedVersion
 

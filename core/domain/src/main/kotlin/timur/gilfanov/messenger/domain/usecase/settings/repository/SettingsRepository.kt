@@ -1,8 +1,8 @@
 package timur.gilfanov.messenger.domain.usecase.settings.repository
 
 import kotlinx.coroutines.flow.Flow
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
@@ -18,11 +18,11 @@ interface SettingsRepository {
     /**
      * Observes settings changes for the authenticated user.
      *
-     * @param session The authenticated session identifying the user
+     * @param userKey The key identifying the user scope
      * @return Flow emitting settings updates or errors
      */
     fun observeSettings(
-        session: AuthSession,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>>
 
     /**
@@ -38,32 +38,32 @@ interface SettingsRepository {
     /**
      * Changes user's UI language preference.
      *
-     * @param session The authenticated session identifying the user
+     * @param userKey The key identifying the user scope
      * @param language The new language preference
      * @return Success or failure with [ChangeLanguageRepositoryError]
      */
     suspend fun changeUiLanguage(
-        session: AuthSession,
+        userKey: UserScopeKey,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError>
 
     /**
      * Syncs a specific user setting with the remote backend.
      *
-     * @param session Authenticated session identifying the user
+     * @param userKey The key identifying the user scope
      * @param key The concrete setting to sync
      */
     suspend fun syncSetting(
-        session: AuthSession,
+        userKey: UserScopeKey,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError>
 
     /**
      * Syncs all pending settings changes for specific users.
      *
-     * @param session Authenticated session identifying the user
+     * @param userKey The key identifying the user scope
      */
     suspend fun syncAllPendingSettings(
-        session: AuthSession,
+        userKey: UserScopeKey,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError>
 }

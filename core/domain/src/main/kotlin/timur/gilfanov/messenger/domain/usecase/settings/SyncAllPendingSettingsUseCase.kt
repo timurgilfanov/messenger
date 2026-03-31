@@ -2,8 +2,9 @@ package timur.gilfanov.messenger.domain.usecase.settings
 
 import kotlinx.coroutines.flow.first
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.fold
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
 
@@ -11,7 +12,7 @@ import timur.gilfanov.messenger.util.Logger
  * Synchronizes all pending setting updates for the active user.
  */
 class SyncAllPendingSettingsUseCase(
-    private val identityRepository: IdentityRepository,
+    private val authRepository: AuthRepository,
     private val settingsRepository: SettingsRepository,
     private val logger: Logger,
 ) {
@@ -20,19 +21,19 @@ class SyncAllPendingSettingsUseCase(
     }
 
     suspend operator fun invoke(): ResultWithError<Unit, SyncAllPendingSettingsError> =
-        identityRepository.identity.first().fold(
-            onSuccess = { identity ->
-                settingsRepository.syncAllPendingSettings(identity).fold(
+        when (val state = authRepository.authState.first()) {
+            is AuthState.Authenticated ->
+                settingsRepository.syncAllPendingSettings(state.session).fold(
                     onSuccess = { ResultWithError.Success(Unit) },
                     onFailure = { error ->
                         logger.e(TAG, "Repository syncAllPendingSettings failed: $error")
                         ResultWithError.Failure(error.toUseCaseError())
                     },
                 )
-            },
-            onFailure = {
+
+            AuthState.Unauthenticated -> {
                 logger.e(TAG, "Unable to resolve identity for syncAllPending")
                 ResultWithError.Failure(SyncAllPendingSettingsError.IdentityNotAvailable)
-            },
-        )
+            }
+        }
 }

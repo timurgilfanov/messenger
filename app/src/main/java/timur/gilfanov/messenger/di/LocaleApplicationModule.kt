@@ -5,7 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveAndApplyLocaleUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveUiLanguageUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.repository.LocaleRepository
@@ -19,13 +19,13 @@ object LocaleApplicationModule {
     @Provides
     @Singleton
     fun provideObserveAndApplyLocaleUseCase(
-        identityRepository: IdentityRepository,
+        authRepository: AuthRepository,
         settingsRepository: SettingsRepository,
         localeRepository: LocaleRepository,
         logger: Logger,
     ): ObserveAndApplyLocaleUseCase = ObserveAndApplyLocaleUseCase(
         observeUiLanguage = ObserveUiLanguageUseCase(
-            identityRepository,
+            authRepository,
             settingsRepository,
             logger,
         ),

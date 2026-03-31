@@ -28,8 +28,9 @@ import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWi
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSettingsSyncSuccess
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.DeviceId
-import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
+import timur.gilfanov.messenger.domain.entity.auth.AuthSession
+import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
@@ -59,8 +60,11 @@ class SettingsRepositoryIntegrationTest {
     private val logger = TestLogger()
 
     private val testUserId = UserId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
-    private val testDeviceId = DeviceId(UUID.fromString("123e4567-e89b-12d3-a456-426614174001"))
-    private val testIdentity = Identity(userId = testUserId, deviceId = testDeviceId)
+    private val testSession = AuthSession(
+        tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
+        provider = AuthProvider.EMAIL,
+        userId = testUserId,
+    )
     private val testTimestamp = Instant.parse("2024-01-15T10:30:00Z")
     private val defaultSettings = Settings(uiLanguage = UiLanguage.English)
 
@@ -90,7 +94,7 @@ class SettingsRepositoryIntegrationTest {
             )
 
             // When/Then - should get default settings after recovery
-            repository.observeSettings(testIdentity).test {
+            repository.observeSettings(testSession).test {
                 // First emission may be SettingsResetToDefaults or Success with defaults
                 val result = awaitItem()
                 // After recovery, we should eventually get settings (either default or recovered)
@@ -133,7 +137,7 @@ class SettingsRepositoryIntegrationTest {
         databaseRule.database.settingsDao().upsert(settingEntity)
 
         // When/Then
-        repository.observeSettings(testIdentity).test {
+        repository.observeSettings(testSession).test {
             val result = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(result)
             assertEquals(UiLanguage.German, result.data.uiLanguage)
@@ -181,13 +185,13 @@ class SettingsRepositoryIntegrationTest {
         databaseRule.database.settingsDao().upsert(settingEntity)
 
         // When
-        val result = repository.changeUiLanguage(testIdentity, UiLanguage.German)
+        val result = repository.changeUiLanguage(testSession, UiLanguage.German)
 
         // Then
         assertIs<ResultWithError.Success<Unit, *>>(result)
 
         // Verify local settings updated
-        repository.observeSettings(testIdentity).test {
+        repository.observeSettings(testSession).test {
             val settingsResult = awaitItem()
             assertIs<ResultWithError.Success<Settings, *>>(settingsResult)
             assertEquals(UiLanguage.German, settingsResult.data.uiLanguage)
@@ -227,7 +231,7 @@ class SettingsRepositoryIntegrationTest {
         databaseRule.database.settingsDao().upsert(settingEntity)
 
         // When
-        val result = repository.syncSetting(testIdentity, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testSession, SettingKey.UI_LANGUAGE)
 
         // Then
         assertIs<ResultWithError.Success<Unit, *>>(result)
@@ -273,7 +277,7 @@ class SettingsRepositoryIntegrationTest {
         databaseRule.database.settingsDao().upsert(settingEntity)
 
         // When
-        val result = repository.syncSetting(testIdentity, SettingKey.UI_LANGUAGE)
+        val result = repository.syncSetting(testSession, SettingKey.UI_LANGUAGE)
 
         // Then - Sync should succeed even with conflict (LWW resolution)
         assertIs<ResultWithError.Success<Unit, *>>(result)

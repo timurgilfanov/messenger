@@ -1,16 +1,17 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
+import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.DeviceId
-import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
+import timur.gilfanov.messenger.domain.entity.auth.AuthSession
+import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
-import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.settings.ChangeUiLanguageUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveUiLanguageUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryFake
@@ -21,12 +22,11 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepos
 
 object LanguageViewModelTestFixtures {
 
-    private val TEST_USER_ID = java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440001")
-    private val TEST_DEVICE_ID = java.util.UUID.fromString("00000000-0000-0000-0000-000000000002")
-
-    fun createTestIdentity(): Identity = Identity(
-        userId = UserId(TEST_USER_ID),
-        deviceId = DeviceId(TEST_DEVICE_ID),
+    private val TEST_USER_ID = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+    private val TEST_SESSION = AuthSession(
+        tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
+        provider = AuthProvider.EMAIL,
+        userId = TEST_USER_ID,
     )
 
     fun createTestSettings(language: UiLanguage = UiLanguage.English): Settings = Settings(
@@ -34,16 +34,16 @@ object LanguageViewModelTestFixtures {
     )
 
     fun createViewModel(
-        identityRepository: IdentityRepository,
+        authRepository: AuthRepository,
         settingsRepository: SettingsRepository,
     ): LanguageViewModel {
         val observeUseCase = ObserveUiLanguageUseCase(
-            identityRepository = identityRepository,
+            authRepository = authRepository,
             settingsRepository = settingsRepository,
             logger = NoOpLogger(),
         )
         val changeUseCase = ChangeUiLanguageUseCase(
-            identityRepository = identityRepository,
+            authRepository = authRepository,
             settingsRepository = settingsRepository,
             logger = NoOpLogger(),
         )
@@ -54,12 +54,9 @@ object LanguageViewModelTestFixtures {
         )
     }
 
-    fun createSuccessfulIdentityRepository(
-        identity: Identity = createTestIdentity(),
-    ): IdentityRepository = IdentityRepositoryStub(ResultWithError.Success(identity))
+    fun createSuccessfulIdentityRepository(): AuthRepositoryFake = AuthRepositoryFake(TEST_SESSION)
 
-    fun createFailingIdentityRepository(): IdentityRepository =
-        IdentityRepositoryStub(ResultWithError.Failure(GetIdentityError))
+    fun createFailingIdentityRepository(): AuthRepositoryFake = AuthRepositoryFake()
 
     fun createSettingsRepositoryWithLanguage(language: UiLanguage): SettingsRepositoryStub =
         SettingsRepositoryStub(

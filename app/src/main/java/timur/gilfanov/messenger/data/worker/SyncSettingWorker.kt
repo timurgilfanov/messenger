@@ -60,7 +60,7 @@ class SyncSettingWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        return syncSetting(userId, settingKey).fold(
+        return syncSetting(settingKey).fold(
             onSuccess = {
                 if (runAttemptCount > 0) {
                     logger.i(TAG, "Setting sync succeeded after $runAttemptCount retries")

@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 
 /**
@@ -20,8 +19,8 @@ sealed interface ObserveUiLanguageError {
     /**
      * Failed to retrieve current user identity.
      *
-     * This error occurs when [IdentityRepository] cannot provide the identity needed
-     * to observe the language preference.
+     * This error occurs when [timur.gilfanov.messenger.domain.usecase.auth.AuthRepository] cannot
+     * provide an authenticated session needed to observe the language preference.
      */
     data object Unauthorized : ObserveUiLanguageError
 

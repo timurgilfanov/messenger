@@ -4,7 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.ChangeUiLanguageUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveUiLanguageUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
@@ -16,22 +16,22 @@ object LanguageModule {
 
     @Provides
     fun provideObserveUiLanguageUseCase(
-        identityRepository: IdentityRepository,
+        authRepository: AuthRepository,
         settingsRepository: SettingsRepository,
         logger: Logger,
     ): ObserveUiLanguageUseCase = ObserveUiLanguageUseCase(
-        identityRepository,
+        authRepository,
         settingsRepository,
         logger,
     )
 
     @Provides
     fun provideChangeUiLanguageUseCase(
-        identityRepository: IdentityRepository,
+        authRepository: AuthRepository,
         settingsRepository: SettingsRepository,
         logger: Logger,
     ): ChangeUiLanguageUseCase = ChangeUiLanguageUseCase(
-        identityRepository,
+        authRepository,
         settingsRepository,
         logger,
     )

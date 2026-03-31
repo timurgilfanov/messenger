@@ -2,10 +2,10 @@ package timur.gilfanov.messenger.domain.usecase.settings
 
 import kotlinx.coroutines.flow.first
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.foldWithErrorMapping
+import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.mapError
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
 
@@ -13,17 +13,17 @@ import timur.gilfanov.messenger.util.Logger
  * Changes user's UI language preference.
  *
  * Updates the user's preferred language for the application interface. The operation
- * requires the current user's identity which is obtained from [IdentityRepository].
+ * requires the current user's authenticated session obtained from [AuthRepository].
  *
  * @param newUiLanguage The new language preference to set
  * @return Success or failure with [ChangeUiLanguageError]
  *
  * ## Error Handling
- * - [ChangeUiLanguageError.Unauthorized]: Current user identity cannot be retrieved
+ * - [ChangeUiLanguageError.Unauthorized]: Current user is not authenticated
  * - [ChangeUiLanguageError.LocalOperationFailed]: Local storage operation failed
  */
 class ChangeUiLanguageUseCase(
-    private val identityRepository: IdentityRepository,
+    private val authRepository: AuthRepository,
     private val settingsRepository: SettingsRepository,
     private val logger: Logger,
 ) {
@@ -34,9 +34,9 @@ class ChangeUiLanguageUseCase(
     suspend operator fun invoke(
         newUiLanguage: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageError> =
-        identityRepository.identity.first().foldWithErrorMapping(
-            onSuccess = { identity ->
-                settingsRepository.changeUiLanguage(identity, newUiLanguage)
+        when (val state = authRepository.authState.first()) {
+            is AuthState.Authenticated ->
+                settingsRepository.changeUiLanguage(state.session, newUiLanguage)
                     .mapError { error ->
                         logger.e(
                             TAG,
@@ -44,10 +44,10 @@ class ChangeUiLanguageUseCase(
                         )
                         error.toUseCaseError()
                     }
-            },
-            onFailure = {
+
+            AuthState.Unauthenticated -> {
                 logger.e(TAG, "Unable to resolve identity while changing UI language")
-                ChangeUiLanguageError.Unauthorized
-            },
-        )
+                ResultWithError.Failure(ChangeUiLanguageError.Unauthorized)
+            }
+        }
 }

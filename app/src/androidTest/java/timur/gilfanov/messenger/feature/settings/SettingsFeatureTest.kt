@@ -26,16 +26,18 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.messenger.SettingsScreenTestActivity
 import timur.gilfanov.messenger.annotations.FeatureTest
-import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
+import timur.gilfanov.messenger.auth.di.AuthDataModule
 import timur.gilfanov.messenger.data.repository.LocaleRepositoryImpl
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.di.TestUserModule
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.LocaleRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
+import timur.gilfanov.messenger.test.AndroidTestSettingsHelper
 import timur.gilfanov.messenger.test.AndroidTestSettingsRepository
 import timur.gilfanov.messenger.test.ChatRepositoryStub
 import timur.gilfanov.messenger.test.MessageRepositoryStub
@@ -44,7 +46,7 @@ import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
-@UninstallModules(RepositoryModule::class, TestUserModule::class)
+@UninstallModules(RepositoryModule::class, TestUserModule::class, AuthDataModule::class)
 @FeatureTest
 @RunWith(AndroidJUnit4::class)
 class SettingsFeatureTest {
@@ -84,7 +86,8 @@ class SettingsFeatureTest {
 
         @Provides
         @Singleton
-        fun provideIdentityRepository(): IdentityRepository = DefaultIdentityRepository()
+        fun provideAuthRepository(): AuthRepository =
+            AuthRepositoryFake(AndroidTestSettingsHelper.testSession)
 
         @Provides
         @Singleton

@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.auth
 
+import java.util.UUID
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -11,6 +12,7 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
+import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
@@ -26,6 +28,7 @@ class TokenRefreshUseCaseTest {
             refreshToken = "initial-refresh-token",
         ),
         provider = AuthProvider.EMAIL,
+        userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
     )
     private val newTokens = AuthTokens(
         accessToken = "new-access-token",

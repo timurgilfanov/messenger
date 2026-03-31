@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -21,9 +22,11 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.fold
+import timur.gilfanov.messenger.domain.entity.profile.UserId
 
 private const val FILE_NAME = "auth_session"
 
+@Suppress("TooManyFunctions") // will be removed in next commit
 @Singleton
 class LocalAuthDataSourceImpl internal constructor(
     private val dataStore: DataStore<Preferences>,
@@ -42,6 +45,7 @@ class LocalAuthDataSourceImpl internal constructor(
     private val keyAccessToken = stringPreferencesKey("access_token")
     private val keyRefreshToken = stringPreferencesKey("refresh_token")
     private val keyAuthProvider = stringPreferencesKey("auth_provider")
+    private val keyUserId = stringPreferencesKey("user_id")
 
     override suspend fun getAccessToken(): ResultWithError<String?, LocalAuthDataSourceError> =
         getToken(keyAccessToken)
@@ -60,6 +64,22 @@ class LocalAuthDataSourceImpl internal constructor(
                 } else {
                     try {
                         ResultWithError.Success(AuthProvider.valueOf(providerName))
+                    } catch (_: IllegalArgumentException) {
+                        ResultWithError.Failure(LocalAuthDataSourceError.DataCorrupted)
+                    }
+                }
+            },
+            onFailure = { ResultWithError.Failure(it) },
+        )
+
+    override suspend fun getUserId(): ResultWithError<UserId?, LocalAuthDataSourceError> =
+        readPreference(keyUserId).fold(
+            onSuccess = { userIdString ->
+                if (userIdString == null) {
+                    ResultWithError.Success(null)
+                } else {
+                    try {
+                        ResultWithError.Success(UserId(UUID.fromString(userIdString)))
                     } catch (_: IllegalArgumentException) {
                         ResultWithError.Failure(LocalAuthDataSourceError.DataCorrupted)
                     }
@@ -90,6 +110,7 @@ class LocalAuthDataSourceImpl internal constructor(
                     preferences[keyAccessToken] = encryptedAccessToken
                     preferences[keyRefreshToken] = encryptedRefreshToken
                     preferences[keyAuthProvider] = session.provider.name
+                    preferences[keyUserId] = session.userId.id.toString()
                 }
             },
             onFailure = { ResultWithError.Failure(it) },

@@ -71,14 +71,14 @@ Replace every use of `identityRepository.identity` with `authRepository.authStat
 - Modify: `app/src/main/java/.../di/RepositoryModule.kt`
 - Modify: relevant DI modules in app (SettingsObservationModule, SettingsSyncUseCaseModule, LanguageModule, LocaleApplicationModule, ProfileModule)
 
-- [ ] In `SettingsRepository`: replace all `identity: Identity` parameters with `session: AuthSession`
-- [ ] Update `ObserveSettingsUseCaseImpl`, `ObserveUiLanguageUseCase`, `ChangeUiLanguageUseCase`, `SyncAllPendingSettingsUseCase`: replace `identityRepository: IdentityRepository` with `authRepository: AuthRepository`; replace `identityRepository.identity.flatMapLatest { identityResult -> identityResult.fold(...) }` with `authRepository.authState.flatMapLatest { state -> when(state) { is Authenticated -> ...; Unauthenticated -> flowOf(Failure(Unauthorized)) } }`
-- [ ] Update `SyncSettingUseCase`: replace `identityRepository: IdentityRepository` with `authRepository: AuthRepository`; remove `userId: UserId` parameter; replace `identityRepository.getIdentity(userId)` with `authRepository.authState.first().let { if it is Authenticated use session else return Failure }`; update all callers of `SyncSettingUseCase` to remove the `userId` argument
-- [ ] Update `ObserveProfileUseCaseImpl`: replace `IdentityRepository` with `AuthRepository`; same `flatMapLatest` on `authState` pattern
-- [ ] Update `SettingsRepositoryImpl`: replace all `identity: Identity` params with `session: AuthSession`; replace uses of `identity.userId` / `identity.deviceId` with corresponding `session` fields
-- [ ] Remove `DefaultIdentityRepository` `@Binds` from `RepositoryModule`; delete `DefaultIdentityRepository.kt`; remove `IdentityRepository` from all DI injection sites
-- [ ] Delete `Identity.kt`, `DeviceId.kt`, `IdentityRepository.kt`, `IdentityRepositoryStub.kt`
-- [ ] Update all settings use case tests to use `AuthRepositoryFake` instead of `IdentityRepositoryStub`; update `SettingsRepositoryImpl` tests to use `AuthSession`
+- [x] In `SettingsRepository`: replace all `identity: Identity` parameters with `session: AuthSession`
+- [x] Update `ObserveSettingsUseCaseImpl`, `ObserveUiLanguageUseCase`, `ChangeUiLanguageUseCase`, `SyncAllPendingSettingsUseCase`: replace `identityRepository: IdentityRepository` with `authRepository: AuthRepository`; replace `identityRepository.identity.flatMapLatest { identityResult -> identityResult.fold(...) }` with `authRepository.authState.flatMapLatest { state -> when(state) { is Authenticated -> ...; Unauthenticated -> flowOf(Failure(Unauthorized)) } }`
+- [x] Update `SyncSettingUseCase`: replace `identityRepository: IdentityRepository` with `authRepository: AuthRepository`; remove `userId: UserId` parameter; replace `identityRepository.getIdentity(userId)` with `authRepository.authState.first().let { if it is Authenticated use session else return Failure }`; update all callers of `SyncSettingUseCase` to remove the `userId` argument
+- [x] Update `ObserveProfileUseCaseImpl`: replace `IdentityRepository` with `AuthRepository`; same `flatMapLatest` on `authState` pattern
+- [x] Update `SettingsRepositoryImpl`: replace all `identity: Identity` params with `session: AuthSession`; replace uses of `identity.userId` / `identity.deviceId` with corresponding `session` fields
+- [x] Remove `DefaultIdentityRepository` `@Binds` from `RepositoryModule`; delete `DefaultIdentityRepository.kt`; remove `IdentityRepository` from all DI injection sites
+- [x] Delete `Identity.kt`, `DeviceId.kt`, `IdentityRepository.kt`, `IdentityRepositoryStub.kt`
+- [x] Update all settings use case tests to use `AuthRepositoryFake` instead of `IdentityRepositoryStub`; update `SettingsRepositoryImpl` tests to use `AuthSession`
 
 ### Task 3: Refactor ChatViewModel and ChatScreen — inject AuthRepository, use isCurrentUser
 

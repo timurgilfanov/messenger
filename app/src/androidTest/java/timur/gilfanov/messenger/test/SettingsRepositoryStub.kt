@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
@@ -17,23 +17,23 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRe
 
 class SettingsRepositoryStub : SettingsRepository {
     override fun observeSettings(
-        identity: Identity,
+        session: AuthSession,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
         flowOf(ResultWithError.Success(Settings(uiLanguage = UiLanguage.English)))
 
     override fun observeConflicts(): Flow<SettingsConflictEvent> = emptyFlow()
 
     override suspend fun changeUiLanguage(
-        identity: Identity,
+        session: AuthSession,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = ResultWithError.Success(Unit)
 
     override suspend fun syncSetting(
-        identity: Identity,
+        session: AuthSession,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError> = ResultWithError.Success(Unit)
 
     override suspend fun syncAllPendingSettings(
-        identity: Identity,
+        session: AuthSession,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError> = ResultWithError.Success(Unit)
 }

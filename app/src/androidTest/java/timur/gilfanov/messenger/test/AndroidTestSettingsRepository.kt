@@ -15,7 +15,7 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
@@ -81,27 +81,27 @@ class AndroidTestSettingsRepository(private val logger: Logger = TestLogger()) :
     }
 
     override fun observeSettings(
-        identity: Identity,
+        session: AuthSession,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
-        realRepository.observeSettings(identity)
+        realRepository.observeSettings(session)
 
     override fun observeConflicts(): Flow<SettingsConflictEvent> = realRepository.observeConflicts()
 
     override suspend fun changeUiLanguage(
-        identity: Identity,
+        session: AuthSession,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> =
-        realRepository.changeUiLanguage(identity, language)
+        realRepository.changeUiLanguage(session, language)
 
     override suspend fun syncSetting(
-        identity: Identity,
+        session: AuthSession,
         key: SettingKey,
-    ): ResultWithError<Unit, SyncSettingRepositoryError> = realRepository.syncSetting(identity, key)
+    ): ResultWithError<Unit, SyncSettingRepositoryError> = realRepository.syncSetting(session, key)
 
     override suspend fun syncAllPendingSettings(
-        identity: Identity,
+        session: AuthSession,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError> =
-        realRepository.syncAllPendingSettings(identity)
+        realRepository.syncAllPendingSettings(session)
 
     companion object {
         private const val TAG = "AndroidTestSettingsRepo"

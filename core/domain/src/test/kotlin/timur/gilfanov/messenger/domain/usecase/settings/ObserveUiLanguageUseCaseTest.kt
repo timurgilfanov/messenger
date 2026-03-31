@@ -10,45 +10,46 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
-import timur.gilfanov.messenger.domain.entity.profile.DeviceId
-import timur.gilfanov.messenger.domain.entity.profile.Identity
+import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
+import timur.gilfanov.messenger.domain.entity.auth.AuthSession
+import timur.gilfanov.messenger.domain.entity.auth.AuthState
+import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
-import timur.gilfanov.messenger.domain.usecase.profile.GetIdentityError
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepositoryStub
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
 class ObserveUiLanguageUseCaseTest {
 
-    private val testIdentity = Identity(
+    private val testSession = AuthSession(
+        tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
+        provider = AuthProvider.EMAIL,
         userId = UserId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
-        deviceId = DeviceId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001")),
     )
     private val logger = NoOpLogger()
 
     @Test
     fun `emits UI language from settings`() = runTest {
-        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
         val settingsRepository = SettingsRepositoryStub(
             settings = Success(Settings(UiLanguage.English)),
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
 
         useCase().test {
             val result = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(result)
             assertEquals(UiLanguage.English, result.data)
-            awaitComplete()
         }
     }
 
     @Test
     fun `emits multiple UI language updates`() = runTest {
-        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(Success(Settings(UiLanguage.English)))
@@ -56,7 +57,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Success(Settings(UiLanguage.English)))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
 
         useCase().test {
             val first = awaitItem()
@@ -70,78 +71,69 @@ class ObserveUiLanguageUseCaseTest {
             val third = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(third)
             assertEquals(UiLanguage.English, third.data)
-
-            awaitComplete()
         }
     }
 
     @Test
     fun `emits unauthorized when identity repository fails`() = runTest {
-        val identityRepository = IdentityRepositoryStub(Failure(GetIdentityError))
+        val authRepository = AuthRepositoryFake()
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(Success(Settings(UiLanguage.English)))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
 
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
             assertIs<ObserveUiLanguageError.Unauthorized>(result.error)
-            awaitComplete()
         }
     }
 
     @Test
     fun `continue flow when identity unauthorized recover`() = runTest {
-        val identityRepository = IdentityRepositoryStub(
-            flow {
-                emit(Failure(GetIdentityError))
-                emit(Success(testIdentity))
-            },
-        )
+        val authRepository = AuthRepositoryFake()
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(Success(Settings(UiLanguage.English)))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
 
         useCase().test {
             val firstResult = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(firstResult)
             assertIs<ObserveUiLanguageError.Unauthorized>(firstResult.error)
 
+            authRepository.setState(AuthState.Authenticated(testSession))
+
             val secondResult = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(secondResult)
             assertEquals(UiLanguage.English, secondResult.data)
-
-            awaitComplete()
         }
     }
 
     @Test
     fun `emits SettingsResetToDefaults error when settings reset to defaults`() = runTest {
-        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
 
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
             assertIs<ObserveUiLanguageError.SettingsResetToDefaults>(result.error)
-            awaitComplete()
         }
     }
 
     @Test
     fun `emits LocalOperationFailed error on temporary errors`() = runTest {
-        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(
@@ -153,20 +145,19 @@ class ObserveUiLanguageUseCaseTest {
                 )
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
 
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
             assertIs<ObserveUiLanguageError.LocalOperationFailed>(result.error)
             assertIs<LocalStorageError.TemporarilyUnavailable>(result.error.error)
-            awaitComplete()
         }
     }
 
     @Test
     fun `handles mixed success and errors in flow`() = runTest {
-        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(Success(Settings(UiLanguage.English)))
@@ -180,7 +171,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Success(Settings(UiLanguage.German)))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
 
         useCase().test {
             val first = awaitItem()
@@ -194,14 +185,12 @@ class ObserveUiLanguageUseCaseTest {
             val third = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(third)
             assertEquals(UiLanguage.German, third.data)
-
-            awaitComplete()
         }
     }
 
     @Test
     fun `handles multiple repository errors and recovery in flow`() = runTest {
-        val identityRepository = IdentityRepositoryStub(Success(testIdentity))
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
                 emit(
@@ -215,7 +204,7 @@ class ObserveUiLanguageUseCaseTest {
                 emit(Success(Settings(UiLanguage.English)))
             },
         )
-        val useCase = ObserveUiLanguageUseCase(identityRepository, settingsRepository, logger)
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
 
         useCase().test {
             val first = awaitItem()
@@ -230,8 +219,6 @@ class ObserveUiLanguageUseCaseTest {
             val third = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(third)
             assertEquals(UiLanguage.English, third.data)
-
-            awaitComplete()
         }
     }
 }

@@ -52,14 +52,16 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
 import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
+import timur.gilfanov.messenger.auth.ui.utils.toDisplayString
 import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
@@ -433,37 +435,22 @@ private fun ProfileNameValidationError.toDisplayString(): String = when (this) {
 }
 
 @Composable
-private fun CredentialsValidationError.toDisplayString(): String = when (this) {
-    CredentialsValidationError.BlankEmail -> stringResource(R.string.login_error_blank_email)
+private fun SignupEmailError.toDisplayString(): String = when (this) {
+    EmailValidationError.BlankEmail -> stringResource(R.string.auth_error_blank_email)
 
-    CredentialsValidationError.InvalidEmailFormat ->
-        stringResource(R.string.login_error_invalid_email_format)
+    EmailValidationError.InvalidEmailFormat ->
+        stringResource(R.string.auth_error_invalid_email_format)
 
-    CredentialsValidationError.NoAtInEmail -> stringResource(R.string.login_error_no_at_in_email)
+    EmailValidationError.NoAtInEmail -> stringResource(R.string.auth_error_no_at_in_email)
 
-    is CredentialsValidationError.EmailTooLong ->
-        stringResource(R.string.login_error_email_too_long, maxLength)
+    is EmailValidationError.EmailTooLong ->
+        stringResource(R.string.auth_error_email_too_long, maxLength)
 
-    CredentialsValidationError.NoDomainAtEmail ->
-        stringResource(R.string.login_error_no_domain_at_email)
+    EmailValidationError.NoDomainAtEmail -> stringResource(R.string.auth_error_no_domain_at_email)
 
-    is CredentialsValidationError.ForbiddenCharacterInEmail ->
-        stringResource(R.string.login_error_forbidden_character_in_email, character)
+    SignupEmailError.EmailTaken -> stringResource(R.string.signup_error_email_taken)
 
-    is CredentialsValidationError.PasswordTooShort ->
-        stringResource(R.string.login_error_password_too_short, minLength)
-
-    is CredentialsValidationError.PasswordTooLong ->
-        stringResource(R.string.login_error_password_too_long, maxLength)
-
-    is CredentialsValidationError.ForbiddenCharacterInPassword ->
-        stringResource(R.string.login_error_forbidden_character_in_password, character)
-
-    is CredentialsValidationError.PasswordMustContainNumbers ->
-        stringResource(R.string.login_error_password_must_contain_numbers, minNumbers)
-
-    is CredentialsValidationError.PasswordMustContainAlphabet ->
-        stringResource(R.string.login_error_password_must_contain_alphabet, minAlphabet)
+    is EmailUnknownError -> stringResource(R.string.signup_error_invalid_email_server)
 }
 
 @Composable
@@ -471,17 +458,6 @@ private fun SignupGeneralError.toDisplayString(): String = when (this) {
     SignupGeneralError.InvalidToken -> stringResource(R.string.signup_error_invalid_token)
     SignupGeneralError.AccountAlreadyExists ->
         stringResource(R.string.signup_error_account_already_exists)
-
-    is SignupGeneralError.InvalidEmail -> when (reason) {
-        EmailValidationError.EmailTaken -> stringResource(R.string.signup_error_email_taken)
-        EmailValidationError.EmailNotExists,
-        is EmailValidationError.UnknownRuleViolation,
-        -> stringResource(R.string.signup_error_invalid_email_server)
-    }
-
-    is SignupGeneralError.InvalidPassword -> stringResource(
-        R.string.signup_error_invalid_password_server,
-    )
 }
 
 private fun SignupSnackbarMessage.toDisplayString(context: Context): String = when (this) {

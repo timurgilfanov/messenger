@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.auth.domain.usecase
 
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
@@ -22,9 +23,12 @@ class LoginWithCredentialsUseCaseImpl(
     ): ResultWithError<Unit, LoginUseCaseError> {
         val validationResult = validator.validate(credentials)
         if (validationResult is ResultWithError.Failure) {
-            return ResultWithError.Failure(
-                LoginUseCaseError.ValidationFailed(validationResult.error),
-            )
+            return when (val error = validationResult.error) {
+                is CredentialsValidationError.Email ->
+                    ResultWithError.Failure(LoginUseCaseError.InvalidEmail(error.reason))
+                is CredentialsValidationError.Password ->
+                    ResultWithError.Failure(LoginUseCaseError.InvalidPassword(error.reason))
+            }
         }
         return repository.loginWithCredentials(credentials).fold(
             onSuccess = { ResultWithError.Success(Unit) },

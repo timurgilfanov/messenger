@@ -1,9 +1,8 @@
 package timur.gilfanov.messenger.auth.domain.usecase
 
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
@@ -12,31 +11,24 @@ import timur.gilfanov.messenger.domain.usecase.common.UnauthRemoteError
  * Errors for [SignupWithCredentialsUseCase].
  *
  * ## Validation Errors
- * - [ValidationFailed] - Client-side credential validation failed; contains the specific error
+ * - [InvalidEmail] - Email failed local or server-side validation
+ * - [InvalidPassword] - Password failed local or server-side validation
  *
  * ## Logical Errors
  * - [InvalidName] - The provided profile name failed client-side or server-side validation
- * - [InvalidEmail] - The email was rejected by the server
- * - [InvalidPassword] - The password was rejected by the server
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed
  * - [RemoteOperationFailed] - Remote operation failed
  */
 sealed interface SignupWithCredentialsUseCaseError {
-    data class ValidationFailed(val error: CredentialsValidationError) :
-        SignupWithCredentialsUseCaseError
-
-    data class InvalidName(val reason: ProfileNameValidationError) :
-        SignupWithCredentialsUseCaseError
-
-    data class InvalidEmail(val reason: EmailValidationError) : SignupWithCredentialsUseCaseError
+    data class InvalidEmail(val reason: SignupEmailError) : SignupWithCredentialsUseCaseError
     data class InvalidPassword(val reason: PasswordValidationError) :
         SignupWithCredentialsUseCaseError
-
+    data class InvalidName(val reason: ProfileNameValidationError) :
+        SignupWithCredentialsUseCaseError
     data class LocalOperationFailed(val error: LocalStorageError) :
         SignupWithCredentialsUseCaseError
-
     data class RemoteOperationFailed(val error: UnauthRemoteError) :
         SignupWithCredentialsUseCaseError
 }

@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.auth.domain.usecase
 
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -42,7 +43,12 @@ class SignupWithCredentialsUseCaseImpl(
     ): SignupWithCredentialsUseCaseError? {
         val credResult = validator.validate(credentials)
         if (credResult is ResultWithError.Failure) {
-            return SignupWithCredentialsUseCaseError.ValidationFailed(credResult.error)
+            return when (val error = credResult.error) {
+                is CredentialsValidationError.Email ->
+                    SignupWithCredentialsUseCaseError.InvalidEmail(error.reason)
+                is CredentialsValidationError.Password ->
+                    SignupWithCredentialsUseCaseError.InvalidPassword(error.reason)
+            }
         }
         val nameResult = nameValidator.validate(name)
         return if (nameResult is ResultWithError.Failure) {

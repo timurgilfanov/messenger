@@ -80,6 +80,63 @@ Replace every use of `identityRepository.identity` with `authRepository.authStat
 - [x] Delete `Identity.kt`, `DeviceId.kt`, `IdentityRepository.kt`, `IdentityRepositoryStub.kt`
 - [x] Update all settings use case tests to use `AuthRepositoryFake` instead of `IdentityRepositoryStub`; update `SettingsRepositoryImpl` tests to use `AuthSession`
 
+### Task 2a: Introduce UserScopeKey; scope settings storage by refreshToken
+
+After Task 2 removed `userId` from `AuthSession`, settings storage needed a stable per-user key that does not require a user ID field. `refreshToken` was chosen as the scoping key because it is already available in `AuthSession.tokens` and is stable for a given session.
+
+**What was fixed / why it was needed:**
+- `AuthSession` no longer carries `userId`; the old `SettingEntity.userId` column had no valid source
+- Scoping settings by `refreshToken` aligns with the principle that one refresh token = one user session
+
+**Files:**
+- Create: `core/domain/src/main/kotlin/.../domain/UserScopeKey.kt`
+- Modify: `app/.../data/source/local/database/entity/SettingEntity.kt` — rename column `userId` → `userKey`; bump Room schema version 3 → 4 with destructive migration
+- Modify: `app/.../data/source/local/database/dao/SettingsDao.kt` — rename parameter `userId` → `userKey`
+- Modify: `app/.../data/source/local/LocalSettingsDataSource.kt` — replace `userKey: String` with `userKey: UserScopeKey`
+- Modify: `app/.../data/source/local/LocalSettingsDataSourceImpl.kt` — same
+- Modify: `app/.../data/repository/SettingsSyncScheduler.kt` — replace `userId: UserId` with `userKey: UserScopeKey`
+- Modify: `app/.../data/repository/SettingsRepositoryImpl.kt` — add `private val AuthSession.userKey get() = UserScopeKey(tokens.refreshToken)` extension; update all internal calls to local data source
+- Modify: `app/src/debug/.../data/source/local/LocalSettingsDataSourceFake.kt` — use `UserScopeKey`
+- Modify: `app/src/test/.../data/source/local/database/dao/SettingsDaoFake.kt` — rename parameter
+
+- [x] Create `UserScopeKey(@JvmInline value class)` in `core/domain`
+- [x] Migrate Room schema: rename `SettingEntity.userId` → `userKey`; bump version to 4; add destructive migration fallback
+- [x] Update `SettingsDao` signatures to use `userKey: String`
+- [x] Update `LocalSettingsDataSource` interface and impl to use `userKey: UserScopeKey`
+- [x] Update `SettingsSyncScheduler` to use `userKey: UserScopeKey` (was incorrectly `userId: UserId`)
+- [x] Add `private val AuthSession.userKey` extension in `SettingsRepositoryImpl`; update all calls to local data source
+- [x] Update `LocalSettingsDataSourceFake`, `SettingsDaoFake`, and related test doubles
+
+### Task 2b: Surface UserScopeKey at SettingsRepository domain boundary
+
+`SettingsRepository` is a domain interface; its operations are scoped per user. After Task 2a the impl derived `UserScopeKey` internally from `AuthSession`, but the interface still exposed `AuthSession` — leaking an auth concept into what should be a pure user-scope parameter. This task moves the derivation to the use-case layer and expresses the boundary cleanly.
+
+**What was fixed / why it was needed:**
+- The domain interface `SettingsRepository` should not know about `AuthSession`; it only needs a stable user-scope key
+- Use cases already held `AuthState.Authenticated` and were the right place to derive the key
+- Centralising the derivation rule (`tokens.refreshToken → UserScopeKey`) in one extension function removes duplication
+
+**Files:**
+- Modify: `core/domain/src/main/kotlin/.../domain/UserScopeKey.kt` — add `fun AuthSession.toUserScopeKey()` extension
+- Modify: `core/domain/src/main/kotlin/.../usecase/settings/repository/SettingsRepository.kt` — `session: AuthSession` → `userKey: UserScopeKey` in all 4 methods
+- Modify: 5 use cases (`ObserveSettingsUseCaseImpl`, `ObserveUiLanguageUseCase`, `ChangeUiLanguageUseCase`, `SyncSettingUseCase`, `SyncAllPendingSettingsUseCase`) — call `state.session.toUserScopeKey()` before repository calls
+- Modify: `app/.../data/repository/SettingsRepositoryImpl.kt` — accept `UserScopeKey` directly; remove `private val AuthSession.userKey` extension; remove `AuthSession` import
+- Modify: `core/domain/src/testFixtures/.../SettingsRepositoryFake.kt`, `SettingsRepositoryStub.kt` — swap signatures
+- Modify: `app/src/androidTest/.../test/AndroidTestSettingsRepository.kt`, `SettingsRepositoryStub.kt` — swap signatures
+- Modify: `app/src/androidTest/.../test/SettingsSyncSchedulerStub.kt` — fix pre-existing bug (`userId: UserId` → `userKey: UserScopeKey`)
+- Modify: `app/src/androidTest/.../test/AndroidTestSettingsHelper.kt` — remove leftover `userId = testUserId` from `AuthSession` construction
+- Modify: `app/src/test/.../data/repository/SettingsRepositoryImplTest.kt` — use `testUserKey` instead of `session` in all repository calls; remove unused `session`/`AuthSession` declarations
+- Modify: `app/src/test/.../data/repository/SettingsRepositoryIntegrationTest.kt` — add `testUserKey = testSession.toUserScopeKey()`; replace `testSession` in repository calls
+
+- [x] Add `fun AuthSession.toUserScopeKey(): UserScopeKey` extension to `UserScopeKey.kt`
+- [x] Update `SettingsRepository` interface — all 4 methods take `userKey: UserScopeKey`; remove `AuthSession` import; update KDoc `@param` lines
+- [x] Update 5 use cases to derive key with `state.session.toUserScopeKey()`
+- [x] Update `SettingsRepositoryImpl` — remove `AuthSession` extension and import; accept `UserScopeKey` in all public and private methods
+- [x] Update all test doubles in `core/domain` testFixtures and `app/src/androidTest`
+- [x] Fix `SettingsSyncSchedulerStub` bug (wrong parameter type)
+- [x] Fix `AndroidTestSettingsHelper` leftover `userId` construction
+- [x] Update test call sites in `SettingsRepositoryImplTest` and `SettingsRepositoryIntegrationTest`
+
 ### Task 3: Refactor ChatViewModel and ChatScreen — inject AuthRepository, use isCurrentUser
 
 **Files:**

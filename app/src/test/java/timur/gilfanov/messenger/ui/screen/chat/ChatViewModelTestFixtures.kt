@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
+import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
+import timur.gilfanov.messenger.domain.entity.auth.AuthSession
+import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -24,6 +27,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
 import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
@@ -33,6 +37,13 @@ import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
 object ChatViewModelTestFixtures {
+
+    fun createAuthenticatedRepository(): AuthRepositoryFake = AuthRepositoryFake(
+        initialSession = AuthSession(
+            tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
+            provider = AuthProvider.EMAIL,
+        ),
+    )
 
     fun createTestChat(
         chatId: ChatId,

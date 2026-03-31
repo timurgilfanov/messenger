@@ -17,7 +17,6 @@ import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginScreen
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupScreen
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
-import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
 import timur.gilfanov.messenger.navigation.Chat
 import timur.gilfanov.messenger.navigation.ChatList
 import timur.gilfanov.messenger.navigation.Language
@@ -55,8 +54,6 @@ class MainActivity : AppCompatActivity() {
 @Suppress("LongMethod") // todo keep entities in feature modules
 @Composable
 fun MessengerApp(googleSignInClient: GoogleSignInClient) {
-    val currentUserId = "550e8400-e29b-41d4-a716-446655440000".toParticipantId()
-
     @Suppress("KotlinConstantConditions")
     val initBackStack = if (BuildConfig.FEATURE_SETTINGS) Main else ChatList
     val backStack = rememberNavBackStack(initBackStack)
@@ -89,7 +86,7 @@ fun MessengerApp(googleSignInClient: GoogleSignInClient) {
             entry<Chat> { chat ->
                 ChatScreen(
                     chatId = chat.chatId.toChatId(),
-                    currentUserId = currentUserId,
+                    onAuthFailure = onAuthFailure,
                 )
             }
             entry<Main> {

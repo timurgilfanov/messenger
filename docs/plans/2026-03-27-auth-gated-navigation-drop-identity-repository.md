@@ -144,13 +144,13 @@ After Task 2 removed `userId` from `AuthSession`, settings storage needed a stab
 - Modify: `app/src/main/java/.../ui/screen/chat/ChatScreen.kt`
 - Modify: `app/src/main/java/.../ui/activity/MainActivity.kt`
 
-- [ ] Remove `@Assisted("currentUserId") currentUserIdUuid: UUID` from `ChatViewModel`; inject `AuthRepository`; remove `KEY_CURRENT_USER_ID` and the `currentUserId: ParticipantId` field
-- [ ] In `ChatViewModel.init`: collect `authRepository.authState.first()` — `Authenticated` → launch `observeChatUpdates()`; `Unauthenticated` → send `ChatSideEffect.Unauthorized`
-- [ ] Replace `participants.first { it.id == currentUserId }` with `participants.first { it.isCurrentUser }` and `participants.first { it.id != currentUserId }` with `participants.first { !it.isCurrentUser }` throughout `ChatViewModel`
-- [ ] Update `ChatViewModelFactory`: remove `currentUserId` param
-- [ ] In `ChatScreen`: remove `currentUserId: ParticipantId` param; simplify hiltViewModel key to `chatId.id.toString()`; add `onAuthFailure: () -> Unit`; handle `ChatSideEffect.Unauthorized` → call `onAuthFailure`
-- [ ] In `MainActivity`/`MessengerApp`: remove hardcoded `currentUserId`; update `ChatScreen` call to pass `onAuthFailure`
-- [ ] Write/update unit tests for `ChatViewModel`: authenticated → chat loads; unauthenticated → Unauthorized side effect
+- [x] Remove `@Assisted("currentUserId") currentUserIdUuid: UUID` from `ChatViewModel`; inject `AuthRepository`; remove `KEY_CURRENT_USER_ID` and the `currentUserId: ParticipantId` field
+- [x] In `ChatViewModel.init`: collect `authRepository.authState.first()` — `Authenticated` → launch `observeChatUpdates()`; `Unauthenticated` → send `ChatSideEffect.Unauthorized`
+- [x] Replace `participants.first { it.id == currentUserId }` with `participants.first { it.isCurrentUser }` and `participants.first { it.id != currentUserId }` with `participants.first { !it.isCurrentUser }` throughout `ChatViewModel`
+- [x] Update `ChatViewModelFactory`: remove `currentUserId` param
+- [x] In `ChatScreen`: remove `currentUserId: ParticipantId` param; simplify hiltViewModel key to `chatId.id.toString()`; add `onAuthFailure: () -> Unit`; handle `ChatSideEffect.Unauthorized` → call `onAuthFailure`
+- [x] In `MainActivity`/`MessengerApp`: remove hardcoded `currentUserId`; update `ChatScreen` call to pass `onAuthFailure`
+- [x] Write/update unit tests for `ChatViewModel`: authenticated → chat loads; unauthenticated → Unauthorized side effect
 
 ### Task 4: Auth-gated startup navigation
 

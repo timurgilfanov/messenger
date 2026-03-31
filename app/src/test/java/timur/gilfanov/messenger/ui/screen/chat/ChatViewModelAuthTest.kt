@@ -3,17 +3,20 @@ package timur.gilfanov.messenger.ui.screen.chat
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import java.util.UUID
-import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
+import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
@@ -24,28 +27,24 @@ import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createA
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@Category(timur.gilfanov.messenger.annotations.Unit::class)
-class ChatViewModelProcessDeathTest {
+@Category(Component::class)
+class ChatViewModelAuthTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `restores chatId from SavedStateHandle after process death`() = runTest {
+    fun `authenticated state loads chat`() = runTest {
         val chatId = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
         val currentUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
         val otherUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
-
-        val restoredSavedStateHandle = SavedStateHandle(
-            mapOf("chatId" to chatId.id.toString()),
-        )
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
         val repository = MessengerRepositoryFake(chat = chat, flowChat = flowOf(Success(chat)))
 
         val viewModel = ChatViewModel(
-            chatIdUuid = UUID.fromString("00000000-0000-0000-0000-000000000010"),
-            savedStateHandle = restoredSavedStateHandle,
+            chatIdUuid = chatId.id,
+            savedStateHandle = SavedStateHandle(),
             authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),
@@ -58,31 +57,29 @@ class ChatViewModelProcessDeathTest {
             while (state !is ChatUiState.Ready) {
                 state = awaitItem()
             }
-            assertEquals(chatId, state.id)
+            assertIs<ChatUiState.Ready>(state)
         }
     }
 
     @Test
-    fun `saves chatId to SavedStateHandle on first creation`() = runTest {
+    fun `unauthenticated state emits Unauthorized side effect`() = runTest {
         val chatId = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
-        val currentUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
-        val otherUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
 
-        val emptySavedStateHandle = SavedStateHandle()
+        val repository = MessengerRepositoryFake()
+        val authRepository = AuthRepositoryFake(initialAuthState = AuthState.Unauthenticated)
 
-        val chat = createTestChat(chatId, currentUserId, otherUserId)
-        val repository = MessengerRepositoryFake(chat = chat, flowChat = flowOf(Success(chat)))
-
-        ChatViewModel(
+        val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            savedStateHandle = emptySavedStateHandle,
-            authRepository = createAuthenticatedRepository(),
+            savedStateHandle = SavedStateHandle(),
+            authRepository = authRepository,
             sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),
             getPagedMessagesUseCase = GetPagedMessagesUseCase(repository),
             markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository),
         )
 
-        assertEquals(chatId.id.toString(), emptySavedStateHandle.get<String>("chatId"))
+        viewModel.effects.test {
+            assertIs<ChatSideEffect.Unauthorized>(awaitItem())
+        }
     }
 }

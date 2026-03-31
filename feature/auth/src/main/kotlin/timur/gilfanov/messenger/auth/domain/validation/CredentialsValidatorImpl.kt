@@ -10,6 +10,8 @@ class CredentialsValidatorImpl : CredentialsValidator {
     companion object {
         const val MIN_PASSWORD_LENGTH = 8
         const val MAX_PASSWORD_LENGTH = 128
+        const val MIN_NUMBERS_IN_PASSWORD = 1
+        const val MIN_ALPHABET_IN_PASSWORD = 1
         const val MAX_EMAIL_LENGTH = 254
         private val EMAIL_REGEX = Regex("[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}")
     }
@@ -68,13 +70,13 @@ class CredentialsValidatorImpl : CredentialsValidator {
         password.none { it.isDigit() } ->
             ResultWithError.Failure(
                 CredentialsValidationError.Password(
-                    PasswordValidationError.PasswordMustContainNumbers(1),
+                    PasswordValidationError.PasswordMustContainNumbers(MIN_NUMBERS_IN_PASSWORD),
                 ),
             )
         password.none { it.isLetter() } ->
             ResultWithError.Failure(
                 CredentialsValidationError.Password(
-                    PasswordValidationError.PasswordMustContainAlphabet(1),
+                    PasswordValidationError.PasswordMustContainAlphabet(MIN_ALPHABET_IN_PASSWORD),
                 ),
             )
         else -> ResultWithError.Success(Unit)

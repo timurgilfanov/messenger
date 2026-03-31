@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.retryWhen
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDao
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
@@ -65,7 +66,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
      * All errors, except NoSettings, will complete the flow and consumer need to resubscribe
      */
     override fun observe(
-        userKey: UserKey,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>> =
         settingsDao.observeAllByUser(userKey.key)
             .retryWhen { cause, attempt ->
@@ -133,7 +134,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
             }
 
     override suspend fun getSetting(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         key: SettingKey,
     ): ResultWithError<TypedLocalSetting, GetSettingError> {
         var attempt = 0L
@@ -160,7 +161,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     }
 
     override suspend fun upsert(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         setting: TypedLocalSetting,
     ): ResultWithError<Unit, UpsertSettingError> {
         var attempt = 0L
@@ -183,7 +184,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     }
 
     override suspend fun transform(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, TransformSettingError> = try {
         database.withTransaction {
@@ -206,7 +207,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     }
 
     override suspend fun upsert(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         settings: List<TypedLocalSetting>,
     ): ResultWithError<Unit, UpsertSettingError> = try {
         val entities = settings.map { it.toSettingEntity(userKey) }
@@ -217,7 +218,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
     }
 
     override suspend fun getUnsyncedSettings(
-        userKey: UserKey,
+        userKey: UserScopeKey,
     ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError> {
         var attempt = 0L
         while (true) {
@@ -238,7 +239,7 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         }
     }
 
-    private suspend fun getSettingsWithRetry(userKey: UserKey): List<SettingEntity> {
+    private suspend fun getSettingsWithRetry(userKey: UserScopeKey): List<SettingEntity> {
         var attempt = 0L
         while (true) {
             try {
@@ -597,7 +598,7 @@ private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSet
  * @param userKey Opaque scoping key identifying the user's session
  * @return Setting entity ready for Room database upsert
  */
-private fun TypedLocalSetting.toSettingEntity(userKey: UserKey): SettingEntity = when (this) {
+private fun TypedLocalSetting.toSettingEntity(userKey: UserScopeKey): SettingEntity = when (this) {
     is TypedLocalSetting.UiLanguage -> SettingEntity(
         userKey = userKey.key,
         key = this.key.key,

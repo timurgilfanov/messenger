@@ -13,6 +13,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
@@ -37,7 +38,7 @@ class LocalSettingsDataSourceImplObserveTest {
         )
     }
 
-    private val testUserKey = UserKey("user-key-1")
+    private val testUserKey = UserScopeKey("user-key-1")
 
     @Test
     fun `observe emits NoSettings when database is empty`() = runTest {
@@ -145,8 +146,8 @@ class LocalSettingsDataSourceImplObserveTest {
     @Test
     fun `observe filters settings by userId`() = runTest {
         // Given
-        val user1Key = UserKey("user-key-1")
-        val user2Key = UserKey("user-key-2")
+        val user1Key = UserScopeKey("user-key-1")
+        val user2Key = UserScopeKey("user-key-2")
         val user1Entity = createSettingEntity(
             userKey = user1Key,
             key = SettingKey.UI_LANGUAGE,
@@ -203,7 +204,7 @@ class LocalSettingsDataSourceImplObserveTest {
 
     @Suppress("LongParameterList")
     private fun createSettingEntity(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         key: SettingKey,
         value: String,
         localVersion: Int = 1,

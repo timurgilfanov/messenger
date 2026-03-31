@@ -21,12 +21,12 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.TestLogger
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceImpl
-import timur.gilfanov.messenger.data.source.local.UserKey
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSettingsChangeSuccess
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSettingsSyncConflict
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSettingsSyncSuccess
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceImpl
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
@@ -72,7 +72,7 @@ class SettingsRepositoryIntegrationTest {
     }
 
     private val syncSchedulerStub = object : SettingsSyncScheduler {
-        override fun scheduleSettingSync(userKey: UserKey, key: SettingKey) = Unit
+        override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) = Unit
         override fun schedulePeriodicSync() = Unit
     }
 
@@ -149,7 +149,7 @@ class SettingsRepositoryIntegrationTest {
         // Given - Pre-populate local settings and mock successful change
         var syncScheduled = false
         val customSyncScheduler = object : SettingsSyncScheduler {
-            override fun scheduleSettingSync(userKey: UserKey, key: SettingKey) {
+            override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) {
                 syncScheduled = true
             }
 

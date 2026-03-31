@@ -6,6 +6,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -13,7 +14,7 @@ import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 @Category(Unit::class)
 class LocalSettingsTest {
 
-    private val testUserKey = UserKey("user-key-1")
+    private val testUserKey = UserScopeKey("user-key-1")
 
     @Test
     fun `fromEntities maps valid UI_LANGUAGE entity correctly`() {

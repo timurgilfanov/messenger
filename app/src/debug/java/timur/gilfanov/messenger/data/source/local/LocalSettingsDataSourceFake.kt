@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
@@ -45,7 +46,7 @@ class LocalSettingsDataSourceFake(
     }
 
     override fun observe(
-        userKey: UserKey,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>> {
         observeError?.let { return flowOf(ResultWithError.Failure(it)) }
 
@@ -60,7 +61,7 @@ class LocalSettingsDataSourceFake(
     }
 
     override suspend fun getSetting(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         key: SettingKey,
     ): ResultWithError<TypedLocalSetting, GetSettingError> {
         getSettingError?.let { return ResultWithError.Failure(it) }
@@ -74,7 +75,7 @@ class LocalSettingsDataSourceFake(
     }
 
     override suspend fun upsert(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         setting: TypedLocalSetting,
     ): ResultWithError<Unit, UpsertSettingError> {
         upsertError?.let { return ResultWithError.Failure(it) }
@@ -87,7 +88,7 @@ class LocalSettingsDataSourceFake(
     }
 
     override suspend fun transform(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, TransformSettingError> {
         transformError?.let { return ResultWithError.Failure(it) }
@@ -128,7 +129,7 @@ class LocalSettingsDataSourceFake(
     }
 
     override suspend fun getUnsyncedSettings(
-        userKey: UserKey,
+        userKey: UserScopeKey,
     ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError> {
         getUnsyncedError?.let { return ResultWithError.Failure(it) }
 
@@ -140,7 +141,7 @@ class LocalSettingsDataSourceFake(
     }
 
     override suspend fun upsert(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         settings: List<TypedLocalSetting>,
     ): ResultWithError<Unit, UpsertSettingError> {
         upsertError?.let { return ResultWithError.Failure(it) }
@@ -179,7 +180,7 @@ private fun SettingEntity.toTypedLocalSetting(defaults: Settings): TypedLocalSet
         null -> error("Unknown setting key: ${this.key}")
     }
 
-private fun TypedLocalSetting.toSettingEntity(userKey: UserKey): SettingEntity = when (this) {
+private fun TypedLocalSetting.toSettingEntity(userKey: UserScopeKey): SettingEntity = when (this) {
     is TypedLocalSetting.UiLanguage -> SettingEntity(
         userKey = userKey.key,
         key = this.key.key,

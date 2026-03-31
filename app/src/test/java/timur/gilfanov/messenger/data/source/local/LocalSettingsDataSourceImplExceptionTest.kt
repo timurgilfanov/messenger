@@ -23,6 +23,7 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDaoFake
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
@@ -41,7 +42,7 @@ class LocalSettingsDataSourceImplExceptionTest {
     private lateinit var wrappedDao: SettingsDaoFake
     private lateinit var dataSource: LocalSettingsDataSource
 
-    private val testUserKey = UserKey("user-key-1")
+    private val testUserKey = UserScopeKey("user-key-1")
 
     @Before
     fun setup() {
@@ -636,7 +637,7 @@ class LocalSettingsDataSourceImplExceptionTest {
 
     @Suppress("LongParameterList")
     private fun createSettingEntity(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         key: SettingKey,
         value: String,
         localVersion: Int = 1,

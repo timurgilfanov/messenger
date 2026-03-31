@@ -23,7 +23,6 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceFake
 import timur.gilfanov.messenger.data.source.local.TransformSettingError
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.local.UpsertSettingError
-import timur.gilfanov.messenger.data.source.local.UserKey
 import timur.gilfanov.messenger.data.source.remote.ChangeUiLanguageRemoteDataSourceError
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettings
@@ -36,6 +35,7 @@ import timur.gilfanov.messenger.data.source.remote.SyncResult
 import timur.gilfanov.messenger.data.source.remote.SyncSingleSettingError
 import timur.gilfanov.messenger.data.source.remote.TypedSettingSyncRequest
 import timur.gilfanov.messenger.data.source.remote.UpdateSettingsRemoteDataSourceError
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
@@ -59,7 +59,7 @@ private const val INVALID_UI_LANGUAGE = "abc"
 @Suppress("LargeClass")
 class SettingsRepositoryImplTest {
 
-    private val testUserKey = UserKey("test-refresh")
+    private val testUserKey = UserScopeKey("test-refresh")
     private val session = AuthSession(
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
@@ -73,7 +73,7 @@ class SettingsRepositoryImplTest {
     private val defaultSettings = Settings(uiLanguage = UiLanguage.English)
 
     private val syncSchedulerStub = object : SettingsSyncScheduler {
-        override fun scheduleSettingSync(userKey: UserKey, key: SettingKey) = Unit
+        override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) = Unit
         override fun schedulePeriodicSync() = Unit
     }
 

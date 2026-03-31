@@ -12,9 +12,9 @@ import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
-import timur.gilfanov.messenger.data.source.local.UserKey
 import timur.gilfanov.messenger.data.worker.SyncAllSettingsWorker
 import timur.gilfanov.messenger.data.worker.SyncSettingWorker
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 
 @Singleton
@@ -27,7 +27,7 @@ class SettingsSyncSchedulerImpl @Inject constructor(private val workManager: Wor
         private const val PERIODIC_SYNC_WORK_NAME = "sync_all_settings_periodic"
     }
 
-    override fun scheduleSettingSync(userKey: UserKey, key: SettingKey) {
+    override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) {
         val workRequest = OneTimeWorkRequestBuilder<SyncSettingWorker>()
             .setInputData(
                 workDataOf(

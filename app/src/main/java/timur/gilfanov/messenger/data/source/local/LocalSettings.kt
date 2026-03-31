@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.data.source.local
 import kotlin.time.Clock
 import kotlin.time.Instant
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -38,7 +39,7 @@ data class LocalSettings(val uiLanguage: LocalSetting<UiLanguage>) {
      * @param userKey Opaque scoping key identifying the user's session
      * @return List of setting entities ready for database upsert
      */
-    fun toSettingEntities(userKey: UserKey): List<SettingEntity> = listOf(
+    fun toSettingEntities(userKey: UserScopeKey): List<SettingEntity> = listOf(
         SettingEntity(
             userKey = userKey.key,
             key = SettingKey.UI_LANGUAGE.key,

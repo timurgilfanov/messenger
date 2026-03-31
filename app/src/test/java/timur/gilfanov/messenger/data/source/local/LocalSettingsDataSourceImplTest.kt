@@ -14,6 +14,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
@@ -38,7 +39,7 @@ class LocalSettingsDataSourceImplTest {
         )
     }
 
-    private val testUserKey = UserKey("user-key-1")
+    private val testUserKey = UserScopeKey("user-key-1")
 
     // getSetting() tests
     @Test
@@ -349,7 +350,7 @@ class LocalSettingsDataSourceImplTest {
                 syncedVersion = 1,
             )
             val user2Unsynced = createSettingEntity(
-                userKey = UserKey("user-key-2"),
+                userKey = UserScopeKey("user-key-2"),
                 key = SettingKey.UI_LANGUAGE,
                 value = UiLanguage.German.toStorageValue(),
                 localVersion = 3,
@@ -372,7 +373,7 @@ class LocalSettingsDataSourceImplTest {
 
     @Suppress("LongParameterList")
     private fun createSettingEntity(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         key: SettingKey,
         value: String,
         localVersion: Int = 1,

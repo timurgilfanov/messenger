@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.data.source.local
 
 import kotlinx.coroutines.flow.Flow
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 
@@ -26,7 +27,7 @@ interface LocalSettingsDataSource {
      *         infrastructure issues
      */
     fun observe(
-        userKey: UserKey,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>>
 
     /**
@@ -38,7 +39,7 @@ interface LocalSettingsDataSource {
      *         or failure with infrastructure error
      */
     suspend fun getSetting(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         key: SettingKey,
     ): ResultWithError<TypedLocalSetting, GetSettingError>
 
@@ -50,7 +51,7 @@ interface LocalSettingsDataSource {
      * @return Success or failure with error
      */
     suspend fun upsert(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         setting: TypedLocalSetting,
     ): ResultWithError<Unit, UpsertSettingError>
 
@@ -62,7 +63,7 @@ interface LocalSettingsDataSource {
      * @return Success or failure with error
      */
     suspend fun upsert(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         settings: List<TypedLocalSetting>,
     ): ResultWithError<Unit, UpsertSettingError>
 
@@ -78,7 +79,7 @@ interface LocalSettingsDataSource {
      * @return Success or failure with error
      */
     suspend fun transform(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, TransformSettingError>
 
@@ -89,6 +90,6 @@ interface LocalSettingsDataSource {
      * @return Success with list of typed settings or failure with error
      */
     suspend fun getUnsyncedSettings(
-        userKey: UserKey,
+        userKey: UserScopeKey,
     ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError>
 }

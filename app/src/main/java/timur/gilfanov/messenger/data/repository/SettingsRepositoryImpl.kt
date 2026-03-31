@@ -18,7 +18,6 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.TransformSettingError
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.local.UpsertSettingError
-import timur.gilfanov.messenger.data.source.local.UserKey
 import timur.gilfanov.messenger.data.source.local.defaultLocalSetting
 import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
@@ -26,6 +25,7 @@ import timur.gilfanov.messenger.data.source.remote.RemoteSetting
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSource
 import timur.gilfanov.messenger.data.source.remote.SyncResult
 import timur.gilfanov.messenger.data.source.remote.toRemoteError
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.fold
@@ -456,7 +456,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     private suspend fun upsertSingleSyncResult(
-        userKey: UserKey,
+        userKey: UserScopeKey,
         updatedSetting: TypedLocalSetting,
         context: String,
     ): ResultWithError<Unit, SyncSettingRepositoryError> =
@@ -729,7 +729,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     private suspend fun upsertDefaultSettings(
-        userKey: UserKey,
+        userKey: UserScopeKey,
     ): ResultWithError<Settings, GetSettingsRepositoryError> {
         val defaultLocalSettings = LocalSettings(
             uiLanguage = defaultLocalSetting(defaultSettings.uiLanguage, now()),
@@ -750,7 +750,7 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 }
 
-private val AuthSession.userKey get() = UserKey(tokens.refreshToken)
+private val AuthSession.userKey get() = UserScopeKey(tokens.refreshToken)
 
 private val TypedLocalSetting.requiresSync get() = setting.localVersion != setting.syncedVersion
 

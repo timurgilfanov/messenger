@@ -4,15 +4,18 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginScreen
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupScreen
@@ -42,21 +45,29 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            hiltViewModel<MainActivityViewModel>() // needed only for locale observation
+            val viewModel = hiltViewModel<MainActivityViewModel>()
+            val initialDestination by viewModel.initialDestination.collectAsStateWithLifecycle()
 
             MessengerTheme {
-                MessengerApp(googleSignInClient = googleSignInClient)
+                MessengerApp(
+                    googleSignInClient = googleSignInClient,
+                    initialDestination = initialDestination,
+                )
             }
         }
     }
 }
 
-@Suppress("LongMethod") // todo keep entities in feature modules
+// top-level app composable
+@Suppress("LongMethod", "ModifierMissing", "ktlint:compose:modifier-missing-check")
 @Composable
-fun MessengerApp(googleSignInClient: GoogleSignInClient) {
-    @Suppress("KotlinConstantConditions")
-    val initBackStack = if (BuildConfig.FEATURE_SETTINGS) Main else ChatList
-    val backStack = rememberNavBackStack(initBackStack)
+fun MessengerApp(googleSignInClient: GoogleSignInClient, initialDestination: NavKey?) {
+    if (initialDestination == null) {
+        Box {}
+        return
+    }
+
+    val backStack = rememberNavBackStack(initialDestination)
 
     val onAuthFailure: () -> Unit = {
         backStack.clear()

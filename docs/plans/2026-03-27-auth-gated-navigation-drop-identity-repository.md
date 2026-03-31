@@ -158,9 +158,9 @@ After Task 2 removed `userId` from `AuthSession`, settings storage needed a stab
 - Modify: `app/src/main/java/.../ui/activity/MainActivityViewModel.kt`
 - Modify: `app/src/main/java/.../ui/activity/MainActivity.kt`
 
-- [ ] Inject `AuthRepository` into `MainActivityViewModel`; add `private val _initialDestination = MutableStateFlow<Any?>(null)`; expose as `val initialDestination`; in `init`, launch a coroutine that collects `authRepository.authState.first()` and sets destination (`Authenticated` → Main, `Unauthenticated` → Login); keep existing locale observation
-- [ ] In `MainActivity`/`MessengerApp`: collect `initialDestination` via `collectAsStateWithLifecycle`; show empty `Box` while null; once resolved, use `LaunchedEffect(destination)` to build the correct initial back stack
-- [ ] Write unit tests for `MainActivityViewModel`: Authenticated → Main; Unauthenticated → Login; initial state is null until authState emits
+- [x] Inject `AuthRepository` into `MainActivityViewModel`; add `private val _initialDestination = MutableStateFlow<Any?>(null)`; expose as `val initialDestination`; in `init`, launch a coroutine that collects `authRepository.authState.first()` and sets destination (`Authenticated` → Main, `Unauthenticated` → Login); keep existing locale observation
+- [x] In `MainActivity`/`MessengerApp`: collect `initialDestination` via `collectAsStateWithLifecycle`; show empty `Box` while null; once resolved, use `LaunchedEffect(destination)` to build the correct initial back stack
+- [x] Write unit tests for `MainActivityViewModel`: Authenticated → Main; Unauthenticated → Login; initial state is null until authState emits
 
 ### Task 5: End-to-end AuthApplicationTest — login → chat → logout → login
 

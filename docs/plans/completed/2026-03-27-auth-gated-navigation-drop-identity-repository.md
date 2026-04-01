@@ -177,6 +177,6 @@ Covers the full auth lifecycle: app boots unauthenticated → user logs in → n
 
 ### Task 6: Verify acceptance criteria
 
-- [ ] Confirm no `IdentityRepository`, `DefaultIdentityRepository`, `Identity`, or `DeviceId` references in `app/src/main` and `core/domain/src/main`
-- [ ] Confirm no hardcoded `550e8400` UUID in `app/src/main`
-- [ ] move this plan to `docs/plans/completed/`
+- [x] Confirm no `IdentityRepository`, `DefaultIdentityRepository`, `Identity`, or `DeviceId` references in `app/src/main` and `core/domain/src/main` — only error-case names (`IdentityNotAvailable`) and KDoc comments remain; no entity/interface classes
+- [x] Confirm no hardcoded `550e8400` UUID in `app/src/main` — UUID appears only in `@Preview` composables (fake data); removed from functional code (`MainActivity`)
+- [x] move this plan to `docs/plans/completed/`

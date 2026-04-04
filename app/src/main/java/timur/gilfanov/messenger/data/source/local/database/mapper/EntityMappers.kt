@@ -65,6 +65,7 @@ object EntityMappers {
             joinedAt = joinedAt,
             isAdmin = isAdmin,
             isModerator = isModerator,
+            isCurrentUser = isCurrentUser,
         )
 
     /**
@@ -104,6 +105,7 @@ object EntityMappers {
             joinedAt = participant.joinedAt,
             isAdmin = participant.isAdmin,
             isModerator = participant.isModerator,
+            isCurrentUser = participant.isCurrentUser,
         )
     }
 
@@ -171,6 +173,7 @@ object EntityMappers {
             onlineAt = onlineAt,
             isAdmin = crossRef.isAdmin,
             isModerator = crossRef.isModerator,
+            isCurrentUser = crossRef.isCurrentUser,
         )
 
     /**

@@ -29,10 +29,11 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
         ChatParticipantCrossRef::class,
         SettingEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 3, to = 4, spec = MessengerDatabase.Migration3To4::class),
+        AutoMigration(from = 4, to = 5),
     ],
 )
 @TypeConverters(Converters::class)

@@ -5,6 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -364,5 +365,49 @@ class EntityMappersTest {
                 },
             )
         }
+    }
+
+    @Test
+    fun `toParticipant sets isCurrentUser true when crossRef marks current user`() {
+        // Given
+        val participant = buildParticipant {
+            id = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+            name = "Current User"
+            joinedAt = Instant.fromEpochMilliseconds(1000)
+            isCurrentUser = true
+        }
+        val entity = participant.toParticipantEntity()
+        val crossRef = with(EntityMappers) {
+            participant.toChatParticipantCrossRef("test-chat-id")
+        }
+
+        // When
+        val restored = entity.toParticipant(crossRef)
+
+        // Then
+        assertTrue(restored.isCurrentUser)
+        assertTrue(crossRef.isCurrentUser)
+    }
+
+    @Test
+    fun `toParticipant sets isCurrentUser false when crossRef does not mark current user`() {
+        // Given
+        val participant = buildParticipant {
+            id = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+            name = "Other User"
+            joinedAt = Instant.fromEpochMilliseconds(1000)
+            isCurrentUser = false
+        }
+        val entity = participant.toParticipantEntity()
+        val crossRef = with(EntityMappers) {
+            participant.toChatParticipantCrossRef("test-chat-id")
+        }
+
+        // When
+        val restored = entity.toParticipant(crossRef)
+
+        // Then
+        assertTrue(!restored.isCurrentUser)
+        assertTrue(!crossRef.isCurrentUser)
     }
 }

@@ -49,7 +49,7 @@ class SettingsSyncSchedulerImpl @Inject constructor(private val workManager: Wor
             .build()
 
         workManager.enqueueUniqueWork(
-            "sync_setting_${userKey.key.hashCode()}_${key.key}",
+            "sync_setting_${userKey.key}_${key.key}",
             ExistingWorkPolicy.APPEND_OR_REPLACE,
             workRequest,
         )

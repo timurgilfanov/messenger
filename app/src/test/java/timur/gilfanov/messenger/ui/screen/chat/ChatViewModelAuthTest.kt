@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.ui.screen.chat
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import java.util.UUID
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -57,7 +58,8 @@ class ChatViewModelAuthTest {
             while (state !is ChatUiState.Ready) {
                 state = awaitItem()
             }
-            assertIs<ChatUiState.Ready>(state)
+            assertEquals(chatId, state.id)
+            assertEquals("Direct Message", state.title)
         }
     }
 

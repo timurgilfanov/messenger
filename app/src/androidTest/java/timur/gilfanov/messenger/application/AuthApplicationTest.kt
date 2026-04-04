@@ -79,6 +79,7 @@ class AuthApplicationTest {
         fun provideMessageRepository(): MessageRepository = repository
 
         @Provides
+        @Singleton
         fun provideSettingsRepository(): SettingsRepository = SettingsRepositoryStub()
 
         @Provides

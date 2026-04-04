@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.ui.activity
 
-import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -118,14 +117,9 @@ class MainActivityViewModelTest {
 
         val viewModel = createViewModel(authRepository = authRepository)
 
-        viewModel.initialDestination.test {
-            val firstItem = awaitItem()
-            if (firstItem == null) {
-                assertEquals(Main, awaitItem())
-            } else {
-                assertEquals(Main, firstItem)
-            }
-        }
+        advanceUntilIdle()
+
+        assertEquals(Main, viewModel.initialDestination.value)
     }
 
     @Test

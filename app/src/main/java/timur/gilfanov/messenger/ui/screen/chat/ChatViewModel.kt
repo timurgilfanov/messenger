@@ -229,7 +229,7 @@ class ChatViewModel @AssistedInject constructor(
             status = chatStatus,
             inputTextValidationError = inputTextValidationError,
             isSending = (state as? ChatUiState.Ready?)?.isSending == true,
-            updateError = (state as? ChatUiState.Ready?)?.updateError,
+            updateError = null,
             dialogError = (state as? ChatUiState.Ready?)?.dialogError,
         )
     }

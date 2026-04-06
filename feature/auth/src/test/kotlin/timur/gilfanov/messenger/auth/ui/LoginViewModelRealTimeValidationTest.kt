@@ -99,6 +99,33 @@ class LoginViewModelRealTimeValidationTest {
     }
 
     @Test
+    fun `updating email to valid does not trigger passwordError on untouched password`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateEmail(VALID_EMAIL)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertNull(state.passwordError)
+        }
+    }
+
+    @Test
+    fun `fixing password while email is invalid clears passwordError`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(INVALID_SHORT_PASSWORD)
+        viewModel.updateEmail(INVALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertNull(state.passwordError)
+        }
+    }
+
+    @Test
     fun `updating password while email is invalid preserves existing passwordError`() = runTest {
         val viewModel = createViewModel()
 

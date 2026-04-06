@@ -125,7 +125,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Pre-insert settings into database
         val settingEntity = SettingEntity(
-            userKey = "test-refresh",
+            userKey = testUserKey.key,
             key = "ui_language",
             value = "German",
             localVersion = 1,
@@ -173,7 +173,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Pre-insert settings
         val settingEntity = SettingEntity(
-            userKey = "test-refresh",
+            userKey = testUserKey.key,
             key = "ui_language",
             value = "English",
             localVersion = 1,
@@ -219,7 +219,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Pre-insert unsynced setting (localVersion > syncedVersion)
         val settingEntity = SettingEntity(
-            userKey = "test-refresh",
+            userKey = testUserKey.key,
             key = "ui_language",
             value = "German",
             localVersion = 2,
@@ -237,7 +237,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Verify local setting updated with new server version
         val updatedEntity = databaseRule.database.settingsDao()
-            .get("test-refresh", "ui_language")
+            .get(testUserKey.key, "ui_language")
         assertEquals(2, updatedEntity?.serverVersion)
         assertEquals(2, updatedEntity?.syncedVersion)
     }
@@ -265,7 +265,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Pre-insert local setting
         val settingEntity = SettingEntity(
-            userKey = "test-refresh",
+            userKey = testUserKey.key,
             key = "ui_language",
             value = "English",
             localVersion = 2,
@@ -283,7 +283,7 @@ class SettingsRepositoryIntegrationTest {
 
         // Verify local setting updated to server value
         val updatedEntity = databaseRule.database.settingsDao()
-            .get("test-refresh", "ui_language")
+            .get(testUserKey.key, "ui_language")
         assertEquals("German", updatedEntity?.value)
     }
 

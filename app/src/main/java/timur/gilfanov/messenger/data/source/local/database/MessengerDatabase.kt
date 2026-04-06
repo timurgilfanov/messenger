@@ -6,6 +6,7 @@ import androidx.room.RenameColumn
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.AutoMigrationSpec
+import androidx.sqlite.db.SupportSQLiteDatabase
 import timur.gilfanov.messenger.data.source.local.database.converter.Converters
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
@@ -44,7 +45,11 @@ abstract class MessengerDatabase : RoomDatabase() {
     abstract fun settingsDao(): SettingsDao
 
     @RenameColumn(tableName = "settings", fromColumnName = "userId", toColumnName = "userKey")
-    class Migration3To4 : AutoMigrationSpec
+    class Migration3To4 : AutoMigrationSpec {
+        override fun onPostMigrate(db: SupportSQLiteDatabase) {
+            db.execSQL("DELETE FROM settings")
+        }
+    }
 
     companion object {
         const val DATABASE_NAME = "messenger_database"

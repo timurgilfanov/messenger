@@ -15,6 +15,7 @@ import timur.gilfanov.messenger.auth.domain.usecase.GoogleLoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
@@ -58,23 +59,31 @@ class LoginViewModel @Inject constructor(
     fun updateEmail(email: String) {
         savedStateHandle[KEY_EMAIL] = email
         val currentPassword = _state.value.password
-        val isCredentialsValid = credentialsValidator.validate(
+        val validationResult = credentialsValidator.validate(
             Credentials(Email(email), Password(currentPassword)),
-        ) is ResultWithError.Success
+        )
+        val isCredentialsValid = validationResult is ResultWithError.Success
+        val emailError = (validationResult as? ResultWithError.Failure)
+            ?.let { it.error as? CredentialsValidationError.Email }
+            ?.reason
         _state.update {
-            it.copy(email = email, emailError = null, isCredentialsValid = isCredentialsValid)
+            it.copy(email = email, emailError = emailError, isCredentialsValid = isCredentialsValid)
         }
     }
 
     fun updatePassword(password: String) {
         val currentEmail = _state.value.email
-        val isCredentialsValid = credentialsValidator.validate(
+        val validationResult = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
-        ) is ResultWithError.Success
+        )
+        val isCredentialsValid = validationResult is ResultWithError.Success
+        val passwordError = (validationResult as? ResultWithError.Failure)
+            ?.let { it.error as? CredentialsValidationError.Password }
+            ?.reason
         _state.update {
             it.copy(
                 password = password,
-                passwordError = null,
+                passwordError = passwordError,
                 isCredentialsValid = isCredentialsValid,
             )
         }

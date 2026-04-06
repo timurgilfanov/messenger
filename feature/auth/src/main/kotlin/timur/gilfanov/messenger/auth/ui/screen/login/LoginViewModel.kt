@@ -63,11 +63,20 @@ class LoginViewModel @Inject constructor(
             Credentials(Email(email), Password(currentPassword)),
         )
         val isCredentialsValid = validationResult is ResultWithError.Success
-        val emailError = (validationResult as? ResultWithError.Failure)
-            ?.let { it.error as? CredentialsValidationError.Email }
-            ?.reason
+        val validationFailure = (validationResult as? ResultWithError.Failure)?.error
+        val emailError = (validationFailure as? CredentialsValidationError.Email)?.reason
+        val passwordError = when (validationFailure) {
+            is CredentialsValidationError.Email -> _state.value.passwordError
+            is CredentialsValidationError.Password -> validationFailure.reason
+            null -> null
+        }
         _state.update {
-            it.copy(email = email, emailError = emailError, isCredentialsValid = isCredentialsValid)
+            it.copy(
+                email = email,
+                emailError = emailError,
+                passwordError = passwordError,
+                isCredentialsValid = isCredentialsValid,
+            )
         }
     }
 
@@ -77,9 +86,12 @@ class LoginViewModel @Inject constructor(
             Credentials(Email(currentEmail), Password(password)),
         )
         val isCredentialsValid = validationResult is ResultWithError.Success
-        val passwordError = (validationResult as? ResultWithError.Failure)
-            ?.let { it.error as? CredentialsValidationError.Password }
-            ?.reason
+        val validationFailure = (validationResult as? ResultWithError.Failure)?.error
+        val passwordError = when (validationFailure) {
+            is CredentialsValidationError.Password -> validationFailure.reason
+            is CredentialsValidationError.Email -> _state.value.passwordError
+            null -> null
+        }
         _state.update {
             it.copy(
                 password = password,

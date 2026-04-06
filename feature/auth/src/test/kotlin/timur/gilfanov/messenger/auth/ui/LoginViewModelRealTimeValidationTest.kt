@@ -37,6 +37,16 @@ class LoginViewModelRealTimeValidationTest {
     }
 
     @Test
+    fun `initial state has no password error`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertNull(state.passwordError)
+        }
+    }
+
+    @Test
     fun `entering invalid email sets emailError`() = runTest {
         val viewModel = createViewModel()
 
@@ -85,6 +95,37 @@ class LoginViewModelRealTimeValidationTest {
         viewModel.state.test {
             val state = awaitItem()
             assertNull(state.passwordError)
+        }
+    }
+
+    @Test
+    fun `updating password while email is invalid preserves existing passwordError`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(INVALID_SHORT_PASSWORD)
+        viewModel.updateEmail(INVALID_EMAIL)
+        viewModel.updatePassword(INVALID_SHORT_PASSWORD)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertIs<PasswordValidationError.PasswordTooShort>(state.passwordError)
+        }
+    }
+
+    @Test
+    fun `fixing email reveals passwordError obscured by invalid email`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
+        viewModel.updateEmail(INVALID_EMAIL)
+        viewModel.updatePassword(INVALID_SHORT_PASSWORD)
+        viewModel.updateEmail(VALID_EMAIL)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertIs<PasswordValidationError.PasswordTooShort>(state.passwordError)
         }
     }
 }

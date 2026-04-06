@@ -108,6 +108,37 @@ class SignupViewModelRealTimeValidationTest {
     }
 
     @Test
+    fun `updating password while email is invalid preserves existing passwordError`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(INVALID_SHORT_PASSWORD)
+        viewModel.updateEmail(INVALID_EMAIL)
+        viewModel.updatePassword(INVALID_SHORT_PASSWORD)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertIs<PasswordValidationError.PasswordTooShort>(state.passwordError)
+        }
+    }
+
+    @Test
+    fun `fixing email reveals passwordError obscured by invalid email`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateEmail(VALID_EMAIL)
+        viewModel.updatePassword(VALID_PASSWORD)
+        viewModel.updateEmail(INVALID_EMAIL)
+        viewModel.updatePassword(INVALID_SHORT_PASSWORD)
+        viewModel.updateEmail(VALID_EMAIL)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertIs<PasswordValidationError.PasswordTooShort>(state.passwordError)
+        }
+    }
+
+    @Test
     fun `restored name from SavedStateHandle has no nameError before any edits`() = runTest {
         val handle = SavedStateHandle(mapOf("name" to VALID_NAME, "email" to VALID_EMAIL))
         val viewModel = createViewModel(savedStateHandle = handle)

@@ -66,6 +66,6 @@ displaying these errors; only the ViewModels need to change.
 
 ### Task 4: Verify acceptance criteria
 
-- [ ] Run full test suite: `./gradlew :feature:auth:testDebugUnitTest`
-- [ ] Run linter: `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Run full test suite: `./gradlew :feature:auth:testDebugUnitTest`
+- [x] Run linter: `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Move this plan to `docs/plans/completed/`

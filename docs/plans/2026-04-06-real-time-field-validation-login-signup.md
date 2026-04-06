@@ -44,10 +44,10 @@ displaying these errors; only the ViewModels need to change.
 **Files:**
 - Modify: `feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/ui/screen/signup/SignupViewModel.kt`
 
-- [ ] In `updateName()`: extract failure reason from `profileNameValidator.validate()` and set `nameError`; clear on success
-- [ ] In `updateEmail()`: same extraction pattern as LoginViewModel
-- [ ] In `updatePassword()`: same extraction pattern as LoginViewModel
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] In `updateName()`: extract failure reason from `profileNameValidator.validate()` and set `nameError`; clear on success
+- [x] In `updateEmail()`: same extraction pattern as LoginViewModel
+- [x] In `updatePassword()`: same extraction pattern as LoginViewModel
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
 
 ### Task 3: ViewModel unit tests
 

@@ -55,14 +55,14 @@ displaying these errors; only the ViewModels need to change.
 - Create: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/ui/LoginViewModelRealTimeValidationTest.kt`
 - Create: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/ui/SignupViewModelRealTimeValidationTest.kt`
 
-- [ ] LoginViewModel: entering invalid email sets `emailError`; fixing it clears `emailError`
-- [ ] LoginViewModel: entering invalid password sets `passwordError`; fixing it clears `passwordError`
-- [ ] LoginViewModel: email error does not appear in initial state (before any edits)
-- [ ] SignupViewModel: entering invalid name sets `nameError`; fixing it clears `nameError`
-- [ ] SignupViewModel: entering invalid email sets `emailError`; fixing it clears `emailError`
-- [ ] SignupViewModel: entering invalid password sets `passwordError`; fixing it clears `passwordError`
-- [ ] SignupViewModel: name/email error do not appear on restore from SavedStateHandle (before any edits in current session)
-- [ ] Run `./gradlew :feature:auth:testDebugUnitTest`
+- [x] LoginViewModel: entering invalid email sets `emailError`; fixing it clears `emailError`
+- [x] LoginViewModel: entering invalid password sets `passwordError`; fixing it clears `passwordError`
+- [x] LoginViewModel: email error does not appear in initial state (before any edits)
+- [x] SignupViewModel: entering invalid name sets `nameError`; fixing it clears `nameError`
+- [x] SignupViewModel: entering invalid email sets `emailError`; fixing it clears `emailError`
+- [x] SignupViewModel: entering invalid password sets `passwordError`; fixing it clears `passwordError`
+- [x] SignupViewModel: name/email error do not appear on restore from SavedStateHandle (before any edits in current session)
+- [x] Run `./gradlew :feature:auth:testDebugUnitTest`
 
 ### Task 4: Verify acceptance criteria
 

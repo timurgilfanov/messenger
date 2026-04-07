@@ -359,7 +359,7 @@ class EntityMappersTest {
         assertEquals(participants.size, crossRefs.size)
         crossRefs.forEach { crossRef ->
             assertEquals(chatId.id.toString(), crossRef.chatId)
-            assert(
+            assertTrue(
                 participants.any { participant ->
                     participant.id.id.toString() == crossRef.participantId
                 },

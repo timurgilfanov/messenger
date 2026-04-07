@@ -47,6 +47,8 @@ abstract class MessengerDatabase : RoomDatabase() {
     @RenameColumn(tableName = "settings", fromColumnName = "userId", toColumnName = "userKey")
     class Migration3To4 : AutoMigrationSpec {
         override fun onPostMigrate(db: SupportSQLiteDatabase) {
+            // Clear settings because the userKey derivation changed (plain userId → hashed token);
+            // existing rows would never match any valid key and are effectively orphaned.
             db.execSQL("DELETE FROM settings")
         }
     }

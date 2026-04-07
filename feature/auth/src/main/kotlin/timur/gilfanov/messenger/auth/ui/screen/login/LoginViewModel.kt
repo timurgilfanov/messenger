@@ -15,7 +15,6 @@ import timur.gilfanov.messenger.auth.domain.usecase.GoogleLoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
@@ -59,12 +58,14 @@ class LoginViewModel @Inject constructor(
     fun updateEmail(email: String) {
         savedStateHandle[KEY_EMAIL] = email
         val currentPassword = _state.value.password
-        val validationResult = credentialsValidator.validate(
+        val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(email), Password(currentPassword)),
-        )
-        val isCredentialsValid = validationResult is ResultWithError.Success
-        val validationFailure = (validationResult as? ResultWithError.Failure)?.error
-        val emailError = (validationFailure as? CredentialsValidationError.Email)?.reason
+        ) is ResultWithError.Success
+        val emailError = (
+            credentialsValidator.validate(
+                Email(email),
+            ) as? ResultWithError.Failure
+            )?.error
         _state.update {
             it.copy(
                 email = email,
@@ -76,23 +77,11 @@ class LoginViewModel @Inject constructor(
 
     fun updatePassword(password: String) {
         val currentEmail = _state.value.email
-        val validationResult = credentialsValidator.validate(
+        val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
-        )
-        val isCredentialsValid = validationResult is ResultWithError.Success
-        val validationFailure = (validationResult as? ResultWithError.Failure)?.error
-        val passwordError = when (validationFailure) {
-            is CredentialsValidationError.Password -> validationFailure.reason
-            is CredentialsValidationError.Email -> {
-                val passwordOnlyResult = credentialsValidator.validate(
-                    Credentials(Email("placeholder@example.com"), Password(password)),
-                )
-                (passwordOnlyResult as? ResultWithError.Failure)
-                    ?.error
-                    ?.let { (it as? CredentialsValidationError.Password)?.reason }
-            }
-            null -> null
-        }
+        ) is ResultWithError.Success
+        val passwordError =
+            (credentialsValidator.validate(Password(password)) as? ResultWithError.Failure)?.error
         _state.update {
             it.copy(
                 password = password,

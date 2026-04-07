@@ -6,8 +6,8 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRe
 /**
  * Errors that can occur during UI language observation operations.
  *
- * ## Identity Errors
- * - [Unauthorized] - Failed to retrieve current user identity
+ * ## Auth Errors
+ * - [Unauthorized] - Not authenticated
  *
  * ## Logical Errors
  * - [SettingsResetToDefaults] - Settings were not found and reset to defaults
@@ -17,7 +17,7 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRe
  */
 sealed interface ObserveUiLanguageError {
     /**
-     * Failed to retrieve current user identity.
+     * Not authenticated.
      *
      * This error occurs when [timur.gilfanov.messenger.domain.usecase.auth.AuthRepository] cannot
      * provide an authenticated session needed to observe the language preference.

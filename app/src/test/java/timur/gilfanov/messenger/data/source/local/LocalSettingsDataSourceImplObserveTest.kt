@@ -144,7 +144,7 @@ class LocalSettingsDataSourceImplObserveTest {
     }
 
     @Test
-    fun `observe filters settings by userId`() = runTest {
+    fun `observe filters settings by userKey`() = runTest {
         // Given
         val user1Key = UserScopeKey("user-key-1")
         val user2Key = UserScopeKey("user-key-2")

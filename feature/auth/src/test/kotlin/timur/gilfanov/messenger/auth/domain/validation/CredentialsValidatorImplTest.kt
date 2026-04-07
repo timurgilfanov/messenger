@@ -144,11 +144,4 @@ class CredentialsValidatorImplTest {
         val failure = assertIs<Failure<*, PasswordValidationError>>(result)
         assertIs<PasswordValidationError.PasswordTooShort>(failure.error)
     }
-
-    @Test
-    fun `validate password alone returns error regardless of email validity`() = runTest {
-        val result = validator.validate(Password("bad"))
-        val failure = assertIs<Failure<*, PasswordValidationError>>(result)
-        assertIs<PasswordValidationError.PasswordTooShort>(failure.error)
-    }
 }

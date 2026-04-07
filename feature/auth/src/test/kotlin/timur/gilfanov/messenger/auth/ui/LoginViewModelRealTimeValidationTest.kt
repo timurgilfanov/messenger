@@ -126,7 +126,7 @@ class LoginViewModelRealTimeValidationTest {
     }
 
     @Test
-    fun `updating password while email is invalid preserves existing passwordError`() = runTest {
+    fun `updating to invalid password while email is invalid sets passwordError`() = runTest {
         val viewModel = createViewModel()
 
         viewModel.updateEmail(VALID_EMAIL)
@@ -141,7 +141,7 @@ class LoginViewModelRealTimeValidationTest {
     }
 
     @Test
-    fun `fixing email reveals passwordError obscured by invalid email`() = runTest {
+    fun `fixing email do not hide passwordError`() = runTest {
         val viewModel = createViewModel()
 
         viewModel.updateEmail(VALID_EMAIL)

@@ -135,7 +135,7 @@ class SignupViewModelRealTimeValidationTest {
     }
 
     @Test
-    fun `updating password while email is invalid preserves existing passwordError`() = runTest {
+    fun `updating to invalid password while email is invalid sets passwordError`() = runTest {
         val viewModel = createViewModel()
 
         viewModel.updateEmail(VALID_EMAIL)
@@ -150,7 +150,7 @@ class SignupViewModelRealTimeValidationTest {
     }
 
     @Test
-    fun `fixing email reveals passwordError obscured by invalid email`() = runTest {
+    fun `fixing email do not hide passwordError`() = runTest {
         val viewModel = createViewModel()
 
         viewModel.updateEmail(VALID_EMAIL)
@@ -167,7 +167,7 @@ class SignupViewModelRealTimeValidationTest {
 
     @Test
     fun `restored name from SavedStateHandle has no nameError before any edits`() = runTest {
-        val handle = SavedStateHandle(mapOf("name" to VALID_NAME, "email" to VALID_EMAIL))
+        val handle = SavedStateHandle(mapOf("name" to INVALID_BLANK_NAME, "email" to INVALID_EMAIL))
         val viewModel = createViewModel(savedStateHandle = handle)
 
         viewModel.state.test {

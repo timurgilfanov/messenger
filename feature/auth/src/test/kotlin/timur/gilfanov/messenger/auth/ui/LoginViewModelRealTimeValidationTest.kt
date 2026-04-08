@@ -126,11 +126,9 @@ class LoginViewModelRealTimeValidationTest {
     }
 
     @Test
-    fun `updating to invalid password while email is invalid sets passwordError`() = runTest {
+    fun `invalid password sets passwordError even when email is invalid`() = runTest {
         val viewModel = createViewModel()
 
-        viewModel.updateEmail(VALID_EMAIL)
-        viewModel.updatePassword(INVALID_SHORT_PASSWORD)
         viewModel.updateEmail(INVALID_EMAIL)
         viewModel.updatePassword(INVALID_SHORT_PASSWORD)
 

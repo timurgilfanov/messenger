@@ -6,18 +6,24 @@
     <string name="login_sign_in_with_google_button">Mit Google anmelden</string>
     <string name="login_create_account_button">Konto erstellen</string>
 
-    <!-- Login validation errors -->
-    <string name="login_error_blank_email">E-Mail darf nicht leer sein</string>
-    <string name="login_error_invalid_email_format">Ungültiges E-Mail-Format</string>
-    <string name="login_error_no_at_in_email">E-Mail muss @ enthalten</string>
-    <string name="login_error_email_too_long">E-Mail darf höchstens %d Zeichen lang sein</string>
-    <string name="login_error_no_domain_at_email">E-Mail muss eine Domain enthalten</string>
-    <string name="login_error_forbidden_character_in_email">Zeichen \'%s\' ist in der E-Mail nicht erlaubt</string>
-    <string name="login_error_password_too_short">Passwort muss mindestens %d Zeichen lang sein</string>
-    <string name="login_error_password_too_long">Passwort darf höchstens %d Zeichen lang sein</string>
-    <string name="login_error_forbidden_character_in_password">Zeichen \'%s\' ist im Passwort nicht erlaubt</string>
-    <string name="login_error_password_must_contain_numbers">Passwort muss mindestens %d Zahl(en) enthalten</string>
-    <string name="login_error_password_must_contain_alphabet">Passwort muss mindestens %d Buchstaben enthalten</string>
+    <!-- Shared email/password validation errors -->
+    <string name="auth_error_blank_email">E-Mail darf nicht leer sein</string>
+    <string name="auth_error_invalid_email_format">Ungültiges E-Mail-Format</string>
+    <string name="auth_error_no_at_in_email">E-Mail muss @ enthalten</string>
+    <string name="auth_error_email_too_long">E-Mail darf höchstens %d Zeichen lang sein</string>
+    <string name="auth_error_no_domain_at_email">E-Mail muss eine Domain enthalten</string>
+    <string name="auth_error_invalid_password_server">Das Passwort erfüllt nicht die Anforderungen</string>
+    <string name="auth_error_password_too_short">Passwort muss mindestens %d Zeichen lang sein</string>
+    <string name="auth_error_password_too_long">Passwort darf höchstens %d Zeichen lang sein</string>
+    <string name="auth_error_forbidden_character_in_password">Zeichen \'%s\' ist im Passwort nicht erlaubt</string>
+    <plurals name="auth_error_password_must_contain_numbers">
+        <item quantity="one">Passwort muss mindestens 1 Zahl enthalten</item>
+        <item quantity="other">Passwort muss mindestens %d Zahlen enthalten</item>
+    </plurals>
+    <plurals name="auth_error_password_must_contain_alphabet">
+        <item quantity="one">Passwort muss mindestens 1 Buchstabe enthalten</item>
+        <item quantity="other">Passwort muss mindestens %d Buchstaben enthalten</item>
+    </plurals>
 
     <!-- Login general errors -->
     <string name="login_error_invalid_credentials">Ungültige E-Mail oder falsches Passwort</string>
@@ -48,7 +54,6 @@
     <string name="signup_error_account_already_exists">Ein Konto mit dieser Google-Identität existiert bereits</string>
     <string name="signup_error_email_taken">Ein Konto mit dieser E-Mail-Adresse existiert bereits</string>
     <string name="signup_error_invalid_email_server">Diese E-Mail-Adresse kann nicht verwendet werden</string>
-    <string name="signup_error_invalid_password_server">Das Passwort erfüllt nicht die Anforderungen</string>
 
     <!-- Dialog error titles -->
     <string name="auth_error_storage_full_title">Speicher voll</string>

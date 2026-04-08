@@ -36,7 +36,6 @@ import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseImpl
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
@@ -50,6 +49,7 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.util.Logger
@@ -283,8 +283,8 @@ class SignupFeatureTest {
     @Test
     fun signupScreen_credentialsSignupClientEmailError_showsEmailFieldError() {
         SignupTestModule.signupWithCredentialsUseCase.result = ResultWithError.Failure(
-            SignupWithCredentialsUseCaseError.ValidationFailed(
-                CredentialsValidationError.BlankEmail,
+            SignupWithCredentialsUseCaseError.InvalidEmail(
+                EmailValidationError.BlankEmail,
             ),
         )
         with(composeTestRule) {
@@ -302,7 +302,7 @@ class SignupFeatureTest {
                     .fetchSemanticsNodes().size == 1
             }
             onNodeWithTag("signup_email_error", useUnmergedTree = true)
-                .assertTextEquals(activity.getString(R.string.login_error_blank_email))
+                .assertTextEquals(activity.getString(R.string.auth_error_blank_email))
         }
     }
 

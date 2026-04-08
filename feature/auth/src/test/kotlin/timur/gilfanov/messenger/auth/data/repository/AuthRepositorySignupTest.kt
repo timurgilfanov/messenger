@@ -20,9 +20,10 @@ import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 
@@ -77,7 +78,7 @@ class AuthRepositorySignupTest {
             val remote = RemoteAuthDataSourceFake()
             remote.enqueueRegister(
                 ResultWithError.Failure(
-                    RegisterError.InvalidEmail(EmailValidationError.EmailTaken),
+                    RegisterError.InvalidEmail(SignupEmailError.EmailTaken),
                 ),
             )
             val repo = createRepo(remoteDataSource = remote, scope = this)
@@ -88,27 +89,28 @@ class AuthRepositorySignupTest {
             val failure =
                 assertIs<ResultWithError.Failure<AuthSession, SignupRepositoryError>>(result)
             val error = assertIs<SignupRepositoryError.InvalidEmail>(failure.error)
-            assertIs<EmailValidationError.EmailTaken>(error.reason)
+            assertIs<SignupEmailError.EmailTaken>(error.reason)
         }
 
     @Test
-    fun `signup InvalidEmail EmailNotExists returns InvalidEmail with EmailNotExists`() = runTest {
-        val remote = RemoteAuthDataSourceFake()
-        remote.enqueueRegister(
-            ResultWithError.Failure(
-                RegisterError.InvalidEmail(EmailValidationError.EmailNotExists),
-            ),
-        )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
-        advanceUntilIdle()
+    fun `signup InvalidEmail EmailUnknownError returns InvalidEmail with EmailUnknownError`() =
+        runTest {
+            val remote = RemoteAuthDataSourceFake()
+            remote.enqueueRegister(
+                ResultWithError.Failure(
+                    RegisterError.InvalidEmail(EmailUnknownError("EMAIL_NOT_EXISTS")),
+                ),
+            )
+            val repo = createRepo(remoteDataSource = remote, scope = this)
+            advanceUntilIdle()
 
-        val result = repo.signup(credentials, name)
+            val result = repo.signup(credentials, name)
 
-        val failure =
-            assertIs<ResultWithError.Failure<AuthSession, SignupRepositoryError>>(result)
-        val error = assertIs<SignupRepositoryError.InvalidEmail>(failure.error)
-        assertIs<EmailValidationError.EmailNotExists>(error.reason)
-    }
+            val failure =
+                assertIs<ResultWithError.Failure<AuthSession, SignupRepositoryError>>(result)
+            val error = assertIs<SignupRepositoryError.InvalidEmail>(failure.error)
+            assertIs<EmailUnknownError>(error.reason)
+        }
 
     @Test
     fun `signup InvalidPassword returns InvalidPassword error with reason preserved`() = runTest {

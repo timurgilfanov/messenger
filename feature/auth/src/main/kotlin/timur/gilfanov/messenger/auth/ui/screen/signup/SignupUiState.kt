@@ -2,10 +2,9 @@ package timur.gilfanov.messenger.auth.ui.screen.signup
 
 import androidx.compose.runtime.Immutable
 import kotlin.time.Duration
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
-import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 
 @Immutable
 data class SignupUiState(
@@ -18,14 +17,15 @@ data class SignupUiState(
     val isCredentialsValid: Boolean = false,
     val isPasswordConfirmed: Boolean = false,
     val nameError: ProfileNameValidationError? = null,
-    val emailError: CredentialsValidationError? = null,
-    val passwordError: CredentialsValidationError? = null,
+    val emailError: SignupEmailError? = null,
+    val passwordError: PasswordValidationError? = null,
     val generalError: SignupGeneralError? = null,
     val blockingError: SignupBlockingError? = null,
 ) {
     val isGoogleSubmitEnabled: Boolean get() = !isLoading && isNameValid
     val isCredentialsSubmitEnabled: Boolean
-        get() = !isLoading && isNameValid && isCredentialsValid && isPasswordConfirmed
+        get() = !isLoading && isNameValid && isCredentialsValid && isPasswordConfirmed &&
+            emailError == null && passwordError == null
     val isPasswordMismatched: Boolean
         get() = !isPasswordConfirmed && password.trim().length == confirmPassword.trim().length &&
             password.isNotBlank()
@@ -35,8 +35,6 @@ data class SignupUiState(
 sealed interface SignupGeneralError {
     data object InvalidToken : SignupGeneralError
     data object AccountAlreadyExists : SignupGeneralError
-    data class InvalidEmail(val reason: EmailValidationError) : SignupGeneralError
-    data class InvalidPassword(val reason: PasswordValidationError) : SignupGeneralError
 }
 
 @Immutable

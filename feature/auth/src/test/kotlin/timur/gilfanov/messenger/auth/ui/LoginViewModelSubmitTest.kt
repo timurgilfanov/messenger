@@ -28,7 +28,9 @@ import timur.gilfanov.messenger.auth.ui.screen.login.LoginViewModel
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -57,13 +59,13 @@ class LoginViewModelSubmitTest {
     @Test
     fun `submit with blank email sets emailError`() = runTest {
         val viewModel = createViewModel(
-            validatorError = CredentialsValidationError.BlankEmail,
+            validatorError = CredentialsValidationError.Email(EmailValidationError.BlankEmail),
         )
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
             viewModel.submitLogin()
             advanceUntilIdle()
-            assertIs<CredentialsValidationError.BlankEmail>(viewModel.state.value.emailError)
+            assertIs<EmailValidationError.BlankEmail>(viewModel.state.value.emailError)
             expectNoEvents()
         }
     }
@@ -71,13 +73,15 @@ class LoginViewModelSubmitTest {
     @Test
     fun `submit with short password sets passwordError`() = runTest {
         val viewModel = createViewModel(
-            validatorError = CredentialsValidationError.PasswordTooShort(8),
+            validatorError = CredentialsValidationError.Password(
+                PasswordValidationError.PasswordTooShort(8),
+            ),
         )
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
             viewModel.submitLogin()
             advanceUntilIdle()
-            assertIs<CredentialsValidationError.PasswordTooShort>(
+            assertIs<PasswordValidationError.PasswordTooShort>(
                 viewModel.state.value.passwordError,
             )
             expectNoEvents()
@@ -87,7 +91,7 @@ class LoginViewModelSubmitTest {
     @Test
     fun `updateEmail clears emailError`() = runTest {
         val viewModel = createViewModel(
-            validatorError = CredentialsValidationError.BlankEmail,
+            validatorError = CredentialsValidationError.Email(EmailValidationError.BlankEmail),
         )
         viewModel.submitLogin()
         advanceUntilIdle()
@@ -98,7 +102,9 @@ class LoginViewModelSubmitTest {
     @Test
     fun `updatePassword clears passwordError`() = runTest {
         val viewModel = createViewModel(
-            validatorError = CredentialsValidationError.PasswordTooShort(8),
+            validatorError = CredentialsValidationError.Password(
+                PasswordValidationError.PasswordTooShort(8),
+            ),
         )
         viewModel.submitLogin()
         advanceUntilIdle()
@@ -240,15 +246,15 @@ class LoginViewModelSubmitTest {
     }
 
     @Test
-    fun `repository InvalidEmail sets generalError InvalidEmail`() = runTest {
+    fun `repository InvalidEmail sets emailError EmailNotExists`() = runTest {
         val viewModel = createViewModel(
             loginResult = Failure(
-                LoginRepositoryError.InvalidEmail(EmailValidationError.EmailNotExists),
+                LoginRepositoryError.InvalidEmail(LoginEmailError.EmailNotExists),
             ),
         )
         viewModel.submitLogin()
         advanceUntilIdle()
-        assertIs<LoginGeneralError.InvalidEmail>(viewModel.state.value.generalError)
+        assertIs<LoginEmailError.EmailNotExists>(viewModel.state.value.emailError)
     }
 
     @Test

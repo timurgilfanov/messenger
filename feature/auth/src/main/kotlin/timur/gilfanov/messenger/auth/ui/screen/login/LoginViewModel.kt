@@ -15,7 +15,6 @@ import timur.gilfanov.messenger.auth.domain.usecase.GoogleLoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.LoginWithGoogleUseCase
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
@@ -62,8 +61,17 @@ class LoginViewModel @Inject constructor(
         val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(email), Password(currentPassword)),
         ) is ResultWithError.Success
+        val emailError = (
+            credentialsValidator.validate(
+                Email(email),
+            ) as? ResultWithError.Failure
+            )?.error
         _state.update {
-            it.copy(email = email, emailError = null, isCredentialsValid = isCredentialsValid)
+            it.copy(
+                email = email,
+                emailError = emailError,
+                isCredentialsValid = isCredentialsValid,
+            )
         }
     }
 
@@ -72,10 +80,12 @@ class LoginViewModel @Inject constructor(
         val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
         ) is ResultWithError.Success
+        val passwordError =
+            (credentialsValidator.validate(Password(password)) as? ResultWithError.Failure)?.error
         _state.update {
             it.copy(
                 password = password,
-                passwordError = null,
+                passwordError = passwordError,
                 isCredentialsValid = isCredentialsValid,
             )
         }
@@ -108,7 +118,15 @@ class LoginViewModel @Inject constructor(
                 onSuccess = { _effects.send(LoginSideEffects.NavigateToChatList) },
                 onFailure = { error ->
                     when (error) {
-                        is LoginUseCaseError.ValidationFailed -> handleValidationError(error)
+                        is LoginUseCaseError.InvalidEmail ->
+                            _state.update {
+                                it.copy(emailError = error.reason, isCredentialsValid = false)
+                            }
+
+                        is LoginUseCaseError.InvalidPassword ->
+                            _state.update {
+                                it.copy(passwordError = error.reason, isCredentialsValid = false)
+                            }
 
                         LoginUseCaseError.InvalidCredentials ->
                             _state.update {
@@ -126,14 +144,6 @@ class LoginViewModel @Inject constructor(
                         LoginUseCaseError.AccountSuspended ->
                             _state.update {
                                 it.copy(generalError = LoginGeneralError.AccountSuspended)
-                            }
-
-                        is LoginUseCaseError.InvalidEmail ->
-                            _state.update {
-                                it.copy(
-                                    generalError = LoginGeneralError.InvalidEmail,
-                                    isCredentialsValid = false,
-                                )
                             }
 
                         is LoginUseCaseError.RemoteOperationFailed ->
@@ -205,27 +215,6 @@ class LoginViewModel @Inject constructor(
     fun onOpenStorageSettingsClick() {
         _state.update { it.copy(blockingError = null) }
         viewModelScope.launch { _effects.send(LoginSideEffects.OpenStorageSettings) }
-    }
-
-    private fun handleValidationError(error: LoginUseCaseError.ValidationFailed) {
-        _state.update { state ->
-            when (val ve = error.error) {
-                is CredentialsValidationError.BlankEmail,
-                is CredentialsValidationError.NoAtInEmail,
-                is CredentialsValidationError.NoDomainAtEmail,
-                is CredentialsValidationError.EmailTooLong,
-                is CredentialsValidationError.InvalidEmailFormat,
-                is CredentialsValidationError.ForbiddenCharacterInEmail,
-                -> state.copy(emailError = ve, isCredentialsValid = false)
-
-                is CredentialsValidationError.PasswordTooShort,
-                is CredentialsValidationError.PasswordTooLong,
-                is CredentialsValidationError.ForbiddenCharacterInPassword,
-                is CredentialsValidationError.PasswordMustContainNumbers,
-                is CredentialsValidationError.PasswordMustContainAlphabet,
-                -> state.copy(passwordError = ve, isCredentialsValid = false)
-            }
-        }
     }
 
     private suspend fun handleLocalStorageError(error: LocalStorageError) {

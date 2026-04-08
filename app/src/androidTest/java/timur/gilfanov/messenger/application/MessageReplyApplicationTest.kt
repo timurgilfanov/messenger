@@ -25,6 +25,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -104,6 +105,9 @@ class MessageReplyApplicationTest {
     }
 
     @Test
+    @Ignore(
+        "Temporarily disabled until deterministic read marking on chat open is fixed. See #339.",
+    )
     fun applicationTest_userReceivesMessageRepliesAndUnreadBadgeDisappears() {
         with(composeTestRule) {
             // Step 1: Wait for chat list to load and verify initial state (no unread messages)

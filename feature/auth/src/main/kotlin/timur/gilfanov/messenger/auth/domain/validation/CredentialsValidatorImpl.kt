@@ -2,6 +2,8 @@ package timur.gilfanov.messenger.auth.domain.validation
 
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.Credentials
+import timur.gilfanov.messenger.domain.entity.auth.Email
+import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 
@@ -19,66 +21,49 @@ class CredentialsValidatorImpl : CredentialsValidator {
     override fun validate(
         credentials: Credentials,
     ): ResultWithError<Unit, CredentialsValidationError> {
-        val emailResult = validateEmail(credentials.email.value)
-        if (emailResult is ResultWithError.Failure) return emailResult
-        return validatePassword(credentials.password.value)
+        val emailResult = validate(credentials.email)
+        if (emailResult is ResultWithError.Failure) {
+            return ResultWithError.Failure(CredentialsValidationError.Email(emailResult.error))
+        }
+        return when (val passwordResult = validate(credentials.password)) {
+            is ResultWithError.Failure ->
+                ResultWithError.Failure(CredentialsValidationError.Password(passwordResult.error))
+            is ResultWithError.Success -> ResultWithError.Success(Unit)
+        }
     }
 
-    private fun validateEmail(
-        email: String,
-    ): ResultWithError<Unit, CredentialsValidationError.Email> = when {
-        email.isBlank() ->
-            ResultWithError.Failure(
-                CredentialsValidationError.Email(EmailValidationError.BlankEmail),
-            )
-        !email.contains('@') ->
-            ResultWithError.Failure(
-                CredentialsValidationError.Email(EmailValidationError.NoAtInEmail),
-            )
-        email.substringAfter('@').isEmpty() ->
-            ResultWithError.Failure(
-                CredentialsValidationError.Email(EmailValidationError.NoDomainAtEmail),
-            )
-        email.length > MAX_EMAIL_LENGTH ->
-            ResultWithError.Failure(
-                CredentialsValidationError.Email(
-                    EmailValidationError.EmailTooLong(MAX_EMAIL_LENGTH),
-                ),
-            )
-        !EMAIL_REGEX.matches(email) ->
-            ResultWithError.Failure(
-                CredentialsValidationError.Email(EmailValidationError.InvalidEmailFormat),
-            )
+    override fun validate(email: Email): ResultWithError<Unit, EmailValidationError> = when {
+        email.value.isBlank() ->
+            ResultWithError.Failure(EmailValidationError.BlankEmail)
+        !email.value.contains('@') ->
+            ResultWithError.Failure(EmailValidationError.NoAtInEmail)
+        email.value.substringAfter('@').isEmpty() ->
+            ResultWithError.Failure(EmailValidationError.NoDomainAtEmail)
+        email.value.length > MAX_EMAIL_LENGTH ->
+            ResultWithError.Failure(EmailValidationError.EmailTooLong(MAX_EMAIL_LENGTH))
+        !EMAIL_REGEX.matches(email.value) ->
+            ResultWithError.Failure(EmailValidationError.InvalidEmailFormat)
         else -> ResultWithError.Success(Unit)
     }
 
-    private fun validatePassword(
-        password: String,
-    ): ResultWithError<Unit, CredentialsValidationError.Password> = when {
-        password.length < MIN_PASSWORD_LENGTH ->
-            ResultWithError.Failure(
-                CredentialsValidationError.Password(
+    override fun validate(password: Password): ResultWithError<Unit, PasswordValidationError> =
+        when {
+            password.value.length < MIN_PASSWORD_LENGTH ->
+                ResultWithError.Failure(
                     PasswordValidationError.PasswordTooShort(MIN_PASSWORD_LENGTH),
-                ),
-            )
-        password.length > MAX_PASSWORD_LENGTH ->
-            ResultWithError.Failure(
-                CredentialsValidationError.Password(
+                )
+            password.value.length > MAX_PASSWORD_LENGTH ->
+                ResultWithError.Failure(
                     PasswordValidationError.PasswordTooLong(MAX_PASSWORD_LENGTH),
-                ),
-            )
-        password.count { it.isDigit() } < MIN_NUMBERS_IN_PASSWORD ->
-            ResultWithError.Failure(
-                CredentialsValidationError.Password(
+                )
+            password.value.count { it.isDigit() } < MIN_NUMBERS_IN_PASSWORD ->
+                ResultWithError.Failure(
                     PasswordValidationError.PasswordMustContainNumbers(MIN_NUMBERS_IN_PASSWORD),
-                ),
-            )
-        password.count { it.isLetter() } < MIN_ALPHABET_IN_PASSWORD ->
-            ResultWithError.Failure(
-                CredentialsValidationError.Password(
+                )
+            password.value.count { it.isLetter() } < MIN_ALPHABET_IN_PASSWORD ->
+                ResultWithError.Failure(
                     PasswordValidationError.PasswordMustContainAlphabet(MIN_ALPHABET_IN_PASSWORD),
-                ),
-            )
-        else -> ResultWithError.Success(Unit)
-    }
+                )
+            else -> ResultWithError.Success(Unit)
+        }
 }

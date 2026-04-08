@@ -61,8 +61,17 @@ class LoginViewModel @Inject constructor(
         val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(email), Password(currentPassword)),
         ) is ResultWithError.Success
+        val emailError = (
+            credentialsValidator.validate(
+                Email(email),
+            ) as? ResultWithError.Failure
+            )?.error
         _state.update {
-            it.copy(email = email, emailError = null, isCredentialsValid = isCredentialsValid)
+            it.copy(
+                email = email,
+                emailError = emailError,
+                isCredentialsValid = isCredentialsValid,
+            )
         }
     }
 
@@ -71,10 +80,12 @@ class LoginViewModel @Inject constructor(
         val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
         ) is ResultWithError.Success
+        val passwordError =
+            (credentialsValidator.validate(Password(password)) as? ResultWithError.Failure)?.error
         _state.update {
             it.copy(
                 password = password,
-                passwordError = null,
+                passwordError = passwordError,
                 isCredentialsValid = isCredentialsValid,
             )
         }

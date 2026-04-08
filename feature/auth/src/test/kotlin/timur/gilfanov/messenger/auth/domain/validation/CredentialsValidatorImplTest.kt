@@ -118,4 +118,30 @@ class CredentialsValidatorImplTest {
         val result = validator.validate(credentials(password = maxPassword))
         assertIs<Success<Unit, *>>(result)
     }
+
+    @Test
+    fun `validate email alone returns success for valid email`() = runTest {
+        val result = validator.validate(Email("user@example.com"))
+        assertIs<Success<Unit, *>>(result)
+    }
+
+    @Test
+    fun `validate email alone returns error for invalid email`() = runTest {
+        val result = validator.validate(Email("notanemail"))
+        val failure = assertIs<Failure<*, EmailValidationError>>(result)
+        assertIs<EmailValidationError.NoAtInEmail>(failure.error)
+    }
+
+    @Test
+    fun `validate password alone returns success for valid password`() = runTest {
+        val result = validator.validate(Password("Password1"))
+        assertIs<Success<Unit, *>>(result)
+    }
+
+    @Test
+    fun `validate password alone returns error for invalid password`() = runTest {
+        val result = validator.validate(Password("short"))
+        val failure = assertIs<Failure<*, PasswordValidationError>>(result)
+        assertIs<PasswordValidationError.PasswordTooShort>(failure.error)
+    }
 }

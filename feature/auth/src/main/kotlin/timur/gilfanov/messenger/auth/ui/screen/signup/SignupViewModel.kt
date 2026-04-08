@@ -41,13 +41,20 @@ class SignupViewModel @Inject constructor(
         run {
             val name: String = savedStateHandle[KEY_NAME] ?: ""
             val email: String = savedStateHandle[KEY_EMAIL] ?: ""
+            val nameValidation =
+                if (name.isNotEmpty()) profileNameValidator.validate(name) else null
+            val emailValidation =
+                if (email.isNotEmpty()) credentialsValidator.validate(Email(email)) else null
+            val credentialsValidation = credentialsValidator.validate(
+                Credentials(Email(email), Password("")),
+            )
             SignupUiState(
                 name = name,
                 email = email,
-                isNameValid = profileNameValidator.validate(name) is ResultWithError.Success,
-                isCredentialsValid = credentialsValidator.validate(
-                    Credentials(Email(email), Password("")),
-                ) is ResultWithError.Success,
+                isNameValid = nameValidation is ResultWithError.Success,
+                nameError = (nameValidation as? ResultWithError.Failure)?.error,
+                isCredentialsValid = credentialsValidation is ResultWithError.Success,
+                emailError = (emailValidation as? ResultWithError.Failure)?.error,
             )
         },
     )
@@ -70,8 +77,10 @@ class SignupViewModel @Inject constructor(
 
     fun updateName(name: String) {
         savedStateHandle[KEY_NAME] = name
-        val isNameValid = profileNameValidator.validate(name) is ResultWithError.Success
-        _state.update { it.copy(name = name, nameError = null, isNameValid = isNameValid) }
+        val nameValidationResult = profileNameValidator.validate(name)
+        val isNameValid = nameValidationResult is ResultWithError.Success
+        val nameError = (nameValidationResult as? ResultWithError.Failure)?.error
+        _state.update { it.copy(name = name, nameError = nameError, isNameValid = isNameValid) }
     }
 
     fun updateEmail(email: String) {
@@ -80,8 +89,17 @@ class SignupViewModel @Inject constructor(
         val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(email), Password(currentPassword)),
         ) is ResultWithError.Success
+        val emailError = (
+            credentialsValidator.validate(
+                Email(email),
+            ) as? ResultWithError.Failure
+            )?.error
         _state.update {
-            it.copy(email = email, emailError = null, isCredentialsValid = isCredentialsValid)
+            it.copy(
+                email = email,
+                emailError = emailError,
+                isCredentialsValid = isCredentialsValid,
+            )
         }
     }
 
@@ -90,12 +108,14 @@ class SignupViewModel @Inject constructor(
         val isCredentialsValid = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
         ) is ResultWithError.Success
+        val passwordError =
+            (credentialsValidator.validate(Password(password)) as? ResultWithError.Failure)?.error
         val currentConfirmPassword = _state.value.confirmPassword
         val isPasswordConfirmed = password == currentConfirmPassword
         _state.update {
             it.copy(
                 password = password,
-                passwordError = null,
+                passwordError = passwordError,
                 isCredentialsValid = isCredentialsValid,
                 isPasswordConfirmed = isPasswordConfirmed,
             )

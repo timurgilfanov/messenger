@@ -166,14 +166,35 @@ class SignupViewModelRealTimeValidationTest {
     }
 
     @Test
-    fun `restored name from SavedStateHandle has no nameError before any edits`() = runTest {
-        val handle = SavedStateHandle(mapOf("name" to INVALID_BLANK_NAME, "email" to INVALID_EMAIL))
+    fun `local name error restored from SavedStateHandle`() = runTest {
+        val handle = SavedStateHandle(mapOf("name" to INVALID_BLANK_NAME))
         val viewModel = createViewModel(savedStateHandle = handle)
 
         viewModel.state.test {
             val state = awaitItem()
-            assertNull(state.nameError)
-            assertNull(state.emailError)
+            assertIs<ProfileNameValidationError.LengthOutOfBounds>(state.nameError)
+        }
+    }
+
+    @Test
+    fun `local email error restored from SavedStateHandle`() = runTest {
+        val handle = SavedStateHandle(mapOf("email" to INVALID_EMAIL))
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertIs<EmailValidationError.NoAtInEmail>(state.emailError)
+        }
+    }
+
+    @Test
+    fun `local password error not restored from SavedStateHandle`() = runTest {
+        val handle = SavedStateHandle(mapOf("password" to INVALID_SHORT_PASSWORD))
+        val viewModel = createViewModel(savedStateHandle = handle)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertNull(state.passwordError)
         }
     }
 }

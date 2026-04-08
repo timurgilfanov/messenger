@@ -41,13 +41,20 @@ class SignupViewModel @Inject constructor(
         run {
             val name: String = savedStateHandle[KEY_NAME] ?: ""
             val email: String = savedStateHandle[KEY_EMAIL] ?: ""
+            val nameValidation =
+                if (name.isNotEmpty()) profileNameValidator.validate(name) else null
+            val emailValidation =
+                if (email.isNotEmpty()) credentialsValidator.validate(Email(email)) else null
+            val credentialsValidation = credentialsValidator.validate(
+                Credentials(Email(email), Password("")),
+            )
             SignupUiState(
                 name = name,
                 email = email,
-                isNameValid = profileNameValidator.validate(name) is ResultWithError.Success,
-                isCredentialsValid = credentialsValidator.validate(
-                    Credentials(Email(email), Password("")),
-                ) is ResultWithError.Success,
+                isNameValid = nameValidation is ResultWithError.Success,
+                nameError = (nameValidation as? ResultWithError.Failure)?.error,
+                isCredentialsValid = credentialsValidation is ResultWithError.Success,
+                emailError = (emailValidation as? ResultWithError.Failure)?.error,
             )
         },
     )

@@ -2,11 +2,13 @@ package timur.gilfanov.messenger.application
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.Module
 import dagger.Provides
@@ -149,6 +151,18 @@ class AuthApplicationTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             onNodeWithTag("login_screen").assertIsDisplayed()
+
+            onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
+
+            onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
+
+            onNodeWithTag("login_sign_in_button").performClick()
+
+            waitUntilExactlyOneExists(
+                hasTestTag("chat_list"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("chat_list").assertIsDisplayed()
         }
     }
 }

@@ -34,7 +34,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.messenger.ChatScreenTestActivity
 import timur.gilfanov.messenger.annotations.FeatureTest
-import timur.gilfanov.messenger.annotations.ReleaseCandidateTest
 import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
 import timur.gilfanov.messenger.data.repository.LocaleRepositoryImpl
 import timur.gilfanov.messenger.di.RepositoryModule
@@ -118,7 +117,6 @@ class ChatMessageSendingFeatureTest {
         hiltRule.inject()
     }
 
-    @ReleaseCandidateTest
     @Test
     fun messageSending_completesSuccessfully() {
         with(composeTestRule) {

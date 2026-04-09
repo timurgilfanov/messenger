@@ -31,7 +31,6 @@ class SettingsSyncSchedulerImpl @Inject constructor(private val workManager: Wor
         val workRequest = OneTimeWorkRequestBuilder<SyncSettingWorker>()
             .setInputData(
                 workDataOf(
-                    SyncSettingWorker.KEY_USER_KEY to userKey.key,
                     SyncSettingWorker.KEY_SETTING_KEY to key.key,
                 ),
             )

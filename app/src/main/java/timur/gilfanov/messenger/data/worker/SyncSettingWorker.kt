@@ -33,11 +33,6 @@ class SyncSettingWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        if (inputData.getString(KEY_USER_KEY) == null) {
-            logger.w(TAG, "Missing user_key in WorkManager input data")
-            return Result.failure()
-        }
-
         val settingKeyString = inputData.getString(KEY_SETTING_KEY)
         if (settingKeyString == null) {
             logger.w(TAG, "Missing setting_key in WorkManager input data")
@@ -131,7 +126,6 @@ class SyncSettingWorker @AssistedInject constructor(
     companion object {
         private const val TAG = "SyncSettingWorker"
         private const val MAX_RETRY_ATTEMPTS = 3
-        const val KEY_USER_KEY = "user_key"
         const val KEY_SETTING_KEY = "setting_key"
     }
 }

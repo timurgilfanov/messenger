@@ -2,13 +2,11 @@ package timur.gilfanov.messenger.application
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.Module
 import dagger.Provides
@@ -123,7 +121,10 @@ class AuthApplicationTest {
             )
             onNodeWithTag("chat_list").assertIsDisplayed()
 
-            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
+            waitUntilExactlyOneExists(
+                hasTestTag("chat_item_${ALICE_CHAT_ID}"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
 
             waitUntilExactlyOneExists(

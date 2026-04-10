@@ -20,30 +20,30 @@ interface SettingsDao {
      *
      * Emits new list whenever any setting changes for this user.
      *
-     * @param userId User identifier
+     * @param userKey Opaque scoping key for the user's session
      * @return Flow of setting entities (empty list if no settings exist)
      */
-    @Query("SELECT * FROM settings WHERE userId = :userId")
-    fun observeAllByUser(userId: String): Flow<List<SettingEntity>>
+    @Query("SELECT * FROM settings WHERE userKey = :userKey")
+    fun observeAllByUser(userKey: String): Flow<List<SettingEntity>>
 
     /**
      * Retrieves a single setting by user and key.
      *
-     * @param userId User identifier
+     * @param userKey Opaque scoping key for the user's session
      * @param key Setting key (e.g., "ui_language")
      * @return Setting entity or null if not found
      */
-    @Query("SELECT * FROM settings WHERE userId = :userId AND key = :key")
-    suspend fun get(userId: String, key: String): SettingEntity?
+    @Query("SELECT * FROM settings WHERE userKey = :userKey AND key = :key")
+    suspend fun get(userKey: String, key: String): SettingEntity?
 
     /**
      * Retrieves all settings for a specific user.
      *
-     * @param userId User identifier
+     * @param userKey Opaque scoping key for the user's session
      * @return List of setting entities (empty if no settings exist)
      */
-    @Query("SELECT * FROM settings WHERE userId = :userId")
-    suspend fun getAll(userId: String): List<SettingEntity>
+    @Query("SELECT * FROM settings WHERE userKey = :userKey")
+    suspend fun getAll(userKey: String): List<SettingEntity>
 
     /**
      * Retrieves all settings that need synchronization for a specific user.
@@ -51,11 +51,11 @@ interface SettingsDao {
      * Returns settings where localVersion > syncedVersion, indicating
      * local modifications that haven't been synced to the server yet.
      *
-     * @param userId User identifier
+     * @param userKey Opaque scoping key for the user's session
      * @return List of unsynced setting entities for the specified user
      */
-    @Query("SELECT * FROM settings WHERE userId = :userId AND localVersion > syncedVersion")
-    suspend fun getUnsynced(userId: String): List<SettingEntity>
+    @Query("SELECT * FROM settings WHERE userKey = :userKey AND localVersion > syncedVersion")
+    suspend fun getUnsynced(userKey: String): List<SettingEntity>
 
     /**
      * Updates or inserts a single setting atomically.

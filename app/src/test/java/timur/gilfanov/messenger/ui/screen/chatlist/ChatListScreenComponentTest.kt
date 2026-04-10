@@ -30,7 +30,6 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError.LocalOperationFailed
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
@@ -44,7 +43,6 @@ class ChatListScreenComponentTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
-    private val testUserId = ParticipantId(UUID.randomUUID())
     private val testChatId = ChatId(UUID.randomUUID())
 
     private fun createTestScreenState(
@@ -55,7 +53,6 @@ class ChatListScreenComponentTest {
     ) = ChatListScreenState(
         uiState = uiState,
         currentUser = CurrentUserUiModel(
-            id = testUserId,
             name = "John Doe",
             pictureUrl = null,
         ),

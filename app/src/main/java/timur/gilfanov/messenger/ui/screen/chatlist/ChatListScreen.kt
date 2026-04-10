@@ -41,7 +41,6 @@ import kotlinx.collections.immutable.persistentListOf
 import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
@@ -280,7 +279,6 @@ private fun ChatListScreenEmptyPreview() {
             screenState = ChatListScreenState(
                 uiState = Empty,
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),
@@ -306,7 +304,6 @@ private fun ChatListScreenEmptyPortraitPreview() {
             screenState = ChatListScreenState(
                 uiState = Empty,
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),
@@ -365,7 +362,6 @@ private fun ChatListScreenWithChatsPreview() {
                     ),
                 ),
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),
@@ -391,7 +387,6 @@ private fun ChatListScreenLoadingPreview() {
             screenState = ChatListScreenState(
                 uiState = Empty,
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),
@@ -417,7 +412,6 @@ private fun ChatListScreenErrorPreview() {
             screenState = ChatListScreenState(
                 uiState = Empty,
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),

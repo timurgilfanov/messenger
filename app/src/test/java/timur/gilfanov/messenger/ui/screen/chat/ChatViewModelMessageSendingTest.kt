@@ -30,6 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithStatusFlow
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createAuthenticatedRepository
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -64,7 +65,7 @@ class ChatViewModelMessageSendingTest {
             val chat = createTestChat(chatId, currentUserId, otherUserId)
             val now = TEST_INSTANT
             val message = buildTextMessage {
-                sender = chat.participants.first { it.id == currentUserId }
+                sender = chat.participants.first { it.isCurrentUser }
                 recipient = chatId
                 this.createdAt = now
                 text = "Test message"
@@ -74,8 +75,8 @@ class ChatViewModelMessageSendingTest {
             val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(rep)
             val viewModel = ChatViewModel(
                 chatIdUuid = chatId.id,
-                currentUserIdUuid = currentUserId.id,
                 savedStateHandle = SavedStateHandle(),
+                authRepository = createAuthenticatedRepository(),
                 sendMessageUseCase = SendMessageUseCase(rep, DeliveryStatusValidatorImpl()),
                 receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
                 getPagedMessagesUseCase = getPagedMessagesUseCase,
@@ -132,8 +133,8 @@ class ChatViewModelMessageSendingTest {
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
+            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,

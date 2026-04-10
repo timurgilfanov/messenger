@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.data.source.local
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Instant
@@ -14,8 +13,8 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -39,12 +38,12 @@ class LocalSettingsDataSourceImplObserveTest {
         )
     }
 
-    private val testUserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+    private val testUserKey = UserScopeKey("user-key-1")
 
     @Test
     fun `observe emits NoSettings when database is empty`() = runTest {
         // When
-        localSettingsDataSource.observe(testUserId).test {
+        localSettingsDataSource.observe(testUserKey).test {
             // Then
             val emission = awaitItem()
             assertIs<ResultWithError.Failure<LocalSettings, GetSettingsLocalDataSourceError>>(
@@ -58,14 +57,14 @@ class LocalSettingsDataSourceImplObserveTest {
     fun `observe emits Success with LocalSettings when entities exist`() = runTest {
         // Given
         val entity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
         )
         databaseRule.database.settingsDao().upsert(entity)
 
         // When
-        localSettingsDataSource.observe(testUserId).test {
+        localSettingsDataSource.observe(testUserKey).test {
             // Then
             val emission = awaitItem()
             assertIs<ResultWithError.Success<LocalSettings, GetSettingsLocalDataSourceError>>(
@@ -79,7 +78,7 @@ class LocalSettingsDataSourceImplObserveTest {
     fun `observe maps SettingEntity to LocalSettings correctly`() = runTest {
         // Given
         val entity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.German.toStorageValue(),
             localVersion = 5,
@@ -90,7 +89,7 @@ class LocalSettingsDataSourceImplObserveTest {
         databaseRule.database.settingsDao().upsert(entity)
 
         // When
-        localSettingsDataSource.observe(testUserId).test {
+        localSettingsDataSource.observe(testUserKey).test {
             // Then
             val emission = awaitItem()
             assertIs<ResultWithError.Success<LocalSettings, GetSettingsLocalDataSourceError>>(
@@ -113,14 +112,14 @@ class LocalSettingsDataSourceImplObserveTest {
     fun `observe emits updated settings when entity changes`() = runTest {
         // Given
         val initialEntity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
         )
         databaseRule.database.settingsDao().upsert(initialEntity)
 
         // When
-        localSettingsDataSource.observe(testUserId).test {
+        localSettingsDataSource.observe(testUserKey).test {
             // Initial emission
             val firstEmission = awaitItem()
             assertIs<ResultWithError.Success<LocalSettings, GetSettingsLocalDataSourceError>>(
@@ -145,17 +144,17 @@ class LocalSettingsDataSourceImplObserveTest {
     }
 
     @Test
-    fun `observe filters settings by userId`() = runTest {
+    fun `observe filters settings by userKey`() = runTest {
         // Given
-        val user1Id = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
-        val user2Id = UserId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+        val user1Key = UserScopeKey("user-key-1")
+        val user2Key = UserScopeKey("user-key-2")
         val user1Entity = createSettingEntity(
-            userId = user1Id,
+            userKey = user1Key,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
         )
         val user2Entity = createSettingEntity(
-            userId = user2Id,
+            userKey = user2Key,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.German.toStorageValue(),
         )
@@ -163,7 +162,7 @@ class LocalSettingsDataSourceImplObserveTest {
         databaseRule.database.settingsDao().upsert(user2Entity)
 
         // When - observe for user1
-        localSettingsDataSource.observe(user1Id).test {
+        localSettingsDataSource.observe(user1Key).test {
             // Then
             val emission = awaitItem()
             assertIs<ResultWithError.Success<LocalSettings, GetSettingsLocalDataSourceError>>(
@@ -177,14 +176,14 @@ class LocalSettingsDataSourceImplObserveTest {
     fun `observe emits NoSettings when all entities are deleted`() = runTest {
         // Given
         val entity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
         )
         databaseRule.database.settingsDao().upsert(entity)
 
         // When
-        localSettingsDataSource.observe(testUserId).test {
+        localSettingsDataSource.observe(testUserKey).test {
             // First emission - settings exist
             val firstEmission = awaitItem()
             assertIs<ResultWithError.Success<LocalSettings, GetSettingsLocalDataSourceError>>(
@@ -205,7 +204,7 @@ class LocalSettingsDataSourceImplObserveTest {
 
     @Suppress("LongParameterList")
     private fun createSettingEntity(
-        userId: UserId,
+        userKey: UserScopeKey,
         key: SettingKey,
         value: String,
         localVersion: Int = 1,
@@ -213,7 +212,7 @@ class LocalSettingsDataSourceImplObserveTest {
         serverVersion: Int = 0,
         modifiedAt: Long = 0L,
     ): SettingEntity = SettingEntity(
-        userId = userId.id.toString(),
+        userKey = userKey.key,
         key = key.key,
         value = value,
         localVersion = localVersion,

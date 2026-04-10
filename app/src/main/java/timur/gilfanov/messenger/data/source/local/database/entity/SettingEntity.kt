@@ -5,14 +5,14 @@ import androidx.room.Index
 
 @Entity(
     tableName = "settings",
-    primaryKeys = ["userId", "key"],
+    primaryKeys = ["userKey", "key"],
     indices = [
         Index(value = ["localVersion", "syncedVersion"]),
         Index(value = ["modifiedAt"]),
     ],
 )
 data class SettingEntity(
-    val userId: String,
+    val userKey: String,
     val key: String,
     val value: String,
     val localVersion: Int,

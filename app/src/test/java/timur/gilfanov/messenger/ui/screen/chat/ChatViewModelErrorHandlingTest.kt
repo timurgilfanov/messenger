@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -33,6 +32,7 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithPaging
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createAuthenticatedRepository
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -60,8 +60,8 @@ class ChatViewModelErrorHandlingTest {
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
+            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
@@ -102,8 +102,8 @@ class ChatViewModelErrorHandlingTest {
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
+            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
@@ -149,8 +149,8 @@ class ChatViewModelErrorHandlingTest {
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
+            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
@@ -193,8 +193,8 @@ class ChatViewModelErrorHandlingTest {
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
+            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
@@ -233,10 +233,7 @@ class ChatViewModelErrorHandlingTest {
 
             val recoveredState = awaitItem()
             assertTrue(recoveredState is ChatUiState.Ready)
-            // It will be nice to check that we have the new message in the state, but I don't know
-            // how to do it with paged messages.
-            // Also, I don't understand why update error is not cleared here. I expect it to be null.
-            assertNotNull(recoveredState.updateError)
+            assertNull(recoveredState.updateError)
         }
     }
 }

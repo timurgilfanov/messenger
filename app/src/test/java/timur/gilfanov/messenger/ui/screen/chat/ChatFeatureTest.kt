@@ -27,18 +27,21 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.ChatScreenTestActivity
 import timur.gilfanov.messenger.annotations.Feature
+import timur.gilfanov.messenger.auth.di.AuthDataModule
 import timur.gilfanov.messenger.di.RepositoryModule
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.testutil.RepositoryCleanupRule
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createAuthenticatedRepository
 
 @RunWith(RobolectricTestRunner::class)
 @HiltAndroidTest
 @UninstallModules(
     RepositoryModule::class,
-    timur.gilfanov.messenger.di.TestUserModule::class,
     timur.gilfanov.messenger.di.TestChatModule::class,
+    AuthDataModule::class,
 )
 @Config(sdk = [33], application = HiltTestApplication::class)
 @Category(Feature::class)
@@ -69,16 +72,15 @@ class ChatFeatureTest {
         @Provides
         @Singleton
         fun provideMessageRepository(): MessageRepository = repository
+
+        @Provides
+        @Singleton
+        fun provideAuthRepository(): AuthRepository = createAuthenticatedRepository()
     }
 
     @Module
     @InstallIn(SingletonComponent::class)
     object TestUserChatModule {
-        @Provides
-        @Singleton
-        @timur.gilfanov.messenger.di.TestUserId
-        fun provideTestUserId(): String = ChatFeatureTestDataHelper.USER_ID
-
         @Provides
         @Singleton
         @timur.gilfanov.messenger.di.TestChatId

@@ -5,7 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.SyncAllPendingSettingsUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
@@ -18,19 +18,19 @@ object SettingsSyncUseCaseModule {
     @Provides
     @Singleton
     fun provideSyncSettingUseCase(
-        identityRepository: IdentityRepository,
+        authRepository: AuthRepository,
         settingsRepository: SettingsRepository,
         logger: Logger,
-    ): SyncSettingUseCase = SyncSettingUseCase(identityRepository, settingsRepository, logger)
+    ): SyncSettingUseCase = SyncSettingUseCase(authRepository, settingsRepository, logger)
 
     @Provides
     @Singleton
     fun provideSyncAllPendingSettingsUseCase(
-        identityRepository: IdentityRepository,
+        authRepository: AuthRepository,
         settingsRepository: SettingsRepository,
         logger: Logger,
     ): SyncAllPendingSettingsUseCase = SyncAllPendingSettingsUseCase(
-        identityRepository,
+        authRepository,
         settingsRepository,
         logger,
     )

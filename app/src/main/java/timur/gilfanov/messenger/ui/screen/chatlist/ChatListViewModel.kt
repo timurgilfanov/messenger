@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.onSuccess
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
@@ -68,7 +67,6 @@ class ChatListViewModel @Inject constructor(
                     is ResultWithError.Success -> {
                         val profile = result.data
                         val currentUser = CurrentUserUiModel(
-                            id = ParticipantId(profile.id.id),
                             name = profile.name,
                             pictureUrl = profile.pictureUrl,
                         )

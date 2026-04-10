@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.data.source.local.database.dao
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -26,13 +25,13 @@ class SettingsDaoTest {
     private val settingsDao: SettingsDao
         get() = databaseRule.database.settingsDao()
 
-    private val testUserId = UUID.fromString("00000000-0000-0000-0000-000000000001").toString()
+    private val testUserKey = "user-key-1"
 
     @Test
     fun `getUnsynced returns settings where localVersion greater than syncedVersion`() = runTest {
         // Given
         val syncedSetting = SettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = "ui_language",
             value = "English",
             localVersion = 2,
@@ -41,7 +40,7 @@ class SettingsDaoTest {
             modifiedAt = 1000L,
         )
         val unsyncedSetting = SettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = "theme",
             value = "DARK",
             localVersion = 3,
@@ -53,7 +52,7 @@ class SettingsDaoTest {
         settingsDao.upsert(unsyncedSetting)
 
         // When
-        val unsynced = settingsDao.getUnsynced(testUserId)
+        val unsynced = settingsDao.getUnsynced(testUserKey)
 
         // Then
         assertEquals(1, unsynced.size)
@@ -65,11 +64,11 @@ class SettingsDaoTest {
     @Test
     fun `compound primary key enforces uniqueness per userId and key combination`() = runTest {
         // Given
-        val user1Id = UUID.fromString("00000000-0000-0000-0000-000000000001").toString()
-        val user2Id = UUID.fromString("00000000-0000-0000-0000-000000000002").toString()
+        val user1Key = "user-key-1"
+        val user2Key = "user-key-2"
 
         val user1Setting = SettingEntity(
-            userId = user1Id,
+            userKey = user1Key,
             key = "ui_language",
             value = "English",
             localVersion = 1,
@@ -78,7 +77,7 @@ class SettingsDaoTest {
             modifiedAt = 1000L,
         )
         val user2Setting = SettingEntity(
-            userId = user2Id,
+            userKey = user2Key,
             key = "ui_language", // Same key, different user
             value = "German",
             localVersion = 1,
@@ -92,8 +91,8 @@ class SettingsDaoTest {
         settingsDao.upsert(user2Setting)
 
         // Then - both settings should exist
-        val user1Retrieved = settingsDao.get(user1Id, "ui_language")
-        val user2Retrieved = settingsDao.get(user2Id, "ui_language")
+        val user1Retrieved = settingsDao.get(user1Key, "ui_language")
+        val user2Retrieved = settingsDao.get(user2Key, "ui_language")
 
         assertNotNull(user1Retrieved)
         assertNotNull(user2Retrieved)
@@ -105,7 +104,7 @@ class SettingsDaoTest {
     fun `upsert inserts new setting`() = runTest {
         // Given
         val setting = SettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = "ui_language",
             value = "English",
             localVersion = 1,
@@ -118,9 +117,9 @@ class SettingsDaoTest {
         settingsDao.upsert(setting)
 
         // Then
-        val retrieved = settingsDao.get(testUserId, "ui_language")
+        val retrieved = settingsDao.get(testUserKey, "ui_language")
         assertNotNull(retrieved)
-        assertEquals(testUserId, retrieved.userId)
+        assertEquals(testUserKey, retrieved.userKey)
         assertEquals("ui_language", retrieved.key)
         assertEquals("English", retrieved.value)
         assertEquals(1, retrieved.localVersion)
@@ -133,7 +132,7 @@ class SettingsDaoTest {
     fun `upsert updates existing setting`() = runTest {
         // Given
         val originalSetting = SettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = "ui_language",
             value = "English",
             localVersion = 1,
@@ -153,7 +152,7 @@ class SettingsDaoTest {
         settingsDao.upsert(updatedSetting)
 
         // Then
-        val retrieved = settingsDao.get(testUserId, "ui_language")
+        val retrieved = settingsDao.get(testUserKey, "ui_language")
         assertNotNull(retrieved)
         assertEquals("German", retrieved.value)
         assertEquals(2, retrieved.localVersion)
@@ -162,11 +161,11 @@ class SettingsDaoTest {
     @Test
     fun `getAll returns only settings for specified user`() = runTest {
         // Given
-        val user1Id = UUID.fromString("00000000-0000-0000-0000-000000000001").toString()
-        val user2Id = UUID.fromString("00000000-0000-0000-0000-000000000002").toString()
+        val user1Key = "user-key-1"
+        val user2Key = "user-key-2"
 
         val user1Setting = SettingEntity(
-            userId = user1Id,
+            userKey = user1Key,
             key = "ui_language",
             value = "English",
             localVersion = 1,
@@ -175,7 +174,7 @@ class SettingsDaoTest {
             modifiedAt = 1000L,
         )
         val user2Setting = SettingEntity(
-            userId = user2Id,
+            userKey = user2Key,
             key = "ui_language",
             value = "German",
             localVersion = 1,
@@ -187,18 +186,18 @@ class SettingsDaoTest {
         settingsDao.upsert(user2Setting)
 
         // When
-        val allUser1Settings = settingsDao.getAll(user1Id)
+        val allUser1Settings = settingsDao.getAll(user1Key)
 
         // Then
         assertEquals(1, allUser1Settings.size)
-        assertEquals(user1Id, allUser1Settings[0].userId)
+        assertEquals(user1Key, allUser1Settings[0].userKey)
         assertEquals("English", allUser1Settings[0].value)
     }
 
     @Test
     fun `get returns null when setting does not exist`() = runTest {
         // When
-        val retrieved = settingsDao.get(testUserId, "nonexistent_key")
+        val retrieved = settingsDao.get(testUserKey, "nonexistent_key")
 
         // Then
         assertNull(retrieved)

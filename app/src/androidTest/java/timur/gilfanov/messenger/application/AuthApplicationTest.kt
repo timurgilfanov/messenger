@@ -3,11 +3,10 @@ package timur.gilfanov.messenger.application
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasTextExactly
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.Module
 import dagger.Provides
@@ -26,36 +25,32 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.messenger.annotations.ApplicationTest
 import timur.gilfanov.messenger.auth.di.AuthDataModule
-import timur.gilfanov.messenger.data.repository.LocaleRepositoryImpl
 import timur.gilfanov.messenger.di.RepositoryModule
+import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.LocaleRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
-import timur.gilfanov.messenger.test.AndroidTestDataHelper
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.ALICE_CHAT_ID
-import timur.gilfanov.messenger.test.AndroidTestDataHelper.ALICE_TEXT_1
-import timur.gilfanov.messenger.test.AndroidTestDataHelper.BOB_CHAT_ID
-import timur.gilfanov.messenger.test.AndroidTestDataHelper.BOB_TEXT_1
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
-import timur.gilfanov.messenger.test.AndroidTestSettingsHelper
 import timur.gilfanov.messenger.test.RepositoryCleanupRule
 import timur.gilfanov.messenger.test.SettingsRepositoryStub
 import timur.gilfanov.messenger.ui.activity.MainActivity
-import timur.gilfanov.messenger.util.Logger
 
 @OptIn(ExperimentalTestApi::class)
 @HiltAndroidTest
 @UninstallModules(RepositoryModule::class, AuthDataModule::class)
 @ApplicationTest
 @RunWith(AndroidJUnit4::class)
-class NavigationApplicationTest {
+class AuthApplicationTest {
 
     companion object {
         private const val SCREEN_LOAD_TIMEOUT_MILLIS = 5_000L
+        private const val TEST_EMAIL = "user@example.com"
+        private const val TEST_PASSWORD = "Password1"
     }
 
     @get:Rule(order = 0)
@@ -72,7 +67,7 @@ class NavigationApplicationTest {
 
     @Module
     @InstallIn(SingletonComponent::class)
-    object NavigationTestRepositoryModule {
+    object AuthTestRepositoryModule {
         private val repository = AndroidTestRepositoryWithRealImplementation(NON_EMPTY)
 
         @Provides
@@ -84,12 +79,12 @@ class NavigationApplicationTest {
         fun provideMessageRepository(): MessageRepository = repository
 
         @Provides
+        @Singleton
         fun provideSettingsRepository(): SettingsRepository = SettingsRepositoryStub()
 
         @Provides
         @Singleton
-        fun provideAuthRepository(): AuthRepository =
-            AuthRepositoryFake(AndroidTestSettingsHelper.testSession)
+        fun provideAuthRepository(): AuthRepository = AuthRepositoryFake()
 
         @Provides
         @Singleton
@@ -97,7 +92,9 @@ class NavigationApplicationTest {
 
         @Provides
         @Singleton
-        fun provideLocaleRepository(logger: Logger): LocaleRepository = LocaleRepositoryImpl(logger)
+        fun provideLocaleRepository(): LocaleRepository = object : LocaleRepository {
+            override suspend fun applyLocale(language: UiLanguage) = Unit
+        }
     }
 
     @Before
@@ -106,87 +103,67 @@ class NavigationApplicationTest {
     }
 
     @Test
-    fun applicationTest_userCanNavigateFromChatListToChatScreen() {
+    fun authFlow_loginThenNavigateToChatThenLogoutThenLoginScreenShown() {
         with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("login_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("login_screen").assertIsDisplayed()
+
+            onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("login_sign_in_button").performClick()
+
             waitUntilExactlyOneExists(
                 hasTestTag("chat_list"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            onNodeWithTag("chat_list").assertIsDisplayed()
 
-            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
-            onNodeWithText("Alice").assertIsDisplayed()
-            onNodeWithText("Bob").assertIsDisplayed()
-            onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
-
-            waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
-            onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
-
-            onNodeWithTag("message_input").assertIsDisplayed()
-            onNodeWithTag("send_button").assertIsDisplayed()
-        }
-    }
-
-    @Test
-    fun applicationTest_userCanNavigateBetweenMultipleChats() {
-        with(composeTestRule) {
             waitUntilExactlyOneExists(
-                hasTestTag("chat_list"),
+                hasTestTag("chat_item_${ALICE_CHAT_ID}"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
-
-            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
-            waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
-
             onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
-            waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
-            onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
+
+            waitUntilExactlyOneExists(
+                hasTestTag("message_input"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
 
-            waitUntilExactlyOneExists(hasTestTag("chat_item_${BOB_CHAT_ID}"))
-            onNodeWithTag("chat_item_${BOB_CHAT_ID}").performClick()
-
-            waitUntilExactlyOneExists(hasTextExactly(BOB_TEXT_1))
-            onNodeWithText(BOB_TEXT_1).assertIsDisplayed()
-        }
-    }
-
-    @Test
-    fun applicationTest_tabsNavigationIsHiddenOnChatScreen() {
-        with(composeTestRule) {
             waitUntilExactlyOneExists(
                 hasTestTag("chat_list"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
-            onNodeWithTag("bottom_nav").assertIsDisplayed()
-            waitUntilExactlyOneExists(hasTestTag("chat_item_${ALICE_CHAT_ID}"))
-            onNodeWithText("Alice").assertIsDisplayed()
-            onNodeWithText("Bob").assertIsDisplayed()
-            onNodeWithTag("chat_item_${ALICE_CHAT_ID}").performClick()
 
-            waitUntilExactlyOneExists(hasTextExactly(ALICE_TEXT_1))
-            onNodeWithText(ALICE_TEXT_1).assertIsDisplayed()
-            onNodeWithTag("bottom_nav").assertDoesNotExist()
-        }
-    }
-
-    @Test
-    fun applicationTest_tabsNavigationIsHiddenOnSettingsLanguageScreen() {
-        with(composeTestRule) {
-            onNodeWithTag("bottom_nav").assertIsDisplayed()
             onNodeWithTag("bottom_nav_settings").performClick()
 
             waitUntilExactlyOneExists(
-                hasTestTag("settings_language_item"),
+                hasTestTag("settings_logout_item"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
-            onNodeWithTag("settings_language_item").performClick()
+            onNodeWithTag("settings_logout_item").performClick()
 
             waitUntilExactlyOneExists(
-                hasTestTag("language_radio_German"),
+                hasTestTag("login_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
-            onNodeWithTag("bottom_nav").assertDoesNotExist()
+            onNodeWithTag("login_screen").assertIsDisplayed()
+
+            onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
+
+            onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
+
+            onNodeWithTag("login_sign_in_button").performClick()
+
+            waitUntilExactlyOneExists(
+                hasTestTag("chat_list"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("chat_list").assertIsDisplayed()
         }
     }
 }

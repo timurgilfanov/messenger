@@ -4,20 +4,24 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginScreen
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupScreen
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
-import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
 import timur.gilfanov.messenger.navigation.Chat
 import timur.gilfanov.messenger.navigation.ChatList
 import timur.gilfanov.messenger.navigation.Language
@@ -43,23 +47,41 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            hiltViewModel<MainActivityViewModel>() // needed only for locale observation
+            val viewModel = hiltViewModel<MainActivityViewModel>()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
             MessengerTheme {
-                MessengerApp(googleSignInClient = googleSignInClient)
+                MessengerApp(
+                    googleSignInClient = googleSignInClient,
+                    uiState = uiState,
+                )
             }
         }
     }
 }
 
-@Suppress("LongMethod") // todo keep entities in feature modules
+// top-level app composable
+@Suppress("LongMethod", "ModifierMissing", "ktlint:compose:modifier-missing-check")
 @Composable
-fun MessengerApp(googleSignInClient: GoogleSignInClient) {
-    val currentUserId = "550e8400-e29b-41d4-a716-446655440000".toParticipantId()
+fun MessengerApp(googleSignInClient: GoogleSignInClient, uiState: MainActivityUiState) {
+    when (uiState) {
+        MainActivityUiState.Loading -> MessengerAppLoading()
+        is MainActivityUiState.Ready -> MessengerAppReady(
+            googleSignInClient = googleSignInClient,
+            initialDestination = uiState.initialDestination,
+        )
+    }
+}
 
-    @Suppress("KotlinConstantConditions")
-    val initBackStack = if (BuildConfig.FEATURE_SETTINGS) Main else ChatList
-    val backStack = rememberNavBackStack(initBackStack)
+@Composable
+private fun MessengerAppLoading() {
+    Box {}
+}
+
+@Suppress("LongMethod", "ModifierMissing", "ktlint:compose:modifier-missing-check")
+@Composable
+private fun MessengerAppReady(googleSignInClient: GoogleSignInClient, initialDestination: NavKey) {
+    val backStack = rememberNavBackStack(initialDestination)
 
     val onAuthFailure: () -> Unit = {
         backStack.clear()
@@ -69,6 +91,10 @@ fun MessengerApp(googleSignInClient: GoogleSignInClient) {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
+        entryDecorators = listOf(
+            rememberSavedStateNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
         entryProvider = entryProvider {
             entry<ChatList> {
                 ChatListScreen(
@@ -89,7 +115,7 @@ fun MessengerApp(googleSignInClient: GoogleSignInClient) {
             entry<Chat> { chat ->
                 ChatScreen(
                     chatId = chat.chatId.toChatId(),
-                    currentUserId = currentUserId,
+                    onAuthFailure = onAuthFailure,
                 )
             }
             entry<Main> {

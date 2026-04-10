@@ -3,7 +3,6 @@ package timur.gilfanov.messenger.ui.screen.settings
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,7 +17,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Profile
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -30,8 +28,6 @@ class ProfileViewModelProcessDeathTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
-
-    private val testUserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
 
     @Test
     fun `restores profile from SavedStateHandle after process death`() = runTest {
@@ -61,7 +57,7 @@ class ProfileViewModelProcessDeathTest {
             observeProfile = ObserveProfileUseCaseStub(
                 flowOf(
                     ResultWithError.Success(
-                        Profile(testUserId, "Timur", "https://example.com/avatar.jpg"),
+                        Profile("Timur", "https://example.com/avatar.jpg"),
                     ),
                 ),
             ),

@@ -4,6 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseImpl
 
@@ -12,5 +13,6 @@ import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseImpl
 object ProfileModule {
 
     @Provides
-    fun provideObserveProfileUseCase(): ObserveProfileUseCase = ObserveProfileUseCaseImpl()
+    fun provideObserveProfileUseCase(authRepository: AuthRepository): ObserveProfileUseCase =
+        ObserveProfileUseCaseImpl(authRepository)
 }

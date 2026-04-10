@@ -1,8 +1,8 @@
 package timur.gilfanov.messenger.domain.usecase.settings.repository
 
 import kotlinx.coroutines.flow.Flow
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
@@ -16,13 +16,13 @@ import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
  */
 interface SettingsRepository {
     /**
-     * Observes settings changes for a specific user.
+     * Observes settings changes for the authenticated user.
      *
-     * @param identity The user identity for which to observe settings
+     * @param userKey The key identifying the user scope
      * @return Flow emitting settings updates or errors
      */
     fun observeSettings(
-        identity: Identity,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>>
 
     /**
@@ -38,32 +38,32 @@ interface SettingsRepository {
     /**
      * Changes user's UI language preference.
      *
-     * @param identity The user identity for which to change the language
+     * @param userKey The key identifying the user scope
      * @param language The new language preference
      * @return Success or failure with [ChangeLanguageRepositoryError]
      */
     suspend fun changeUiLanguage(
-        identity: Identity,
+        userKey: UserScopeKey,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError>
 
     /**
      * Syncs a specific user setting with the remote backend.
      *
-     * @param identity Identity whose setting is being synced
+     * @param userKey The key identifying the user scope
      * @param key The concrete setting to sync
      */
     suspend fun syncSetting(
-        identity: Identity,
+        userKey: UserScopeKey,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError>
 
     /**
      * Syncs all pending settings changes for specific users.
      *
-     * @param identity Identity whose setting is being synced
+     * @param userKey The key identifying the user scope
      */
     suspend fun syncAllPendingSettings(
-        identity: Identity,
+        userKey: UserScopeKey,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError>
 }

@@ -6,7 +6,6 @@ import kotlinx.collections.immutable.toPersistentList
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
 
@@ -30,14 +29,13 @@ data class ChatListScreenState(
     val uiState: ChatListUiState = ChatListUiState.NotEmpty(
         chats = emptyList<ChatListItemUiModel>().toPersistentList(),
     ),
-    val currentUser: CurrentUserUiModel =
-        CurrentUserUiModel(ParticipantId(java.util.UUID.randomUUID()), "", null),
+    val currentUser: CurrentUserUiModel = CurrentUserUiModel("", null),
     val isLoading: Boolean = false,
     val isChatListUpdateApplying: Boolean = false,
     val error: FlowChatListRepositoryError? = null,
 )
 
-data class CurrentUserUiModel(val id: ParticipantId, val name: String, val pictureUrl: String?)
+data class CurrentUserUiModel(val name: String, val pictureUrl: String?)
 
 fun Chat.toChatListItemUiModel(): ChatListItemUiModel {
     val lastMessage = messages.lastOrNull()

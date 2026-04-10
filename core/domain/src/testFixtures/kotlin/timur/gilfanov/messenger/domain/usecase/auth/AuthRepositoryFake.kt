@@ -26,6 +26,10 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
     override val authState: Flow<AuthState> = authStateFlow.asStateFlow()
     val currentAuthState: AuthState get() = authStateFlow.value
 
+    fun setState(state: AuthState) {
+        authStateFlow.value = state
+    }
+
     private val loginWithCredentialsQueue =
         ArrayDeque<ResultWithError<AuthSession, LoginRepositoryError>>()
     private val loginWithGoogleQueue =

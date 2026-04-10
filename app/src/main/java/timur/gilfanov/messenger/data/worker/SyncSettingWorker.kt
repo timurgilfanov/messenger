@@ -6,9 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import java.util.UUID
 import timur.gilfanov.messenger.domain.entity.fold
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -35,19 +33,6 @@ class SyncSettingWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        val userIdString = inputData.getString(KEY_USER_ID)
-        if (userIdString == null) {
-            logger.w(TAG, "Missing user_id in WorkManager input data")
-            return Result.failure()
-        }
-
-        val userId = try {
-            UserId(UUID.fromString(userIdString))
-        } catch (_: IllegalArgumentException) {
-            logger.w(TAG, "Invalid user_id format: $userIdString")
-            return Result.failure()
-        }
-
         val settingKeyString = inputData.getString(KEY_SETTING_KEY)
         if (settingKeyString == null) {
             logger.w(TAG, "Missing setting_key in WorkManager input data")
@@ -60,7 +45,7 @@ class SyncSettingWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        return syncSetting(userId, settingKey).fold(
+        return syncSetting(settingKey).fold(
             onSuccess = {
                 if (runAttemptCount > 0) {
                     logger.i(TAG, "Setting sync succeeded after $runAttemptCount retries")
@@ -70,7 +55,7 @@ class SyncSettingWorker @AssistedInject constructor(
             onFailure = { error ->
                 when (error) {
                     SyncSettingError.IdentityNotAvailable -> {
-                        logger.e(TAG, "Identity not available for user ${userId.id}")
+                        logger.e(TAG, "Identity not available for sync")
                         Result.retry()
                     }
                     SyncSettingError.SettingNotFound -> {
@@ -141,7 +126,6 @@ class SyncSettingWorker @AssistedInject constructor(
     companion object {
         private const val TAG = "SyncSettingWorker"
         private const val MAX_RETRY_ATTEMPTS = 3
-        const val KEY_USER_ID = "user_id"
         const val KEY_SETTING_KEY = "setting_key"
     }
 }

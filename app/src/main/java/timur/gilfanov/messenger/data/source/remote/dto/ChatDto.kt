@@ -30,6 +30,7 @@ data class ParticipantDto(
     val onlineAt: String? = null, // ISO 8601 timestamp
     val isAdmin: Boolean = false,
     val isModerator: Boolean = false,
+    val isCurrentUser: Boolean = false,
 )
 
 // Reuse RuleDto from SerializationDtos.kt but add network-specific serialization

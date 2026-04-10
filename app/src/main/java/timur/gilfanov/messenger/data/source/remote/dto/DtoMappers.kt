@@ -81,6 +81,7 @@ fun ParticipantDto.toDomain(): Participant = Participant(
     onlineAt = onlineAt?.let { Instant.parse(it) },
     isAdmin = isAdmin,
     isModerator = isModerator,
+    isCurrentUser = isCurrentUser,
 )
 
 fun Participant.toDto(): ParticipantDto = ParticipantDto(
@@ -91,6 +92,7 @@ fun Participant.toDto(): ParticipantDto = ParticipantDto(
     onlineAt = onlineAt?.toString(),
     isAdmin = isAdmin,
     isModerator = isModerator,
+    isCurrentUser = isCurrentUser,
 )
 
 // Message mappers

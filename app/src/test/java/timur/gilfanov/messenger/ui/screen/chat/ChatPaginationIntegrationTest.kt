@@ -30,6 +30,7 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createAuthenticatedRepository
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 /**
@@ -58,8 +59,8 @@ class ChatPaginationIntegrationTest {
 
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
+            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
                 DeliveryStatusValidatorImpl(),
@@ -107,8 +108,8 @@ class ChatPaginationIntegrationTest {
 
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
+            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
                 DeliveryStatusValidatorImpl(),
@@ -143,8 +144,8 @@ class ChatPaginationIntegrationTest {
 
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
+            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
                 DeliveryStatusValidatorImpl(),
@@ -192,8 +193,8 @@ class ChatPaginationIntegrationTest {
 
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
+            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
                 DeliveryStatusValidatorImpl(),

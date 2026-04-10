@@ -4,7 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCaseImpl
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
@@ -16,11 +16,11 @@ object SettingsObservationModule {
 
     @Provides
     fun provideObserveSettingsUseCase(
-        identityRepository: IdentityRepository,
+        authRepository: AuthRepository,
         settingsRepository: SettingsRepository,
         logger: Logger,
     ): ObserveSettingsUseCase = ObserveSettingsUseCaseImpl(
-        identityRepository,
+        authRepository,
         settingsRepository,
         logger,
     )

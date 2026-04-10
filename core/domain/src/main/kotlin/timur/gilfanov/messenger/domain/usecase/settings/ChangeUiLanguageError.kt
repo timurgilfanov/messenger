@@ -1,24 +1,23 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
 
 /**
  * Errors that can occur during UI language change operations.
  *
- * ## Identity Errors
- * - [Unauthorized] - Failed to retrieve current user identity
+ * ## Auth Errors
+ * - [Unauthorized] - Not authenticated
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed
  */
 sealed interface ChangeUiLanguageError {
     /**
-     * Failed to retrieve current user identity.
+     * Not authenticated.
      *
-     * This error occurs when [IdentityRepository] cannot provide the identity needed
-     * to perform the language change operation.
+     * This error occurs when [timur.gilfanov.messenger.domain.usecase.auth.AuthRepository] cannot
+     * provide an authenticated session needed to perform the language change operation.
      */
     data object Unauthorized : ChangeUiLanguageError
 

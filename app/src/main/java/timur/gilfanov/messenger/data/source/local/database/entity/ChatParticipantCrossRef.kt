@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.local.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -37,4 +38,5 @@ data class ChatParticipantCrossRef(
     val joinedAt: Instant,
     val isAdmin: Boolean = false,
     val isModerator: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val isCurrentUser: Boolean = false,
 )

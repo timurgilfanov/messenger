@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.ui.activity
 
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -105,10 +104,10 @@ class MainActivityViewModelTest {
     )
 
     @Test
-    fun `initial destination is null before auth state emits`() = runTest {
+    fun `ui state is Loading before auth state emits`() = runTest {
         val viewModel = createViewModel(authRepository = NeverEmitsAuthRepository())
 
-        assertNull(viewModel.initialDestination.value)
+        assertEquals(MainActivityUiState.Loading, viewModel.uiState.value)
     }
 
     @Test
@@ -119,7 +118,10 @@ class MainActivityViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals(Main, viewModel.initialDestination.value)
+        assertEquals(
+            MainActivityUiState.Ready(initialDestination = Main),
+            viewModel.uiState.value,
+        )
     }
 
     @Test
@@ -130,6 +132,9 @@ class MainActivityViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals(Login, viewModel.initialDestination.value)
+        assertEquals(
+            MainActivityUiState.Ready(initialDestination = Login),
+            viewModel.uiState.value,
+        )
     }
 }

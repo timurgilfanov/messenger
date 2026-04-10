@@ -2,12 +2,11 @@ package timur.gilfanov.messenger.ui.activity
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation3.runtime.NavKey
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
@@ -15,6 +14,7 @@ import timur.gilfanov.messenger.domain.usecase.settings.ObserveAndApplyLocaleUse
 import timur.gilfanov.messenger.navigation.Login
 import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.util.Logger
+import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
@@ -23,8 +23,8 @@ class MainActivityViewModel @Inject constructor(
     private val logger: Logger,
 ) : ViewModel() {
 
-    private val _initialDestination = MutableStateFlow<NavKey?>(null)
-    val initialDestination = _initialDestination.asStateFlow()
+    private val _uiState = MutableStateFlow<MainActivityUiState>(MainActivityUiState.Loading)
+    val uiState = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -33,9 +33,14 @@ class MainActivityViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            _initialDestination.value = when (authRepository.authState.first()) {
-                is AuthState.Authenticated -> Main
-                AuthState.Unauthenticated -> Login
+            val authState = authRepository.authState.first()
+            _uiState.update {
+                MainActivityUiState.Ready(
+                    initialDestination = when (authState) {
+                        is AuthState.Authenticated -> Main
+                        AuthState.Unauthenticated -> Login
+                    },
+                )
             }
         }
     }

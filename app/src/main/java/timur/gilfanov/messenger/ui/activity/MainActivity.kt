@@ -48,12 +48,12 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContent {
             val viewModel = hiltViewModel<MainActivityViewModel>()
-            val initialDestination by viewModel.initialDestination.collectAsStateWithLifecycle()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
             MessengerTheme {
                 MessengerApp(
                     googleSignInClient = googleSignInClient,
-                    initialDestination = initialDestination,
+                    uiState = uiState,
                 )
             }
         }
@@ -63,12 +63,24 @@ class MainActivity : AppCompatActivity() {
 // top-level app composable
 @Suppress("LongMethod", "ModifierMissing", "ktlint:compose:modifier-missing-check")
 @Composable
-fun MessengerApp(googleSignInClient: GoogleSignInClient, initialDestination: NavKey?) {
-    if (initialDestination == null) {
-        Box {}
-        return
+fun MessengerApp(googleSignInClient: GoogleSignInClient, uiState: MainActivityUiState) {
+    when (uiState) {
+        MainActivityUiState.Loading -> MessengerAppLoading()
+        is MainActivityUiState.Ready -> MessengerAppReady(
+            googleSignInClient = googleSignInClient,
+            initialDestination = uiState.initialDestination,
+        )
     }
+}
 
+@Composable
+private fun MessengerAppLoading() {
+    Box {}
+}
+
+@Suppress("LongMethod", "ModifierMissing", "ktlint:compose:modifier-missing-check")
+@Composable
+private fun MessengerAppReady(googleSignInClient: GoogleSignInClient, initialDestination: NavKey) {
     val backStack = rememberNavBackStack(initialDestination)
 
     val onAuthFailure: () -> Unit = {

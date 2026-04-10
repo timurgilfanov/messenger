@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.ui.activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -14,7 +15,6 @@ import timur.gilfanov.messenger.domain.usecase.settings.ObserveAndApplyLocaleUse
 import timur.gilfanov.messenger.navigation.Login
 import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.util.Logger
-import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(

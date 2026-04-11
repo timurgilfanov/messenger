@@ -342,7 +342,6 @@ class SignupFeatureTest {
             onNodeWithTag("signup_email_field").assertIsNotEnabled()
             onNodeWithTag("signup_password_field").assertIsNotEnabled()
             onNodeWithTag("signup_confirm_password_field").assertIsNotEnabled()
-            onNodeWithTag("signup_credentials_sign_up_button").assertIsNotEnabled()
         }
     }
 

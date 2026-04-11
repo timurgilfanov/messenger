@@ -66,11 +66,11 @@ LogoutUseCaseImpl.
 - Modify: `app/src/main/java/timur/gilfanov/messenger/data/repository/SettingsSyncSchedulerImpl.kt`
 - Modify: `app/src/androidTest/java/timur/gilfanov/messenger/test/SettingsSyncSchedulerStub.kt`
 
-- [ ] Add `fun cancelUserScopedJobs(userKey: UserScopeKey)` to `SettingsSyncScheduler` interface (with KDoc)
-- [ ] In `SettingsSyncSchedulerImpl.scheduleSettingSync`: add `.addTag(userKey.key)` to `OneTimeWorkRequestBuilder` so each job is discoverable by user key
-- [ ] Implement `cancelUserScopedJobs`: `workManager.cancelAllWorkByTag(userKey.key)`
-- [ ] Add `cancelUserScopedJobs(userKey: UserScopeKey) = Unit` to `SettingsSyncSchedulerStub`
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct` to verify no lint issues
+- [x] Add `fun cancelUserScopedJobs(userKey: UserScopeKey)` to `SettingsSyncScheduler` interface (with KDoc)
+- [x] In `SettingsSyncSchedulerImpl.scheduleSettingSync`: add `.addTag(userKey.key)` to `OneTimeWorkRequestBuilder` so each job is discoverable by user key
+- [x] Implement `cancelUserScopedJobs`: `workManager.cancelAllWorkByTag(userKey.key)`
+- [x] Add `cancelUserScopedJobs(userKey: UserScopeKey) = Unit` to `SettingsSyncSchedulerStub`
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct` to verify no lint issues
 
 ### Task 4: SettingsRepository — add deleteUserData
 
@@ -82,13 +82,13 @@ LogoutUseCaseImpl.
 - Modify: `core/domain/src/testFixtures/kotlin/timur/gilfanov/messenger/domain/usecase/settings/SettingsRepositoryStub.kt`
 - Modify: `app/src/test/java/timur/gilfanov/messenger/data/repository/SettingsRepositoryImplTest.kt`
 
-- [ ] Create `DeleteUserDataRepositoryError` sealed interface: `data class LocalOperationFailed(val error: LocalStorageError) : DeleteUserDataRepositoryError`
-- [ ] Add `suspend fun deleteUserData(userKey: UserScopeKey): ResultWithError<Unit, DeleteUserDataRepositoryError>` to `SettingsRepository` interface (with KDoc)
-- [ ] Implement in `SettingsRepositoryImpl`: call `syncScheduler.cancelUserScopedJobs(userKey)` first, then `localDataSource.deleteAllForUser(userKey)`, map `DeleteAllForUserError` to `DeleteUserDataRepositoryError.LocalOperationFailed(localStorageError)`
-- [ ] Add `deleteUserData` to `SettingsRepositoryFake` with configurable result (default: `ResultWithError.Success(Unit)`) and a field to inspect the `userKey` passed in
-- [ ] Add `deleteUserData` to `SettingsRepositoryStub` returning success by default
-- [ ] Add tests in `SettingsRepositoryImplTest`: success path calls both cancel and delete; on delete error, error is propagated; cancel is always called regardless of delete result
-- [ ] Run `./gradlew app:testDebugUnitTest --tests "*.SettingsRepositoryImplTest"` — must pass
+- [x] Create `DeleteUserDataRepositoryError` sealed interface: `data class LocalOperationFailed(val error: LocalStorageError) : DeleteUserDataRepositoryError`
+- [x] Add `suspend fun deleteUserData(userKey: UserScopeKey): ResultWithError<Unit, DeleteUserDataRepositoryError>` to `SettingsRepository` interface (with KDoc)
+- [x] Implement in `SettingsRepositoryImpl`: call `syncScheduler.cancelUserScopedJobs(userKey)` first, then `localDataSource.deleteAllForUser(userKey)`, map `DeleteAllForUserError` to `DeleteUserDataRepositoryError.LocalOperationFailed(localStorageError)`
+- [x] Add `deleteUserData` to `SettingsRepositoryFake` with configurable result (default: `ResultWithError.Success(Unit)`) and a field to inspect the `userKey` passed in
+- [x] Add `deleteUserData` to `SettingsRepositoryStub` returning success by default
+- [x] Add tests in `SettingsRepositoryImplTest`: success path calls both cancel and delete; on delete error, error is propagated; cancel is always called regardless of delete result
+- [x] Run `./gradlew app:testDebugUnitTest --tests "*.SettingsRepositoryImplTest"` — must pass
 
 ### Task 5: LogoutUseCaseImpl — add settings cleanup before logout
 

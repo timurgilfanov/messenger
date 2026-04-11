@@ -246,21 +246,11 @@ private fun SignupForm(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        NameField(state.name, state.nameError?.toDisplayString(), onNameChange)
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        EmailField(state.email, state.emailError?.toDisplayString(), onEmailChange)
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        PasswordField(state.password, state.passwordError?.toDisplayString(), onPasswordChange)
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        ConfirmPasswordField(
-            confirmPassword = state.confirmPassword,
-            isPasswordMismatch = state.isPasswordMismatched,
+        SignupCredentialsFields(
+            state = state,
+            onNameChange = onNameChange,
+            onEmailChange = onEmailChange,
+            onPasswordChange = onPasswordChange,
             onConfirmPasswordChange = onConfirmPasswordChange,
         )
 
@@ -306,12 +296,59 @@ private fun SignupForm(
 }
 
 @Composable
-private fun NameField(name: String, nameError: String?, onNameChange: (String) -> Unit) {
+private fun SignupCredentialsFields(
+    state: SignupUiState,
+    onNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+) {
+    val areFieldsEnabled = !state.isLoading
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        NameField(
+            name = state.name,
+            nameError = state.nameError?.toDisplayString(),
+            onNameChange = onNameChange,
+            enabled = areFieldsEnabled,
+        )
+
+        EmailField(
+            email = state.email,
+            emailError = state.emailError?.toDisplayString(),
+            onEmailChange = onEmailChange,
+            enabled = areFieldsEnabled,
+        )
+
+        PasswordField(
+            password = state.password,
+            passwordError = state.passwordError?.toDisplayString(),
+            onPasswordChange = onPasswordChange,
+            enabled = areFieldsEnabled,
+        )
+
+        ConfirmPasswordField(
+            confirmPassword = state.confirmPassword,
+            isPasswordMismatch = state.isPasswordMismatched,
+            onConfirmPasswordChange = onConfirmPasswordChange,
+            enabled = areFieldsEnabled,
+        )
+    }
+}
+
+@Composable
+private fun NameField(
+    name: String,
+    nameError: String?,
+    onNameChange: (String) -> Unit,
+    enabled: Boolean,
+) {
     OutlinedTextField(
         value = name,
         onValueChange = onNameChange,
         label = { Text(stringResource(R.string.signup_name_label)) },
         singleLine = true,
+        enabled = enabled,
         isError = nameError != null,
         supportingText = nameError?.let { error ->
             {
@@ -328,7 +365,12 @@ private fun NameField(name: String, nameError: String?, onNameChange: (String) -
 }
 
 @Composable
-private fun EmailField(email: String, emailError: String?, onEmailChange: (String) -> Unit) {
+private fun EmailField(
+    email: String,
+    emailError: String?,
+    onEmailChange: (String) -> Unit,
+    enabled: Boolean,
+) {
     OutlinedTextField(
         value = email,
         onValueChange = onEmailChange,
@@ -338,6 +380,7 @@ private fun EmailField(email: String, emailError: String?, onEmailChange: (Strin
             imeAction = ImeAction.Next,
         ),
         singleLine = true,
+        enabled = enabled,
         isError = emailError != null,
         supportingText = emailError?.let { error ->
             {
@@ -358,6 +401,7 @@ private fun PasswordField(
     password: String,
     passwordError: String?,
     onPasswordChange: (String) -> Unit,
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = password,
@@ -369,6 +413,7 @@ private fun PasswordField(
             imeAction = ImeAction.Next,
         ),
         singleLine = true,
+        enabled = enabled,
         isError = passwordError != null,
         supportingText = passwordError?.let { error ->
             {
@@ -389,6 +434,7 @@ private fun ConfirmPasswordField(
     confirmPassword: String,
     isPasswordMismatch: Boolean,
     onConfirmPasswordChange: (String) -> Unit,
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = confirmPassword,
@@ -400,6 +446,7 @@ private fun ConfirmPasswordField(
             imeAction = ImeAction.Done,
         ),
         singleLine = true,
+        enabled = enabled,
         isError = isPasswordMismatch,
         supportingText = if (isPasswordMismatch) {
             {

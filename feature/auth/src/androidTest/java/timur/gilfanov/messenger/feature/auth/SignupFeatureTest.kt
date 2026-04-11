@@ -325,6 +325,27 @@ class SignupFeatureTest {
     }
 
     @Test
+    fun signupScreen_credentialsSignup_fieldsBecomeDisabledWhileLoading() {
+        SignupTestModule.signupWithCredentialsUseCase.shouldSuspend = true
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
+            onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("signup_confirm_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("signup_credentials_sign_up_button").performClick()
+            waitForIdle()
+            onNodeWithTag("signup_name_field").assertIsNotEnabled()
+            onNodeWithTag("signup_email_field").assertIsNotEnabled()
+            onNodeWithTag("signup_password_field").assertIsNotEnabled()
+            onNodeWithTag("signup_confirm_password_field").assertIsNotEnabled()
+        }
+    }
+
+    @Test
     fun signupScreen_localOperationFailed_storageFull_showsBlockingDialog() {
         SignupTestModule.googleSignInClient.result =
             GoogleSignInResult.Success(TEST_GOOGLE_ID_TOKEN)

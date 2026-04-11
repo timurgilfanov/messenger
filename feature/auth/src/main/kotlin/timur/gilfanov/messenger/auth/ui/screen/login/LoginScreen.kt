@@ -246,11 +246,23 @@ private fun LoginForm(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        EmailField(state.email, state.emailError?.toDisplayString(), onEmailChange)
+        val areFieldsEnabled = !state.isLoading
+
+        EmailField(
+            email = state.email,
+            emailError = state.emailError?.toDisplayString(),
+            onEmailChange = onEmailChange,
+            enabled = areFieldsEnabled,
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        PasswordField(state.password, state.passwordError?.toDisplayString(), onPasswordChange)
+        PasswordField(
+            password = state.password,
+            passwordError = state.passwordError?.toDisplayString(),
+            onPasswordChange = onPasswordChange,
+            enabled = areFieldsEnabled,
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -298,6 +310,7 @@ private fun PasswordField(
     password: String,
     passwordError: String?,
     onPasswordChange: (String) -> Unit,
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = password,
@@ -309,6 +322,7 @@ private fun PasswordField(
             imeAction = ImeAction.Done,
         ),
         singleLine = true,
+        enabled = enabled,
         isError = passwordError != null,
         supportingText = passwordError?.let { error ->
             {
@@ -325,7 +339,12 @@ private fun PasswordField(
 }
 
 @Composable
-private fun EmailField(email: String, emailError: String?, onEmailChange: (String) -> Unit) {
+private fun EmailField(
+    email: String,
+    emailError: String?,
+    onEmailChange: (String) -> Unit,
+    enabled: Boolean,
+) {
     OutlinedTextField(
         value = email,
         onValueChange = onEmailChange,
@@ -334,6 +353,7 @@ private fun EmailField(email: String, emailError: String?, onEmailChange: (Strin
             keyboardType = KeyboardType.Email,
             imeAction = ImeAction.Next,
         ),
+        enabled = enabled,
         isError = emailError != null,
         supportingText = emailError?.let { error ->
             {

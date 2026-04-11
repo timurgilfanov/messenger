@@ -113,4 +113,4 @@ LogoutUseCaseImpl.
 
 ### Task 7: Update documentation
 
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Move this plan to `docs/plans/completed/`

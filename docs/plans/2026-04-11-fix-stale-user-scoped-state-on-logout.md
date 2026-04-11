@@ -98,12 +98,12 @@ LogoutUseCaseImpl.
 - Modify: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/domain/usecase/LogoutUseCaseImplTest.kt`
 - Modify: `app/src/test/java/timur/gilfanov/messenger/ui/screen/settings/SettingsViewModelLogoutTest.kt`
 
-- [ ] Add `SettingsRepository` constructor parameter to `LogoutUseCaseImpl` (between `authRepository` and `logger`)
-- [ ] In `LogoutUseCaseImpl.invoke()`: read `authRepository.authState.first()`, extract `UserScopeKey` if `Authenticated`, call `settingsRepository.deleteUserData(userKey)`, log any failure, then call `authRepository.logout()`
-- [ ] Update `AuthViewModelModule.provideLogoutUseCase` to inject `SettingsRepository`
-- [ ] Update `LogoutUseCaseImplTest.createUseCase` to accept `SettingsRepository` (default: `SettingsRepositoryStub()`); add test: cleanup called with correct key on successful logout; add test: cleanup failure does not block logout
-- [ ] Update `SettingsViewModelLogoutTest.createViewModel`: add `SettingsRepositoryStub()` to `LogoutUseCaseImpl` constructor
-- [ ] Run `./gradlew :feature:auth:testDebugUnitTest` and `./gradlew app:testDebugUnitTest` — must pass
+- [x] Add `SettingsRepository` constructor parameter to `LogoutUseCaseImpl` (between `authRepository` and `logger`)
+- [x] In `LogoutUseCaseImpl.invoke()`: read `authRepository.authState.first()`, extract `UserScopeKey` if `Authenticated`, call `settingsRepository.deleteUserData(userKey)`, log any failure, then call `authRepository.logout()`
+- [x] Update `AuthViewModelModule.provideLogoutUseCase` to inject `SettingsRepository`
+- [x] Update `LogoutUseCaseImplTest.createUseCase` to accept `SettingsRepository` (default: `SettingsRepositoryStub()`); add test: cleanup called with correct key on successful logout; add test: cleanup failure does not block logout
+- [x] Update `SettingsViewModelLogoutTest.createViewModel`: add `SettingsRepositoryStub()` to `LogoutUseCaseImpl` constructor
+- [x] Run `./gradlew :feature:auth:testDebugUnitTest` and `./gradlew app:testDebugUnitTest` — must pass
 
 ### Task 6: Verify acceptance criteria
 

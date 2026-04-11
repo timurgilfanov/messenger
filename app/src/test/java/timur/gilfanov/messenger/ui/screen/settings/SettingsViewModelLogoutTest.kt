@@ -25,6 +25,7 @@ import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCaseStub
+import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -41,7 +42,7 @@ class SettingsViewModelLogoutTest {
     private fun createViewModel(authRepository: AuthRepositoryFake): SettingsViewModel =
         SettingsViewModel(
             observeSettings = ObserveSettingsUseCaseStub(settingsFlow),
-            logoutUseCase = LogoutUseCaseImpl(authRepository, NoOpLogger()),
+            logoutUseCase = LogoutUseCaseImpl(authRepository, SettingsRepositoryStub(), NoOpLogger()),
             logger = NoOpLogger(),
             savedStateHandle = SavedStateHandle(),
         )

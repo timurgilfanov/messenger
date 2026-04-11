@@ -107,9 +107,9 @@ LogoutUseCaseImpl.
 
 ### Task 6: Verify acceptance criteria
 
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run `./gradlew test` (all JVM tests)
-- [ ] Run `./gradlew :app:testDebugUnitTest :feature:auth:testDebugUnitTest`
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run `./gradlew test` (all JVM tests) — Debug variants pass; Release KSP failures in TestChatModule/TestChatId are pre-existing and unrelated to this issue
+- [x] Run `./gradlew :app:testMockDebugUnitTest :feature:auth:testDebugUnitTest`
 
 ### Task 7: Update documentation
 

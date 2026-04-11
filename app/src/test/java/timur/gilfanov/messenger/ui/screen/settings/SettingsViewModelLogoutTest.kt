@@ -42,7 +42,11 @@ class SettingsViewModelLogoutTest {
     private fun createViewModel(authRepository: AuthRepositoryFake): SettingsViewModel =
         SettingsViewModel(
             observeSettings = ObserveSettingsUseCaseStub(settingsFlow),
-            logoutUseCase = LogoutUseCaseImpl(authRepository, SettingsRepositoryStub(), NoOpLogger()),
+            logoutUseCase = LogoutUseCaseImpl(
+                authRepository,
+                SettingsRepositoryStub(),
+                NoOpLogger(),
+            ),
             logger = NoOpLogger(),
             savedStateHandle = SavedStateHandle(),
         )

@@ -24,6 +24,7 @@ class LocalSettingsDataSourceFake(
     private var upsertError: UpsertSettingError? = null
     private var transformError: TransformSettingError? = null
     private var observeError: GetSettingsLocalDataSourceError? = null
+    private var deleteAllForUserError: DeleteAllForUserError? = null
 
     fun setGetSettingBehavior(error: GetSettingError?) {
         getSettingError = error
@@ -43,6 +44,10 @@ class LocalSettingsDataSourceFake(
 
     fun setObserveBehavior(error: GetSettingsLocalDataSourceError?) {
         observeError = error
+    }
+
+    fun setDeleteAllForUserBehavior(error: DeleteAllForUserError?) {
+        deleteAllForUserError = error
     }
 
     override fun observe(
@@ -153,6 +158,17 @@ class LocalSettingsDataSourceFake(
                 updatedMap = updatedMap + (Pair(entity.userKey, entity.key) to entity)
             }
             updatedMap
+        }
+        return ResultWithError.Success(Unit)
+    }
+
+    override suspend fun deleteAllForUser(
+        userKey: UserScopeKey,
+    ): ResultWithError<Unit, DeleteAllForUserError> {
+        deleteAllForUserError?.let { return ResultWithError.Failure(it) }
+
+        settings.update { map ->
+            map.filterKeys { (key, _) -> key != userKey.key }
         }
         return ResultWithError.Success(Unit)
     }

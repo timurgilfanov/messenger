@@ -45,7 +45,7 @@ import timur.gilfanov.messenger.util.Logger
  *
  * ## Method-Specific Behavior:
  * - [observe]: Retries transient errors in Flow, completes Flow on permanent errors
- * - [getSetting], [getUnsyncedSettings]: Retry transient errors, propagate permanent errors
+ * - [getSetting], [getUnsyncedSettings], [deleteAllForUser]: Retry transient errors, propagate permanent errors
  * - [upsert] (single): Retries transient errors with exponential backoff
  * - [upsert] (batch): **NO RETRY** - fails immediately on any error
  * - [transform]: **NO RETRY** - transaction semantics prevent retry
@@ -239,6 +239,27 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteAllForUser(
+        userKey: UserScopeKey,
+    ): ResultWithError<Unit, DeleteAllForUserError> {
+        var attempt = 0L
+        while (true) {
+            try {
+                settingsDao.deleteAllByUser(userKey.key)
+                return Success(Unit)
+            } catch (e: SQLiteException) {
+                when (val action = handleDeleteAllForUserException(e, userKey, attempt)) {
+                    is RetryDecision.Retry -> {
+                        delay(action.delayMs)
+                        attempt++
+                    }
+
+                    is RetryDecision.Fail -> return Failure(action.error)
+                }
+            }
+        }
+    }
+
     private suspend fun getSettingsWithRetry(userKey: UserScopeKey): List<SettingEntity> {
         var attempt = 0L
         while (true) {
@@ -394,6 +415,64 @@ class LocalSettingsDataSourceImpl @Inject constructor(
         else -> {
             logger.e(TAG, "Unknown error while fetching unsynced settings", exception)
             RetryDecision.Fail(GetUnsyncedSettingsError.UnknownError(exception))
+        }
+    }
+
+    private fun handleDeleteAllForUserException(
+        exception: SQLiteException,
+        userKey: UserScopeKey,
+        attempt: Long,
+    ): RetryDecision<DeleteAllForUserError> = when (exception) {
+        is SQLiteDatabaseLockedException ->
+            retryOrFail(
+                attempt = attempt,
+                error = DeleteAllForUserError.ConcurrentModificationError,
+                message = "Failed to delete all settings for user ${userKey.key}",
+                exception = exception,
+            )
+
+        is SQLiteDiskIOException ->
+            retryOrFail(
+                attempt = attempt,
+                error = DeleteAllForUserError.DiskIOError,
+                message = "Failed to delete all settings for user ${userKey.key}",
+                exception = exception,
+            )
+
+        is SQLiteDatabaseCorruptException -> {
+            logger.e(
+                TAG,
+                "Database corrupted while deleting all settings for user ${userKey.key}",
+                exception,
+            )
+            RetryDecision.Fail(DeleteAllForUserError.DatabaseCorrupted)
+        }
+
+        is SQLiteAccessPermException -> {
+            logger.e(
+                TAG,
+                "Access denied while deleting all settings for user ${userKey.key}",
+                exception,
+            )
+            RetryDecision.Fail(DeleteAllForUserError.AccessDenied)
+        }
+
+        is SQLiteReadOnlyDatabaseException -> {
+            logger.e(
+                TAG,
+                "Read-only database while deleting all settings for user ${userKey.key}",
+                exception,
+            )
+            RetryDecision.Fail(DeleteAllForUserError.ReadOnlyDatabase)
+        }
+
+        else -> {
+            logger.e(
+                TAG,
+                "Unknown database error while deleting all settings for user ${userKey.key}",
+                exception,
+            )
+            RetryDecision.Fail(DeleteAllForUserError.UnknownError(exception))
         }
     }
 

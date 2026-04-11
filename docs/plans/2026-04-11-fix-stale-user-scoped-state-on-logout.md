@@ -52,12 +52,12 @@ LogoutUseCaseImpl.
 - Modify: `app/src/debug/java/timur/gilfanov/messenger/data/source/local/LocalSettingsDataSourceFake.kt`
 - Modify: `app/src/test/java/timur/gilfanov/messenger/data/source/local/LocalSettingsDataSourceImplTest.kt`
 
-- [ ] Add `DeleteAllForUserError` sealed interface to `SettingsDataSourceError.kt` (cases: `ConcurrentModificationError`, `DiskIOError`, `DatabaseCorrupted`, `AccessDenied`, `ReadOnlyDatabase`, `UnknownError(val cause: Throwable)`)
-- [ ] Add `suspend fun deleteAllForUser(userKey: UserScopeKey): ResultWithError<Unit, DeleteAllForUserError>` to `LocalSettingsDataSource` interface (with KDoc)
-- [ ] Implement in `LocalSettingsDataSourceImpl` using the same retry loop pattern as `getSetting`/`upsert`: retry `SQLiteDatabaseLockedException` and `SQLiteDiskIOException` via existing `retryOrFail` helper (up to `MAX_RETRIES` with exponential backoff); fail immediately on `SQLiteFullException`, `SQLiteDatabaseCorruptException`, `SQLiteAccessPermException`, `SQLiteReadOnlyDatabaseException`, and unknown errors; update the class-level KDoc to document the new method's retry behaviour
-- [ ] Add `deleteAllForUser` to `LocalSettingsDataSourceFake`: remove entries matching `userKey` from `settings` map, support `deleteAllForUserError` configuration field
-- [ ] Add tests in `LocalSettingsDataSourceImplTest`: success path removes rows for that user only; `SQLiteDatabaseLockedException` retries and succeeds on second attempt; `SQLiteDatabaseLockedException` after max retries maps to `ConcurrentModificationError`; `SQLiteDiskIOException` maps similarly; permanent errors (`DatabaseCorrupted`, `AccessDenied`, `ReadOnlyDatabase`) map to correct cases with no retry
-- [ ] Run `./gradlew app:testDebugUnitTest --tests "*.LocalSettingsDataSourceImpl*"` — must pass
+- [x] Add `DeleteAllForUserError` sealed interface to `SettingsDataSourceError.kt` (cases: `ConcurrentModificationError`, `DiskIOError`, `DatabaseCorrupted`, `AccessDenied`, `ReadOnlyDatabase`, `UnknownError(val cause: Throwable)`)
+- [x] Add `suspend fun deleteAllForUser(userKey: UserScopeKey): ResultWithError<Unit, DeleteAllForUserError>` to `LocalSettingsDataSource` interface (with KDoc)
+- [x] Implement in `LocalSettingsDataSourceImpl` using the same retry loop pattern as `getSetting`/`upsert`: retry `SQLiteDatabaseLockedException` and `SQLiteDiskIOException` via existing `retryOrFail` helper (up to `MAX_RETRIES` with exponential backoff); fail immediately on `SQLiteFullException`, `SQLiteDatabaseCorruptException`, `SQLiteAccessPermException`, `SQLiteReadOnlyDatabaseException`, and unknown errors; update the class-level KDoc to document the new method's retry behaviour
+- [x] Add `deleteAllForUser` to `LocalSettingsDataSourceFake`: remove entries matching `userKey` from `settings` map, support `deleteAllForUserError` configuration field
+- [x] Add tests in `LocalSettingsDataSourceImplTest`: success path removes rows for that user only; `SQLiteDatabaseLockedException` retries and succeeds on second attempt; `SQLiteDatabaseLockedException` after max retries maps to `ConcurrentModificationError`; `SQLiteDiskIOException` maps similarly; permanent errors (`DatabaseCorrupted`, `AccessDenied`, `ReadOnlyDatabase`) map to correct cases with no retry
+- [x] Run `./gradlew app:testDebugUnitTest --tests "*.LocalSettingsDataSourceImpl*"` — must pass
 
 ### Task 3: SettingsSyncScheduler — add cancelUserScopedJobs + tag work requests
 

@@ -178,7 +178,9 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
         } else {
             defaultLogoutResult ?: ResultWithError.Success(Unit)
         }
-        if (result is ResultWithError.Success) {
+        val sessionLocallyCleared = result !is ResultWithError.Failure ||
+            result.error !is LogoutRepositoryError.LocalOperationFailed
+        if (sessionLocallyCleared) {
             authStateFlow.value = Unauthenticated
         }
         return result

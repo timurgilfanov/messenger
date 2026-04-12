@@ -68,6 +68,18 @@ class LogoutUseCaseImplTest {
     }
 
     @Test
+    fun `cleanup not called when already unauthenticated`() = runTest {
+        val repository = AuthRepositoryFake()
+        val settingsRepository = SettingsRepositoryFake(
+            initialSettings = timur.gilfanov.messenger.domain.entity.settings.Settings(
+                uiLanguage = timur.gilfanov.messenger.domain.entity.settings.UiLanguage.English,
+            ),
+        )
+        createUseCase(repository, settingsRepository)()
+        assertEquals(null, settingsRepository.lastDeleteUserDataKey)
+    }
+
+    @Test
     fun `cleanup called with correct user key on logout`() = runTest {
         val session = AuthSession(
             tokens = AuthTokens(accessToken = "access-1", refreshToken = "refresh-1"),
@@ -83,6 +95,52 @@ class LogoutUseCaseImplTest {
         createUseCase(repository, settingsRepository)()
         assertNotNull(settingsRepository.lastDeleteUserDataKey)
         assertEquals(expectedKey, settingsRepository.lastDeleteUserDataKey)
+    }
+
+    @Test
+    fun `cleanup called even when remote logout fails`() = runTest {
+        val session = AuthSession(
+            tokens = AuthTokens(accessToken = "access-3", refreshToken = "refresh-3"),
+            provider = AuthProvider.EMAIL,
+        )
+        val expectedKey = session.toUserScopeKey()
+        val repository = AuthRepositoryFake(
+            initialAuthState = AuthState.Authenticated(session),
+        ).apply {
+            defaultLogoutResult = ResultWithError.Failure(
+                LogoutRepositoryError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+            )
+        }
+        val settingsRepository = SettingsRepositoryFake(
+            initialSettings = timur.gilfanov.messenger.domain.entity.settings.Settings(
+                uiLanguage = timur.gilfanov.messenger.domain.entity.settings.UiLanguage.English,
+            ),
+        )
+        createUseCase(repository, settingsRepository)()
+        assertNotNull(settingsRepository.lastDeleteUserDataKey)
+        assertEquals(expectedKey, settingsRepository.lastDeleteUserDataKey)
+    }
+
+    @Test
+    fun `cleanup not called when local logout fails`() = runTest {
+        val session = AuthSession(
+            tokens = AuthTokens(accessToken = "access-4", refreshToken = "refresh-4"),
+            provider = AuthProvider.EMAIL,
+        )
+        val repository = AuthRepositoryFake(
+            initialAuthState = AuthState.Authenticated(session),
+        ).apply {
+            defaultLogoutResult = ResultWithError.Failure(
+                LogoutRepositoryError.LocalOperationFailed(LocalStorageError.AccessDenied),
+            )
+        }
+        val settingsRepository = SettingsRepositoryFake(
+            initialSettings = timur.gilfanov.messenger.domain.entity.settings.Settings(
+                uiLanguage = timur.gilfanov.messenger.domain.entity.settings.UiLanguage.English,
+            ),
+        )
+        createUseCase(repository, settingsRepository)()
+        assertEquals(null, settingsRepository.lastDeleteUserDataKey)
     }
 
     @Test

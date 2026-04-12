@@ -775,6 +775,8 @@ private fun DeleteAllForUserError.toLocalStorageError(): LocalStorageError = whe
     DeleteAllForUserError.DiskIOError,
     -> LocalStorageError.TemporarilyUnavailable
 
+    DeleteAllForUserError.StorageFull -> LocalStorageError.StorageFull
+
     DeleteAllForUserError.DatabaseCorrupted -> LocalStorageError.Corrupted
 
     DeleteAllForUserError.AccessDenied -> LocalStorageError.AccessDenied

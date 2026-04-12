@@ -21,16 +21,25 @@ class LogoutUseCaseImpl(
 
     override suspend fun invoke(): ResultWithError<Unit, LogoutError> {
         val authState = authRepository.authState.first()
-        if (authState is AuthState.Authenticated) {
-            val userKey = authState.session.toUserScopeKey()
-            val cleanupResult = settingsRepository.deleteUserData(userKey)
-            if (cleanupResult is ResultWithError.Failure) {
-                logger.e(TAG, "Settings cleanup failed before logout: ${cleanupResult.error}")
-            }
+        val userKey = if (authState is AuthState.Authenticated) {
+            authState.session.toUserScopeKey()
+        } else {
+            null
         }
-        return authRepository.logout().mapError { error ->
+        val result = authRepository.logout().mapError { error ->
             logger.e(TAG, "Repository logout failed: $error")
             error.toUseCaseError()
         }
+        if (userKey != null) {
+            val sessionLocallyCleared = result !is ResultWithError.Failure ||
+                result.error !is LogoutError.LocalOperationFailed
+            if (sessionLocallyCleared) {
+                val cleanupResult = settingsRepository.deleteUserData(userKey)
+                if (cleanupResult is ResultWithError.Failure) {
+                    logger.e(TAG, "Settings cleanup failed after logout: ${cleanupResult.error}")
+                }
+            }
+        }
+        return result
     }
 }

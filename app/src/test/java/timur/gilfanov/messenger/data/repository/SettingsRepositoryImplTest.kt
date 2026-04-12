@@ -1440,7 +1440,8 @@ class SettingsRepositoryImplTest {
         assertIs<ResultWithError.Success<Unit, *>>(result)
         assertTrue(trackingScheduler.cancelledKeys.contains(testUserKey))
         val remaining = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
-        assertIs<ResultWithError.Failure<*, *>>(remaining)
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(remaining)
+        assertEquals(GetSettingError.SettingNotFound, remaining.error)
     }
 
     @Test
@@ -1456,13 +1457,40 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
-    fun `deleteUserData always cancels jobs even when delete fails`() = runTest {
+    fun `deleteUserData cancels jobs before attempting delete`() = runTest {
         localDataSource.setDeleteAllForUserBehavior(DeleteAllForUserError.AccessDenied)
 
         val result = repository.deleteUserData(testUserKey)
 
         assertIs<ResultWithError.Failure<Unit, DeleteUserDataRepositoryError>>(result)
         assertTrue(trackingScheduler.cancelledKeys.contains(testUserKey))
+    }
+
+    @Test
+    fun `deleteUserData maps StorageFull to LocalStorageError StorageFull`() = runTest {
+        localDataSource.setDeleteAllForUserBehavior(DeleteAllForUserError.StorageFull)
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Failure<Unit, DeleteUserDataRepositoryError>>(result)
+        val error = result.error
+        assertIs<DeleteUserDataRepositoryError.LocalOperationFailed>(error)
+        assertIs<LocalStorageError.StorageFull>(error.error)
+    }
+
+    @Test
+    fun `deleteUserData maps UnknownError preserving cause`() = runTest {
+        val cause = Exception("unexpected db failure")
+        localDataSource.setDeleteAllForUserBehavior(DeleteAllForUserError.UnknownError(cause))
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Failure<Unit, DeleteUserDataRepositoryError>>(result)
+        val error = result.error
+        assertIs<DeleteUserDataRepositoryError.LocalOperationFailed>(error)
+        val localError = error.error
+        assertIs<LocalStorageError.UnknownError>(localError)
+        assertEquals(cause, localError.cause)
     }
 
     @Suppress("LongParameterList")

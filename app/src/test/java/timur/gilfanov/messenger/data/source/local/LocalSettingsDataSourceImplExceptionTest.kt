@@ -508,6 +508,32 @@ class LocalSettingsDataSourceImplExceptionTest {
         assertEquals(3, wrappedDao.callCount)
     }
 
+    // deleteAllForUser() exception tests
+    @Test
+    fun `deleteAllForUser returns StorageFull on SQLiteFullException`() = runTest {
+        wrappedDao.simulateDatabaseError = SQLiteFullException("storage full")
+
+        val result = dataSource.deleteAllForUser(testUserKey)
+
+        assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+        assertIs<DeleteAllForUserError.StorageFull>(result.error)
+        assertEquals(1, wrappedDao.callCount)
+    }
+
+    @Test
+    fun `deleteAllForUser returns UnknownError on unmapped SQLiteException`() = runTest {
+        val expectedException = SQLiteException("unknown")
+        wrappedDao.simulateDatabaseError = expectedException
+
+        val result = dataSource.deleteAllForUser(testUserKey)
+
+        assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+        val error = result.error
+        assertIs<DeleteAllForUserError.UnknownError>(error)
+        assertEquals(expectedException, error.cause)
+        assertEquals(1, wrappedDao.callCount)
+    }
+
     // observe() exception tests using Turbine
     @Test
     fun `observe emits InsufficientStorage on SQLiteFullException`() = runTest {

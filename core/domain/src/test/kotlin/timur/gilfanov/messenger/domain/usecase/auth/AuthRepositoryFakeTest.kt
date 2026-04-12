@@ -117,7 +117,7 @@ class AuthRepositoryFakeTest {
     }
 
     @Test
-    fun `logout failure keeps authState authenticated`() = runTest {
+    fun `logout failure still transitions to unauthenticated`() = runTest {
         val initialSession = AuthSession(
             tokens = AuthTokens(accessToken = "a1", refreshToken = "r1"),
             provider = AuthProvider.EMAIL,
@@ -131,7 +131,7 @@ class AuthRepositoryFakeTest {
 
         val result = repository.logout()
         assertIs<ResultWithError.Failure<Unit, LogoutRepositoryError>>(result)
-        assertEquals(AuthState.Authenticated(initialSession), repository.currentAuthState)
+        assertEquals(AuthState.Unauthenticated, repository.currentAuthState)
     }
 
     @Test

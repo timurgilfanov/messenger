@@ -439,6 +439,15 @@ class LocalSettingsDataSourceImpl @Inject constructor(
                 exception = exception,
             )
 
+        is SQLiteFullException -> {
+            logger.e(
+                TAG,
+                "Storage full while deleting all settings for user ${userKey.key}",
+                exception,
+            )
+            RetryDecision.Fail(DeleteAllForUserError.StorageFull)
+        }
+
         is SQLiteDatabaseCorruptException -> {
             logger.e(
                 TAG,

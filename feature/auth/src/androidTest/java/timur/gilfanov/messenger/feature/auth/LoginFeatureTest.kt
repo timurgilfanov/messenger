@@ -88,6 +88,7 @@ class LoginFeatureTest {
         // when the activity launches, before @Before runs. tearDown calls reset() to prevent
         // state from leaking into the next test.
         val googleSignInClient = GoogleSignInClientStub()
+        val loginWithCredentialsUseCase = LoginWithCredentialsUseCaseStub()
 
         @Provides
         @Singleton
@@ -104,8 +105,9 @@ class LoginFeatureTest {
             validator: CredentialsValidator,
             repository: AuthRepository,
             logger: Logger,
-        ): LoginWithCredentialsUseCase =
-            LoginWithCredentialsUseCaseImpl(validator, repository, logger)
+        ): LoginWithCredentialsUseCase = loginWithCredentialsUseCase.apply {
+            delegate = LoginWithCredentialsUseCaseImpl(validator, repository, logger)
+        }
 
         @Provides
         @Singleton
@@ -145,6 +147,7 @@ class LoginFeatureTest {
     @After
     fun tearDown() {
         LoginTestModule.googleSignInClient.reset()
+        LoginTestModule.loginWithCredentialsUseCase.reset()
     }
 
     @Test
@@ -329,6 +332,24 @@ class LoginFeatureTest {
             onNodeWithTag("login_google_sign_in_button").performClick()
             waitForIdle()
             onNodeWithTag("login_google_sign_in_button").assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun loginScreen_credentialsSubmit_fieldsBecomeDisabledWhileLoading() {
+        LoginTestModule.loginWithCredentialsUseCase.shouldSuspend = true
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("login_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("login_sign_in_button").performClick()
+            waitForIdle()
+            onNodeWithTag("login_email_field").assertIsNotEnabled()
+            onNodeWithTag("login_password_field").assertIsNotEnabled()
+            onNodeWithTag("login_sign_in_button").assertIsNotEnabled()
         }
     }
 

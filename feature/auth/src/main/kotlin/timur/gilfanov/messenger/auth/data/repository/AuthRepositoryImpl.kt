@@ -60,8 +60,11 @@ class AuthRepositoryImpl @Inject constructor(
 
     init {
         coroutineScope.launch {
-            restoreAuthState()
-            restoreJob.complete(Unit)
+            try {
+                restoreAuthState()
+            } finally {
+                restoreJob.complete(Unit)
+            }
         }
     }
 

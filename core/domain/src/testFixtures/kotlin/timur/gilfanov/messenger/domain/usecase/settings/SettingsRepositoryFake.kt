@@ -69,6 +69,11 @@ class SettingsRepositoryFake(
         userKey: UserScopeKey,
     ): ResultWithError<Unit, DeleteUserDataRepositoryError> {
         lastDeleteUserDataKey = userKey
+        if (deleteUserDataResult is ResultWithError.Success) {
+            settingsFlow.update {
+                ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
+            }
+        }
         return deleteUserDataResult
     }
 }

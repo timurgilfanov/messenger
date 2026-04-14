@@ -26,6 +26,14 @@ import timur.gilfanov.messenger.util.Logger
 @InstallIn(SingletonComponent::class)
 object AuthModule {
 
+    /**
+     * Provides [TokenRefreshUseCase] using Dagger.Lazy to break the DI cycle:
+     * `TokenRefreshUseCase` → `SettingsRepository` → `RemoteSettingsDataSource`
+     * → `HttpClient` → `AuthInterceptor` → `TokenRefreshUseCase`.
+     *
+     * Lazy defers [SettingsRepository] instantiation until first use, after all
+     * singletons in the cycle are already constructed.
+     */
     @Provides
     @Singleton
     fun provideTokenRefreshUseCase(
@@ -33,11 +41,6 @@ object AuthModule {
         settingsRepositoryLazy: Lazy<SettingsRepository>,
         logger: Logger,
     ): TokenRefreshUseCase {
-        // Break the DI cycle:
-        //   TokenRefreshUseCase -> SettingsRepository -> RemoteSettingsDataSource
-        //   -> HttpClient -> AuthInterceptor -> TokenRefreshUseCase
-        // Dagger.Lazy defers SettingsRepository instantiation until first use, after
-        // all singletons in the cycle are already constructed.
         val settingsRepository = object : SettingsRepository {
             override fun observeSettings(userKey: UserScopeKey) =
                 settingsRepositoryLazy.get().observeSettings(userKey)

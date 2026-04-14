@@ -472,7 +472,11 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun deleteUserData(
         userKey: UserScopeKey,
     ): ResultWithError<Unit, DeleteUserDataRepositoryError> {
-        syncScheduler.cancelUserScopedJobs(userKey)
+        runCatching {
+            syncScheduler.cancelUserScopedJobs(userKey)
+        }.onFailure { cause ->
+            logger.e(TAG, "Failed to cancel user-scoped sync jobs for ${userKey.key}", cause)
+        }
         return localDataSource.deleteAllForUser(userKey).foldWithErrorMapping(
             onSuccess = { ResultWithError.Success(Unit) },
             onFailure = { error ->

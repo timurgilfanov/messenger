@@ -30,14 +30,10 @@ class LogoutUseCaseImpl(
             logger.e(TAG, "Repository logout failed: $error")
             error.toUseCaseError()
         }
-        if (userKey != null) {
-            val sessionLocallyCleared = result !is ResultWithError.Failure ||
-                result.error !is LogoutError.LocalOperationFailed
-            if (sessionLocallyCleared) {
-                val cleanupResult = settingsRepository.deleteUserData(userKey)
-                if (cleanupResult is ResultWithError.Failure) {
-                    logger.e(TAG, "Settings cleanup failed after logout: ${cleanupResult.error}")
-                }
+        if (userKey != null && authRepository.authState.first() is AuthState.Unauthenticated) {
+            val cleanupResult = settingsRepository.deleteUserData(userKey)
+            if (cleanupResult is ResultWithError.Failure) {
+                logger.e(TAG, "Settings cleanup failed after logout: ${cleanupResult.error}")
             }
         }
         return result

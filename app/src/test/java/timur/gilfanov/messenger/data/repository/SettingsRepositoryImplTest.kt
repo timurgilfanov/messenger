@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.data.repository
 import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +17,7 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
+import timur.gilfanov.messenger.data.source.local.DeleteAllForUserError
 import timur.gilfanov.messenger.data.source.local.GetSettingError
 import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.GetUnsyncedSettingsError
@@ -44,6 +46,7 @@ import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.DeleteUserDataRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRepositoryError
@@ -65,13 +68,22 @@ class SettingsRepositoryImplTest {
     private lateinit var testScope: CoroutineScope
     private val defaultSettings = Settings(uiLanguage = UiLanguage.English)
 
-    private val syncSchedulerStub = object : SettingsSyncScheduler {
+    private inner class TrackingScheduler : SettingsSyncScheduler {
+        val cancelledKeys = mutableListOf<UserScopeKey>()
         override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) = Unit
         override fun schedulePeriodicSync() = Unit
+        override fun cancelUserScopedJobs(userKey: UserScopeKey) {
+            cancelledKeys.add(userKey)
+        }
     }
+
+    private lateinit var trackingScheduler: TrackingScheduler
+    private lateinit var syncSchedulerStub: SettingsSyncScheduler
 
     @Before
     fun setup() {
+        trackingScheduler = TrackingScheduler()
+        syncSchedulerStub = trackingScheduler
         localDataSource = LocalSettingsDataSourceFake()
         remoteDataSourceFake = RemoteSettingsDataSourceFake(
             initialSettings = defaultSettings,
@@ -1410,6 +1422,75 @@ class SettingsRepositoryImplTest {
         val syncSettingError2 = result.error
         assertIs<SyncSettingRepositoryError.LocalOperationFailed>(syncSettingError2)
         assertIs<LocalStorageError.StorageFull>(syncSettingError2.error)
+    }
+
+    @Test
+    fun `deleteUserData cancels jobs and deletes local data on success`() = runTest {
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.English,
+            localVersion = 1,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1000L,
+        )
+        localDataSource.upsert(testUserKey, setting)
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+        assertTrue(trackingScheduler.cancelledKeys.contains(testUserKey))
+        val remaining = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(remaining)
+        assertEquals(GetSettingError.SettingNotFound, remaining.error)
+    }
+
+    @Test
+    fun `deleteUserData propagates local delete error`() = runTest {
+        localDataSource.setDeleteAllForUserBehavior(DeleteAllForUserError.DatabaseCorrupted)
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Failure<Unit, DeleteUserDataRepositoryError>>(result)
+        val error = result.error
+        assertIs<DeleteUserDataRepositoryError.LocalOperationFailed>(error)
+        assertIs<LocalStorageError.Corrupted>(error.error)
+    }
+
+    @Test
+    fun `deleteUserData cancels jobs before attempting delete`() = runTest {
+        localDataSource.setDeleteAllForUserBehavior(DeleteAllForUserError.AccessDenied)
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Failure<Unit, DeleteUserDataRepositoryError>>(result)
+        assertTrue(trackingScheduler.cancelledKeys.contains(testUserKey))
+    }
+
+    @Test
+    fun `deleteUserData maps StorageFull to LocalStorageError StorageFull`() = runTest {
+        localDataSource.setDeleteAllForUserBehavior(DeleteAllForUserError.StorageFull)
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Failure<Unit, DeleteUserDataRepositoryError>>(result)
+        val error = result.error
+        assertIs<DeleteUserDataRepositoryError.LocalOperationFailed>(error)
+        assertIs<LocalStorageError.StorageFull>(error.error)
+    }
+
+    @Test
+    fun `deleteUserData maps UnknownError preserving cause`() = runTest {
+        val cause = Exception("unexpected db failure")
+        localDataSource.setDeleteAllForUserBehavior(DeleteAllForUserError.UnknownError(cause))
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Failure<Unit, DeleteUserDataRepositoryError>>(result)
+        val error = result.error
+        assertIs<DeleteUserDataRepositoryError.LocalOperationFailed>(error)
+        val localError = error.error
+        assertIs<LocalStorageError.UnknownError>(localError)
+        assertEquals(cause, localError.cause)
     }
 
     @Suppress("LongParameterList")

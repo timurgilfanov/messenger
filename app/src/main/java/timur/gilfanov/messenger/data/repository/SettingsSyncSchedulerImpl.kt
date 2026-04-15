@@ -45,6 +45,7 @@ class SettingsSyncSchedulerImpl @Inject constructor(private val workManager: Wor
                 TimeUnit.SECONDS,
             )
             .setInitialDelay(DEBOUNCE_DELAY_MS, TimeUnit.MILLISECONDS)
+            .addTag(userKey.key)
             .build()
 
         workManager.enqueueUniqueWork(
@@ -52,6 +53,10 @@ class SettingsSyncSchedulerImpl @Inject constructor(private val workManager: Wor
             ExistingWorkPolicy.APPEND_OR_REPLACE,
             workRequest,
         )
+    }
+
+    override fun cancelUserScopedJobs(userKey: UserScopeKey) {
+        workManager.cancelAllWorkByTag(userKey.key)
     }
 
     override fun schedulePeriodicSync() {

@@ -1,5 +1,10 @@
 package timur.gilfanov.messenger.data.source.local
 
+import android.database.sqlite.SQLiteAccessPermException
+import android.database.sqlite.SQLiteDatabaseCorruptException
+import android.database.sqlite.SQLiteDatabaseLockedException
+import android.database.sqlite.SQLiteDiskIOException
+import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -13,6 +18,7 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDaoFake
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -369,6 +375,171 @@ class LocalSettingsDataSourceImplTest {
             assertEquals(1, result.data.size)
             assertIs<TypedLocalSetting.UiLanguage>(result.data[0])
             assertEquals(UiLanguage.English, result.data[0].setting.value)
+        }
+
+    // deleteAllForUser() tests
+
+    @Test
+    fun `deleteAllForUser removes only the targeted user rows`() = runTest {
+        // Given
+        val user1 = testUserKey
+        val user2 = UserScopeKey("user-key-2")
+        databaseRule.database.settingsDao().upsert(
+            createSettingEntity(
+                userKey = user1,
+                key = SettingKey.UI_LANGUAGE,
+                value = UiLanguage.English.toStorageValue(),
+            ),
+        )
+        databaseRule.database.settingsDao().upsert(
+            createSettingEntity(
+                userKey = user2,
+                key = SettingKey.UI_LANGUAGE,
+                value = UiLanguage.German.toStorageValue(),
+            ),
+        )
+
+        // When
+        val result = localSettingsDataSource.deleteAllForUser(user1)
+
+        // Then
+        assertIs<ResultWithError.Success<Unit, DeleteAllForUserError>>(result)
+        val user1Rows = databaseRule.database.settingsDao().getAll(user1.key)
+        assertTrue(user1Rows.isEmpty())
+        val user2Rows = databaseRule.database.settingsDao().getAll(user2.key)
+        assertEquals(1, user2Rows.size)
+    }
+
+    @Test
+    fun `deleteAllForUser retries SQLiteDatabaseLockedException and succeeds on second attempt`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            fakeDao.enqueueErrors(SQLiteDatabaseLockedException("database is locked"))
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Success<Unit, DeleteAllForUserError>>(result)
+            assertEquals(2, fakeDao.callCount)
+        }
+
+    @Test
+    fun `deleteAllForUser maps lock exception to ConcurrentModificationError after retries`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            repeat(4) { fakeDao.enqueueErrors(SQLiteDatabaseLockedException("database is locked")) }
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+            assertEquals(DeleteAllForUserError.ConcurrentModificationError, result.error)
+        }
+
+    @Test
+    fun `deleteAllForUser maps SQLiteDiskIOException to DiskIOError after max retries`() = runTest {
+        // Given
+        val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+        repeat(4) { fakeDao.enqueueErrors(SQLiteDiskIOException("disk I/O error")) }
+        val dataSource = LocalSettingsDataSourceImpl(
+            database = databaseRule.database,
+            settingsDao = fakeDao,
+            logger = NoOpLogger(),
+            defaultSettings = Settings(uiLanguage = UiLanguage.English),
+        )
+
+        // When
+        val result = dataSource.deleteAllForUser(testUserKey)
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+        assertEquals(DeleteAllForUserError.DiskIOError, result.error)
+    }
+
+    @Test
+    fun `deleteAllForUser maps SQLiteDatabaseCorruptException to DatabaseCorrupted immediately`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            fakeDao.enqueueErrors(
+                SQLiteDatabaseCorruptException("database disk image is malformed"),
+            )
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+            assertEquals(DeleteAllForUserError.DatabaseCorrupted, result.error)
+            assertEquals(1, fakeDao.callCount)
+        }
+
+    @Test
+    fun `deleteAllForUser maps SQLiteAccessPermException to AccessDenied with no retry`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            fakeDao.enqueueErrors(SQLiteAccessPermException("access permission denied"))
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+            assertEquals(DeleteAllForUserError.AccessDenied, result.error)
+            assertEquals(1, fakeDao.callCount)
+        }
+
+    @Test
+    fun `deleteAllForUser maps SQLiteReadOnlyDatabaseException to ReadOnlyDatabase immediately`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            fakeDao.enqueueErrors(
+                SQLiteReadOnlyDatabaseException("attempt to write a readonly database"),
+            )
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+            assertEquals(DeleteAllForUserError.ReadOnlyDatabase, result.error)
+            assertEquals(1, fakeDao.callCount)
         }
 
     @Suppress("LongParameterList")

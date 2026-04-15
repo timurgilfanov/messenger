@@ -62,4 +62,9 @@ class SettingsDaoFake(private val realDao: SettingsDao) : SettingsDao {
         checkDatabaseHealth()
         realDao.upsert(settings)
     }
+
+    override suspend fun deleteAllByUser(userKey: String) {
+        checkDatabaseHealth()
+        realDao.deleteAllByUser(userKey)
+    }
 }

@@ -74,4 +74,12 @@ interface SettingsDao {
      */
     @Upsert
     suspend fun upsert(settings: List<SettingEntity>)
+
+    /**
+     * Deletes all settings rows belonging to a specific user.
+     *
+     * @param userKey Opaque scoping key for the user's session
+     */
+    @Query("DELETE FROM settings WHERE userKey = :userKey")
+    suspend fun deleteAllByUser(userKey: String)
 }

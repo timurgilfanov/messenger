@@ -41,9 +41,9 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
 fun LanguageScreen(
-    onAuthFailure: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onAuthFailure: () -> Unit = {},
     viewModel: LanguageViewModel = hiltViewModel(),
 ) {
     val currentOnAuthFailure by rememberUpdatedState(onAuthFailure)

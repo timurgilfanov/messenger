@@ -81,9 +81,9 @@ data class ChatListContentActions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListScreen(
-    onAuthFailure: () -> Unit,
     actions: ChatListActions,
     modifier: Modifier = Modifier,
+    onAuthFailure: () -> Unit = {},
     viewModel: ChatListViewModel = hiltViewModel(),
 ) {
     val screenState by viewModel.state.collectAsStateWithLifecycle()

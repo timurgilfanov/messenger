@@ -52,8 +52,8 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 @Composable
 fun ChatScreen(
     chatId: ChatId,
-    onAuthFailure: () -> Unit,
     modifier: Modifier = Modifier,
+    onAuthFailure: () -> Unit = {},
     viewModel: ChatViewModel =
         hiltViewModel(
             key = chatId.id.toString(),

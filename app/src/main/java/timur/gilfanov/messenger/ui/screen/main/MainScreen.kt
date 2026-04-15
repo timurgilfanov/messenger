@@ -31,13 +31,13 @@ import timur.gilfanov.messenger.ui.screen.settings.SettingsScreen
 @Suppress("LongParameterList") // in Compose property drilling is preferred over wrapper
 @Composable
 fun MainScreen(
-    onAuthFailure: () -> Unit,
     onProfileEditClick: () -> Unit,
     onChangeLanguageClick: () -> Unit,
     onChatClick: (ChatId) -> Unit,
     onNewChatClick: () -> Unit,
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onAuthFailure: () -> Unit = {},
     viewModel: MainScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()

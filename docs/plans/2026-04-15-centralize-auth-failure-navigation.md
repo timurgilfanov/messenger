@@ -58,13 +58,13 @@ auth emission (which sets `Ready`) from runtime emissions (which trigger
 **Files:**
 - Modify: `app/src/main/java/timur/gilfanov/messenger/ui/activity/MainActivity.kt`
 
-- [ ] Add `effects: Flow<MainActivitySideEffect>` parameter to `MessengerApp` and pass `viewModel.effects` from `setContent`
-- [ ] Add `effects` parameter to `MessengerAppReady`
-- [ ] In `MessengerAppReady`: add `LaunchedEffect(lifecycleOwner)` with `repeatOnLifecycle(STARTED)` that collects effects; handle `NavigateToLogin` by `backStack.clear(); backStack.add(Login)`
-- [ ] Remove the `val onAuthFailure: () -> Unit` lambda
-- [ ] Remove `onAuthFailure = onAuthFailure` from every screen call inside `entryProvider` (ChatList, Chat, Main, Language entries)
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run `./gradlew :app:testMockDebugUnitTest` — must pass
+- [x] Add `effects: Flow<MainActivitySideEffect>` parameter to `MessengerApp` and pass `viewModel.effects` from `setContent`
+- [x] Add `effects` parameter to `MessengerAppReady`
+- [x] In `MessengerAppReady`: add `LaunchedEffect(lifecycleOwner)` with `repeatOnLifecycle(STARTED)` that collects effects; handle `NavigateToLogin` by `backStack.clear(); backStack.add(Login)`
+- [x] Remove the `val onAuthFailure: () -> Unit` lambda
+- [x] Remove `onAuthFailure = onAuthFailure` from every screen call inside `entryProvider` (ChatList, Chat, Main, Language entries)
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run `./gradlew :app:testMockDebugUnitTest` — must pass
 
 ### Task 3: Remove `onAuthFailure` from individual screens
 

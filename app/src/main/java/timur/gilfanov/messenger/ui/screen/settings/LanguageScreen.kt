@@ -22,7 +22,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -43,10 +42,8 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 fun LanguageScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onAuthFailure: () -> Unit = {},
     viewModel: LanguageViewModel = hiltViewModel(),
 ) {
-    val currentOnAuthFailure by rememberUpdatedState(onAuthFailure)
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -62,7 +59,7 @@ fun LanguageScreen(
             viewModel.effects.collect {
                 when (it) {
                     is LanguageSideEffects.ChangeFailed -> onShowSnackbar(errorMessage)
-                    LanguageSideEffects.Unauthorized -> currentOnAuthFailure()
+                    LanguageSideEffects.Unauthorized -> Unit
                 }
             }
         }

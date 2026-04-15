@@ -53,7 +53,6 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 fun ChatScreen(
     chatId: ChatId,
     modifier: Modifier = Modifier,
-    onAuthFailure: () -> Unit = {},
     viewModel: ChatViewModel =
         hiltViewModel(
             key = chatId.id.toString(),
@@ -64,13 +63,12 @@ fun ChatScreen(
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val inputTextFieldState = rememberTextFieldState()
-    val currentOnAuthFailure = rememberUpdatedState(onAuthFailure)
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { sideEffect ->
             when (sideEffect) {
                 ChatSideEffect.ClearInputText -> inputTextFieldState.setTextAndPlaceCursorAtEnd("")
-                ChatSideEffect.Unauthorized -> currentOnAuthFailure.value()
+                ChatSideEffect.Unauthorized -> Unit
             }
         }
     }

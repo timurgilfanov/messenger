@@ -31,7 +31,6 @@ class ChatScreenTestActivity : ComponentActivity() {
             MessengerTheme {
                 ChatScreen(
                     chatId = chatId,
-                    onAuthFailure = { finish() },
                     modifier = Modifier.fillMaxSize(),
                 )
             }

@@ -75,13 +75,13 @@ auth emission (which sets `Ready`) from runtime emissions (which trigger
 - Modify: `app/src/main/java/timur/gilfanov/messenger/ui/screen/settings/LanguageScreen.kt`
 - Modify: `app/src/main/java/timur/gilfanov/messenger/ui/screen/main/MainScreen.kt`
 
-- [ ] `ChatListScreen`: remove `onAuthFailure` parameter; remove the `LaunchedEffect` that only handled `ChatListSideEffects.Unauthorized` (since `Unauthorized` was its only effect)
-- [ ] `ChatScreen`: remove `onAuthFailure` parameter; remove the `ChatSideEffect.Unauthorized -> currentOnAuthFailure.value()` branch from the LaunchedEffect; remove `currentOnAuthFailure`
-- [ ] `SettingsScreen`: remove `onAuthFailure` parameter and `currentOnAuthFailure`; remove `ProfileSideEffects.Unauthorized -> currentOnAuthFailure()` branch; remove `SettingsSideEffects.Unauthorized -> currentOnAuthFailure()` branch; remove `SettingsSideEffects.LoggedOut -> currentOnAuthFailure()` branch
-- [ ] `LanguageScreen`: remove `onAuthFailure` parameter and `currentOnAuthFailure`; remove `LanguageSideEffects.Unauthorized -> currentOnAuthFailure()` branch
-- [ ] `MainScreen`: remove `onAuthFailure` parameter; remove it from `ChatListScreen(...)` and `SettingsScreen(...)` calls
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run `./gradlew :app:testMockDebugUnitTest` — must pass
+- [x] `ChatListScreen`: remove `onAuthFailure` parameter; remove the `LaunchedEffect` that only handled `ChatListSideEffects.Unauthorized` (since `Unauthorized` was its only effect)
+- [x] `ChatScreen`: remove `onAuthFailure` parameter; remove the `ChatSideEffect.Unauthorized -> currentOnAuthFailure.value()` branch from the LaunchedEffect; remove `currentOnAuthFailure`
+- [x] `SettingsScreen`: remove `onAuthFailure` parameter and `currentOnAuthFailure`; remove `ProfileSideEffects.Unauthorized -> currentOnAuthFailure()` branch; remove `SettingsSideEffects.Unauthorized -> currentOnAuthFailure()` branch; remove `SettingsSideEffects.LoggedOut -> currentOnAuthFailure()` branch
+- [x] `LanguageScreen`: remove `onAuthFailure` parameter and `currentOnAuthFailure`; remove `LanguageSideEffects.Unauthorized -> currentOnAuthFailure()` branch
+- [x] `MainScreen`: remove `onAuthFailure` parameter; remove it from `ChatListScreen(...)` and `SettingsScreen(...)` calls
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run `./gradlew :app:testMockDebugUnitTest` — must pass
 
 ### Task 4: Update debug test activities and tests
 
@@ -91,8 +91,8 @@ auth emission (which sets `Ready`) from runtime emissions (which trigger
 - Modify: `app/src/debug/java/timur/gilfanov/messenger/SettingsScreenTestActivity.kt`
 - Modify: `app/src/test/java/timur/gilfanov/messenger/ui/screen/settings/LanguageScreenSideEffectsTest.kt`
 
-- [ ] Remove `onAuthFailure = {}` and `onAuthFailure = { finish() }` from debug test activities
-- [ ] In `LanguageScreenSideEffectsTest`: remove `calls onAuthFailure when unauthorized` test (behavior now centralized in `MainActivityViewModel`); remove `onAuthFailure` from remaining test invocations
+- [x] Remove `onAuthFailure = {}` and `onAuthFailure = { finish() }` from debug test activities
+- [x] In `LanguageScreenSideEffectsTest`: remove `calls onAuthFailure when unauthorized` test (behavior now centralized in `MainActivityViewModel`); remove `onAuthFailure` from remaining test invocations
 - [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
 - [ ] Run `./gradlew :app:testMockDebugUnitTest` — must pass
 

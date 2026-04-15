@@ -37,7 +37,6 @@ fun MainScreen(
     onNewChatClick: () -> Unit,
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onAuthFailure: () -> Unit = {},
     viewModel: MainScreenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
@@ -72,7 +71,6 @@ fun MainScreen(
         val modifier1 = Modifier.padding(paddingValues)
         when (uiState.selectedTab) {
             0 -> ChatListScreen(
-                onAuthFailure = onAuthFailure,
                 actions = ChatListActions(
                     onChatClick = onChatClick,
                     onNewChatClick = onNewChatClick,
@@ -84,7 +82,6 @@ fun MainScreen(
             1 -> SettingsScreen(
                 onProfileEditClick = onProfileEditClick,
                 onChangeLanguageClick = onChangeLanguageClick,
-                onAuthFailure = onAuthFailure,
                 onShowSnackbar = onShowSnackbar,
                 modifier = modifier1,
             )

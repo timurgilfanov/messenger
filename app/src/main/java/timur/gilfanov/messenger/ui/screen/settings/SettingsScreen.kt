@@ -37,13 +37,11 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 fun SettingsScreen(
     onProfileEditClick: () -> Unit,
     onChangeLanguageClick: () -> Unit,
-    onAuthFailure: () -> Unit,
     onShowSnackbar: (String) -> Unit,
     modifier: Modifier = Modifier,
     profileViewModel: ProfileViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
-    val currentOnAuthFailure by rememberUpdatedState(onAuthFailure)
     val currentOnShowSnackbar by rememberUpdatedState(onShowSnackbar)
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -58,8 +56,7 @@ fun SettingsScreen(
                     is ProfileSideEffects.ObserveProfileFailed -> currentOnShowSnackbar(
                         getProfileErrorMessage,
                     )
-
-                    ProfileSideEffects.Unauthorized -> currentOnAuthFailure()
+                    ProfileSideEffects.Unauthorized -> Unit
                 }
             }
         }
@@ -77,13 +74,11 @@ fun SettingsScreen(
                     is SettingsSideEffects.ObserveSettingsFailed ->
                         currentOnShowSnackbar(getSettingsErrorMessage)
 
-                    SettingsSideEffects.Unauthorized -> currentOnAuthFailure()
-
-                    SettingsSideEffects.LoggedOut -> currentOnAuthFailure()
-
                     is SettingsSideEffects.LogoutFailed -> currentOnShowSnackbar(
                         logoutFailedMessage,
                     )
+                    SettingsSideEffects.Unauthorized -> Unit
+                    SettingsSideEffects.LoggedOut -> Unit
                 }
             }
         }

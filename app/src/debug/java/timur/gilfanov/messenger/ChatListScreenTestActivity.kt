@@ -21,7 +21,6 @@ class ChatListScreenTestActivity : ComponentActivity() {
         setContent {
             MessengerTheme {
                 ChatListScreen(
-                    onAuthFailure = { },
                     actions = ChatListActions(
                         onChatClick = { chatId ->
                             // Navigation to chat screen will be implemented later

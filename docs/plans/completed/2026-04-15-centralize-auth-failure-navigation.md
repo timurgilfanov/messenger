@@ -104,4 +104,4 @@ auth emission (which sets `Ready`) from runtime emissions (which trigger
 
 ### Task 6: Update documentation
 
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Move this plan to `docs/plans/completed/`

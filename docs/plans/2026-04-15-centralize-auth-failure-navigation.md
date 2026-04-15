@@ -98,9 +98,9 @@ auth emission (which sets `Ready`) from runtime emissions (which trigger
 
 ### Task 5: Verify acceptance criteria
 
-- [ ] Run full test suite: `./gradlew :app:testMockDebugUnitTest`
-- [ ] Run linter: `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Confirm no `onAuthFailure` references remain in production source: `grep -r "onAuthFailure" app/src/main`
+- [x] Run full test suite: `./gradlew :app:testMockDebugUnitTest`
+- [x] Run linter: `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Confirm no `onAuthFailure` references remain in production source: `grep -r "onAuthFailure" app/src/main`
 
 ### Task 6: Update documentation
 

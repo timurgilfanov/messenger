@@ -93,8 +93,8 @@ auth emission (which sets `Ready`) from runtime emissions (which trigger
 
 - [x] Remove `onAuthFailure = {}` and `onAuthFailure = { finish() }` from debug test activities
 - [x] In `LanguageScreenSideEffectsTest`: remove `calls onAuthFailure when unauthorized` test (behavior now centralized in `MainActivityViewModel`); remove `onAuthFailure` from remaining test invocations
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run `./gradlew :app:testMockDebugUnitTest` — must pass
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run `./gradlew :app:testMockDebugUnitTest` — must pass
 
 ### Task 5: Verify acceptance criteria
 

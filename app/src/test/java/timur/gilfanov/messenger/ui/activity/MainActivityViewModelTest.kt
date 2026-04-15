@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.activity
 
+import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -136,5 +137,41 @@ class MainActivityViewModelTest {
             MainActivityUiState.Ready(initialDestination = Login),
             viewModel.uiState.value,
         )
+    }
+
+    @Test
+    fun `authenticated runtime session expiry emits NavigateToLogin effect`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
+        val viewModel = createViewModel(authRepository = authRepository)
+        advanceUntilIdle()
+
+        viewModel.effects.test {
+            authRepository.setState(AuthState.Unauthenticated)
+            advanceUntilIdle()
+
+            assertEquals(MainActivitySideEffect.NavigateToLogin, awaitItem())
+        }
+    }
+
+    @Test
+    fun `initial Unauthenticated state does not emit NavigateToLogin effect`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
+        val viewModel = createViewModel(authRepository = authRepository)
+
+        viewModel.effects.test {
+            advanceUntilIdle()
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `initial Authenticated state does not emit NavigateToLogin effect`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
+        val viewModel = createViewModel(authRepository = authRepository)
+
+        viewModel.effects.test {
+            advanceUntilIdle()
+            expectNoEvents()
+        }
     }
 }

@@ -4,9 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
@@ -26,6 +27,9 @@ class MainActivityViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<MainActivityUiState>(MainActivityUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
+    private val _effects = Channel<MainActivitySideEffect>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
+
     init {
         viewModelScope.launch {
             observeAndApplyLocale().collect {
@@ -33,14 +37,19 @@ class MainActivityViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            val authState = authRepository.authState.first()
-            _uiState.update {
-                MainActivityUiState.Ready(
-                    initialDestination = when (authState) {
-                        is AuthState.Authenticated -> Main
-                        AuthState.Unauthenticated -> Login
-                    },
-                )
+            authRepository.authState.collect { state ->
+                if (_uiState.value is MainActivityUiState.Loading) {
+                    _uiState.update {
+                        MainActivityUiState.Ready(
+                            initialDestination = when (state) {
+                                is AuthState.Authenticated -> Main
+                                AuthState.Unauthenticated -> Login
+                            },
+                        )
+                    }
+                } else if (state is AuthState.Unauthenticated) {
+                    _effects.send(MainActivitySideEffect.NavigateToLogin)
+                }
             }
         }
     }

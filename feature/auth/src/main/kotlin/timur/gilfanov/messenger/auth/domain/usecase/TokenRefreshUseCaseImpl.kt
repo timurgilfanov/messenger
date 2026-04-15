@@ -72,7 +72,9 @@ class TokenRefreshUseCaseImpl(
         }
         val localLogoutError = (logoutResult as? ResultWithError.Failure)
             ?.error as? LogoutRepositoryError.LocalOperationFailed
-        if (localLogoutError == null && scopeKeyBeforeRefresh != null) {
+        if (authRepository.authState.first() is AuthState.Unauthenticated &&
+            scopeKeyBeforeRefresh != null
+        ) {
             deleteUserDataLoggingFailure(scopeKeyBeforeRefresh, "session expiry")
         }
         return if (localLogoutError != null) {

@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.fold
@@ -20,15 +21,17 @@ class SyncSettingUseCase(
 ) {
     companion object {
         private const val TAG = "SyncSettingUseCase"
+        private const val AUTH_STATE_TIMEOUT_MS = 5_000L
     }
 
-    suspend operator fun invoke(key: SettingKey): ResultWithError<Unit, SyncSettingError> =
-        when (val state = authRepository.authState.first { it !is AuthState.Loading }) {
-            AuthState.Loading -> {
-                logger.e(TAG, "Unable to resolve identity for syncSetting")
-                ResultWithError.Failure(SyncSettingError.IdentityNotAvailable)
-            }
-
+    suspend operator fun invoke(key: SettingKey): ResultWithError<Unit, SyncSettingError> {
+        val state = withTimeoutOrNull(AUTH_STATE_TIMEOUT_MS) {
+            authRepository.authState.first { it !is AuthState.Loading }
+        } ?: run {
+            logger.e(TAG, "Timed out waiting for auth state in syncSetting")
+            return ResultWithError.Failure(SyncSettingError.IdentityNotAvailable)
+        }
+        return when (state) {
             is AuthState.Authenticated ->
                 settingsRepository.syncSetting(state.session.toUserScopeKey(), key).fold(
                     onSuccess = { ResultWithError.Success(Unit) },
@@ -45,5 +48,8 @@ class SyncSettingUseCase(
                 logger.e(TAG, "Unable to resolve identity for syncSetting")
                 ResultWithError.Failure(SyncSettingError.IdentityNotAvailable)
             }
+
+            AuthState.Loading -> error("unreachable: first{} filtered Loading states")
         }
+    }
 }

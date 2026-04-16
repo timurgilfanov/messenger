@@ -21,6 +21,12 @@ import timur.gilfanov.messenger.util.Logger
  * This use case provides a reactive stream of the user's selected UI language,
  * emitting updates whenever the language preference changes.
  *
+ * ## Loading state
+ * While auth is in [timur.gilfanov.messenger.domain.entity.auth.AuthState.Loading], [invoke]
+ * returns an empty flow and suppresses all emissions. Observations resume automatically once
+ * auth transitions out of [timur.gilfanov.messenger.domain.entity.auth.AuthState.Loading].
+ * Callers should expect no events during Loading periods.
+ *
  * ## Error Handling
  * - [ObserveUiLanguageError.Unauthorized]: Current user is not authenticated
  * - [ObserveUiLanguageError.SettingsResetToDefaults]: Settings were not found and reset

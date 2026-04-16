@@ -21,6 +21,7 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryEr
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
 @Category(Unit::class)
@@ -132,6 +133,25 @@ class AuthRepositoryFakeTest {
         val result = repository.logout()
         assertIs<ResultWithError.Failure<Unit, LogoutRepositoryError>>(result)
         assertEquals(AuthState.Unauthenticated, repository.currentAuthState)
+    }
+
+    @Test
+    fun `logout local failure preserves authenticated state`() = runTest {
+        val initialSession = AuthSession(
+            tokens = AuthTokens(accessToken = "a1", refreshToken = "r1"),
+            provider = AuthProvider.EMAIL,
+        )
+        val repository = AuthRepositoryFake(initialSession).apply {
+            defaultLogoutResult = ResultWithError.Failure(
+                LogoutRepositoryError.LocalOperationFailed(
+                    LocalStorageError.TemporarilyUnavailable,
+                ),
+            )
+        }
+
+        val result = repository.logout()
+        assertIs<ResultWithError.Failure<Unit, LogoutRepositoryError>>(result)
+        assertEquals(AuthState.Authenticated(initialSession), repository.currentAuthState)
     }
 
     @Test

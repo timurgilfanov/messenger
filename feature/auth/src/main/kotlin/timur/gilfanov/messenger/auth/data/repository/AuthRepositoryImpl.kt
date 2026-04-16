@@ -2,10 +2,12 @@ package timur.gilfanov.messenger.auth.data.repository
 
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
@@ -53,7 +55,13 @@ class AuthRepositoryImpl @Inject constructor(
     override val authState: Flow<AuthState> = _authState.asStateFlow()
 
     init {
-        coroutineScope.launch { restoreAuthState() }
+        coroutineScope.launch {
+            try {
+                restoreAuthState()
+            } finally {
+                restoreJob.complete(Unit)
+            }
+        }
     }
 
     private suspend fun restoreAuthState() {

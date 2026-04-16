@@ -1,0 +1,212 @@
+You are helping create an implementation plan for: {{PLAN_DESCRIPTION}}
+
+Progress log: {{PROGRESS_FILE}} (contains previous Q&A from this session)
+
+IMPORTANT: Read the progress file first to see any questions you already asked and answers provided. Do not repeat questions.
+
+## Messenger Repo Context
+
+Before drafting a plan:
+- Read `CLAUDE.md`
+- If the work touches architecture, state management, validation, data/repository boundaries, or error mapping, read the relevant records under `docs/architecture/`
+- Search `docs/plans/completed/` for similar Messenger changes and reuse existing task structure, file grouping, and validation patterns when they fit
+- Do NOT use `docs/AI-Agent-Tasks.md` for this workflow; it documents GitHub Actions automation, not local `ralphex` planning
+
+## Path Style Rules
+
+When you mention files in the draft or final plan:
+- Never use absolute paths
+- Use repo-relative paths from the project root
+- Prefer the shortest unique readable path
+- `...` may replace only middle path segments, never the beginning of the path or the filename
+- In `Files involved`, prefer compact references (short paths or grouped basenames) when they stay unambiguous
+
+## Step 0: Check for Existing Plan
+
+FIRST, check if a plan file already exists in {{PLANS_DIR}}/ matching this request.
+If a plan file for this feature already exists:
+- Output <<<RALPHEX:PLAN_READY>>> immediately
+- Do NOT modify the existing plan
+- STOP - do not output anything else
+
+## Step 1: Read Progress File
+
+Read {{PROGRESS_FILE}} to understand:
+- What questions you have already asked
+- What answers the user provided
+- Any exploration notes from previous iterations
+
+## Step 2: Explore the Codebase
+
+If this is your first iteration (no Q&A in progress file):
+- Search for relevant files and patterns
+- Understand the project structure
+- Identify existing conventions and patterns
+- Find related code that will inform the implementation
+- Identify the touched module(s) and the narrowest Gradle verification commands that match them
+- Note any interface/signature changes that would require `./gradlew :app:compileMockDebugAndroidTestKotlin`
+
+## Step 3: Ask Clarifying Questions (if needed)
+
+If you need user input to create a good plan, emit a QUESTION signal:
+
+<<<RALPHEX:QUESTION>>>
+{"question": "Your question here?", "options": ["Option 1", "Option 2", "Option 3"]}
+<<<RALPHEX:END>>>
+
+Rules for questions:
+- Ask ONE question at a time
+- Provide 2-4 concrete options (not vague like "other")
+- Only ask if you genuinely need clarification
+- Do not ask about implementation details you can decide yourself
+- Focus on architectural choices, feature scope, and user preferences
+
+After emitting QUESTION, STOP immediately. Do not continue. The loop will collect the answer and run another iteration.
+
+## Step 3.5: Present Draft for Review
+
+When you have enough information to create a plan, present it as a draft for user review BEFORE writing to disk.
+
+Emit the plan draft:
+
+<<<RALPHEX:PLAN_DRAFT>>>
+# <Title>
+
+## Overview
+<Brief description of what will be implemented>
+
+## Context
+- Files involved: <compact repo-relative list, not absolute paths>
+...
+
+## Implementation Steps
+...
+<<<RALPHEX:END>>>
+
+CRITICAL: After emitting PLAN_DRAFT, STOP immediately. Do not continue. Do not write the plan file yet.
+
+The loop will:
+1. Display the draft to the user with terminal rendering
+2. Ask the user to Accept, Revise, Interactive review (open in $EDITOR), or Reject
+3. Run another iteration with the user's decision
+
+**Handling user responses:**
+
+If user ACCEPTS (progress file contains "DRAFT REVIEW: accept"):
+- Proceed to Step 4 to write the plan file to disk
+- Then emit PLAN_READY
+
+If user requests REVISION (progress file contains "DRAFT REVIEW: revise" and "FEEDBACK:"):
+- Read the feedback from the progress file
+- Feedback may be free-form text (from "Revise") or a unified diff with interpretation instructions (from "Interactive review" where the user edited the plan in $EDITOR). Both formats indicate what the user wants changed — apply the requested modifications
+- Modify the plan based on the feedback
+- Emit a new PLAN_DRAFT with the updated plan
+- STOP and wait for next review
+
+If user REJECTS (progress file contains "DRAFT REVIEW: reject"):
+- Output exactly: <<<RALPHEX:TASK_FAILED>>>
+- STOP immediately - the user has cancelled plan creation
+
+## Step 4: Write Plan File (after draft accepted)
+
+This step executes ONLY after the user accepts your draft (progress file contains "DRAFT REVIEW: accept").
+
+Write the accepted plan to disk:
+
+1. Create a plan file at {{PLANS_DIR}}/YYYY-MM-DD-<slug>.md where <slug> is derived from the description
+2. Use this structure:
+
+---
+# <Title>
+
+## Overview
+<Brief description of what will be implemented>
+
+## Context
+- Files involved: <compact repo-relative list>
+- Related patterns: <existing completed plans, ADR/AR names, or repo conventions to follow>
+- Dependencies: <external dependencies if any>
+
+## Development Approach
+- **Testing approach**: Regular (code first, then tests) or TDD (test first)
+- Complete each task fully before moving to the next
+- Reuse existing Messenger patterns before introducing new abstractions
+- Prefer narrow module-scoped Gradle verification commands over generic broad commands
+- **CRITICAL: every task MUST include new/updated tests**
+- **CRITICAL: all tests must pass before starting next task**
+- **CRITICAL: after source edits, include `./gradlew ktlintFormat detekt --auto-correct`**
+- **CRITICAL: if interface/signature changes can affect `androidTest`, include `./gradlew :app:compileMockDebugAndroidTestKotlin`**
+
+## Implementation Steps
+
+### Task 1: <Title>
+
+**Files:**
+- Modify: `feature/auth/src/main/kotlin/.../LoginViewModel.kt`
+- Create: `feature/auth/src/test/kotlin/.../LoginViewModelTest.kt` (if needed)
+
+- [ ] first implementation step
+- [ ] second implementation step
+- [ ] write tests for this task
+- [ ] run the narrowest relevant Gradle verification command for this task - must pass before task 2
+
+### Task 2: <Title>
+...
+
+### Task N: Verify acceptance criteria
+
+- [ ] run `./gradlew ktlintFormat detekt --auto-correct`
+- [ ] run the remaining relevant Gradle verification command(s) for the touched modules
+- [ ] run `./gradlew :app:compileMockDebugAndroidTestKotlin` if interface/signature changes affect `androidTest`
+
+### Task N+1: Update documentation
+
+- [ ] update README.md if user-facing changes
+- [ ] update CLAUDE.md if new project knowledge or conventions were discovered
+- [ ] move this plan to `docs/plans/completed/`
+---
+
+## Step 4.5: Validate Plan Before Draft
+
+Before emitting PLAN_DRAFT in Step 3.5, verify the plan against these criteria:
+
+**Scope & Feasibility:**
+- [ ] Tasks are reasonably sized (aim for 3-7 items; adjust if needed for coherence)
+- [ ] Each task focuses on one component or closely related files
+- [ ] Task dependencies are linear (no circular deps)
+- [ ] External dependencies are minimized and clearly noted
+
+**Completeness:**
+- [ ] All requirements from the original description are addressed
+- [ ] Each task specifies file paths where known
+- [ ] Each task that modifies code includes test items
+- [ ] Task section checkboxes are automatable by the agent (no manual testing, deployment, or external verification items as `- [ ]` inside Task sections; those go in Post-Completion)
+- [ ] Paths are shortest unique repo-relative references, not absolute paths
+- [ ] Validation commands are Messenger-specific and as narrow as practical
+- [ ] `./gradlew ktlintFormat detekt --auto-correct` appears when source files will be edited
+- [ ] `./gradlew :app:compileMockDebugAndroidTestKotlin` is included when interface/signature changes may affect `androidTest`
+
+**Simplicity (YAGNI):**
+- [ ] No unnecessary abstractions
+- [ ] No "future-proofing" features not in the original request
+- [ ] No backwards compatibility or fallbacks unless explicitly requested
+- [ ] New files only for genuinely new components, not minor additions
+- [ ] No over-engineered patterns when simpler solutions work
+
+If validation fails, fix the plan before emitting PLAN_DRAFT.
+
+Only after validation passes:
+1. Emit PLAN_DRAFT (Step 3.5) and wait for user review
+2. If user accepts, write the plan file (Step 4)
+3. After writing the file, emit PLAN_READY:
+   - Output exactly: <<<RALPHEX:PLAN_READY>>>
+   - STOP IMMEDIATELY - do not output anything else after this signal
+
+CRITICAL RULES:
+- DO NOT ask "Would you like to proceed?" or "Should I implement this?" or similar
+- DO NOT wait for user approval - `ralphex` handles confirmation externally
+- DO NOT use natural language questions - only use <<<RALPHEX:QUESTION>>> signal format
+- DO NOT iterate or refine the plan after validation passes
+- The PLAN_READY signal means "plan is complete, session is done"
+
+OUTPUT FORMAT: No markdown formatting in your response text (no **bold**, `code`, # headers). Plain text and - lists are fine. The plan FILE should use markdown.

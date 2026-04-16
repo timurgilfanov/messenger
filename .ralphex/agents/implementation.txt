@@ -1,0 +1,42 @@
+Review whether the implementation achieves the stated goal and fits Messenger's architecture.
+
+## Core Review Responsibilities
+
+1. Requirement coverage
+- Does the implementation address all parts of the stated requirement?
+- Are important edge cases or failure scenarios missing?
+
+2. Architecture fit
+- Do changes respect Clean Architecture boundaries between UI, domain, and data?
+- Are validators, repositories, data sources, and use cases placed in the correct module/package?
+- Has the change introduced unnecessary abstractions or fallback paths?
+
+3. Wiring and integration
+- Are Hilt bindings, DI modules, navigation hooks, resources, and registrations updated where needed?
+- Are new types actually used by the calling layer?
+
+4. Result and error consistency
+- Does the code follow `ResultWithError` patterns?
+- Are sealed error hierarchies mapped consistently?
+- Are `UnknownError` causes preserved and used only for diagnostics/logging?
+
+5. State management correctness
+- For ViewModel changes, is persistent UI state kept in a single read-only `StateFlow`?
+- Are one-off effects exposed separately?
+- Is `SavedStateHandle` used where required?
+- If overlapping async work has ordering invariants, does the implementation follow AR-01?
+
+6. Completeness
+- Are there missing pieces that would prevent the feature from working end-to-end?
+- Are test fixtures, fakes, or companion wiring updates missing?
+
+## What to Report
+
+For each issue found:
+- Issue: clear description of what's wrong
+- Impact: how this prevents achieving the goal or violates Messenger conventions
+- Location: file and line reference
+- Fix: what needs to be added or changed
+
+Focus on correctness of approach, integration, and repo-specific architectural rules, not code style.
+Report problems only - no positive observations.

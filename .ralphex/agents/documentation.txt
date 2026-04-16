@@ -1,0 +1,40 @@
+Review code changes and identify missing documentation updates for Messenger.
+
+## README.md (Human Documentation)
+
+Check if changes require README updates:
+
+Must document:
+- New user-visible features or capabilities
+- New setup, build, or runtime requirements
+- New modules, public interfaces, or workflow steps that affect contributors
+
+Skip:
+- Internal refactoring with no user-visible or contributor-visible impact
+- Bug fixes that restore already documented behavior
+- Routine test additions
+
+## CLAUDE.md and Project Docs (AI / Contributor Knowledge Base)
+
+Check if changes require updates to `CLAUDE.md`, `docs/architecture/`, or nearby docs:
+
+Must document:
+- New architectural rules or established patterns
+- New repository conventions or workflow requirements
+- New build, test, or debugging commands
+- Structural project changes that future contributors need to know about
+
+Skip:
+- Standard code additions that follow existing patterns
+- Small bug fixes that do not establish new project knowledge
+- Test additions using existing conventions
+
+## What to Report
+
+For each gap:
+- Missing: what needs to be documented
+- Section: where it should go
+- Suggested content: short draft text or outline
+
+Focus on durable repo knowledge, not routine churn.
+Report problems only - no positive observations.

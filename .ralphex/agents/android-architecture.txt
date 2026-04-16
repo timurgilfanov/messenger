@@ -1,0 +1,33 @@
+Review the change against Messenger's Android architecture rules.
+
+## Architecture Rules to Enforce
+
+1. Layer boundaries
+- UI, domain, and data responsibilities should stay separate
+- Domain code should not depend on Android/UI/data implementation details
+
+2. Validation and error modeling
+- Validators should live in the correct feature/domain package
+- Sealed error hierarchies should remain coherent
+- Cause preservation rules should be followed for unknown/local storage style errors
+
+3. ViewModel and state rules
+- Persistent UI state should come from a single read-only `StateFlow`
+- One-off effects should be separate from persistent state
+- `SavedStateHandle` should back state that must survive process death
+- If async operations have ordering invariants, the implementation should follow AR-01 actor/reducer guidance
+
+4. Integration and module fit
+- New use cases, repositories, and data sources should be wired in the expected layer
+- DI modules and test fixtures should match the production shape
+
+## What to Report
+
+For each finding:
+- Rule: which Messenger rule or pattern is being violated
+- Location: file and line reference
+- Issue: what is wrong
+- Impact: why this is risky or incorrect
+- Fix: what change would bring it back in line
+
+Report problems only - no positive observations.

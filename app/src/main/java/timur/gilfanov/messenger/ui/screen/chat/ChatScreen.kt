@@ -68,7 +68,6 @@ fun ChatScreen(
         viewModel.effects.collect { sideEffect ->
             when (sideEffect) {
                 ChatSideEffect.ClearInputText -> inputTextFieldState.setTextAndPlaceCursorAtEnd("")
-                ChatSideEffect.Unauthorized -> Unit
             }
         }
     }

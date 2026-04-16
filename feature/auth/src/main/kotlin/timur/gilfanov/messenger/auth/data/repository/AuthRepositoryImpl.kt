@@ -49,7 +49,7 @@ class AuthRepositoryImpl @Inject constructor(
         private const val TAG = "AuthRepositoryImpl"
     }
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
     override val authState: Flow<AuthState> = _authState.asStateFlow()
 
     init {
@@ -78,14 +78,17 @@ class AuthRepositoryImpl @Inject constructor(
                 null
             },
         )
-        if (accessToken != null && refreshToken != null && provider != null) {
-            _authState.value = AuthState.Authenticated(
+        val restoredState = if (accessToken != null && refreshToken != null && provider != null) {
+            AuthState.Authenticated(
                 AuthSession(
                     tokens = AuthTokens(accessToken, refreshToken),
                     provider = provider,
                 ),
             )
+        } else {
+            AuthState.Unauthenticated
         }
+        _authState.compareAndSet(AuthState.Loading, restoredState)
     }
 
     override suspend fun loginWithCredentials(
@@ -206,17 +209,20 @@ class AuthRepositoryImpl @Inject constructor(
         } else {
             null
         }
-        localDataSource.clearSession().fold(
-            onSuccess = {},
+        val clearSessionError = localDataSource.clearSession().fold(
+            onSuccess = { null },
             onFailure = { storageError ->
                 logger.e(TAG, "Failed to clear session on logout: $storageError")
+                LogoutRepositoryError.LocalOperationFailed(storageError.toLocalError())
             },
         )
-        _authState.value = AuthState.Unauthenticated
-        return if (remoteResult != null) {
-            ResultWithError.Failure(remoteResult)
-        } else {
-            ResultWithError.Success(Unit)
+        if (clearSessionError == null) {
+            _authState.value = AuthState.Unauthenticated
+        }
+        return when {
+            clearSessionError != null -> ResultWithError.Failure(clearSessionError)
+            remoteResult != null -> ResultWithError.Failure(remoteResult)
+            else -> ResultWithError.Success(Unit)
         }
     }
 

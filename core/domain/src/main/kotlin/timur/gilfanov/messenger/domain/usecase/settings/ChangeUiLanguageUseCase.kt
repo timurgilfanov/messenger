@@ -36,6 +36,11 @@ class ChangeUiLanguageUseCase(
         newUiLanguage: UiLanguage,
     ): ResultWithError<Unit, ChangeUiLanguageError> =
         when (val state = authRepository.authState.first()) {
+            AuthState.Loading -> {
+                logger.e(TAG, "Unable to resolve identity while changing UI language")
+                ResultWithError.Failure(ChangeUiLanguageError.Unauthorized)
+            }
+
             is AuthState.Authenticated ->
                 settingsRepository.changeUiLanguage(state.session.toUserScopeKey(), newUiLanguage)
                     .mapError { error ->

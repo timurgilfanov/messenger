@@ -23,7 +23,7 @@ class TokenRefreshUseCaseImpl(
     }
 
     override suspend fun invoke(): ResultWithError<AuthTokens, TokenRefreshError> {
-        val stateBeforeRefresh = authRepository.authState.first()
+        val stateBeforeRefresh = authRepository.authState.first { it !is AuthState.Loading }
         val scopeKeyBeforeRefresh = (stateBeforeRefresh as? AuthState.Authenticated)
             ?.session?.toUserScopeKey()
         val refreshTokenBeforeRefresh = (stateBeforeRefresh as? AuthState.Authenticated)

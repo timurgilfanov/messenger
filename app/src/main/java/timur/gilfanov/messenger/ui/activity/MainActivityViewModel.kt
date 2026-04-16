@@ -38,17 +38,23 @@ class MainActivityViewModel @Inject constructor(
         }
         viewModelScope.launch {
             authRepository.authState.collect { state ->
-                if (_uiState.value is MainActivityUiState.Loading) {
-                    _uiState.update {
-                        MainActivityUiState.Ready(
-                            initialDestination = when (state) {
-                                is AuthState.Authenticated -> Main
-                                AuthState.Unauthenticated -> Login
-                            },
-                        )
+                when (state) {
+                    AuthState.Loading -> { /* auth state is being determined, keep loading */ }
+                    is AuthState.Authenticated -> {
+                        if (_uiState.value is MainActivityUiState.Loading) {
+                            _uiState.update {
+                                MainActivityUiState.Ready(initialDestination = Main)
+                            }
+                        }
                     }
-                } else if (state is AuthState.Unauthenticated) {
-                    _effects.send(MainActivitySideEffect.NavigateToLogin)
+                    AuthState.Unauthenticated -> {
+                        if (_uiState.value is MainActivityUiState.Loading) {
+                            _uiState.update {
+                                MainActivityUiState.Ready(initialDestination = Login)
+                            }
+                        }
+                        _effects.send(MainActivitySideEffect.NavigateToLogin)
+                    }
                 }
             }
         }

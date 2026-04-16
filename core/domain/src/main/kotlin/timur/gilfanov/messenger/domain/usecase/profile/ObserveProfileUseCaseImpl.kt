@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.domain.usecase.profile
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -16,6 +17,8 @@ class ObserveProfileUseCaseImpl(private val authRepository: AuthRepository) :
     override operator fun invoke(): Flow<ResultWithError<Profile, ObserveProfileError>> =
         authRepository.authState.flatMapLatest { state ->
             when (state) {
+                AuthState.Loading -> emptyFlow()
+
                 is AuthState.Authenticated ->
                     flowOf(
                         ResultWithError.Success(

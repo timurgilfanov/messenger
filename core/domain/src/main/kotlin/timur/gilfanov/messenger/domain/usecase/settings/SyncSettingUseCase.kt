@@ -23,7 +23,12 @@ class SyncSettingUseCase(
     }
 
     suspend operator fun invoke(key: SettingKey): ResultWithError<Unit, SyncSettingError> =
-        when (val state = authRepository.authState.first()) {
+        when (val state = authRepository.authState.first { it !is AuthState.Loading }) {
+            AuthState.Loading -> {
+                logger.e(TAG, "Unable to resolve identity for syncSetting")
+                ResultWithError.Failure(SyncSettingError.IdentityNotAvailable)
+            }
+
             is AuthState.Authenticated ->
                 settingsRepository.syncSetting(state.session.toUserScopeKey(), key).fold(
                     onSuccess = { ResultWithError.Success(Unit) },

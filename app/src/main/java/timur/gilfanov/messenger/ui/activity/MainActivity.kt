@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -99,15 +98,17 @@ private fun MessengerAppReady(
 ) {
     val backStack = rememberNavBackStack(initialDestination)
     val lifecycleOwner = LocalLifecycleOwner.current
-    val currentBackStack = remember { backStack }
 
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             effects.collect { effect ->
                 when (effect) {
                     MainActivitySideEffect.NavigateToLogin -> {
-                        currentBackStack.clear()
-                        currentBackStack.add(Login)
+                        val top = backStack.lastOrNull()
+                        if (top !is Login && top !is Signup) {
+                            backStack.clear()
+                            backStack.add(Login)
+                        }
                     }
                 }
             }

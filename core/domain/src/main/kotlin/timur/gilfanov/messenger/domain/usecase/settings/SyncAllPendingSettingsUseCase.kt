@@ -22,7 +22,12 @@ class SyncAllPendingSettingsUseCase(
     }
 
     suspend operator fun invoke(): ResultWithError<Unit, SyncAllPendingSettingsError> =
-        when (val state = authRepository.authState.first()) {
+        when (val state = authRepository.authState.first { it !is AuthState.Loading }) {
+            AuthState.Loading -> {
+                logger.e(TAG, "Unable to resolve identity for syncAllPending")
+                ResultWithError.Failure(SyncAllPendingSettingsError.IdentityNotAvailable)
+            }
+
             is AuthState.Authenticated ->
                 settingsRepository.syncAllPendingSettings(state.session.toUserScopeKey()).fold(
                     onSuccess = { ResultWithError.Success(Unit) },

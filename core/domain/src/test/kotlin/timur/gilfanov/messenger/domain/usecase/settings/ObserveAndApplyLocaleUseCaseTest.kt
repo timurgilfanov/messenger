@@ -37,7 +37,7 @@ class ObserveAndApplyLocaleUseCaseTest {
             settingsRepository,
             logger,
         )
-        val useCase = ObserveAndApplyLocaleUseCase(observeUiLanguage, localeRepository, logger)
+        val useCase = ObserveAndApplyLocaleUseCaseImpl(observeUiLanguage, localeRepository, logger)
 
         useCase().test {
             awaitItem()
@@ -62,7 +62,7 @@ class ObserveAndApplyLocaleUseCaseTest {
             settingsRepository,
             logger,
         )
-        val useCase = ObserveAndApplyLocaleUseCase(observeUiLanguage, localeRepository, logger)
+        val useCase = ObserveAndApplyLocaleUseCaseImpl(observeUiLanguage, localeRepository, logger)
 
         useCase().test {
             awaitItem()
@@ -92,7 +92,7 @@ class ObserveAndApplyLocaleUseCaseTest {
             settingsRepository,
             logger,
         )
-        val useCase = ObserveAndApplyLocaleUseCase(observeUiLanguage, localeRepository, logger)
+        val useCase = ObserveAndApplyLocaleUseCaseImpl(observeUiLanguage, localeRepository, logger)
 
         useCase().test {
             awaitItem()
@@ -118,7 +118,7 @@ class ObserveAndApplyLocaleUseCaseTest {
             settingsRepository,
             logger,
         )
-        val useCase = ObserveAndApplyLocaleUseCase(observeUiLanguage, localeRepository, logger)
+        val useCase = ObserveAndApplyLocaleUseCaseImpl(observeUiLanguage, localeRepository, logger)
 
         useCase().test {
             awaitItem()
@@ -139,7 +139,7 @@ class ObserveAndApplyLocaleUseCaseTest {
             settingsRepository,
             logger,
         )
-        val useCase = ObserveAndApplyLocaleUseCase(observeUiLanguage, localeRepository, logger)
+        val useCase = ObserveAndApplyLocaleUseCaseImpl(observeUiLanguage, localeRepository, logger)
 
         useCase().test {
             awaitItem()

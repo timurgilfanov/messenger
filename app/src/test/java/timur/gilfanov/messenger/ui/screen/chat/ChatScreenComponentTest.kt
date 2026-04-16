@@ -17,6 +17,8 @@ import androidx.compose.ui.test.performTextInput
 import androidx.paging.PagingData
 import androidx.test.core.app.ApplicationProvider
 import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
@@ -139,7 +141,7 @@ class ChatScreenComponentTest {
 
         // Note: In a real test, we would need to update the state and recompose
         // This test verifies that the callback is called
-        assert(textFieldState.text == testMessage)
+        assertEquals(testMessage, textFieldState.text.toString())
     }
 
     @Test
@@ -196,7 +198,7 @@ class ChatScreenComponentTest {
         }
 
         composeTestRule.onNodeWithTag("send_button").performClick()
-        assert(sendClicked)
+        assertTrue(sendClicked)
     }
 
     @Test

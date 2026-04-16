@@ -45,7 +45,8 @@ class SettingsViewModel @Inject constructor(
     val effects = _effects.receiveAsFlow()
 
     // Suppresses the Unauthorized side effect emitted by the settings observer when logout
-    // transitions auth state to Unauthenticated, preventing a double navigation to login.
+    // transitions auth state to Unauthenticated. Without this guard, a deliberate logout would
+    // produce a spurious Unauthorized effect alongside the LoggedOut effect.
     // No synchronisation needed: Dispatchers.Main is single-threaded, so the flag is always set
     // before logout() suspends and the settings observer gets a chance to run.
     private var isLoggingOut = false

@@ -129,4 +129,73 @@ class ObserveSettingsUseCaseImplTest {
             assertIs<ResultWithError.Success<Settings, ObserveSettingsError>>(value2)
         }
     }
+
+    @Test
+    fun `emits nothing while auth state is Loading`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Loading)
+        val settingsRepository = SettingsRepositoryStub(
+            settings = ResultWithError.Success(createTestSettings()),
+        )
+
+        val useCase = ObserveSettingsUseCaseImpl(
+            authRepository = authRepository,
+            settingsRepository = settingsRepository,
+            logger = NoOpLogger(),
+        )
+
+        useCase().test {
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `emits settings after Loading transitions to Authenticated`() = runTest {
+        val session = createTestSession()
+        val settings = createTestSettings(UiLanguage.German)
+
+        val authRepository = AuthRepositoryFake(AuthState.Loading)
+        val settingsRepository = SettingsRepositoryStub(
+            settings = ResultWithError.Success(settings),
+        )
+
+        val useCase = ObserveSettingsUseCaseImpl(
+            authRepository = authRepository,
+            settingsRepository = settingsRepository,
+            logger = NoOpLogger(),
+        )
+
+        useCase().test {
+            expectNoEvents()
+
+            authRepository.setState(AuthState.Authenticated(session))
+
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Settings, ObserveSettingsError>>(result)
+            assertEquals(settings, result.data)
+        }
+    }
+
+    @Test
+    fun `emits Unauthorized after Loading transitions to Unauthenticated`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Loading)
+        val settingsRepository = SettingsRepositoryStub(
+            settings = ResultWithError.Success(createTestSettings()),
+        )
+
+        val useCase = ObserveSettingsUseCaseImpl(
+            authRepository = authRepository,
+            settingsRepository = settingsRepository,
+            logger = NoOpLogger(),
+        )
+
+        useCase().test {
+            expectNoEvents()
+
+            authRepository.setState(AuthState.Unauthenticated)
+
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<Settings, ObserveSettingsError>>(result)
+            assertEquals(ObserveSettingsError.Unauthorized, result.error)
+        }
+    }
 }

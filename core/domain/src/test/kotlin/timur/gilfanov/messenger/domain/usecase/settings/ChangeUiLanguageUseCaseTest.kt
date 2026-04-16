@@ -61,4 +61,16 @@ class ChangeUiLanguageUseCaseTest {
         assertIs<Failure<*, ChangeUiLanguageError>>(result)
         assertIs<ChangeUiLanguageError.Unauthorized>(result.error)
     }
+
+    @Test
+    fun `when auth state is Loading then use case returns unauthorized`() = runTest {
+        val loadingRepository = AuthRepositoryFake(AuthState.Loading)
+        val settingsRepository = SettingsRepositoryStub(changeLanguage = Success(Unit))
+        val useCase = ChangeUiLanguageUseCase(loadingRepository, settingsRepository, logger)
+
+        val result = useCase(UiLanguage.English)
+
+        assertIs<Failure<*, ChangeUiLanguageError>>(result)
+        assertIs<ChangeUiLanguageError.Unauthorized>(result.error)
+    }
 }

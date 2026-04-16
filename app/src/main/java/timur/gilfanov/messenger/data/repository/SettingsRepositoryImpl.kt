@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import timur.gilfanov.messenger.data.source.local.DeleteAllForUserError
 import timur.gilfanov.messenger.data.source.local.GetSettingError
 import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.GetUnsyncedSettingsError
@@ -35,6 +36,7 @@ import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.DeleteUserDataRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
@@ -467,6 +469,30 @@ class SettingsRepositoryImpl @Inject constructor(
             },
         )
 
+    override suspend fun deleteUserData(
+        userKey: UserScopeKey,
+    ): ResultWithError<Unit, DeleteUserDataRepositoryError> {
+        runCatching {
+            syncScheduler.cancelUserScopedJobs(userKey)
+        }.onFailure { cause ->
+            logger.e(TAG, "Failed to cancel user-scoped sync jobs for ${userKey.key}", cause)
+        }
+        return localDataSource.deleteAllForUser(userKey).foldWithErrorMapping(
+            onSuccess = { ResultWithError.Success(Unit) },
+            onFailure = { error ->
+                val localError = error.toLocalStorageError()
+                val mapped = DeleteUserDataRepositoryError.LocalOperationFailed(localError)
+                logErrorMapping(
+                    "deleteUserData",
+                    error,
+                    mapped,
+                    (localError as? LocalStorageError.UnknownError)?.cause,
+                )
+                mapped
+            },
+        )
+    }
+
     @Suppress("ReturnCount")
     override suspend fun syncAllPendingSettings(
         userKey: UserScopeKey,
@@ -746,6 +772,22 @@ class SettingsRepositoryImpl @Inject constructor(
             },
         )
     }
+}
+
+private fun DeleteAllForUserError.toLocalStorageError(): LocalStorageError = when (this) {
+    DeleteAllForUserError.ConcurrentModificationError,
+    DeleteAllForUserError.DiskIOError,
+    -> LocalStorageError.TemporarilyUnavailable
+
+    DeleteAllForUserError.StorageFull -> LocalStorageError.StorageFull
+
+    DeleteAllForUserError.DatabaseCorrupted -> LocalStorageError.Corrupted
+
+    DeleteAllForUserError.AccessDenied -> LocalStorageError.AccessDenied
+
+    DeleteAllForUserError.ReadOnlyDatabase -> LocalStorageError.ReadOnly
+
+    is DeleteAllForUserError.UnknownError -> LocalStorageError.UnknownError(this.cause)
 }
 
 private val TypedLocalSetting.requiresSync get() = setting.localVersion != setting.syncedVersion

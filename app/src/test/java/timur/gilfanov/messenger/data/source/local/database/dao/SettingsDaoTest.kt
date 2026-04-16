@@ -202,4 +202,53 @@ class SettingsDaoTest {
         // Then
         assertNull(retrieved)
     }
+
+    @Test
+    fun `deleteAllByUser removes only rows for the targeted user`() = runTest {
+        // Given
+        val user1Key = "user-key-1"
+        val user2Key = "user-key-2"
+
+        val user1Setting1 = SettingEntity(
+            userKey = user1Key,
+            key = "ui_language",
+            value = "English",
+            localVersion = 1,
+            syncedVersion = 0,
+            serverVersion = 0,
+            modifiedAt = 1000L,
+        )
+        val user1Setting2 = SettingEntity(
+            userKey = user1Key,
+            key = "theme",
+            value = "DARK",
+            localVersion = 1,
+            syncedVersion = 0,
+            serverVersion = 0,
+            modifiedAt = 2000L,
+        )
+        val user2Setting = SettingEntity(
+            userKey = user2Key,
+            key = "ui_language",
+            value = "German",
+            localVersion = 1,
+            syncedVersion = 0,
+            serverVersion = 0,
+            modifiedAt = 3000L,
+        )
+        settingsDao.upsert(user1Setting1)
+        settingsDao.upsert(user1Setting2)
+        settingsDao.upsert(user2Setting)
+
+        // When
+        settingsDao.deleteAllByUser(user1Key)
+
+        // Then
+        val user1Remaining = settingsDao.getAll(user1Key)
+        val user2Remaining = settingsDao.getAll(user2Key)
+
+        assertEquals(0, user1Remaining.size)
+        assertEquals(1, user2Remaining.size)
+        assertEquals("German", user2Remaining[0].value)
+    }
 }

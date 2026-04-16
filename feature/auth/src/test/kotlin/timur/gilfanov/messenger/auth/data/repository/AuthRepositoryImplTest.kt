@@ -200,6 +200,26 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `logout clearSession failure returns LocalOperationFailed`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val remote = RemoteAuthDataSourceFake()
+        val repo = createRepo(remoteDataSource = remote, sessionStorage = storage, scope = this)
+        repo.loginWithCredentials(credentials)
+        advanceUntilIdle()
+
+        storage.enqueueClearSession(
+            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+        )
+        val result = repo.logout()
+
+        val failure = assertIs<ResultWithError.Failure<Unit, LogoutRepositoryError>>(result)
+        assertIs<LogoutRepositoryError.LocalOperationFailed>(failure.error)
+        repo.authState.test {
+            assertIs<AuthState.Authenticated>(awaitItem())
+        }
+    }
+
+    @Test
     fun `refreshToken success new tokens saved and authState updated`() = runTest {
         val storage = LocalAuthDataSourceFake()
         val repo = createRepo(sessionStorage = storage, scope = this)

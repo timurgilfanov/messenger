@@ -20,4 +20,13 @@ interface SettingsSyncScheduler {
      * Schedule periodic sync for all settings to keep local state in sync with server.
      */
     fun schedulePeriodicSync()
+
+    /**
+     * Cancel all pending and running WorkManager jobs that were scheduled for the given user.
+     *
+     * Jobs are identified by the tag equal to [UserScopeKey.key] that is added when scheduling
+     * via [scheduleSettingSync]. This should be called on logout so that no stale work runs
+     * for the outgoing user.
+     */
+    fun cancelUserScopedJobs(userKey: UserScopeKey)
 }

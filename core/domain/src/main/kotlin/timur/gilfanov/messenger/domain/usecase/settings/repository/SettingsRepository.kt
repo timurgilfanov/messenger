@@ -66,4 +66,19 @@ interface SettingsRepository {
     suspend fun syncAllPendingSettings(
         userKey: UserScopeKey,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError>
+
+    /**
+     * Cancels all pending WorkManager jobs for the user and deletes all settings rows
+     * keyed to the given [userKey].
+     *
+     * Job cancellation is best-effort and always runs before the local delete. A failure
+     * from the local delete is propagated; job cancellation failures are not observable
+     * and are handled internally by WorkManager.
+     *
+     * @param userKey The key identifying the user scope whose data should be removed
+     * @return Success or failure with [DeleteUserDataRepositoryError]
+     */
+    suspend fun deleteUserData(
+        userKey: UserScopeKey,
+    ): ResultWithError<Unit, DeleteUserDataRepositoryError>
 }

@@ -92,4 +92,18 @@ interface LocalSettingsDataSource {
     suspend fun getUnsyncedSettings(
         userKey: UserScopeKey,
     ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError>
+
+    /**
+     * Deletes all settings belonging to a specific user.
+     *
+     * Retries transient errors (database locks, disk I/O errors) up to the maximum retry limit
+     * with exponential backoff. Permanent errors (corruption, access denied, read-only) fail
+     * immediately without retry.
+     *
+     * @param userKey Opaque scoping key identifying the user's session
+     * @return Success or failure with error describing the cause
+     */
+    suspend fun deleteAllForUser(
+        userKey: UserScopeKey,
+    ): ResultWithError<Unit, DeleteAllForUserError>
 }

@@ -49,3 +49,15 @@ sealed interface GetUnsyncedSettingsError {
 
     data class UnknownError(val cause: Throwable) : GetUnsyncedSettingsError
 }
+
+sealed interface DeleteAllForUserError {
+    data object ConcurrentModificationError : DeleteAllForUserError
+    data object DiskIOError : DeleteAllForUserError
+
+    data object StorageFull : DeleteAllForUserError
+    data object DatabaseCorrupted : DeleteAllForUserError
+    data object AccessDenied : DeleteAllForUserError
+    data object ReadOnlyDatabase : DeleteAllForUserError
+
+    data class UnknownError(val cause: Throwable) : DeleteAllForUserError
+}

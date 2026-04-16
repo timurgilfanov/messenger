@@ -1,14 +1,19 @@
+# second review prompt
+# this prompt is used for the final review pass in phase 4
+# focuses on critical/major issues only, uses 2 agents
+#
+# available variables:
+#   {{PLAN_FILE}} - path to the plan file being executed
+#   {{PROGRESS_FILE}} - path to the progress log (task execution + previous reviews)
+#   {{GOAL}} - human-readable goal description
+#   {{DEFAULT_BRANCH}} - default branch name (main, master, trunk, etc.)
+#   {{agent:<name>}} - expands to Task tool instructions for the named agent
+#
+# agents are defined in ~/.config/ralphex/agents/ (user) or pkg/config/defaults/agents/ (builtin)
+
 Second code review pass of: {{GOAL}}
 
 Progress log: {{PROGRESS_FILE}} (contains task execution and previous review iterations)
-
-## Messenger Repo Context
-
-Before launching agents:
-- Read `CLAUDE.md`
-- For changed areas, read the relevant records under `docs/architecture/`
-- Use `docs/plans/completed/` only to confirm established Messenger patterns when helpful
-- Do NOT use `docs/AI-Agent-Tasks.md`; it is unrelated to this local `ralphex` workflow
 
 ## Step 1: Get Branch Context
 
@@ -30,11 +35,9 @@ Agents to launch:
 Each agent prompt should be short — do NOT paste the diff into it. Instead, instruct each agent to:
 1. Run `git diff {{DEFAULT_BRANCH}}...HEAD` and `git diff --stat {{DEFAULT_BRANCH}}...HEAD` to get the changes
 2. Read the actual source files to review code in full context
-3. Apply Messenger conventions from `CLAUDE.md` and the relevant architecture records for the changed area
-4. Report problems only - no positive observations
+3. Report problems only - no positive observations
 
 Focus only on critical and major issues. Ignore style/minor issues.
-Treat broken layer boundaries, missing DI wiring, invalid error mapping, state restoration/order bugs, and missing blocking tests as potentially major.
 
 ## Step 3: Verify and Evaluate Findings
 

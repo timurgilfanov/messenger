@@ -1,3 +1,13 @@
+# plan creation prompt
+# this prompt is used for interactive plan creation mode
+# claude explores the codebase, asks clarifying questions, and creates a plan
+#
+# available variables:
+#   {{PLAN_DESCRIPTION}} - user's original request for what to implement
+#   {{PROGRESS_FILE}} - path to progress file with Q&A history
+#   {{DEFAULT_BRANCH}} - default branch name (main, master, trunk, etc.)
+#   {{PLANS_DIR}} - plans directory (default: docs/plans)
+
 You are helping create an implementation plan for: {{PLAN_DESCRIPTION}}
 
 Progress log: {{PROGRESS_FILE}} (contains previous Q&A from this session)
@@ -9,17 +19,8 @@ IMPORTANT: Read the progress file first to see any questions you already asked a
 Before drafting a plan:
 - Read `CLAUDE.md`
 - If the work touches architecture, state management, validation, data/repository boundaries, or error mapping, read the relevant records under `docs/architecture/`
-- Search `docs/plans/completed/` for similar Messenger changes and reuse existing task structure, file grouping, and validation patterns when they fit
-- Do NOT use `docs/AI-Agent-Tasks.md` for this workflow; it documents GitHub Actions automation, not local `ralphex` planning
-
-## Path Style Rules
-
-When you mention files in the draft or final plan:
-- Never use absolute paths
-- Use repo-relative paths from the project root
-- Prefer the shortest unique readable path
-- `...` may replace only middle path segments, never the beginning of the path or the filename
-- In `Files involved`, prefer compact references (short paths or grouped basenames) when they stay unambiguous
+- If a close analogue exists in `docs/plans/completed/`, inspect at most 1-2 relevant completed plans for task structure, file grouping, and validation patterns when they fit
+- Do NOT scan the whole completed-plan archive when no close match is obvious
 
 ## Step 0: Check for Existing Plan
 
@@ -43,8 +44,6 @@ If this is your first iteration (no Q&A in progress file):
 - Understand the project structure
 - Identify existing conventions and patterns
 - Find related code that will inform the implementation
-- Identify the touched module(s) and the narrowest Gradle verification commands that match them
-- Note any interface/signature changes that would require `./gradlew :app:compileMockDebugAndroidTestKotlin`
 
 ## Step 3: Ask Clarifying Questions (if needed)
 
@@ -123,7 +122,7 @@ Write the accepted plan to disk:
 <Brief description of what will be implemented>
 
 ## Context
-- Files involved: <compact repo-relative list>
+- Files involved: <full repo-relative list, no `...` compression>
 - Related patterns: <existing completed plans, ADR/AR names, or repo conventions to follow>
 - Dependencies: <external dependencies if any>
 
@@ -132,6 +131,7 @@ Write the accepted plan to disk:
 - Complete each task fully before moving to the next
 - Reuse existing Messenger patterns before introducing new abstractions
 - Prefer narrow module-scoped Gradle verification commands over generic broad commands
+- <Any project-specific approaches>
 - **CRITICAL: every task MUST include new/updated tests**
 - **CRITICAL: all tests must pass before starting next task**
 - **CRITICAL: after source edits, include `./gradlew ktlintFormat detekt --auto-correct`**
@@ -142,8 +142,8 @@ Write the accepted plan to disk:
 ### Task 1: <Title>
 
 **Files:**
-- Modify: `feature/auth/src/main/kotlin/.../LoginViewModel.kt`
-- Create: `feature/auth/src/test/kotlin/.../LoginViewModelTest.kt` (if needed)
+- Modify: `path/to/file`
+- Create: `path/to/new_file` (if any)
 
 - [ ] first implementation step
 - [ ] second implementation step
@@ -153,11 +153,14 @@ Write the accepted plan to disk:
 ### Task 2: <Title>
 ...
 
+(continue for all tasks)
+
 ### Task N: Verify acceptance criteria
 
 - [ ] run `./gradlew ktlintFormat detekt --auto-correct`
 - [ ] run the remaining relevant Gradle verification command(s) for the touched modules
 - [ ] run `./gradlew :app:compileMockDebugAndroidTestKotlin` if interface/signature changes affect `androidTest`
+- [ ] verify test coverage meets 80%+
 
 ### Task N+1: Update documentation
 
@@ -181,7 +184,6 @@ Before emitting PLAN_DRAFT in Step 3.5, verify the plan against these criteria:
 - [ ] Each task specifies file paths where known
 - [ ] Each task that modifies code includes test items
 - [ ] Task section checkboxes are automatable by the agent (no manual testing, deployment, or external verification items as `- [ ]` inside Task sections; those go in Post-Completion)
-- [ ] Paths are shortest unique repo-relative references, not absolute paths
 - [ ] Validation commands are Messenger-specific and as narrow as practical
 - [ ] `./gradlew ktlintFormat detekt --auto-correct` appears when source files will be edited
 - [ ] `./gradlew :app:compileMockDebugAndroidTestKotlin` is included when interface/signature changes may affect `androidTest`

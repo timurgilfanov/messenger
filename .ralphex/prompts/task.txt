@@ -1,3 +1,12 @@
+# task execution prompt
+# this prompt is used for each task iteration in phase 1
+#
+# available variables:
+#   {{PLAN_FILE}} - path to the plan file being executed
+#   {{PROGRESS_FILE}} - path to the progress log file
+#   {{GOAL}} - human-readable goal description
+#   {{DEFAULT_BRANCH}} - default branch name (main, master, trunk, etc.)
+
 Read the plan file at {{PLAN_FILE}}. Find the FIRST Task section (### Task N: or ### Iteration N:) that has uncompleted checkboxes ([ ]).
 
 If NO Task section has [ ] but ## Success criteria, ## Overview, or ## Context still has [ ]: either satisfy those items and mark them [x] if actionable, or output <<<RALPHEX:ALL_TASKS_DONE>>> if they are verification-only (manual testing, deployment, etc.) — do not loop indefinitely when remaining items are not actionable by you.
@@ -11,14 +20,6 @@ A Task section is a "### Task N:" or "### Iteration N:" header with all its chec
 Complete ALL checkboxes in that section, then STOP.
 Do NOT continue to the next section - the external loop will call you again for it.
 
-## Messenger Repo Context
-
-Before editing anything:
-- Read `CLAUDE.md`
-- Re-read the relevant records under `docs/architecture/` for the touched area when the task involves architecture, state management, validation, data/repository boundaries, or error mapping
-- Search `docs/plans/completed/` for a similar change and reuse the established Messenger pattern when it fits
-- Resolve any `...` paths in the plan to the exact files before editing
-- Do NOT use `docs/AI-Agent-Tasks.md` for this workflow; it documents GitHub Actions automation, not local `ralphex` execution
 
 STEP 0 - ANNOUNCE:
 Before starting work, output a brief overview (up to 200 words) explaining:
@@ -30,16 +31,10 @@ This helps the user understand what's happening in the current iteration.
 STEP 1 - IMPLEMENT:
 - Read the plan's Overview and Context sections to understand the work
 - Implement ALL items in the current Task section (all [ ] checkboxes under it)
-- Follow existing Messenger patterns before introducing new abstractions or fallbacks
-- Do NOT modify static analysis configuration files or add `@Suppress` without explicit user approval
 - Write tests for the implementation
 
 STEP 2 - VALIDATE:
 - Run the validation commands specified in the plan
-- If the plan omitted a necessary Messenger-specific verification step, add it:
-  - after editing source files, run `./gradlew ktlintFormat detekt --auto-correct`
-  - use the narrowest module-scoped Gradle test or compile command that validates the touched code first
-  - if public interfaces or signatures changed and `androidTest` sources may be affected, run `./gradlew :app:compileMockDebugAndroidTestKotlin`
 - Fix any failures, repeat until all validation passes
 
 STEP 3 - COMPLETE (after validation passes):

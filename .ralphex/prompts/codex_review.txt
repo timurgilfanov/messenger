@@ -1,3 +1,15 @@
+# codex review prompt
+# this prompt is sent to the codex external review tool (or compatible wrapper)
+# codex reviews code changes and reports findings for claude to evaluate
+#
+# available variables:
+#   {{DIFF_INSTRUCTION}} - git diff command appropriate for current iteration
+#   {{PLAN_FILE}} - path to the plan file being executed
+#   {{PROGRESS_FILE}} - path to progress log with previous review iterations
+#   {{PREVIOUS_REVIEW_CONTEXT}} - previous review context (empty on first iteration)
+#   {{DEFAULT_BRANCH}} - default branch name (main, master, trunk, etc.)
+#   {{GOAL}} - human-readable goal description
+
 Review the code changes for: {{GOAL}}
 
 ## Get the Diff
@@ -12,14 +24,6 @@ Plan: {{PLAN_FILE}}
 
 Check the progress log at {{PROGRESS_FILE}} for previous review iterations and findings history before reporting issues.
 
-## Messenger Repo Context
-
-Before reporting issues:
-- Read `CLAUDE.md`
-- When the changes touch architecture, state management, validation, data/repository boundaries, or error mapping, read the relevant records under `docs/architecture/`
-- Use `docs/plans/completed/` only to confirm established Messenger patterns when helpful
-- Do NOT use `docs/AI-Agent-Tasks.md`; it is unrelated to this local `ralphex` workflow
-
 ## Review Focus
 
 Analyze for:
@@ -28,11 +32,6 @@ Analyze for:
 - Race conditions
 - Error handling gaps
 - Code quality issues
-- Clean Architecture boundary violations
-- Missing DI or module wiring
-- `ResultWithError`, validator, or error-mapping inconsistencies
-- MVI or `SavedStateHandle` state handling bugs
-- Missing tests for new logic or changed error paths
 
 Report findings with file:line references. If no issues found, say "NO ISSUES FOUND".
 

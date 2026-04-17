@@ -182,7 +182,7 @@ class ChatFeatureTest {
             }
 
             composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntilExactlyOneExists(hasTestTag("message_input"), timeoutMillis = 5_000L)
 
             onNodeWithTag("message_input").apply {
                 assertIsDisplayed()
@@ -190,7 +190,7 @@ class ChatFeatureTest {
             }
 
             composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
-            waitForIdle()
+            waitUntilExactlyOneExists(hasTestTag("message_input"), timeoutMillis = 5_000L)
 
             onNodeWithTag("message_input")
                 .assertTextEquals(testMessage)

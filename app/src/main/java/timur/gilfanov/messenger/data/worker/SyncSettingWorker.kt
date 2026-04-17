@@ -24,6 +24,11 @@ class SyncSettingWorker @AssistedInject constructor(
 
     @Suppress("ReturnCount")
     override suspend fun doWork(): Result {
+        if (isStopped) {
+            logger.i(TAG, "Worker stopped before starting; aborting sync")
+            return Result.failure()
+        }
+
         if (runAttemptCount >= MAX_RETRY_ATTEMPTS) {
             logger.w(
                 TAG,
@@ -47,6 +52,10 @@ class SyncSettingWorker @AssistedInject constructor(
 
         return syncSetting(settingKey).fold(
             onSuccess = {
+                if (isStopped) {
+                    logger.i(TAG, "Worker stopped after sync; discarding success result")
+                    return@fold Result.failure()
+                }
                 if (runAttemptCount > 0) {
                     logger.i(TAG, "Setting sync succeeded after $runAttemptCount retries")
                 }

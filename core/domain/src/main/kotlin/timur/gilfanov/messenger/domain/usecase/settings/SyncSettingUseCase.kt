@@ -13,7 +13,7 @@ import timur.gilfanov.messenger.util.Logger
 /**
  * Synchronizes a single user setting with the remote backend.
  */
-class SyncSettingUseCase(
+open class SyncSettingUseCase(
     private val authRepository: AuthRepository,
     private val settingsRepository: SettingsRepository,
     private val logger: Logger,
@@ -22,7 +22,7 @@ class SyncSettingUseCase(
         private const val TAG = "SyncSettingUseCase"
     }
 
-    suspend operator fun invoke(key: SettingKey): ResultWithError<Unit, SyncSettingError> =
+    open suspend operator fun invoke(key: SettingKey): ResultWithError<Unit, SyncSettingError> =
         when (val state = authRepository.authState.first()) {
             is AuthState.Authenticated ->
                 settingsRepository.syncSetting(state.session.toUserScopeKey(), key).fold(

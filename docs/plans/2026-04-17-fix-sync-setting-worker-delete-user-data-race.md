@@ -45,11 +45,11 @@ Eliminate the race where a mid-execution SyncSettingWorker can recreate settings
 - Modify: `app/src/main/java/timur/gilfanov/messenger/data/worker/SyncSettingWorker.kt`
 - Create: `app/src/test/java/timur/gilfanov/messenger/data/worker/SyncSettingWorkerTest.kt`
 
-- [ ] Early return `Result.failure()` at the start of `doWork` if `isStopped`
-- [ ] After `syncSetting(settingKey)` returns, check `isStopped` before translating a `Success` into `Result.success()`; if stopped, return `Result.failure()` to avoid further side effects
-- [ ] Ensure cooperative cancellation is respected (no `NonCancellable` wrappers around DB writes in the relied-on path — verify by reading `SettingsRepositoryImpl.syncSetting`)
-- [ ] Add unit tests for the worker: verify that when `isStopped` is true, `doWork` returns `Result.failure()` without invoking `syncSetting` (use a `SyncSettingUseCase` fake that records invocations; simulate `isStopped` via a pre-stopped `WorkerParameters` or extract a testable seam)
-- [ ] Run `./gradlew :app:testMockDebugUnitTest --tests "*SyncSettingWorkerTest*"` — must pass before Task 3
+- [x] Early return `Result.failure()` at the start of `doWork` if `isStopped`
+- [x] After `syncSetting(settingKey)` returns, check `isStopped` before translating a `Success` into `Result.success()`; if stopped, return `Result.failure()` to avoid further side effects
+- [x] Ensure cooperative cancellation is respected (no `NonCancellable` wrappers around DB writes in the relied-on path — verify by reading `SettingsRepositoryImpl.syncSetting`)
+- [x] Add unit tests for the worker: verify that when `isStopped` is true, `doWork` returns `Result.failure()` without invoking `syncSetting` (use a `SyncSettingUseCase` fake that records invocations; simulate `isStopped` via a pre-stopped `WorkerParameters` or extract a testable seam)
+- [x] Run `./gradlew :app:testMockDebugUnitTest --tests "*SyncSettingWorkerTest*"` — must pass before Task 3
 
 ### Task 3: Verify acceptance criteria
 

@@ -70,10 +70,14 @@ class SettingsRepositoryImplTest {
 
     private inner class TrackingScheduler : SettingsSyncScheduler {
         val cancelledKeys = mutableListOf<UserScopeKey>()
+        val cancellationEvents = mutableListOf<String>()
+        var cancelAction: (suspend () -> Unit)? = null
         override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) = Unit
         override fun schedulePeriodicSync() = Unit
-        override fun cancelUserScopedJobs(userKey: UserScopeKey) {
+        override suspend fun cancelUserScopedJobs(userKey: UserScopeKey) {
+            cancelAction?.invoke()
             cancelledKeys.add(userKey)
+            cancellationEvents.add("cancel:${userKey.key}")
         }
     }
 
@@ -1464,6 +1468,35 @@ class SettingsRepositoryImplTest {
 
         assertIs<ResultWithError.Failure<Unit, DeleteUserDataRepositoryError>>(result)
         assertTrue(trackingScheduler.cancelledKeys.contains(testUserKey))
+    }
+
+    @Test
+    fun `deleteUserData awaits cancellation before deleting local data`() = runTest {
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.English,
+            localVersion = 1,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1000L,
+        )
+        localDataSource.upsert(testUserKey, setting)
+
+        var dataPresentDuringCancellation = false
+        trackingScheduler.cancelAction = {
+            val current = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+            dataPresentDuringCancellation = current is ResultWithError.Success
+        }
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+        assertTrue(
+            dataPresentDuringCancellation,
+            "cancellation must complete before deleteAllForUser runs",
+        )
+        val afterDelete = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(afterDelete)
+        assertEquals(GetSettingError.SettingNotFound, afterDelete.error)
     }
 
     @Test

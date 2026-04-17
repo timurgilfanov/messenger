@@ -287,6 +287,7 @@ dependencies {
 
     // Background Work
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.kotlinx.coroutines.guava)
 
     // ========== Third-party Runtime Libraries ==========
     // Dependency Injection

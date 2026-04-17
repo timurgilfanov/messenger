@@ -27,6 +27,9 @@ interface SettingsSyncScheduler {
      * Jobs are identified by the tag equal to [UserScopeKey.key] that is added when scheduling
      * via [scheduleSettingSync]. This should be called on logout so that no stale work runs
      * for the outgoing user.
+     *
+     * Suspends until WorkManager has registered the cancellation so that callers can safely
+     * perform follow-up cleanup (e.g. deleting user-scoped rows) without racing in-flight workers.
      */
-    fun cancelUserScopedJobs(userKey: UserScopeKey)
+    suspend fun cancelUserScopedJobs(userKey: UserScopeKey)
 }

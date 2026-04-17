@@ -1,4 +1,4 @@
-Review whether the implementation achieves the stated goal and fits Messenger's architecture.
+Review whether the implementation achieves the stated goal/requirement.
 
 ## Core Review Responsibilities
 

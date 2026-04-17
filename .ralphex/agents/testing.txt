@@ -43,9 +43,9 @@ Watch for tests that don't actually verify code:
 ## What to Report
 
 For each finding:
-- Location: file and line reference
-- Issue: what is missing or weak in the tests
-- Impact: what bug or regression could slip through
-- Fix: what test coverage or test change is needed
+- Location: test file and function
+- Issue: what's wrong with the test
+- Impact: what bugs could slip through
+- Fix: how to improve the test
 
 Report problems only - no positive observations.

@@ -50,7 +50,7 @@ After agents complete:
 - Cross-agent duplicates → merge, note both sources
 
 ### 3.2 Verify EVERY Finding (CRITICAL)
-For EACH issue (bugs, test gaps, smells, over-engineering, error handling, docs, architecture violations, etc.):
+For EACH issue (bugs, test gaps, smells, over-engineering, error handling, docs, etc.):
 1. Read actual code at file:line
 2. Check full context (20-30 lines around)
 3. Verify issue is real, not a false positive
@@ -64,7 +64,7 @@ IMPORTANT: Pre-existing issues (linter errors, failed tests) should also be fixe
 Do NOT reject issues just because they existed before this branch - fix them anyway.
 
 ### 3.3 Fix All Confirmed Issues
-1. Fix all CONFIRMED issues (all types: bugs, tests, smells, docs, architecture violations, etc.)
+1. Fix all CONFIRMED issues (all types: bugs, tests, smells, docs, etc.)
 2. Run tests and linter to verify fixes - ALL tests must pass, ALL linter issues resolved
 3. Commit fixes: `git commit -m "fix: address code review findings"`
 

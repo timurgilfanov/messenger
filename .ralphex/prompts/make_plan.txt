@@ -129,13 +129,9 @@ Write the accepted plan to disk:
 ## Development Approach
 - **Testing approach**: Regular (code first, then tests) or TDD (test first)
 - Complete each task fully before moving to the next
-- Reuse existing Messenger patterns before introducing new abstractions
-- Prefer narrow module-scoped Gradle verification commands over generic broad commands
 - <Any project-specific approaches>
 - **CRITICAL: every task MUST include new/updated tests**
 - **CRITICAL: all tests must pass before starting next task**
-- **CRITICAL: after source edits, include `./gradlew ktlintFormat detekt --auto-correct`**
-- **CRITICAL: if interface/signature changes can affect `androidTest`, include `./gradlew :app:compileMockDebugAndroidTestKotlin`**
 
 ## Implementation Steps
 
@@ -165,7 +161,7 @@ Write the accepted plan to disk:
 ### Task N+1: Update documentation
 
 - [ ] update README.md if user-facing changes
-- [ ] update CLAUDE.md if new project knowledge or conventions were discovered
+- [ ] update CLAUDE.md if internal patterns changed
 - [ ] move this plan to `docs/plans/completed/`
 ---
 
@@ -181,12 +177,9 @@ Before emitting PLAN_DRAFT in Step 3.5, verify the plan against these criteria:
 
 **Completeness:**
 - [ ] All requirements from the original description are addressed
-- [ ] Each task specifies file paths where known
+- [ ] Each task specifies file paths where known (use patterns for discovery tasks)
 - [ ] Each task that modifies code includes test items
 - [ ] Task section checkboxes are automatable by the agent (no manual testing, deployment, or external verification items as `- [ ]` inside Task sections; those go in Post-Completion)
-- [ ] Validation commands are Messenger-specific and as narrow as practical
-- [ ] `./gradlew ktlintFormat detekt --auto-correct` appears when source files will be edited
-- [ ] `./gradlew :app:compileMockDebugAndroidTestKotlin` is included when interface/signature changes may affect `androidTest`
 
 **Simplicity (YAGNI):**
 - [ ] No unnecessary abstractions
@@ -206,7 +199,7 @@ Only after validation passes:
 
 CRITICAL RULES:
 - DO NOT ask "Would you like to proceed?" or "Should I implement this?" or similar
-- DO NOT wait for user approval - `ralphex` handles confirmation externally
+- DO NOT wait for user approval - ralphex handles confirmation externally
 - DO NOT use natural language questions - only use <<<RALPHEX:QUESTION>>> signal format
 - DO NOT iterate or refine the plan after validation passes
 - The PLAN_READY signal means "plan is complete, session is done"

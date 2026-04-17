@@ -20,7 +20,6 @@ A Task section is a "### Task N:" or "### Iteration N:" header with all its chec
 Complete ALL checkboxes in that section, then STOP.
 Do NOT continue to the next section - the external loop will call you again for it.
 
-
 STEP 0 - ANNOUNCE:
 Before starting work, output a brief overview (up to 200 words) explaining:
 - Which task number you picked and its title

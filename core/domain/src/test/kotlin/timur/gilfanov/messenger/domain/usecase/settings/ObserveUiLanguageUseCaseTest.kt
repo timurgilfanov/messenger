@@ -218,4 +218,55 @@ class ObserveUiLanguageUseCaseTest {
             assertEquals(UiLanguage.English, third.data)
         }
     }
+
+    @Test
+    fun `emits nothing while auth state is Loading`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Loading)
+        val settingsRepository = SettingsRepositoryStub(
+            settings = Success(Settings(UiLanguage.English)),
+        )
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
+
+        useCase().test {
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `emits language after Loading transitions to Authenticated`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Loading)
+        val settingsRepository = SettingsRepositoryStub(
+            settings = Success(Settings(UiLanguage.German)),
+        )
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
+
+        useCase().test {
+            expectNoEvents()
+
+            authRepository.setState(AuthState.Authenticated(testSession))
+
+            val result = awaitItem()
+            assertIs<Success<UiLanguage, ObserveUiLanguageError>>(result)
+            assertEquals(UiLanguage.German, result.data)
+        }
+    }
+
+    @Test
+    fun `emits Unauthorized after Loading transitions to Unauthenticated`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Loading)
+        val settingsRepository = SettingsRepositoryStub(
+            settings = Success(Settings(UiLanguage.English)),
+        )
+        val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
+
+        useCase().test {
+            expectNoEvents()
+
+            authRepository.setState(AuthState.Unauthenticated)
+
+            val result = awaitItem()
+            assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
+            assertIs<ObserveUiLanguageError.Unauthorized>(result.error)
+        }
+    }
 }

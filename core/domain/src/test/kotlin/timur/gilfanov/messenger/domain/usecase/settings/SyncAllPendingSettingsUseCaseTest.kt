@@ -1,6 +1,9 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
 import kotlin.test.assertIs
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -85,4 +88,48 @@ class SyncAllPendingSettingsUseCaseTest {
         assertIs<SyncAllPendingSettingsError.LocalOperationFailed>(result.error)
         assertIs<LocalStorageError.StorageFull>(result.error.error)
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `waits for Loading to resolve then succeeds when Authenticated`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Loading)
+        val settingsRepository = SettingsRepositoryStub(
+            syncAllResult = ResultWithError.Success(Unit),
+        )
+        val useCase = SyncAllPendingSettingsUseCase(authRepository, settingsRepository, logger)
+
+        var result: ResultWithError<Unit, SyncAllPendingSettingsError>? = null
+        backgroundScope.launch { result = useCase() }
+
+        advanceUntilIdle()
+        kotlin.test.assertNull(result) // still waiting while Loading
+
+        authRepository.setState(AuthState.Authenticated(session))
+        advanceUntilIdle()
+
+        assertIs<ResultWithError.Success<Unit, SyncAllPendingSettingsError>>(result)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `waits for Loading to resolve then returns IdentityNotAvailable when Unauthenticated`() =
+        runTest {
+            val authRepository = AuthRepositoryFake(AuthState.Loading)
+            val settingsRepository = SettingsRepositoryStub(
+                syncAllResult = ResultWithError.Success(Unit),
+            )
+            val useCase = SyncAllPendingSettingsUseCase(authRepository, settingsRepository, logger)
+
+            var result: ResultWithError<Unit, SyncAllPendingSettingsError>? = null
+            backgroundScope.launch { result = useCase() }
+
+            advanceUntilIdle()
+            kotlin.test.assertNull(result) // still waiting while Loading
+
+            authRepository.setState(AuthState.Unauthenticated)
+            advanceUntilIdle()
+
+            assertIs<ResultWithError.Failure<Unit, SyncAllPendingSettingsError>>(result)
+            assertIs<SyncAllPendingSettingsError.IdentityNotAvailable>(result!!.error)
+        }
 }

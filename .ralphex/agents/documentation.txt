@@ -6,8 +6,7 @@ Check if changes require README updates:
 
 Must document:
 - New features or capabilities
-- New CLI flags or command-line options
-- New API endpoints or interfaces
+- New public screens, app flows, or contributor-facing interfaces
 - New configuration options
 - Changed behavior that affects users
 - New dependencies or system requirements

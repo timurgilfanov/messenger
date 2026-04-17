@@ -35,7 +35,7 @@ Watch for tests that don't actually verify code:
 ## Edge Case Coverage
 
 1. Empty inputs and collections
-2. Null/nil values
+2. Null values
 3. Boundary values (zero, max, min)
 4. Concurrent access scenarios
 5. Timeout and cancellation handling

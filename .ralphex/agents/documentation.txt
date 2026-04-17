@@ -1,40 +1,54 @@
-Review code changes and identify missing documentation updates for Messenger.
+Review code changes and identify missing documentation updates.
 
 ## README.md (Human Documentation)
 
 Check if changes require README updates:
 
 Must document:
-- New user-visible features or capabilities
-- New setup, build, or runtime requirements
-- New modules, public interfaces, or workflow steps that affect contributors
+- New features or capabilities
+- New CLI flags or command-line options
+- New API endpoints or interfaces
+- New configuration options
+- Changed behavior that affects users
+- New dependencies or system requirements
+- Breaking changes
 
 Skip:
-- Internal refactoring with no user-visible or contributor-visible impact
-- Bug fixes that restore already documented behavior
-- Routine test additions
+- Internal refactoring with no user-visible changes
+- Bug fixes that restore documented behavior
+- Test additions
+- Code style changes
 
-## CLAUDE.md and Project Docs (AI / Contributor Knowledge Base)
+## CLAUDE.md (AI Knowledge Base)
 
-Check if changes require updates to `CLAUDE.md`, `docs/architecture/`, or nearby docs:
+Check if changes require CLAUDE.md updates:
 
 Must document:
-- New architectural rules or established patterns
-- New repository conventions or workflow requirements
-- New build, test, or debugging commands
-- Structural project changes that future contributors need to know about
+- New architectural patterns discovered/established
+- New conventions or coding standards
+- New build/test commands
+- New libraries or tools integrated
+- Project structure changes
+- Workflow changes
+- Non-obvious debugging techniques
 
 Skip:
-- Standard code additions that follow existing patterns
-- Small bug fixes that do not establish new project knowledge
-- Test additions using existing conventions
+- Standard code additions following existing patterns
+- Simple bug fixes
+- Test additions using existing patterns
+
+## Plan Files
+
+If changes relate to an existing plan:
+- Mark completed items as done
+- Update plan status if needed
+- Note which plan items this change addresses
 
 ## What to Report
 
 For each gap:
 - Missing: what needs to be documented
-- Section: where it should go
-- Suggested content: short draft text or outline
+- Section: where in the documentation it should go
+- Suggested content: draft text or outline
 
-Focus on durable repo knowledge, not routine churn.
 Report problems only - no positive observations.

@@ -2,41 +2,25 @@ Review whether the implementation achieves the stated goal and fits Messenger's 
 
 ## Core Review Responsibilities
 
-1. Requirement coverage
-- Does the implementation address all parts of the stated requirement?
-- Are important edge cases or failure scenarios missing?
+1. Requirement coverage - does implementation address all aspects of the stated requirement? Are there edge cases or scenarios not handled?
 
-2. Architecture fit
-- Do changes respect Clean Architecture boundaries between UI, domain, and data?
-- Are validators, repositories, data sources, and use cases placed in the correct module/package?
-- Has the change introduced unnecessary abstractions or fallback paths?
+2. Correctness of approach - is the chosen approach actually solving the right problem? Could it fail to achieve the goal in certain conditions? Does it respect Messenger's Clean Architecture boundaries and module/package responsibilities, including validator placement and consistent error mapping with cause preservation?
 
-3. Wiring and integration
-- Are Hilt bindings, DI modules, navigation hooks, resources, and registrations updated where needed?
-- Are new types actually used by the calling layer?
+3. Wiring and integration - is everything connected properly? Are new components registered, DI bindings/modules updated, navigation or screen wiring added, resources/configs updated?
 
-4. Result and error consistency
-- Does the code follow `ResultWithError` patterns?
-- Are sealed error hierarchies mapped consistently?
-- Are `UnknownError` causes preserved and used only for diagnostics/logging?
+4. Completeness - are there missing pieces that would prevent the feature from working? Missing imports, unimplemented interfaces, incomplete migrations?
 
-5. State management correctness
-- For ViewModel changes, is persistent UI state kept in a single read-only `StateFlow`?
-- Are one-off effects exposed separately?
-- Is `SavedStateHandle` used where required?
-- If overlapping async work has ordering invariants, does the implementation follow AR-01?
+5. Logic flow - does data flow correctly from input to output? Are transformations correct? Is state managed properly, including a single read-only `StateFlow` for persistent UI state, separate one-off effects, `SavedStateHandle` where required, and AR-01 when async ordering invariants exist?
 
-6. Completeness
-- Are there missing pieces that would prevent the feature from working end-to-end?
-- Are test fixtures, fakes, or companion wiring updates missing?
+6. Edge cases - are boundary conditions handled? Empty inputs, null values, concurrent access, error paths?
 
 ## What to Report
 
 For each issue found:
 - Issue: clear description of what's wrong
-- Impact: how this prevents achieving the goal or violates Messenger conventions
+- Impact: how this prevents achieving the goal
 - Location: file and line reference
 - Fix: what needs to be added or changed
 
-Focus on correctness of approach, integration, and repo-specific architectural rules, not code style.
+Focus on correctness of approach, not code style.
 Report problems only - no positive observations.

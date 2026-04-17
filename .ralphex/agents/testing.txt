@@ -1,27 +1,44 @@
-Review test coverage and quality for this Messenger Android repo.
+Review test coverage and quality.
 
 ## Test Existence and Coverage
 
-1. Missing tests
-- New or changed logic should have tests in the owning module
-- Error paths, validation branches, and state transitions should be covered
+1. Missing tests - new code paths without corresponding tests
+2. Untested error paths - error conditions not verified
+3. Coverage gaps - functions or branches without test coverage
+4. Integration test needs - system boundaries requiring integration tests
 
-2. Correct test level
-- JVM tests for domain/data logic where possible
-- Android unit or `androidTest` only when Android framework or UI behavior requires it
-- Interface/signature changes that impact `androidTest` sources should not leave those sources unvalidated
+## Test Quality
 
-3. Integration-sensitive areas
-- Repository/data-source mapping and error translation need targeted coverage
-- ViewModel changes should cover state updates, side effects, and restore/retry behavior when relevant
+1. Tests verify behavior, not implementation details
+2. Each test is independent, can run in any order
+3. Descriptive test names that explain what is being tested
+4. Both success and error paths tested
+5. Edge cases and boundary conditions covered
 
-## Messenger Testing Conventions
+## Fake Test Detection
 
-1. Prefer fakes and test fixtures over mocks/spies unless there is a strong reason not to
-2. Use reproducible constants instead of current time or random values
-3. Use `assertTrue` from `kotlin.test` instead of JVM `assert()`
-4. Use Turbine cleanup intentionally; do not add `cancelAndIgnoreRemainingEvents()` by default
-5. Keep tests behavior-focused rather than implementation-detail-focused
+Watch for tests that don't actually verify code:
+- Tests that always pass regardless of code changes
+- Tests checking hardcoded values instead of actual output
+- Tests verifying mock behavior instead of code using the mock
+- Ignored errors with _ or empty error checks
+- Conditional assertions that always pass
+- Commented out failing test cases
+
+## Test Independence
+
+1. No shared mutable state between tests
+2. Proper setup and teardown
+3. No order dependencies between tests
+4. Resources properly cleaned up
+
+## Edge Case Coverage
+
+1. Empty inputs and collections
+2. Null/nil values
+3. Boundary values (zero, max, min)
+4. Concurrent access scenarios
+5. Timeout and cancellation handling
 
 ## What to Report
 

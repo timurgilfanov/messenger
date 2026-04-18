@@ -60,5 +60,5 @@ Eliminate the race where a mid-execution SyncSettingWorker can recreate settings
 
 ### Task 4: Update documentation
 
-- [ ] update KDoc on `SettingsSyncScheduler.cancelUserScopedJobs` to document the awaiting behavior
-- [ ] move this plan to `docs/plans/completed/`
+- [x] update KDoc on `SettingsSyncScheduler.cancelUserScopedJobs` to document the awaiting behavior
+- [x] move this plan to `docs/plans/completed/`

@@ -53,10 +53,10 @@ Eliminate the race where a mid-execution SyncSettingWorker can recreate settings
 
 ### Task 3: Verify acceptance criteria
 
-- [ ] run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] run `./gradlew :app:testMockDebugUnitTest`
-- [ ] run `./gradlew :app:compileMockDebugAndroidTestKotlin` (the scheduler interface signature changed)
-- [ ] verify test coverage for changed lines meets 80%+
+- [x] run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] run `./gradlew :app:testMockDebugUnitTest`
+- [x] run `./gradlew :app:compileMockDebugAndroidTestKotlin` (the scheduler interface signature changed)
+- [x] verify test coverage for changed lines meets 80%+ (covered by new SyncSettingWorkerTest + expanded SettingsRepositoryImplTest ordering test)
 
 ### Task 4: Update documentation
 

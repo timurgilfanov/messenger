@@ -5,7 +5,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
@@ -49,8 +49,8 @@ class AuthRepositoryImpl @Inject constructor(
         private const val TAG = "AuthRepositoryImpl"
     }
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
-    override val authState: Flow<AuthState> = _authState.asStateFlow()
+    private val _authState = MutableStateFlow<AuthState?>(null)
+    override val authState: Flow<AuthState> = _authState.filterNotNull()
 
     init {
         coroutineScope.launch {
@@ -90,7 +90,7 @@ class AuthRepositoryImpl @Inject constructor(
         } else {
             AuthState.Unauthenticated
         }
-        _authState.compareAndSet(AuthState.Loading, restoredState)
+        _authState.compareAndSet(null, restoredState)
     }
 
     override suspend fun loginWithCredentials(

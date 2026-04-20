@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.domain.usecase.settings
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -28,8 +27,6 @@ class ObserveSettingsUseCaseImpl(
     override operator fun invoke(): Flow<ResultWithError<Settings, ObserveSettingsError>> =
         authRepository.authState.flatMapLatest { state ->
             when (state) {
-                AuthState.Loading -> emptyFlow()
-
                 is AuthState.Authenticated ->
                     settingsRepository.observeSettings(state.session.toUserScopeKey())
                         .map { settingsResult ->

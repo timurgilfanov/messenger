@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.domain.usecase.settings
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -19,13 +18,8 @@ import timur.gilfanov.messenger.util.Logger
  * Observes the current user's UI language preference.
  *
  * This use case provides a reactive stream of the user's selected UI language,
- * emitting updates whenever the language preference changes.
- *
- * ## Loading state
- * While auth is in [timur.gilfanov.messenger.domain.entity.auth.AuthState.Loading], [invoke]
- * returns an empty flow and suppresses all emissions. Observations resume automatically once
- * auth transitions out of [timur.gilfanov.messenger.domain.entity.auth.AuthState.Loading].
- * Callers should expect no events during Loading periods.
+ * emitting updates whenever the language preference changes. Collection naturally suspends
+ * until the auth state has been resolved (see [AuthRepository.authState]).
  *
  * ## Error Handling
  * - [ObserveUiLanguageError.Unauthorized]: Current user is not authenticated
@@ -48,8 +42,6 @@ class ObserveUiLanguageUseCase(
     operator fun invoke(): Flow<ResultWithError<UiLanguage, ObserveUiLanguageError>> =
         authRepository.authState.flatMapLatest { state ->
             when (state) {
-                AuthState.Loading -> emptyFlow()
-
                 is AuthState.Authenticated ->
                     settingsRepository.observeSettings(state.session.toUserScopeKey())
                         .map { settingsResult ->

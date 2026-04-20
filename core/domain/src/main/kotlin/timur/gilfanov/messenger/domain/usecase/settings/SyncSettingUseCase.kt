@@ -26,7 +26,7 @@ class SyncSettingUseCase(
 
     suspend operator fun invoke(key: SettingKey): ResultWithError<Unit, SyncSettingError> {
         val state = withTimeoutOrNull(AUTH_STATE_TIMEOUT_MS) {
-            authRepository.authState.first { it !is AuthState.Loading }
+            authRepository.authState.first()
         } ?: run {
             logger.e(TAG, "Timed out waiting for auth state in syncSetting")
             return ResultWithError.Failure(SyncSettingError.IdentityNotAvailable)
@@ -48,8 +48,6 @@ class SyncSettingUseCase(
                 logger.e(TAG, "Unable to resolve identity for syncSetting")
                 ResultWithError.Failure(SyncSettingError.IdentityNotAvailable)
             }
-
-            AuthState.Loading -> error("unreachable: first{} filtered Loading states")
         }
     }
 }

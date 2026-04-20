@@ -25,7 +25,7 @@ class SyncAllPendingSettingsUseCase(
 
     suspend operator fun invoke(): ResultWithError<Unit, SyncAllPendingSettingsError> {
         val state = withTimeoutOrNull(AUTH_STATE_TIMEOUT_MS) {
-            authRepository.authState.first { it !is AuthState.Loading }
+            authRepository.authState.first()
         } ?: run {
             logger.e(TAG, "Timed out waiting for auth state in syncAllPending")
             return ResultWithError.Failure(SyncAllPendingSettingsError.IdentityNotAvailable)
@@ -44,8 +44,6 @@ class SyncAllPendingSettingsUseCase(
                 logger.e(TAG, "Unable to resolve identity for syncAllPending")
                 ResultWithError.Failure(SyncAllPendingSettingsError.IdentityNotAvailable)
             }
-
-            AuthState.Loading -> error("unreachable: first{} filtered Loading states")
         }
     }
 }

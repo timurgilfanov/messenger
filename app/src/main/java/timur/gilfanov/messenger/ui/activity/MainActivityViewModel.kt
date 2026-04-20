@@ -39,7 +39,6 @@ class MainActivityViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.authState.collect { state ->
                 when (state) {
-                    AuthState.Loading -> { /* auth state is being determined, keep loading */ }
                     is AuthState.Authenticated -> {
                         if (_uiState.value is MainActivityUiState.Loading) {
                             _uiState.update {

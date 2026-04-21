@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.ui.activity
 
 sealed interface MainActivitySideEffect {
-    data object NavigateToLogin : MainActivitySideEffect
-    data object NavigateToMain : MainActivitySideEffect
+    data object Unauthenticated : MainActivitySideEffect
+    data object Authenticated : MainActivitySideEffect
 }

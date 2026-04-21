@@ -22,9 +22,8 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryE
  */
 interface AuthRepository {
     /**
-     * Emits the current resolved auth state. The first emission occurs only after initial token
-     * restoration from local storage completes; subscribers that collect earlier suspend until
-     * then. Subsequent emissions reflect login, logout, and token-refresh transitions.
+     * Emits the current [AuthState]. Suspends subscribers until the state is resolved, then emits
+     * on every transition between [AuthState.Authenticated] and [AuthState.Unauthenticated].
      */
     val authState: Flow<AuthState>
 

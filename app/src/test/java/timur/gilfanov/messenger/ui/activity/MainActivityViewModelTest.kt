@@ -29,7 +29,6 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryEr
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
-import timur.gilfanov.messenger.domain.usecase.settings.ObserveAndApplyLocaleUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 private class NeverEmitsAuthRepository : AuthRepository {
@@ -77,7 +76,7 @@ class MainActivityViewModelTest {
 
     private fun createViewModel(authRepository: AuthRepository): MainActivityViewModel =
         MainActivityViewModel(
-            observeAndApplyLocale = ObserveAndApplyLocaleUseCase { emptyFlow() },
+            observeAndApplyLocale = { emptyFlow() },
             authRepository = authRepository,
             logger = NoOpLogger(),
         )
@@ -93,56 +92,56 @@ class MainActivityViewModelTest {
     }
 
     @Test
-    fun `authenticated initial auth state emits NavigateToMain effect`() = runTest {
+    fun `authenticated initial auth state emits Authenticated effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
 
         val viewModel = createViewModel(authRepository = authRepository)
 
         viewModel.effects.test {
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.NavigateToMain, awaitItem())
+            assertEquals(MainActivitySideEffect.Authenticated, awaitItem())
         }
     }
 
     @Test
-    fun `unauthenticated initial auth state emits NavigateToLogin effect`() = runTest {
+    fun `unauthenticated initial auth state emits Unauthenticated effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
 
         val viewModel = createViewModel(authRepository = authRepository)
 
         viewModel.effects.test {
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.NavigateToLogin, awaitItem())
+            assertEquals(MainActivitySideEffect.Unauthenticated, awaitItem())
         }
     }
 
     @Test
-    fun `authenticated runtime session expiry emits NavigateToLogin effect`() = runTest {
+    fun `authenticated runtime session expiry emits Unauthenticated effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
         val viewModel = createViewModel(authRepository = authRepository)
 
         viewModel.effects.test {
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.NavigateToMain, awaitItem())
+            assertEquals(MainActivitySideEffect.Authenticated, awaitItem())
 
             authRepository.setState(AuthState.Unauthenticated)
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.NavigateToLogin, awaitItem())
+            assertEquals(MainActivitySideEffect.Unauthenticated, awaitItem())
         }
     }
 
     @Test
-    fun `unauthenticated to authenticated transition emits NavigateToMain effect`() = runTest {
+    fun `unauthenticated to authenticated transition emits Authenticated effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
         val viewModel = createViewModel(authRepository = authRepository)
 
         viewModel.effects.test {
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.NavigateToLogin, awaitItem())
+            assertEquals(MainActivitySideEffect.Unauthenticated, awaitItem())
 
             authRepository.setState(AuthState.Authenticated(testSession))
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.NavigateToMain, awaitItem())
+            assertEquals(MainActivitySideEffect.Authenticated, awaitItem())
         }
     }
 }

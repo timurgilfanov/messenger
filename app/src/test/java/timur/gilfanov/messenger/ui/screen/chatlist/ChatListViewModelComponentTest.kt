@@ -6,7 +6,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Instant
+import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,13 +50,13 @@ class ChatListViewModelComponentTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val testUserId = UUID.fromString("00000000-0000-0000-0000-000000000001")
+    private val testUserId = UUID.randomUUID()
     private val testProfile = Profile("Test User", null)
     private val testObserveProfileUseCase: ObserveProfileUseCase =
         ObserveProfileUseCaseStub(flowOf(Success(testProfile)))
     private val testLogger = NoOpLogger()
-    private val testChatId = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
-    private val testTimestamp = Instant.fromEpochMilliseconds(1_000_000)
+    private val testChatId = ChatId(UUID.randomUUID())
+    private val testTimestamp = Clock.System.now()
 
     private fun createTestChat(
         id: ChatId = testChatId,

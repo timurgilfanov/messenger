@@ -32,8 +32,8 @@ class MainActivityViewModel @Inject constructor(
             authRepository.authState.collect { state ->
                 _effects.send(
                     when (state) {
-                        is AuthState.Authenticated -> MainActivitySideEffect.NavigateToMain
-                        AuthState.Unauthenticated -> MainActivitySideEffect.NavigateToLogin
+                        is AuthState.Authenticated -> MainActivitySideEffect.Authenticated
+                        AuthState.Unauthenticated -> MainActivitySideEffect.Unauthenticated
                     },
                 )
             }

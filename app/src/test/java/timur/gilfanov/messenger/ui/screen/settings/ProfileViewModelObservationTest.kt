@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -93,6 +94,7 @@ class ProfileViewModelObservationTest {
         backgroundScope.launch { viewModel.state.collect {} }
 
         viewModel.effects.test {
+            advanceUntilIdle()
             expectNoEvents()
         }
     }

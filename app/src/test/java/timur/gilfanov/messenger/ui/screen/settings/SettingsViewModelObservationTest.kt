@@ -83,7 +83,6 @@ class SettingsViewModelObservationTest {
         viewModel.effects.test {
             advanceTimeBy(201)
             expectNoEvents()
-            cancelAndIgnoreRemainingEvents()
         }
     }
 

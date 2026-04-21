@@ -49,7 +49,6 @@ class LanguageViewModelObservationTest {
         viewModel.effects.test {
             advanceTimeBy(DEBOUNCE_PASS_MS)
             expectNoEvents()
-            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -70,7 +69,6 @@ class LanguageViewModelObservationTest {
         viewModel.effects.test {
             advanceTimeBy(DEBOUNCE_PASS_MS)
             expectNoEvents()
-            cancelAndIgnoreRemainingEvents()
         }
     }
 

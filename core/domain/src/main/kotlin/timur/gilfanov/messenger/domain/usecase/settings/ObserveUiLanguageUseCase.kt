@@ -18,7 +18,8 @@ import timur.gilfanov.messenger.util.Logger
  * Observes the current user's UI language preference.
  *
  * This use case provides a reactive stream of the user's selected UI language,
- * emitting updates whenever the language preference changes.
+ * emitting updates whenever the language preference changes. Collection naturally suspends
+ * until the auth state has been resolved (see [AuthRepository.authState]).
  *
  * ## Error Handling
  * - [ObserveUiLanguageError.Unauthorized]: Current user is not authenticated

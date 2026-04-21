@@ -73,7 +73,7 @@ class SettingsViewModelObservationTest {
     }
 
     @Test
-    fun `sends Unauthorized effect on Unauthorized error`() = runTest {
+    fun `Unauthorized error from observation does not post side effect`() = runTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, ObserveSettingsError>>(
             ResultWithError.Failure(ObserveSettingsError.Unauthorized),
         )
@@ -82,8 +82,7 @@ class SettingsViewModelObservationTest {
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
             advanceTimeBy(201)
-            assertEquals(SettingsSideEffects.Unauthorized, awaitItem())
-            cancelAndIgnoreRemainingEvents()
+            expectNoEvents()
         }
     }
 

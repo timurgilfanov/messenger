@@ -22,7 +22,6 @@ import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createAuthenticatedRepository
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -49,7 +48,6 @@ class ChatViewModelTextInputTest {
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             savedStateHandle = SavedStateHandle(),
-            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,

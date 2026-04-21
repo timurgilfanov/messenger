@@ -31,7 +31,6 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithPaging
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createAuthenticatedRepository
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -68,7 +67,6 @@ class ChatViewModelUpdatesTest {
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             savedStateHandle = SavedStateHandle(),
-            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
@@ -121,7 +119,6 @@ class ChatViewModelUpdatesTest {
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             savedStateHandle = SavedStateHandle(),
-            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,
@@ -192,7 +189,6 @@ class ChatViewModelUpdatesTest {
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             savedStateHandle = SavedStateHandle(),
-            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,

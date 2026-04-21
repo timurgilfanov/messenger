@@ -62,7 +62,10 @@ class SettingsRepositoryStub(
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError> =
         syncAllResult ?: error("syncAllPendingSettings not configured for this test")
 
+    var deleteUserDataResult: ResultWithError<Unit, DeleteUserDataRepositoryError> =
+        ResultWithError.Success(Unit)
+
     override suspend fun deleteUserData(
         userKey: UserScopeKey,
-    ): ResultWithError<Unit, DeleteUserDataRepositoryError> = ResultWithError.Success(Unit)
+    ): ResultWithError<Unit, DeleteUserDataRepositoryError> = deleteUserDataResult
 }

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -85,7 +86,7 @@ class ProfileViewModelObservationTest {
     }
 
     @Test
-    fun `sends Unauthorized effect on Unauthorized error`() = runTest {
+    fun `Unauthorized error does not post side effect`() = runTest {
         val viewModel = createViewModel(
             flowOf(ResultWithError.Failure(ObserveProfileError.Unauthorized)),
         )
@@ -93,7 +94,8 @@ class ProfileViewModelObservationTest {
         backgroundScope.launch { viewModel.state.collect {} }
 
         viewModel.effects.test {
-            assertEquals(ProfileSideEffects.Unauthorized, awaitItem())
+            advanceUntilIdle()
+            expectNoEvents()
         }
     }
 

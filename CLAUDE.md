@@ -27,6 +27,7 @@ Architecture Records (AR) and Architecture Decision Records (ADR) are kept in `d
   - When a ViewModel supports multiple submit paths (e.g., credentials and Google), track the last attempted action via a private `sealed interface Last<ScreenName>Action` (e.g., `LastLoginAction`, `LastSignupAction`) and a matching `var last<ScreenName>Action` field; `retryLastAction()` dispatches on it to re-invoke the correct path
   - Button-enabled state is exposed as a computed `val` on `UiState` (e.g., `val isSubmitEnabled: Boolean get() = !isLoading && isCredentialsValid`). The ViewModel calls injected validators on every field update and stores the boolean result (e.g., `isCredentialsValid`, `isNameValid`) in state; the computed property combines these with `!isLoading`. Passwords are intentionally not persisted to `SavedStateHandle` for security — the computed property falls back to disabled on process death until the user re-enters the password fields
 - **Vertical Feature Delivery**: Features are developed and shipped as complete vertical units (domain + data + UI, fully tested) rather than partial horizontal layers across multiple features
+- **Centralized Auth Navigation**: All auth-driven navigation is owned by `MainActivityViewModel` + `MessengerApp`; feature ViewModels must not observe `AuthState` or introduce per-screen `Unauthorized` side effects. See `docs/architecture/ADR-004-centralized-auth-navigation.md`.
 
 ## KDoc
 - Do not generate inline comments or code comments

@@ -20,7 +20,6 @@ import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createAuthenticatedRepository
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -46,7 +45,6 @@ class ChatViewModelProcessDeathTest {
         val viewModel = ChatViewModel(
             chatIdUuid = UUID.fromString("00000000-0000-0000-0000-000000000010"),
             savedStateHandle = restoredSavedStateHandle,
-            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),
             getPagedMessagesUseCase = GetPagedMessagesUseCase(repository),
@@ -76,7 +74,6 @@ class ChatViewModelProcessDeathTest {
         ChatViewModel(
             chatIdUuid = chatId.id,
             savedStateHandle = emptySavedStateHandle,
-            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),
             getPagedMessagesUseCase = GetPagedMessagesUseCase(repository),

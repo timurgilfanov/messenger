@@ -30,7 +30,6 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithStatusFlow
-import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createAuthenticatedRepository
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -76,7 +75,6 @@ class ChatViewModelMessageSendingTest {
             val viewModel = ChatViewModel(
                 chatIdUuid = chatId.id,
                 savedStateHandle = SavedStateHandle(),
-                authRepository = createAuthenticatedRepository(),
                 sendMessageUseCase = SendMessageUseCase(rep, DeliveryStatusValidatorImpl()),
                 receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
                 getPagedMessagesUseCase = getPagedMessagesUseCase,
@@ -134,7 +132,6 @@ class ChatViewModelMessageSendingTest {
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
             savedStateHandle = SavedStateHandle(),
-            authRepository = createAuthenticatedRepository(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
             getPagedMessagesUseCase = getPagedMessagesUseCase,

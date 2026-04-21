@@ -30,8 +30,6 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryE
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveAndApplyLocaleUseCase
-import timur.gilfanov.messenger.navigation.Login
-import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 private class NeverEmitsAuthRepository : AuthRepository {
@@ -85,73 +83,66 @@ class MainActivityViewModelTest {
         )
 
     @Test
-    fun `ui state is Loading before auth state emits`() = runTest {
+    fun `no effect is emitted before auth state resolves`() = runTest {
         val viewModel = createViewModel(authRepository = NeverEmitsAuthRepository())
 
-        assertEquals(MainActivityUiState.Loading, viewModel.uiState.value)
+        viewModel.effects.test {
+            advanceUntilIdle()
+            expectNoEvents()
+        }
     }
 
     @Test
-    fun `authenticated auth state resolves destination to Main`() = runTest {
+    fun `authenticated initial auth state emits NavigateToMain effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
 
         val viewModel = createViewModel(authRepository = authRepository)
 
-        advanceUntilIdle()
-
-        assertEquals(
-            MainActivityUiState.Ready(initialDestination = Main),
-            viewModel.uiState.value,
-        )
+        viewModel.effects.test {
+            advanceUntilIdle()
+            assertEquals(MainActivitySideEffect.NavigateToMain, awaitItem())
+        }
     }
 
     @Test
-    fun `unauthenticated auth state resolves destination to Login`() = runTest {
+    fun `unauthenticated initial auth state emits NavigateToLogin effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
 
         val viewModel = createViewModel(authRepository = authRepository)
 
-        advanceUntilIdle()
-
-        assertEquals(
-            MainActivityUiState.Ready(initialDestination = Login),
-            viewModel.uiState.value,
-        )
+        viewModel.effects.test {
+            advanceUntilIdle()
+            assertEquals(MainActivitySideEffect.NavigateToLogin, awaitItem())
+        }
     }
 
     @Test
     fun `authenticated runtime session expiry emits NavigateToLogin effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
         val viewModel = createViewModel(authRepository = authRepository)
-        advanceUntilIdle()
 
         viewModel.effects.test {
+            advanceUntilIdle()
+            assertEquals(MainActivitySideEffect.NavigateToMain, awaitItem())
+
             authRepository.setState(AuthState.Unauthenticated)
             advanceUntilIdle()
-
             assertEquals(MainActivitySideEffect.NavigateToLogin, awaitItem())
         }
     }
 
     @Test
-    fun `initial Unauthenticated emits NavigateToLogin for restored back stack`() = runTest {
+    fun `unauthenticated to authenticated transition emits NavigateToMain effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
         val viewModel = createViewModel(authRepository = authRepository)
 
         viewModel.effects.test {
             advanceUntilIdle()
             assertEquals(MainActivitySideEffect.NavigateToLogin, awaitItem())
-        }
-    }
 
-    @Test
-    fun `initial Authenticated state does not emit NavigateToLogin effect`() = runTest {
-        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
-        val viewModel = createViewModel(authRepository = authRepository)
-
-        viewModel.effects.test {
+            authRepository.setState(AuthState.Authenticated(testSession))
             advanceUntilIdle()
-            expectNoEvents()
+            assertEquals(MainActivitySideEffect.NavigateToMain, awaitItem())
         }
     }
 }

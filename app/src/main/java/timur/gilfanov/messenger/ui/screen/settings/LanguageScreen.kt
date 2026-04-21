@@ -59,7 +59,6 @@ fun LanguageScreen(
             viewModel.effects.collect {
                 when (it) {
                     is LanguageSideEffects.ChangeFailed -> onShowSnackbar(errorMessage)
-                    LanguageSideEffects.Unauthorized -> Unit
                 }
             }
         }

@@ -3,17 +3,17 @@ package timur.gilfanov.messenger.ui.activity
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
@@ -53,12 +53,10 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContent {
             val viewModel = hiltViewModel<MainActivityViewModel>()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
             MessengerTheme {
                 MessengerApp(
                     googleSignInClient = googleSignInClient,
-                    uiState = uiState,
                     effects = viewModel.effects,
                 )
             }
@@ -66,20 +64,47 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-// top-level app composable
-@Suppress("LongMethod", "ModifierMissing", "ktlint:compose:modifier-missing-check")
-@Composable
-fun MessengerApp(
-    googleSignInClient: GoogleSignInClient,
-    uiState: MainActivityUiState,
-    effects: Flow<MainActivitySideEffect>,
+@VisibleForTesting
+internal fun applyMainActivityEffect(
+    effect: MainActivitySideEffect,
+    backStack: MutableList<NavKey>,
 ) {
-    when (uiState) {
-        MainActivityUiState.Loading -> MessengerAppLoading()
-        is MainActivityUiState.Ready -> MessengerAppReady(
+    when (effect) {
+        MainActivitySideEffect.NavigateToLogin -> {
+            val top = backStack.lastOrNull()
+            if (top !is Login && top !is Signup) {
+                backStack.clear()
+                backStack.add(Login)
+            }
+        }
+        MainActivitySideEffect.NavigateToMain -> {
+            val top = backStack.lastOrNull()
+            if (top == null || top is Login || top is Signup) {
+                backStack.clear()
+                backStack.add(Main)
+            }
+        }
+    }
+}
+
+@Composable
+@Suppress("ModifierMissing", "ktlint:compose:modifier-missing-check")
+fun MessengerApp(googleSignInClient: GoogleSignInClient, effects: Flow<MainActivitySideEffect>) {
+    val backStack = rememberNavBackStack<NavKey>()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            effects.collect { effect -> applyMainActivityEffect(effect, backStack) }
+        }
+    }
+
+    if (backStack.isEmpty()) {
+        MessengerAppLoading()
+    } else {
+        MessengerAppReady(
             googleSignInClient = googleSignInClient,
-            initialDestination = uiState.initialDestination,
-            effects = effects,
+            backStack = backStack,
         )
     }
 }
@@ -91,30 +116,7 @@ private fun MessengerAppLoading() {
 
 @Suppress("LongMethod", "ModifierMissing", "ktlint:compose:modifier-missing-check")
 @Composable
-private fun MessengerAppReady(
-    googleSignInClient: GoogleSignInClient,
-    initialDestination: NavKey,
-    effects: Flow<MainActivitySideEffect>,
-) {
-    val backStack = rememberNavBackStack(initialDestination)
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            effects.collect { effect ->
-                when (effect) {
-                    MainActivitySideEffect.NavigateToLogin -> {
-                        val top = backStack.lastOrNull()
-                        if (top !is Login && top !is Signup) {
-                            backStack.clear()
-                            backStack.add(Login)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+private fun MessengerAppReady(googleSignInClient: GoogleSignInClient, backStack: NavBackStack) {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },

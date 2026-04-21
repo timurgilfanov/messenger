@@ -37,7 +37,7 @@ class LanguageViewModelObservationTest {
     }
 
     @Test
-    fun `Unauthorized error from observation posts Unauthorized side effect`() = runTest {
+    fun `Unauthorized error from observation does not post side effect`() = runTest {
         val settingsFlow = MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
             ResultWithError.Success(createTestSettings(UiLanguage.English)),
         )
@@ -48,7 +48,7 @@ class LanguageViewModelObservationTest {
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
             advanceTimeBy(DEBOUNCE_PASS_MS)
-            assertEquals(LanguageSideEffects.Unauthorized, awaitItem())
+            expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
     }

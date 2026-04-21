@@ -56,7 +56,6 @@ fun SettingsScreen(
                     is ProfileSideEffects.ObserveProfileFailed -> currentOnShowSnackbar(
                         getProfileErrorMessage,
                     )
-                    ProfileSideEffects.Unauthorized -> Unit
                 }
             }
         }
@@ -77,8 +76,6 @@ fun SettingsScreen(
                     is SettingsSideEffects.LogoutFailed -> currentOnShowSnackbar(
                         logoutFailedMessage,
                     )
-                    SettingsSideEffects.Unauthorized -> Unit
-                    SettingsSideEffects.LoggedOut -> Unit
                 }
             }
         }

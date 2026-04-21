@@ -243,26 +243,4 @@ class LanguageViewModelChangeLanguageTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
-
-//    @Test
-//    fun `Unauthorized error posts Unauthorized side effect`() = runTest {
-//        val settingsFlow = MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
-//            ResultWithError.Success(createTestSettings(UiLanguage.English)),
-//        )
-//          todo need change from success to failure for this test
-//        val identityRepository = createFailingIdentityRepository()
-//        val settingsRepository = createSettingsRepositoryWithFlow(settingsFlow)
-//        val viewModel = createViewModel(identityRepository, settingsRepository)
-//
-//        viewModel.state.test {
-//            awaitItem()
-//            advanceTimeBy(DEBOUNCE_PASS_MS)
-//            assertEquals(UiLanguage.English, awaitItem().selectedLanguage)
-//
-//            viewModel.changeLanguage(UiLanguage.German)
-//
-//            val sideEffect = awaitItem() // effects
-//            assertIs<LanguageSideEffects.Unauthorized>(sideEffect)
-//        }
-//    }
 }

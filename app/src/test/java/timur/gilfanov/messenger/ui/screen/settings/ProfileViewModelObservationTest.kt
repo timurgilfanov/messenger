@@ -85,7 +85,7 @@ class ProfileViewModelObservationTest {
     }
 
     @Test
-    fun `sends Unauthorized effect on Unauthorized error`() = runTest {
+    fun `Unauthorized error does not post side effect`() = runTest {
         val viewModel = createViewModel(
             flowOf(ResultWithError.Failure(ObserveProfileError.Unauthorized)),
         )
@@ -93,7 +93,7 @@ class ProfileViewModelObservationTest {
         backgroundScope.launch { viewModel.state.collect {} }
 
         viewModel.effects.test {
-            assertEquals(ProfileSideEffects.Unauthorized, awaitItem())
+            expectNoEvents()
         }
     }
 

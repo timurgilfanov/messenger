@@ -5,7 +5,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -37,7 +36,6 @@ class LanguageScreenSideEffectsTest {
         composeTestRule.setContent {
             MessengerTheme {
                 LanguageScreen(
-                    onAuthFailure = {},
                     onBackClick = {},
                     viewModel = viewModel,
                 )
@@ -57,29 +55,6 @@ class LanguageScreenSideEffectsTest {
         composeTestRule.onNodeWithText("Cannot change language").assertExists()
     }
 
-    @Test
-    fun `calls onAuthFailure when unauthorized`() {
-        var authFailureCalled = false
-        val viewModel = createViewModelWithUnauthorized()
-
-        composeTestRule.setContent {
-            MessengerTheme {
-                LanguageScreen(
-                    onAuthFailure = { authFailureCalled = true },
-                    onBackClick = {},
-                    viewModel = viewModel,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithTag("language_radio_${UiLanguage.German}")
-            .performClick()
-
-        composeTestRule.waitUntil { authFailureCalled }
-
-        assertTrue(authFailureCalled)
-    }
-
     private fun createViewModelWithChangeFailure(): LanguageViewModel {
         val identityRepository = createSuccessfulIdentityRepository()
         val settingsRepository = createSettingsRepositoryFake(
@@ -88,12 +63,6 @@ class LanguageScreenSideEffectsTest {
                 ChangeLanguageRepositoryError.LocalOperationFailed(LocalStorageError.StorageFull),
             ),
         )
-        return createViewModel(identityRepository, settingsRepository)
-    }
-
-    private fun createViewModelWithUnauthorized(): LanguageViewModel {
-        val identityRepository = LanguageViewModelTestFixtures.createFailingIdentityRepository()
-        val settingsRepository = createSettingsRepositoryFake(UiLanguage.English)
         return createViewModel(identityRepository, settingsRepository)
     }
 }

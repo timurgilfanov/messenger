@@ -68,12 +68,12 @@ interface SettingsRepository {
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError>
 
     /**
-     * Cancels all pending WorkManager jobs for the user and deletes all settings rows
+     * Cancels all pending sync jobs for the user and deletes all settings rows
      * keyed to the given [userKey].
      *
      * Job cancellation is best-effort and always runs before the local delete. A failure
      * from the local delete is propagated; job cancellation failures are not observable
-     * and are handled internally by WorkManager.
+     * and are handled internally.
      *
      * @param userKey The key identifying the user scope whose data should be removed
      * @return Success or failure with [DeleteUserDataRepositoryError]

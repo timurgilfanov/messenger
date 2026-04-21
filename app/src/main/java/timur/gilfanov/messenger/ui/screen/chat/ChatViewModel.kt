@@ -19,19 +19,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidator
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
@@ -51,7 +48,6 @@ private const val KEY_CHAT_ID = "chatId"
 class ChatViewModel @AssistedInject constructor(
     @Assisted("chatId") chatIdUuid: UUID,
     private val savedStateHandle: SavedStateHandle,
-    private val authRepository: AuthRepository,
     private val sendMessageUseCase: SendMessageUseCase,
     private val receiveChatUpdatesUseCase: ReceiveChatUpdatesUseCase,
     private val getPagedMessagesUseCase: GetPagedMessagesUseCase,
@@ -68,11 +64,8 @@ class ChatViewModel @AssistedInject constructor(
 
     init {
         viewModelScope.launch {
-            when (authRepository.authState.first()) {
-                is AuthState.Authenticated -> _state.repeatOnSubscription {
-                    observeChatUpdates()
-                }
-                AuthState.Unauthenticated -> _effects.send(ChatSideEffect.Unauthorized)
+            _state.repeatOnSubscription {
+                observeChatUpdates()
             }
         }
     }

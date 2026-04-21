@@ -1,8 +1,10 @@
 package timur.gilfanov.messenger.ui.activity
 
+import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -27,12 +29,6 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryEr
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
-import timur.gilfanov.messenger.domain.usecase.settings.LocaleRepositoryStub
-import timur.gilfanov.messenger.domain.usecase.settings.ObserveAndApplyLocaleUseCase
-import timur.gilfanov.messenger.domain.usecase.settings.ObserveUiLanguageUseCase
-import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryStub
-import timur.gilfanov.messenger.navigation.Login
-import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 private class NeverEmitsAuthRepository : AuthRepository {
@@ -78,63 +74,74 @@ class MainActivityViewModelTest {
         provider = AuthProvider.EMAIL,
     )
 
-    private fun createNoOpLocaleUseCase(
-        localeAuthRepo: AuthRepository,
-    ): ObserveAndApplyLocaleUseCase {
-        val logger = NoOpLogger()
-        val observeUiLanguage = ObserveUiLanguageUseCase(
-            authRepository = localeAuthRepo,
-            settingsRepository = SettingsRepositoryStub(),
-            logger = logger,
+    private fun createViewModel(authRepository: AuthRepository): MainActivityViewModel =
+        MainActivityViewModel(
+            observeAndApplyLocale = { emptyFlow() },
+            authRepository = authRepository,
+            logger = NoOpLogger(),
         )
-        return ObserveAndApplyLocaleUseCase(
-            observeUiLanguage = observeUiLanguage,
-            localeRepository = LocaleRepositoryStub(),
-            logger = logger,
-        )
-    }
-
-    private fun createViewModel(
-        authRepository: AuthRepository,
-        localeAuthRepository: AuthRepository = AuthRepositoryFake(AuthState.Unauthenticated),
-    ): MainActivityViewModel = MainActivityViewModel(
-        observeAndApplyLocale = createNoOpLocaleUseCase(localeAuthRepository),
-        authRepository = authRepository,
-        logger = NoOpLogger(),
-    )
 
     @Test
-    fun `ui state is Loading before auth state emits`() = runTest {
+    fun `no effect is emitted before auth state resolves`() = runTest {
         val viewModel = createViewModel(authRepository = NeverEmitsAuthRepository())
 
-        assertEquals(MainActivityUiState.Loading, viewModel.uiState.value)
+        viewModel.effects.test {
+            advanceUntilIdle()
+            expectNoEvents()
+        }
     }
 
     @Test
-    fun `authenticated auth state resolves destination to Main`() = runTest {
+    fun `authenticated initial auth state emits Authenticated effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
 
         val viewModel = createViewModel(authRepository = authRepository)
 
-        advanceUntilIdle()
-
-        assertEquals(
-            MainActivityUiState.Ready(initialDestination = Main),
-            viewModel.uiState.value,
-        )
+        viewModel.effects.test {
+            advanceUntilIdle()
+            assertEquals(MainActivitySideEffect.Authenticated, awaitItem())
+        }
     }
 
     @Test
-    fun `unauthenticated auth state resolves destination to Login`() = runTest {
+    fun `unauthenticated initial auth state emits Unauthenticated effect`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
 
         val viewModel = createViewModel(authRepository = authRepository)
 
-        advanceUntilIdle()
+        viewModel.effects.test {
+            advanceUntilIdle()
+            assertEquals(MainActivitySideEffect.Unauthenticated, awaitItem())
+        }
+    }
 
-        assertEquals(
-            MainActivityUiState.Ready(initialDestination = Login),
-            viewModel.uiState.value,
-        )
+    @Test
+    fun `authenticated runtime session expiry emits Unauthenticated effect`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
+        val viewModel = createViewModel(authRepository = authRepository)
+
+        viewModel.effects.test {
+            advanceUntilIdle()
+            assertEquals(MainActivitySideEffect.Authenticated, awaitItem())
+
+            authRepository.setState(AuthState.Unauthenticated)
+            advanceUntilIdle()
+            assertEquals(MainActivitySideEffect.Unauthenticated, awaitItem())
+        }
+    }
+
+    @Test
+    fun `unauthenticated to authenticated transition emits Authenticated effect`() = runTest {
+        val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
+        val viewModel = createViewModel(authRepository = authRepository)
+
+        viewModel.effects.test {
+            advanceUntilIdle()
+            assertEquals(MainActivitySideEffect.Unauthenticated, awaitItem())
+
+            authRepository.setState(AuthState.Authenticated(testSession))
+            advanceUntilIdle()
+            assertEquals(MainActivitySideEffect.Authenticated, awaitItem())
+        }
     }
 }

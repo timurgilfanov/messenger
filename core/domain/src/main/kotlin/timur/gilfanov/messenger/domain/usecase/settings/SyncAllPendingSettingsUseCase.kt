@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.entity.fold
@@ -19,10 +20,17 @@ class SyncAllPendingSettingsUseCase(
 ) {
     companion object {
         private const val TAG = "SyncAllPendingSettingsUseCase"
+        private const val AUTH_STATE_TIMEOUT_MS = 5_000L
     }
 
-    suspend operator fun invoke(): ResultWithError<Unit, SyncAllPendingSettingsError> =
-        when (val state = authRepository.authState.first()) {
+    suspend operator fun invoke(): ResultWithError<Unit, SyncAllPendingSettingsError> {
+        val state = withTimeoutOrNull(AUTH_STATE_TIMEOUT_MS) {
+            authRepository.authState.first()
+        } ?: run {
+            logger.e(TAG, "Timed out waiting for auth state in syncAllPending")
+            return ResultWithError.Failure(SyncAllPendingSettingsError.IdentityNotAvailable)
+        }
+        return when (state) {
             is AuthState.Authenticated ->
                 settingsRepository.syncAllPendingSettings(state.session.toUserScopeKey()).fold(
                     onSuccess = { ResultWithError.Success(Unit) },
@@ -37,4 +45,5 @@ class SyncAllPendingSettingsUseCase(
                 ResultWithError.Failure(SyncAllPendingSettingsError.IdentityNotAvailable)
             }
         }
+    }
 }

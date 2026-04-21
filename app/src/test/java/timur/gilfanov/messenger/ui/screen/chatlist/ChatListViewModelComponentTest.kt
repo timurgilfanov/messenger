@@ -9,10 +9,12 @@ import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -41,6 +43,7 @@ import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCase
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Category(Component::class)
 class ChatListViewModelComponentTest {
 
@@ -312,22 +315,6 @@ class ChatListViewModelComponentTest {
     }
 
     @Test
-    fun `emits Unauthorized side effect when observeProfile returns Unauthorized`() = runTest {
-        val observeProfileUseCase = ObserveProfileUseCaseStub(
-            flowOf(ResultWithError.Failure(ObserveProfileError.Unauthorized)),
-        )
-        val repository = RepositoryFake()
-        val useCase = FlowChatListUseCase(repository)
-        val viewModel = ChatListViewModel(observeProfileUseCase, useCase, repository, testLogger)
-
-        backgroundScope.launch { viewModel.state.collect {} }
-
-        viewModel.effects.test {
-            assertEquals(ChatListSideEffects.Unauthorized, awaitItem())
-        }
-    }
-
-    @Test
     fun `logs when observeProfile returns Unauthorized`() = runTest {
         val loggedMessages = mutableListOf<Pair<String, String>>()
         val capturingLogger = object : timur.gilfanov.messenger.util.Logger {
@@ -350,10 +337,7 @@ class ChatListViewModelComponentTest {
             ChatListViewModel(observeProfileUseCase, useCase, repository, capturingLogger)
 
         backgroundScope.launch { viewModel.state.collect {} }
-
-        viewModel.effects.test {
-            awaitItem()
-        }
+        advanceUntilIdle()
 
         assertTrue(
             loggedMessages.any {

@@ -10,7 +10,5 @@ import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
  */
 sealed interface LanguageSideEffects {
 
-    data object Unauthorized : LanguageSideEffects
-
     data class ChangeFailed(val error: LocalStorageError) : LanguageSideEffects
 }

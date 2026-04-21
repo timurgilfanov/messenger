@@ -75,7 +75,6 @@ class LanguageViewModel @Inject constructor(
                         when (error) {
                             ChangeUiLanguageError.Unauthorized -> {
                                 logger.i(TAG, "Language change failed with Unauthorized error")
-                                _effects.send(LanguageSideEffects.Unauthorized)
                             }
 
                             is ChangeUiLanguageError.LocalOperationFailed -> {
@@ -105,7 +104,6 @@ class LanguageViewModel @Inject constructor(
                         when (error) {
                             ObserveUiLanguageError.Unauthorized -> {
                                 logger.i(TAG, "Language observation failed with Unauthorized error")
-                                _effects.send(LanguageSideEffects.Unauthorized)
                             }
 
                             ObserveUiLanguageError.SettingsResetToDefaults -> {

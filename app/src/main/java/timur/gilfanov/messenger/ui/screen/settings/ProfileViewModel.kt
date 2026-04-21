@@ -51,7 +51,6 @@ class ProfileViewModel @Inject constructor(
                                     TAG,
                                     "Profile observation failed with Unauthorized error",
                                 )
-                                _effects.send(ProfileSideEffects.Unauthorized)
                             }
                         }
                     }

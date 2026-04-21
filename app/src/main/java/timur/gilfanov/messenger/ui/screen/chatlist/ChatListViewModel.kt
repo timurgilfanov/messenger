@@ -7,12 +7,10 @@ import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -43,9 +41,6 @@ class ChatListViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(ChatListScreenState(isLoading = true))
     val state = _state.asStateFlow()
-
-    private val _effects = Channel<ChatListSideEffects>(capacity = Channel.BUFFERED)
-    val effects = _effects.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -81,7 +76,6 @@ class ChatListViewModel @Inject constructor(
                                 TAG,
                                 "Profile observation failed with Unauthorized error",
                             )
-                            _effects.send(ChatListSideEffects.Unauthorized)
                         }
                     }
                 }

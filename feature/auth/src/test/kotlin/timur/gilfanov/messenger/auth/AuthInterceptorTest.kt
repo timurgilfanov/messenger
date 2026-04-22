@@ -13,9 +13,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.yield
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
@@ -263,10 +262,7 @@ class AuthInterceptorTest {
             launch { client.get("/test") }
         }
 
-        while (refreshInvocationCount.get() == 0) {
-            yield()
-        }
-        runCurrent()
+        advanceUntilIdle()
         releaseRefresh.complete(Unit)
         jobs.joinAll()
 

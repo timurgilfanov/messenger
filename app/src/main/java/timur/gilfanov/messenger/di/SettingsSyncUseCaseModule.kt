@@ -8,6 +8,7 @@ import javax.inject.Singleton
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.settings.SyncAllPendingSettingsUseCase
 import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingUseCase
+import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingUseCaseImpl
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
 
@@ -21,7 +22,7 @@ object SettingsSyncUseCaseModule {
         authRepository: AuthRepository,
         settingsRepository: SettingsRepository,
         logger: Logger,
-    ): SyncSettingUseCase = SyncSettingUseCase(authRepository, settingsRepository, logger)
+    ): SyncSettingUseCase = SyncSettingUseCaseImpl(authRepository, settingsRepository, logger)
 
     @Provides
     @Singleton

@@ -17,8 +17,6 @@ import org.robolectric.RobolectricTestRunner
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
-import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryStub
 import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingError
 import timur.gilfanov.messenger.domain.usecase.settings.SyncSettingUseCase
 
@@ -36,11 +34,7 @@ class SyncSettingWorkerTest {
         recorder: SyncRecorder,
         result: ResultWithError<Unit, SyncSettingError> = ResultWithError.Success(Unit),
         beforeReturn: suspend () -> Unit = {},
-    ): SyncSettingUseCase = object : SyncSettingUseCase(
-        AuthRepositoryFake(),
-        SettingsRepositoryStub(),
-        NoOpLogger(),
-    ) {
+    ): SyncSettingUseCase = object : SyncSettingUseCase {
         override suspend fun invoke(key: SettingKey): ResultWithError<Unit, SyncSettingError> {
             recorder.invocationCount++
             beforeReturn()

@@ -53,10 +53,10 @@ Add a cross-field validation rule to `CredentialsValidatorImpl` that rejects pas
 
 ### Task 3: Verify acceptance criteria
 
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run `./gradlew :feature:auth:testDebugUnitTest`
-- [ ] Run `./gradlew :app:compileMockDebugAndroidTestKotlin`
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run `./gradlew :feature:auth:testDebugUnitTest`
+- [x] Run `./gradlew :app:compileMockDebugAndroidTestKotlin`
 
 ### Task 4: Update documentation
 
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Move this plan to `docs/plans/completed/`

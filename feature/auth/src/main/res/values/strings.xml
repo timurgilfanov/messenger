@@ -16,6 +16,7 @@
     <string name="auth_error_password_too_short">Password must be at least %d characters</string>
     <string name="auth_error_password_too_long">Password must be at most %d characters</string>
     <string name="auth_error_forbidden_character_in_password">Character \'%s\' is not allowed in password</string>
+    <string name="auth_error_password_must_not_equal_email">Password must not be the same as your email</string>
     <plurals name="auth_error_password_must_contain_numbers">
         <item quantity="one">Password must contain at least 1 number</item>
         <item quantity="other">Password must contain at least %d numbers</item>

@@ -16,6 +16,7 @@
     <string name="auth_error_password_too_short">Passwort muss mindestens %d Zeichen lang sein</string>
     <string name="auth_error_password_too_long">Passwort darf höchstens %d Zeichen lang sein</string>
     <string name="auth_error_forbidden_character_in_password">Zeichen \'%s\' ist im Passwort nicht erlaubt</string>
+    <string name="auth_error_password_must_not_equal_email">Passwort darf nicht mit der E-Mail-Adresse übereinstimmen</string>
     <plurals name="auth_error_password_must_contain_numbers">
         <item quantity="one">Passwort muss mindestens 1 Zahl enthalten</item>
         <item quantity="other">Passwort muss mindestens %d Zahlen enthalten</item>

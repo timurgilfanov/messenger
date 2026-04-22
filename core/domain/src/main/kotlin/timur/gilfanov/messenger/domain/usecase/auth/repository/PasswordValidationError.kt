@@ -15,4 +15,5 @@ sealed interface PasswordValidationError {
     data class PasswordMustContainNumbers(val minNumbers: Int) : PasswordValidationError
     data class PasswordMustContainAlphabet(val minAlphabet: Int) : PasswordValidationError
     data class UnknownRuleViolation(val reason: String) : PasswordValidationError
+    data object PasswordEqualToEmail : PasswordValidationError
 }

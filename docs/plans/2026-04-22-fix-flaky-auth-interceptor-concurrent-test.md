@@ -31,9 +31,9 @@ Replace a fragile `while { yield() } + runCurrent()` synchronization pattern wit
 
 ### Task 2: Verify acceptance criteria
 
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run full unit test suite for the module: `./gradlew :feature:auth:testDebugUnitTest`
-- [ ] Confirm no regressions in the other `AuthInterceptorTest` cases
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run full unit test suite for the module: `./gradlew :feature:auth:testDebugUnitTest`
+- [x] Confirm no regressions in the other `AuthInterceptorTest` cases
 
 ### Task 3: Update documentation
 

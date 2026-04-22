@@ -170,7 +170,10 @@ class LoginFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntilExactlyOneExists(
+                hasTestTag("login_email_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("login_email_field").assertExists()
             onNodeWithTag("login_sign_in_button").assertExists()
         }
@@ -203,7 +206,10 @@ class LoginFeatureTest {
             onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntilExactlyOneExists(
+                hasTestTag("login_email_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             val emailLabel = activity.getString(R.string.login_email_label)
             val passwordLabel = activity.getString(R.string.login_password_label)
@@ -229,7 +235,10 @@ class LoginFeatureTest {
             waitUntilExactlyOneExists(hasTestTag("login_general_error"))
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntilExactlyOneExists(
+                hasTestTag("login_general_error"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             val errorInvalidCredentials =
                 activity.getString(R.string.login_error_invalid_credentials)

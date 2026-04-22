@@ -174,7 +174,10 @@ class SignupFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_name_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("signup_name_field").assertExists()
             onNodeWithTag("signup_google_sign_up_button").assertExists()
         }
@@ -190,7 +193,10 @@ class SignupFeatureTest {
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_name_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             val nameLabel = activity.getString(R.string.signup_name_label)
             onNodeWithTag("signup_name_field").assertTextEquals(nameLabel, TEST_NAME)
@@ -207,7 +213,10 @@ class SignupFeatureTest {
             onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_email_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             val emailLabel = activity.getString(R.string.signup_email_label)
             onNodeWithTag("signup_email_field").assertTextEquals(emailLabel, TEST_EMAIL)

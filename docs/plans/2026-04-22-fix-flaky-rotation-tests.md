@@ -40,16 +40,16 @@ In `loginScreen_preservesErrorOnRotation` (line 232):
 - Modify: `feature/auth/src/androidTest/java/timur/gilfanov/messenger/feature/auth/SignupFeatureTest.kt`
 
 In `signupScreen_handlesRotation` (line 177):
-- [ ] Replace `waitForIdle()` with `waitUntilExactlyOneExists(hasTestTag("signup_name_field"), timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS)`
+- [x] Replace `waitForIdle()` with `waitUntilExactlyOneExists(hasTestTag("signup_name_field"), timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS)`
 
 In `signupScreen_preservesNameOnRotation` (line 193):
-- [ ] Replace `waitForIdle()` with `waitUntilExactlyOneExists(hasTestTag("signup_name_field"), timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS)`
+- [x] Replace `waitForIdle()` with `waitUntilExactlyOneExists(hasTestTag("signup_name_field"), timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS)`
 
 In `signupScreen_preservesEmailOnRotation` (line 210):
-- [ ] Replace `waitForIdle()` with `waitUntilExactlyOneExists(hasTestTag("signup_email_field"), timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS)`
+- [x] Replace `waitForIdle()` with `waitUntilExactlyOneExists(hasTestTag("signup_email_field"), timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS)`
 
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run `./gradlew :feature:auth:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=timur.gilfanov.messenger.feature.auth.SignupFeatureTest` — must pass
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run `./gradlew :feature:auth:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=timur.gilfanov.messenger.feature.auth.SignupFeatureTest` — must pass
 
 ### Task 3: Verify acceptance criteria
 

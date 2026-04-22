@@ -28,7 +28,16 @@ class CredentialsValidatorImpl : CredentialsValidator {
         return when (val passwordResult = validate(credentials.password)) {
             is ResultWithError.Failure ->
                 ResultWithError.Failure(CredentialsValidationError.Password(passwordResult.error))
-            is ResultWithError.Success -> ResultWithError.Success(Unit)
+            is ResultWithError.Success ->
+                if (credentials.password.value == credentials.email.value) {
+                    ResultWithError.Failure(
+                        CredentialsValidationError.Password(
+                            PasswordValidationError.PasswordEqualToEmail,
+                        ),
+                    )
+                } else {
+                    ResultWithError.Success(Unit)
+                }
         }
     }
 

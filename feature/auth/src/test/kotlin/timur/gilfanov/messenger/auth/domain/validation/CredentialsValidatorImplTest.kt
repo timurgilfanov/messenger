@@ -144,4 +144,21 @@ class CredentialsValidatorImplTest {
         val failure = assertIs<Failure<*, PasswordValidationError>>(result)
         assertIs<PasswordValidationError.PasswordTooShort>(failure.error)
     }
+
+    @Test
+    fun `password equal to email returns PasswordEqualToEmail`() = runTest {
+        val result = validator.validate(
+            credentials(email = "user1@example.com", password = "user1@example.com"),
+        )
+        val failure = assertIs<Failure<*, CredentialsValidationError.Password>>(result)
+        assertIs<PasswordValidationError.PasswordEqualToEmail>(failure.error.reason)
+    }
+
+    @Test
+    fun `password different from email passes`() = runTest {
+        val result = validator.validate(
+            credentials(email = "user@example.com", password = "user@example.com1"),
+        )
+        assertIs<Success<Unit, *>>(result)
+    }
 }

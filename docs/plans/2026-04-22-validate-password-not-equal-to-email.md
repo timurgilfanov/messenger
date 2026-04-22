@@ -45,11 +45,11 @@ Add a cross-field validation rule to `CredentialsValidatorImpl` that rejects pas
 - Modify: `feature/auth/src/main/kotlin/timur/gilfanov/messenger/auth/domain/validation/CredentialsValidatorImpl.kt`
 - Modify: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/domain/validation/CredentialsValidatorImplTest.kt`
 
-- [ ] In `validate(credentials: Credentials)`, after the existing password check succeeds, add: if `credentials.password.value == credentials.email.value` return `Failure(CredentialsValidationError.Password(PasswordValidationError.PasswordEqualToEmail))`
-- [ ] Add test: `password equal to email returns PasswordEqualToEmail`
-- [ ] Add test: `password different from email passes` (confirm the happy-path control, email=`"user@example.com"`, password=`"user@example.com1"` returns success)
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run `./gradlew :feature:auth:testDebugUnitTest --tests "timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImplTest"` — must pass
+- [x] In `validate(credentials: Credentials)`, after the existing password check succeeds, add: if `credentials.password.value == credentials.email.value` return `Failure(CredentialsValidationError.Password(PasswordValidationError.PasswordEqualToEmail))`
+- [x] Add test: `password equal to email returns PasswordEqualToEmail`
+- [x] Add test: `password different from email passes` (confirm the happy-path control, email=`"user@example.com"`, password=`"user@example.com1"` returns success)
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run `./gradlew :feature:auth:testDebugUnitTest --tests "timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImplTest"` — must pass
 
 ### Task 3: Verify acceptance criteria
 

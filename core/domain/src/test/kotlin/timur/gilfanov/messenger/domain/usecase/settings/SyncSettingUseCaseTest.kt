@@ -29,7 +29,7 @@ class SyncSettingUseCaseTest {
         val settingsRepository = SettingsRepositoryStub(
             syncSettingResult = ResultWithError.Success(Unit),
         )
-        val useCase = SyncSettingUseCase(authRepository, settingsRepository, logger)
+        val useCase = SyncSettingUseCaseImpl(authRepository, settingsRepository, logger)
 
         val result = useCase(SettingKey.UI_LANGUAGE)
 
@@ -42,7 +42,7 @@ class SyncSettingUseCaseTest {
         val settingsRepository = SettingsRepositoryStub(
             syncSettingResult = ResultWithError.Success(Unit),
         )
-        val useCase = SyncSettingUseCase(authRepository, settingsRepository, logger)
+        val useCase = SyncSettingUseCaseImpl(authRepository, settingsRepository, logger)
 
         val result = useCase(SettingKey.UI_LANGUAGE)
 
@@ -58,7 +58,7 @@ class SyncSettingUseCaseTest {
                 SyncSettingRepositoryError.SettingNotFound,
             ),
         )
-        val useCase = SyncSettingUseCase(authRepository, settingsRepository, logger)
+        val useCase = SyncSettingUseCaseImpl(authRepository, settingsRepository, logger)
 
         val result = useCase(SettingKey.UI_LANGUAGE)
 
@@ -76,7 +76,7 @@ class SyncSettingUseCaseTest {
                 ),
             ),
         )
-        val useCase = SyncSettingUseCase(authRepository, settingsRepository, logger)
+        val useCase = SyncSettingUseCaseImpl(authRepository, settingsRepository, logger)
 
         val result = useCase(SettingKey.UI_LANGUAGE)
 

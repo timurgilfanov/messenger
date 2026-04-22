@@ -28,5 +28,5 @@ interface SettingsSyncScheduler {
      * via [scheduleSettingSync]. This should be called on logout so that no stale work runs
      * for the outgoing user.
      */
-    fun cancelUserScopedJobs(userKey: UserScopeKey)
+    suspend fun cancelUserScopedJobs(userKey: UserScopeKey)
 }

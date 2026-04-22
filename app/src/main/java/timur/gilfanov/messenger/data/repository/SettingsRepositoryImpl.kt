@@ -4,6 +4,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Clock.System.now
 import kotlin.time.Instant
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -472,9 +473,11 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun deleteUserData(
         userKey: UserScopeKey,
     ): ResultWithError<Unit, DeleteUserDataRepositoryError> {
-        runCatching {
+        try {
             syncScheduler.cancelUserScopedJobs(userKey)
-        }.onFailure { cause ->
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (@Suppress("TooGenericExceptionCaught") cause: Throwable) {
             logger.e(TAG, "Failed to cancel user-scoped sync jobs for ${userKey.key}", cause)
         }
         return localDataSource.deleteAllForUser(userKey).foldWithErrorMapping(

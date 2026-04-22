@@ -12,6 +12,7 @@ import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.guava.await
 import timur.gilfanov.messenger.data.worker.SyncAllSettingsWorker
 import timur.gilfanov.messenger.data.worker.SyncSettingWorker
 import timur.gilfanov.messenger.domain.UserScopeKey
@@ -55,8 +56,8 @@ class SettingsSyncSchedulerImpl @Inject constructor(private val workManager: Wor
         )
     }
 
-    override fun cancelUserScopedJobs(userKey: UserScopeKey) {
-        workManager.cancelAllWorkByTag(userKey.key)
+    override suspend fun cancelUserScopedJobs(userKey: UserScopeKey) {
+        workManager.cancelAllWorkByTag(userKey.key).result.await()
     }
 
     override fun schedulePeriodicSync() {

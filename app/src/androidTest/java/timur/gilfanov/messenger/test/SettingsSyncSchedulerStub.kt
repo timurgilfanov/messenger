@@ -7,5 +7,5 @@ import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 class SettingsSyncSchedulerStub : SettingsSyncScheduler {
     override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) = Unit
     override fun schedulePeriodicSync() = Unit
-    override fun cancelUserScopedJobs(userKey: UserScopeKey) = Unit
+    override suspend fun cancelUserScopedJobs(userKey: UserScopeKey) = Unit
 }

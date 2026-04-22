@@ -76,7 +76,7 @@ class SettingsRepositoryIntegrationTest {
     private val syncSchedulerStub = object : SettingsSyncScheduler {
         override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) = Unit
         override fun schedulePeriodicSync() = Unit
-        override fun cancelUserScopedJobs(userKey: UserScopeKey) = Unit
+        override suspend fun cancelUserScopedJobs(userKey: UserScopeKey) = Unit
     }
 
     // Observation Tests
@@ -157,7 +157,7 @@ class SettingsRepositoryIntegrationTest {
             }
 
             override fun schedulePeriodicSync() = Unit
-            override fun cancelUserScopedJobs(userKey: UserScopeKey) = Unit
+            override suspend fun cancelUserScopedJobs(userKey: UserScopeKey) = Unit
         }
 
         setupRepository(

@@ -2,10 +2,12 @@ package timur.gilfanov.messenger.data.repository
 
 import app.cash.turbine.test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -70,10 +72,14 @@ class SettingsRepositoryImplTest {
 
     private inner class TrackingScheduler : SettingsSyncScheduler {
         val cancelledKeys = mutableListOf<UserScopeKey>()
+        val cancellationEvents = mutableListOf<String>()
+        var cancelAction: (suspend () -> Unit)? = null
         override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) = Unit
         override fun schedulePeriodicSync() = Unit
-        override fun cancelUserScopedJobs(userKey: UserScopeKey) {
+        override suspend fun cancelUserScopedJobs(userKey: UserScopeKey) {
+            cancelAction?.invoke()
             cancelledKeys.add(userKey)
+            cancellationEvents.add("cancel:${userKey.key}")
         }
     }
 
@@ -1464,6 +1470,79 @@ class SettingsRepositoryImplTest {
 
         assertIs<ResultWithError.Failure<Unit, DeleteUserDataRepositoryError>>(result)
         assertTrue(trackingScheduler.cancelledKeys.contains(testUserKey))
+    }
+
+    @Test
+    fun `deleteUserData awaits cancellation before deleting local data`() = runTest {
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.English,
+            localVersion = 1,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1000L,
+        )
+        localDataSource.upsert(testUserKey, setting)
+
+        var dataPresentDuringCancellation = false
+        trackingScheduler.cancelAction = {
+            val current = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+            dataPresentDuringCancellation = current is ResultWithError.Success
+        }
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+        assertTrue(
+            dataPresentDuringCancellation,
+            "cancellation must complete before deleteAllForUser runs",
+        )
+        val afterDelete = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(afterDelete)
+        assertEquals(GetSettingError.SettingNotFound, afterDelete.error)
+    }
+
+    @Test
+    fun `deleteUserData rethrows CancellationException from cancelUserScopedJobs`() = runTest {
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.English,
+            localVersion = 1,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1000L,
+        )
+        localDataSource.upsert(testUserKey, setting)
+        trackingScheduler.cancelAction = {
+            throw CancellationException("cancelled")
+        }
+
+        assertFailsWith<CancellationException> {
+            repository.deleteUserData(testUserKey)
+        }
+
+        val afterAttempt = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, GetSettingError>>(afterAttempt)
+    }
+
+    @Test
+    fun `deleteUserData continues after generic error from cancelUserScopedJobs`() = runTest {
+        val setting = createTypedLocalSetting(
+            value = UiLanguage.English,
+            localVersion = 1,
+            syncedVersion = 1,
+            serverVersion = 1,
+            modifiedAt = 1000L,
+        )
+        localDataSource.upsert(testUserKey, setting)
+        trackingScheduler.cancelAction = {
+            throw IllegalStateException("cancel failed")
+        }
+
+        val result = repository.deleteUserData(testUserKey)
+
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+        val afterDelete = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(afterDelete)
+        assertEquals(GetSettingError.SettingNotFound, afterDelete.error)
     }
 
     @Test

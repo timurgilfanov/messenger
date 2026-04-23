@@ -29,7 +29,7 @@ class CredentialsValidatorImpl : CredentialsValidator {
             is ResultWithError.Failure ->
                 ResultWithError.Failure(CredentialsValidationError.Password(passwordResult.error))
             is ResultWithError.Success ->
-                if (credentials.password.value == credentials.email.value) {
+                if (credentials.password.value.equals(credentials.email.value, ignoreCase = true)) {
                     ResultWithError.Failure(
                         CredentialsValidationError.Password(
                             PasswordValidationError.PasswordEqualToEmail,

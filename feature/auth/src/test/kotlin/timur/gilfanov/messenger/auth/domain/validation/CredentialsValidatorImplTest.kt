@@ -155,6 +155,15 @@ class CredentialsValidatorImplTest {
     }
 
     @Test
+    fun `password equal to email in different case returns PasswordEqualToEmail`() = runTest {
+        val result = validator.validate(
+            credentials(email = "User1@Example.com", password = "user1@example.com"),
+        )
+        val failure = assertIs<Failure<*, CredentialsValidationError.Password>>(result)
+        assertIs<PasswordValidationError.PasswordEqualToEmail>(failure.error.reason)
+    }
+
+    @Test
     fun `password different from email passes`() = runTest {
         val result = validator.validate(
             credentials(email = "user@example.com", password = "user@example.com1"),
@@ -179,13 +188,5 @@ class CredentialsValidatorImplTest {
         )
         val failure = assertIs<Failure<*, CredentialsValidationError.Email>>(result)
         assertIs<EmailValidationError.NoAtInEmail>(failure.error.reason)
-    }
-
-    @Test
-    fun `password equal to email in different case passes`() = runTest {
-        val result = validator.validate(
-            credentials(email = "User1@Example.com", password = "user1@example.com"),
-        )
-        assertIs<Success<Unit, *>>(result)
     }
 }

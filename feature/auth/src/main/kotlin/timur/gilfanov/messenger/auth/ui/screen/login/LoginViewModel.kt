@@ -69,6 +69,7 @@ class LoginViewModel @Inject constructor(
                 Email(email),
             ) as? ResultWithError.Failure
             )?.error
+        // Password error depends on email via `PasswordError.PasswordEqualToEmail`
         val passwordError = when {
             currentPassword.isEmpty() -> _state.value.passwordError
             credError is CredentialsValidationError.Password -> credError.reason
@@ -96,6 +97,7 @@ class LoginViewModel @Inject constructor(
         )
         val isCredentialsValid = credentialsResult is ResultWithError.Success
         val credError = (credentialsResult as? ResultWithError.Failure)?.error
+        // Email check have a priority in credentials validation in `CredentialsValidatorImpl`
         val passwordError = when (credError) {
             is CredentialsValidationError.Password -> credError.reason
             else -> (

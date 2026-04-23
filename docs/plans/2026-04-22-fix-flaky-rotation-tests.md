@@ -53,8 +53,8 @@ In `signupScreen_preservesEmailOnRotation` (line 210):
 
 ### Task 3: Verify acceptance criteria
 
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run `./gradlew :feature:auth:connectedDebugAndroidTest`
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run `./gradlew :feature:auth:connectedDebugAndroidTest`
 
 ### Task 4: Update documentation
 

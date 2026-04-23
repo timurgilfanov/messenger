@@ -58,4 +58,4 @@ In `signupScreen_preservesEmailOnRotation` (line 210):
 
 ### Task 4: Update documentation
 
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Move this plan to `docs/plans/completed/`

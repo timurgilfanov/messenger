@@ -161,4 +161,31 @@ class CredentialsValidatorImplTest {
         )
         assertIs<Success<Unit, *>>(result)
     }
+
+    @Test
+    fun `password fails standalone validation even when equal to email`() = runTest {
+        // "a@b.cd" is a valid email but only 6 chars — below MIN_PASSWORD_LENGTH
+        val result = validator.validate(
+            credentials(email = "a@b.cd", password = "a@b.cd"),
+        )
+        val failure = assertIs<Failure<*, CredentialsValidationError.Password>>(result)
+        assertIs<PasswordValidationError.PasswordTooShort>(failure.error.reason)
+    }
+
+    @Test
+    fun `invalid email takes priority over password equal to email`() = runTest {
+        val result = validator.validate(
+            credentials(email = "notanemail1", password = "notanemail1"),
+        )
+        val failure = assertIs<Failure<*, CredentialsValidationError.Email>>(result)
+        assertIs<EmailValidationError.NoAtInEmail>(failure.error.reason)
+    }
+
+    @Test
+    fun `password equal to email in different case passes`() = runTest {
+        val result = validator.validate(
+            credentials(email = "User1@Example.com", password = "user1@example.com"),
+        )
+        assertIs<Success<Unit, *>>(result)
+    }
 }

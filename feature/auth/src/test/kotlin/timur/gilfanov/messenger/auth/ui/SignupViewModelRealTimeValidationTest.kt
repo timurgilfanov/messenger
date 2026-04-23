@@ -22,6 +22,7 @@ private const val VALID_EMAIL = "user@example.com"
 private const val INVALID_EMAIL = "notanemail"
 private const val VALID_PASSWORD = "password1"
 private const val INVALID_SHORT_PASSWORD = "short"
+private const val EMAIL_VALID_AS_PASSWORD = "user1@example.com"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(Component::class)
@@ -162,6 +163,75 @@ class SignupViewModelRealTimeValidationTest {
             assertIs<PasswordValidationError.PasswordTooShort>(state.passwordError)
         }
     }
+
+    @Test
+    fun `password equal to email sets PasswordEqualToEmail error`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateEmail(EMAIL_VALID_AS_PASSWORD)
+        viewModel.updatePassword(EMAIL_VALID_AS_PASSWORD)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertIs<PasswordValidationError.PasswordEqualToEmail>(state.passwordError)
+        }
+    }
+
+    @Test
+    fun `changing password to differ from email clears PasswordEqualToEmail error`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateEmail(EMAIL_VALID_AS_PASSWORD)
+        viewModel.updatePassword(EMAIL_VALID_AS_PASSWORD)
+        viewModel.updatePassword(VALID_PASSWORD)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertNull(state.passwordError)
+        }
+    }
+
+    @Test
+    fun `updating email to match password sets PasswordEqualToEmail error`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updatePassword(EMAIL_VALID_AS_PASSWORD)
+        viewModel.updateEmail(EMAIL_VALID_AS_PASSWORD)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertIs<PasswordValidationError.PasswordEqualToEmail>(state.passwordError)
+        }
+    }
+
+    @Test
+    fun `updating email to differ from password clears PasswordEqualToEmail error`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updatePassword(EMAIL_VALID_AS_PASSWORD)
+        viewModel.updateEmail(EMAIL_VALID_AS_PASSWORD)
+        viewModel.updateEmail(VALID_EMAIL)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertNull(state.passwordError)
+        }
+    }
+
+    @Test
+    fun `changing email to invalid after PasswordEqualToEmail clears stale cross-field error`() =
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.updateEmail(EMAIL_VALID_AS_PASSWORD)
+            viewModel.updatePassword(EMAIL_VALID_AS_PASSWORD)
+            viewModel.updateEmail(INVALID_EMAIL)
+
+            viewModel.state.test {
+                val state = awaitItem()
+                assertNull(state.passwordError)
+            }
+        }
 
     @Test
     fun `local name error restored from SavedStateHandle`() = runTest {

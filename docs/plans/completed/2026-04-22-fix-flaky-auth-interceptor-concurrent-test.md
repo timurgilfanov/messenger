@@ -37,4 +37,4 @@ Replace a fragile `while { yield() } + runCurrent()` synchronization pattern wit
 
 ### Task 3: Update documentation
 
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Move this plan to `docs/plans/completed/`

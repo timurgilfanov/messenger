@@ -5,13 +5,12 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.get
 import io.ktor.http.HttpStatusCode
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -20,10 +19,7 @@ import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCase
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
-import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
@@ -125,13 +121,6 @@ class AuthInterceptorTest {
                 respond("OK", HttpStatusCode.OK)
             }
         }
-        val authRepositoryFake = AuthRepositoryFake(
-            AuthSession(
-                tokens = AuthTokens("old-access-token", "old-refresh-token"),
-                provider = AuthProvider.EMAIL,
-            ),
-        )
-        authRepositoryFake.enqueueRefreshTokenResult(ResultWithError.Success(newTokens))
         val client = buildClient(
             mockEngine = mockEngine,
             authTokenStorage = authTokenStorage,
@@ -230,6 +219,40 @@ class AuthInterceptorTest {
         assertEquals(1, callCount)
     }
 
+    @Test
+    fun `when 401 after completed refresh then triggers new token refresh`() = runTest {
+        val authTokenStorage = LocalAuthDataSourceFake().apply {
+            accessToken = "old-access-token"
+        }
+        var refreshInvocationCount = 0
+        var requestCount = 0
+        val mockEngine = MockEngine {
+            requestCount++
+            if (requestCount == 1 || requestCount == 3) {
+                respond("Unauthorized", HttpStatusCode.Unauthorized)
+            } else {
+                respond("OK", HttpStatusCode.OK)
+            }
+        }
+        val client = buildClient(
+            mockEngine = mockEngine,
+            authTokenStorage = authTokenStorage,
+            tokenRefreshUseCase = {
+                refreshInvocationCount++
+                authTokenStorage.saveTokens(newTokens)
+                ResultWithError.Success(newTokens)
+            },
+            scope = this,
+        )
+
+        val response1 = client.get("/test")
+        val response2 = client.get("/test")
+
+        assertEquals(HttpStatusCode.OK, response1.status)
+        assertEquals(HttpStatusCode.OK, response2.status)
+        assertEquals(2, refreshInvocationCount)
+    }
+
     /**
      * Requests that reach the interceptor while a refresh is already in progress must await the
      * same refresh deferred instead of starting their own refresh. The test controls the refresh
@@ -242,7 +265,7 @@ class AuthInterceptorTest {
         val authTokenStorage = LocalAuthDataSourceFake().apply {
             accessToken = "old-access-token"
         }
-        val refreshInvocationCount = AtomicInteger(0)
+        var refreshInvocationCount = 0
         val releaseRefresh = CompletableDeferred<Unit>()
         val mockEngine = MockEngine {
             respond("Unauthorized", HttpStatusCode.Unauthorized)
@@ -251,7 +274,7 @@ class AuthInterceptorTest {
             mockEngine = mockEngine,
             authTokenStorage = authTokenStorage,
             tokenRefreshUseCase = {
-                refreshInvocationCount.incrementAndGet()
+                refreshInvocationCount++
                 releaseRefresh.await()
                 ResultWithError.Failure(TokenRefreshError.SessionExpired)
             },
@@ -259,13 +282,14 @@ class AuthInterceptorTest {
         )
 
         val jobs = List(10) {
-            launch { client.get("/test") }
+            async { client.get("/test") }
         }
 
         advanceUntilIdle()
         releaseRefresh.complete(Unit)
-        jobs.joinAll()
+        val responses = jobs.awaitAll()
 
-        assertEquals(1, refreshInvocationCount.get())
+        assertEquals(1, refreshInvocationCount)
+        responses.forEach { assertEquals(HttpStatusCode.Unauthorized, it.status) }
     }
 }

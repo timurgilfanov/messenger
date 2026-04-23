@@ -47,6 +47,7 @@ Full strategy in `docs/Testing Strategy.md`.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
 - **Turbine `cancelAndIgnoreRemainingEvents()`**: Only use it when there are genuinely unconsumed events to discard (e.g. after `advanceUntilIdle()` on a `StateFlow` that emitted further updates). Do not use it as a default `StateFlow` teardown — Turbine cancels the flow and asserts no unconsumed events automatically when the `test {}` block ends.
 - **`assertTrue` over `assert`**: Use `assertTrue` from `kotlin.test` for boolean assertions in tests. Kotlin's built-in `assert()` is a JVM assertion that can be silently disabled at runtime with `-da`.
+- **Post-rotation synchronization**: After `activity.requestedOrientation = SCREEN_ORIENTATION_*`, never use `waitForIdle()` (hangs on Firebase Test Lab due to IME and window-redraw idling) and never call `waitUntilExactlyOneExists` on a node that already exists pre-rotation (satisfies immediately on the stale composition). Use a two-phase wait: `waitUntilDoesNotExist(hasTestTag("…_screen"), timeoutMillis = …)` to observe Activity destruction, then `waitUntilExactlyOneExists(hasTestTag("…"), timeoutMillis = …)` to confirm the post-rotation composition is ready.
 
 ## Workflows
 - After editing any source file: run `./gradlew ktlintFormat detekt --auto-correct`

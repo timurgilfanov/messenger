@@ -174,11 +174,14 @@ class SignupFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            waitUntilDoesNotExist(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             waitUntilExactlyOneExists(
                 hasTestTag("signup_name_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
-            onNodeWithTag("signup_name_field").assertExists()
             onNodeWithTag("signup_google_sign_up_button").assertExists()
         }
     }
@@ -193,6 +196,10 @@ class SignupFeatureTest {
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            waitUntilDoesNotExist(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             waitUntilExactlyOneExists(
                 hasTestTag("signup_name_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
@@ -213,6 +220,10 @@ class SignupFeatureTest {
             onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
 
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
+            waitUntilDoesNotExist(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             waitUntilExactlyOneExists(
                 hasTestTag("signup_email_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
@@ -250,7 +261,10 @@ class SignupFeatureTest {
             )
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
             onNodeWithTag("signup_google_sign_up_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("signup_general_error"))
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_general_error"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("signup_general_error")
                 .assertTextEquals(activity.getString(R.string.signup_error_invalid_token))
         }
@@ -370,7 +384,10 @@ class SignupFeatureTest {
             )
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
             onNodeWithTag("signup_google_sign_up_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("signup_blocking_error_dialog"))
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_blocking_error_dialog"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("signup_blocking_error_action_button")
                 .assertTextEquals(
                     activity.getString(R.string.auth_action_open_storage_settings),

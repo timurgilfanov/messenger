@@ -18,7 +18,6 @@ import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
 import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
-import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
 
 @Module
@@ -39,11 +38,8 @@ object AuthViewModelModule {
     ): LoginWithGoogleUseCase = LoginWithGoogleUseCaseImpl(repository, logger)
 
     @Provides
-    fun provideLogoutUseCase(
-        authRepository: AuthRepository,
-        settingsRepository: SettingsRepository,
-        logger: Logger,
-    ): LogoutUseCase = LogoutUseCaseImpl(authRepository, settingsRepository, logger)
+    fun provideLogoutUseCase(authRepository: AuthRepository, logger: Logger): LogoutUseCase =
+        LogoutUseCaseImpl(authRepository, logger)
 
     @Provides
     fun provideProfileNameValidator(): ProfileNameValidator = ProfileNameValidatorImpl()

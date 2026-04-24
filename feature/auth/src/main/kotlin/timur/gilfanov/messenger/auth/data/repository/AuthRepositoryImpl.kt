@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.auth.data.repository
 
+import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +42,7 @@ import timur.gilfanov.messenger.util.Logger
 class AuthRepositoryImpl @Inject constructor(
     private val remoteDataSource: RemoteAuthDataSource,
     private val localDataSource: LocalAuthDataSource,
+    private val cleanupObserver: Lazy<AuthCleanupObserver>,
     @ApplicationScope private val coroutineScope: CoroutineScope,
     private val logger: Logger,
 ) : AuthRepository {
@@ -53,6 +55,7 @@ class AuthRepositoryImpl @Inject constructor(
     override val authState: Flow<AuthState> = _authState.filterNotNull()
 
     init {
+        cleanupObserver.get().start()
         coroutineScope.launch {
             restoreAuthState()
         }

@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.auth.data.repository
 
 import app.cash.turbine.test
+import dagger.Lazy
 import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -20,12 +21,14 @@ import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryStub
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
@@ -37,18 +40,37 @@ class AuthRepositorySignupTest {
     private fun createRepo(
         remoteDataSource: RemoteAuthDataSourceFake = RemoteAuthDataSourceFake(),
         sessionStorage: LocalAuthDataSourceFake = LocalAuthDataSourceFake(),
-        scope: kotlinx.coroutines.CoroutineScope,
-    ) = AuthRepositoryImpl(
-        remoteDataSource = remoteDataSource,
-        localDataSource = sessionStorage,
-        coroutineScope = scope,
-        logger = NoOpLogger(),
-    )
+        testScope: kotlinx.coroutines.test.TestScope,
+    ): AuthRepositoryImpl {
+        val logger = NoOpLogger()
+        val authRepositoryLazy = object : Lazy<AuthRepository> {
+            private var repo: AuthRepository? = null
+            fun set(r: AuthRepository) {
+                repo = r
+            }
+            override fun get(): AuthRepository = repo!!
+        }
+        val cleanupObserver = AuthCleanupObserver(
+            authRepository = authRepositoryLazy,
+            settingsRepository = { SettingsRepositoryStub() },
+            scope = testScope.backgroundScope,
+            logger = logger,
+        )
+        val repo = AuthRepositoryImpl(
+            remoteDataSource = remoteDataSource,
+            localDataSource = sessionStorage,
+            cleanupObserver = { cleanupObserver },
+            coroutineScope = testScope,
+            logger = logger,
+        )
+        authRepositoryLazy.set(repo)
+        return repo
+    }
 
     @Test
     fun `signup success stores session and sets Authenticated EMAIL provider`() = runTest {
         val storage = LocalAuthDataSourceFake()
-        val repo = createRepo(sessionStorage = storage, scope = this)
+        val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -62,7 +84,7 @@ class AuthRepositorySignupTest {
 
     @Test
     fun `signup success updates authState to Authenticated`() = runTest {
-        val repo = createRepo(scope = this)
+        val repo = createRepo(testScope = this)
         advanceUntilIdle()
 
         repo.signup(credentials, name)
@@ -81,7 +103,7 @@ class AuthRepositorySignupTest {
                     RegisterError.InvalidEmail(SignupEmailError.EmailTaken),
                 ),
             )
-            val repo = createRepo(remoteDataSource = remote, scope = this)
+            val repo = createRepo(remoteDataSource = remote, testScope = this)
             advanceUntilIdle()
 
             val result = repo.signup(credentials, name)
@@ -101,7 +123,7 @@ class AuthRepositorySignupTest {
                     RegisterError.InvalidEmail(EmailUnknownError("EMAIL_NOT_EXISTS")),
                 ),
             )
-            val repo = createRepo(remoteDataSource = remote, scope = this)
+            val repo = createRepo(remoteDataSource = remote, testScope = this)
             advanceUntilIdle()
 
             val result = repo.signup(credentials, name)
@@ -119,7 +141,7 @@ class AuthRepositorySignupTest {
         remote.enqueueRegister(
             ResultWithError.Failure(RegisterError.InvalidPassword(passwordError)),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -136,7 +158,7 @@ class AuthRepositorySignupTest {
         remote.enqueueRegister(
             ResultWithError.Failure(RegisterError.InvalidName(nameError)),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -154,7 +176,7 @@ class AuthRepositorySignupTest {
                 RegisterError.RemoteDataSource(RemoteDataSourceError.ServerError),
             ),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -169,7 +191,7 @@ class AuthRepositorySignupTest {
         storage.enqueueSaveSession(
             ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
         )
-        val repo = createRepo(sessionStorage = storage, scope = this)
+        val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -187,7 +209,7 @@ class AuthRepositorySignupTest {
             storage.enqueueSaveSession(
                 ResultWithError.Failure(LocalAuthDataSourceError.StorageFull),
             )
-            val repo = createRepo(sessionStorage = storage, scope = this)
+            val repo = createRepo(sessionStorage = storage, testScope = this)
             advanceUntilIdle()
 
             val result = repo.signup(credentials, name)

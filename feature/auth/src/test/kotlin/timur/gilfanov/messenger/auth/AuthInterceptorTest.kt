@@ -13,9 +13,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.yield
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
@@ -239,7 +238,9 @@ class AuthInterceptorTest {
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when concurrent 401 responses then tokenRefreshUseCase is invoked only once`() = runTest {
+    fun `when concurrent 401 responses then tokenRefreshUseCase is invoked only once`() = runTest(
+        UnconfinedTestDispatcher(),
+    ) {
         val authTokenStorage = LocalAuthDataSourceFake().apply {
             accessToken = "old-access-token"
         }
@@ -263,10 +264,6 @@ class AuthInterceptorTest {
             launch { client.get("/test") }
         }
 
-        while (refreshInvocationCount.get() == 0) {
-            yield()
-        }
-        runCurrent()
         releaseRefresh.complete(Unit)
         jobs.joinAll()
 

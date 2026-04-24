@@ -1,10 +1,10 @@
 package timur.gilfanov.messenger.auth.data.repository
 
 import dagger.Lazy
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.di.ApplicationScope
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -32,21 +32,20 @@ class AuthCleanupObserver @Inject constructor(
         private const val TAG = "AuthCleanupObserver"
     }
 
-    private var isStarted = false
+    private val isStarted = AtomicBoolean(false)
 
     /**
      * Starts observing auth state transitions.
      * Should be called once during application initialization.
      */
     fun start() {
-        if (isStarted) return
-        isStarted = true
+        if (!isStarted.compareAndSet(false, true)) return
 
         scope.launch {
-            val repository = authRepository.get()
-            var previousState: AuthState = repository.authState.first()
-            repository.authState.collect { currentState ->
-                handleTransition(previousState, currentState)
+            var previousState: AuthState? = null
+            authRepository.get().authState.collect { currentState ->
+                val prev = previousState
+                if (prev != null) handleTransition(prev, currentState)
                 previousState = currentState
             }
         }

@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
@@ -17,7 +18,9 @@ import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.toUserScopeKey
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryFake
+import timur.gilfanov.messenger.domain.usecase.settings.repository.DeleteUserDataRepositoryError
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
@@ -117,5 +120,56 @@ class AuthCleanupObserverTest {
             authRepository.setState(AuthState.Unauthenticated)
 
             assertEquals(session1.toUserScopeKey(), settingsRepository.lastDeleteUserDataKey)
+        }
+
+    @Test
+    fun `when starting Authenticated and no transition occurs then NO cleanup`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
+            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
+            val observer = createObserver(authRepository, settingsRepository, backgroundScope)
+
+            observer.start()
+
+            assertNull(settingsRepository.lastDeleteUserDataKey)
+        }
+
+    @Test
+    fun `when start is called twice then cleanup is triggered only once per transition`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
+            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
+            val observer = createObserver(authRepository, settingsRepository, backgroundScope)
+
+            observer.start()
+            observer.start()
+
+            authRepository.setState(AuthState.Unauthenticated)
+
+            assertEquals(1, settingsRepository.deleteUserDataCallCount)
+            assertEquals(session1.toUserScopeKey(), settingsRepository.lastDeleteUserDataKey)
+        }
+
+    @Test
+    fun `when deleteUserData fails then observer continues observing subsequent transitions`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
+            val settingsRepository = SettingsRepositoryFake(
+                initialSettings = Settings(UiLanguage.English),
+                deleteUserDataResult = ResultWithError.Failure(
+                    DeleteUserDataRepositoryError.LocalOperationFailed(
+                        LocalStorageError.AccessDenied,
+                    ),
+                ),
+            )
+            val observer = createObserver(authRepository, settingsRepository, backgroundScope)
+
+            observer.start()
+            authRepository.setState(AuthState.Unauthenticated)
+            assertEquals(1, settingsRepository.deleteUserDataCallCount)
+
+            authRepository.setState(AuthState.Authenticated(session1))
+            authRepository.setState(AuthState.Unauthenticated)
+            assertEquals(2, settingsRepository.deleteUserDataCallCount)
         }
 }

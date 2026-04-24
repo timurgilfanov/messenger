@@ -102,4 +102,20 @@ class AuthCleanupObserverTest {
 
             assertNull(settingsRepository.lastDeleteUserDataKey)
         }
+
+    @Test
+    fun `when start Authenticated and immediate transition to Unauth then cleanup is called`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
+            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
+            val observer = createObserver(authRepository, settingsRepository, backgroundScope)
+
+            // Start observer while Authenticated
+            observer.start()
+
+            // Transition to Unauthenticated immediately
+            authRepository.setState(AuthState.Unauthenticated)
+
+            assertEquals(session1.toUserScopeKey(), settingsRepository.lastDeleteUserDataKey)
+        }
 }

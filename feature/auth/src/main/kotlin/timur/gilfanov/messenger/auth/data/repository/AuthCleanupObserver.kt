@@ -4,6 +4,7 @@ import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.di.ApplicationScope
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -42,8 +43,9 @@ class AuthCleanupObserver @Inject constructor(
         isStarted = true
 
         scope.launch {
-            var previousState: AuthState = AuthState.Unauthenticated
-            authRepository.get().authState.collect { currentState ->
+            val repository = authRepository.get()
+            var previousState: AuthState = repository.authState.first()
+            repository.authState.collect { currentState ->
                 handleTransition(previousState, currentState)
                 previousState = currentState
             }

@@ -176,7 +176,10 @@ class LoginFeatureTest {
                 hasTestTag("login_email_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
-            onNodeWithTag("login_sign_in_button").assertExists()
+            waitUntilExactlyOneExists(
+                hasTestTag("login_sign_in_button"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
         }
     }
 
@@ -188,9 +191,11 @@ class LoginFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             repeat(100) {
+                val oldActivity = activity
                 withContext(Dispatchers.Main) {
                     activity.recreate()
                 }
+                waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
                 waitUntilExactlyOneExists(
                     hasTestTag("login_screen"),
                     timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,

@@ -180,7 +180,10 @@ class SignupFeatureTest {
                 hasTestTag("signup_name_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
-            onNodeWithTag("signup_google_sign_up_button").assertExists()
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_google_sign_up_button"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
         }
     }
 

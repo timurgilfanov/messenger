@@ -169,11 +169,9 @@ class LoginFeatureTest {
                 hasTestTag("login_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitUntilDoesNotExist(
-                hasTestTag("login_screen"),
-                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
-            )
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
             waitUntilExactlyOneExists(
                 hasTestTag("login_email_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
@@ -211,11 +209,9 @@ class LoginFeatureTest {
             onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
             onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
 
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitUntilDoesNotExist(
-                hasTestTag("login_screen"),
-                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
-            )
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
             waitUntilExactlyOneExists(
                 hasTestTag("login_email_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
@@ -247,11 +243,9 @@ class LoginFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
 
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitUntilDoesNotExist(
-                hasTestTag("login_screen"),
-                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
-            )
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
             waitUntilExactlyOneExists(
                 hasTestTag("login_general_error"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,

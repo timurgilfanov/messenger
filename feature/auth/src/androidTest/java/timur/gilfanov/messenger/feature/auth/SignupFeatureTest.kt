@@ -173,11 +173,9 @@ class SignupFeatureTest {
                 hasTestTag("signup_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitUntilDoesNotExist(
-                hasTestTag("signup_screen"),
-                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
-            )
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
             waitUntilExactlyOneExists(
                 hasTestTag("signup_name_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
@@ -195,11 +193,9 @@ class SignupFeatureTest {
             )
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
 
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitUntilDoesNotExist(
-                hasTestTag("signup_screen"),
-                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
-            )
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
             waitUntilExactlyOneExists(
                 hasTestTag("signup_name_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
@@ -219,11 +215,9 @@ class SignupFeatureTest {
             )
             onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
 
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitUntilDoesNotExist(
-                hasTestTag("signup_screen"),
-                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
-            )
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
             waitUntilExactlyOneExists(
                 hasTestTag("signup_email_field"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,

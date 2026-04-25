@@ -50,9 +50,9 @@ The fix is what finally makes that claim true.
 
 ### Task 2: Verify acceptance criteria
 
-- [ ] Run the full `AuthInterceptorTest` suite: `./gradlew :feature:auth:testDebugUnitTest --tests "timur.gilfanov.messenger.auth.AuthInterceptorTest"`
-- [ ] Run the full `:feature:auth` unit test suite: `./gradlew :feature:auth:testDebugUnitTest`
+- [x] Run the full `AuthInterceptorTest` suite: `./gradlew :feature:auth:testDebugUnitTest --tests "timur.gilfanov.messenger.auth.AuthInterceptorTest"`
+- [x] Run the full `:feature:auth` unit test suite: `./gradlew :feature:auth:testDebugUnitTest`
 
 ### Task 3: Update documentation
 
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Move this plan to `docs/plans/completed/`

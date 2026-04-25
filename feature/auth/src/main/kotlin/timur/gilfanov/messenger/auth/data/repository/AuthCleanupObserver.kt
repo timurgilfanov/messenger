@@ -7,6 +7,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.di.ApplicationScope
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.toUserScopeKey
@@ -74,7 +75,7 @@ class AuthCleanupObserver @Inject constructor(
         }
     }
 
-    private suspend fun deleteUserData(userKey: timur.gilfanov.messenger.domain.UserScopeKey) {
+    private suspend fun deleteUserData(userKey: UserScopeKey) {
         val result = settingsRepository.get().deleteUserData(userKey)
         if (result is ResultWithError.Failure) {
             logger.e(TAG, "Failed to clean up settings for $userKey: ${result.error}")

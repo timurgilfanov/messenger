@@ -8,6 +8,7 @@ import io.ktor.http.HttpStatusCode
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -37,6 +38,7 @@ class AuthInterceptorTest {
         tokenRefreshUseCase: TokenRefreshUseCase,
         scope: TestScope,
     ): HttpClient {
+        mockEngine.config.dispatcher = Dispatchers.Unconfined
         val interceptor = AuthInterceptor(authTokenStorage, tokenRefreshUseCase, scope)
         val client = HttpClient(mockEngine)
         interceptor.install(client)
@@ -256,8 +258,15 @@ class AuthInterceptorTest {
     /**
      * Requests that reach the interceptor while a refresh is already in progress must await the
      * same refresh deferred instead of starting their own refresh. The test controls the refresh
-     * completion explicitly so request overlap does not depend on Ktor engine scheduling details or
-     * wall-clock timing.
+     * completion explicitly so request overlap does not depend on wall-clock timing.
+     *
+     * [buildClient] sets `mockEngine.config.dispatcher = Dispatchers.Unconfined` before constructing
+     * the [HttpClient]. Without this, [MockEngine] defaults to [kotlinx.coroutines.Dispatchers.IO],
+     * which runs the handler on real IO threads that [advanceUntilIdle] cannot drain. When
+     * [releaseRefresh] completes before the IO threads dispatch back, each request finds the
+     * deferred inactive and starts its own refresh. [Dispatchers.Unconfined] keeps every handler
+     * invocation on the test scheduler, so all 10 request coroutines suspend at
+     * `deferred.await()` before the refresh-coroutine runs, making coalescing deterministic.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test

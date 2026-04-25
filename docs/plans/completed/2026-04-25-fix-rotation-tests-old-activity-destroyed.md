@@ -57,4 +57,4 @@ For each of `signupScreen_handlesRotation`, `signupScreen_preservesNameOnRotatio
 
 ### Task 5: Update documentation
 
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] Move this plan to `docs/plans/completed/`

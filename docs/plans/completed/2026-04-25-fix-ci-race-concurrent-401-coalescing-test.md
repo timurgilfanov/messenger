@@ -12,8 +12,8 @@ defaults to `Dispatchers.IO` (`HttpClientEngineBase.dispatcher = config.dispatch
 immediately. When IO threads eventually dispatch back, `deferred1` is already complete, subsequent
 requests see `deferred1.isActive == false`, each create their own deferred, count becomes 2+.
 
-Fix: set `mockEngine.config.dispatcher = Dispatchers.Unconfined` in `buildClient` before creating
-`HttpClient`. `withContext(Unconfined + callContext)` runs the handler synchronously on the
+Fix: set `mockEngine.config.dispatcher = Dispatchers.Unconfined` in the concurrent test body before
+calling `buildClient` (which constructs `HttpClient`). `withContext(Unconfined + callContext)` runs the handler synchronously on the
 calling thread. No real-thread dispatch — all work stays on the test scheduler.
 Concurrency is preserved: `runTest` uses `StandardTestDispatcher` (cooperative, single-threaded).
 When `advanceUntilIdle()` runs the 10 request coroutines FIFO, each suspends at `deferred1.await()`
@@ -42,7 +42,7 @@ The fix is what finally makes that claim true.
 **Files:**
 - Modify: `feature/auth/src/test/kotlin/timur/gilfanov/messenger/auth/AuthInterceptorTest.kt`
 
-- [x] In `buildClient`, add `mockEngine.config.dispatcher = Dispatchers.Unconfined` as the first line (before `HttpClient` is created, so the lazy `dispatcher` property on the engine picks up the override)
+- [x] In the concurrent test body, add `mockEngine.config.dispatcher = Dispatchers.Unconfined` before calling `buildClient` (before `HttpClient` is created, so the lazy `dispatcher` property on the engine picks up the override). Scoped to this test only so other tests run with the default engine dispatcher.
 - [x] Add `import kotlinx.coroutines.Dispatchers` to imports
 - [x] Update the KDoc on the concurrent-401 test to explain the `Dispatchers.Unconfined` constraint: MockEngine defaults to `Dispatchers.IO`, which defeats `advanceUntilIdle()` — Unconfined keeps the handler on the test scheduler so all 10 request coroutines reach `deferred1.await()` before the refresh-coroutine runs, preserving deterministic concurrent coalescing verification
 - [x] Run `./gradlew ktlintFormat detekt --auto-correct`

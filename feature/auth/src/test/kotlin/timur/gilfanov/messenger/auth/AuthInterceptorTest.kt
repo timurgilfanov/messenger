@@ -7,6 +7,7 @@ import io.ktor.client.request.get
 import io.ktor.http.HttpStatusCode
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,7 +39,6 @@ class AuthInterceptorTest {
         tokenRefreshUseCase: TokenRefreshUseCase,
         scope: TestScope,
     ): HttpClient {
-        mockEngine.config.dispatcher = Dispatchers.Unconfined
         val interceptor = AuthInterceptor(authTokenStorage, tokenRefreshUseCase, scope)
         val client = HttpClient(mockEngine)
         interceptor.install(client)
@@ -227,14 +227,18 @@ class AuthInterceptorTest {
             accessToken = "old-access-token"
         }
         var refreshInvocationCount = 0
-        var requestCount = 0
+        val engineResponses = ArrayDeque(
+            listOf(
+                HttpStatusCode.Unauthorized,
+                HttpStatusCode.OK,
+                HttpStatusCode.Unauthorized,
+                HttpStatusCode.OK,
+            ),
+        )
         val mockEngine = MockEngine {
-            requestCount++
-            if (requestCount == 1 || requestCount == 3) {
-                respond("Unauthorized", HttpStatusCode.Unauthorized)
-            } else {
-                respond("OK", HttpStatusCode.OK)
-            }
+            val status = engineResponses.removeFirst()
+            val body = if (status == HttpStatusCode.OK) "OK" else "Unauthorized"
+            respond(body, status)
         }
         val client = buildClient(
             mockEngine = mockEngine,
@@ -253,6 +257,7 @@ class AuthInterceptorTest {
         assertEquals(HttpStatusCode.OK, response1.status)
         assertEquals(HttpStatusCode.OK, response2.status)
         assertEquals(2, refreshInvocationCount)
+        assertTrue(engineResponses.isEmpty())
     }
 
     /**
@@ -260,8 +265,8 @@ class AuthInterceptorTest {
      * same refresh deferred instead of starting their own refresh. The test controls the refresh
      * completion explicitly so request overlap does not depend on wall-clock timing.
      *
-     * [buildClient] sets `mockEngine.config.dispatcher = Dispatchers.Unconfined` before constructing
-     * the [HttpClient]. Without this, [MockEngine] defaults to [kotlinx.coroutines.Dispatchers.IO],
+     * `mockEngine.config.dispatcher = Dispatchers.Unconfined` is set before constructing the
+     * [HttpClient]. Without this, [MockEngine] defaults to [kotlinx.coroutines.Dispatchers.IO],
      * which runs the handler on real IO threads that [advanceUntilIdle] cannot drain. When
      * [releaseRefresh] completes before the IO threads dispatch back, each request finds the
      * deferred inactive and starts its own refresh. [Dispatchers.Unconfined] keeps every handler
@@ -279,6 +284,7 @@ class AuthInterceptorTest {
         val mockEngine = MockEngine {
             respond("Unauthorized", HttpStatusCode.Unauthorized)
         }
+        mockEngine.config.dispatcher = Dispatchers.Unconfined
         val client = buildClient(
             mockEngine = mockEngine,
             authTokenStorage = authTokenStorage,

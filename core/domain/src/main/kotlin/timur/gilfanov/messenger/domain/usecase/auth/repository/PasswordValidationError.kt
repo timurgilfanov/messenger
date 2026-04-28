@@ -1,11 +1,11 @@
 package timur.gilfanov.messenger.domain.usecase.auth.repository
 
 /**
- * Server-side password validation errors returned by auth operations.
+ * Password validation errors used in auth operations.
  *
- * Used as a detail type within repository error variants (e.g., [SignupRepositoryError.InvalidPassword])
- * to describe why the password was rejected.
- * These are display-only — use cases branch on the parent repository error variant,
+ * Covers both server-side rejections (e.g., [SignupRepositoryError.InvalidPassword])
+ * and client-side cross-field rules (e.g., [PasswordEqualToEmail]).
+ * These are display-only — callers branch on the parent error variant,
  * not on the sub-type.
  */
 sealed interface PasswordValidationError {
@@ -15,4 +15,5 @@ sealed interface PasswordValidationError {
     data class PasswordMustContainNumbers(val minNumbers: Int) : PasswordValidationError
     data class PasswordMustContainAlphabet(val minAlphabet: Int) : PasswordValidationError
     data class UnknownRuleViolation(val reason: String) : PasswordValidationError
+    data object PasswordEqualToEmail : PasswordValidationError
 }

@@ -15,6 +15,7 @@ import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseError
+import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -86,18 +87,32 @@ class SignupViewModel @Inject constructor(
     fun updateEmail(email: String) {
         savedStateHandle[KEY_EMAIL] = email
         val currentPassword = _state.value.password
-        val isCredentialsValid = credentialsValidator.validate(
+        val credentialsResult = credentialsValidator.validate(
             Credentials(Email(email), Password(currentPassword)),
-        ) is ResultWithError.Success
+        )
+        val isCredentialsValid = credentialsResult is ResultWithError.Success
+        val credError = (credentialsResult as? ResultWithError.Failure)?.error
         val emailError = (
             credentialsValidator.validate(
                 Email(email),
             ) as? ResultWithError.Failure
             )?.error
+        // Password error depends on email via `PasswordError.PasswordEqualToEmail`
+        val passwordError = when {
+            currentPassword.isEmpty() -> _state.value.passwordError
+            credError is CredentialsValidationError.Password -> credError.reason
+            credentialsResult is ResultWithError.Success -> null
+            else -> (
+                credentialsValidator.validate(
+                    Password(currentPassword),
+                ) as? ResultWithError.Failure
+                )?.error
+        }
         _state.update {
             it.copy(
                 email = email,
                 emailError = emailError,
+                passwordError = passwordError,
                 isCredentialsValid = isCredentialsValid,
             )
         }
@@ -105,11 +120,20 @@ class SignupViewModel @Inject constructor(
 
     fun updatePassword(password: String) {
         val currentEmail = _state.value.email
-        val isCredentialsValid = credentialsValidator.validate(
+        val credentialsResult = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
-        ) is ResultWithError.Success
-        val passwordError =
-            (credentialsValidator.validate(Password(password)) as? ResultWithError.Failure)?.error
+        )
+        val isCredentialsValid = credentialsResult is ResultWithError.Success
+        val credError = (credentialsResult as? ResultWithError.Failure)?.error
+        // Email check have a priority in credentials validation in `CredentialsValidatorImpl`
+        val passwordError = when (credError) {
+            is CredentialsValidationError.Password -> credError.reason
+            else -> (
+                credentialsValidator.validate(
+                    Password(password),
+                ) as? ResultWithError.Failure
+                )?.error
+        }
         val currentConfirmPassword = _state.value.confirmPassword
         val isPasswordConfirmed = password == currentConfirmPassword
         _state.update {

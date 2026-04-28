@@ -77,4 +77,7 @@ internal fun PasswordValidationError.toDisplayString(): String = when (this) {
 
     is PasswordValidationError.UnknownRuleViolation ->
         stringResource(R.string.auth_error_invalid_password_server)
+
+    is PasswordValidationError.PasswordEqualToEmail ->
+        stringResource(R.string.auth_error_password_must_not_equal_email)
 }

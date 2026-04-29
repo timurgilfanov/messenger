@@ -47,6 +47,7 @@ Full strategy in `docs/Testing Strategy.md`.
 - **Reproducibility**: Use constants for time and IDs instead of current time or randomly generated IDs to have a constant input for better reproduction and issue location.
 - **Turbine `cancelAndIgnoreRemainingEvents()`**: Only use it when there are genuinely unconsumed events to discard (e.g. after `advanceUntilIdle()` on a `StateFlow` that emitted further updates). Do not use it as a default `StateFlow` teardown — Turbine cancels the flow and asserts no unconsumed events automatically when the `test {}` block ends.
 - **`assertTrue` over `assert`**: Use `assertTrue` from `kotlin.test` for boolean assertions in tests. Kotlin's built-in `assert()` is a JVM assertion that can be silently disabled at runtime with `-da`.
+- **`MockEngine` dispatcher in `runTest`**: When using Ktor's `MockEngine` inside `runTest`, set `mockEngine.config.dispatcher = Dispatchers.Unconfined` before constructing `HttpClient`. `MockEngine` defaults to `Dispatchers.IO`; `advanceUntilIdle()` cannot drain real IO threads, so the test scheduler reports idle while IO threads are still running the handler — causing non-deterministic interleaving in concurrency tests.
 
 ## Workflows
 - After editing any source file: run `./gradlew ktlintFormat detekt --auto-correct`

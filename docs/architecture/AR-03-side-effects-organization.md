@@ -20,19 +20,17 @@ This rule applies to every `XxxSideEffects` sealed interface emitted via the Vie
 
 Organize side effects as a **two-level sealed hierarchy**: the outer level declares the effect category; the inner level names the specific event in user-facing terms.
 
-Three mandatory categories:
+Standard categories:
 
 | Category | Purpose | Examples |
 |---|---|---|
-| `Navigation` | Screen transition the user must experience | `ToLogin`, `ToChatList`, `ToSignup` |
+| `Navigation` | Route-agnostic transition the user must experience | `Authenticated`, `Unauthenticated`, `SignupRequested` |
 | `Feedback` | Ambient information the user should receive (toast, snackbar, banner) | `NetworkUnavailable`, `LogoutFailed(isRetryable: Boolean)` |
 | `System` | OS-level intent the app must fire | `OpenAppSettings`, `OpenStorageSettings` |
+| `UiCommand` | Transient local UI command that is neither navigation, feedback, nor an OS intent | `InputCleared`, `Focused`, `ScrolledToTop` |
 
 ```kotlin
 sealed interface SettingsSideEffects {
-    sealed interface Navigation : SettingsSideEffects {
-        data object ToLogin : Navigation
-    }
     sealed interface Feedback : SettingsSideEffects {
         data class ObserveFailed(val isFatal: Boolean) : Feedback
         data class LogoutFailed(val isRetryable: Boolean) : Feedback
@@ -40,10 +38,6 @@ sealed interface SettingsSideEffects {
 }
 
 sealed interface LoginSideEffects {
-    sealed interface Navigation : LoginSideEffects {
-        data object ToChatList : Navigation
-        data object ToSignup : Navigation
-    }
     sealed interface Feedback : LoginSideEffects {
         data object NetworkUnavailable : Feedback
         data object ServiceUnavailable : Feedback
@@ -54,6 +48,12 @@ sealed interface LoginSideEffects {
     sealed interface System : LoginSideEffects {
         data object OpenAppSettings : System
         data object OpenStorageSettings : System
+    }
+}
+
+sealed interface ChatSideEffects {
+    sealed interface UiCommand : ChatSideEffects {
+        data object InputCleared : UiCommand
     }
 }
 ```
@@ -69,38 +69,34 @@ Domain error types (sealed interfaces from the domain or data layer, e.g. `Local
 
 ## Rationale
 
-**Why categories:** The ViewModel knows what kind of UI response is needed (navigate, notify, fire intent). The UI knows how to render within that kind. The outer category is the stable contract between them; the inner case is the semantic detail that drives content. This stops the ViewModel from committing to UI primitives (snackbar vs dialog) while also stopping the UI from reasoning about domain error semantics.
+**Why categories:** The ViewModel knows what kind of UI response is needed (navigate, notify, fire intent, run a local UI command). The UI knows how to render within that kind. The outer category is the stable contract between them; the inner case is the semantic detail that drives content. This stops the ViewModel from committing to UI primitives (snackbar vs dialog) while also stopping the UI from reasoning about domain error semantics.
 
-**Why two levels instead of flat:** A flat action-based hierarchy forces the ViewModel to commit to rendering mechanisms (`ShowSnackbar`, `ShowDialog`). A flat cause-based hierarchy forces the UI to resolve many-to-one mappings (`Unauthorized` and `LoggedOut` both navigate to login — the UI must know this). The two-level structure absorbs both problems: many-to-one domain causes map to one inner case (`Navigation.ToLogin`); rendering decisions stay in the UI.
+**Why route-agnostic navigation:** Navigation side effects must describe the user-visible state or intent, not a concrete route name. Auth-driven navigation is centralized by ADR-004, so feature ViewModels do not emit per-screen auth navigation effects. When a non-auth ViewModel does need navigation, the handler maps route-agnostic cases such as `Navigation.SignupRequested` to the concrete route.
+
+**Why two levels instead of flat:** A flat action-based hierarchy forces the ViewModel to commit to rendering mechanisms (`ShowSnackbar`, `ShowDialog`). A flat cause-based hierarchy forces the UI to resolve many-to-one mappings (`Unauthorized` and `LoggedOut` both produce the same auth transition). The two-level structure absorbs both problems: many-to-one domain causes map to one route-agnostic inner case; rendering decisions stay in the UI.
 
 **Why inner cases must be user-facing:** If inner cases carry raw domain error types, the UI must import and interpret domain layer types, which recreates the cause-based leak. If inner cases carry implementation-flavored names, the UI still reasons about domain specifics. User-facing names are domain-neutral and stable.
 
 ## Implications
 - ViewModel must map domain errors to UI-relevant descriptors before emitting
-- `Unauthorized` and `LoggedOut` both emit `Navigation.ToLogin` — the ViewModel resolves the many-to-one mapping
+- Feature ViewModels do not emit per-screen auth navigation effects; auth routing follows ADR-004
 - `ShowSnackbar` is no longer a valid effect name — use `Feedback.XxxEvent`; the UI handler decides the widget
+- Transient local UI commands use `UiCommand.XxxEvent`; do not force input clearing, focus, or scroll commands into `Feedback`, `Navigation`, or `System`
 - UI handlers dispatch on the outer category first, then branch on inner case for content
-- A centralized composable can handle `Navigation.ToLogin` uniformly across features without branching on screen identity
 
 ## Enforcement
-- Side effects interfaces use the two-level hierarchy: an outer category (`Navigation`, `Feedback`, `System`) and inner named cases
+- Side effects interfaces use the two-level hierarchy: an outer category (`Navigation`, `Feedback`, `System`, `UiCommand`) and inner named cases
+- Use only the categories that apply to the screen; do not add empty category interfaces
 - Domain error types do not appear as parameter types in any `XxxSideEffects` interface
 - Inner case names are user-facing, not domain-class names
+- Navigation case names are route-agnostic; `ToXxx` and `NavigateToXxx` names are rejected unless the route itself is the user-facing concept
 - `ShowSnackbar`, `ShowDialog`, `ShowToast` are rejected as effect names in code review
-- Flat single-level side effects interfaces are flagged in code review unless the screen has exactly one category of effect
+- Flat single-level side effects interfaces are flagged in code review
 
 ## Anti-patterns
 - `data class ShowSnackbar(val message: SnackbarMessage)` — ViewModel commits to rendering mechanism
 - `data class ObserveSettingsFailed(val error: LocalStorageError)` — raw domain error type crosses the boundary
-- `data object Unauthorized` and `data object LoggedOut` as sibling cases that always produce identical UI behavior — many-to-one mapping deferred to UI
+- `data object NavigateToChatList` — ViewModel commits to a concrete route name
+- `data object Unauthorized` and `data object LoggedOut` as sibling feature-screen cases that duplicate centralized auth navigation
 - Inner cases named after the domain class or use case: `ObserveSettingsUseCaseFailed`
-- Adding a fourth category (e.g., `Analytics`) without updating this rule — category creep degrades dispatch discipline
-
-## Open issues
-This rule is proposed but not yet applied to the existing codebase. The following interfaces were produced under the old conventions and will need migration:
-- `SettingsSideEffects` (cause-based, raw domain error types as parameters)
-- `ProfileSideEffects` (cause-based, raw domain error type as parameter)
-- `LanguageSideEffects` (cause-based, raw domain error type as parameter)
-- `LoginSideEffects` (action-based, `ShowSnackbar` as a category)
-- `ProfileEditSideEffects` (mixed, raw domain error type as parameter)
-- `ChatListSideEffects` (cause-based, single case — may be acceptable as-is after migration if `Unauthorized` becomes `Navigation.ToLogin`)
+- Adding a new category (e.g., `Analytics`) without updating this rule — category creep degrades dispatch discipline

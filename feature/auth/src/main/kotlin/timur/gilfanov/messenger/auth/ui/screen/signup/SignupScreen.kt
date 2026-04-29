@@ -52,14 +52,16 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
 import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
+import timur.gilfanov.messenger.auth.ui.utils.toDisplayString
 import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
@@ -244,21 +246,11 @@ private fun SignupForm(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        NameField(state.name, state.nameError?.toDisplayString(), onNameChange)
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        EmailField(state.email, state.emailError?.toDisplayString(), onEmailChange)
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        PasswordField(state.password, state.passwordError?.toDisplayString(), onPasswordChange)
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        ConfirmPasswordField(
-            confirmPassword = state.confirmPassword,
-            isPasswordMismatch = state.isPasswordMismatched,
+        SignupCredentialsFields(
+            state = state,
+            onNameChange = onNameChange,
+            onEmailChange = onEmailChange,
+            onPasswordChange = onPasswordChange,
             onConfirmPasswordChange = onConfirmPasswordChange,
         )
 
@@ -304,12 +296,59 @@ private fun SignupForm(
 }
 
 @Composable
-private fun NameField(name: String, nameError: String?, onNameChange: (String) -> Unit) {
+private fun SignupCredentialsFields(
+    state: SignupUiState,
+    onNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+) {
+    val areFieldsEnabled = !state.isLoading
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        NameField(
+            name = state.name,
+            nameError = state.nameError?.toDisplayString(),
+            onNameChange = onNameChange,
+            enabled = areFieldsEnabled,
+        )
+
+        EmailField(
+            email = state.email,
+            emailError = state.emailError?.toDisplayString(),
+            onEmailChange = onEmailChange,
+            enabled = areFieldsEnabled,
+        )
+
+        PasswordField(
+            password = state.password,
+            passwordError = state.passwordError?.toDisplayString(),
+            onPasswordChange = onPasswordChange,
+            enabled = areFieldsEnabled,
+        )
+
+        ConfirmPasswordField(
+            confirmPassword = state.confirmPassword,
+            isPasswordMismatch = state.isPasswordMismatched,
+            onConfirmPasswordChange = onConfirmPasswordChange,
+            enabled = areFieldsEnabled,
+        )
+    }
+}
+
+@Composable
+private fun NameField(
+    name: String,
+    nameError: String?,
+    onNameChange: (String) -> Unit,
+    enabled: Boolean,
+) {
     OutlinedTextField(
         value = name,
         onValueChange = onNameChange,
         label = { Text(stringResource(R.string.signup_name_label)) },
         singleLine = true,
+        enabled = enabled,
         isError = nameError != null,
         supportingText = nameError?.let { error ->
             {
@@ -326,7 +365,12 @@ private fun NameField(name: String, nameError: String?, onNameChange: (String) -
 }
 
 @Composable
-private fun EmailField(email: String, emailError: String?, onEmailChange: (String) -> Unit) {
+private fun EmailField(
+    email: String,
+    emailError: String?,
+    onEmailChange: (String) -> Unit,
+    enabled: Boolean,
+) {
     OutlinedTextField(
         value = email,
         onValueChange = onEmailChange,
@@ -336,6 +380,7 @@ private fun EmailField(email: String, emailError: String?, onEmailChange: (Strin
             imeAction = ImeAction.Next,
         ),
         singleLine = true,
+        enabled = enabled,
         isError = emailError != null,
         supportingText = emailError?.let { error ->
             {
@@ -356,6 +401,7 @@ private fun PasswordField(
     password: String,
     passwordError: String?,
     onPasswordChange: (String) -> Unit,
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = password,
@@ -367,6 +413,7 @@ private fun PasswordField(
             imeAction = ImeAction.Next,
         ),
         singleLine = true,
+        enabled = enabled,
         isError = passwordError != null,
         supportingText = passwordError?.let { error ->
             {
@@ -387,6 +434,7 @@ private fun ConfirmPasswordField(
     confirmPassword: String,
     isPasswordMismatch: Boolean,
     onConfirmPasswordChange: (String) -> Unit,
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = confirmPassword,
@@ -398,6 +446,7 @@ private fun ConfirmPasswordField(
             imeAction = ImeAction.Done,
         ),
         singleLine = true,
+        enabled = enabled,
         isError = isPasswordMismatch,
         supportingText = if (isPasswordMismatch) {
             {
@@ -433,37 +482,22 @@ private fun ProfileNameValidationError.toDisplayString(): String = when (this) {
 }
 
 @Composable
-private fun CredentialsValidationError.toDisplayString(): String = when (this) {
-    CredentialsValidationError.BlankEmail -> stringResource(R.string.login_error_blank_email)
+private fun SignupEmailError.toDisplayString(): String = when (this) {
+    EmailValidationError.BlankEmail -> stringResource(R.string.auth_error_blank_email)
 
-    CredentialsValidationError.InvalidEmailFormat ->
-        stringResource(R.string.login_error_invalid_email_format)
+    EmailValidationError.InvalidEmailFormat ->
+        stringResource(R.string.auth_error_invalid_email_format)
 
-    CredentialsValidationError.NoAtInEmail -> stringResource(R.string.login_error_no_at_in_email)
+    EmailValidationError.NoAtInEmail -> stringResource(R.string.auth_error_no_at_in_email)
 
-    is CredentialsValidationError.EmailTooLong ->
-        stringResource(R.string.login_error_email_too_long, maxLength)
+    is EmailValidationError.EmailTooLong ->
+        stringResource(R.string.auth_error_email_too_long, maxLength)
 
-    CredentialsValidationError.NoDomainAtEmail ->
-        stringResource(R.string.login_error_no_domain_at_email)
+    EmailValidationError.NoDomainAtEmail -> stringResource(R.string.auth_error_no_domain_at_email)
 
-    is CredentialsValidationError.ForbiddenCharacterInEmail ->
-        stringResource(R.string.login_error_forbidden_character_in_email, character)
+    SignupEmailError.EmailTaken -> stringResource(R.string.signup_error_email_taken)
 
-    is CredentialsValidationError.PasswordTooShort ->
-        stringResource(R.string.login_error_password_too_short, minLength)
-
-    is CredentialsValidationError.PasswordTooLong ->
-        stringResource(R.string.login_error_password_too_long, maxLength)
-
-    is CredentialsValidationError.ForbiddenCharacterInPassword ->
-        stringResource(R.string.login_error_forbidden_character_in_password, character)
-
-    is CredentialsValidationError.PasswordMustContainNumbers ->
-        stringResource(R.string.login_error_password_must_contain_numbers, minNumbers)
-
-    is CredentialsValidationError.PasswordMustContainAlphabet ->
-        stringResource(R.string.login_error_password_must_contain_alphabet, minAlphabet)
+    is EmailUnknownError -> stringResource(R.string.signup_error_invalid_email_server)
 }
 
 @Composable
@@ -471,17 +505,6 @@ private fun SignupGeneralError.toDisplayString(): String = when (this) {
     SignupGeneralError.InvalidToken -> stringResource(R.string.signup_error_invalid_token)
     SignupGeneralError.AccountAlreadyExists ->
         stringResource(R.string.signup_error_account_already_exists)
-
-    is SignupGeneralError.InvalidEmail -> when (reason) {
-        EmailValidationError.EmailTaken -> stringResource(R.string.signup_error_email_taken)
-        EmailValidationError.EmailNotExists,
-        is EmailValidationError.UnknownRuleViolation,
-        -> stringResource(R.string.signup_error_invalid_email_server)
-    }
-
-    is SignupGeneralError.InvalidPassword -> stringResource(
-        R.string.signup_error_invalid_password_server,
-    )
 }
 
 private fun SignupSnackbarMessage.toDisplayString(context: Context): String = when (this) {

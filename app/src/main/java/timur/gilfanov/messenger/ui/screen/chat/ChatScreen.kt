@@ -52,16 +52,12 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 @Composable
 fun ChatScreen(
     chatId: ChatId,
-    currentUserId: ParticipantId,
     modifier: Modifier = Modifier,
     viewModel: ChatViewModel =
         hiltViewModel(
-            key = "${chatId.id}_${currentUserId.id}",
+            key = chatId.id.toString(),
             creationCallback = { factory: ChatViewModel.ChatViewModelFactory ->
-                factory.create(
-                    chatId = chatId.id,
-                    currentUserId = currentUserId.id,
-                )
+                factory.create(chatId = chatId.id)
             },
         ),
 ) {
@@ -221,10 +217,7 @@ fun ChatContent(
                 val message = messages[index]
                 if (message != null) {
                     MessageBubble(
-                        message = message.toMessageUiModel(
-                            participants = state.participants,
-                            currentUserId = getCurrentUserId(state),
-                        ),
+                        message = message.toMessageUiModel(participants = state.participants),
                         modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
@@ -278,7 +271,6 @@ private fun ChatLoadingPreview() {
  */
 private fun Message.toMessageUiModel(
     participants: ImmutableList<ParticipantUiModel>,
-    currentUserId: ParticipantId,
 ): MessageUiModel {
     val senderParticipant = participants.find { it.id == this.sender.id }
 
@@ -292,18 +284,8 @@ private fun Message.toMessageUiModel(
         senderName = senderParticipant?.name ?: this.sender.name,
         createdAt = formatTimestamp(this.createdAt.toEpochMilliseconds()),
         deliveryStatus = this.deliveryStatus ?: DeliveryStatus.Sending(0),
-        isFromCurrentUser = this.sender.id == currentUserId,
+        isFromCurrentUser = this.sender.isCurrentUser,
     )
-}
-
-/**
- * Helper function to get the current user ID from the chat state.
- * This is a temporary workaround - ideally we'd store this in the UI state.
- */
-private fun getCurrentUserId(state: ChatUiState.Ready): ParticipantId {
-    // For now, we'll use a heuristic to find the current user
-    // This should be improved to properly track the current user ID
-    return state.participants.firstOrNull()?.id ?: ParticipantId(UUID.randomUUID())
 }
 
 private fun formatTimestamp(epochMillis: Long): String {

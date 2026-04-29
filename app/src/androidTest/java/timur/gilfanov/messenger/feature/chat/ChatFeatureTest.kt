@@ -35,17 +35,20 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import timur.gilfanov.messenger.ChatScreenTestActivity
 import timur.gilfanov.messenger.annotations.FeatureTest
-import timur.gilfanov.messenger.data.repository.DefaultIdentityRepository
+import timur.gilfanov.messenger.auth.di.AuthDataModule
 import timur.gilfanov.messenger.data.repository.LocaleRepositoryImpl
 import timur.gilfanov.messenger.di.RepositoryModule
+import timur.gilfanov.messenger.di.TestChatModule
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
+import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
-import timur.gilfanov.messenger.domain.usecase.profile.IdentityRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.LocaleRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.test.AndroidTestDataHelper
 import timur.gilfanov.messenger.test.AndroidTestDataHelper.DataScenario.NON_EMPTY
 import timur.gilfanov.messenger.test.AndroidTestRepositoryWithRealImplementation
+import timur.gilfanov.messenger.test.AndroidTestSettingsHelper
 import timur.gilfanov.messenger.test.SettingsRepositoryStub
 import timur.gilfanov.messenger.util.Logger
 
@@ -53,8 +56,8 @@ import timur.gilfanov.messenger.util.Logger
 @HiltAndroidTest
 @UninstallModules(
     RepositoryModule::class,
-    timur.gilfanov.messenger.di.TestUserModule::class,
-    timur.gilfanov.messenger.di.TestChatModule::class,
+    TestChatModule::class,
+    AuthDataModule::class,
 )
 @FeatureTest
 @RunWith(AndroidJUnit4::class)
@@ -83,7 +86,9 @@ class ChatFeatureTest {
         fun provideSettingsRepository(): SettingsRepository = SettingsRepositoryStub()
 
         @Provides
-        fun provideIdentityRepository(): IdentityRepository = DefaultIdentityRepository()
+        @Singleton
+        fun provideAuthRepository(): AuthRepository =
+            AuthRepositoryFake(AndroidTestSettingsHelper.testSession)
 
         @Provides
         @Singleton
@@ -97,11 +102,6 @@ class ChatFeatureTest {
     @Module
     @InstallIn(SingletonComponent::class)
     object TestUserChatModule {
-        @Provides
-        @Singleton
-        @timur.gilfanov.messenger.di.TestUserId
-        fun provideTestUserId(): String = AndroidTestDataHelper.USER_ID
-
         @Provides
         @Singleton
         @timur.gilfanov.messenger.di.TestChatId
@@ -182,7 +182,7 @@ class ChatFeatureTest {
             }
 
             composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntilExactlyOneExists(hasTestTag("message_input"), timeoutMillis = 5_000L)
 
             onNodeWithTag("message_input").apply {
                 assertIsDisplayed()
@@ -190,7 +190,7 @@ class ChatFeatureTest {
             }
 
             composeTestRule.activity.requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
-            waitForIdle()
+            waitUntilExactlyOneExists(hasTestTag("message_input"), timeoutMillis = 5_000L)
 
             onNodeWithTag("message_input")
                 .assertTextEquals(testMessage)

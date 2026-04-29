@@ -26,6 +26,10 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
     override val authState: Flow<AuthState> = authStateFlow.asStateFlow()
     val currentAuthState: AuthState get() = authStateFlow.value
 
+    fun setState(state: AuthState) {
+        authStateFlow.value = state
+    }
+
     private val loginWithCredentialsQueue =
         ArrayDeque<ResultWithError<AuthSession, LoginRepositoryError>>()
     private val loginWithGoogleQueue =
@@ -174,7 +178,9 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
         } else {
             defaultLogoutResult ?: ResultWithError.Success(Unit)
         }
-        if (result is ResultWithError.Success) {
+        val sessionLocallyCleared = result !is ResultWithError.Failure ||
+            result.error !is LogoutRepositoryError.LocalOperationFailed
+        if (sessionLocallyCleared) {
             authStateFlow.value = Unauthenticated
         }
         return result

@@ -6,9 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import java.util.UUID
 import timur.gilfanov.messenger.domain.entity.fold
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
@@ -26,25 +24,17 @@ class SyncSettingWorker @AssistedInject constructor(
 
     @Suppress("ReturnCount")
     override suspend fun doWork(): Result {
+        if (isStopped) {
+            logger.i(TAG, "Worker stopped before starting; aborting sync")
+            return Result.failure()
+        }
+
         if (runAttemptCount >= MAX_RETRY_ATTEMPTS) {
             logger.w(
                 TAG,
                 "Max retry attempts ($MAX_RETRY_ATTEMPTS) reached for setting sync. " +
                     "Giving up - periodic sync will retry later.",
             )
-            return Result.failure()
-        }
-
-        val userIdString = inputData.getString(KEY_USER_ID)
-        if (userIdString == null) {
-            logger.w(TAG, "Missing user_id in WorkManager input data")
-            return Result.failure()
-        }
-
-        val userId = try {
-            UserId(UUID.fromString(userIdString))
-        } catch (_: IllegalArgumentException) {
-            logger.w(TAG, "Invalid user_id format: $userIdString")
             return Result.failure()
         }
 
@@ -60,8 +50,12 @@ class SyncSettingWorker @AssistedInject constructor(
             return Result.failure()
         }
 
-        return syncSetting(userId, settingKey).fold(
+        return syncSetting(settingKey).fold(
             onSuccess = {
+                if (isStopped) {
+                    logger.i(TAG, "Worker stopped after sync; discarding success result")
+                    return@fold Result.failure()
+                }
                 if (runAttemptCount > 0) {
                     logger.i(TAG, "Setting sync succeeded after $runAttemptCount retries")
                 }
@@ -70,7 +64,7 @@ class SyncSettingWorker @AssistedInject constructor(
             onFailure = { error ->
                 when (error) {
                     SyncSettingError.IdentityNotAvailable -> {
-                        logger.e(TAG, "Identity not available for user ${userId.id}")
+                        logger.e(TAG, "Identity not available for sync")
                         Result.retry()
                     }
                     SyncSettingError.SettingNotFound -> {
@@ -141,7 +135,6 @@ class SyncSettingWorker @AssistedInject constructor(
     companion object {
         private const val TAG = "SyncSettingWorker"
         private const val MAX_RETRY_ATTEMPTS = 3
-        const val KEY_USER_ID = "user_id"
         const val KEY_SETTING_KEY = "setting_key"
     }
 }

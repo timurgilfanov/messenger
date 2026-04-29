@@ -66,7 +66,6 @@ class ChatViewModelUpdatesTest {
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
@@ -119,7 +118,6 @@ class ChatViewModelUpdatesTest {
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,
@@ -190,7 +188,6 @@ class ChatViewModelUpdatesTest {
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,

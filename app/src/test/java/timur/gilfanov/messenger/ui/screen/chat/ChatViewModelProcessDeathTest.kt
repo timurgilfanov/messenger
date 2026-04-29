@@ -30,16 +30,13 @@ class ChatViewModelProcessDeathTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `restores chatId and currentUserId from SavedStateHandle after process death`() = runTest {
+    fun `restores chatId from SavedStateHandle after process death`() = runTest {
         val chatId = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
         val currentUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
         val otherUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
 
         val restoredSavedStateHandle = SavedStateHandle(
-            mapOf(
-                "chatId" to chatId.id.toString(),
-                "currentUserId" to currentUserId.id.toString(),
-            ),
+            mapOf("chatId" to chatId.id.toString()),
         )
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
@@ -47,7 +44,6 @@ class ChatViewModelProcessDeathTest {
 
         val viewModel = ChatViewModel(
             chatIdUuid = UUID.fromString("00000000-0000-0000-0000-000000000010"),
-            currentUserIdUuid = UUID.fromString("00000000-0000-0000-0000-000000000020"),
             savedStateHandle = restoredSavedStateHandle,
             sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),
@@ -65,7 +61,7 @@ class ChatViewModelProcessDeathTest {
     }
 
     @Test
-    fun `saves chatId and currentUserId to SavedStateHandle on first creation`() = runTest {
+    fun `saves chatId to SavedStateHandle on first creation`() = runTest {
         val chatId = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
         val currentUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
         val otherUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
@@ -77,7 +73,6 @@ class ChatViewModelProcessDeathTest {
 
         ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = emptySavedStateHandle,
             sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),
@@ -86,9 +81,5 @@ class ChatViewModelProcessDeathTest {
         )
 
         assertEquals(chatId.id.toString(), emptySavedStateHandle.get<String>("chatId"))
-        assertEquals(
-            currentUserId.id.toString(),
-            emptySavedStateHandle.get<String>("currentUserId"),
-        )
     }
 }

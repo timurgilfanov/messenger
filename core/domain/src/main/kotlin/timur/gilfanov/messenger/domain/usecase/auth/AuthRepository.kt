@@ -21,6 +21,10 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryE
  * update it on success.
  */
 interface AuthRepository {
+    /**
+     * Emits the current [AuthState]. Suspends subscribers until the state is resolved, then emits
+     * on every transition between [AuthState.Authenticated] and [AuthState.Unauthenticated].
+     */
     val authState: Flow<AuthState>
 
     suspend fun loginWithCredentials(

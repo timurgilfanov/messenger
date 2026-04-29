@@ -3,21 +3,30 @@ package timur.gilfanov.messenger.ui.activity
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-import timur.gilfanov.messenger.BuildConfig
+import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.screen.login.LoginScreen
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupScreen
 import timur.gilfanov.messenger.domain.entity.chat.toChatId
-import timur.gilfanov.messenger.domain.entity.chat.toParticipantId
 import timur.gilfanov.messenger.navigation.Chat
 import timur.gilfanov.messenger.navigation.ChatList
 import timur.gilfanov.messenger.navigation.Language
@@ -43,36 +52,81 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            hiltViewModel<MainActivityViewModel>() // needed only for locale observation
+            val viewModel = hiltViewModel<MainActivityViewModel>()
 
             MessengerTheme {
-                MessengerApp(googleSignInClient = googleSignInClient)
+                MessengerApp(
+                    googleSignInClient = googleSignInClient,
+                    effects = viewModel.effects,
+                )
             }
         }
     }
 }
 
-@Suppress("LongMethod") // todo keep entities in feature modules
+@VisibleForTesting
+internal fun applyMainActivityEffect(
+    effect: MainActivitySideEffect,
+    backStack: MutableList<NavKey>,
+) {
+    when (effect) {
+        MainActivitySideEffect.Unauthenticated -> {
+            val top = backStack.lastOrNull()
+            if (top !is Login && top !is Signup) {
+                backStack.clear()
+                backStack.add(Login)
+            }
+        }
+        MainActivitySideEffect.Authenticated -> {
+            val top = backStack.lastOrNull()
+            if (top == null || top is Login || top is Signup) {
+                backStack.clear()
+                backStack.add(Main)
+            }
+        }
+    }
+}
+
 @Composable
-fun MessengerApp(googleSignInClient: GoogleSignInClient) {
-    val currentUserId = "550e8400-e29b-41d4-a716-446655440000".toParticipantId()
+@Suppress("ModifierMissing", "ktlint:compose:modifier-missing-check")
+fun MessengerApp(googleSignInClient: GoogleSignInClient, effects: Flow<MainActivitySideEffect>) {
+    val backStack = rememberNavBackStack<NavKey>()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    @Suppress("KotlinConstantConditions")
-    val initBackStack = if (BuildConfig.FEATURE_SETTINGS) Main else ChatList
-    val backStack = rememberNavBackStack(initBackStack)
-
-    val onAuthFailure: () -> Unit = {
-        backStack.clear()
-        backStack.add(Login)
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            effects.collect { effect -> applyMainActivityEffect(effect, backStack) }
+        }
     }
 
+    if (backStack.isEmpty()) {
+        MessengerAppLoading()
+    } else {
+        MessengerAppReady(
+            googleSignInClient = googleSignInClient,
+            backStack = backStack,
+        )
+    }
+}
+
+@Composable
+private fun MessengerAppLoading() {
+    Box {}
+}
+
+@Suppress("LongMethod", "ModifierMissing", "ktlint:compose:modifier-missing-check")
+@Composable
+private fun MessengerAppReady(googleSignInClient: GoogleSignInClient, backStack: NavBackStack) {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
+        entryDecorators = listOf(
+            rememberSavedStateNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
         entryProvider = entryProvider {
             entry<ChatList> {
                 ChatListScreen(
-                    onAuthFailure = onAuthFailure,
                     actions = ChatListActions(
                         onChatClick = { chatId ->
                             backStack.add(Chat(chatId.id.toString()))
@@ -89,12 +143,10 @@ fun MessengerApp(googleSignInClient: GoogleSignInClient) {
             entry<Chat> { chat ->
                 ChatScreen(
                     chatId = chat.chatId.toChatId(),
-                    currentUserId = currentUserId,
                 )
             }
             entry<Main> {
                 MainScreen(
-                    onAuthFailure = onAuthFailure,
                     onChatClick = { chatId -> backStack.add(Chat(chatId.id.toString())) },
                     onNewChatClick = {
                         // Navigation to new chat screen will be implemented later
@@ -113,7 +165,6 @@ fun MessengerApp(googleSignInClient: GoogleSignInClient) {
             }
             entry<Language> {
                 LanguageScreen(
-                    onAuthFailure = onAuthFailure,
                     onBackClick = { backStack.removeLastOrNull() },
                 )
             }

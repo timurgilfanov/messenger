@@ -36,7 +36,6 @@ import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithCredentialsUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCase
 import timur.gilfanov.messenger.auth.domain.usecase.SignupWithGoogleUseCaseImpl
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.domain.validation.ProfileNameValidator
@@ -50,6 +49,7 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.util.Logger
@@ -173,10 +173,17 @@ class SignupFeatureTest {
                 hasTestTag("signup_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
-            onNodeWithTag("signup_name_field").assertExists()
-            onNodeWithTag("signup_google_sign_up_button").assertExists()
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_name_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_google_sign_up_button"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
         }
     }
 
@@ -189,8 +196,13 @@ class SignupFeatureTest {
             )
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
 
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_name_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             val nameLabel = activity.getString(R.string.signup_name_label)
             onNodeWithTag("signup_name_field").assertTextEquals(nameLabel, TEST_NAME)
@@ -206,8 +218,13 @@ class SignupFeatureTest {
             )
             onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
 
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_email_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             val emailLabel = activity.getString(R.string.signup_email_label)
             onNodeWithTag("signup_email_field").assertTextEquals(emailLabel, TEST_EMAIL)
@@ -241,7 +258,10 @@ class SignupFeatureTest {
             )
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
             onNodeWithTag("signup_google_sign_up_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("signup_general_error"))
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_general_error"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("signup_general_error")
                 .assertTextEquals(activity.getString(R.string.signup_error_invalid_token))
         }
@@ -283,8 +303,8 @@ class SignupFeatureTest {
     @Test
     fun signupScreen_credentialsSignupClientEmailError_showsEmailFieldError() {
         SignupTestModule.signupWithCredentialsUseCase.result = ResultWithError.Failure(
-            SignupWithCredentialsUseCaseError.ValidationFailed(
-                CredentialsValidationError.BlankEmail,
+            SignupWithCredentialsUseCaseError.InvalidEmail(
+                EmailValidationError.BlankEmail,
             ),
         )
         with(composeTestRule) {
@@ -302,7 +322,7 @@ class SignupFeatureTest {
                     .fetchSemanticsNodes().size == 1
             }
             onNodeWithTag("signup_email_error", useUnmergedTree = true)
-                .assertTextEquals(activity.getString(R.string.login_error_blank_email))
+                .assertTextEquals(activity.getString(R.string.auth_error_blank_email))
         }
     }
 
@@ -325,6 +345,27 @@ class SignupFeatureTest {
     }
 
     @Test
+    fun signupScreen_credentialsSignup_fieldsBecomeDisabledWhileLoading() {
+        SignupTestModule.signupWithCredentialsUseCase.shouldSuspend = true
+        with(composeTestRule) {
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_screen"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
+            onNodeWithTag("signup_email_field").performTextInput(TEST_EMAIL)
+            onNodeWithTag("signup_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("signup_confirm_password_field").performTextInput(TEST_PASSWORD)
+            onNodeWithTag("signup_credentials_sign_up_button").performClick()
+            waitForIdle()
+            onNodeWithTag("signup_name_field").assertIsNotEnabled()
+            onNodeWithTag("signup_email_field").assertIsNotEnabled()
+            onNodeWithTag("signup_password_field").assertIsNotEnabled()
+            onNodeWithTag("signup_confirm_password_field").assertIsNotEnabled()
+        }
+    }
+
+    @Test
     fun signupScreen_localOperationFailed_storageFull_showsBlockingDialog() {
         SignupTestModule.googleSignInClient.result =
             GoogleSignInResult.Success(TEST_GOOGLE_ID_TOKEN)
@@ -340,7 +381,10 @@ class SignupFeatureTest {
             )
             onNodeWithTag("signup_name_field").performTextInput(TEST_NAME)
             onNodeWithTag("signup_google_sign_up_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("signup_blocking_error_dialog"))
+            waitUntilExactlyOneExists(
+                hasTestTag("signup_blocking_error_dialog"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("signup_blocking_error_action_button")
                 .assertTextEquals(
                     activity.getString(R.string.auth_action_open_storage_settings),

@@ -17,6 +17,8 @@ import timur.gilfanov.messenger.auth.ui.SignupViewModelTestFixtures.createViewMo
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupBlockingError
 import timur.gilfanov.messenger.auth.ui.screen.signup.SignupSideEffects
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
@@ -66,12 +68,14 @@ class SignupViewModelSubmitTest {
     @Test
     fun `updateEmail clears emailError`() = runTest {
         val viewModel = createViewModel(
-            credentialsValidatorError = CredentialsValidationError.BlankEmail,
+            credentialsValidatorError = CredentialsValidationError.Email(
+                EmailValidationError.BlankEmail,
+            ),
         )
 
         viewModel.submitSignupWithCredentials()
         advanceUntilIdle()
-        assertIs<CredentialsValidationError.BlankEmail>(viewModel.state.value.emailError)
+        assertIs<EmailValidationError.BlankEmail>(viewModel.state.value.emailError)
 
         viewModel.updateEmail("user@example.com")
         assertNull(viewModel.state.value.emailError)
@@ -80,12 +84,16 @@ class SignupViewModelSubmitTest {
     @Test
     fun `updatePassword clears passwordError`() = runTest {
         val viewModel = createViewModel(
-            credentialsValidatorError = CredentialsValidationError.PasswordTooShort(8),
+            credentialsValidatorError = CredentialsValidationError.Password(
+                PasswordValidationError.PasswordTooShort(8),
+            ),
         )
 
         viewModel.submitSignupWithCredentials()
         advanceUntilIdle()
-        assertIs<CredentialsValidationError.PasswordTooShort>(viewModel.state.value.passwordError)
+        assertIs<PasswordValidationError.PasswordTooShort>(
+            viewModel.state.value.passwordError,
+        )
 
         viewModel.updatePassword("Password1")
         assertNull(viewModel.state.value.passwordError)

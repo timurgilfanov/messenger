@@ -59,23 +59,57 @@ class LoginViewModel @Inject constructor(
     fun updateEmail(email: String) {
         savedStateHandle[KEY_EMAIL] = email
         val currentPassword = _state.value.password
-        val isCredentialsValid = credentialsValidator.validate(
+        val credentialsResult = credentialsValidator.validate(
             Credentials(Email(email), Password(currentPassword)),
-        ) is ResultWithError.Success
+        )
+        val isCredentialsValid = credentialsResult is ResultWithError.Success
+        val credError = (credentialsResult as? ResultWithError.Failure)?.error
+        val emailError = (
+            credentialsValidator.validate(
+                Email(email),
+            ) as? ResultWithError.Failure
+            )?.error
+        // Password error depends on email via `PasswordError.PasswordEqualToEmail`
+        val passwordError = when {
+            currentPassword.isEmpty() -> _state.value.passwordError
+            credError is CredentialsValidationError.Password -> credError.reason
+            credentialsResult is ResultWithError.Success -> null
+            else -> (
+                credentialsValidator.validate(
+                    Password(currentPassword),
+                ) as? ResultWithError.Failure
+                )?.error
+        }
         _state.update {
-            it.copy(email = email, emailError = null, isCredentialsValid = isCredentialsValid)
+            it.copy(
+                email = email,
+                emailError = emailError,
+                passwordError = passwordError,
+                isCredentialsValid = isCredentialsValid,
+            )
         }
     }
 
     fun updatePassword(password: String) {
         val currentEmail = _state.value.email
-        val isCredentialsValid = credentialsValidator.validate(
+        val credentialsResult = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
-        ) is ResultWithError.Success
+        )
+        val isCredentialsValid = credentialsResult is ResultWithError.Success
+        val credError = (credentialsResult as? ResultWithError.Failure)?.error
+        // Email check have a priority in credentials validation in `CredentialsValidatorImpl`
+        val passwordError = when (credError) {
+            is CredentialsValidationError.Password -> credError.reason
+            else -> (
+                credentialsValidator.validate(
+                    Password(password),
+                ) as? ResultWithError.Failure
+                )?.error
+        }
         _state.update {
             it.copy(
                 password = password,
-                passwordError = null,
+                passwordError = passwordError,
                 isCredentialsValid = isCredentialsValid,
             )
         }
@@ -108,7 +142,15 @@ class LoginViewModel @Inject constructor(
                 onSuccess = { _effects.send(LoginSideEffects.NavigateToChatList) },
                 onFailure = { error ->
                     when (error) {
-                        is LoginUseCaseError.ValidationFailed -> handleValidationError(error)
+                        is LoginUseCaseError.InvalidEmail ->
+                            _state.update {
+                                it.copy(emailError = error.reason, isCredentialsValid = false)
+                            }
+
+                        is LoginUseCaseError.InvalidPassword ->
+                            _state.update {
+                                it.copy(passwordError = error.reason, isCredentialsValid = false)
+                            }
 
                         LoginUseCaseError.InvalidCredentials ->
                             _state.update {
@@ -126,14 +168,6 @@ class LoginViewModel @Inject constructor(
                         LoginUseCaseError.AccountSuspended ->
                             _state.update {
                                 it.copy(generalError = LoginGeneralError.AccountSuspended)
-                            }
-
-                        is LoginUseCaseError.InvalidEmail ->
-                            _state.update {
-                                it.copy(
-                                    generalError = LoginGeneralError.InvalidEmail,
-                                    isCredentialsValid = false,
-                                )
                             }
 
                         is LoginUseCaseError.RemoteOperationFailed ->
@@ -205,27 +239,6 @@ class LoginViewModel @Inject constructor(
     fun onOpenStorageSettingsClick() {
         _state.update { it.copy(blockingError = null) }
         viewModelScope.launch { _effects.send(LoginSideEffects.OpenStorageSettings) }
-    }
-
-    private fun handleValidationError(error: LoginUseCaseError.ValidationFailed) {
-        _state.update { state ->
-            when (val ve = error.error) {
-                is CredentialsValidationError.BlankEmail,
-                is CredentialsValidationError.NoAtInEmail,
-                is CredentialsValidationError.NoDomainAtEmail,
-                is CredentialsValidationError.EmailTooLong,
-                is CredentialsValidationError.InvalidEmailFormat,
-                is CredentialsValidationError.ForbiddenCharacterInEmail,
-                -> state.copy(emailError = ve, isCredentialsValid = false)
-
-                is CredentialsValidationError.PasswordTooShort,
-                is CredentialsValidationError.PasswordTooLong,
-                is CredentialsValidationError.ForbiddenCharacterInPassword,
-                is CredentialsValidationError.PasswordMustContainNumbers,
-                is CredentialsValidationError.PasswordMustContainAlphabet,
-                -> state.copy(passwordError = ve, isCredentialsValid = false)
-            }
-        }
     }
 
     private suspend fun handleLocalStorageError(error: LocalStorageError) {

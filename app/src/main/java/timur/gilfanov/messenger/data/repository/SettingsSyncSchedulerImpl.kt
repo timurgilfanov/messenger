@@ -12,9 +12,10 @@ import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.guava.await
 import timur.gilfanov.messenger.data.worker.SyncAllSettingsWorker
 import timur.gilfanov.messenger.data.worker.SyncSettingWorker
-import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 
 @Singleton
@@ -27,12 +28,10 @@ class SettingsSyncSchedulerImpl @Inject constructor(private val workManager: Wor
         private const val PERIODIC_SYNC_WORK_NAME = "sync_all_settings_periodic"
     }
 
-    override fun scheduleSettingSync(userId: UserId, key: SettingKey) {
-        val userIdString = userId.id.toString()
+    override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) {
         val workRequest = OneTimeWorkRequestBuilder<SyncSettingWorker>()
             .setInputData(
                 workDataOf(
-                    SyncSettingWorker.KEY_USER_ID to userIdString,
                     SyncSettingWorker.KEY_SETTING_KEY to key.key,
                 ),
             )
@@ -47,13 +46,18 @@ class SettingsSyncSchedulerImpl @Inject constructor(private val workManager: Wor
                 TimeUnit.SECONDS,
             )
             .setInitialDelay(DEBOUNCE_DELAY_MS, TimeUnit.MILLISECONDS)
+            .addTag(userKey.key)
             .build()
 
         workManager.enqueueUniqueWork(
-            "sync_setting_${userIdString}_${key.key}",
+            "sync_setting_${userKey.key}_${key.key}",
             ExistingWorkPolicy.APPEND_OR_REPLACE,
             workRequest,
         )
+    }
+
+    override suspend fun cancelUserScopedJobs(userKey: UserScopeKey) {
+        workManager.cancelAllWorkByTag(userKey.key).result.await()
     }
 
     override fun schedulePeriodicSync() {

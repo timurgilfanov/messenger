@@ -5,7 +5,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
@@ -49,11 +49,13 @@ class AuthRepositoryImpl @Inject constructor(
         private const val TAG = "AuthRepositoryImpl"
     }
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
-    override val authState: Flow<AuthState> = _authState.asStateFlow()
+    private val _authState = MutableStateFlow<AuthState?>(null)
+    override val authState: Flow<AuthState> = _authState.filterNotNull()
 
     init {
-        coroutineScope.launch { restoreAuthState() }
+        coroutineScope.launch {
+            restoreAuthState()
+        }
     }
 
     private suspend fun restoreAuthState() {
@@ -78,14 +80,17 @@ class AuthRepositoryImpl @Inject constructor(
                 null
             },
         )
-        if (accessToken != null && refreshToken != null && provider != null) {
-            _authState.value = AuthState.Authenticated(
+        val restoredState = if (accessToken != null && refreshToken != null && provider != null) {
+            AuthState.Authenticated(
                 AuthSession(
                     tokens = AuthTokens(accessToken, refreshToken),
                     provider = provider,
                 ),
             )
+        } else {
+            AuthState.Unauthenticated
         }
+        _authState.compareAndSet(null, restoredState)
     }
 
     override suspend fun loginWithCredentials(
@@ -206,17 +211,20 @@ class AuthRepositoryImpl @Inject constructor(
         } else {
             null
         }
-        localDataSource.clearSession().fold(
-            onSuccess = {},
+        val clearSessionError = localDataSource.clearSession().fold(
+            onSuccess = { null },
             onFailure = { storageError ->
                 logger.e(TAG, "Failed to clear session on logout: $storageError")
+                LogoutRepositoryError.LocalOperationFailed(storageError.toLocalError())
             },
         )
-        _authState.value = AuthState.Unauthenticated
-        return if (remoteResult != null) {
-            ResultWithError.Failure(remoteResult)
-        } else {
-            ResultWithError.Success(Unit)
+        if (clearSessionError == null) {
+            _authState.value = AuthState.Unauthenticated
+        }
+        return when {
+            clearSessionError != null -> ResultWithError.Failure(clearSessionError)
+            remoteResult != null -> ResultWithError.Failure(remoteResult)
+            else -> ResultWithError.Success(Unit)
         }
     }
 

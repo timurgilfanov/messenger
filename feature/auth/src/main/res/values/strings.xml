@@ -6,18 +6,25 @@
     <string name="login_sign_in_with_google_button">Sign In with Google</string>
     <string name="login_create_account_button">Create account</string>
 
-    <!-- Login validation errors -->
-    <string name="login_error_blank_email">Email must not be blank</string>
-    <string name="login_error_invalid_email_format">Invalid email format</string>
-    <string name="login_error_no_at_in_email">Email must contain @</string>
-    <string name="login_error_email_too_long">Email must be at most %d characters</string>
-    <string name="login_error_no_domain_at_email">Email must contain a domain</string>
-    <string name="login_error_forbidden_character_in_email">Character \'%s\' is not allowed in email</string>
-    <string name="login_error_password_too_short">Password must be at least %d characters</string>
-    <string name="login_error_password_too_long">Password must be at most %d characters</string>
-    <string name="login_error_forbidden_character_in_password">Character \'%s\' is not allowed in password</string>
-    <string name="login_error_password_must_contain_numbers">Password must contain at least %d number(s)</string>
-    <string name="login_error_password_must_contain_alphabet">Password must contain at least %d letter(s)</string>
+    <!-- Shared email/password validation errors -->
+    <string name="auth_error_blank_email">Email must not be blank</string>
+    <string name="auth_error_invalid_email_format">Invalid email format</string>
+    <string name="auth_error_no_at_in_email">Email must contain @</string>
+    <string name="auth_error_email_too_long">Email must be at most %d characters</string>
+    <string name="auth_error_no_domain_at_email">Email must contain a domain</string>
+    <string name="auth_error_invalid_password_server">The password does not meet requirements</string>
+    <string name="auth_error_password_too_short">Password must be at least %d characters</string>
+    <string name="auth_error_password_too_long">Password must be at most %d characters</string>
+    <string name="auth_error_forbidden_character_in_password">Character \'%s\' is not allowed in password</string>
+    <string name="auth_error_password_must_not_equal_email">Password must not be the same as your email</string>
+    <plurals name="auth_error_password_must_contain_numbers">
+        <item quantity="one">Password must contain at least 1 number</item>
+        <item quantity="other">Password must contain at least %d numbers</item>
+    </plurals>
+    <plurals name="auth_error_password_must_contain_alphabet">
+        <item quantity="one">Password must contain at least 1 letter</item>
+        <item quantity="other">Password must contain at least %d letters</item>
+    </plurals>
 
     <string name="google_server_client_id" translatable="false">954783563995-s2vqh91na4he5lad90srq57mrv64bium.apps.googleusercontent.com</string>
 
@@ -50,7 +57,6 @@
     <string name="signup_error_account_already_exists">An account with this Google identity already exists</string>
     <string name="signup_error_email_taken">An account with this email already exists</string>
     <string name="signup_error_invalid_email_server">This email address cannot be used</string>
-    <string name="signup_error_invalid_password_server">The password does not meet requirements</string>
 
     <!-- Dialog error titles -->
     <string name="auth_error_storage_full_title">Storage full</string>

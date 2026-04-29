@@ -7,17 +7,14 @@ import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.onSuccess
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
@@ -45,9 +42,6 @@ class ChatListViewModel @Inject constructor(
     private val _state = MutableStateFlow(ChatListScreenState(isLoading = true))
     val state = _state.asStateFlow()
 
-    private val _effects = Channel<ChatListSideEffects>(capacity = Channel.BUFFERED)
-    val effects = _effects.receiveAsFlow()
-
     init {
         viewModelScope.launch {
             _state.repeatOnSubscription {
@@ -68,7 +62,6 @@ class ChatListViewModel @Inject constructor(
                     is ResultWithError.Success -> {
                         val profile = result.data
                         val currentUser = CurrentUserUiModel(
-                            id = ParticipantId(profile.id.id),
                             name = profile.name,
                             pictureUrl = profile.pictureUrl,
                         )
@@ -83,7 +76,6 @@ class ChatListViewModel @Inject constructor(
                                 TAG,
                                 "Profile observation failed with Unauthorized error",
                             )
-                            _effects.send(ChatListSideEffects.Unauthorized)
                         }
                     }
                 }

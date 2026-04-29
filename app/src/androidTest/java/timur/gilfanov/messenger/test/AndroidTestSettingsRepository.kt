@@ -14,13 +14,14 @@ import timur.gilfanov.messenger.data.repository.SettingsRepositoryImpl
 import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSourceImpl
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.remote.RemoteSettingsDataSourceFake
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.DeleteUserDataRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
@@ -81,27 +82,31 @@ class AndroidTestSettingsRepository(private val logger: Logger = TestLogger()) :
     }
 
     override fun observeSettings(
-        identity: Identity,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
-        realRepository.observeSettings(identity)
+        realRepository.observeSettings(userKey)
 
     override fun observeConflicts(): Flow<SettingsConflictEvent> = realRepository.observeConflicts()
 
     override suspend fun changeUiLanguage(
-        identity: Identity,
+        userKey: UserScopeKey,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> =
-        realRepository.changeUiLanguage(identity, language)
+        realRepository.changeUiLanguage(userKey, language)
 
     override suspend fun syncSetting(
-        identity: Identity,
+        userKey: UserScopeKey,
         key: SettingKey,
-    ): ResultWithError<Unit, SyncSettingRepositoryError> = realRepository.syncSetting(identity, key)
+    ): ResultWithError<Unit, SyncSettingRepositoryError> = realRepository.syncSetting(userKey, key)
 
     override suspend fun syncAllPendingSettings(
-        identity: Identity,
+        userKey: UserScopeKey,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError> =
-        realRepository.syncAllPendingSettings(identity)
+        realRepository.syncAllPendingSettings(userKey)
+
+    override suspend fun deleteUserData(
+        userKey: UserScopeKey,
+    ): ResultWithError<Unit, DeleteUserDataRepositoryError> = realRepository.deleteUserData(userKey)
 
     companion object {
         private const val TAG = "AndroidTestSettingsRepo"

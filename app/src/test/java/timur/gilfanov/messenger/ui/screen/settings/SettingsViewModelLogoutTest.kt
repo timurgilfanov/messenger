@@ -2,12 +2,10 @@ package timur.gilfanov.messenger.ui.screen.settings
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
-import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -25,6 +23,7 @@ import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsError
 import timur.gilfanov.messenger.domain.usecase.settings.ObserveSettingsUseCaseStub
+import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -41,13 +40,17 @@ class SettingsViewModelLogoutTest {
     private fun createViewModel(authRepository: AuthRepositoryFake): SettingsViewModel =
         SettingsViewModel(
             observeSettings = ObserveSettingsUseCaseStub(settingsFlow),
-            logoutUseCase = LogoutUseCaseImpl(authRepository, NoOpLogger()),
+            logoutUseCase = LogoutUseCaseImpl(
+                authRepository,
+                SettingsRepositoryStub(),
+                NoOpLogger(),
+            ),
             logger = NoOpLogger(),
             savedStateHandle = SavedStateHandle(),
         )
 
     @Test
-    fun `logout success sends LoggedOut effect`() = runTest {
+    fun `logout success emits no effect`() = runTest {
         val authRepository = AuthRepositoryFake().apply {
             defaultLogoutResult = ResultWithError.Success(Unit)
         }
@@ -56,7 +59,7 @@ class SettingsViewModelLogoutTest {
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.effects.test {
             viewModel.logout()
-            assertEquals(SettingsSideEffects.LoggedOut, awaitItem())
+            expectNoEvents()
         }
     }
 
@@ -93,23 +96,6 @@ class SettingsViewModelLogoutTest {
             val effect = awaitItem()
             assertIs<SettingsSideEffects.LogoutFailed>(effect)
             assertIs<LogoutError.RemoteOperationFailed>(effect.error)
-        }
-    }
-
-    @Test
-    fun `logout success suppresses Unauthorized effect from settings observation`() = runTest {
-        val authRepository = AuthRepositoryFake().apply {
-            defaultLogoutResult = ResultWithError.Success(Unit)
-        }
-        val viewModel = createViewModel(authRepository)
-
-        backgroundScope.launch { viewModel.state.collect {} }
-        viewModel.effects.test {
-            viewModel.logout()
-            settingsFlow.value = ResultWithError.Failure(ObserveSettingsError.Unauthorized)
-            advanceTimeBy(201) // flush the 200 ms debounce so Unauthorized reaches the collector
-            assertEquals(SettingsSideEffects.LoggedOut, awaitItem())
-            expectNoEvents()
         }
     }
 }

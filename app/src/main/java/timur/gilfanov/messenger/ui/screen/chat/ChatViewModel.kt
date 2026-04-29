@@ -23,13 +23,12 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.ValidationError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidator
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
@@ -43,13 +42,11 @@ import timur.gilfanov.messenger.util.repeatOnSubscription
 
 private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
 private const val KEY_CHAT_ID = "chatId"
-private const val KEY_CURRENT_USER_ID = "currentUserId"
 
 @Suppress("LongParameterList") // a lot of use cases is valid for ViewModel
 @HiltViewModel(assistedFactory = ChatViewModel.ChatViewModelFactory::class)
 class ChatViewModel @AssistedInject constructor(
     @Assisted("chatId") chatIdUuid: UUID,
-    @Assisted("currentUserId") currentUserIdUuid: UUID,
     private val savedStateHandle: SavedStateHandle,
     private val sendMessageUseCase: SendMessageUseCase,
     private val receiveChatUpdatesUseCase: ReceiveChatUpdatesUseCase,
@@ -75,41 +72,24 @@ class ChatViewModel @AssistedInject constructor(
 
     private var currentInputText: String = ""
 
+    private val textValidator = TextValidator(TextMessage.MAX_TEXT_LENGTH)
+
     private val chatId: ChatId = savedStateHandle.get<String>(KEY_CHAT_ID)?.let {
         ChatId(UUID.fromString(it))
     } ?: ChatId(chatIdUuid).also {
         savedStateHandle[KEY_CHAT_ID] = it.id.toString()
     }
 
-    private val currentUserId: ParticipantId =
-        savedStateHandle.get<String>(KEY_CURRENT_USER_ID)?.let {
-            ParticipantId(UUID.fromString(it))
-        } ?: ParticipantId(currentUserIdUuid).also {
-            savedStateHandle[KEY_CURRENT_USER_ID] = it.id.toString()
-        }
-
     @AssistedFactory
     interface ChatViewModelFactory {
-        fun create(
-            @Assisted("chatId") chatId: UUID,
-            @Assisted("currentUserId") currentUserId: UUID,
-        ): ChatViewModel
+        fun create(@Assisted("chatId") chatId: UUID): ChatViewModel
     }
 
-    private fun validateInputText(text: String): TextValidationError? {
-        val message = textMessage(
-            messageId = MessageId(UUID.randomUUID()),
-            now = Clock.System.now(),
-            text = text,
-        )
-        return when (val validate = message.validate()) {
-            is ResultWithError.Failure<Unit, ValidationError> -> {
-                validate.error as TextValidationError
-            }
-
-            is ResultWithError.Success<Unit, ValidationError> -> null
+    private fun validateInputText(text: String): TextValidationError? =
+        when (val validate = textValidator.validate(text)) {
+            is ResultWithError.Failure<Unit, TextValidationError> -> validate.error
+            is ResultWithError.Success<Unit, TextValidationError> -> null
         }
-    }
 
     fun onInputTextChanged(text: String) {
         currentInputText = text
@@ -167,7 +147,7 @@ class ChatViewModel @AssistedInject constructor(
         TextMessage(
             id = messageId,
             parentId = null,
-            sender = currentChat!!.participants.first { it.id == currentUserId },
+            sender = currentChat!!.participants.first { it.isCurrentUser },
             recipient = chatId,
             createdAt = now,
             text = text,
@@ -226,7 +206,7 @@ class ChatViewModel @AssistedInject constructor(
         }.toPersistentList()
 
         val chatStatus = if (chat.isOneToOne) {
-            val otherParticipant = chat.participants.first { it.id != currentUserId }
+            val otherParticipant = chat.participants.first { !it.isCurrentUser }
             ChatStatus.OneToOne(otherParticipant.onlineAt)
         } else {
             ChatStatus.Group(chat.participants.size)
@@ -242,7 +222,7 @@ class ChatViewModel @AssistedInject constructor(
             status = chatStatus,
             inputTextValidationError = inputTextValidationError,
             isSending = (state as? ChatUiState.Ready?)?.isSending == true,
-            updateError = (state as? ChatUiState.Ready?)?.updateError,
+            updateError = null,
             dialogError = (state as? ChatUiState.Ready?)?.dialogError,
         )
     }

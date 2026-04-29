@@ -33,24 +33,24 @@ class SettingsDaoFake(private val realDao: SettingsDao) : SettingsDao {
         simulateDatabaseError?.let { throw it }
     }
 
-    override fun observeAllByUser(userId: String): Flow<List<SettingEntity>> = flow {
+    override fun observeAllByUser(userKey: String): Flow<List<SettingEntity>> = flow {
         checkDatabaseHealth()
-        emitAll(realDao.observeAllByUser(userId))
+        emitAll(realDao.observeAllByUser(userKey))
     }
 
-    override suspend fun get(userId: String, key: String): SettingEntity? {
+    override suspend fun get(userKey: String, key: String): SettingEntity? {
         checkDatabaseHealth()
-        return realDao.get(userId, key)
+        return realDao.get(userKey, key)
     }
 
-    override suspend fun getAll(userId: String): List<SettingEntity> {
+    override suspend fun getAll(userKey: String): List<SettingEntity> {
         checkDatabaseHealth()
-        return realDao.getAll(userId)
+        return realDao.getAll(userKey)
     }
 
-    override suspend fun getUnsynced(userId: String): List<SettingEntity> {
+    override suspend fun getUnsynced(userKey: String): List<SettingEntity> {
         checkDatabaseHealth()
-        return realDao.getUnsynced(userId)
+        return realDao.getUnsynced(userKey)
     }
 
     override suspend fun upsert(setting: SettingEntity) {
@@ -61,5 +61,10 @@ class SettingsDaoFake(private val realDao: SettingsDao) : SettingsDao {
     override suspend fun upsert(settings: List<SettingEntity>) {
         checkDatabaseHealth()
         realDao.upsert(settings)
+    }
+
+    override suspend fun deleteAllByUser(userKey: String) {
+        checkDatabaseHealth()
+        realDao.deleteAllByUser(userKey)
     }
 }

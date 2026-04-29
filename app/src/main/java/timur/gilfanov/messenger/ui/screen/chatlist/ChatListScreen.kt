@@ -19,11 +19,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -31,17 +29,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import java.util.UUID
 import kotlin.time.Clock
 import kotlinx.collections.immutable.persistentListOf
 import timur.gilfanov.messenger.BuildConfig
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.usecase.chat.repository.FlowChatListRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListUiState.Empty
@@ -82,24 +76,11 @@ data class ChatListContentActions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListScreen(
-    onAuthFailure: () -> Unit,
     actions: ChatListActions,
     modifier: Modifier = Modifier,
     viewModel: ChatListViewModel = hiltViewModel(),
 ) {
     val screenState by viewModel.state.collectAsStateWithLifecycle()
-
-    val currentOnAuthFailure by rememberUpdatedState(onAuthFailure)
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
-            viewModel.effects.collect { effect ->
-                when (effect) {
-                    ChatListSideEffects.Unauthorized -> currentOnAuthFailure()
-                }
-            }
-        }
-    }
 
     val contentActions = remember(actions) {
         ChatListContentActions(
@@ -280,7 +261,6 @@ private fun ChatListScreenEmptyPreview() {
             screenState = ChatListScreenState(
                 uiState = Empty,
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),
@@ -306,7 +286,6 @@ private fun ChatListScreenEmptyPortraitPreview() {
             screenState = ChatListScreenState(
                 uiState = Empty,
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),
@@ -365,7 +344,6 @@ private fun ChatListScreenWithChatsPreview() {
                     ),
                 ),
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),
@@ -391,7 +369,6 @@ private fun ChatListScreenLoadingPreview() {
             screenState = ChatListScreenState(
                 uiState = Empty,
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),
@@ -417,7 +394,6 @@ private fun ChatListScreenErrorPreview() {
             screenState = ChatListScreenState(
                 uiState = Empty,
                 currentUser = CurrentUserUiModel(
-                    id = ParticipantId(UUID.randomUUID()),
                     name = "John Doe",
                     pictureUrl = null,
                 ),

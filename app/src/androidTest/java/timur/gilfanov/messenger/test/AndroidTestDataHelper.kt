@@ -64,6 +64,7 @@ object AndroidTestDataHelper {
         onlineAt = FIXED_TIMESTAMP,
         isAdmin = false,
         isModerator = false,
+        isCurrentUser = true,
     )
 
     val aliceUser = Participant(
@@ -220,6 +221,7 @@ object AndroidTestDataHelper {
                 joinedAt = FIXED_TIMESTAMP,
                 isAdmin = false,
                 isModerator = false,
+                isCurrentUser = true,
             ),
         )
         chatDao.insertChatParticipantCrossRef(
@@ -240,6 +242,7 @@ object AndroidTestDataHelper {
                 joinedAt = FIXED_TIMESTAMP,
                 isAdmin = false,
                 isModerator = false,
+                isCurrentUser = true,
             ),
         )
         chatDao.insertChatParticipantCrossRef(

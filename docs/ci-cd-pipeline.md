@@ -1,17 +1,14 @@
 # CI/CD Pipeline
 
-The CI/CD pipeline is organized by test categories and follows the Testing Strategy execution matrix:
+The CI/CD pipeline in `.github/workflows/main.yaml` is organized by test categories and follows the Testing Strategy execution matrix:
 
 **Every Commit (push + PR):**
-- `build`: lint + detekt + architecture tests + APK generation
+- `build-<mock|prod>`: lint + detekt + architecture tests + APK generation
 - `unit-component-tests`: Unit and Component tests (fast feedback)
-
-**Local Development:**
-- `preCommit`: Run all pre-commit checks locally before committing (auto-formatting + lint + detekt + architecture + unit + component tests)
 
 **Pre-merge (PR only):**
 - `feature-tests`: Feature tests on emulators
-- `application-tests-emulator`: Application unit tests locally + instrumentation tests on Firebase Test Lab emulators
+- `application-tests-emulator`: Application unit tests on the CI runner + instrumentation tests on Firebase Test Lab emulators
 
 **Post-merge (main branch):**
 - `application-tests-devices`: Application instrumentation tests on real devices via Firebase Test Lab

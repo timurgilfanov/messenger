@@ -42,13 +42,20 @@ class SignupViewModel @Inject constructor(
         run {
             val name: String = savedStateHandle[KEY_NAME] ?: ""
             val email: String = savedStateHandle[KEY_EMAIL] ?: ""
+            val nameValidation =
+                if (name.isNotEmpty()) profileNameValidator.validate(name) else null
+            val emailValidation =
+                if (email.isNotEmpty()) credentialsValidator.validate(Email(email)) else null
+            val credentialsValidation = credentialsValidator.validate(
+                Credentials(Email(email), Password("")),
+            )
             SignupUiState(
                 name = name,
                 email = email,
-                isNameValid = profileNameValidator.validate(name) is ResultWithError.Success,
-                isCredentialsValid = credentialsValidator.validate(
-                    Credentials(Email(email), Password("")),
-                ) is ResultWithError.Success,
+                isNameValid = nameValidation is ResultWithError.Success,
+                nameError = (nameValidation as? ResultWithError.Failure)?.error,
+                isCredentialsValid = credentialsValidation is ResultWithError.Success,
+                emailError = (emailValidation as? ResultWithError.Failure)?.error,
             )
         },
     )
@@ -71,32 +78,68 @@ class SignupViewModel @Inject constructor(
 
     fun updateName(name: String) {
         savedStateHandle[KEY_NAME] = name
-        val isNameValid = profileNameValidator.validate(name) is ResultWithError.Success
-        _state.update { it.copy(name = name, nameError = null, isNameValid = isNameValid) }
+        val nameValidationResult = profileNameValidator.validate(name)
+        val isNameValid = nameValidationResult is ResultWithError.Success
+        val nameError = (nameValidationResult as? ResultWithError.Failure)?.error
+        _state.update { it.copy(name = name, nameError = nameError, isNameValid = isNameValid) }
     }
 
     fun updateEmail(email: String) {
         savedStateHandle[KEY_EMAIL] = email
         val currentPassword = _state.value.password
-        val isCredentialsValid = credentialsValidator.validate(
+        val credentialsResult = credentialsValidator.validate(
             Credentials(Email(email), Password(currentPassword)),
-        ) is ResultWithError.Success
+        )
+        val isCredentialsValid = credentialsResult is ResultWithError.Success
+        val credError = (credentialsResult as? ResultWithError.Failure)?.error
+        val emailError = (
+            credentialsValidator.validate(
+                Email(email),
+            ) as? ResultWithError.Failure
+            )?.error
+        // Password error depends on email via `PasswordError.PasswordEqualToEmail`
+        val passwordError = when {
+            currentPassword.isEmpty() -> _state.value.passwordError
+            credError is CredentialsValidationError.Password -> credError.reason
+            credentialsResult is ResultWithError.Success -> null
+            else -> (
+                credentialsValidator.validate(
+                    Password(currentPassword),
+                ) as? ResultWithError.Failure
+                )?.error
+        }
         _state.update {
-            it.copy(email = email, emailError = null, isCredentialsValid = isCredentialsValid)
+            it.copy(
+                email = email,
+                emailError = emailError,
+                passwordError = passwordError,
+                isCredentialsValid = isCredentialsValid,
+            )
         }
     }
 
     fun updatePassword(password: String) {
         val currentEmail = _state.value.email
-        val isCredentialsValid = credentialsValidator.validate(
+        val credentialsResult = credentialsValidator.validate(
             Credentials(Email(currentEmail), Password(password)),
-        ) is ResultWithError.Success
+        )
+        val isCredentialsValid = credentialsResult is ResultWithError.Success
+        val credError = (credentialsResult as? ResultWithError.Failure)?.error
+        // Email check have a priority in credentials validation in `CredentialsValidatorImpl`
+        val passwordError = when (credError) {
+            is CredentialsValidationError.Password -> credError.reason
+            else -> (
+                credentialsValidator.validate(
+                    Password(password),
+                ) as? ResultWithError.Failure
+                )?.error
+        }
         val currentConfirmPassword = _state.value.confirmPassword
         val isPasswordConfirmed = password == currentConfirmPassword
         _state.update {
             it.copy(
                 password = password,
-                passwordError = null,
+                passwordError = passwordError,
                 isCredentialsValid = isCredentialsValid,
                 isPasswordConfirmed = isPasswordConfirmed,
             )
@@ -173,27 +216,18 @@ class SignupViewModel @Inject constructor(
                 onSuccess = { _effects.send(SignupSideEffects.NavigateToChatList) },
                 onFailure = { error ->
                     when (error) {
-                        is SignupWithCredentialsUseCaseError.ValidationFailed ->
-                            handleValidationError(error)
-
-                        is SignupWithCredentialsUseCaseError.InvalidName ->
-                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
-
                         is SignupWithCredentialsUseCaseError.InvalidEmail ->
                             _state.update {
-                                it.copy(
-                                    generalError = SignupGeneralError.InvalidEmail(error.reason),
-                                    isCredentialsValid = false,
-                                )
+                                it.copy(emailError = error.reason, isCredentialsValid = false)
                             }
 
                         is SignupWithCredentialsUseCaseError.InvalidPassword ->
                             _state.update {
-                                it.copy(
-                                    generalError = SignupGeneralError.InvalidPassword(error.reason),
-                                    isCredentialsValid = false,
-                                )
+                                it.copy(passwordError = error.reason, isCredentialsValid = false)
                             }
+
+                        is SignupWithCredentialsUseCaseError.InvalidName ->
+                            _state.update { it.copy(nameError = error.reason, isNameValid = false) }
 
                         is SignupWithCredentialsUseCaseError.RemoteOperationFailed ->
                             _effects.send(
@@ -225,27 +259,6 @@ class SignupViewModel @Inject constructor(
     fun onOpenStorageSettingsClick() {
         _state.update { it.copy(blockingError = null) }
         viewModelScope.launch { _effects.send(SignupSideEffects.OpenStorageSettings) }
-    }
-
-    private fun handleValidationError(error: SignupWithCredentialsUseCaseError.ValidationFailed) {
-        _state.update { state ->
-            when (val ve = error.error) {
-                is CredentialsValidationError.BlankEmail,
-                is CredentialsValidationError.NoAtInEmail,
-                is CredentialsValidationError.NoDomainAtEmail,
-                is CredentialsValidationError.EmailTooLong,
-                is CredentialsValidationError.InvalidEmailFormat,
-                is CredentialsValidationError.ForbiddenCharacterInEmail,
-                -> state.copy(emailError = ve, isCredentialsValid = false)
-
-                is CredentialsValidationError.PasswordTooShort,
-                is CredentialsValidationError.PasswordTooLong,
-                is CredentialsValidationError.ForbiddenCharacterInPassword,
-                is CredentialsValidationError.PasswordMustContainNumbers,
-                is CredentialsValidationError.PasswordMustContainAlphabet,
-                -> state.copy(passwordError = ve, isCredentialsValid = false)
-            }
-        }
     }
 
     private suspend fun handleLocalStorageError(error: LocalStorageError) {

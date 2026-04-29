@@ -1,6 +1,6 @@
 package timur.gilfanov.messenger.data.repository
 
-import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 
 /**
@@ -14,10 +14,19 @@ interface SettingsSyncScheduler {
      * When a new job is scheduled for the same setting and user, it is appended to any
      * in-flight work to ensure events are processed sequentially.
      */
-    fun scheduleSettingSync(userId: UserId, key: SettingKey)
+    fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey)
 
     /**
      * Schedule periodic sync for all settings to keep local state in sync with server.
      */
     fun schedulePeriodicSync()
+
+    /**
+     * Cancel all pending and running WorkManager jobs that were scheduled for the given user.
+     *
+     * Jobs are identified by the tag equal to [UserScopeKey.key] that is added when scheduling
+     * via [scheduleSettingSync]. This should be called on logout so that no stale work runs
+     * for the outgoing user.
+     */
+    suspend fun cancelUserScopedJobs(userKey: UserScopeKey)
 }

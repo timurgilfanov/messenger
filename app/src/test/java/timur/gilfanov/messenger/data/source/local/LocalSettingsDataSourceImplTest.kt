@@ -1,7 +1,11 @@
 package timur.gilfanov.messenger.data.source.local
 
+import android.database.sqlite.SQLiteAccessPermException
+import android.database.sqlite.SQLiteDatabaseCorruptException
+import android.database.sqlite.SQLiteDatabaseLockedException
+import android.database.sqlite.SQLiteDiskIOException
+import android.database.sqlite.SQLiteReadOnlyDatabaseException
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -14,9 +18,10 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDaoFake
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -40,21 +45,21 @@ class LocalSettingsDataSourceImplTest {
         )
     }
 
-    private val testUserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+    private val testUserKey = UserScopeKey("user-key-1")
 
     // getSetting() tests
     @Test
     fun `getSetting returns Success when setting exists`() = runTest {
         // Given
         val entity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
         )
         databaseRule.database.settingsDao().upsert(entity)
 
         // When
-        val result = localSettingsDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val result = localSettingsDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         // Then
         assertIs<ResultWithError.Success<TypedLocalSetting, GetSettingError>>(result)
@@ -65,7 +70,7 @@ class LocalSettingsDataSourceImplTest {
     @Test
     fun `getSetting returns SettingNotFound when setting does not exist`() = runTest {
         // When
-        val result = localSettingsDataSource.getSetting(testUserId, SettingKey.UI_LANGUAGE)
+        val result = localSettingsDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
 
         // Then
         assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(result)
@@ -82,14 +87,14 @@ class LocalSettingsDataSourceImplTest {
         )
 
         // When
-        val result = localSettingsDataSource.upsert(testUserId, typedSetting)
+        val result = localSettingsDataSource.upsert(testUserKey, typedSetting)
 
         // Then
         assertIs<ResultWithError.Success<Unit, UpsertSettingError>>(result)
 
         // Verify in database
         val storedEntity = databaseRule.database.settingsDao().get(
-            testUserId.id.toString(),
+            testUserKey.key,
             SettingKey.UI_LANGUAGE.key,
         )
         assertNotNull(storedEntity)
@@ -100,7 +105,7 @@ class LocalSettingsDataSourceImplTest {
     fun `upsert updates existing setting successfully`() = runTest {
         // Given
         val originalEntity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
             localVersion = 1,
@@ -114,14 +119,14 @@ class LocalSettingsDataSourceImplTest {
         )
 
         // When
-        val result = localSettingsDataSource.upsert(testUserId, updatedSetting)
+        val result = localSettingsDataSource.upsert(testUserKey, updatedSetting)
 
         // Then
         assertIs<ResultWithError.Success<Unit, UpsertSettingError>>(result)
 
         // Verify in database
         val storedEntity = databaseRule.database.settingsDao().get(
-            testUserId.id.toString(),
+            testUserKey.key,
             SettingKey.UI_LANGUAGE.key,
         )
         assertNotNull(storedEntity)
@@ -132,7 +137,7 @@ class LocalSettingsDataSourceImplTest {
     @Test
     fun `transform increments localVersion when value changes`() = runTest {
         val initial = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
             localVersion = 2,
@@ -142,13 +147,13 @@ class LocalSettingsDataSourceImplTest {
         )
         databaseRule.database.settingsDao().upsert(initial)
 
-        val result = localSettingsDataSource.transform(testUserId) { settings ->
+        val result = localSettingsDataSource.transform(testUserKey) { settings ->
             settings.copy(uiLanguage = settings.uiLanguage.copy(value = UiLanguage.German))
         }
 
         assertIs<ResultWithError.Success<Unit, TransformSettingError>>(result)
         val stored = databaseRule.database.settingsDao()
-            .get(testUserId.id.toString(), SettingKey.UI_LANGUAGE.key)
+            .get(testUserKey.key, SettingKey.UI_LANGUAGE.key)
         assertNotNull(stored)
         assertEquals(3, stored.localVersion)
         assertEquals(1, stored.syncedVersion)
@@ -169,13 +174,13 @@ class LocalSettingsDataSourceImplTest {
         )
 
         // When
-        val result = localSettingsDataSource.upsert(testUserId, settings)
+        val result = localSettingsDataSource.upsert(testUserKey, settings)
 
         // Then
         assertIs<ResultWithError.Success<Unit, UpsertSettingError>>(result)
 
         // Verify all entities in database
-        val allSettings = databaseRule.database.settingsDao().getAll(testUserId.id.toString())
+        val allSettings = databaseRule.database.settingsDao().getAll(testUserKey.key)
         assertEquals(1, allSettings.size)
     }
 
@@ -184,7 +189,7 @@ class LocalSettingsDataSourceImplTest {
     fun `transform applies function and increments version`() = runTest {
         // Given
         val originalEntity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
             localVersion = 1,
@@ -193,7 +198,7 @@ class LocalSettingsDataSourceImplTest {
         databaseRule.database.settingsDao().upsert(originalEntity)
 
         // When
-        val result = localSettingsDataSource.transform(testUserId) { localSettings ->
+        val result = localSettingsDataSource.transform(testUserKey) { localSettings ->
             localSettings.copy(
                 uiLanguage = localSettings.uiLanguage.copy(value = UiLanguage.German),
             )
@@ -204,7 +209,7 @@ class LocalSettingsDataSourceImplTest {
 
         // Verify transformation
         val updatedEntity = databaseRule.database.settingsDao().get(
-            testUserId.id.toString(),
+            testUserKey.key,
             SettingKey.UI_LANGUAGE.key,
         )
         assertNotNull(updatedEntity)
@@ -217,7 +222,7 @@ class LocalSettingsDataSourceImplTest {
     fun `transform does not increment version if value unchanged`() = runTest {
         // Given
         val originalEntity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
             localVersion = 3,
@@ -226,7 +231,7 @@ class LocalSettingsDataSourceImplTest {
         databaseRule.database.settingsDao().upsert(originalEntity)
 
         // When - transform but don't change value
-        val result = localSettingsDataSource.transform(testUserId) { localSettings ->
+        val result = localSettingsDataSource.transform(testUserKey) { localSettings ->
             localSettings // Return unchanged
         }
 
@@ -235,7 +240,7 @@ class LocalSettingsDataSourceImplTest {
 
         // Verify no version increment
         val updatedEntity = databaseRule.database.settingsDao().get(
-            testUserId.id.toString(),
+            testUserKey.key,
             SettingKey.UI_LANGUAGE.key,
         )
         assertNotNull(updatedEntity)
@@ -245,7 +250,7 @@ class LocalSettingsDataSourceImplTest {
     @Test
     fun `transform returns SettingsNotFound when no settings exist`() = runTest {
         // When
-        val result = localSettingsDataSource.transform(testUserId) { localSettings ->
+        val result = localSettingsDataSource.transform(testUserKey) { localSettings ->
             localSettings.copy(
                 uiLanguage = localSettings.uiLanguage.copy(value = UiLanguage.German),
             )
@@ -260,7 +265,7 @@ class LocalSettingsDataSourceImplTest {
     fun `transform updates modifiedAt timestamp`() = runTest {
         // Given
         val originalEntity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
             modifiedAt = 1000L,
@@ -268,7 +273,7 @@ class LocalSettingsDataSourceImplTest {
         databaseRule.database.settingsDao().upsert(originalEntity)
 
         // When
-        val result = localSettingsDataSource.transform(testUserId) { localSettings ->
+        val result = localSettingsDataSource.transform(testUserKey) { localSettings ->
             localSettings.copy(
                 uiLanguage = localSettings.uiLanguage.copy(value = UiLanguage.German),
             )
@@ -279,7 +284,7 @@ class LocalSettingsDataSourceImplTest {
 
         // Verify modifiedAt was updated
         val updatedEntity = databaseRule.database.settingsDao().get(
-            testUserId.id.toString(),
+            testUserKey.key,
             SettingKey.UI_LANGUAGE.key,
         )
         assertNotNull(updatedEntity)
@@ -291,7 +296,7 @@ class LocalSettingsDataSourceImplTest {
     fun `getUnsyncedSettings returns unsynced settings`() = runTest {
         // Given
         val syncedEntity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.German.toStorageValue(),
             localVersion = 2,
@@ -300,7 +305,7 @@ class LocalSettingsDataSourceImplTest {
         databaseRule.database.settingsDao().upsert(syncedEntity)
 
         // When
-        val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
+        val result = localSettingsDataSource.getUnsyncedSettings(testUserKey)
 
         // Then
         assertIs<ResultWithError.Success<List<TypedLocalSetting>, *>>(result)
@@ -313,7 +318,7 @@ class LocalSettingsDataSourceImplTest {
     fun `getUnsyncedSettings returns empty list when all synced`() = runTest {
         // Given
         val syncedEntity = createSettingEntity(
-            userId = testUserId,
+            userKey = testUserKey,
             key = SettingKey.UI_LANGUAGE,
             value = UiLanguage.English.toStorageValue(),
             localVersion = 1,
@@ -322,7 +327,7 @@ class LocalSettingsDataSourceImplTest {
         databaseRule.database.settingsDao().upsert(syncedEntity)
 
         // When
-        val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
+        val result = localSettingsDataSource.getUnsyncedSettings(testUserKey)
 
         // Then
         assertIs<ResultWithError.Success<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
@@ -332,7 +337,7 @@ class LocalSettingsDataSourceImplTest {
     @Test
     fun `getUnsyncedSettings returns empty list when no settings exist`() = runTest {
         // When
-        val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
+        val result = localSettingsDataSource.getUnsyncedSettings(testUserKey)
 
         // Then
         assertIs<ResultWithError.Success<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(result)
@@ -344,14 +349,14 @@ class LocalSettingsDataSourceImplTest {
         runTest {
             // Given
             val user1Unsynced = createSettingEntity(
-                userId = testUserId,
+                userKey = testUserKey,
                 key = SettingKey.UI_LANGUAGE,
                 value = UiLanguage.English.toStorageValue(),
                 localVersion = 2,
                 syncedVersion = 1,
             )
             val user2Unsynced = createSettingEntity(
-                userId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000002")),
+                userKey = UserScopeKey("user-key-2"),
                 key = SettingKey.UI_LANGUAGE,
                 value = UiLanguage.German.toStorageValue(),
                 localVersion = 3,
@@ -361,7 +366,7 @@ class LocalSettingsDataSourceImplTest {
             databaseRule.database.settingsDao().upsert(user2Unsynced)
 
             // When
-            val result = localSettingsDataSource.getUnsyncedSettings(testUserId)
+            val result = localSettingsDataSource.getUnsyncedSettings(testUserKey)
 
             // Then
             assertIs<ResultWithError.Success<List<TypedLocalSetting>, GetUnsyncedSettingsError>>(
@@ -372,9 +377,174 @@ class LocalSettingsDataSourceImplTest {
             assertEquals(UiLanguage.English, result.data[0].setting.value)
         }
 
+    // deleteAllForUser() tests
+
+    @Test
+    fun `deleteAllForUser removes only the targeted user rows`() = runTest {
+        // Given
+        val user1 = testUserKey
+        val user2 = UserScopeKey("user-key-2")
+        databaseRule.database.settingsDao().upsert(
+            createSettingEntity(
+                userKey = user1,
+                key = SettingKey.UI_LANGUAGE,
+                value = UiLanguage.English.toStorageValue(),
+            ),
+        )
+        databaseRule.database.settingsDao().upsert(
+            createSettingEntity(
+                userKey = user2,
+                key = SettingKey.UI_LANGUAGE,
+                value = UiLanguage.German.toStorageValue(),
+            ),
+        )
+
+        // When
+        val result = localSettingsDataSource.deleteAllForUser(user1)
+
+        // Then
+        assertIs<ResultWithError.Success<Unit, DeleteAllForUserError>>(result)
+        val user1Rows = databaseRule.database.settingsDao().getAll(user1.key)
+        assertTrue(user1Rows.isEmpty())
+        val user2Rows = databaseRule.database.settingsDao().getAll(user2.key)
+        assertEquals(1, user2Rows.size)
+    }
+
+    @Test
+    fun `deleteAllForUser retries SQLiteDatabaseLockedException and succeeds on second attempt`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            fakeDao.enqueueErrors(SQLiteDatabaseLockedException("database is locked"))
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Success<Unit, DeleteAllForUserError>>(result)
+            assertEquals(2, fakeDao.callCount)
+        }
+
+    @Test
+    fun `deleteAllForUser maps lock exception to ConcurrentModificationError after retries`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            repeat(4) { fakeDao.enqueueErrors(SQLiteDatabaseLockedException("database is locked")) }
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+            assertEquals(DeleteAllForUserError.ConcurrentModificationError, result.error)
+        }
+
+    @Test
+    fun `deleteAllForUser maps SQLiteDiskIOException to DiskIOError after max retries`() = runTest {
+        // Given
+        val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+        repeat(4) { fakeDao.enqueueErrors(SQLiteDiskIOException("disk I/O error")) }
+        val dataSource = LocalSettingsDataSourceImpl(
+            database = databaseRule.database,
+            settingsDao = fakeDao,
+            logger = NoOpLogger(),
+            defaultSettings = Settings(uiLanguage = UiLanguage.English),
+        )
+
+        // When
+        val result = dataSource.deleteAllForUser(testUserKey)
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+        assertEquals(DeleteAllForUserError.DiskIOError, result.error)
+    }
+
+    @Test
+    fun `deleteAllForUser maps SQLiteDatabaseCorruptException to DatabaseCorrupted immediately`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            fakeDao.enqueueErrors(
+                SQLiteDatabaseCorruptException("database disk image is malformed"),
+            )
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+            assertEquals(DeleteAllForUserError.DatabaseCorrupted, result.error)
+            assertEquals(1, fakeDao.callCount)
+        }
+
+    @Test
+    fun `deleteAllForUser maps SQLiteAccessPermException to AccessDenied with no retry`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            fakeDao.enqueueErrors(SQLiteAccessPermException("access permission denied"))
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+            assertEquals(DeleteAllForUserError.AccessDenied, result.error)
+            assertEquals(1, fakeDao.callCount)
+        }
+
+    @Test
+    fun `deleteAllForUser maps SQLiteReadOnlyDatabaseException to ReadOnlyDatabase immediately`() =
+        runTest {
+            // Given
+            val fakeDao = SettingsDaoFake(databaseRule.database.settingsDao())
+            fakeDao.enqueueErrors(
+                SQLiteReadOnlyDatabaseException("attempt to write a readonly database"),
+            )
+            val dataSource = LocalSettingsDataSourceImpl(
+                database = databaseRule.database,
+                settingsDao = fakeDao,
+                logger = NoOpLogger(),
+                defaultSettings = Settings(uiLanguage = UiLanguage.English),
+            )
+
+            // When
+            val result = dataSource.deleteAllForUser(testUserKey)
+
+            // Then
+            assertIs<ResultWithError.Failure<Unit, DeleteAllForUserError>>(result)
+            assertEquals(DeleteAllForUserError.ReadOnlyDatabase, result.error)
+            assertEquals(1, fakeDao.callCount)
+        }
+
     @Suppress("LongParameterList")
     private fun createSettingEntity(
-        userId: UserId,
+        userKey: UserScopeKey,
         key: SettingKey,
         value: String,
         localVersion: Int = 1,
@@ -382,7 +552,7 @@ class LocalSettingsDataSourceImplTest {
         serverVersion: Int = 0,
         modifiedAt: Long = 0L,
     ): SettingEntity = SettingEntity(
-        userId = userId.id.toString(),
+        userKey = userKey.key,
         key = key.key,
         value = value,
         localVersion = localVersion,

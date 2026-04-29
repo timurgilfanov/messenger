@@ -31,7 +31,6 @@ import timur.gilfanov.messenger.ui.screen.settings.SettingsScreen
 @Suppress("LongParameterList") // in Compose property drilling is preferred over wrapper
 @Composable
 fun MainScreen(
-    onAuthFailure: () -> Unit,
     onProfileEditClick: () -> Unit,
     onChangeLanguageClick: () -> Unit,
     onChatClick: (ChatId) -> Unit,
@@ -72,7 +71,6 @@ fun MainScreen(
         val modifier1 = Modifier.padding(paddingValues)
         when (uiState.selectedTab) {
             0 -> ChatListScreen(
-                onAuthFailure = onAuthFailure,
                 actions = ChatListActions(
                     onChatClick = onChatClick,
                     onNewChatClick = onNewChatClick,
@@ -84,7 +82,6 @@ fun MainScreen(
             1 -> SettingsScreen(
                 onProfileEditClick = onProfileEditClick,
                 onChangeLanguageClick = onChangeLanguageClick,
-                onAuthFailure = onAuthFailure,
                 onShowSnackbar = onShowSnackbar,
                 modifier = modifier1,
             )

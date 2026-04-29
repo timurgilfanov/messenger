@@ -14,6 +14,7 @@ class ParticipantBuilder {
     var onlineAt: Instant? = null
     var isAdmin: Boolean = false
     var isModerator: Boolean = false
+    var isCurrentUser: Boolean = false
 
     fun build(): Participant = Participant(
         id = id,
@@ -23,5 +24,6 @@ class ParticipantBuilder {
         onlineAt = onlineAt,
         isAdmin = isAdmin,
         isModerator = isModerator,
+        isCurrentUser = isCurrentUser,
     )
 }

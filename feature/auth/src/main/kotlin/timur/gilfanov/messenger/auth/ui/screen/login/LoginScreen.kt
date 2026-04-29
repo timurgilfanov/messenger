@@ -54,13 +54,17 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.R
-import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidationError
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInResult
 import timur.gilfanov.messenger.auth.ui.utils.openAppSettings
 import timur.gilfanov.messenger.auth.ui.utils.openStorageSettings
+import timur.gilfanov.messenger.auth.ui.utils.toDisplayString
 import timur.gilfanov.messenger.auth.ui.utils.tooManyAttemptsDisplayString
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailValidationError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginEmailError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
@@ -242,11 +246,23 @@ private fun LoginForm(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        EmailField(state.email, state.emailError?.toDisplayString(), onEmailChange)
+        val areFieldsEnabled = !state.isLoading
+
+        EmailField(
+            email = state.email,
+            emailError = state.emailError?.toDisplayString(),
+            onEmailChange = onEmailChange,
+            enabled = areFieldsEnabled,
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        PasswordField(state.password, state.passwordError?.toDisplayString(), onPasswordChange)
+        PasswordField(
+            password = state.password,
+            passwordError = state.passwordError?.toDisplayString(),
+            onPasswordChange = onPasswordChange,
+            enabled = areFieldsEnabled,
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -294,6 +310,7 @@ private fun PasswordField(
     password: String,
     passwordError: String?,
     onPasswordChange: (String) -> Unit,
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = password,
@@ -305,6 +322,7 @@ private fun PasswordField(
             imeAction = ImeAction.Done,
         ),
         singleLine = true,
+        enabled = enabled,
         isError = passwordError != null,
         supportingText = passwordError?.let { error ->
             {
@@ -321,7 +339,12 @@ private fun PasswordField(
 }
 
 @Composable
-private fun EmailField(email: String, emailError: String?, onEmailChange: (String) -> Unit) {
+private fun EmailField(
+    email: String,
+    emailError: String?,
+    onEmailChange: (String) -> Unit,
+    enabled: Boolean,
+) {
     OutlinedTextField(
         value = email,
         onValueChange = onEmailChange,
@@ -330,6 +353,7 @@ private fun EmailField(email: String, emailError: String?, onEmailChange: (Strin
             keyboardType = KeyboardType.Email,
             imeAction = ImeAction.Next,
         ),
+        enabled = enabled,
         isError = emailError != null,
         supportingText = emailError?.let { error ->
             {
@@ -346,41 +370,22 @@ private fun EmailField(email: String, emailError: String?, onEmailChange: (Strin
 }
 
 @Composable
-private fun CredentialsValidationError.toDisplayString(): String = when (this) {
-    CredentialsValidationError.BlankEmail -> stringResource(R.string.login_error_blank_email)
+private fun LoginEmailError.toDisplayString(): String = when (this) {
+    EmailValidationError.BlankEmail -> stringResource(R.string.auth_error_blank_email)
 
-    CredentialsValidationError.InvalidEmailFormat -> stringResource(
-        R.string.login_error_invalid_email_format,
-    )
+    EmailValidationError.InvalidEmailFormat ->
+        stringResource(R.string.auth_error_invalid_email_format)
 
-    CredentialsValidationError.NoAtInEmail -> stringResource(R.string.login_error_no_at_in_email)
+    EmailValidationError.NoAtInEmail -> stringResource(R.string.auth_error_no_at_in_email)
 
-    is CredentialsValidationError.EmailTooLong -> stringResource(
-        R.string.login_error_email_too_long,
-        maxLength,
-    )
+    is EmailValidationError.EmailTooLong ->
+        stringResource(R.string.auth_error_email_too_long, maxLength)
 
-    CredentialsValidationError.NoDomainAtEmail -> stringResource(
-        R.string.login_error_no_domain_at_email,
-    )
+    EmailValidationError.NoDomainAtEmail -> stringResource(R.string.auth_error_no_domain_at_email)
 
-    is CredentialsValidationError.ForbiddenCharacterInEmail ->
-        stringResource(R.string.login_error_forbidden_character_in_email, character)
-
-    is CredentialsValidationError.PasswordTooShort ->
-        stringResource(R.string.login_error_password_too_short, minLength)
-
-    is CredentialsValidationError.PasswordTooLong ->
-        stringResource(R.string.login_error_password_too_long, maxLength)
-
-    is CredentialsValidationError.ForbiddenCharacterInPassword ->
-        stringResource(R.string.login_error_forbidden_character_in_password, character)
-
-    is CredentialsValidationError.PasswordMustContainNumbers ->
-        stringResource(R.string.login_error_password_must_contain_numbers, minNumbers)
-
-    is CredentialsValidationError.PasswordMustContainAlphabet ->
-        stringResource(R.string.login_error_password_must_contain_alphabet, minAlphabet)
+    LoginEmailError.EmailNotExists,
+    is EmailUnknownError,
+    -> stringResource(R.string.login_error_invalid_email)
 }
 
 @Composable
@@ -390,7 +395,6 @@ private fun LoginGeneralError.toDisplayString(): String = when (this) {
     LoginGeneralError.AccountSuspended -> stringResource(R.string.login_error_account_suspended)
     LoginGeneralError.AccountNotFound -> stringResource(R.string.login_error_account_not_found)
     LoginGeneralError.InvalidToken -> stringResource(R.string.login_error_invalid_token)
-    LoginGeneralError.InvalidEmail -> stringResource(R.string.login_error_invalid_email)
 }
 
 private fun LoginSnackbarMessage.toDisplayString(context: Context): String = when (this) {
@@ -428,8 +432,8 @@ private fun LoginScreenContentWithErrorsPreview() {
         darkTheme = false,
         state = LoginUiState(
             email = "bad-email",
-            emailError = CredentialsValidationError.InvalidEmailFormat,
-            passwordError = CredentialsValidationError.PasswordTooShort(
+            emailError = EmailValidationError.InvalidEmailFormat,
+            passwordError = PasswordValidationError.PasswordTooShort(
                 CredentialsValidatorImpl.MIN_PASSWORD_LENGTH,
             ),
         ),

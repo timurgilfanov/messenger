@@ -1,8 +1,8 @@
 package timur.gilfanov.messenger.data.source.local
 
 import kotlinx.coroutines.flow.Flow
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 
 /**
@@ -21,49 +21,49 @@ interface LocalSettingsDataSource {
      * Handles transient errors internally with retry logic. Permanent errors propagate
      * to repository layer for error mapping.
      *
-     * @param userId The unique identifier of the user
+     * @param userKey Opaque scoping key identifying the user's session
      * @return Flow emitting Success with LocalSettings when initialized, or Failure with
      *         NoSettings error when not initialized, or Failure with other errors for
      *         infrastructure issues
      */
     fun observe(
-        userId: UserId,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<LocalSettings, GetSettingsLocalDataSourceError>>
 
     /**
      * Retrieves a specific typed setting with sync metadata.
      *
-     * @param userId The unique identifier of the user
+     * @param userKey Opaque scoping key identifying the user's session
      * @param key The setting key (domain type)
      * @return Success with typed setting, or failure with SettingNotFound if not exists,
      *         or failure with infrastructure error
      */
     suspend fun getSetting(
-        userId: UserId,
+        userKey: UserScopeKey,
         key: SettingKey,
     ): ResultWithError<TypedLocalSetting, GetSettingError>
 
     /**
      * Updates or inserts a typed setting.
      *
-     * @param userId The user ID that owns this setting
+     * @param userKey Opaque scoping key identifying the user's session
      * @param setting The typed setting to update
      * @return Success or failure with error
      */
     suspend fun upsert(
-        userId: UserId,
+        userKey: UserScopeKey,
         setting: TypedLocalSetting,
     ): ResultWithError<Unit, UpsertSettingError>
 
     /**
      * Updates or inserts multiple typed settings in a single transaction.
      *
-     * @param userId The user ID that owns these settings
+     * @param userKey Opaque scoping key identifying the user's session
      * @param settings The typed settings to update
      * @return Success or failure with error
      */
     suspend fun upsert(
-        userId: UserId,
+        userKey: UserScopeKey,
         settings: List<TypedLocalSetting>,
     ): ResultWithError<Unit, UpsertSettingError>
 
@@ -74,22 +74,36 @@ interface LocalSettingsDataSource {
      * LocalSettings and returns the updated LocalSettings. If settings don't exist, returns
      * SettingsNotFound error.
      *
-     * @param userId The unique identifier of the user
+     * @param userKey Opaque scoping key identifying the user's session
      * @param transform Function to transform the current LocalSettings
      * @return Success or failure with error
      */
     suspend fun transform(
-        userId: UserId,
+        userKey: UserScopeKey,
         transform: (LocalSettings) -> LocalSettings,
     ): ResultWithError<Unit, TransformSettingError>
 
     /**
      * Retrieves all settings that need synchronization as typed settings.
      *
-     * @param userId The unique identifier of the user
+     * @param userKey Opaque scoping key identifying the user's session
      * @return Success with list of typed settings or failure with error
      */
     suspend fun getUnsyncedSettings(
-        userId: UserId,
+        userKey: UserScopeKey,
     ): ResultWithError<List<TypedLocalSetting>, GetUnsyncedSettingsError>
+
+    /**
+     * Deletes all settings belonging to a specific user.
+     *
+     * Retries transient errors (database locks, disk I/O errors) up to the maximum retry limit
+     * with exponential backoff. Permanent errors (corruption, access denied, read-only) fail
+     * immediately without retry.
+     *
+     * @param userKey Opaque scoping key identifying the user's session
+     * @return Success or failure with error describing the cause
+     */
+    suspend fun deleteAllForUser(
+        userKey: UserScopeKey,
+    ): ResultWithError<Unit, DeleteAllForUserError>
 }

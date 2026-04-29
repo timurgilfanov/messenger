@@ -1,13 +1,12 @@
 package timur.gilfanov.messenger.data.source.local
 
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.time.Instant
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
-import timur.gilfanov.messenger.domain.entity.profile.UserId
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
@@ -15,13 +14,13 @@ import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 @Category(Unit::class)
 class LocalSettingsTest {
 
-    private val testUserId = UserId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+    private val testUserKey = UserScopeKey("user-key-1")
 
     @Test
     fun `fromEntities maps valid UI_LANGUAGE entity correctly`() {
         // Given
         val entity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = testUserKey.key,
             key = SettingKey.UI_LANGUAGE.key,
             value = "German",
             localVersion = 5,
@@ -66,7 +65,7 @@ class LocalSettingsTest {
     fun `fromEntities falls back to English when value is invalid`() {
         // Given
         val entity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = testUserKey.key,
             key = SettingKey.UI_LANGUAGE.key,
             value = "InvalidLanguage", // Invalid value
             localVersion = 2,
@@ -91,7 +90,7 @@ class LocalSettingsTest {
     fun `fromEntities ignores non-UI_LANGUAGE entities`() {
         // Given
         val themeEntity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = testUserKey.key,
             key = SettingKey.THEME.key,
             value = "DARK",
             localVersion = 1,
@@ -114,7 +113,7 @@ class LocalSettingsTest {
     fun `fromEntities handles multiple entities correctly`() {
         // Given
         val uiLanguageEntity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = testUserKey.key,
             key = SettingKey.UI_LANGUAGE.key,
             value = "German",
             localVersion = 2,
@@ -123,7 +122,7 @@ class LocalSettingsTest {
             modifiedAt = 2000L,
         )
         val themeEntity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = testUserKey.key,
             key = SettingKey.THEME.key,
             value = "LIGHT",
             localVersion = 1,
@@ -157,12 +156,12 @@ class LocalSettingsTest {
         )
 
         // When
-        val entities = localSettings.toSettingEntities(testUserId)
+        val entities = localSettings.toSettingEntities(testUserKey)
 
         // Then
         assertEquals(1, entities.size)
         val entity = entities[0]
-        assertEquals(testUserId.id.toString(), entity.userId)
+        assertEquals(testUserKey.key, entity.userKey)
         assertEquals(SettingKey.UI_LANGUAGE.key, entity.key)
         assertEquals("German", entity.value)
         assertEquals(5, entity.localVersion)
@@ -195,7 +194,7 @@ class LocalSettingsTest {
     fun `round trip conversion preserves data`() {
         // Given
         val originalEntity = SettingEntity(
-            userId = testUserId.id.toString(),
+            userKey = testUserKey.key,
             key = SettingKey.UI_LANGUAGE.key,
             value = "German",
             localVersion = 5,
@@ -209,12 +208,12 @@ class LocalSettingsTest {
             listOf(originalEntity),
             defaults = Settings(uiLanguage = UiLanguage.English),
         )
-        val roundTripEntities = localSettings.toSettingEntities(testUserId)
+        val roundTripEntities = localSettings.toSettingEntities(testUserKey)
 
         // Then
         assertEquals(1, roundTripEntities.size)
         val roundTripEntity = roundTripEntities[0]
-        assertEquals(originalEntity.userId, roundTripEntity.userId)
+        assertEquals(originalEntity.userKey, roundTripEntity.userKey)
         assertEquals(originalEntity.key, roundTripEntity.key)
         assertEquals(originalEntity.value, roundTripEntity.value)
         assertEquals(originalEntity.localVersion, roundTripEntity.localVersion)

@@ -58,7 +58,6 @@ class ChatPaginationIntegrationTest {
 
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
@@ -107,7 +106,6 @@ class ChatPaginationIntegrationTest {
 
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
@@ -143,7 +141,6 @@ class ChatPaginationIntegrationTest {
 
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,
@@ -192,7 +189,6 @@ class ChatPaginationIntegrationTest {
 
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = SendMessageUseCase(
                 messageRepository,

@@ -53,12 +53,14 @@ object DomainTestFixtures {
         pictureUrl: String? = null,
         joinedAt: Instant = fromEpochMilliseconds(1000),
         onlineAt: Instant? = fromEpochMilliseconds(1000),
+        isCurrentUser: Boolean = false,
     ): Participant = buildParticipant {
         this.id = id
         this.name = name
         this.pictureUrl = pictureUrl
         this.joinedAt = joinedAt
         this.onlineAt = onlineAt
+        this.isCurrentUser = isCurrentUser
     }
 
     data class TestMessageParams(
@@ -91,7 +93,12 @@ object DomainTestFixtures {
     )
 
     fun createTestChatWithParticipants(params: TestChatWithParticipantsParams): Chat {
-        val currentUser = createTestParticipant(id = params.currentUserId, name = "Current User")
+        val currentUser =
+            createTestParticipant(
+                id = params.currentUserId,
+                name = "Current User",
+                isCurrentUser = true,
+            )
         val otherUsers = if (params.otherUserIds.size == 1) {
             listOf(
                 createTestParticipant(

@@ -3,13 +3,14 @@ package timur.gilfanov.messenger.domain.usecase.settings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.profile.Identity
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
 import timur.gilfanov.messenger.domain.entity.settings.Settings
 import timur.gilfanov.messenger.domain.entity.settings.SettingsConflictEvent
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.settings.repository.ChangeLanguageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.settings.repository.DeleteUserDataRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRepositoryError
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncAllSettingsRepositoryError
@@ -38,7 +39,7 @@ class SettingsRepositoryStub(
     )
 
     override fun observeSettings(
-        identity: Identity,
+        userKey: UserScopeKey,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> = settingsFlow
 
     override fun observeConflicts(): Flow<SettingsConflictEvent> {
@@ -46,18 +47,25 @@ class SettingsRepositoryStub(
     }
 
     override suspend fun changeUiLanguage(
-        identity: Identity,
+        userKey: UserScopeKey,
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = changeLanguage
 
     override suspend fun syncSetting(
-        identity: Identity,
+        userKey: UserScopeKey,
         key: SettingKey,
     ): ResultWithError<Unit, SyncSettingRepositoryError> =
         syncSettingResult ?: error("syncSetting not configured for this test")
 
     override suspend fun syncAllPendingSettings(
-        identity: Identity,
+        userKey: UserScopeKey,
     ): ResultWithError<Unit, SyncAllSettingsRepositoryError> =
         syncAllResult ?: error("syncAllPendingSettings not configured for this test")
+
+    var deleteUserDataResult: ResultWithError<Unit, DeleteUserDataRepositoryError> =
+        ResultWithError.Success(Unit)
+
+    override suspend fun deleteUserData(
+        userKey: UserScopeKey,
+    ): ResultWithError<Unit, DeleteUserDataRepositoryError> = deleteUserDataResult
 }

@@ -64,7 +64,7 @@ class ChatViewModelMessageSendingTest {
             val chat = createTestChat(chatId, currentUserId, otherUserId)
             val now = TEST_INSTANT
             val message = buildTextMessage {
-                sender = chat.participants.first { it.id == currentUserId }
+                sender = chat.participants.first { it.isCurrentUser }
                 recipient = chatId
                 this.createdAt = now
                 text = "Test message"
@@ -74,7 +74,6 @@ class ChatViewModelMessageSendingTest {
             val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(rep)
             val viewModel = ChatViewModel(
                 chatIdUuid = chatId.id,
-                currentUserIdUuid = currentUserId.id,
                 savedStateHandle = SavedStateHandle(),
                 sendMessageUseCase = SendMessageUseCase(rep, DeliveryStatusValidatorImpl()),
                 receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(rep),
@@ -132,7 +131,6 @@ class ChatViewModelMessageSendingTest {
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
             chatIdUuid = chatId.id,
-            currentUserIdUuid = currentUserId.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,

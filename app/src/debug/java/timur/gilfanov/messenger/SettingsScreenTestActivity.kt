@@ -22,7 +22,6 @@ class SettingsScreenTestActivity : ComponentActivity() {
                 SettingsScreen(
                     onProfileEditClick = {},
                     onChangeLanguageClick = {},
-                    onAuthFailure = {},
                     onShowSnackbar = {},
                     modifier = Modifier.fillMaxSize(),
                 )

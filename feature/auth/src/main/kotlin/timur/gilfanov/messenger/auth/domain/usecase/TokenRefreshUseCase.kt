@@ -8,8 +8,9 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
  *
  * On terminal errors ([TokenRefreshError.SessionExpired]), a logout is performed as a side effect
  * to transition the auth state to [timur.gilfanov.messenger.domain.entity.auth.AuthState.Unauthenticated].
- * The logout result is ignored; callers should treat [TokenRefreshError.SessionExpired] as the
- * authoritative signal that the session has ended.
+ * If logout itself fails with a local storage error, [TokenRefreshError.LocalOperationFailed] is
+ * returned instead of [TokenRefreshError.SessionExpired]. Otherwise callers should treat
+ * [TokenRefreshError.SessionExpired] as the authoritative signal that the session has ended.
  */
 fun interface TokenRefreshUseCase {
     suspend operator fun invoke(): ResultWithError<AuthTokens, TokenRefreshError>

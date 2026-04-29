@@ -240,6 +240,7 @@ class AuthInterceptorTest {
             val body = if (status == HttpStatusCode.OK) "OK" else "Unauthorized"
             respond(body, status)
         }
+        mockEngine.config.dispatcher = Dispatchers.Unconfined
         val client = buildClient(
             mockEngine = mockEngine,
             authTokenStorage = authTokenStorage,
@@ -268,7 +269,7 @@ class AuthInterceptorTest {
      * `mockEngine.config.dispatcher = Dispatchers.Unconfined` is set before constructing the
      * [HttpClient]. Without this, [MockEngine] defaults to [kotlinx.coroutines.Dispatchers.IO],
      * which runs the handler on real IO threads that [advanceUntilIdle] cannot drain. When
-     * [releaseRefresh] completes before the IO threads dispatch back, each request finds the
+     * `releaseRefresh` completes before the IO threads dispatch back, each request finds the
      * deferred inactive and starts its own refresh. [Dispatchers.Unconfined] keeps every handler
      * invocation on the test scheduler, so all 10 request coroutines suspend at
      * `deferred.await()` before the refresh-coroutine runs, making coalescing deterministic.

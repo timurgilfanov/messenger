@@ -240,7 +240,7 @@ class AuthCleanupObserverTest {
         }
 
     @Test
-    fun `when starting Authenticated with matching pending key then marker is preserved`() =
+    fun `when starting Authenticated with matching pending key then clears stale marker`() =
         runTest(UnconfinedTestDispatcher()) {
             val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
             val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
@@ -257,7 +257,7 @@ class AuthCleanupObserverTest {
             observer.start()
 
             assertNull(settingsRepository.lastDeleteUserDataKey)
-            assertEquals(session1.toUserScopeKey(), localAuthDataSource.pendingCleanupKey)
+            assertNull(localAuthDataSource.pendingCleanupKey)
         }
 
     @Test

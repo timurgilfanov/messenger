@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.auth.domain.usecase
 
-import kotlinx.coroutines.flow.first
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.fold
@@ -18,9 +17,8 @@ class TokenRefreshUseCaseImpl(
         private const val TAG = "TokenRefreshUseCaseImpl"
     }
 
-    override suspend fun invoke(): ResultWithError<AuthTokens, TokenRefreshError> {
-        authRepository.authState.first()
-        return authRepository.refreshToken().fold(
+    override suspend fun invoke(): ResultWithError<AuthTokens, TokenRefreshError> =
+        authRepository.refreshToken().fold(
             onSuccess = { tokens ->
                 ResultWithError.Success(tokens)
             },
@@ -47,7 +45,6 @@ class TokenRefreshUseCaseImpl(
                 }
             },
         )
-    }
 
     private suspend fun handleRefreshError(): ResultWithError<AuthTokens, TokenRefreshError> {
         val logoutResult = authRepository.logout()

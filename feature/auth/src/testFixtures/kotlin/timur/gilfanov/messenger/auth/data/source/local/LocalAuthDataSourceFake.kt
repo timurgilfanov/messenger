@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.auth.data.source.local
 
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
@@ -7,9 +8,9 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 
 class LocalAuthDataSourceFake : LocalAuthDataSource {
 
-    private var accessToken: String? = null
-    private var refreshToken: String? = null
-    private var authProvider: AuthProvider? = null
+    var accessToken: String? = null
+    var refreshToken: String? = null
+    var authProvider: AuthProvider? = null
 
     private val getAccessTokenQueue =
         ArrayDeque<ResultWithError<String?, LocalAuthDataSourceError>>()
@@ -20,6 +21,12 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
     private val saveTokensQueue = ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
     private val saveSessionQueue = ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
     private val clearSessionQueue = ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
+    private val setPendingCleanupKeyQueue =
+        ArrayDeque<ResultWithError<Unit, LocalAuthDataSourceError>>()
+    private val getPendingCleanupKeyQueue =
+        ArrayDeque<ResultWithError<UserScopeKey?, LocalAuthDataSourceError>>()
+
+    var pendingCleanupKey: UserScopeKey? = null
 
     fun enqueueGetAccessToken(vararg results: ResultWithError<String?, LocalAuthDataSourceError>) {
         results.forEach { getAccessTokenQueue.addLast(it) }
@@ -45,6 +52,18 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
 
     fun enqueueClearSession(vararg results: ResultWithError<Unit, LocalAuthDataSourceError>) {
         results.forEach { clearSessionQueue.addLast(it) }
+    }
+
+    fun enqueueSetPendingCleanupKey(
+        vararg results: ResultWithError<Unit, LocalAuthDataSourceError>,
+    ) {
+        results.forEach { setPendingCleanupKeyQueue.addLast(it) }
+    }
+
+    fun enqueueGetPendingCleanupKey(
+        vararg results: ResultWithError<UserScopeKey?, LocalAuthDataSourceError>,
+    ) {
+        results.forEach { getPendingCleanupKeyQueue.addLast(it) }
     }
 
     override suspend fun getAccessToken(): ResultWithError<String?, LocalAuthDataSourceError> =
@@ -121,4 +140,46 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         }
         return result
     }
+
+    override suspend fun setPendingCleanupKey(
+        key: UserScopeKey?,
+    ): ResultWithError<Unit, LocalAuthDataSourceError> {
+        val result = if (setPendingCleanupKeyQueue.isNotEmpty()) {
+            setPendingCleanupKeyQueue.removeFirst()
+        } else {
+            ResultWithError.Success(Unit)
+        }
+        if (result is ResultWithError.Success) pendingCleanupKey = key
+        return result
+    }
+
+    override suspend fun setPendingCleanupKeyIfAbsent(
+        key: UserScopeKey,
+    ): ResultWithError<Boolean, LocalAuthDataSourceError> = if (pendingCleanupKey == null) {
+        pendingCleanupKey = key
+        ResultWithError.Success(true)
+    } else {
+        ResultWithError.Success(false)
+    }
+
+    override suspend fun clearPendingCleanupKeyIfMatches(
+        key: UserScopeKey,
+    ): ResultWithError<Unit, LocalAuthDataSourceError> {
+        if (pendingCleanupKey == key) {
+            pendingCleanupKey = null
+        }
+        return ResultWithError.Success(Unit)
+    }
+
+    override suspend fun getPendingCleanupKey(): ResultWithError<
+        UserScopeKey?,
+        LocalAuthDataSourceError,
+        > =
+        if (getPendingCleanupKeyQueue.isNotEmpty()) {
+            getPendingCleanupKeyQueue.removeFirst()
+        } else {
+            ResultWithError.Success(
+                pendingCleanupKey,
+            )
+        }
 }

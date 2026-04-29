@@ -2,7 +2,10 @@ package timur.gilfanov.messenger.auth.data.repository
 
 import app.cash.turbine.test
 import dagger.Lazy
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -26,6 +29,7 @@ import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
+import timur.gilfanov.messenger.domain.toUserScopeKey
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
@@ -58,6 +62,7 @@ class AuthRepositoryImplTest {
         val cleanupObserver = AuthCleanupObserver(
             authRepository = authRepositoryLazy,
             settingsRepository = { SettingsRepositoryStub() },
+            localAuthDataSource = { sessionStorage },
             scope = testScope.backgroundScope,
             logger = logger,
         )
@@ -294,5 +299,120 @@ class AuthRepositoryImplTest {
         repo.authState.test {
             assertIs<AuthState.Authenticated>(awaitItem())
         }
+    }
+
+    @Test
+    fun `logout saves pending cleanup key before clearing session`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        repo.loginWithCredentials(credentials)
+        advanceUntilIdle()
+
+        val refreshTokenBeforeLogout = requireNotNull(storage.refreshToken)
+        val expectedKey = AuthSession(
+            tokens = AuthTokens(accessToken = "", refreshToken = refreshTokenBeforeLogout),
+            provider = AuthProvider.EMAIL,
+        ).toUserScopeKey()
+
+        repo.logout()
+
+        assertEquals(expectedKey, storage.pendingCleanupKey)
+    }
+
+    @Test
+    fun `logout clears pending cleanup key when clearSession fails`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        repo.loginWithCredentials(credentials)
+        advanceUntilIdle()
+
+        assertNotNull(storage.refreshToken)
+        storage.enqueueClearSession(
+            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+        )
+
+        repo.logout()
+
+        assertNull(storage.pendingCleanupKey)
+    }
+
+    @Test
+    fun `refreshToken writes pending cleanup key for old scope when refresh token changes`() =
+        runTest {
+            val storage = LocalAuthDataSourceFake()
+            val remote = RemoteAuthDataSourceFake()
+            val repo =
+                createRepo(remoteDataSource = remote, sessionStorage = storage, testScope = this)
+            repo.loginWithCredentials(credentials)
+            advanceUntilIdle()
+
+            val oldRefreshToken = requireNotNull(storage.refreshToken)
+            val oldKey = AuthSession(
+                tokens = AuthTokens(accessToken = "", refreshToken = oldRefreshToken),
+                provider = AuthProvider.EMAIL,
+            ).toUserScopeKey()
+            val newTokens = AuthTokens("new-access", "new-refresh")
+            remote.enqueueRefresh(ResultWithError.Success(newTokens))
+
+            repo.refreshToken()
+
+            assertEquals(oldKey, storage.pendingCleanupKey)
+        }
+
+    @Test
+    fun `refreshToken does not write pending cleanup key when scope key is unchanged`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val remote = RemoteAuthDataSourceFake()
+        val repo = createRepo(remoteDataSource = remote, sessionStorage = storage, testScope = this)
+        repo.loginWithCredentials(credentials)
+        advanceUntilIdle()
+
+        val currentRefreshToken = requireNotNull(storage.refreshToken)
+        val newTokens = AuthTokens("new-access", currentRefreshToken)
+        remote.enqueueRefresh(ResultWithError.Success(newTokens))
+
+        repo.refreshToken()
+
+        assertNull(storage.pendingCleanupKey)
+    }
+
+    @Test
+    fun `logout returns LocalOperationFailed when pending cleanup marker write fails`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        repo.loginWithCredentials(credentials)
+        advanceUntilIdle()
+
+        storage.enqueueSetPendingCleanupKey(
+            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+        )
+
+        val result = repo.logout()
+
+        val failure = assertIs<ResultWithError.Failure<Unit, LogoutRepositoryError>>(result)
+        assertIs<LogoutRepositoryError.LocalOperationFailed>(failure.error)
+        repo.authState.test {
+            assertIs<AuthState.Authenticated>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `refreshToken returns SessionRevoked and does not save tokens after logout`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val remote = RemoteAuthDataSourceFake()
+        val repo =
+            createRepo(remoteDataSource = remote, sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        storage.enqueueGetRefreshToken(ResultWithError.Success("stale-refresh-token"))
+        remote.enqueueRefresh(ResultWithError.Success(AuthTokens("new-access", "new-refresh")))
+
+        val result = repo.refreshToken()
+
+        val failure =
+            assertIs<ResultWithError.Failure<AuthTokens, RefreshRepositoryError>>(result)
+        assertIs<RefreshRepositoryError.SessionRevoked>(failure.error)
+        assertNull(storage.accessToken)
+        assertNull(storage.refreshToken)
     }
 }

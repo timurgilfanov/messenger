@@ -3,18 +3,25 @@ package timur.gilfanov.messenger.auth.data.repository
 import app.cash.turbine.test
 import dagger.Lazy
 import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceFake
 import timur.gilfanov.messenger.auth.data.source.remote.LoginWithCredentialsError
+import timur.gilfanov.messenger.auth.data.source.remote.LoginWithGoogleError
 import timur.gilfanov.messenger.auth.data.source.remote.LogoutError
 import timur.gilfanov.messenger.auth.data.source.remote.RefreshError
 import timur.gilfanov.messenger.auth.data.source.remote.RegisterError
+import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSourceFake
+import timur.gilfanov.messenger.auth.data.source.remote.SignupWithGoogleError
 import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
@@ -43,8 +50,8 @@ class AuthRepositoryImplTest {
     private val googleIdToken = GoogleIdToken("google-id-token")
 
     private fun createRepo(
-        remoteDataSource: RemoteAuthDataSourceFake = RemoteAuthDataSourceFake(),
-        sessionStorage: LocalAuthDataSourceFake = LocalAuthDataSourceFake(),
+        remoteDataSource: RemoteAuthDataSource = RemoteAuthDataSourceFake(),
+        sessionStorage: LocalAuthDataSource = LocalAuthDataSourceFake(),
         testScope: kotlinx.coroutines.test.TestScope,
     ): AuthRepositoryImpl {
         val logger = NoOpLogger()
@@ -261,6 +268,45 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `refreshToken returns SessionRevoked when logout clears session first`() = runTest {
+        val initialSession = AuthSession(
+            tokens = AuthTokens("old-access", "old-refresh"),
+            provider = AuthProvider.EMAIL,
+        )
+        val newTokens = AuthTokens("new-access", "new-refresh")
+        val storage = RefreshLogoutRaceLocalAuthDataSource(initialSession)
+        val remote = RefreshLogoutRaceRemoteAuthDataSource(
+            refreshCanComplete = storage.clearSessionStarted,
+            refreshedTokens = newTokens,
+        )
+        val repo = createRepo(
+            remoteDataSource = remote,
+            sessionStorage = storage,
+            testScope = this,
+        )
+        advanceUntilIdle()
+
+        val refreshResult = async { repo.refreshToken() }
+        advanceUntilIdle()
+        val logoutResult = async { repo.logout() }
+        storage.clearSessionStarted.await()
+        advanceUntilIdle()
+        storage.finishClearSession.complete(Unit)
+
+        assertIs<ResultWithError.Success<Unit, LogoutRepositoryError>>(logoutResult.await())
+        val refreshFailure =
+            assertIs<ResultWithError.Failure<AuthTokens, RefreshRepositoryError>>(
+                refreshResult.await(),
+            )
+        assertIs<RefreshRepositoryError.SessionRevoked>(refreshFailure.error)
+        assertNull(storage.accessToken)
+        assertNull(storage.refreshToken)
+        repo.authState.test {
+            assertIs<AuthState.Unauthenticated>(awaitItem())
+        }
+    }
+
+    @Test
     fun `refreshToken TokenExpired returns error and storage unchanged`() = runTest {
         val storage = LocalAuthDataSourceFake()
         val repo = createRepo(sessionStorage = storage, testScope = this)
@@ -295,4 +341,86 @@ class AuthRepositoryImplTest {
             assertIs<AuthState.Authenticated>(awaitItem())
         }
     }
+}
+
+private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) :
+    LocalAuthDataSource {
+    var accessToken: String? = initialSession.tokens.accessToken
+        private set
+    var refreshToken: String? = initialSession.tokens.refreshToken
+        private set
+    private var authProvider: AuthProvider? = initialSession.provider
+
+    val clearSessionStarted = CompletableDeferred<Unit>()
+    val finishClearSession = CompletableDeferred<Unit>()
+
+    override suspend fun getAccessToken(): ResultWithError<String?, LocalAuthDataSourceError> =
+        ResultWithError.Success(accessToken)
+
+    override suspend fun getRefreshToken(): ResultWithError<String?, LocalAuthDataSourceError> =
+        ResultWithError.Success(refreshToken)
+
+    override suspend fun getAuthProvider(): ResultWithError<
+        AuthProvider?,
+        LocalAuthDataSourceError,
+        > =
+        ResultWithError.Success(authProvider)
+
+    override suspend fun saveTokens(
+        tokens: AuthTokens,
+    ): ResultWithError<Unit, LocalAuthDataSourceError> {
+        accessToken = tokens.accessToken
+        refreshToken = tokens.refreshToken
+        return ResultWithError.Success(Unit)
+    }
+
+    override suspend fun saveSession(
+        session: AuthSession,
+    ): ResultWithError<Unit, LocalAuthDataSourceError> {
+        accessToken = session.tokens.accessToken
+        refreshToken = session.tokens.refreshToken
+        authProvider = session.provider
+        return ResultWithError.Success(Unit)
+    }
+
+    override suspend fun clearSession(): ResultWithError<Unit, LocalAuthDataSourceError> {
+        accessToken = null
+        refreshToken = null
+        authProvider = null
+        clearSessionStarted.complete(Unit)
+        finishClearSession.await()
+        return ResultWithError.Success(Unit)
+    }
+}
+
+private class RefreshLogoutRaceRemoteAuthDataSource(
+    private val refreshCanComplete: CompletableDeferred<Unit>,
+    private val refreshedTokens: AuthTokens,
+) : RemoteAuthDataSource {
+    override suspend fun loginWithCredentials(
+        credentials: Credentials,
+    ): ResultWithError<AuthTokens, LoginWithCredentialsError> =
+        ResultWithError.Success(refreshedTokens)
+
+    override suspend fun loginWithGoogle(
+        idToken: GoogleIdToken,
+    ): ResultWithError<AuthTokens, LoginWithGoogleError> = ResultWithError.Success(refreshedTokens)
+
+    override suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthTokens, SignupWithGoogleError> = ResultWithError.Success(refreshedTokens)
+
+    override suspend fun register(
+        credentials: Credentials,
+        name: String,
+    ): ResultWithError<AuthTokens, RegisterError> = ResultWithError.Success(refreshedTokens)
+
+    override suspend fun refresh(refreshToken: String): ResultWithError<AuthTokens, RefreshError> {
+        refreshCanComplete.await()
+        return ResultWithError.Success(refreshedTokens)
+    }
+
+    override suspend fun logout(accessToken: String): ResultWithError<Unit, LogoutError> =
+        ResultWithError.Success(Unit)
 }

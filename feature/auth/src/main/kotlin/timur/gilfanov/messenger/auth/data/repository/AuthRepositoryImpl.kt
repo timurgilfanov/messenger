@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
 import timur.gilfanov.messenger.auth.data.source.remote.LoginWithCredentialsError
@@ -53,6 +55,8 @@ class AuthRepositoryImpl @Inject constructor(
 
     private val _authState = MutableStateFlow<AuthState?>(null)
     override val authState: Flow<AuthState> = _authState.filterNotNull()
+
+    private val sessionMutex = Mutex()
 
     init {
         cleanupObserver.get().start()
@@ -214,20 +218,22 @@ class AuthRepositoryImpl @Inject constructor(
         } else {
             null
         }
-        val clearSessionError = localDataSource.clearSession().fold(
-            onSuccess = { null },
-            onFailure = { storageError ->
-                logger.e(TAG, "Failed to clear session on logout: $storageError")
-                LogoutRepositoryError.LocalOperationFailed(storageError.toLocalError())
-            },
-        )
-        if (clearSessionError == null) {
-            _authState.value = AuthState.Unauthenticated
-        }
-        return when {
-            clearSessionError != null -> ResultWithError.Failure(clearSessionError)
-            remoteResult != null -> ResultWithError.Failure(remoteResult)
-            else -> ResultWithError.Success(Unit)
+        return sessionMutex.withLock {
+            val clearSessionError = localDataSource.clearSession().fold(
+                onSuccess = { null },
+                onFailure = { storageError ->
+                    logger.e(TAG, "Failed to clear session on logout: $storageError")
+                    LogoutRepositoryError.LocalOperationFailed(storageError.toLocalError())
+                },
+            )
+            if (clearSessionError == null) {
+                _authState.value = AuthState.Unauthenticated
+            }
+            when {
+                clearSessionError != null -> ResultWithError.Failure(clearSessionError)
+                remoteResult != null -> ResultWithError.Failure(remoteResult)
+                else -> ResultWithError.Success(Unit)
+            }
         }
     }
 
@@ -238,27 +244,7 @@ class AuthRepositoryImpl @Inject constructor(
                     ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
                 } else {
                     remoteDataSource.refresh(refreshToken).fold(
-                        onSuccess = { newTokens ->
-                            localDataSource.saveTokens(newTokens).fold(
-                                onSuccess = {
-                                    val currentState = _authState.value
-                                    if (currentState is AuthState.Authenticated) {
-                                        _authState.value = currentState.copy(
-                                            session = currentState.session.copy(tokens = newTokens),
-                                        )
-                                    }
-                                    ResultWithError.Success(newTokens)
-                                },
-                                onFailure = { storageError ->
-                                    logger.e(TAG, "Failed to save refreshed tokens: $storageError")
-                                    ResultWithError.Failure(
-                                        RefreshRepositoryError.LocalOperationFailed(
-                                            storageError.toLocalError(),
-                                        ),
-                                    )
-                                },
-                            )
-                        },
+                        onSuccess = { newTokens -> saveRefreshedTokens(newTokens) },
                         onFailure = { error ->
                             ResultWithError.Failure(mapRefreshError(error))
                         },
@@ -272,6 +258,29 @@ class AuthRepositoryImpl @Inject constructor(
                 )
             },
         )
+
+    private suspend fun saveRefreshedTokens(
+        newTokens: AuthTokens,
+    ): ResultWithError<AuthTokens, RefreshRepositoryError> = sessionMutex.withLock {
+        val currentState = _authState.value
+        if (currentState !is AuthState.Authenticated) {
+            return@withLock ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
+        }
+        localDataSource.saveTokens(newTokens).fold(
+            onSuccess = {
+                _authState.value = currentState.copy(
+                    session = currentState.session.copy(tokens = newTokens),
+                )
+                ResultWithError.Success(newTokens)
+            },
+            onFailure = { storageError ->
+                logger.e(TAG, "Failed to save refreshed tokens: $storageError")
+                ResultWithError.Failure(
+                    RefreshRepositoryError.LocalOperationFailed(storageError.toLocalError()),
+                )
+            },
+        )
+    }
 }
 
 private fun LocalAuthDataSourceError.toLocalError(): LocalStorageError = when (this) {

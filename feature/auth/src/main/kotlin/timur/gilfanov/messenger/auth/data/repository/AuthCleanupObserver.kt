@@ -55,9 +55,9 @@ class AuthCleanupObserver @Inject constructor(
                 previousState = currentState
 
                 if (prev == null) {
-                    handleInitialState(currentState)
+                    scope.launch { handleInitialState(currentState) }
                 } else {
-                    handleTransition(prev, currentState)
+                    scope.launch { handleTransition(prev, currentState) }
                 }
             }
         }
@@ -83,8 +83,6 @@ class AuthCleanupObserver @Inject constructor(
             if (cleanupSucceeded) {
                 clearSavedPendingCleanupKeyIfMatches(key)
             }
-        } else {
-            clearSavedPendingCleanupKeyIfMatches(key)
         }
     }
 

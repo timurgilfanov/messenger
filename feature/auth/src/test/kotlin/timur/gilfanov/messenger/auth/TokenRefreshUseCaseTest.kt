@@ -153,4 +153,40 @@ class TokenRefreshUseCaseTest {
         assertIs<TokenRefreshError.LocalOperationFailed>(result.error)
         assertIs<AuthState.Authenticated>(authRepositoryFake.currentAuthState)
     }
+
+    @Test
+    fun `when TokenExpired and remote logout fails then returns SessionExpired`() = runTest {
+        val authRepositoryFake = AuthRepositoryFake(initialSession).apply {
+            defaultLogoutResult = ResultWithError.Failure(
+                LogoutRepositoryError.RemoteOperationFailed(RemoteError.Failed.ServiceDown),
+            )
+            defaultRefreshTokenResult =
+                ResultWithError.Failure(RefreshRepositoryError.TokenExpired)
+        }
+        val useCase = createUseCase(authRepositoryFake)
+
+        val result = useCase()
+
+        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
+        assertIs<TokenRefreshError.SessionExpired>(result.error)
+        assertIs<AuthState.Unauthenticated>(authRepositoryFake.currentAuthState)
+    }
+
+    @Test
+    fun `when SessionRevoked and remote logout fails then returns SessionExpired`() = runTest {
+        val authRepositoryFake = AuthRepositoryFake(initialSession).apply {
+            defaultLogoutResult = ResultWithError.Failure(
+                LogoutRepositoryError.RemoteOperationFailed(RemoteError.Failed.ServiceDown),
+            )
+            defaultRefreshTokenResult =
+                ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
+        }
+        val useCase = createUseCase(authRepositoryFake)
+
+        val result = useCase()
+
+        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
+        assertIs<TokenRefreshError.SessionExpired>(result.error)
+        assertIs<AuthState.Unauthenticated>(authRepositoryFake.currentAuthState)
+    }
 }

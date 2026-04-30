@@ -48,7 +48,6 @@ class AuthRepositorySignupWithGoogleTest {
         val cleanupObserver = AuthCleanupObserver(
             authRepository = authRepositoryLazy,
             settingsRepository = { SettingsRepositoryStub() },
-            localAuthDataSource = { sessionStorage },
             scope = testScope.backgroundScope,
             logger = logger,
         )

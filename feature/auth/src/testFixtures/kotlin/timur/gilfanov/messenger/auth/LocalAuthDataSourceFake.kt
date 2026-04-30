@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.auth
 
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
-import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
@@ -12,7 +11,6 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
     var accessToken: String? = null
     var refreshToken: String? = null
     var authProvider: AuthProvider? = null
-    var pendingCleanupKey: UserScopeKey? = null
 
     override suspend fun getAccessToken(): ResultWithError<String?, LocalAuthDataSourceError> =
         ResultWithError.Success(accessToken)
@@ -49,35 +47,4 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         authProvider = null
         return ResultWithError.Success(Unit)
     }
-
-    override suspend fun setPendingCleanupKey(
-        key: UserScopeKey?,
-    ): ResultWithError<Unit, LocalAuthDataSourceError> {
-        pendingCleanupKey = key
-        return ResultWithError.Success(Unit)
-    }
-
-    override suspend fun setPendingCleanupKeyIfAbsent(
-        key: UserScopeKey,
-    ): ResultWithError<Boolean, LocalAuthDataSourceError> = if (pendingCleanupKey == null) {
-        pendingCleanupKey = key
-        ResultWithError.Success(true)
-    } else {
-        ResultWithError.Success(false)
-    }
-
-    override suspend fun clearPendingCleanupKeyIfMatches(
-        key: UserScopeKey,
-    ): ResultWithError<Unit, LocalAuthDataSourceError> {
-        if (pendingCleanupKey == key) {
-            pendingCleanupKey = null
-        }
-        return ResultWithError.Success(Unit)
-    }
-
-    override suspend fun getPendingCleanupKey(): ResultWithError<
-        UserScopeKey?,
-        LocalAuthDataSourceError,
-        > =
-        ResultWithError.Success(pendingCleanupKey)
 }

@@ -8,7 +8,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.auth.LocalAuthDataSourceFake
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
 import timur.gilfanov.messenger.domain.entity.auth.AuthSession
@@ -40,11 +39,9 @@ class AuthCleanupObserverTest {
         authRepository: AuthRepositoryFake,
         settingsRepository: SettingsRepositoryFake,
         scope: CoroutineScope,
-        localAuthDataSource: LocalAuthDataSourceFake = LocalAuthDataSourceFake(),
     ) = AuthCleanupObserver(
         authRepository = { authRepository },
         settingsRepository = { settingsRepository },
-        localAuthDataSource = { localAuthDataSource },
         scope = scope,
         logger = NoOpLogger(),
     )
@@ -78,51 +75,6 @@ class AuthCleanupObserverTest {
         }
 
     @Test
-    fun `when user scope key changes and cleanup succeeds then pending marker is cleared`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
-            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
-            val localAuthDataSource = LocalAuthDataSourceFake()
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-            authRepository.setState(AuthState.Authenticated(session2))
-
-            assertNull(localAuthDataSource.pendingCleanupKey)
-        }
-
-    @Test
-    fun `when user scope key changes and cleanup fails then pending marker is kept for retry`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
-            val settingsRepository = SettingsRepositoryFake(
-                initialSettings = Settings(UiLanguage.English),
-                deleteUserDataResult = ResultWithError.Failure(
-                    DeleteUserDataRepositoryError.LocalOperationFailed(
-                        LocalStorageError.AccessDenied,
-                    ),
-                ),
-            )
-            val localAuthDataSource = LocalAuthDataSourceFake()
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-            authRepository.setState(AuthState.Authenticated(session2))
-
-            assertEquals(session1.toUserScopeKey(), localAuthDataSource.pendingCleanupKey)
-        }
-
-    @Test
     fun `when transitioning Unauthenticated to Authenticated then NO cleanup`() =
         runTest(UnconfinedTestDispatcher()) {
             val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
@@ -145,6 +97,7 @@ class AuthCleanupObserverTest {
 
             observer.start()
 
+            // Change access token but keep refresh token (which determines the key)
             val session1Updated = session1.copy(
                 tokens = session1.tokens.copy(accessToken = "access-1-updated"),
             )
@@ -160,8 +113,10 @@ class AuthCleanupObserverTest {
             val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
             val observer = createObserver(authRepository, settingsRepository, backgroundScope)
 
+            // Start observer while Authenticated
             observer.start()
 
+            // Transition to Unauthenticated immediately
             authRepository.setState(AuthState.Unauthenticated)
 
             assertEquals(session1.toUserScopeKey(), settingsRepository.lastDeleteUserDataKey)
@@ -216,226 +171,5 @@ class AuthCleanupObserverTest {
             authRepository.setState(AuthState.Authenticated(session1))
             authRepository.setState(AuthState.Unauthenticated)
             assertEquals(2, settingsRepository.deleteUserDataCallCount)
-        }
-
-    @Test
-    fun `when starting Unauthenticated with pending key then cleanup runs and key is cleared`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
-            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
-            val localAuthDataSource = LocalAuthDataSourceFake().apply {
-                pendingCleanupKey = session1.toUserScopeKey()
-            }
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-
-            assertEquals(session1.toUserScopeKey(), settingsRepository.lastDeleteUserDataKey)
-            assertNull(localAuthDataSource.pendingCleanupKey)
-        }
-
-    @Test
-    fun `when starting Authenticated with matching pending key then marker is preserved`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
-            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
-            val localAuthDataSource = LocalAuthDataSourceFake().apply {
-                pendingCleanupKey = session1.toUserScopeKey()
-            }
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-
-            assertNull(settingsRepository.lastDeleteUserDataKey)
-            assertEquals(session1.toUserScopeKey(), localAuthDataSource.pendingCleanupKey)
-        }
-
-    @Test
-    fun `when starting with no pending cleanup key then no extra cleanup occurs`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
-            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
-            val localAuthDataSource = LocalAuthDataSourceFake()
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-
-            assertNull(settingsRepository.lastDeleteUserDataKey)
-        }
-
-    @Test
-    fun `when Authenticated has pending key for different user then runs cleanup and clears key`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session2))
-            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
-            val localAuthDataSource = LocalAuthDataSourceFake().apply {
-                pendingCleanupKey = session1.toUserScopeKey()
-            }
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-
-            assertEquals(session1.toUserScopeKey(), settingsRepository.lastDeleteUserDataKey)
-            assertNull(localAuthDataSource.pendingCleanupKey)
-        }
-
-    @Test
-    fun `when deleteUserData fails during startup recovery then pending key is kept for retry`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Unauthenticated)
-            val settingsRepository = SettingsRepositoryFake(
-                initialSettings = Settings(UiLanguage.English),
-                deleteUserDataResult = ResultWithError.Failure(
-                    DeleteUserDataRepositoryError.LocalOperationFailed(
-                        LocalStorageError.AccessDenied,
-                    ),
-                ),
-            )
-            val localAuthDataSource = LocalAuthDataSourceFake().apply {
-                pendingCleanupKey = session1.toUserScopeKey()
-            }
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-
-            assertEquals(session1.toUserScopeKey(), settingsRepository.lastDeleteUserDataKey)
-            assertEquals(session1.toUserScopeKey(), localAuthDataSource.pendingCleanupKey)
-        }
-
-    @Test
-    fun `when deleteUserData fails during logout transition then pending key is kept for retry`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
-            val settingsRepository = SettingsRepositoryFake(
-                initialSettings = Settings(UiLanguage.English),
-                deleteUserDataResult = ResultWithError.Failure(
-                    DeleteUserDataRepositoryError.LocalOperationFailed(
-                        LocalStorageError.AccessDenied,
-                    ),
-                ),
-            )
-            val localAuthDataSource = LocalAuthDataSourceFake()
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-            localAuthDataSource.pendingCleanupKey = session1.toUserScopeKey()
-            authRepository.setState(AuthState.Unauthenticated)
-
-            assertEquals(session1.toUserScopeKey(), localAuthDataSource.pendingCleanupKey)
-        }
-
-    @Test
-    fun `when logout cleanup runs then pending key is cleared after deleteUserData`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
-            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
-            val localAuthDataSource = LocalAuthDataSourceFake().apply {
-                pendingCleanupKey = session1.toUserScopeKey()
-            }
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-            authRepository.setState(AuthState.Unauthenticated)
-
-            assertEquals(session1.toUserScopeKey(), settingsRepository.lastDeleteUserDataKey)
-            assertNull(localAuthDataSource.pendingCleanupKey)
-        }
-
-    @Test
-    fun `when second user logs out while first cleanup is running then both cleanups complete`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
-            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
-            val observer = createObserver(authRepository, settingsRepository, backgroundScope)
-
-            observer.start()
-
-            authRepository.setState(AuthState.Unauthenticated)
-            authRepository.setState(AuthState.Authenticated(session2))
-            authRepository.setState(AuthState.Unauthenticated)
-
-            assertEquals(2, settingsRepository.deleteUserDataCallCount)
-        }
-
-    @Test
-    fun `when pending marker exists and scope changes then marker is preserved and cleanup runs`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val session3 = AuthSession(
-                tokens = AuthTokens(accessToken = "access-3", refreshToken = "refresh-3"),
-                provider = AuthProvider.EMAIL,
-            )
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
-            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
-            val localAuthDataSource = LocalAuthDataSourceFake()
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-            localAuthDataSource.pendingCleanupKey = session2.toUserScopeKey()
-            authRepository.setState(AuthState.Authenticated(session3))
-
-            assertEquals(session2.toUserScopeKey(), localAuthDataSource.pendingCleanupKey)
-            assertEquals(session1.toUserScopeKey(), settingsRepository.lastDeleteUserDataKey)
-        }
-
-    @Test
-    fun `when cleanup for user A succeeds but stored pending key is B then B key is not cleared`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
-            val settingsRepository = SettingsRepositoryFake(Settings(UiLanguage.English))
-            val localAuthDataSource = LocalAuthDataSourceFake()
-            val observer = createObserver(
-                authRepository,
-                settingsRepository,
-                backgroundScope,
-                localAuthDataSource,
-            )
-
-            observer.start()
-
-            localAuthDataSource.pendingCleanupKey = session2.toUserScopeKey()
-
-            authRepository.setState(AuthState.Unauthenticated)
-
-            assertEquals(session2.toUserScopeKey(), localAuthDataSource.pendingCleanupKey)
         }
 }

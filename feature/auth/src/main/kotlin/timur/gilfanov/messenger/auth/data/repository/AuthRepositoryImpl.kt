@@ -56,6 +56,7 @@ class AuthRepositoryImpl @Inject constructor(
     private val _authState = MutableStateFlow<AuthState?>(null)
     override val authState: Flow<AuthState> = _authState.filterNotNull()
 
+    // Prevents refresh from saving new tokens while logout is clearing the local session.
     private val sessionMutex = Mutex()
 
     init {

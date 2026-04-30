@@ -5,25 +5,24 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.get
 import io.ktor.http.HttpStatusCode
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCase
 import timur.gilfanov.messenger.domain.entity.ResultWithError
-import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
-import timur.gilfanov.messenger.domain.entity.auth.AuthSession
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 
@@ -125,13 +124,6 @@ class AuthInterceptorTest {
                 respond("OK", HttpStatusCode.OK)
             }
         }
-        val authRepositoryFake = AuthRepositoryFake(
-            AuthSession(
-                tokens = AuthTokens("old-access-token", "old-refresh-token"),
-                provider = AuthProvider.EMAIL,
-            ),
-        )
-        authRepositoryFake.enqueueRefreshTokenResult(ResultWithError.Success(newTokens))
         val client = buildClient(
             mockEngine = mockEngine,
             authTokenStorage = authTokenStorage,
@@ -230,11 +222,58 @@ class AuthInterceptorTest {
         assertEquals(1, callCount)
     }
 
+    @Test
+    fun `when 401 after completed refresh then triggers new token refresh`() = runTest {
+        val authTokenStorage = LocalAuthDataSourceFake().apply {
+            accessToken = "old-access-token"
+        }
+        var refreshInvocationCount = 0
+        val engineResponses = ArrayDeque(
+            listOf(
+                HttpStatusCode.Unauthorized,
+                HttpStatusCode.OK,
+                HttpStatusCode.Unauthorized,
+                HttpStatusCode.OK,
+            ),
+        )
+        val mockEngine = MockEngine {
+            val status = engineResponses.removeFirst()
+            val body = if (status == HttpStatusCode.OK) "OK" else "Unauthorized"
+            respond(body, status)
+        }
+        mockEngine.config.dispatcher = Dispatchers.Unconfined
+        val client = buildClient(
+            mockEngine = mockEngine,
+            authTokenStorage = authTokenStorage,
+            tokenRefreshUseCase = {
+                refreshInvocationCount++
+                authTokenStorage.saveTokens(newTokens)
+                ResultWithError.Success(newTokens)
+            },
+            scope = this,
+        )
+
+        val response1 = client.get("/test")
+        val response2 = client.get("/test")
+
+        assertEquals(HttpStatusCode.OK, response1.status)
+        assertEquals(HttpStatusCode.OK, response2.status)
+        assertEquals(2, refreshInvocationCount)
+        assertTrue(engineResponses.isEmpty())
+    }
+
     /**
      * Requests that reach the interceptor while a refresh is already in progress must await the
      * same refresh deferred instead of starting their own refresh. The test controls the refresh
-     * completion explicitly so request overlap does not depend on Ktor engine scheduling details or
-     * wall-clock timing.
+     * completion explicitly so request overlap does not depend on wall-clock timing.
+     *
+     * `mockEngine.config.dispatcher = Dispatchers.Unconfined` is set before constructing the
+     * [HttpClient]. Without this, [MockEngine] defaults to [kotlinx.coroutines.Dispatchers.IO],
+     * which runs the handler on real IO threads that [advanceUntilIdle] cannot drain. When
+     * `releaseRefresh` completes before the IO threads dispatch back, each request finds the
+     * deferred inactive and starts its own refresh. [Dispatchers.Unconfined] keeps every handler
+     * invocation on the test scheduler, so all 10 request coroutines suspend at
+     * `deferred.await()` before the refresh-coroutine runs, making coalescing deterministic.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
@@ -244,16 +283,17 @@ class AuthInterceptorTest {
         val authTokenStorage = LocalAuthDataSourceFake().apply {
             accessToken = "old-access-token"
         }
-        val refreshInvocationCount = AtomicInteger(0)
+        var refreshInvocationCount = 0
         val releaseRefresh = CompletableDeferred<Unit>()
         val mockEngine = MockEngine {
             respond("Unauthorized", HttpStatusCode.Unauthorized)
         }
+        mockEngine.config.dispatcher = Dispatchers.Unconfined
         val client = buildClient(
             mockEngine = mockEngine,
             authTokenStorage = authTokenStorage,
             tokenRefreshUseCase = {
-                refreshInvocationCount.incrementAndGet()
+                refreshInvocationCount++
                 releaseRefresh.await()
                 ResultWithError.Failure(TokenRefreshError.SessionExpired)
             },
@@ -261,12 +301,14 @@ class AuthInterceptorTest {
         )
 
         val jobs = List(10) {
-            launch { client.get("/test") }
+            async { client.get("/test") }
         }
 
+        advanceUntilIdle()
         releaseRefresh.complete(Unit)
-        jobs.joinAll()
+        val responses = jobs.awaitAll()
 
-        assertEquals(1, refreshInvocationCount.get())
+        assertEquals(1, refreshInvocationCount)
+        responses.forEach { assertEquals(HttpStatusCode.Unauthorized, it.status) }
     }
 }

@@ -169,10 +169,17 @@ class LoginFeatureTest {
                 hasTestTag("login_screen"),
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
-            onNodeWithTag("login_email_field").assertExists()
-            onNodeWithTag("login_sign_in_button").assertExists()
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
+            waitUntilExactlyOneExists(
+                hasTestTag("login_email_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
+            waitUntilExactlyOneExists(
+                hasTestTag("login_sign_in_button"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
         }
     }
 
@@ -184,10 +191,15 @@ class LoginFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             repeat(100) {
+                val oldActivity = activity
                 withContext(Dispatchers.Main) {
                     activity.recreate()
                 }
-                onNodeWithTag("login_screen").assertExists()
+                waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
+                waitUntilExactlyOneExists(
+                    hasTestTag("login_screen"),
+                    timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+                )
             }
         }
     }
@@ -202,8 +214,13 @@ class LoginFeatureTest {
             onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
             onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
 
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
+            waitUntilExactlyOneExists(
+                hasTestTag("login_email_field"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             val emailLabel = activity.getString(R.string.login_email_label)
             val passwordLabel = activity.getString(R.string.login_password_label)
@@ -226,10 +243,18 @@ class LoginFeatureTest {
             onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
             onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("login_sign_in_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("login_general_error"))
+            waitUntilExactlyOneExists(
+                hasTestTag("login_general_error"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
+            val oldActivity = activity
             activity.requestedOrientation = SCREEN_ORIENTATION_LANDSCAPE
-            waitForIdle()
+            waitUntil(timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS) { oldActivity.isDestroyed }
+            waitUntilExactlyOneExists(
+                hasTestTag("login_general_error"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
 
             val errorInvalidCredentials =
                 activity.getString(R.string.login_error_invalid_credentials)
@@ -251,7 +276,10 @@ class LoginFeatureTest {
             onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
             onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("login_sign_in_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("login_general_error"))
+            waitUntilExactlyOneExists(
+                hasTestTag("login_general_error"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("login_general_error")
                 .assertTextEquals(activity.getString(R.string.login_error_invalid_credentials))
         }
@@ -297,7 +325,10 @@ class LoginFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             onNodeWithTag("login_google_sign_in_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("login_general_error"))
+            waitUntilExactlyOneExists(
+                hasTestTag("login_general_error"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("login_general_error")
                 .assertTextEquals(activity.getString(R.string.login_error_account_not_found))
         }
@@ -315,7 +346,10 @@ class LoginFeatureTest {
                 timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
             )
             onNodeWithTag("login_google_sign_in_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("login_general_error"))
+            waitUntilExactlyOneExists(
+                hasTestTag("login_general_error"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("login_general_error")
                 .assertTextEquals(activity.getString(R.string.login_error_account_suspended))
         }
@@ -368,7 +402,10 @@ class LoginFeatureTest {
             onNodeWithTag("login_email_field").performTextInput(TEST_EMAIL)
             onNodeWithTag("login_password_field").performTextInput(TEST_PASSWORD)
             onNodeWithTag("login_sign_in_button").performClick()
-            waitUntilExactlyOneExists(hasTestTag("login_blocking_error_dialog"))
+            waitUntilExactlyOneExists(
+                hasTestTag("login_blocking_error_dialog"),
+                timeoutMillis = SCREEN_LOAD_TIMEOUT_MILLIS,
+            )
             onNodeWithTag("login_blocking_error_action_button")
                 .assertTextEquals(activity.getString(R.string.auth_action_open_storage_settings))
         }

@@ -39,7 +39,7 @@ class AuthCleanupObserverTest {
         authRepository: AuthRepositoryFake,
         settingsRepository: SettingsRepositoryFake,
         scope: CoroutineScope,
-    ) = AuthCleanupObserver(
+    ) = AuthCleanupObserverImpl(
         authRepository = { authRepository },
         settingsRepository = { settingsRepository },
         scope = scope,

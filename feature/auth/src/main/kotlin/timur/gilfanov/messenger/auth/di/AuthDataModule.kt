@@ -2,13 +2,9 @@ package timur.gilfanov.messenger.auth.di
 
 import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import timur.gilfanov.messenger.auth.data.repository.AuthRepositoryImpl
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceImpl
@@ -31,12 +27,4 @@ abstract class AuthDataModule {
     @Binds
     @Singleton
     abstract fun bindLocalAuthDataSource(impl: LocalAuthDataSourceImpl): LocalAuthDataSource
-
-    companion object {
-        @Provides
-        @Singleton
-        @ApplicationScope
-        fun provideApplicationScope(): CoroutineScope =
-            CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    }
 }

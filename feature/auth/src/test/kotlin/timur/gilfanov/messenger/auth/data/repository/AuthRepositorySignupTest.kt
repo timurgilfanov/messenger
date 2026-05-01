@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.auth.data.repository
 
 import app.cash.turbine.test
-import dagger.Lazy
 import kotlin.test.assertIs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -21,14 +20,12 @@ import timur.gilfanov.messenger.domain.entity.auth.Credentials
 import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.repository.EmailUnknownError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.PasswordValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.ProfileNameValidationError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
-import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryStub
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
@@ -41,31 +38,12 @@ class AuthRepositorySignupTest {
         remoteDataSource: RemoteAuthDataSourceFake = RemoteAuthDataSourceFake(),
         sessionStorage: LocalAuthDataSourceFake = LocalAuthDataSourceFake(),
         testScope: kotlinx.coroutines.test.TestScope,
-    ): AuthRepositoryImpl {
-        val logger = NoOpLogger()
-        val authRepositoryLazy = object : Lazy<AuthRepository> {
-            private var repo: AuthRepository? = null
-            fun set(r: AuthRepository) {
-                repo = r
-            }
-            override fun get(): AuthRepository = repo!!
-        }
-        val cleanupObserver = AuthCleanupObserver(
-            authRepository = authRepositoryLazy,
-            settingsRepository = { SettingsRepositoryStub() },
-            scope = testScope.backgroundScope,
-            logger = logger,
-        )
-        val repo = AuthRepositoryImpl(
-            remoteDataSource = remoteDataSource,
-            localDataSource = sessionStorage,
-            cleanupObserver = { cleanupObserver },
-            coroutineScope = testScope,
-            logger = logger,
-        )
-        authRepositoryLazy.set(repo)
-        return repo
-    }
+    ): AuthRepositoryImpl = AuthRepositoryImpl(
+        remoteDataSource = remoteDataSource,
+        localDataSource = sessionStorage,
+        coroutineScope = testScope,
+        logger = NoOpLogger(),
+    )
 
     @Test
     fun `signup success stores session and sets Authenticated EMAIL provider`() = runTest {

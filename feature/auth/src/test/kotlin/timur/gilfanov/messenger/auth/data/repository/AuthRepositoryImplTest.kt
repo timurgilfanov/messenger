@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.auth.data.repository
 
 import app.cash.turbine.test
-import dagger.Lazy
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlinx.coroutines.CompletableDeferred
@@ -33,14 +32,12 @@ import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
-import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
-import timur.gilfanov.messenger.domain.usecase.settings.SettingsRepositoryStub
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(timur.gilfanov.messenger.annotations.Unit::class)
@@ -53,31 +50,12 @@ class AuthRepositoryImplTest {
         remoteDataSource: RemoteAuthDataSource = RemoteAuthDataSourceFake(),
         sessionStorage: LocalAuthDataSource = LocalAuthDataSourceFake(),
         testScope: kotlinx.coroutines.test.TestScope,
-    ): AuthRepositoryImpl {
-        val logger = NoOpLogger()
-        val authRepositoryLazy = object : Lazy<AuthRepository> {
-            private var repo: AuthRepository? = null
-            fun set(r: AuthRepository) {
-                repo = r
-            }
-            override fun get(): AuthRepository = repo!!
-        }
-        val cleanupObserver = AuthCleanupObserver(
-            authRepository = authRepositoryLazy,
-            settingsRepository = { SettingsRepositoryStub() },
-            scope = testScope.backgroundScope,
-            logger = logger,
-        )
-        val repo = AuthRepositoryImpl(
-            remoteDataSource = remoteDataSource,
-            localDataSource = sessionStorage,
-            cleanupObserver = { cleanupObserver },
-            coroutineScope = testScope,
-            logger = logger,
-        )
-        authRepositoryLazy.set(repo)
-        return repo
-    }
+    ): AuthRepositoryImpl = AuthRepositoryImpl(
+        remoteDataSource = remoteDataSource,
+        localDataSource = sessionStorage,
+        coroutineScope = testScope,
+        logger = NoOpLogger(),
+    )
 
     @Test
     fun `loginWithCredentials success stores session and sets Authenticated EMAIL provider`() =
@@ -307,6 +285,55 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `refresh during logout-then-login returns SessionRevoked without overwriting tokens`() =
+        runTest {
+            val initialAccessToken = "a-access"
+            val initialRefreshToken = "a-refresh"
+            val storage = LocalAuthDataSourceFake().apply {
+                enqueueGetAccessToken(ResultWithError.Success(initialAccessToken))
+                enqueueGetRefreshToken(ResultWithError.Success(initialRefreshToken))
+                enqueueGetAuthProvider(ResultWithError.Success(AuthProvider.EMAIL))
+            }
+            val refreshGate = CompletableDeferred<Unit>()
+            val refreshedAtokens = AuthTokens("a-refreshed-access", "a-refreshed-refresh")
+            val newLoginBtokens = AuthTokens("b-access", "b-refresh")
+            val remote = StaleRefreshRemote(
+                refreshGate = refreshGate,
+                refreshedTokens = refreshedAtokens,
+                loginTokens = newLoginBtokens,
+            )
+
+            val repo = createRepo(
+                remoteDataSource = remote,
+                sessionStorage = storage,
+                testScope = this,
+            )
+            advanceUntilIdle()
+
+            val refreshDeferred = async { repo.refreshToken() }
+            advanceUntilIdle()
+
+            val logoutResult = repo.logout()
+            assertIs<ResultWithError.Success<Unit, LogoutRepositoryError>>(logoutResult)
+            val loginResult = repo.loginWithCredentials(credentials)
+            assertIs<ResultWithError.Success<AuthSession, LoginRepositoryError>>(loginResult)
+            advanceUntilIdle()
+
+            refreshGate.complete(Unit)
+            advanceUntilIdle()
+
+            val refreshFailure =
+                assertIs<ResultWithError.Failure<AuthTokens, RefreshRepositoryError>>(
+                    refreshDeferred.await(),
+                )
+            assertIs<RefreshRepositoryError.SessionRevoked>(refreshFailure.error)
+            repo.authState.test {
+                val state = assertIs<AuthState.Authenticated>(awaitItem())
+                kotlin.test.assertEquals(newLoginBtokens, state.session.tokens)
+            }
+        }
+
+    @Test
     fun `refreshToken TokenExpired returns error and storage unchanged`() = runTest {
         val storage = LocalAuthDataSourceFake()
         val repo = createRepo(sessionStorage = storage, testScope = this)
@@ -418,6 +445,38 @@ private class RefreshLogoutRaceRemoteAuthDataSource(
 
     override suspend fun refresh(refreshToken: String): ResultWithError<AuthTokens, RefreshError> {
         refreshCanComplete.await()
+        return ResultWithError.Success(refreshedTokens)
+    }
+
+    override suspend fun logout(accessToken: String): ResultWithError<Unit, LogoutError> =
+        ResultWithError.Success(Unit)
+}
+
+private class StaleRefreshRemote(
+    private val refreshGate: CompletableDeferred<Unit>,
+    private val refreshedTokens: AuthTokens,
+    private val loginTokens: AuthTokens,
+) : RemoteAuthDataSource {
+    override suspend fun loginWithCredentials(
+        credentials: Credentials,
+    ): ResultWithError<AuthTokens, LoginWithCredentialsError> = ResultWithError.Success(loginTokens)
+
+    override suspend fun loginWithGoogle(
+        idToken: GoogleIdToken,
+    ): ResultWithError<AuthTokens, LoginWithGoogleError> = ResultWithError.Success(loginTokens)
+
+    override suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthTokens, SignupWithGoogleError> = ResultWithError.Success(loginTokens)
+
+    override suspend fun register(
+        credentials: Credentials,
+        name: String,
+    ): ResultWithError<AuthTokens, RegisterError> = ResultWithError.Success(loginTokens)
+
+    override suspend fun refresh(refreshToken: String): ResultWithError<AuthTokens, RefreshError> {
+        refreshGate.await()
         return ResultWithError.Success(refreshedTokens)
     }
 

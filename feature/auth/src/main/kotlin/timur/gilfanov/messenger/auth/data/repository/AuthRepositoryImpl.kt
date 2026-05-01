@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.auth.data.repository
 
-import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +43,6 @@ import timur.gilfanov.messenger.util.Logger
 class AuthRepositoryImpl @Inject constructor(
     private val remoteDataSource: RemoteAuthDataSource,
     private val localDataSource: LocalAuthDataSource,
-    private val cleanupObserver: Lazy<AuthCleanupObserver>,
     @ApplicationScope private val coroutineScope: CoroutineScope,
     private val logger: Logger,
 ) : AuthRepository {
@@ -56,11 +54,12 @@ class AuthRepositoryImpl @Inject constructor(
     private val _authState = MutableStateFlow<AuthState?>(null)
     override val authState: Flow<AuthState> = _authState.filterNotNull()
 
-    // Prevents refresh from saving new tokens while logout is clearing the local session.
+    // Serializes auth-state mutations (login, signup, logout, refresh-save) so that, e.g.,
+    // a refresh in flight cannot overwrite tokens of a session created by a concurrent login,
+    // and login/logout cannot leave storage and _authState in an inconsistent state.
     private val sessionMutex = Mutex()
 
     init {
-        cleanupObserver.get().start()
         coroutineScope.launch {
             restoreAuthState()
         }
@@ -107,18 +106,22 @@ class AuthRepositoryImpl @Inject constructor(
         remoteDataSource.loginWithCredentials(credentials).fold(
             onSuccess = { tokens ->
                 val session = AuthSession(tokens = tokens, provider = AuthProvider.EMAIL)
-                localDataSource.saveSession(session).fold(
-                    onSuccess = {
-                        _authState.value = AuthState.Authenticated(session)
-                        ResultWithError.Success(session)
-                    },
-                    onFailure = { storageError ->
-                        logger.e(TAG, "Failed to save session after login: $storageError")
-                        ResultWithError.Failure(
-                            LoginRepositoryError.LocalOperationFailed(storageError.toLocalError()),
-                        )
-                    },
-                )
+                sessionMutex.withLock {
+                    localDataSource.saveSession(session).fold(
+                        onSuccess = {
+                            _authState.value = AuthState.Authenticated(session)
+                            ResultWithError.Success(session)
+                        },
+                        onFailure = { storageError ->
+                            logger.e(TAG, "Failed to save session after login: $storageError")
+                            ResultWithError.Failure(
+                                LoginRepositoryError.LocalOperationFailed(
+                                    storageError.toLocalError(),
+                                ),
+                            )
+                        },
+                    )
+                }
             },
             onFailure = { error ->
                 ResultWithError.Failure(mapLoginWithCredentialsError(error))
@@ -131,20 +134,25 @@ class AuthRepositoryImpl @Inject constructor(
         remoteDataSource.loginWithGoogle(idToken).fold(
             onSuccess = { tokens ->
                 val session = AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE)
-                localDataSource.saveSession(session).fold(
-                    onSuccess = {
-                        _authState.value = AuthState.Authenticated(session)
-                        ResultWithError.Success(session)
-                    },
-                    onFailure = { storageError ->
-                        logger.e(TAG, "Failed to save session after Google login: $storageError")
-                        ResultWithError.Failure(
-                            GoogleLoginRepositoryError.LocalOperationFailed(
-                                storageError.toLocalError(),
-                            ),
-                        )
-                    },
-                )
+                sessionMutex.withLock {
+                    localDataSource.saveSession(session).fold(
+                        onSuccess = {
+                            _authState.value = AuthState.Authenticated(session)
+                            ResultWithError.Success(session)
+                        },
+                        onFailure = { storageError ->
+                            logger.e(
+                                TAG,
+                                "Failed to save session after Google login: $storageError",
+                            )
+                            ResultWithError.Failure(
+                                GoogleLoginRepositoryError.LocalOperationFailed(
+                                    storageError.toLocalError(),
+                                ),
+                            )
+                        },
+                    )
+                }
             },
             onFailure = { error ->
                 ResultWithError.Failure(mapLoginWithGoogleError(error))
@@ -158,20 +166,25 @@ class AuthRepositoryImpl @Inject constructor(
         remoteDataSource.signupWithGoogle(idToken, name).fold(
             onSuccess = { tokens ->
                 val session = AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE)
-                localDataSource.saveSession(session).fold(
-                    onSuccess = {
-                        _authState.value = AuthState.Authenticated(session)
-                        ResultWithError.Success(session)
-                    },
-                    onFailure = { storageError ->
-                        logger.e(TAG, "Failed to save session after Google signup: $storageError")
-                        ResultWithError.Failure(
-                            GoogleSignupRepositoryError.LocalOperationFailed(
-                                storageError.toLocalError(),
-                            ),
-                        )
-                    },
-                )
+                sessionMutex.withLock {
+                    localDataSource.saveSession(session).fold(
+                        onSuccess = {
+                            _authState.value = AuthState.Authenticated(session)
+                            ResultWithError.Success(session)
+                        },
+                        onFailure = { storageError ->
+                            logger.e(
+                                TAG,
+                                "Failed to save session after Google signup: $storageError",
+                            )
+                            ResultWithError.Failure(
+                                GoogleSignupRepositoryError.LocalOperationFailed(
+                                    storageError.toLocalError(),
+                                ),
+                            )
+                        },
+                    )
+                }
             },
             onFailure = { error ->
                 ResultWithError.Failure(mapSignupWithGoogleError(error))
@@ -185,18 +198,22 @@ class AuthRepositoryImpl @Inject constructor(
         remoteDataSource.register(credentials, name).fold(
             onSuccess = { tokens ->
                 val session = AuthSession(tokens = tokens, provider = AuthProvider.EMAIL)
-                localDataSource.saveSession(session).fold(
-                    onSuccess = {
-                        _authState.value = AuthState.Authenticated(session)
-                        ResultWithError.Success(session)
-                    },
-                    onFailure = { storageError ->
-                        logger.e(TAG, "Failed to save session after signup: $storageError")
-                        ResultWithError.Failure(
-                            SignupRepositoryError.LocalOperationFailed(storageError.toLocalError()),
-                        )
-                    },
-                )
+                sessionMutex.withLock {
+                    localDataSource.saveSession(session).fold(
+                        onSuccess = {
+                            _authState.value = AuthState.Authenticated(session)
+                            ResultWithError.Success(session)
+                        },
+                        onFailure = { storageError ->
+                            logger.e(TAG, "Failed to save session after signup: $storageError")
+                            ResultWithError.Failure(
+                                SignupRepositoryError.LocalOperationFailed(
+                                    storageError.toLocalError(),
+                                ),
+                            )
+                        },
+                    )
+                }
             },
             onFailure = { error ->
                 ResultWithError.Failure(mapSignupError(error))
@@ -245,7 +262,9 @@ class AuthRepositoryImpl @Inject constructor(
                     ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
                 } else {
                     remoteDataSource.refresh(refreshToken).fold(
-                        onSuccess = { newTokens -> saveRefreshedTokens(newTokens) },
+                        onSuccess = { newTokens ->
+                            saveRefreshedTokens(newTokens, refreshTokenUsed = refreshToken)
+                        },
                         onFailure = { error ->
                             ResultWithError.Failure(mapRefreshError(error))
                         },
@@ -262,9 +281,16 @@ class AuthRepositoryImpl @Inject constructor(
 
     private suspend fun saveRefreshedTokens(
         newTokens: AuthTokens,
+        refreshTokenUsed: String,
     ): ResultWithError<AuthTokens, RefreshRepositoryError> = sessionMutex.withLock {
         val currentState = _authState.value
         if (currentState !is AuthState.Authenticated) {
+            return@withLock ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
+        }
+        // The session may have been replaced (logout + new login) while the refresh network
+        // call was in flight. Refuse to overwrite the new session's tokens with the result of
+        // a refresh that targeted a different session.
+        if (currentState.session.tokens.refreshToken != refreshTokenUsed) {
             return@withLock ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
         }
         localDataSource.saveTokens(newTokens).fold(

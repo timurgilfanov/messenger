@@ -32,6 +32,7 @@ import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
+import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
@@ -137,6 +138,21 @@ class AuthRepositoryImplTest {
         }
 
     @Test
+    fun `loginWithGoogle storage failure returns LocalOperationFailed`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueSaveSession(
+            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+        )
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithGoogle(googleIdToken)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, *>>(result)
+        assertIs<GoogleLoginRepositoryError.LocalOperationFailed>(failure.error)
+    }
+
+    @Test
     fun `signup success session saved and authState is Authenticated`() = runTest {
         val storage = LocalAuthDataSourceFake()
         val repo = createRepo(sessionStorage = storage, testScope = this)
@@ -201,6 +217,21 @@ class AuthRepositoryImplTest {
         val failure =
             assertIs<ResultWithError.Failure<Unit, LogoutRepositoryError>>(result)
         assertIs<LogoutRepositoryError.RemoteOperationFailed>(failure.error)
+        repo.authState.test {
+            assertIs<AuthState.Unauthenticated>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `logout when there is no access token skips remote call and returns Success`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val remote = RemoteAuthDataSourceFake()
+        val repo = createRepo(remoteDataSource = remote, sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.logout()
+
+        assertIs<ResultWithError.Success<Unit, LogoutRepositoryError>>(result)
         repo.authState.test {
             assertIs<AuthState.Unauthenticated>(awaitItem())
         }
@@ -371,6 +402,24 @@ class AuthRepositoryImplTest {
             val state = assertIs<AuthState.Authenticated>(awaitItem())
             kotlin.test.assertEquals(newLoginBtokens, state.session.tokens)
         }
+    }
+
+    @Test
+    fun `refreshToken saveTokens failure returns LocalOperationFailed`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        repo.loginWithCredentials(credentials)
+        advanceUntilIdle()
+
+        storage.enqueueSaveTokens(
+            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+        )
+
+        val result = repo.refreshToken()
+
+        val failure = assertIs<ResultWithError.Failure<AuthTokens, RefreshRepositoryError>>(result)
+        val error = assertIs<RefreshRepositoryError.LocalOperationFailed>(failure.error)
+        assertIs<LocalStorageError.AccessDenied>(error.error)
     }
 
     @Test

@@ -72,9 +72,9 @@ Refactor five `ChatViewModel*Test` files in `app/src/test/.../ui/screen/chat/` t
 
 ### Task 6: Verify acceptance criteria
 
-- [ ] run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.ui.screen.chat.*"` to confirm all chat ViewModel tests pass together
-- [ ] verify no `UUID.randomUUID()` remains in the 5 refactored files via grep
+- [x] run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.ui.screen.chat.*"` to confirm all chat ViewModel tests pass together
+- [x] verify no `UUID.randomUUID()` remains in the 5 refactored files via grep
 
 ### Task 7: Update documentation
 

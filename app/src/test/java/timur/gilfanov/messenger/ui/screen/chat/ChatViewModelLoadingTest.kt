@@ -39,6 +39,14 @@ class ChatViewModelLoadingTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private companion object {
+        private val TEST_CHAT_ID = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+        private val TEST_CURRENT_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+        private val TEST_OTHER_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
+    }
+
     private data class ExpectedStateParams(
         val chatId: ChatId,
         val currentUserId: ParticipantId,
@@ -73,9 +81,9 @@ class ChatViewModelLoadingTest {
 
     @Test
     fun `loads chat successfully`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
         val now = Instant.fromEpochMilliseconds(1000)
         val createdAtUi = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(1000))
         val message = createTestMessage(currentUserId, "Hello!", joinedAt = now, createdAt = now)
@@ -119,9 +127,9 @@ class ChatViewModelLoadingTest {
 
     @Test
     fun `loads group chat successfully`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
 
         val chat = createTestChat(chatId, currentUserId, otherUserId, isOneToOne = false)
 
@@ -167,8 +175,7 @@ class ChatViewModelLoadingTest {
 
     @Test
     fun `handles chat loading error`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
 
         val repository = MessengerRepositoryFake(
             flowChat = flowOf(

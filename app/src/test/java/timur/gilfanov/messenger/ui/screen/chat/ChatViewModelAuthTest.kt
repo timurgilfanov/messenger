@@ -30,17 +30,21 @@ class ChatViewModelAuthTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private companion object {
+        private val TEST_CHAT_ID = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+        private val TEST_CURRENT_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+        private val TEST_OTHER_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
+    }
+
     @Test
     fun `loads chat on init`() = runTest {
-        val chatId = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
-        val currentUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
-        val otherUserId = ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
-
-        val chat = createTestChat(chatId, currentUserId, otherUserId)
+        val chat = createTestChat(TEST_CHAT_ID, TEST_CURRENT_USER_ID, TEST_OTHER_USER_ID)
         val repository = MessengerRepositoryFake(chat = chat, flowChat = flowOf(Success(chat)))
 
         val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
+            chatIdUuid = TEST_CHAT_ID.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
             receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),
@@ -53,7 +57,7 @@ class ChatViewModelAuthTest {
             while (state !is ChatUiState.Ready) {
                 state = awaitItem()
             }
-            assertEquals(chatId, state.id)
+            assertEquals(TEST_CHAT_ID, state.id)
             assertEquals("Direct Message", state.title)
         }
     }

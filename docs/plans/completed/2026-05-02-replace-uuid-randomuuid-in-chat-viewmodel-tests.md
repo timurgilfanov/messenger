@@ -78,4 +78,4 @@ Refactor five `ChatViewModel*Test` files in `app/src/test/.../ui/screen/chat/` t
 
 ### Task 7: Update documentation
 
-- [ ] move this plan to `docs/plans/completed/`
+- [x] move this plan to `docs/plans/completed/`

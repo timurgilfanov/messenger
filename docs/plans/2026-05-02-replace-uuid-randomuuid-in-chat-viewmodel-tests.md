@@ -48,9 +48,9 @@ Refactor five `ChatViewModel*Test` files in `app/src/test/.../ui/screen/chat/` t
 **Files:**
 - Modify: `app/src/test/java/timur/gilfanov/messenger/ui/screen/chat/ChatViewModelUpdatesTest.kt`
 
-- [ ] Add `private companion object` with `TEST_CHAT_ID`, `TEST_CURRENT_USER_ID`, `TEST_OTHER_USER_ID`, `TEST_NEW_PARTICIPANT_ID` constants
-- [ ] Replace 10 `UUID.randomUUID()` call sites across 3 test methods with the constants
-- [ ] Run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.ui.screen.chat.ChatViewModelUpdatesTest"` — must pass before task 4
+- [x] Add `private companion object` with `TEST_CHAT_ID`, `TEST_CURRENT_USER_ID`, `TEST_OTHER_USER_ID`, `TEST_NEW_PARTICIPANT_ID` constants
+- [x] Replace 10 `UUID.randomUUID()` call sites across 3 test methods with the constants
+- [x] Run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.ui.screen.chat.ChatViewModelUpdatesTest"` — must pass before task 4
 
 ### Task 4: Refactor ChatViewModelAuthTest
 

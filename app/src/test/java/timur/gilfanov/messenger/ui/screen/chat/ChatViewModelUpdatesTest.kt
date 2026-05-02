@@ -43,12 +43,22 @@ class ChatViewModelUpdatesTest {
 
     private val testDispatcher: TestDispatcher get() = mainDispatcherRule.testDispatcher
 
+    private companion object {
+        private val TEST_CHAT_ID = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+        private val TEST_CURRENT_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+        private val TEST_OTHER_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
+        private val TEST_NEW_PARTICIPANT_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000004"))
+    }
+
     @Test
     @Ignore("Receiving messages from PagingData not implemented yet")
     fun `message from other participant appears in UI state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
         val now = Instant.fromEpochMilliseconds(1000)
 
         val initialChat = createTestChat(chatId, currentUserId, otherUserId)
@@ -100,10 +110,10 @@ class ChatViewModelUpdatesTest {
 
     @Test
     fun `chat metadata updates seen in UI state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-        val newParticipantId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
+        val newParticipantId = TEST_NEW_PARTICIPANT_ID
         val now = Instant.fromEpochMilliseconds(1000)
 
         val initialChat = createTestChat(chatId, currentUserId, otherUserId, isOneToOne = false)
@@ -168,9 +178,9 @@ class ChatViewModelUpdatesTest {
     @Ignore("Receiving messages from PagingData not implemented yet")
     @Test
     fun `few rapid messages result in one chat update`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
         val now = Instant.fromEpochMilliseconds(1000)
 
         val initialChat = createTestChat(chatId, currentUserId, otherUserId)

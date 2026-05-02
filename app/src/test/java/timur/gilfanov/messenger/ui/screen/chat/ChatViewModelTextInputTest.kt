@@ -31,13 +31,17 @@ class ChatViewModelTextInputTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private companion object {
+        private val TEST_CHAT_ID = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+        private val TEST_CURRENT_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+        private val TEST_OTHER_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
+    }
+
     @Test
     fun `text input clear Empty text validation error`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-
-        val initialChat = createTestChat(chatId, currentUserId, otherUserId)
+        val initialChat = createTestChat(TEST_CHAT_ID, TEST_CURRENT_USER_ID, TEST_OTHER_USER_ID)
 
         val repository = MessengerRepositoryFake(chat = initialChat, flowSendMessage = flowOf())
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
@@ -46,7 +50,7 @@ class ChatViewModelTextInputTest {
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
+            chatIdUuid = TEST_CHAT_ID.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,

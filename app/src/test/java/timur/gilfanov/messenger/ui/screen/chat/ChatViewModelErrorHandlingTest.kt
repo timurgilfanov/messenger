@@ -42,10 +42,17 @@ class ChatViewModelErrorHandlingTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private companion object {
+        private val TEST_CHAT_ID = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+        private val TEST_CURRENT_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+        private val TEST_OTHER_USER_ID =
+            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
+    }
+
     @Test
     fun `No chat exists error propagates to UI state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
 
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>(
@@ -79,9 +86,9 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `Network errors propagates to UI state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
 
         val initialChat = createTestChat(chatId, currentUserId, otherUserId)
         val chatFlow =
@@ -131,8 +138,7 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `Network not available in Loading state propagates to UI state `() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
 
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>(
@@ -170,9 +176,9 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `Chat recovers from transient errors`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
         val now = Instant.fromEpochMilliseconds(1000)
 
         val initialChat = createTestChat(chatId, currentUserId, otherUserId)

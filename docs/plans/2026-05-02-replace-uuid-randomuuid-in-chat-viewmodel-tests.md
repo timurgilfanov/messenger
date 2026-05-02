@@ -66,9 +66,9 @@ Refactor five `ChatViewModel*Test` files in `app/src/test/.../ui/screen/chat/` t
 **Files:**
 - Modify: `app/src/test/java/timur/gilfanov/messenger/ui/screen/chat/ChatViewModelErrorHandlingTest.kt`
 
-- [ ] Add `private companion object` with `TEST_CHAT_ID`, `TEST_CURRENT_USER_ID`, `TEST_OTHER_USER_ID` constants
-- [ ] Replace 11 `UUID.randomUUID()` call sites across 4 test methods with the constants
-- [ ] Run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.ui.screen.chat.ChatViewModelErrorHandlingTest"` — must pass before task 6
+- [x] Add `private companion object` with `TEST_CHAT_ID`, `TEST_CURRENT_USER_ID`, `TEST_OTHER_USER_ID` constants
+- [x] Replace 11 `UUID.randomUUID()` call sites across 4 test methods with the constants
+- [x] Run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.ui.screen.chat.ChatViewModelErrorHandlingTest"` — must pass before task 6
 
 ### Task 6: Verify acceptance criteria
 

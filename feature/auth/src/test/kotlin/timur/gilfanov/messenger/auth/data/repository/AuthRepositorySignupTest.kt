@@ -37,18 +37,18 @@ class AuthRepositorySignupTest {
     private fun createRepo(
         remoteDataSource: RemoteAuthDataSourceFake = RemoteAuthDataSourceFake(),
         sessionStorage: LocalAuthDataSourceFake = LocalAuthDataSourceFake(),
-        scope: kotlinx.coroutines.CoroutineScope,
-    ) = AuthRepositoryImpl(
+        testScope: kotlinx.coroutines.test.TestScope,
+    ): AuthRepositoryImpl = AuthRepositoryImpl(
         remoteDataSource = remoteDataSource,
         localDataSource = sessionStorage,
-        coroutineScope = scope,
+        coroutineScope = testScope,
         logger = NoOpLogger(),
     )
 
     @Test
     fun `signup success stores session and sets Authenticated EMAIL provider`() = runTest {
         val storage = LocalAuthDataSourceFake()
-        val repo = createRepo(sessionStorage = storage, scope = this)
+        val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -62,7 +62,7 @@ class AuthRepositorySignupTest {
 
     @Test
     fun `signup success updates authState to Authenticated`() = runTest {
-        val repo = createRepo(scope = this)
+        val repo = createRepo(testScope = this)
         advanceUntilIdle()
 
         repo.signup(credentials, name)
@@ -81,7 +81,7 @@ class AuthRepositorySignupTest {
                     RegisterError.InvalidEmail(SignupEmailError.EmailTaken),
                 ),
             )
-            val repo = createRepo(remoteDataSource = remote, scope = this)
+            val repo = createRepo(remoteDataSource = remote, testScope = this)
             advanceUntilIdle()
 
             val result = repo.signup(credentials, name)
@@ -101,7 +101,7 @@ class AuthRepositorySignupTest {
                     RegisterError.InvalidEmail(EmailUnknownError("EMAIL_NOT_EXISTS")),
                 ),
             )
-            val repo = createRepo(remoteDataSource = remote, scope = this)
+            val repo = createRepo(remoteDataSource = remote, testScope = this)
             advanceUntilIdle()
 
             val result = repo.signup(credentials, name)
@@ -119,7 +119,7 @@ class AuthRepositorySignupTest {
         remote.enqueueRegister(
             ResultWithError.Failure(RegisterError.InvalidPassword(passwordError)),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -136,7 +136,7 @@ class AuthRepositorySignupTest {
         remote.enqueueRegister(
             ResultWithError.Failure(RegisterError.InvalidName(nameError)),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -154,7 +154,7 @@ class AuthRepositorySignupTest {
                 RegisterError.RemoteDataSource(RemoteDataSourceError.ServerError),
             ),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -169,7 +169,7 @@ class AuthRepositorySignupTest {
         storage.enqueueSaveSession(
             ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
         )
-        val repo = createRepo(sessionStorage = storage, scope = this)
+        val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signup(credentials, name)
@@ -187,7 +187,7 @@ class AuthRepositorySignupTest {
             storage.enqueueSaveSession(
                 ResultWithError.Failure(LocalAuthDataSourceError.StorageFull),
             )
-            val repo = createRepo(sessionStorage = storage, scope = this)
+            val repo = createRepo(sessionStorage = storage, testScope = this)
             advanceUntilIdle()
 
             val result = repo.signup(credentials, name)

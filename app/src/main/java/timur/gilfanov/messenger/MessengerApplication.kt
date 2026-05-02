@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
+import timur.gilfanov.messenger.auth.data.repository.AuthCleanupObserver
 import timur.gilfanov.messenger.data.repository.SettingsSyncScheduler
 
 @HiltAndroidApp
@@ -18,6 +19,9 @@ class MessengerApplication :
     @Inject
     lateinit var settingsSyncScheduler: SettingsSyncScheduler
 
+    @Inject
+    lateinit var authCleanupObserver: AuthCleanupObserver
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -25,6 +29,7 @@ class MessengerApplication :
 
     override fun onCreate() {
         super.onCreate()
+        authCleanupObserver.start()
         settingsSyncScheduler.schedulePeriodicSync()
     }
 }

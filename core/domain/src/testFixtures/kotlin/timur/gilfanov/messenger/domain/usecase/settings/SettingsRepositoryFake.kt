@@ -26,6 +26,8 @@ class SettingsRepositoryFake(
 
     var lastDeleteUserDataKey: UserScopeKey? = null
         private set
+    var deleteUserDataCallCount: Int = 0
+        private set
 
     private val settingsFlow =
         MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
@@ -69,6 +71,7 @@ class SettingsRepositoryFake(
         userKey: UserScopeKey,
     ): ResultWithError<Unit, DeleteUserDataRepositoryError> {
         lastDeleteUserDataKey = userKey
+        deleteUserDataCallCount++
         if (deleteUserDataResult is ResultWithError.Success) {
             settingsFlow.update {
                 ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)

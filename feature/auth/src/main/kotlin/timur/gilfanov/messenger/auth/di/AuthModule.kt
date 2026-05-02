@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.auth.di
 
-import dagger.Lazy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,52 +14,19 @@ import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidator
 import timur.gilfanov.messenger.auth.domain.validation.CredentialsValidatorImpl
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClient
 import timur.gilfanov.messenger.auth.ui.GoogleSignInClientImpl
-import timur.gilfanov.messenger.domain.UserScopeKey
-import timur.gilfanov.messenger.domain.entity.settings.SettingKey
-import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
-import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AuthModule {
 
-    /**
-     * Provides [TokenRefreshUseCase] using Dagger.Lazy to break the DI cycle:
-     * `TokenRefreshUseCase` → `SettingsRepository` → `RemoteSettingsDataSource`
-     * → `HttpClient` → `AuthInterceptor` → `TokenRefreshUseCase`.
-     *
-     * Lazy defers [SettingsRepository] instantiation until first use, after all
-     * singletons in the cycle are already constructed.
-     */
     @Provides
     @Singleton
     fun provideTokenRefreshUseCase(
         authRepository: AuthRepository,
-        settingsRepositoryLazy: Lazy<SettingsRepository>,
         logger: Logger,
-    ): TokenRefreshUseCase {
-        val settingsRepository = object : SettingsRepository {
-            override fun observeSettings(userKey: UserScopeKey) =
-                settingsRepositoryLazy.get().observeSettings(userKey)
-
-            override fun observeConflicts() = settingsRepositoryLazy.get().observeConflicts()
-
-            override suspend fun changeUiLanguage(userKey: UserScopeKey, language: UiLanguage) =
-                settingsRepositoryLazy.get().changeUiLanguage(userKey, language)
-
-            override suspend fun syncSetting(userKey: UserScopeKey, key: SettingKey) =
-                settingsRepositoryLazy.get().syncSetting(userKey, key)
-
-            override suspend fun syncAllPendingSettings(userKey: UserScopeKey) =
-                settingsRepositoryLazy.get().syncAllPendingSettings(userKey)
-
-            override suspend fun deleteUserData(userKey: UserScopeKey) =
-                settingsRepositoryLazy.get().deleteUserData(userKey)
-        }
-        return TokenRefreshUseCaseImpl(authRepository, settingsRepository, logger)
-    }
+    ): TokenRefreshUseCase = TokenRefreshUseCaseImpl(authRepository, logger)
 
     @Provides
     @Singleton

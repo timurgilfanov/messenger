@@ -32,11 +32,11 @@ class AuthRepositorySignupWithGoogleTest {
     private fun createRepo(
         remoteDataSource: RemoteAuthDataSourceFake = RemoteAuthDataSourceFake(),
         sessionStorage: LocalAuthDataSourceFake = LocalAuthDataSourceFake(),
-        scope: kotlinx.coroutines.CoroutineScope,
-    ) = AuthRepositoryImpl(
+        testScope: kotlinx.coroutines.test.TestScope,
+    ): AuthRepositoryImpl = AuthRepositoryImpl(
         remoteDataSource = remoteDataSource,
         localDataSource = sessionStorage,
-        coroutineScope = scope,
+        coroutineScope = testScope,
         logger = NoOpLogger(),
     )
 
@@ -44,7 +44,7 @@ class AuthRepositorySignupWithGoogleTest {
     fun `signupWithGoogle success stores session and sets Authenticated GOOGLE provider`() =
         runTest {
             val storage = LocalAuthDataSourceFake()
-            val repo = createRepo(sessionStorage = storage, scope = this)
+            val repo = createRepo(sessionStorage = storage, testScope = this)
             advanceUntilIdle()
 
             val result = repo.signupWithGoogle(idToken, name)
@@ -58,7 +58,7 @@ class AuthRepositorySignupWithGoogleTest {
 
     @Test
     fun `signupWithGoogle success updates authState to Authenticated`() = runTest {
-        val repo = createRepo(scope = this)
+        val repo = createRepo(testScope = this)
         advanceUntilIdle()
 
         repo.signupWithGoogle(idToken, name)
@@ -74,7 +74,7 @@ class AuthRepositorySignupWithGoogleTest {
         remote.enqueueSignupWithGoogle(
             ResultWithError.Failure(SignupWithGoogleError.InvalidToken),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signupWithGoogle(idToken, name)
@@ -90,7 +90,7 @@ class AuthRepositorySignupWithGoogleTest {
         remote.enqueueSignupWithGoogle(
             ResultWithError.Failure(SignupWithGoogleError.AccountAlreadyExists),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signupWithGoogle(idToken, name)
@@ -107,7 +107,7 @@ class AuthRepositorySignupWithGoogleTest {
         remote.enqueueSignupWithGoogle(
             ResultWithError.Failure(SignupWithGoogleError.InvalidName(nameError)),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signupWithGoogle(idToken, name)
@@ -126,7 +126,7 @@ class AuthRepositorySignupWithGoogleTest {
                 SignupWithGoogleError.RemoteDataSource(RemoteDataSourceError.ServerError),
             ),
         )
-        val repo = createRepo(remoteDataSource = remote, scope = this)
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signupWithGoogle(idToken, name)
@@ -142,7 +142,7 @@ class AuthRepositorySignupWithGoogleTest {
         storage.enqueueSaveSession(
             ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
         )
-        val repo = createRepo(sessionStorage = storage, scope = this)
+        val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signupWithGoogle(idToken, name)
@@ -159,7 +159,7 @@ class AuthRepositorySignupWithGoogleTest {
         storage.enqueueSaveSession(
             ResultWithError.Failure(LocalAuthDataSourceError.StorageFull),
         )
-        val repo = createRepo(sessionStorage = storage, scope = this)
+        val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
 
         val result = repo.signupWithGoogle(idToken, name)

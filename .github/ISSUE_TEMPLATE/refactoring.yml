@@ -1,7 +1,7 @@
 name: Refactoring
 description: Propose a code refactoring or structural improvement
 title: "[Refactor] "
-labels: ["developer-experience"]
+labels: ["refactoring"]
 body:
   - type: markdown
     attributes:

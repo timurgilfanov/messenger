@@ -295,6 +295,13 @@ class AuthRepositoryImpl @Inject constructor(
             },
         )
 
+    /**
+     * Persists [newTokens] only if the session active under [sessionMutex] is still the one whose
+     * [refreshTokenUsed] produced [newTokens]. The session can have been replaced
+     * (e.g. logout followed by a new login) while the refresh network call was in flight; in
+     * that case [RefreshRepositoryError.SessionRevoked] is returned and the new session's tokens
+     * are left untouched.
+     */
     private suspend fun saveRefreshedTokens(
         newTokens: AuthTokens,
         refreshTokenUsed: String,
@@ -303,9 +310,6 @@ class AuthRepositoryImpl @Inject constructor(
         if (currentState !is AuthState.Authenticated) {
             return@withLock ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
         }
-        // The session may have been replaced (logout + new login) while the refresh network
-        // call was in flight. Refuse to overwrite the new session's tokens with the result of
-        // a refresh that targeted a different session.
         if (currentState.session.tokens.refreshToken != refreshTokenUsed) {
             return@withLock ResultWithError.Failure(RefreshRepositoryError.SessionRevoked)
         }

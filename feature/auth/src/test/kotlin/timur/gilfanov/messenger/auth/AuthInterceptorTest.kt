@@ -14,7 +14,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -277,9 +276,7 @@ class AuthInterceptorTest {
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `when concurrent 401 responses then tokenRefreshUseCase is invoked only once`() = runTest(
-        UnconfinedTestDispatcher(),
-    ) {
+    fun `when concurrent 401 responses then tokenRefreshUseCase is invoked only once`() = runTest {
         val authTokenStorage = LocalAuthDataSourceFake().apply {
             accessToken = "old-access-token"
         }

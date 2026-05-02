@@ -334,6 +334,46 @@ class AuthRepositoryImplTest {
         }
 
     @Test
+    fun `logout during concurrent login does not wipe the new session`() = runTest {
+        val initialAccessToken = "a-access"
+        val initialRefreshToken = "a-refresh"
+        val storage = LocalAuthDataSourceFake().apply {
+            enqueueGetAccessToken(ResultWithError.Success(initialAccessToken))
+            enqueueGetRefreshToken(ResultWithError.Success(initialRefreshToken))
+            enqueueGetAuthProvider(ResultWithError.Success(AuthProvider.EMAIL))
+        }
+        val logoutGate = CompletableDeferred<Unit>()
+        val newLoginBtokens = AuthTokens("b-access", "b-refresh")
+        val remote = LogoutRaceRemote(
+            logoutGate = logoutGate,
+            loginTokens = newLoginBtokens,
+        )
+
+        val repo = createRepo(
+            remoteDataSource = remote,
+            sessionStorage = storage,
+            testScope = this,
+        )
+        advanceUntilIdle()
+
+        val logoutDeferred = async { repo.logout() }
+        advanceUntilIdle()
+
+        val loginResult = repo.loginWithCredentials(credentials)
+        assertIs<ResultWithError.Success<AuthSession, LoginRepositoryError>>(loginResult)
+        advanceUntilIdle()
+
+        logoutGate.complete(Unit)
+        advanceUntilIdle()
+
+        assertIs<ResultWithError.Success<Unit, LogoutRepositoryError>>(logoutDeferred.await())
+        repo.authState.test {
+            val state = assertIs<AuthState.Authenticated>(awaitItem())
+            kotlin.test.assertEquals(newLoginBtokens, state.session.tokens)
+        }
+    }
+
+    @Test
     fun `refreshToken TokenExpired returns error and storage unchanged`() = runTest {
         val storage = LocalAuthDataSourceFake()
         val repo = createRepo(sessionStorage = storage, testScope = this)
@@ -482,4 +522,35 @@ private class StaleRefreshRemote(
 
     override suspend fun logout(accessToken: String): ResultWithError<Unit, LogoutError> =
         ResultWithError.Success(Unit)
+}
+
+private class LogoutRaceRemote(
+    private val logoutGate: CompletableDeferred<Unit>,
+    private val loginTokens: AuthTokens,
+) : RemoteAuthDataSource {
+    override suspend fun loginWithCredentials(
+        credentials: Credentials,
+    ): ResultWithError<AuthTokens, LoginWithCredentialsError> = ResultWithError.Success(loginTokens)
+
+    override suspend fun loginWithGoogle(
+        idToken: GoogleIdToken,
+    ): ResultWithError<AuthTokens, LoginWithGoogleError> = ResultWithError.Success(loginTokens)
+
+    override suspend fun signupWithGoogle(
+        idToken: GoogleIdToken,
+        name: String,
+    ): ResultWithError<AuthTokens, SignupWithGoogleError> = ResultWithError.Success(loginTokens)
+
+    override suspend fun register(
+        credentials: Credentials,
+        name: String,
+    ): ResultWithError<AuthTokens, RegisterError> = ResultWithError.Success(loginTokens)
+
+    override suspend fun refresh(refreshToken: String): ResultWithError<AuthTokens, RefreshError> =
+        ResultWithError.Success(loginTokens)
+
+    override suspend fun logout(accessToken: String): ResultWithError<Unit, LogoutError> {
+        logoutGate.await()
+        return ResultWithError.Success(Unit)
+    }
 }

@@ -67,7 +67,7 @@ class AuthCleanupObserverImpl @Inject constructor(
     private suspend fun deleteUserData(userKey: UserScopeKey) {
         val result = settingsRepository.get().deleteUserData(userKey)
         if (result is ResultWithError.Failure) {
-            logger.e(TAG, "Failed to clean up settings for $userKey: ${result.error}")
+            logger.e(TAG, "Failed to clean up user-scoped settings: ${result.error}")
         }
     }
 }

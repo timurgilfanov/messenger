@@ -54,9 +54,11 @@ class AuthRepositoryImpl @Inject constructor(
     private val _authState = MutableStateFlow<AuthState?>(null)
     override val authState: Flow<AuthState> = _authState.filterNotNull()
 
-    // Serializes auth-state mutations (login, signup, logout, refresh-save) so that, e.g.,
-    // a refresh in flight cannot overwrite tokens of a session created by a concurrent login,
-    // and login/logout cannot leave storage and _authState in an inconsistent state.
+    /**
+     * Serializes auth-state mutations (login, signup, logout, refresh-save) so that a refresh
+     * in flight cannot overwrite tokens of a session created by a concurrent login, and so that
+     * login/logout cannot leave local storage and [_authState] in an inconsistent state.
+     */
     private val sessionMutex = Mutex()
 
     init {
@@ -221,12 +223,12 @@ class AuthRepositoryImpl @Inject constructor(
         )
 
     override suspend fun logout(): ResultWithError<Unit, LogoutRepositoryError> {
-        val accessToken = localDataSource.getAccessToken().fold(
+        val accessTokenAtStart = localDataSource.getAccessToken().fold(
             onSuccess = { it },
             onFailure = { null },
         )
-        val remoteResult = if (accessToken != null) {
-            remoteDataSource.logout(accessToken).fold(
+        val remoteResult = if (accessTokenAtStart != null) {
+            remoteDataSource.logout(accessTokenAtStart).fold(
                 onSuccess = { null },
                 onFailure = { error ->
                     logger.e(TAG, "Remote logout failed: $error")
@@ -237,6 +239,12 @@ class AuthRepositoryImpl @Inject constructor(
             null
         }
         return sessionMutex.withLock {
+            if (accessTokenAtStart != null && sessionWasReplacedDuring(accessTokenAtStart)) {
+                return@withLock when (remoteResult) {
+                    null -> ResultWithError.Success(Unit)
+                    else -> ResultWithError.Failure(remoteResult)
+                }
+            }
             val clearSessionError = localDataSource.clearSession().fold(
                 onSuccess = { null },
                 onFailure = { storageError ->
@@ -253,6 +261,14 @@ class AuthRepositoryImpl @Inject constructor(
                 else -> ResultWithError.Success(Unit)
             }
         }
+    }
+
+    private suspend fun sessionWasReplacedDuring(accessTokenAtStart: String): Boolean {
+        val currentAccessToken = localDataSource.getAccessToken().fold(
+            onSuccess = { it },
+            onFailure = { return false },
+        )
+        return currentAccessToken != null && currentAccessToken != accessTokenAtStart
     }
 
     override suspend fun refreshToken(): ResultWithError<AuthTokens, RefreshRepositoryError> =

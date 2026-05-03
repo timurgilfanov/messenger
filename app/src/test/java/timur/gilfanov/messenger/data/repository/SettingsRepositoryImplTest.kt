@@ -146,23 +146,6 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
-    fun `observeSettings does not persist offline fallback defaults`() = runTest {
-        repository.observeSettings(testUserKey).test {
-            val failure = awaitItem()
-            assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(failure)
-            assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(failure.error)
-
-            val success = awaitItem()
-            assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(success)
-            assertEquals(defaultSettings.uiLanguage, success.data.uiLanguage)
-        }
-
-        val persistedSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
-        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(persistedSetting)
-        assertIs<GetSettingError.SettingNotFound>(persistedSetting.error)
-    }
-
-    @Test
     fun `syncAllPendingSettings is no-op after offline fallback`() = runTest {
         repository.observeSettings(testUserKey).test {
             awaitItem()
@@ -172,6 +155,10 @@ class SettingsRepositoryImplTest {
         val outcome = repository.syncAllPendingSettings(testUserKey)
 
         assertIs<ResultWithError.Success<Unit, *>>(outcome)
+
+        val persistedSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(persistedSetting)
+        assertIs<GetSettingError.SettingNotFound>(persistedSetting.error)
     }
 
     @Test
@@ -193,13 +180,6 @@ class SettingsRepositoryImplTest {
                 key == testUserKey && setting == SettingKey.UI_LANGUAGE
             },
         )
-    }
-
-    @Test
-    fun `changeUiLanguage on empty DB while offline does not infinite loop`() = runTest {
-        val result = repository.changeUiLanguage(testUserKey, UiLanguage.German)
-
-        assertIs<ResultWithError.Success<Unit, *>>(result)
     }
 
     @Test

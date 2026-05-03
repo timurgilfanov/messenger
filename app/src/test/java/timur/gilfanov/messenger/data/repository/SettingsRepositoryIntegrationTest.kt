@@ -9,6 +9,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -93,28 +94,19 @@ class SettingsRepositoryIntegrationTest {
                 },
             )
 
-            // When/Then - should get default settings after recovery
             repository.observeSettings(testUserKey).test {
-                // First emission may be SettingsResetToDefaults or Success with defaults
-                val result = awaitItem()
-                // After recovery, we should eventually get settings (either default or recovered)
-                when (result) {
-                    is ResultWithError.Failure -> {
-                        // SettingsResetToDefaults indicates recovery with defaults
-                        assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(result.error)
-                        // Next emission should be Success with defaults
-                        val settingsResult = awaitItem()
-                        assertIs<ResultWithError.Success<Settings, *>>(settingsResult)
-                        assertEquals(UiLanguage.English, settingsResult.data.uiLanguage)
-                    }
+                val failure = awaitItem()
+                assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(failure)
+                assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(failure.error)
 
-                    is ResultWithError.Success -> {
-                        // Success with default settings
-                        assertEquals(UiLanguage.English, result.data.uiLanguage)
-                    }
-                }
+                val success = awaitItem()
+                assertIs<ResultWithError.Success<Settings, *>>(success)
+                assertEquals(UiLanguage.English, success.data.uiLanguage)
+
                 cancelAndIgnoreRemainingEvents()
             }
+
+            assertNull(databaseRule.database.settingsDao().get(testUserKey.key, "ui_language"))
         }
 
     @Test

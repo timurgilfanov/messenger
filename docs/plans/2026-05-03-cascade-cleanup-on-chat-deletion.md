@@ -66,13 +66,13 @@ Files:
 - Modify: `app/src/main/java/timur/gilfanov/messenger/data/source/local/LocalChatDataSourceImpl.kt`
 - Modify: `app/src/test/java/timur/gilfanov/messenger/data/source/local/LocalChatDataSourceImplTest.kt`
 
-- [ ] In `deleteChat` (around line 96), after `chatDao.deleteChat(chatEntity)` and inside the existing `database.withTransaction { … }`, call `participantDao.deleteOrphanedParticipants()`. Keep the `ChatNotFound` branch unchanged.
-- [ ] Update / add tests in `LocalChatDataSourceImplTest`:
+- [x] In `deleteChat` (around line 96), after `chatDao.deleteChat(chatEntity)` and inside the existing `database.withTransaction { … }`, call `participantDao.deleteOrphanedParticipants()`. Keep the `ChatNotFound` branch unchanged.
+- [x] Update / add tests in `LocalChatDataSourceImplTest`:
   - cascade verification: after `deleteChat`, the chat's messages and junction rows are removed.
   - orphan cleanup: participants whose only chat was deleted are removed from `participants`.
   - shared participant preservation: participants who remain in another chat stay in `participants`.
   - the `ChatNotFound` test still passes and no participants are touched on that path.
-- [ ] Run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.data.source.local.LocalChatDataSourceImplTest"` — must pass before Task 4.
+- [x] Run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.data.source.local.LocalChatDataSourceImplTest"` — must pass before Task 4.
 
 ### Task 4: Verify acceptance criteria
 

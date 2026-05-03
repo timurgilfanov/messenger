@@ -16,11 +16,13 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
@@ -112,6 +114,131 @@ class LocalChatDataSourceImplTest {
         // Then
         assertIs<ResultWithError.Failure<Unit, LocalDataSourceError>>(result)
         assertIs<LocalDataSourceError.ChatNotFound>(result.error)
+    }
+
+    @Test
+    fun `delete non-existent chat does not touch participants`() = runTest {
+        // Given - existing chat with participants in the database
+        val chat = createTestChat()
+        localChatDataSource.insertChat(chat)
+        val participantsBefore = databaseRule.participantDao.getAllParticipants()
+        assertEquals(chat.participants.size, participantsBefore.size)
+
+        val nonExistentChatId = ChatId(UUID.fromString("99999999-9999-9999-9999-999999999999"))
+
+        // When
+        val result = localChatDataSource.deleteChat(nonExistentChatId)
+
+        // Then
+        assertIs<ResultWithError.Failure<Unit, LocalDataSourceError>>(result)
+        assertIs<LocalDataSourceError.ChatNotFound>(result.error)
+        val participantsAfter = databaseRule.participantDao.getAllParticipants()
+        assertEquals(participantsBefore.size, participantsAfter.size)
+    }
+
+    @Test
+    fun `delete chat cascades messages and chat_participants`() = runTest {
+        // Given - chat with messages and participants
+        val chat = createTestChat()
+        localChatDataSource.insertChat(chat)
+        val message = DomainTestFixtures.createTestTextMessage(
+            id = MessageId(UUID.fromString("33333333-cccc-cccc-cccc-cccccccccccc")),
+            text = "Hello",
+            sender = chat.participants.first(),
+            recipient = chat.id,
+            createdAt = Instant.fromEpochMilliseconds(1500000),
+        )
+        databaseRule.messageDao.insertMessage(
+            with(EntityMappers) { message.toMessageEntity() },
+        )
+
+        // Sanity-check the pre-state.
+        assertEquals(
+            1,
+            databaseRule.messageDao.getMessagesByChatId(chat.id.id.toString()).size,
+        )
+        assertEquals(
+            chat.participants.size,
+            databaseRule.participantDao.getParticipantsByChatId(chat.id.id.toString()).size,
+        )
+
+        // When
+        val result = localChatDataSource.deleteChat(chat.id)
+
+        // Then - FK cascade removed messages and junction rows
+        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
+        assertTrue(
+            databaseRule.messageDao.getMessagesByChatId(chat.id.id.toString()).isEmpty(),
+        )
+        assertTrue(
+            databaseRule.participantDao.getParticipantsByChatId(chat.id.id.toString()).isEmpty(),
+        )
+    }
+
+    @Test
+    fun `delete chat removes orphaned participants`() = runTest {
+        // Given - chat whose participants are not shared with any other chat
+        val chat = createTestChat()
+        localChatDataSource.insertChat(chat)
+        assertEquals(chat.participants.size, databaseRule.participantDao.getAllParticipants().size)
+
+        // When
+        val result = localChatDataSource.deleteChat(chat.id)
+
+        // Then - all participants removed because no other chat references them
+        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
+        assertTrue(databaseRule.participantDao.getAllParticipants().isEmpty())
+    }
+
+    @Test
+    fun `delete chat preserves participants shared with another chat`() = runTest {
+        // Given - two chats sharing the same participants
+        val sharedParticipants = setOf(
+            DomainTestFixtures.createTestParticipant(
+                id = ParticipantId(
+                    UUID.fromString("44444444-4444-4444-4444-444444444444"),
+                ),
+                name = "User 1",
+                joinedAt = Instant.fromEpochMilliseconds(1000000),
+                onlineAt = null,
+            ),
+            DomainTestFixtures.createTestParticipant(
+                id = ParticipantId(
+                    UUID.fromString("55555555-5555-5555-5555-555555555555"),
+                ),
+                name = "User 2",
+                joinedAt = Instant.fromEpochMilliseconds(1100000),
+                onlineAt = null,
+            ),
+        )
+        val chatToDelete = DomainTestFixtures.createTestChat(
+            id = ChatId(UUID.fromString("aaaaaaaa-1111-1111-1111-aaaaaaaaaaaa")),
+            name = "Chat to Delete",
+            participants = sharedParticipants,
+        )
+        val chatToKeep = DomainTestFixtures.createTestChat(
+            id = ChatId(UUID.fromString("aaaaaaaa-2222-2222-2222-aaaaaaaaaaaa")),
+            name = "Chat to Keep",
+            participants = sharedParticipants,
+        )
+        localChatDataSource.insertChat(chatToDelete)
+        localChatDataSource.insertChat(chatToKeep)
+
+        // When
+        val result = localChatDataSource.deleteChat(chatToDelete.id)
+
+        // Then - shared participants stay because chatToKeep still references them
+        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
+        assertEquals(
+            sharedParticipants.size,
+            databaseRule.participantDao.getAllParticipants().size,
+        )
+        assertEquals(
+            sharedParticipants.size,
+            databaseRule.participantDao.getParticipantsByChatId(
+                chatToKeep.id.id.toString(),
+            ).size,
+        )
     }
 
     @Test

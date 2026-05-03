@@ -99,6 +99,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                 val chatEntity = chatDao.getChatById(chatId.id.toString())
                 if (chatEntity != null) {
                     chatDao.deleteChat(chatEntity)
+                    participantDao.deleteOrphanedParticipants()
                     ResultWithError.Success(Unit)
                 } else {
                     ResultWithError.Failure(

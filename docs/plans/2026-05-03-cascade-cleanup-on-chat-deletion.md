@@ -53,12 +53,12 @@ Files:
 - Modify: `app/src/main/java/timur/gilfanov/messenger/data/source/local/LocalSyncDataSourceImpl.kt`
 - Modify: `app/src/test/java/timur/gilfanov/messenger/data/source/local/LocalSyncDataSourceImplTest.kt`
 
-- [ ] In `applyChatDeletedDelta` (around line 190), after the existing `chatDao.deleteChat(it)` call, invoke `participantDao.deleteOrphanedParticipants()`. The whole operation already runs inside `database.withTransaction { … }` via `applyChatDelta`, so atomicity is preserved.
-- [ ] Add tests to `LocalSyncDataSourceImplTest`:
+- [x] In `applyChatDeletedDelta` (around line 190), after the existing `chatDao.deleteChat(it)` call, invoke `participantDao.deleteOrphanedParticipants()`. The whole operation already runs inside `database.withTransaction { … }` via `applyChatDelta`, so atomicity is preserved.
+- [x] Add tests to `LocalSyncDataSourceImplTest`:
   - cascade verification: after applying `ChatDeletedDelta`, the chat's messages and `chat_participants` junction rows are gone (proves the existing FK cascade is wired and continues to work).
   - orphan cleanup: a participant who only belonged to the deleted chat is removed from the `participants` table.
   - shared participant preservation: a participant who is also a member of another chat is preserved.
-- [ ] Run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.data.source.local.LocalSyncDataSourceImplTest"` — must pass before Task 3.
+- [x] Run `./gradlew :app:testMockDebugUnitTest --tests "timur.gilfanov.messenger.data.source.local.LocalSyncDataSourceImplTest"` — must pass before Task 3.
 
 ### Task 3: Cleanup orphaned participants in LocalChatDataSourceImpl.deleteChat
 

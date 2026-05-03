@@ -12,6 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
@@ -226,6 +227,151 @@ class LocalSyncDataSourceImplTest {
         val storedChat = databaseRule.chatDao.getChatById(chatId.id.toString())
         assertNull(storedChat)
     }
+
+    @Test
+    fun `applyChatDelta with ChatDeletedDelta cascades messages and chat_participants`() = runTest {
+        // Given - chat with messages and participants
+        val chatId = ChatId(UUID.fromString("dddddddd-1111-1111-1111-dddddddddddd"))
+        val createDelta = ChatCreatedDelta(
+            chatId = chatId,
+            chatMetadata = ChatMetadata(
+                name = "Chat With Messages",
+                participants = createTestParticipants(),
+                pictureUrl = null,
+                rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
+                unreadMessagesCount = 0,
+                lastReadMessageId = null,
+                lastActivityAt = null,
+            ),
+            initialMessages = createTestMessages(chatId),
+            timestamp = Instant.fromEpochMilliseconds(1000000),
+        )
+        localSyncDataSource.applyChatDelta(createDelta)
+
+        // Sanity-check the pre-state.
+        assertEquals(
+            1,
+            databaseRule.messageDao.getMessagesByChatId(chatId.id.toString()).size,
+        )
+        assertEquals(
+            2,
+            databaseRule.participantDao.getParticipantsByChatId(chatId.id.toString()).size,
+        )
+
+        // When
+        val deleteDelta = ChatDeletedDelta(
+            chatId = chatId,
+            timestamp = Instant.fromEpochMilliseconds(2000000),
+        )
+        val result = localSyncDataSource.applyChatDelta(deleteDelta)
+
+        // Then - FK cascade removed messages and junction rows
+        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
+        assertTrue(
+            databaseRule.messageDao.getMessagesByChatId(chatId.id.toString()).isEmpty(),
+        )
+        assertTrue(
+            databaseRule.participantDao.getParticipantsByChatId(chatId.id.toString()).isEmpty(),
+        )
+    }
+
+    @Test
+    fun `applyChatDelta with ChatDeletedDelta removes orphaned participants`() = runTest {
+        // Given - chat whose participants are not shared with any other chat
+        val chatId = ChatId(UUID.fromString("dddddddd-2222-2222-2222-dddddddddddd"))
+        val participants = createTestParticipants()
+        val createDelta = ChatCreatedDelta(
+            chatId = chatId,
+            chatMetadata = ChatMetadata(
+                name = "Solo Chat",
+                participants = participants,
+                pictureUrl = null,
+                rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
+                unreadMessagesCount = 0,
+                lastReadMessageId = null,
+                lastActivityAt = null,
+            ),
+            initialMessages = persistentListOf(),
+            timestamp = Instant.fromEpochMilliseconds(1000000),
+        )
+        localSyncDataSource.applyChatDelta(createDelta)
+        assertEquals(participants.size, databaseRule.participantDao.getAllParticipants().size)
+
+        // When
+        val deleteDelta = ChatDeletedDelta(
+            chatId = chatId,
+            timestamp = Instant.fromEpochMilliseconds(2000000),
+        )
+        val result = localSyncDataSource.applyChatDelta(deleteDelta)
+
+        // Then - all participants removed because no other chat references them
+        assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
+        assertTrue(databaseRule.participantDao.getAllParticipants().isEmpty())
+    }
+
+    @Test
+    fun `applyChatDelta with ChatDeletedDelta preserves participants shared with another chat`() =
+        runTest {
+            // Given - two chats sharing the same participants
+            val chatToDelete = ChatId(UUID.fromString("dddddddd-3333-3333-3333-dddddddddddd"))
+            val chatToKeep = ChatId(UUID.fromString("dddddddd-4444-4444-4444-dddddddddddd"))
+            val sharedParticipants = createTestParticipants()
+
+            localSyncDataSource.applyChatDelta(
+                ChatCreatedDelta(
+                    chatId = chatToDelete,
+                    chatMetadata = ChatMetadata(
+                        name = "Chat to Delete",
+                        participants = sharedParticipants,
+                        pictureUrl = null,
+                        rules = persistentSetOf<
+                            timur.gilfanov.messenger.domain.entity.chat.Rule,
+                            >(),
+                        unreadMessagesCount = 0,
+                        lastReadMessageId = null,
+                        lastActivityAt = null,
+                    ),
+                    initialMessages = persistentListOf(),
+                    timestamp = Instant.fromEpochMilliseconds(1000000),
+                ),
+            )
+            localSyncDataSource.applyChatDelta(
+                ChatCreatedDelta(
+                    chatId = chatToKeep,
+                    chatMetadata = ChatMetadata(
+                        name = "Chat to Keep",
+                        participants = sharedParticipants,
+                        pictureUrl = null,
+                        rules = persistentSetOf<
+                            timur.gilfanov.messenger.domain.entity.chat.Rule,
+                            >(),
+                        unreadMessagesCount = 0,
+                        lastReadMessageId = null,
+                        lastActivityAt = null,
+                    ),
+                    initialMessages = persistentListOf(),
+                    timestamp = Instant.fromEpochMilliseconds(1100000),
+                ),
+            )
+
+            // When
+            val deleteDelta = ChatDeletedDelta(
+                chatId = chatToDelete,
+                timestamp = Instant.fromEpochMilliseconds(2000000),
+            )
+            val result = localSyncDataSource.applyChatDelta(deleteDelta)
+
+            // Then - shared participants stay because chatToKeep still references them
+            assertIs<ResultWithError.Success<Unit, LocalDataSourceError>>(result)
+            assertEquals(
+                sharedParticipants.size,
+                databaseRule.participantDao.getAllParticipants().size,
+            )
+            assertEquals(
+                sharedParticipants.size,
+                databaseRule.participantDao.getParticipantsByChatId(chatToKeep.id.toString()).size,
+            )
+        }
 
     // Upsert behavior tests (Room uses OnConflictStrategy.REPLACE)
     @Test

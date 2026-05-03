@@ -175,26 +175,25 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
-    fun `changeUiLanguage on empty DB while offline persists user choice as fresh row`() =
-        runTest {
-            val result = repository.changeUiLanguage(testUserKey, UiLanguage.German)
+    fun `changeUiLanguage on empty DB while offline persists user choice as fresh row`() = runTest {
+        val result = repository.changeUiLanguage(testUserKey, UiLanguage.German)
 
-            assertIs<ResultWithError.Success<Unit, *>>(result)
+        assertIs<ResultWithError.Success<Unit, *>>(result)
 
-            val persistedSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
-            assertIs<ResultWithError.Success<TypedLocalSetting, *>>(persistedSetting)
-            assertIs<TypedLocalSetting.UiLanguage>(persistedSetting.data)
-            assertEquals(UiLanguage.German, persistedSetting.data.setting.value)
-            assertEquals(1, persistedSetting.data.setting.localVersion)
-            assertEquals(0, persistedSetting.data.setting.syncedVersion)
-            assertEquals(0, persistedSetting.data.setting.serverVersion)
+        val persistedSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(persistedSetting)
+        assertIs<TypedLocalSetting.UiLanguage>(persistedSetting.data)
+        assertEquals(UiLanguage.German, persistedSetting.data.setting.value)
+        assertEquals(1, persistedSetting.data.setting.localVersion)
+        assertEquals(0, persistedSetting.data.setting.syncedVersion)
+        assertEquals(0, persistedSetting.data.setting.serverVersion)
 
-            assertTrue(
-                trackingScheduler.scheduledSyncs.any { (key, setting) ->
-                    key == testUserKey && setting == SettingKey.UI_LANGUAGE
-                },
-            )
-        }
+        assertTrue(
+            trackingScheduler.scheduledSyncs.any { (key, setting) ->
+                key == testUserKey && setting == SettingKey.UI_LANGUAGE
+            },
+        )
+    }
 
     @Test
     fun `changeUiLanguage on empty DB while offline does not infinite loop`() = runTest {

@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -18,8 +17,6 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
-import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
@@ -32,6 +29,9 @@ import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithPaging
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_CHAT_ID
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_CURRENT_USER_ID
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_OTHER_USER_ID
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -44,8 +44,7 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `No chat exists error propagates to UI state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
 
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>(
@@ -79,9 +78,9 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `Network errors propagates to UI state`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
 
         val initialChat = createTestChat(chatId, currentUserId, otherUserId)
         val chatFlow =
@@ -131,8 +130,7 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `Network not available in Loading state propagates to UI state `() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
 
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>(
@@ -170,9 +168,9 @@ class ChatViewModelErrorHandlingTest {
 
     @Test
     fun `Chat recovers from transient errors`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
         val now = Instant.fromEpochMilliseconds(1000)
 
         val initialChat = createTestChat(chatId, currentUserId, otherUserId)

@@ -5,7 +5,6 @@ import app.cash.turbine.test
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
@@ -29,6 +28,9 @@ import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_CHAT_ID
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_CURRENT_USER_ID
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_OTHER_USER_ID
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -73,9 +75,9 @@ class ChatViewModelLoadingTest {
 
     @Test
     fun `loads chat successfully`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
         val now = Instant.fromEpochMilliseconds(1000)
         val createdAtUi = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(1000))
         val message = createTestMessage(currentUserId, "Hello!", joinedAt = now, createdAt = now)
@@ -119,9 +121,9 @@ class ChatViewModelLoadingTest {
 
     @Test
     fun `loads group chat successfully`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
+        val currentUserId = TEST_CURRENT_USER_ID
+        val otherUserId = TEST_OTHER_USER_ID
 
         val chat = createTestChat(chatId, currentUserId, otherUserId, isOneToOne = false)
 
@@ -167,8 +169,7 @@ class ChatViewModelLoadingTest {
 
     @Test
     fun `handles chat loading error`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
+        val chatId = TEST_CHAT_ID
 
         val repository = MessengerRepositoryFake(
             flowChat = flowOf(

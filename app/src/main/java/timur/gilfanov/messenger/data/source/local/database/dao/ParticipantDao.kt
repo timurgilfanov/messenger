@@ -31,6 +31,11 @@ interface ParticipantDao {
     @Query("DELETE FROM participants WHERE id = :participantId")
     suspend fun deleteParticipantById(participantId: String)
 
+    @Query(
+        "DELETE FROM participants WHERE id NOT IN (SELECT participantId FROM chat_participants)",
+    )
+    suspend fun deleteOrphanedParticipants(): Int
+
     @Query("SELECT * FROM participants WHERE id = :participantId")
     suspend fun getParticipantById(participantId: String): ParticipantEntity?
 

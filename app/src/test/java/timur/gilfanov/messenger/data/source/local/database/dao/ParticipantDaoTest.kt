@@ -209,10 +209,116 @@ class ParticipantDaoTest {
         assertEquals(true, moderatorCrossRef.isModerator)
     }
 
+    @Test
+    fun `deleteOrphanedParticipants returns zero when all participants are referenced`() = runTest {
+        // Given - two participants, both linked to a chat
+        val participantA = createTestParticipant(UUID.randomUUID().toString(), "User A")
+        val participantB = createTestParticipant(UUID.randomUUID().toString(), "User B")
+        val chatId = UUID.randomUUID().toString()
+        val chat = createTestChat(chatId)
+        participantDao.insertParticipants(listOf(participantA, participantB))
+        chatDao.insertChat(chat)
+        chatDao.insertChatParticipantCrossRefs(
+            listOf(
+                createCrossRef(chatId, participantA.id),
+                createCrossRef(chatId, participantB.id),
+            ),
+        )
+
+        // When
+        val deleted = participantDao.deleteOrphanedParticipants()
+
+        // Then
+        assertEquals(0, deleted)
+        val remaining = participantDao.getAllParticipants()
+        assertEquals(2, remaining.size)
+    }
+
+    @Test
+    fun `deleteOrphanedParticipants removes participant whose only chat reference was deleted`() =
+        runTest {
+            // Given - participant linked to a chat, then the junction row is removed
+            val participantId = UUID.randomUUID().toString()
+            val participant = createTestParticipant(participantId)
+            val chatId = UUID.randomUUID().toString()
+            val chat = createTestChat(chatId)
+            participantDao.insertParticipant(participant)
+            chatDao.insertChat(chat)
+            chatDao.insertChatParticipantCrossRef(createCrossRef(chatId, participantId))
+            chatDao.removeAllChatParticipants(chatId)
+
+            // When
+            val deleted = participantDao.deleteOrphanedParticipants()
+
+            // Then
+            assertEquals(1, deleted)
+            assertNull(participantDao.getParticipantById(participantId))
+        }
+
+    @Test
+    fun `deleteOrphanedParticipants preserves participants still referenced by another chat`() =
+        runTest {
+            // Given - one participant in two chats, one chat is removed
+            val sharedParticipantId = UUID.randomUUID().toString()
+            val orphanParticipantId = UUID.randomUUID().toString()
+            val sharedParticipant = createTestParticipant(sharedParticipantId, "Shared")
+            val orphanParticipant = createTestParticipant(orphanParticipantId, "Orphan")
+            val chatA = createTestChat(UUID.randomUUID().toString())
+            val chatB = createTestChat(UUID.randomUUID().toString())
+            participantDao.insertParticipants(listOf(sharedParticipant, orphanParticipant))
+            chatDao.insertChat(chatA)
+            chatDao.insertChat(chatB)
+            chatDao.insertChatParticipantCrossRefs(
+                listOf(
+                    createCrossRef(chatA.id, sharedParticipantId),
+                    createCrossRef(chatB.id, sharedParticipantId),
+                    createCrossRef(chatA.id, orphanParticipantId),
+                ),
+            )
+            // Remove chatA — junction rows for chatA cascade away.
+            chatDao.deleteChat(chatA)
+
+            // When
+            val deleted = participantDao.deleteOrphanedParticipants()
+
+            // Then - shared participant stays (still in chatB), orphan is removed
+            assertEquals(1, deleted)
+            assertNotNull(participantDao.getParticipantById(sharedParticipantId))
+            assertNull(participantDao.getParticipantById(orphanParticipantId))
+        }
+
+    @Test
+    fun `deleteOrphanedParticipants returns zero when participants table is empty`() = runTest {
+        // When
+        val deleted = participantDao.deleteOrphanedParticipants()
+
+        // Then
+        assertEquals(0, deleted)
+        assertTrue(participantDao.getAllParticipants().isEmpty())
+    }
+
     private fun createTestParticipant(id: String, name: String = "Test User") = ParticipantEntity(
         id = id,
         name = name,
         pictureUrl = null,
         onlineAt = null,
+    )
+
+    private fun createTestChat(id: String) = ChatEntity(
+        id = id,
+        name = "Test Chat",
+        pictureUrl = null,
+        rules = "[]",
+        unreadMessagesCount = 0,
+        lastReadMessageId = null,
+        updatedAt = Instant.fromEpochMilliseconds(1000000),
+    )
+
+    private fun createCrossRef(chatId: String, participantId: String) = ChatParticipantCrossRef(
+        chatId = chatId,
+        participantId = participantId,
+        joinedAt = Instant.fromEpochMilliseconds(900000),
+        isAdmin = false,
+        isModerator = false,
     )
 }

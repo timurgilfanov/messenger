@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.paging.PagingData
+import java.util.UUID
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,6 +38,12 @@ import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
 object ChatViewModelTestFixtures {
+
+    val TEST_CHAT_ID = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+    val TEST_CURRENT_USER_ID =
+        ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+    val TEST_OTHER_USER_ID =
+        ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
 
     fun createAuthenticatedRepository(): AuthRepositoryFake = AuthRepositoryFake(
         initialSession = AuthSession(

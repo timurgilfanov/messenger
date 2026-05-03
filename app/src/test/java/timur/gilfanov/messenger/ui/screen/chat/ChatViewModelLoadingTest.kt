@@ -5,7 +5,6 @@ import app.cash.turbine.test
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
@@ -29,6 +28,9 @@ import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_CHAT_ID
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_CURRENT_USER_ID
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_OTHER_USER_ID
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestMessage
 
@@ -38,14 +40,6 @@ class ChatViewModelLoadingTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
-
-    private companion object {
-        private val TEST_CHAT_ID = ChatId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
-        private val TEST_CURRENT_USER_ID =
-            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
-        private val TEST_OTHER_USER_ID =
-            ParticipantId(UUID.fromString("00000000-0000-0000-0000-000000000003"))
-    }
 
     private data class ExpectedStateParams(
         val chatId: ChatId,

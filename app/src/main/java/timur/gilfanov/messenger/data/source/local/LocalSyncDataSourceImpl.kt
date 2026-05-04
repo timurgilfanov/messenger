@@ -189,6 +189,9 @@ class LocalSyncDataSourceImpl @Inject constructor(
 
     private suspend fun applyChatDeletedDelta(delta: ChatDeletedDelta) {
         val chatEntity = chatDao.getChatById(delta.chatId.id.toString())
-        chatEntity?.let { chatDao.deleteChat(it) }
+        chatEntity?.let {
+            chatDao.deleteChat(it)
+            participantDao.deleteOrphanedParticipants()
+        }
     }
 }

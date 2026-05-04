@@ -10,7 +10,7 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRe
  * - [Unauthorized] - Not authenticated
  *
  * ## Logical Errors
- * - [SettingsUnspecified] - Settings are unspecified and transient defaults were emitted
+ * - [SettingsUnspecified] - Settings are unspecified
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed
@@ -25,10 +25,7 @@ sealed interface ObserveSettingsError {
     data object Unauthorized : ObserveSettingsError
 
     /**
-     * Settings are unspecified and consumers received transient defaults.
-     *
-     * Default values are emitted transiently so the UI has something to display; no row is
-     * persisted by observation.
+     * Settings are unspecified.
      */
     data object SettingsUnspecified : ObserveSettingsError
 

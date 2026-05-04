@@ -109,8 +109,7 @@ class LanguageViewModel @Inject constructor(
                             ObserveUiLanguageError.SettingsUnspecified -> {
                                 logger.i(
                                     TAG,
-                                    "Settings are unspecified while observing language; " +
-                                        "transient defaults emitted without persistence",
+                                    "Settings are unspecified while observing language",
                                 )
                             }
 

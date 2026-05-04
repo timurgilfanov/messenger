@@ -80,8 +80,7 @@ class SettingsViewModel @Inject constructor(
                                     ObserveSettingsError.SettingsUnspecified -> {
                                         logger.i(
                                             TAG,
-                                            "Settings are unspecified; " +
-                                                "transient defaults emitted without persistence",
+                                            "Settings are unspecified",
                                         )
                                     }
 

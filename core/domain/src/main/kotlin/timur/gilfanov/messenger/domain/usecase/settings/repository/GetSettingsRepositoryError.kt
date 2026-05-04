@@ -6,21 +6,20 @@ import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
  * Errors for get settings repository operations.
  *
  * ## Logical Errors
- * - [SettingsResetToDefaults] - Settings were not found and reset to defaults
+ * - [SettingsUnspecified] - Settings are currently unavailable and no stored value is specified
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed
  */
 sealed interface GetSettingsRepositoryError {
     /**
-     * Settings could not be loaded and consumers received transient defaults.
+     * Settings are currently unavailable and no stored value is specified.
      *
-     * Occurs when settings cannot be loaded from any available source (e.g. local empty and
-     * remote recovery failed offline). Default values are emitted transiently so the UI has
-     * something to display; no row is persisted. Recovery is re-attempted on the next
-     * subscription to `observeSettings`.
+     * Consumers choose the fallback appropriate to their operation. Observation emits
+     * transient defaults without persistence so the UI has something to display, while
+     * language change persists the user's chosen value as a fresh row.
      */
-    data object SettingsResetToDefaults : GetSettingsRepositoryError
+    data object SettingsUnspecified : GetSettingsRepositoryError
 
     /**
      * Local storage operation failed.

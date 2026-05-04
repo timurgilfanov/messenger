@@ -133,7 +133,7 @@ class SettingsRepositoryImplTest {
         repository.observeSettings(testUserKey).test {
             val result1 = awaitItem()
             assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(result1)
-            assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(result1.error)
+            assertIs<GetSettingsRepositoryError.SettingsUnspecified>(result1.error)
 
             val result = awaitItem()
             assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)

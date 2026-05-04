@@ -97,7 +97,7 @@ class SettingsRepositoryIntegrationTest {
             repository.observeSettings(testUserKey).test {
                 val failure = awaitItem()
                 assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(failure)
-                assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(failure.error)
+                assertIs<GetSettingsRepositoryError.SettingsUnspecified>(failure.error)
 
                 val success = awaitItem()
                 assertIs<ResultWithError.Success<Settings, *>>(success)

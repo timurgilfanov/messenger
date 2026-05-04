@@ -10,7 +10,7 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRe
  * - [Unauthorized] - Not authenticated
  *
  * ## Logical Errors
- * - [SettingsResetToDefaults] - Settings were not found and reset to defaults
+ * - [SettingsUnspecified] - Settings are unspecified and transient defaults were emitted
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed
@@ -25,14 +25,12 @@ sealed interface ObserveUiLanguageError {
     data object Unauthorized : ObserveUiLanguageError
 
     /**
-     * Settings could not be loaded and consumers received transient defaults.
+     * Settings are unspecified and consumers received transient defaults.
      *
-     * Occurs when settings cannot be loaded from any available source (e.g. local empty and
-     * remote recovery failed offline). Default values are emitted transiently so the UI has
-     * something to display; no row is persisted. Recovery is re-attempted on the next
-     * subscription to `observeSettings` / `observeUiLanguage`.
+     * Default values are emitted transiently so the UI has something to display; no row is
+     * persisted by observation.
      */
-    data object SettingsResetToDefaults : ObserveUiLanguageError
+    data object SettingsUnspecified : ObserveUiLanguageError
 
     /**
      * Local storage operation failed.
@@ -47,8 +45,8 @@ sealed interface ObserveUiLanguageError {
  */
 internal fun GetSettingsRepositoryError.toObserveUiLanguageError(): ObserveUiLanguageError =
     when (this) {
-        GetSettingsRepositoryError.SettingsResetToDefaults ->
-            ObserveUiLanguageError.SettingsResetToDefaults
+        GetSettingsRepositoryError.SettingsUnspecified ->
+            ObserveUiLanguageError.SettingsUnspecified
         is GetSettingsRepositoryError.LocalOperationFailed ->
             ObserveUiLanguageError.LocalOperationFailed(error)
     }

@@ -74,7 +74,7 @@ class SettingsRepositoryFake(
         deleteUserDataCallCount++
         if (deleteUserDataResult is ResultWithError.Success) {
             settingsFlow.update {
-                ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
+                ResultWithError.Failure(GetSettingsRepositoryError.SettingsUnspecified)
             }
         }
         return deleteUserDataResult

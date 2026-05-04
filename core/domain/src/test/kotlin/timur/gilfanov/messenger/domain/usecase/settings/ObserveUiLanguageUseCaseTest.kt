@@ -112,11 +112,11 @@ class ObserveUiLanguageUseCaseTest {
     }
 
     @Test
-    fun `emits SettingsResetToDefaults error when settings reset to defaults`() = runTest {
+    fun `emits SettingsUnspecified error when settings are unspecified`() = runTest {
         val authRepository = AuthRepositoryFake(AuthState.Authenticated(testSession))
         val settingsRepository = SettingsRepositoryStub(
             settingsFlow = flow {
-                emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
+                emit(Failure(GetSettingsRepositoryError.SettingsUnspecified))
             },
         )
         val useCase = ObserveUiLanguageUseCase(authRepository, settingsRepository, logger)
@@ -124,7 +124,7 @@ class ObserveUiLanguageUseCaseTest {
         useCase().test {
             val result = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(result)
-            assertIs<ObserveUiLanguageError.SettingsResetToDefaults>(result.error)
+            assertIs<ObserveUiLanguageError.SettingsUnspecified>(result.error)
         }
     }
 
@@ -197,7 +197,7 @@ class ObserveUiLanguageUseCaseTest {
                         ),
                     ),
                 )
-                emit(Failure(GetSettingsRepositoryError.SettingsResetToDefaults))
+                emit(Failure(GetSettingsRepositoryError.SettingsUnspecified))
                 emit(Success(Settings(UiLanguage.English)))
             },
         )
@@ -211,7 +211,7 @@ class ObserveUiLanguageUseCaseTest {
 
             val second = awaitItem()
             assertIs<Failure<UiLanguage, ObserveUiLanguageError>>(second)
-            assertIs<ObserveUiLanguageError.SettingsResetToDefaults>(second.error)
+            assertIs<ObserveUiLanguageError.SettingsUnspecified>(second.error)
 
             val third = awaitItem()
             assertIs<Success<UiLanguage, ObserveUiLanguageError>>(third)

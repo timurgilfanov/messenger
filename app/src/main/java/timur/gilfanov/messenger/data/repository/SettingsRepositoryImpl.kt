@@ -56,12 +56,12 @@ import timur.gilfanov.messenger.util.Logger
  * - Recovery is triggered when [observeSettings] emits NoSettings error
  * - Recovery is also triggered before [changeUiLanguage] if local settings are not found
  * - When remote recovery fails (e.g. offline), [observeSettings] emits a transient
- *   [GetSettingsRepositoryError.SettingsResetToDefaults] failure followed by a transient
- *   `Success(defaultSettings)` value, but does NOT persist any row. The next observe-collection
- *   cycle re-attempts recovery against the server, so real server preferences are not overwritten
- *   by placeholder defaults. For [changeUiLanguage] on an offline + empty DB, the user's chosen
+ *   [GetSettingsRepositoryError.SettingsUnspecified] failure followed by transient
+ *   `Success(defaultSettings)`, but does NOT persist any row. The next observe-collection cycle
+ *   re-attempts recovery against the server, so real server preferences are not overwritten by
+ *   placeholder defaults. For [changeUiLanguage] on an offline + empty DB, the user's chosen
  *   language is persisted directly as a fresh row (`localVersion=1, syncedVersion=0,
- *   serverVersion=0`) and scheduled for sync — this is a real user choice, not a placeholder
+ *   serverVersion=0`) and scheduled for sync because this is a real user choice, not a placeholder
  *
  * **Synchronization:**
  * - Local changes are queued for background sync via WorkManager
@@ -124,7 +124,7 @@ class SettingsRepositoryImpl @Inject constructor(
                         val mapped = handleObserveFailure(userKey, error)
                         if (
                             mapped is ResultWithError.Failure &&
-                            mapped.error == GetSettingsRepositoryError.SettingsResetToDefaults
+                            mapped.error == GetSettingsRepositoryError.SettingsUnspecified
                         ) {
                             flowOf(mapped, ResultWithError.Success(defaultSettings))
                         } else {
@@ -228,10 +228,10 @@ class SettingsRepositoryImpl @Inject constructor(
         language: UiLanguage,
         error: GetSettingsRepositoryError,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = when (error) {
-        GetSettingsRepositoryError.SettingsResetToDefaults -> {
+        GetSettingsRepositoryError.SettingsUnspecified -> {
             logger.w(
                 TAG,
-                "Settings reset to defaults during language change, " +
+                "Settings are unspecified during language change, " +
                     "persisting user choice as a fresh row",
             )
             persistUserLanguageChoiceAsFreshRow(userKey, language)
@@ -793,10 +793,10 @@ class SettingsRepositoryImpl @Inject constructor(
         onFailure = { remoteError ->
             logger.e(
                 TAG,
-                "Remote recovery failed, emitting transient defaults without persisting: " +
+                "Settings are unspecified, emitting transient defaults without persisting: " +
                     "$remoteError",
             )
-            ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
+            ResultWithError.Failure(GetSettingsRepositoryError.SettingsUnspecified)
         },
     )
 

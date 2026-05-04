@@ -10,7 +10,7 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRe
  * - [Unauthorized] - Not authenticated
  *
  * ## Logical Errors
- * - [SettingsResetToDefaults] - Settings were not found and reset to defaults
+ * - [SettingsUnspecified] - Settings are unspecified and transient defaults were emitted
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed
@@ -25,14 +25,12 @@ sealed interface ObserveSettingsError {
     data object Unauthorized : ObserveSettingsError
 
     /**
-     * Settings could not be loaded and consumers received transient defaults.
+     * Settings are unspecified and consumers received transient defaults.
      *
-     * Occurs when settings cannot be loaded from any available source (e.g. local empty and
-     * remote recovery failed offline). Default values are emitted transiently so the UI has
-     * something to display; no row is persisted. Recovery is re-attempted on the next
-     * subscription to `observeSettings`.
+     * Default values are emitted transiently so the UI has something to display; no row is
+     * persisted by observation.
      */
-    data object SettingsResetToDefaults : ObserveSettingsError
+    data object SettingsUnspecified : ObserveSettingsError
 
     /**
      * Local storage operation failed.
@@ -47,8 +45,8 @@ sealed interface ObserveSettingsError {
  */
 internal fun GetSettingsRepositoryError.toObserveSettingsError(): ObserveSettingsError =
     when (this) {
-        GetSettingsRepositoryError.SettingsResetToDefaults ->
-            ObserveSettingsError.SettingsResetToDefaults
+        GetSettingsRepositoryError.SettingsUnspecified ->
+            ObserveSettingsError.SettingsUnspecified
         is GetSettingsRepositoryError.LocalOperationFailed ->
             ObserveSettingsError.LocalOperationFailed(error)
     }

@@ -23,7 +23,8 @@ import timur.gilfanov.messenger.util.Logger
  *
  * ## Error Handling
  * - [ObserveUiLanguageError.Unauthorized]: Current user is not authenticated
- * - [ObserveUiLanguageError.SettingsResetToDefaults]: Settings were not found and reset
+ * - [ObserveUiLanguageError.SettingsUnspecified]: Settings are unspecified and transient defaults
+ *   were emitted without persistence
  * - [ObserveUiLanguageError.LocalOperationFailed]: Local storage operation failed
  *
  * @property authRepository Provides access to the current authentication state

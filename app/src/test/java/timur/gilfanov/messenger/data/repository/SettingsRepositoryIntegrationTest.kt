@@ -103,8 +103,6 @@ class SettingsRepositoryIntegrationTest {
                 val success = awaitItem()
                 assertIs<ResultWithError.Success<Settings, *>>(success)
                 assertEquals(UiLanguage.English, success.data.uiLanguage)
-
-                cancelAndIgnoreRemainingEvents()
             }
 
             assertNull(databaseRule.database.settingsDao().get(testUserKey.key, "ui_language"))

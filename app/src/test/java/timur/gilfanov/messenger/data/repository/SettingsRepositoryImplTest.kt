@@ -146,7 +146,7 @@ class SettingsRepositoryImplTest {
     }
 
     @Test
-    fun `syncAllPendingSettings is no-op after offline fallback`() = runTest {
+    fun `syncAllPendingSettings doesn't persist settings after offline fallback`() = runTest {
         repository.observeSettings(testUserKey).test {
             awaitItem()
             awaitItem()

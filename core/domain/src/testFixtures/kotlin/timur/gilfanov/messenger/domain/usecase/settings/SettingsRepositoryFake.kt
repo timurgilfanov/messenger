@@ -1,9 +1,8 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.yield
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
@@ -31,10 +30,15 @@ class SettingsRepositoryFake(
     var deleteUserDataCallCount: Int = 0
         private set
 
-    private val settingsFlow =
-        MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
-            ResultWithError.Success(initialSettings),
-        )
+    private val _settingsFlow =
+        MutableSharedFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
+            replay = 1,
+            extraBufferCapacity = 1,
+        ).also { flow ->
+            flow.tryEmit(ResultWithError.Success(initialSettings))
+        }
+
+    private val settingsFlow = _settingsFlow.asSharedFlow()
 
     override fun observeSettings(
         userKey: UserScopeKey,
@@ -49,10 +53,11 @@ class SettingsRepositoryFake(
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> {
         if (changeResult is ResultWithError.Success) {
-            settingsFlow.update { current ->
-                (current as? ResultWithError.Success)?.let {
-                    ResultWithError.Success(it.data.copy(uiLanguage = language))
-                } ?: current
+            val current = _settingsFlow.replayCache.lastOrNull()
+            if (current is ResultWithError.Success) {
+                _settingsFlow.emit(
+                    ResultWithError.Success(current.data.copy(uiLanguage = language)),
+                )
             }
         }
         return changeResult
@@ -75,13 +80,10 @@ class SettingsRepositoryFake(
         lastDeleteUserDataKey = userKey
         deleteUserDataCallCount++
         if (deleteUserDataResult is ResultWithError.Success) {
-            settingsFlow.update {
-                ResultWithError.Failure(GetSettingsRepositoryError.SettingsUnspecified)
-            }
-            yield()
-            settingsFlow.update {
-                ResultWithError.Success(defaultSettings)
-            }
+            _settingsFlow.emit(
+                ResultWithError.Failure(GetSettingsRepositoryError.SettingsUnspecified),
+            )
+            _settingsFlow.emit(ResultWithError.Success(defaultSettings))
         }
         return deleteUserDataResult
     }

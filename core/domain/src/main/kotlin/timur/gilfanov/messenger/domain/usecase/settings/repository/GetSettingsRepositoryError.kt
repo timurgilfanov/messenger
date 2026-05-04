@@ -13,10 +13,12 @@ import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
  */
 sealed interface GetSettingsRepositoryError {
     /**
-     * Settings were not found and were reset to default values.
+     * Settings could not be loaded and consumers received transient defaults.
      *
-     * Occurs when settings cannot be loaded from any available source
-     * and the system automatically created default settings.
+     * Occurs when settings cannot be loaded from any available source (e.g. local empty and
+     * remote recovery failed offline). Default values are emitted transiently so the UI has
+     * something to display; no row is persisted. Recovery is re-attempted on the next
+     * subscription to `observeSettings`.
      */
     data object SettingsResetToDefaults : GetSettingsRepositoryError
 

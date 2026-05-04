@@ -2,7 +2,6 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
-import java.util.UUID
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -12,8 +11,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
-import timur.gilfanov.messenger.domain.entity.chat.ChatId
-import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
@@ -22,6 +19,9 @@ import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_CHAT_ID
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_CURRENT_USER_ID
+import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.TEST_OTHER_USER_ID
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createTestChat
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -33,11 +33,7 @@ class ChatViewModelTextInputTest {
 
     @Test
     fun `text input clear Empty text validation error`() = runTest {
-        val chatId = ChatId(UUID.randomUUID())
-        val currentUserId = ParticipantId(UUID.randomUUID())
-        val otherUserId = ParticipantId(UUID.randomUUID())
-
-        val initialChat = createTestChat(chatId, currentUserId, otherUserId)
+        val initialChat = createTestChat(TEST_CHAT_ID, TEST_CURRENT_USER_ID, TEST_OTHER_USER_ID)
 
         val repository = MessengerRepositoryFake(chat = initialChat, flowSendMessage = flowOf())
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
@@ -46,7 +42,7 @@ class ChatViewModelTextInputTest {
         val getPagedMessagesUseCase = GetPagedMessagesUseCase(repository)
         val markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository)
         val viewModel = ChatViewModel(
-            chatIdUuid = chatId.id,
+            chatIdUuid = TEST_CHAT_ID.id,
             savedStateHandle = SavedStateHandle(),
             sendMessageUseCase = sendMessageUseCase,
             receiveChatUpdatesUseCase = receiveChatUpdatesUseCase,

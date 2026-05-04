@@ -5,11 +5,13 @@ import javax.inject.Singleton
 import kotlin.time.Clock.System.now
 import kotlin.time.Instant
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.data.source.local.DeleteAllForUserError
 import timur.gilfanov.messenger.data.source.local.GetSettingError
 import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
@@ -108,23 +110,25 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override fun observeConflicts(): Flow<SettingsConflictEvent> = conflictEvents.asSharedFlow()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeSettings(
         userKey: UserScopeKey,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
         localDataSource.observe(userKey)
-            .transform { result ->
+            .flatMapConcat { result ->
                 result.fold(
                     onSuccess = {
-                        emit(ResultWithError.Success(it.toDomain()))
+                        flowOf(ResultWithError.Success(it.toDomain()))
                     },
                     onFailure = { error ->
                         val mapped = handleObserveFailure(userKey, error)
-                        emit(mapped)
                         if (
                             mapped is ResultWithError.Failure &&
                             mapped.error == GetSettingsRepositoryError.SettingsResetToDefaults
                         ) {
-                            emit(ResultWithError.Success(defaultSettings))
+                            flowOf(mapped, ResultWithError.Success(defaultSettings))
+                        } else {
+                            flowOf(mapped)
                         }
                     },
                 )

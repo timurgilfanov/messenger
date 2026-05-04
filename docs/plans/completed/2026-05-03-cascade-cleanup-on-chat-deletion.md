@@ -76,12 +76,12 @@ Files:
 
 ### Task 4: Verify acceptance criteria
 
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`.
-- [ ] Run `./gradlew :app:testMockDebugUnitTest` for the full app unit-test suite to catch any unexpected regression in repository or sync tests that exercise delete flows.
-- [ ] Run `./gradlew :app:compileMockDebugAndroidTestKotlin` (signature change on `ParticipantDao` adds a new method — all `:app` androidTest sources compile against it).
-- [ ] Verify test coverage for the touched files meets the 80% target (`./gradlew :app:koverHtmlReportMockDebug` or the project's standard coverage task).
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`.
+- [x] Run `./gradlew :app:testMockDebugUnitTest` for the full app unit-test suite to catch any unexpected regression in repository or sync tests that exercise delete flows.
+- [x] Run `./gradlew :app:compileMockDebugAndroidTestKotlin` (signature change on `ParticipantDao` adds a new method — all `:app` androidTest sources compile against it).
+- [x] Verify test coverage for the touched files meets the 80% target (`./gradlew :app:koverHtmlReportMockDebug` or the project's standard coverage task).
 
 ### Task 5: Update documentation
 
-- [ ] No README/CLAUDE.md changes expected (internal data-source behavior, no new pattern). Confirm no doc updates are required and skip if so.
-- [ ] Move this plan to `docs/plans/completed/`.
+- [x] No README/CLAUDE.md changes expected (internal data-source behavior, no new pattern). Confirm no doc updates are required and skip if so.
+- [x] Move this plan to `docs/plans/completed/`.

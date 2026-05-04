@@ -107,10 +107,7 @@ class LanguageViewModel @Inject constructor(
                             }
 
                             ObserveUiLanguageError.SettingsUnspecified -> {
-                                logger.i(
-                                    TAG,
-                                    "Settings are unspecified while observing language",
-                                )
+                                logger.i(TAG, "Settings are unspecified while observing language")
                             }
 
                             is ObserveUiLanguageError.LocalOperationFailed -> {

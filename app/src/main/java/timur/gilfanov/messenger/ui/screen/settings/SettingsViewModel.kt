@@ -78,10 +78,7 @@ class SettingsViewModel @Inject constructor(
                                     }
 
                                     ObserveSettingsError.SettingsUnspecified -> {
-                                        logger.i(
-                                            TAG,
-                                            "Settings are unspecified",
-                                        )
+                                        logger.i(TAG, "Settings are unspecified")
                                     }
 
                                     is ObserveSettingsError.LocalOperationFailed -> {

@@ -16,6 +16,8 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef
+import timur.gilfanov.messenger.data.source.local.database.entity.MessageEntity
+import timur.gilfanov.messenger.data.source.local.database.entity.MessageType
 import timur.gilfanov.messenger.data.source.local.database.entity.ParticipantEntity
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
 
@@ -32,6 +34,9 @@ class ParticipantDaoTest {
 
     private val chatDao: ChatDao
         get() = databaseRule.chatDao
+
+    private val messageDao: MessageDao
+        get() = databaseRule.messageDao
 
     @Test
     fun `insert and get participant by id`() = runTest {
@@ -288,6 +293,29 @@ class ParticipantDaoTest {
         }
 
     @Test
+    fun `deleteOrphanedParticipants preserves participant still referenced by messages`() =
+        runTest {
+            val participantId = "11111111-1111-1111-1111-111111111111"
+            val chatId = "22222222-2222-2222-2222-222222222222"
+            val messageId = "33333333-3333-3333-3333-333333333333"
+            val participant = createTestParticipant(participantId)
+            val chat = createTestChat(chatId)
+            val message = createTestMessage(messageId, chatId, participantId)
+
+            participantDao.insertParticipant(participant)
+            chatDao.insertChat(chat)
+            chatDao.insertChatParticipantCrossRef(createCrossRef(chatId, participantId))
+            messageDao.insertMessage(message)
+            chatDao.removeAllChatParticipants(chatId)
+
+            val deleted = participantDao.deleteOrphanedParticipants()
+
+            assertEquals(0, deleted)
+            assertNotNull(participantDao.getParticipantById(participantId))
+            assertNotNull(messageDao.getMessageById(messageId))
+        }
+
+    @Test
     fun `deleteOrphanedParticipants returns zero when participants table is empty`() = runTest {
         // When
         val deleted = participantDao.deleteOrphanedParticipants()
@@ -320,5 +348,17 @@ class ParticipantDaoTest {
         joinedAt = Instant.fromEpochMilliseconds(900000),
         isAdmin = false,
         isModerator = false,
+    )
+
+    private fun createTestMessage(id: String, chatId: String, senderId: String) = MessageEntity(
+        id = id,
+        chatId = chatId,
+        senderId = senderId,
+        parentId = null,
+        type = MessageType.TEXT,
+        text = "Test message",
+        imageUrl = null,
+        deliveryStatus = null,
+        createdAt = Instant.fromEpochMilliseconds(1100000),
     )
 }

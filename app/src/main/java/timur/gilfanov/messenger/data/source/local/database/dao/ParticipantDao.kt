@@ -32,7 +32,17 @@ interface ParticipantDao {
     suspend fun deleteParticipantById(participantId: String)
 
     @Query(
-        "DELETE FROM participants WHERE id NOT IN (SELECT participantId FROM chat_participants)",
+        """
+        DELETE FROM participants
+        WHERE NOT EXISTS (
+            SELECT 1 FROM chat_participants
+            WHERE chat_participants.participantId = participants.id
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM messages
+            WHERE messages.senderId = participants.id
+        )
+        """,
     )
     suspend fun deleteOrphanedParticipants(): Int
 

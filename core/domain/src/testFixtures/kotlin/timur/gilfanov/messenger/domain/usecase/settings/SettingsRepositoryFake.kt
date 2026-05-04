@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.domain.usecase.settings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.yield
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
@@ -18,6 +19,7 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRe
 
 class SettingsRepositoryFake(
     initialSettings: Settings,
+    private val defaultSettings: Settings = initialSettings,
     private var changeResult: ResultWithError<Unit, ChangeLanguageRepositoryError> =
         ResultWithError.Success(Unit),
     private var deleteUserDataResult: ResultWithError<Unit, DeleteUserDataRepositoryError> =
@@ -75,6 +77,10 @@ class SettingsRepositoryFake(
         if (deleteUserDataResult is ResultWithError.Success) {
             settingsFlow.update {
                 ResultWithError.Failure(GetSettingsRepositoryError.SettingsUnspecified)
+            }
+            yield()
+            settingsFlow.update {
+                ResultWithError.Success(defaultSettings)
             }
         }
         return deleteUserDataResult

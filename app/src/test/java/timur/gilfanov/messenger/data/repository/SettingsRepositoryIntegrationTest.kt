@@ -11,6 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.time.Instant
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -286,6 +287,8 @@ class SettingsRepositoryIntegrationTest {
         mockEngine: MockEngine,
         syncScheduler: SettingsSyncScheduler = syncSchedulerStub,
     ) {
+        mockEngine.config.dispatcher = Dispatchers.Unconfined
+
         val httpClient = HttpClient(mockEngine) {
             install(ContentNegotiation) {
                 json(json)

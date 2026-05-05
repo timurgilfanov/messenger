@@ -92,24 +92,32 @@ object ChatViewModelTestFixtures {
         private val flowChat: Flow<
             ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>,
             >? = null,
+        private val flowSendMessageResult: Flow<
+            ResultWithError<Message, SendMessageRepositoryError>,
+            >? = null,
         private val flowSendMessage: Flow<Message>? = null,
         private val pagedMessages: List<Message>? = null,
     ) : ChatRepository,
         MessageRepository {
 
+        val sentMessages = mutableListOf<Message>()
+
         override suspend fun sendMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> = flowSendMessage?.map {
-            ResultWithError.Success<Message, SendMessageRepositoryError>(it)
+        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> {
+            sentMessages += message
+            return flowSendMessageResult ?: flowSendMessage?.map {
+                ResultWithError.Success<Message, SendMessageRepositoryError>(it)
+            }
+                ?: flowOf(
+                    ResultWithError.Success<Message, SendMessageRepositoryError>(
+                        when (message) {
+                            is TextMessage -> message.copy(deliveryStatus = Sending(0))
+                            else -> message
+                        },
+                    ),
+                )
         }
-            ?: flowOf(
-                ResultWithError.Success<Message, SendMessageRepositoryError>(
-                    when (message) {
-                        is TextMessage -> message.copy(deliveryStatus = Sending(0))
-                        else -> message
-                    },
-                ),
-            )
 
         override suspend fun receiveChatUpdates(
             chatId: ChatId,
@@ -145,31 +153,35 @@ object ChatViewModelTestFixtures {
         MessageRepository {
 
         private val chatFlow = MutableStateFlow(chat)
+        val sentMessages = mutableListOf<Message>()
 
         @OptIn(ExperimentalCoroutinesApi::class)
         override suspend fun sendMessage(
             message: Message,
-        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> = flowOf(
-            *(
-                statuses.map {
-                    Success<Message, SendMessageRepositoryError>(
-                        (message as TextMessage).copy(deliveryStatus = it),
-                    )
-                }.toTypedArray()
-                ),
-        ).onEach { result ->
-            val msg = result.data
-            delay(10) // to pass immediate state updates, like text input
-            chatFlow.update { currentChat ->
-                val messages = currentChat.messages.toMutableList().apply {
-                    val indexOfFirst = indexOfFirst { it.id == msg.id }
-                    if (indexOfFirst != -1) {
-                        this[indexOfFirst] = msg
-                    } else {
-                        add(msg)
-                    }
-                }.toPersistentList()
-                currentChat.copy(messages = messages)
+        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> {
+            sentMessages += message
+            return flowOf(
+                *(
+                    statuses.map {
+                        Success<Message, SendMessageRepositoryError>(
+                            (message as TextMessage).copy(deliveryStatus = it),
+                        )
+                    }.toTypedArray()
+                    ),
+            ).onEach { result ->
+                val msg = result.data
+                delay(10) // to pass immediate state updates, like text input
+                chatFlow.update { currentChat ->
+                    val messages = currentChat.messages.toMutableList().apply {
+                        val indexOfFirst = indexOfFirst { it.id == msg.id }
+                        if (indexOfFirst != -1) {
+                            this[indexOfFirst] = msg
+                        } else {
+                            add(msg)
+                        }
+                    }.toPersistentList()
+                    currentChat.copy(messages = messages)
+                }
             }
         }
 

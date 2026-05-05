@@ -3,28 +3,34 @@ package timur.gilfanov.messenger.ui.screen.chat
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import java.util.UUID
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
+import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.MessageId
+import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.buildTextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithStatusFlow
@@ -44,6 +50,56 @@ class ChatViewModelMessageSendingTest {
         private val TEST_MESSAGE_ID_1 =
             MessageId(UUID.fromString("00000000-0000-0000-0000-000000000004"))
         private val TEST_INSTANT = Instant.fromEpochMilliseconds(1000)
+    }
+
+    @Test
+    fun `invalid message text is rejected locally without sending`() = runTest {
+        listOf(
+            "" to TextValidationError.Empty,
+            "   \n\t" to TextValidationError.Empty,
+            "a".repeat(TextMessage.MAX_TEXT_LENGTH + 1) to
+                TextValidationError.TooLong(TextMessage.MAX_TEXT_LENGTH),
+        ).forEach { (inputText, expectedError) ->
+            val chat = createTestChat(TEST_CHAT_ID, TEST_CURRENT_USER_ID, TEST_OTHER_USER_ID)
+            val repository = MessengerRepositoryFake(chat = chat)
+            val viewModel = createViewModel(repository)
+
+            viewModel.effects.test {
+                viewModel.state.test {
+                    var readyState = awaitItem()
+                    while (readyState !is ChatUiState.Ready) {
+                        readyState = awaitItem()
+                    }
+                    assertFalse(readyState.isSending)
+
+                    if (inputText.isNotEmpty()) {
+                        viewModel.onInputTextChanged(inputText)
+
+                        val validationErrorState = awaitItem()
+                        assertTrue(validationErrorState is ChatUiState.Ready)
+                        assertEquals(
+                            expectedError,
+                            validationErrorState.inputTextValidationError,
+                        )
+                    }
+
+                    viewModel.sendMessage(TEST_MESSAGE_ID_1, TEST_INSTANT)
+
+                    val currentState = if (inputText.isEmpty()) {
+                        awaitItem()
+                    } else {
+                        viewModel.state.value
+                    }
+                    assertTrue(currentState is ChatUiState.Ready)
+                    assertFalse(currentState.isSending)
+                    assertEquals(expectedError, currentState.inputTextValidationError)
+                    assertTrue(repository.sentMessages.isEmpty())
+                    expectNoEvents()
+                }
+
+                expectNoEvents()
+            }
+        }
     }
 
     @Test
@@ -105,6 +161,8 @@ class ChatViewModelMessageSendingTest {
                     }
                 }
 
+                val sentMessage = assertIs<TextMessage>(rep.sentMessages.single())
+                assertEquals("Test message", sentMessage.text)
                 assertIs<ChatSideEffect.ClearInputText>(awaitItem())
                 expectNoEvents()
             }
@@ -118,7 +176,14 @@ class ChatViewModelMessageSendingTest {
         val otherUserId = TEST_OTHER_USER_ID
 
         val chat = createTestChat(chatId, currentUserId, otherUserId)
-        val repository = MessengerRepositoryFake(chat = chat)
+        val repository = MessengerRepositoryFake(
+            chat = chat,
+            flowSendMessageResult = flowOf(
+                ResultWithError.Failure(
+                    SendMessageRepositoryError.LocalOperationFailed(LocalStorageError.Corrupted),
+                ),
+            ),
+        )
 
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
@@ -141,13 +206,7 @@ class ChatViewModelMessageSendingTest {
             }
             assertNull(readyState.dialogError)
 
-            viewModel.onInputTextChanged("")
-
-            val validationErrorState = awaitItem()
-            assertTrue(validationErrorState is ChatUiState.Ready)
-            assertIs<TextValidationError.Empty>(validationErrorState.inputTextValidationError)
-
-            // Sending an empty text message should cause an error
+            viewModel.onInputTextChanged("Test message")
             viewModel.sendMessage(TEST_MESSAGE_ID_1, TEST_INSTANT)
 
             val sendingState = awaitItem()
@@ -158,7 +217,7 @@ class ChatViewModelMessageSendingTest {
             assertTrue(errorState is ChatUiState.Ready)
             assertFalse(errorState.isSending)
             assertIs<ReadyError.SendMessageError>(errorState.dialogError)
-            assertIs<SendMessageError.MessageIsNotValid>(
+            assertIs<SendMessageError.LocalOperationFailed>(
                 (errorState.dialogError as ReadyError.SendMessageError).error,
             )
 
@@ -169,4 +228,13 @@ class ChatViewModelMessageSendingTest {
             assertNull(clearedState.dialogError)
         }
     }
+
+    private fun createViewModel(repository: MessengerRepositoryFake): ChatViewModel = ChatViewModel(
+        chatIdUuid = TEST_CHAT_ID.id,
+        savedStateHandle = SavedStateHandle(),
+        sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
+        receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),
+        getPagedMessagesUseCase = GetPagedMessagesUseCase(repository),
+        markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository),
+    )
 }

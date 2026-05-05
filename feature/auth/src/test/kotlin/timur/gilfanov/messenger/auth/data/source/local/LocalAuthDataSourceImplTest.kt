@@ -73,7 +73,7 @@ class LocalAuthDataSourceImplTest {
     fun `getAccessToken returns null when storage is empty`() = runTest {
         val result = storage.getAccessToken()
 
-        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(result)
+        assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(result)
         assertNull(result.data)
     }
 
@@ -81,7 +81,7 @@ class LocalAuthDataSourceImplTest {
     fun `getRefreshToken returns null when storage is empty`() = runTest {
         val result = storage.getRefreshToken()
 
-        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(result)
+        assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(result)
         assertNull(result.data)
     }
 
@@ -89,7 +89,7 @@ class LocalAuthDataSourceImplTest {
     fun `getAuthProvider returns null when storage is empty`() = runTest {
         val result = storage.getAuthProvider()
 
-        assertIs<ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>>(result)
+        assertIs<ResultWithError.Success<AuthProvider?, AuthLocalDataSourceError>>(result)
         assertNull(result.data)
     }
 
@@ -101,7 +101,7 @@ class LocalAuthDataSourceImplTest {
         val result = storage.getAccessToken()
 
         assertEquals(
-            ResultWithError.Failure(LocalAuthDataSourceError.DataCorrupted),
+            ResultWithError.Failure(AuthLocalDataSourceError.DataCorrupted),
             result,
         )
     }
@@ -113,8 +113,8 @@ class LocalAuthDataSourceImplTest {
         val result = storage.getAuthProvider()
 
         assertEquals(
-            ResultWithError.Failure<AuthProvider?, LocalAuthDataSourceError>(
-                LocalAuthDataSourceError.DataCorrupted,
+            ResultWithError.Failure<AuthProvider?, AuthLocalDataSourceError>(
+                AuthLocalDataSourceError.DataCorrupted,
             ),
             result,
         )
@@ -132,8 +132,8 @@ class LocalAuthDataSourceImplTest {
         )
 
         assertEquals(
-            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
-                LocalAuthDataSourceError.KeystoreUnavailable,
+            ResultWithError.Failure<Unit, AuthLocalDataSourceError>(
+                AuthLocalDataSourceError.KeystoreUnavailable,
             ),
             result,
         )
@@ -146,8 +146,8 @@ class LocalAuthDataSourceImplTest {
         val result = storage.saveTokens(AuthTokens("access", "refresh"))
 
         assertEquals(
-            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
-                LocalAuthDataSourceError.AccessDenied,
+            ResultWithError.Failure<Unit, AuthLocalDataSourceError>(
+                AuthLocalDataSourceError.AccessDenied,
             ),
             result,
         )
@@ -163,8 +163,8 @@ class LocalAuthDataSourceImplTest {
         val result = storage.getAccessToken()
 
         assertEquals(
-            ResultWithError.Failure<String?, LocalAuthDataSourceError>(
-                LocalAuthDataSourceError.TemporarilyUnavailable,
+            ResultWithError.Failure<String?, AuthLocalDataSourceError>(
+                AuthLocalDataSourceError.TemporarilyUnavailable,
             ),
             result,
         )
@@ -180,8 +180,8 @@ class LocalAuthDataSourceImplTest {
         val result = storage.getAccessToken()
 
         assertEquals(
-            ResultWithError.Failure<String?, LocalAuthDataSourceError>(
-                LocalAuthDataSourceError.DataCorrupted,
+            ResultWithError.Failure<String?, AuthLocalDataSourceError>(
+                AuthLocalDataSourceError.DataCorrupted,
             ),
             result,
         )
@@ -202,8 +202,8 @@ class LocalAuthDataSourceImplTest {
         )
 
         assertEquals(
-            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
-                LocalAuthDataSourceError.TemporarilyUnavailable,
+            ResultWithError.Failure<Unit, AuthLocalDataSourceError>(
+                AuthLocalDataSourceError.TemporarilyUnavailable,
             ),
             result,
         )
@@ -230,8 +230,8 @@ class LocalAuthDataSourceImplTest {
         )
 
         assertEquals(
-            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
-                LocalAuthDataSourceError.StorageFull,
+            ResultWithError.Failure<Unit, AuthLocalDataSourceError>(
+                AuthLocalDataSourceError.StorageFull,
             ),
             result,
         )
@@ -258,8 +258,8 @@ class LocalAuthDataSourceImplTest {
         )
 
         assertEquals(
-            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
-                LocalAuthDataSourceError.ReadOnly,
+            ResultWithError.Failure<Unit, AuthLocalDataSourceError>(
+                AuthLocalDataSourceError.ReadOnly,
             ),
             result,
         )
@@ -283,8 +283,8 @@ class LocalAuthDataSourceImplTest {
         )
 
         assertEquals(
-            ResultWithError.Failure<Unit, LocalAuthDataSourceError>(
-                LocalAuthDataSourceError.AccessDenied,
+            ResultWithError.Failure<Unit, AuthLocalDataSourceError>(
+                AuthLocalDataSourceError.AccessDenied,
             ),
             result,
         )

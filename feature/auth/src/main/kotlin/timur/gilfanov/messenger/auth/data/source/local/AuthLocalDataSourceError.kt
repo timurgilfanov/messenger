@@ -11,12 +11,12 @@ package timur.gilfanov.messenger.auth.data.source.local
  * - [DataCorrupted] - Stored auth data is invalid or cannot be decrypted
  * - [UnknownError] - Unexpected error with preserved cause
  */
-sealed interface LocalAuthDataSourceError {
-    data object AccessDenied : LocalAuthDataSourceError
-    data object KeystoreUnavailable : LocalAuthDataSourceError
-    data object TemporarilyUnavailable : LocalAuthDataSourceError
-    data object StorageFull : LocalAuthDataSourceError
-    data object ReadOnly : LocalAuthDataSourceError
-    data object DataCorrupted : LocalAuthDataSourceError
-    data class UnknownError(val cause: Throwable) : LocalAuthDataSourceError
+sealed interface AuthLocalDataSourceError {
+    data object AccessDenied : AuthLocalDataSourceError
+    data object KeystoreUnavailable : AuthLocalDataSourceError
+    data object TemporarilyUnavailable : AuthLocalDataSourceError
+    data object StorageFull : AuthLocalDataSourceError
+    data object ReadOnly : AuthLocalDataSourceError
+    data object DataCorrupted : AuthLocalDataSourceError
+    data class UnknownError(val cause: Throwable) : AuthLocalDataSourceError
 }

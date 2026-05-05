@@ -7,10 +7,10 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
+import timur.gilfanov.messenger.auth.data.source.local.AuthLocalDataSourceError
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceFake
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSourceFake
-import timur.gilfanov.messenger.auth.data.source.remote.SignupWithGoogleError
+import timur.gilfanov.messenger.auth.data.source.remote.SignupWithGoogleRemoteDataSourceError
 import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
@@ -72,7 +72,7 @@ class AuthRepositorySignupWithGoogleTest {
     fun `signupWithGoogle InvalidToken returns InvalidToken error`() = runTest {
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueSignupWithGoogle(
-            ResultWithError.Failure(SignupWithGoogleError.InvalidToken),
+            ResultWithError.Failure(SignupWithGoogleRemoteDataSourceError.InvalidToken),
         )
         val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
@@ -88,7 +88,7 @@ class AuthRepositorySignupWithGoogleTest {
     fun `signupWithGoogle AccountAlreadyExists returns AccountAlreadyExists error`() = runTest {
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueSignupWithGoogle(
-            ResultWithError.Failure(SignupWithGoogleError.AccountAlreadyExists),
+            ResultWithError.Failure(SignupWithGoogleRemoteDataSourceError.AccountAlreadyExists),
         )
         val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
@@ -105,7 +105,7 @@ class AuthRepositorySignupWithGoogleTest {
         val nameError = ProfileNameValidationError.LengthOutOfBounds(length = 1, min = 2, max = 50)
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueSignupWithGoogle(
-            ResultWithError.Failure(SignupWithGoogleError.InvalidName(nameError)),
+            ResultWithError.Failure(SignupWithGoogleRemoteDataSourceError.InvalidName(nameError)),
         )
         val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
@@ -123,7 +123,9 @@ class AuthRepositorySignupWithGoogleTest {
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueSignupWithGoogle(
             ResultWithError.Failure(
-                SignupWithGoogleError.RemoteDataSource(RemoteDataSourceError.ServerError),
+                SignupWithGoogleRemoteDataSourceError.RemoteDataSource(
+                    RemoteDataSourceError.ServerError,
+                ),
             ),
         )
         val repo = createRepo(remoteDataSource = remote, testScope = this)
@@ -140,7 +142,7 @@ class AuthRepositorySignupWithGoogleTest {
     fun `signupWithGoogle local storage failure returns LocalOperationFailed`() = runTest {
         val storage = LocalAuthDataSourceFake()
         storage.enqueueSaveSession(
-            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+            ResultWithError.Failure(AuthLocalDataSourceError.AccessDenied),
         )
         val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
@@ -157,7 +159,7 @@ class AuthRepositorySignupWithGoogleTest {
     fun `signupWithGoogle StorageFull maps to LocalStorageError StorageFull`() = runTest {
         val storage = LocalAuthDataSourceFake()
         storage.enqueueSaveSession(
-            ResultWithError.Failure(LocalAuthDataSourceError.StorageFull),
+            ResultWithError.Failure(AuthLocalDataSourceError.StorageFull),
         )
         val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()

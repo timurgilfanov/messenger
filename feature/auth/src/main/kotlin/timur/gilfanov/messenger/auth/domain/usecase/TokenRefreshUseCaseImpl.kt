@@ -8,6 +8,8 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryE
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
 import timur.gilfanov.messenger.util.Logger
 
+private typealias TokenRefreshResult = ResultWithError<AuthTokens, TokenRefreshUseCaseError>
+
 class TokenRefreshUseCaseImpl(
     private val authRepository: AuthRepository,
     private val logger: Logger,
@@ -17,7 +19,7 @@ class TokenRefreshUseCaseImpl(
         private const val TAG = "TokenRefreshUseCaseImpl"
     }
 
-    override suspend fun invoke(): ResultWithError<AuthTokens, TokenRefreshError> =
+    override suspend fun invoke(): ResultWithError<AuthTokens, TokenRefreshUseCaseError> =
         authRepository.refreshToken().fold(
             onSuccess = { tokens ->
                 ResultWithError.Success(tokens)
@@ -30,7 +32,9 @@ class TokenRefreshUseCaseImpl(
 
                     is RefreshRepositoryError.LocalOperationFailed -> {
                         logger.e(TAG, "Local operation failed during token refresh: ${error.error}")
-                        ResultWithError.Failure(TokenRefreshError.LocalOperationFailed(error.error))
+                        ResultWithError.Failure(
+                            TokenRefreshUseCaseError.LocalOperationFailed(error.error),
+                        )
                     }
 
                     is RefreshRepositoryError.RemoteOperationFailed -> {
@@ -39,14 +43,14 @@ class TokenRefreshUseCaseImpl(
                             "Remote operation failed during token refresh: ${error.error}",
                         )
                         ResultWithError.Failure(
-                            TokenRefreshError.RemoteOperationFailed(error.error),
+                            TokenRefreshUseCaseError.RemoteOperationFailed(error.error),
                         )
                     }
                 }
             },
         )
 
-    private suspend fun handleRefreshError(): ResultWithError<AuthTokens, TokenRefreshError> {
+    private suspend fun handleRefreshError(): TokenRefreshResult {
         val logoutResult = authRepository.logout()
         if (logoutResult is ResultWithError.Failure) {
             logger.e(
@@ -57,9 +61,11 @@ class TokenRefreshUseCaseImpl(
         val localLogoutError = (logoutResult as? ResultWithError.Failure)
             ?.error as? LogoutRepositoryError.LocalOperationFailed
         return if (localLogoutError != null) {
-            ResultWithError.Failure(TokenRefreshError.LocalOperationFailed(localLogoutError.error))
+            ResultWithError.Failure(
+                TokenRefreshUseCaseError.LocalOperationFailed(localLogoutError.error),
+            )
         } else {
-            ResultWithError.Failure(TokenRefreshError.SessionExpired)
+            ResultWithError.Failure(TokenRefreshUseCaseError.SessionExpired)
         }
     }
 }

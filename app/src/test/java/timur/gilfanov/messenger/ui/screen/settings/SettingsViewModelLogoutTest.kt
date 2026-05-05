@@ -11,7 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Component
-import timur.gilfanov.messenger.auth.domain.usecase.LogoutError
+import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.LogoutUseCaseImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.Settings
@@ -75,7 +75,7 @@ class SettingsViewModelLogoutTest {
             viewModel.logout()
             val effect = awaitItem()
             assertIs<SettingsSideEffects.LogoutFailed>(effect)
-            assertIs<LogoutError.LocalOperationFailed>(effect.error)
+            assertIs<LogoutUseCaseError.LocalOperationFailed>(effect.error)
         }
     }
 
@@ -93,7 +93,7 @@ class SettingsViewModelLogoutTest {
             viewModel.logout()
             val effect = awaitItem()
             assertIs<SettingsSideEffects.LogoutFailed>(effect)
-            assertIs<LogoutError.RemoteOperationFailed>(effect.error)
+            assertIs<LogoutUseCaseError.RemoteOperationFailed>(effect.error)
         }
     }
 }

@@ -90,8 +90,8 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("bad-token"), "Alice")
 
-        assertIs<ResultWithError.Failure<*, SignupWithGoogleError>>(result)
-        assertIs<SignupWithGoogleError.InvalidToken>(result.error)
+        assertIs<ResultWithError.Failure<*, SignupWithGoogleRemoteDataSourceError>>(result)
+        assertIs<SignupWithGoogleRemoteDataSourceError.InvalidToken>(result.error)
     }
 
     @Test
@@ -100,8 +100,8 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("valid-token"), "Alice")
 
-        assertIs<ResultWithError.Failure<*, SignupWithGoogleError>>(result)
-        assertIs<SignupWithGoogleError.AccountAlreadyExists>(result.error)
+        assertIs<ResultWithError.Failure<*, SignupWithGoogleRemoteDataSourceError>>(result)
+        assertIs<SignupWithGoogleRemoteDataSourceError.AccountAlreadyExists>(result.error)
     }
 
     @Test
@@ -111,9 +111,9 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("valid-token"), "!!")
 
-        assertIs<ResultWithError.Failure<*, SignupWithGoogleError>>(result)
-        assertIs<SignupWithGoogleError.InvalidName>(result.error)
-        val invalidName = result.error as SignupWithGoogleError.InvalidName
+        assertIs<ResultWithError.Failure<*, SignupWithGoogleRemoteDataSourceError>>(result)
+        assertIs<SignupWithGoogleRemoteDataSourceError.InvalidName>(result.error)
+        val invalidName = result.error as SignupWithGoogleRemoteDataSourceError.InvalidName
         assertIs<ProfileNameValidationError.UnknownRuleViolation>(invalidName.reason)
     }
 
@@ -123,10 +123,10 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("valid-token"), "Alice")
 
-        assertIs<ResultWithError.Failure<*, SignupWithGoogleError>>(result)
-        assertIs<SignupWithGoogleError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, SignupWithGoogleRemoteDataSourceError>>(result)
+        assertIs<SignupWithGoogleRemoteDataSourceError.RemoteDataSource>(result.error)
         assertIs<RemoteDataSourceError.ServerError>(
-            (result.error as SignupWithGoogleError.RemoteDataSource).error,
+            (result.error as SignupWithGoogleRemoteDataSourceError.RemoteDataSource).error,
         )
     }
 
@@ -139,7 +139,7 @@ class RemoteAuthDataSourceSignupWithGoogleTest {
 
         val result = dataSource.signupWithGoogle(GoogleIdToken("valid-token"), "Alice")
 
-        assertIs<ResultWithError.Failure<*, SignupWithGoogleError>>(result)
-        assertIs<SignupWithGoogleError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, SignupWithGoogleRemoteDataSourceError>>(result)
+        assertIs<SignupWithGoogleRemoteDataSourceError.RemoteDataSource>(result.error)
     }
 }

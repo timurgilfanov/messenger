@@ -143,6 +143,7 @@ class SettingsRepositoryImplTest {
         val persistedSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
         assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(persistedSetting)
         assertIs<GetSettingError.SettingNotFound>(persistedSetting.error)
+        assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
     }
 
     @Test
@@ -174,7 +175,6 @@ class SettingsRepositoryImplTest {
         assertEquals(1, persistedSetting.data.setting.localVersion)
         assertEquals(0, persistedSetting.data.setting.syncedVersion)
         assertEquals(0, persistedSetting.data.setting.serverVersion)
-
         assertTrue(
             trackingScheduler.scheduledSyncs.any { (key, setting) ->
                 key == testUserKey && setting == SettingKey.UI_LANGUAGE
@@ -221,6 +221,11 @@ class SettingsRepositoryImplTest {
         assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
         assertEquals(2, updatedSetting.data.setting.localVersion)
         assertEquals(1, updatedSetting.data.setting.syncedVersion)
+        assertTrue(
+            trackingScheduler.scheduledSyncs.any { (key, setting) ->
+                key == testUserKey && setting == SettingKey.UI_LANGUAGE
+            },
+        )
     }
 
     @Test
@@ -896,6 +901,11 @@ class SettingsRepositoryImplTest {
             assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
             assertEquals(2, updatedSetting.data.setting.localVersion)
             assertEquals(1, updatedSetting.data.setting.syncedVersion)
+            assertTrue(
+                trackingScheduler.scheduledSyncs.any { (key, setting) ->
+                    key == testUserKey && setting == SettingKey.UI_LANGUAGE
+                },
+            )
         }
 
     @Test
@@ -928,6 +938,7 @@ class SettingsRepositoryImplTest {
                     (error.error as LocalStorageError.UnknownError).cause,
                 )
             }
+            assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
         }
     }
 
@@ -959,6 +970,7 @@ class SettingsRepositoryImplTest {
         val error = result.error
         assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(error)
         assertIs<LocalStorageError.AccessDenied>(error.error)
+        assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
     }
 
     @Test
@@ -993,6 +1005,7 @@ class SettingsRepositoryImplTest {
             val localError = error.error
             assertIs<LocalStorageError.UnknownError>(localError)
             assertEquals(cause, localError.cause)
+            assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
         }
 
     @Test
@@ -1020,6 +1033,7 @@ class SettingsRepositoryImplTest {
         val error = result.error
         assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(error)
         assertIs<LocalStorageError.StorageFull>(error.error)
+        assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
     }
 
     @Test
@@ -1192,6 +1206,11 @@ class SettingsRepositoryImplTest {
                 "Should still reference recovery sync",
             )
             assertEquals(3, savedSetting.data.setting.serverVersion)
+            assertTrue(
+                trackingScheduler.scheduledSyncs.any { (key, setting) ->
+                    key == testUserKey && setting == SettingKey.UI_LANGUAGE
+                },
+            )
         }
 
     @Test

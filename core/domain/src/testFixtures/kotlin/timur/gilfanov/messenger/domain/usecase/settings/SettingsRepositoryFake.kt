@@ -30,6 +30,15 @@ class SettingsRepositoryFake(
     var deleteUserDataCallCount: Int = 0
         private set
 
+    /**
+     * A new collector receives only the replay cache, which contains the latest value.
+     * After deleteUserData emits Failure(SettingsUnspecified) and then Success(defaultSettings),
+     * later collectors receive only the final Success because replay is 1.
+     *
+     * extraBufferCapacity lets active collectors that are briefly not keeping up observe both
+     * values in that sequence. It does not increase how many values are replayed to new collectors;
+     * replay = 2 would be required for that, which would be the wrong contract here.
+     */
     private val _settingsFlow =
         MutableSharedFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
             replay = 1,

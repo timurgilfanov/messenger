@@ -77,8 +77,8 @@ class SettingsViewModel @Inject constructor(
                                         )
                                     }
 
-                                    ObserveSettingsError.SettingsResetToDefaults -> {
-                                        logger.i(TAG, "Settings were reset to defaults")
+                                    ObserveSettingsError.SettingsUnspecified -> {
+                                        logger.i(TAG, "Settings are unspecified")
                                     }
 
                                     is ObserveSettingsError.LocalOperationFailed -> {

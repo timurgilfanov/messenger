@@ -5,11 +5,13 @@ import javax.inject.Singleton
 import kotlin.time.Clock.System.now
 import kotlin.time.Instant
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.data.source.local.DeleteAllForUserError
 import timur.gilfanov.messenger.data.source.local.GetSettingError
 import timur.gilfanov.messenger.data.source.local.GetSettingsLocalDataSourceError
@@ -20,7 +22,6 @@ import timur.gilfanov.messenger.data.source.local.LocalSettingsDataSource
 import timur.gilfanov.messenger.data.source.local.TransformSettingError
 import timur.gilfanov.messenger.data.source.local.TypedLocalSetting
 import timur.gilfanov.messenger.data.source.local.UpsertSettingError
-import timur.gilfanov.messenger.data.source.local.defaultLocalSetting
 import timur.gilfanov.messenger.data.source.local.toStorageValue
 import timur.gilfanov.messenger.data.source.local.toUiLanguageOrNull
 import timur.gilfanov.messenger.data.source.remote.RemoteSetting
@@ -54,7 +55,13 @@ import timur.gilfanov.messenger.util.Logger
  * - Settings are automatically recovered from the server when local data is missing
  * - Recovery is triggered when [observeSettings] emits NoSettings error
  * - Recovery is also triggered before [changeUiLanguage] if local settings are not found
- * - Falls back to default settings if remote fetch fails
+ * - When remote recovery fails (e.g. offline), [observeSettings] emits a transient
+ *   [GetSettingsRepositoryError.SettingsUnspecified] failure followed by transient
+ *   `Success(defaultSettings)`, but does NOT persist any row. The next observe-collection cycle
+ *   re-attempts recovery against the server, so real server preferences are not overwritten by
+ *   placeholder defaults. For [changeUiLanguage] on an offline + empty DB, the user's chosen
+ *   language is persisted directly as a fresh row (`localVersion=1, syncedVersion=0,
+ *   serverVersion=0`) and scheduled for sync because this is a real user choice, not a placeholder
  *
  * **Synchronization:**
  * - Local changes are queued for background sync via WorkManager
@@ -103,17 +110,26 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override fun observeConflicts(): Flow<SettingsConflictEvent> = conflictEvents.asSharedFlow()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeSettings(
         userKey: UserScopeKey,
     ): Flow<ResultWithError<Settings, GetSettingsRepositoryError>> =
         localDataSource.observe(userKey)
-            .map { result ->
+            .flatMapConcat { result ->
                 result.fold(
                     onSuccess = {
-                        ResultWithError.Success(it.toDomain())
+                        flowOf(ResultWithError.Success(it.toDomain()))
                     },
                     onFailure = { error ->
-                        handleObserveFailure(userKey, error)
+                        val mapped = handleObserveFailure(userKey, error)
+                        if (
+                            mapped is ResultWithError.Failure &&
+                            mapped.error == GetSettingsRepositoryError.SettingsUnspecified
+                        ) {
+                            flowOf(mapped, ResultWithError.Success(defaultSettings))
+                        } else {
+                            flowOf(mapped)
+                        }
                     },
                 )
             }
@@ -212,12 +228,13 @@ class SettingsRepositoryImpl @Inject constructor(
         language: UiLanguage,
         error: GetSettingsRepositoryError,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> = when (error) {
-        GetSettingsRepositoryError.SettingsResetToDefaults -> {
+        GetSettingsRepositoryError.SettingsUnspecified -> {
             logger.w(
                 TAG,
-                "Settings reset to defaults during language change, retrying",
+                "Settings are unspecified during language change, " +
+                    "persisting user choice as a fresh row",
             )
-            changeUiLanguage(userKey, language)
+            persistUserLanguageChoiceAsFreshRow(userKey, language)
         }
 
         is GetSettingsRepositoryError.LocalOperationFailed -> {
@@ -226,6 +243,57 @@ class SettingsRepositoryImpl @Inject constructor(
             logErrorMapping("changeUiLanguage:recoverSettings", error, mapped, cause)
             ResultWithError.Failure(mapped)
         }
+    }
+
+    private suspend fun persistUserLanguageChoiceAsFreshRow(
+        userKey: UserScopeKey,
+        language: UiLanguage,
+    ): ResultWithError<Unit, ChangeLanguageRepositoryError> {
+        val freshSetting = TypedLocalSetting.UiLanguage(
+            setting = LocalSetting(
+                value = language,
+                localVersion = 1,
+                syncedVersion = 0,
+                serverVersion = 0,
+                modifiedAt = now(),
+            ),
+        )
+        return localDataSource.upsert(userKey, freshSetting).fold(
+            onSuccess = {
+                syncScheduler.scheduleSettingSync(userKey, SettingKey.UI_LANGUAGE)
+                ResultWithError.Success(Unit)
+            },
+            onFailure = { error ->
+                val mapped = error.toChangeLanguageRepositoryError(
+                    "changeUiLanguage:persistUserChoice",
+                )
+                ResultWithError.Failure(mapped)
+            },
+        )
+    }
+
+    private fun UpsertSettingError.toChangeLanguageRepositoryError(
+        context: String,
+    ): ChangeLanguageRepositoryError {
+        val localError = when (this) {
+            UpsertSettingError.AccessDenied -> LocalStorageError.AccessDenied
+
+            UpsertSettingError.ConcurrentModificationError,
+            UpsertSettingError.DiskIOError,
+            -> LocalStorageError.TemporarilyUnavailable
+
+            UpsertSettingError.DatabaseCorrupted -> LocalStorageError.Corrupted
+
+            UpsertSettingError.ReadOnlyDatabase -> LocalStorageError.ReadOnly
+
+            UpsertSettingError.StorageFull -> LocalStorageError.StorageFull
+
+            is UpsertSettingError.UnknownError -> LocalStorageError.UnknownError(this.cause)
+        }
+        val mapped = ChangeLanguageRepositoryError.LocalOperationFailed(localError)
+        val cause = (localError as? LocalStorageError.UnknownError)?.cause
+        logErrorMapping(context, this, mapped, cause)
+        return mapped
     }
 
     private fun logErrorMapping(
@@ -723,8 +791,12 @@ class SettingsRepositoryImpl @Inject constructor(
         },
 
         onFailure = { remoteError ->
-            logger.e(TAG, "Remote recovery failed, falling back to defaults: $remoteError")
-            upsertDefaultSettings(userKey)
+            logger.e(
+                TAG,
+                "Settings are unspecified, emitting transient defaults without persisting: " +
+                    "$remoteError",
+            )
+            ResultWithError.Failure(GetSettingsRepositoryError.SettingsUnspecified)
         },
     )
 
@@ -753,27 +825,6 @@ class SettingsRepositoryImpl @Inject constructor(
         val mapped = GetSettingsRepositoryError.LocalOperationFailed(localError)
         logErrorMapping(context, this, mapped)
         return mapped
-    }
-
-    private suspend fun upsertDefaultSettings(
-        userKey: UserScopeKey,
-    ): ResultWithError<Settings, GetSettingsRepositoryError> {
-        val defaultLocalSettings = LocalSettings(
-            uiLanguage = defaultLocalSetting(defaultSettings.uiLanguage, now()),
-        )
-        val typedSettings = listOf(
-            TypedLocalSetting.UiLanguage(setting = defaultLocalSettings.uiLanguage),
-        )
-        return localDataSource.upsert(userKey, typedSettings).fold(
-            onSuccess = {
-                ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
-            },
-            onFailure = {
-                ResultWithError.Failure(
-                    it.toGetSettingsRepositoryError("upsertDefaultSettings"),
-                )
-            },
-        )
     }
 }
 

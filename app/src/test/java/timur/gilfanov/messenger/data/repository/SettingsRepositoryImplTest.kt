@@ -73,8 +73,11 @@ class SettingsRepositoryImplTest {
     private inner class TrackingScheduler : SettingsSyncScheduler {
         val cancelledKeys = mutableListOf<UserScopeKey>()
         val cancellationEvents = mutableListOf<String>()
+        val scheduledSyncs = mutableListOf<Pair<UserScopeKey, SettingKey>>()
         var cancelAction: (suspend () -> Unit)? = null
-        override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) = Unit
+        override fun scheduleSettingSync(userKey: UserScopeKey, key: SettingKey) {
+            scheduledSyncs.add(userKey to key)
+        }
         override fun schedulePeriodicSync() = Unit
         override suspend fun cancelUserScopedJobs(userKey: UserScopeKey) {
             cancelAction?.invoke()
@@ -130,12 +133,53 @@ class SettingsRepositoryImplTest {
         repository.observeSettings(testUserKey).test {
             val result1 = awaitItem()
             assertIs<ResultWithError.Failure<Settings, GetSettingsRepositoryError>>(result1)
-            assertIs<GetSettingsRepositoryError.SettingsResetToDefaults>(result1.error)
+            assertIs<GetSettingsRepositoryError.SettingsUnspecified>(result1.error)
 
             val result = awaitItem()
             assertIs<ResultWithError.Success<Settings, GetSettingsRepositoryError>>(result)
             assertEquals(defaultSettings.uiLanguage, result.data.uiLanguage)
         }
+
+        val persistedSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(persistedSetting)
+        assertIs<GetSettingError.SettingNotFound>(persistedSetting.error)
+        assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
+    }
+
+    @Test
+    fun `syncAllPendingSettings doesn't persist settings after offline fallback`() = runTest {
+        repository.observeSettings(testUserKey).test {
+            awaitItem()
+            awaitItem()
+        }
+
+        val outcome = repository.syncAllPendingSettings(testUserKey)
+
+        assertIs<ResultWithError.Success<Unit, *>>(outcome)
+
+        val persistedSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Failure<TypedLocalSetting, GetSettingError>>(persistedSetting)
+        assertIs<GetSettingError.SettingNotFound>(persistedSetting.error)
+    }
+
+    @Test
+    fun `changeUiLanguage on empty DB while offline persists user choice as fresh row`() = runTest {
+        val result = repository.changeUiLanguage(testUserKey, UiLanguage.German)
+
+        assertIs<ResultWithError.Success<Unit, *>>(result)
+
+        val persistedSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
+        assertIs<ResultWithError.Success<TypedLocalSetting, *>>(persistedSetting)
+        assertIs<TypedLocalSetting.UiLanguage>(persistedSetting.data)
+        assertEquals(UiLanguage.German, persistedSetting.data.setting.value)
+        assertEquals(1, persistedSetting.data.setting.localVersion)
+        assertEquals(0, persistedSetting.data.setting.syncedVersion)
+        assertEquals(0, persistedSetting.data.setting.serverVersion)
+        assertTrue(
+            trackingScheduler.scheduledSyncs.any { (key, setting) ->
+                key == testUserKey && setting == SettingKey.UI_LANGUAGE
+            },
+        )
     }
 
     @Test
@@ -177,6 +221,11 @@ class SettingsRepositoryImplTest {
         assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
         assertEquals(2, updatedSetting.data.setting.localVersion)
         assertEquals(1, updatedSetting.data.setting.syncedVersion)
+        assertTrue(
+            trackingScheduler.scheduledSyncs.any { (key, setting) ->
+                key == testUserKey && setting == SettingKey.UI_LANGUAGE
+            },
+        )
     }
 
     @Test
@@ -852,6 +901,11 @@ class SettingsRepositoryImplTest {
             assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
             assertEquals(2, updatedSetting.data.setting.localVersion)
             assertEquals(1, updatedSetting.data.setting.syncedVersion)
+            assertTrue(
+                trackingScheduler.scheduledSyncs.any { (key, setting) ->
+                    key == testUserKey && setting == SettingKey.UI_LANGUAGE
+                },
+            )
         }
 
     @Test
@@ -884,6 +938,7 @@ class SettingsRepositoryImplTest {
                     (error.error as LocalStorageError.UnknownError).cause,
                 )
             }
+            assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
         }
     }
 
@@ -915,6 +970,7 @@ class SettingsRepositoryImplTest {
         val error = result.error
         assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(error)
         assertIs<LocalStorageError.AccessDenied>(error.error)
+        assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
     }
 
     @Test
@@ -949,6 +1005,7 @@ class SettingsRepositoryImplTest {
             val localError = error.error
             assertIs<LocalStorageError.UnknownError>(localError)
             assertEquals(cause, localError.cause)
+            assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
         }
 
     @Test
@@ -976,22 +1033,8 @@ class SettingsRepositoryImplTest {
         val error = result.error
         assertIs<ChangeLanguageRepositoryError.LocalOperationFailed>(error)
         assertIs<LocalStorageError.StorageFull>(error.error)
+        assertTrue(trackingScheduler.scheduledSyncs.isEmpty())
     }
-
-    @Test
-    fun `changeUiLanguage with no local and no remote creates default then applies change`() =
-        runTest {
-            val result = repository.changeUiLanguage(testUserKey, UiLanguage.German)
-
-            assertIs<ResultWithError.Success<Unit, *>>(result)
-
-            val updatedSetting = localDataSource.getSetting(testUserKey, SettingKey.UI_LANGUAGE)
-            assertIs<ResultWithError.Success<TypedLocalSetting, *>>(updatedSetting)
-            assertIs<TypedLocalSetting.UiLanguage>(updatedSetting.data)
-            assertEquals(UiLanguage.German, updatedSetting.data.setting.value)
-            assertEquals(2, updatedSetting.data.setting.localVersion)
-            assertEquals(0, updatedSetting.data.setting.syncedVersion)
-        }
 
     @Test
     fun `observeSettings triggers recovery with invalid server value falls back to English`() =
@@ -1163,6 +1206,11 @@ class SettingsRepositoryImplTest {
                 "Should still reference recovery sync",
             )
             assertEquals(3, savedSetting.data.setting.serverVersion)
+            assertTrue(
+                trackingScheduler.scheduledSyncs.any { (key, setting) ->
+                    key == testUserKey && setting == SettingKey.UI_LANGUAGE
+                },
+            )
         }
 
     @Test

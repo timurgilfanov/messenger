@@ -106,8 +106,8 @@ class LanguageViewModel @Inject constructor(
                                 logger.i(TAG, "Language observation failed with Unauthorized error")
                             }
 
-                            ObserveUiLanguageError.SettingsResetToDefaults -> {
-                                logger.i(TAG, "Settings were reset to defaults")
+                            ObserveUiLanguageError.SettingsUnspecified -> {
+                                logger.i(TAG, "Settings are unspecified while observing language")
                             }
 
                             is ObserveUiLanguageError.LocalOperationFailed -> {

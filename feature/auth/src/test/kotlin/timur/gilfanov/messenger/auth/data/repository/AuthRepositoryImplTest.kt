@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.auth.data.repository
 import app.cash.turbine.test
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -91,6 +92,55 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `loginWithCredentials EmailNotVerified returns error`() = runTest {
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueLoginWithCredentials(
+            ResultWithError.Failure(LoginWithCredentialsRemoteDataSourceError.EmailNotVerified),
+        )
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithCredentials(credentials)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, LoginRepositoryError>>(result)
+        assertIs<LoginRepositoryError.EmailNotVerified>(failure.error)
+    }
+
+    @Test
+    fun `loginWithCredentials AccountSuspended returns error`() = runTest {
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueLoginWithCredentials(
+            ResultWithError.Failure(LoginWithCredentialsRemoteDataSourceError.AccountSuspended),
+        )
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithCredentials(credentials)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, LoginRepositoryError>>(result)
+        assertIs<LoginRepositoryError.AccountSuspended>(failure.error)
+    }
+
+    @Test
+    fun `loginWithCredentials remote failure returns RemoteOperationFailed`() = runTest {
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueLoginWithCredentials(
+            ResultWithError.Failure(
+                LoginWithCredentialsRemoteDataSourceError.RemoteDataSource(
+                    RemoteDataSourceError.ServerError,
+                ),
+            ),
+        )
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithCredentials(credentials)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, LoginRepositoryError>>(result)
+        assertIs<LoginRepositoryError.RemoteOperationFailed>(failure.error)
+    }
+
+    @Test
     fun `loginWithCredentials storage failure returns LocalOperationFailed`() = runTest {
         val storage = LocalAuthDataSourceFake()
         storage.enqueueSaveSession(
@@ -122,6 +172,52 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `loginWithCredentials read only storage maps to LocalStorageError ReadOnly`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueSaveSession(ResultWithError.Failure(AuthLocalDataSourceError.ReadOnly))
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithCredentials(credentials)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, LoginRepositoryError>>(result)
+        val error = assertIs<LoginRepositoryError.LocalOperationFailed>(failure.error)
+        assertIs<LocalStorageError.ReadOnly>(error.error)
+    }
+
+    @Test
+    fun `loginWithCredentials corrupted storage maps to LocalStorageError Corrupted`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueSaveSession(ResultWithError.Failure(AuthLocalDataSourceError.DataCorrupted))
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithCredentials(credentials)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, LoginRepositoryError>>(result)
+        val error = assertIs<LoginRepositoryError.LocalOperationFailed>(failure.error)
+        assertIs<LocalStorageError.Corrupted>(error.error)
+    }
+
+    @Test
+    fun `loginWithCredentials unknown storage error preserves cause`() = runTest {
+        val cause = IllegalStateException("keystore read failed")
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueSaveSession(
+            ResultWithError.Failure(AuthLocalDataSourceError.UnknownError(cause)),
+        )
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithCredentials(credentials)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, LoginRepositoryError>>(result)
+        val error = assertIs<LoginRepositoryError.LocalOperationFailed>(failure.error)
+        val localError = assertIs<LocalStorageError.UnknownError>(error.error)
+        assertSame(cause, localError.cause)
+    }
+
+    @Test
     fun `loginWithGoogle success stores session and sets Authenticated GOOGLE provider`() =
         runTest {
             val storage = LocalAuthDataSourceFake()
@@ -150,6 +246,78 @@ class AuthRepositoryImplTest {
 
         val failure = assertIs<ResultWithError.Failure<AuthSession, *>>(result)
         assertIs<GoogleLoginRepositoryError.LocalOperationFailed>(failure.error)
+    }
+
+    @Test
+    fun `loginWithGoogle InvalidToken returns error`() = runTest {
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueLoginWithGoogle(
+            ResultWithError.Failure(LoginWithGoogleRemoteDataSourceError.InvalidToken),
+        )
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithGoogle(googleIdToken)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, GoogleLoginRepositoryError>>(
+            result,
+        )
+        assertIs<GoogleLoginRepositoryError.InvalidToken>(failure.error)
+    }
+
+    @Test
+    fun `loginWithGoogle AccountNotFound returns error`() = runTest {
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueLoginWithGoogle(
+            ResultWithError.Failure(LoginWithGoogleRemoteDataSourceError.AccountNotFound),
+        )
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithGoogle(googleIdToken)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, GoogleLoginRepositoryError>>(
+            result,
+        )
+        assertIs<GoogleLoginRepositoryError.AccountNotFound>(failure.error)
+    }
+
+    @Test
+    fun `loginWithGoogle AccountSuspended returns error`() = runTest {
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueLoginWithGoogle(
+            ResultWithError.Failure(LoginWithGoogleRemoteDataSourceError.AccountSuspended),
+        )
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithGoogle(googleIdToken)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, GoogleLoginRepositoryError>>(
+            result,
+        )
+        assertIs<GoogleLoginRepositoryError.AccountSuspended>(failure.error)
+    }
+
+    @Test
+    fun `loginWithGoogle remote failure returns RemoteOperationFailed`() = runTest {
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueLoginWithGoogle(
+            ResultWithError.Failure(
+                LoginWithGoogleRemoteDataSourceError.RemoteDataSource(
+                    RemoteDataSourceError.ServerError,
+                ),
+            ),
+        )
+        val repo = createRepo(remoteDataSource = remote, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo.loginWithGoogle(googleIdToken)
+
+        val failure = assertIs<ResultWithError.Failure<AuthSession, GoogleLoginRepositoryError>>(
+            result,
+        )
+        assertIs<GoogleLoginRepositoryError.RemoteOperationFailed>(failure.error)
     }
 
     @Test
@@ -445,6 +613,52 @@ class AuthRepositoryImplTest {
 
         val failure = assertIs<ResultWithError.Failure<AuthTokens, RefreshRepositoryError>>(result)
         assertIs<RefreshRepositoryError.TokenExpired>(failure.error)
+    }
+
+    @Test
+    fun `refreshToken SessionRevoked returns error`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        repo.loginWithCredentials(credentials)
+        advanceUntilIdle()
+
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueRefresh(
+            ResultWithError.Failure<AuthTokens, RefreshRemoteDataSourceError>(
+                RefreshRemoteDataSourceError.SessionRevoked,
+            ),
+        )
+        val repo2 =
+            createRepo(remoteDataSource = remote, sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo2.refreshToken()
+
+        val failure = assertIs<ResultWithError.Failure<AuthTokens, RefreshRepositoryError>>(result)
+        assertIs<RefreshRepositoryError.SessionRevoked>(failure.error)
+    }
+
+    @Test
+    fun `refreshToken remote failure returns RemoteOperationFailed`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        repo.loginWithCredentials(credentials)
+        advanceUntilIdle()
+
+        val remote = RemoteAuthDataSourceFake()
+        remote.enqueueRefresh(
+            ResultWithError.Failure<AuthTokens, RefreshRemoteDataSourceError>(
+                RefreshRemoteDataSourceError.RemoteDataSource(RemoteDataSourceError.ServerError),
+            ),
+        )
+        val repo2 =
+            createRepo(remoteDataSource = remote, sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        val result = repo2.refreshToken()
+
+        val failure = assertIs<ResultWithError.Failure<AuthTokens, RefreshRepositoryError>>(result)
+        assertIs<RefreshRepositoryError.RemoteOperationFailed>(failure.error)
     }
 
     @Test

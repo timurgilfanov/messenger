@@ -34,12 +34,12 @@ import timur.gilfanov.messenger.navigation.Login
 import timur.gilfanov.messenger.navigation.Main
 import timur.gilfanov.messenger.navigation.ProfileEdit
 import timur.gilfanov.messenger.navigation.Signup
+import timur.gilfanov.messenger.profile.ui.screen.ProfileEditScreen
 import timur.gilfanov.messenger.ui.screen.chat.ChatScreen
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListActions
 import timur.gilfanov.messenger.ui.screen.chatlist.ChatListScreen
 import timur.gilfanov.messenger.ui.screen.main.MainScreen
 import timur.gilfanov.messenger.ui.screen.settings.LanguageScreen
-import timur.gilfanov.messenger.ui.screen.settings.ProfileEditScreen
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @AndroidEntryPoint

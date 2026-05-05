@@ -270,6 +270,7 @@ jobs:
             app/build/reports/tests/testMockDebugUnitTest
             core/domain/build/reports/tests/test
             feature/auth/reports/tests/testDebugUnitTest
+            feature/profile/build/reports/tests/testDebugUnitTest
           
       - name: Publish Unit Test Results (:app)
         uses: mikepenz/action-junit-report@v4
@@ -288,6 +289,12 @@ jobs:
         with:
           report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
           check_name: "Unit Test Results (:feature:auth)"
+
+      - name: Publish Unit Test Results (:feature:profile)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/profile/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Unit Test Results (:feature:profile)"
           
       - name: Run Component Tests
         id: run_component_tests
@@ -306,6 +313,7 @@ jobs:
             app/build/reports/tests/testMockDebugUnitTest
             core/domain/build/reports/tests/test
             feature/auth/build/reports/tests/testDebugUnitTest
+            feature/profile/build/reports/tests/testDebugUnitTest
 
       - name: Publish Component Test Results (:app)
         uses: mikepenz/action-junit-report@v4
@@ -324,6 +332,12 @@ jobs:
         with:
           report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
           check_name: "Component Test Results (:feature:auth)"
+
+      - name: Publish Component Test Results (:feature:profile)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/profile/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Component Test Results (:feature:profile)"
           
       - name: Fail if Unit or Component Tests Failed
         if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success'
@@ -337,6 +351,7 @@ jobs:
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildFlavor=mock -PbuildType=debug
           ./gradlew :core:domain:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildType=debug
+          ./gradlew :feature:profile:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildType=debug
 
       - name: Upload Unit Coverage to Codecov (Unit)
         uses: codecov/codecov-action@v4
@@ -360,6 +375,7 @@ jobs:
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildFlavor=mock -PbuildType=debug
           ./gradlew :core:domain:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildType=debug
+          ./gradlew :feature:profile:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildType=debug
 
       - name: Upload Component Coverage to Codecov (Component)
         uses: codecov/codecov-action@v4
@@ -440,6 +456,7 @@ jobs:
           path: |
             app/build/reports/tests/testMockDebugUnitTest
             feature/auth/build/reports/tests/testDebugUnitTest
+            feature/profile/build/reports/tests/testDebugUnitTest
 
       - name: Publish Feature Test Results (:app)
         uses: mikepenz/action-junit-report@v4
@@ -453,6 +470,12 @@ jobs:
           report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
           check_name: "Feature Test Results (:feature:auth)"
 
+      - name: Publish Feature Test Results (:feature:profile)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/profile/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Feature Test Results (:feature:profile)"
+
       - name: Fail if Feature Tests Failed
         if: steps.run_feature_tests.outcome != 'success'
         run: |
@@ -464,6 +487,7 @@ jobs:
           ./gradlew :app:koverXmlReportMockDebug :app:koverXmlReportAllJvmModules :app:koverXmlReportAllAndroidLibraryModules
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildFlavor=mock -PbuildType=debug
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildType=debug
+          ./gradlew :feature:profile:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildType=debug
 
       - name: Upload Feature Coverage to Codecov (Feature)
         uses: codecov/codecov-action@v4

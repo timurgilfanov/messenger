@@ -7,9 +7,9 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
+import timur.gilfanov.messenger.auth.data.source.local.AuthLocalDataSourceError
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceFake
-import timur.gilfanov.messenger.auth.data.source.remote.RegisterError
+import timur.gilfanov.messenger.auth.data.source.remote.RegisterRemoteDataSourceError
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSourceFake
 import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -78,7 +78,7 @@ class AuthRepositorySignupTest {
             val remote = RemoteAuthDataSourceFake()
             remote.enqueueRegister(
                 ResultWithError.Failure(
-                    RegisterError.InvalidEmail(SignupEmailError.EmailTaken),
+                    RegisterRemoteDataSourceError.InvalidEmail(SignupEmailError.EmailTaken),
                 ),
             )
             val repo = createRepo(remoteDataSource = remote, testScope = this)
@@ -98,7 +98,9 @@ class AuthRepositorySignupTest {
             val remote = RemoteAuthDataSourceFake()
             remote.enqueueRegister(
                 ResultWithError.Failure(
-                    RegisterError.InvalidEmail(EmailUnknownError("EMAIL_NOT_EXISTS")),
+                    RegisterRemoteDataSourceError.InvalidEmail(
+                        EmailUnknownError("EMAIL_NOT_EXISTS"),
+                    ),
                 ),
             )
             val repo = createRepo(remoteDataSource = remote, testScope = this)
@@ -117,7 +119,7 @@ class AuthRepositorySignupTest {
         val passwordError = PasswordValidationError.PasswordTooShort(minLength = 8)
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueRegister(
-            ResultWithError.Failure(RegisterError.InvalidPassword(passwordError)),
+            ResultWithError.Failure(RegisterRemoteDataSourceError.InvalidPassword(passwordError)),
         )
         val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
@@ -134,7 +136,7 @@ class AuthRepositorySignupTest {
         val nameError = ProfileNameValidationError.LengthOutOfBounds(length = 1, min = 2, max = 50)
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueRegister(
-            ResultWithError.Failure(RegisterError.InvalidName(nameError)),
+            ResultWithError.Failure(RegisterRemoteDataSourceError.InvalidName(nameError)),
         )
         val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
@@ -151,7 +153,7 @@ class AuthRepositorySignupTest {
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueRegister(
             ResultWithError.Failure(
-                RegisterError.RemoteDataSource(RemoteDataSourceError.ServerError),
+                RegisterRemoteDataSourceError.RemoteDataSource(RemoteDataSourceError.ServerError),
             ),
         )
         val repo = createRepo(remoteDataSource = remote, testScope = this)
@@ -167,7 +169,7 @@ class AuthRepositorySignupTest {
     fun `signup local storage AccessDenied maps to LocalOperationFailed AccessDenied`() = runTest {
         val storage = LocalAuthDataSourceFake()
         storage.enqueueSaveSession(
-            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+            ResultWithError.Failure(AuthLocalDataSourceError.AccessDenied),
         )
         val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
@@ -185,7 +187,7 @@ class AuthRepositorySignupTest {
         runTest {
             val storage = LocalAuthDataSourceFake()
             storage.enqueueSaveSession(
-                ResultWithError.Failure(LocalAuthDataSourceError.StorageFull),
+                ResultWithError.Failure(AuthLocalDataSourceError.StorageFull),
             )
             val repo = createRepo(sessionStorage = storage, testScope = this)
             advanceUntilIdle()

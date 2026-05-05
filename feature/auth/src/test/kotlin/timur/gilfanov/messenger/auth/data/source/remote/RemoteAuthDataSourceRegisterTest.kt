@@ -101,8 +101,8 @@ class RemoteAuthDataSourceRegisterTest {
 
         val result = dataSource.register(credentials, name)
 
-        assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-        val error = assertIs<RegisterError.InvalidEmail>(result.error)
+        assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+        val error = assertIs<RegisterRemoteDataSourceError.InvalidEmail>(result.error)
         assertIs<SignupEmailError.EmailTaken>(error.reason)
     }
 
@@ -112,8 +112,8 @@ class RemoteAuthDataSourceRegisterTest {
 
         val result = dataSource.register(credentials, name)
 
-        assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-        val error = assertIs<RegisterError.InvalidEmail>(result.error)
+        assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+        val error = assertIs<RegisterRemoteDataSourceError.InvalidEmail>(result.error)
         assertIs<EmailUnknownError>(error.reason)
     }
 
@@ -131,8 +131,8 @@ class RemoteAuthDataSourceRegisterTest {
 
             val result = dataSource.register(credentials, name)
 
-            assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-            val error = assertIs<RegisterError.InvalidPassword>(result.error)
+            assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+            val error = assertIs<RegisterRemoteDataSourceError.InvalidPassword>(result.error)
             val passwordError = assertIs<PasswordValidationError.PasswordTooShort>(error.reason)
             kotlin.test.assertEquals(8, passwordError.minLength)
         }
@@ -145,8 +145,8 @@ class RemoteAuthDataSourceRegisterTest {
 
             val result = dataSource.register(credentials, name)
 
-            assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-            val error = assertIs<RegisterError.InvalidPassword>(result.error)
+            assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+            val error = assertIs<RegisterRemoteDataSourceError.InvalidPassword>(result.error)
             val passwordError = assertIs<PasswordValidationError.PasswordTooShort>(error.reason)
             kotlin.test.assertNull(passwordError.minLength)
         }
@@ -165,8 +165,8 @@ class RemoteAuthDataSourceRegisterTest {
 
             val result = dataSource.register(credentials, name)
 
-            assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-            val error = assertIs<RegisterError.InvalidPassword>(result.error)
+            assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+            val error = assertIs<RegisterRemoteDataSourceError.InvalidPassword>(result.error)
             val passwordError = assertIs<PasswordValidationError.PasswordTooLong>(error.reason)
             kotlin.test.assertEquals(64, passwordError.maxLength)
         }
@@ -179,8 +179,8 @@ class RemoteAuthDataSourceRegisterTest {
 
             val result = dataSource.register(credentials, name)
 
-            assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-            val error = assertIs<RegisterError.InvalidPassword>(result.error)
+            assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+            val error = assertIs<RegisterRemoteDataSourceError.InvalidPassword>(result.error)
             val passwordError = assertIs<PasswordValidationError.PasswordTooLong>(error.reason)
             kotlin.test.assertNull(passwordError.maxLength)
         }
@@ -192,8 +192,8 @@ class RemoteAuthDataSourceRegisterTest {
 
         val result = dataSource.register(credentials, name)
 
-        assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-        val error = assertIs<RegisterError.InvalidName>(result.error)
+        assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+        val error = assertIs<RegisterRemoteDataSourceError.InvalidName>(result.error)
         assertIs<ProfileNameValidationError.UnknownRuleViolation>(error.reason)
     }
 
@@ -203,10 +203,10 @@ class RemoteAuthDataSourceRegisterTest {
 
         val result = dataSource.register(credentials, name)
 
-        assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-        assertIs<RegisterError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+        assertIs<RegisterRemoteDataSourceError.RemoteDataSource>(result.error)
         assertIs<RemoteDataSourceError.ServerError>(
-            (result.error as RegisterError.RemoteDataSource).error,
+            (result.error as RegisterRemoteDataSourceError.RemoteDataSource).error,
         )
     }
 
@@ -219,7 +219,7 @@ class RemoteAuthDataSourceRegisterTest {
 
         val result = dataSource.register(credentials, name)
 
-        assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-        assertIs<RegisterError.RemoteDataSource>(result.error)
+        assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+        assertIs<RegisterRemoteDataSourceError.RemoteDataSource>(result.error)
     }
 }

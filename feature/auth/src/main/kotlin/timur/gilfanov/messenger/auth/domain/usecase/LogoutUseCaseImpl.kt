@@ -12,7 +12,7 @@ class LogoutUseCaseImpl(private val authRepository: AuthRepository, private val 
         private const val TAG = "LogoutUseCaseImpl"
     }
 
-    override suspend fun invoke(): ResultWithError<Unit, LogoutError> =
+    override suspend fun invoke(): ResultWithError<Unit, LogoutUseCaseError> =
         authRepository.logout().mapError { error ->
             logger.e(TAG, "Repository logout failed: $error")
             error.toUseCaseError()

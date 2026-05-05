@@ -8,11 +8,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
-import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCaseError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.onSuccess
+
+private typealias TokenRefreshResult = ResultWithError<AuthTokens, TokenRefreshUseCaseError>
 
 /**
  * Ktor plugin that transparently handles authentication for all HTTP requests.
@@ -37,7 +39,7 @@ class AuthInterceptor(
     private val refreshLock = Any()
 
     @Volatile
-    private var ongoingRefresh: Deferred<ResultWithError<AuthTokens, TokenRefreshError>>? = null
+    private var ongoingRefresh: Deferred<TokenRefreshResult>? = null
 
     fun install(client: HttpClient) {
         client.plugin(HttpSend).intercept { request ->
@@ -79,13 +81,12 @@ class AuthInterceptor(
      * without it, subsequent 401s would reuse the old deferred and no new refresh would be
      * triggered.
      */
-    private fun getOrCreateRefresh(): Deferred<ResultWithError<AuthTokens, TokenRefreshError>> =
-        synchronized(refreshLock) {
-            val existing = ongoingRefresh
-            if (existing != null && existing.isActive) {
-                existing
-            } else {
-                scope.async { tokenRefreshUseCase() }.also { ongoingRefresh = it }
-            }
+    private fun getOrCreateRefresh(): Deferred<TokenRefreshResult> = synchronized(refreshLock) {
+        val existing = ongoingRefresh
+        if (existing != null && existing.isActive) {
+            existing
+        } else {
+            scope.async { tokenRefreshUseCase() }.also { ongoingRefresh = it }
         }
+    }
 }

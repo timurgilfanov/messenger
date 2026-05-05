@@ -13,10 +13,10 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
  * [saveTokens] updates only the tokens (for token refresh).
  */
 interface LocalAuthDataSource {
-    suspend fun getAccessToken(): ResultWithError<String?, LocalAuthDataSourceError>
-    suspend fun getRefreshToken(): ResultWithError<String?, LocalAuthDataSourceError>
-    suspend fun getAuthProvider(): ResultWithError<AuthProvider?, LocalAuthDataSourceError>
-    suspend fun saveTokens(tokens: AuthTokens): ResultWithError<Unit, LocalAuthDataSourceError>
-    suspend fun saveSession(session: AuthSession): ResultWithError<Unit, LocalAuthDataSourceError>
-    suspend fun clearSession(): ResultWithError<Unit, LocalAuthDataSourceError>
+    suspend fun getAccessToken(): ResultWithError<String?, AuthLocalDataSourceError>
+    suspend fun getRefreshToken(): ResultWithError<String?, AuthLocalDataSourceError>
+    suspend fun getAuthProvider(): ResultWithError<AuthProvider?, AuthLocalDataSourceError>
+    suspend fun saveTokens(tokens: AuthTokens): ResultWithError<Unit, AuthLocalDataSourceError>
+    suspend fun saveSession(session: AuthSession): ResultWithError<Unit, AuthLocalDataSourceError>
+    suspend fun clearSession(): ResultWithError<Unit, AuthLocalDataSourceError>
 }

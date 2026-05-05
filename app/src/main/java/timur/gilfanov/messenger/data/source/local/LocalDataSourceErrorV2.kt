@@ -7,7 +7,7 @@ import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
  *
  * Focused on infrastructure-level failures during I/O and serialization.
  * Entity-specific errors (e.g., UserDataNotFound) are defined in separate
- * interfaces (e.g., LocalProfileDataSourceError) and compose this interface
+ * interfaces (e.g., ProfileLocalDataSourceError) and compose this interface
  * for common infrastructure errors.
  *
  * ## Migration from LocalDataSourceError

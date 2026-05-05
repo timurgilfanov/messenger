@@ -62,33 +62,34 @@ class RemoteAuthDataSourceImpl @Inject constructor(
 
     override suspend fun loginWithCredentials(
         credentials: Credentials,
-    ): ResultWithError<AuthTokens, LoginWithCredentialsError> = executeRemoteRequest(
-        TAG,
-        "loginWithCredentials",
-        logger,
-        LoginWithCredentialsError::RemoteDataSource,
-    ) {
-        val response: ApiResponse<AuthTokensDto> = httpClient.post(AuthApiRoutes.LOGIN) {
-            contentType(ContentType.Application.Json)
-            setBody(
-                CredentialsLoginRequestDto(credentials.email.value, credentials.password.value),
-            )
-        }.body()
-        val data = response.data
-        if (response.success && data != null) {
-            ResultWithError.Success(data.toDomain())
-        } else {
-            ResultWithError.Failure(mapLoginWithCredentialsError(response.error))
+    ): ResultWithError<AuthTokens, LoginWithCredentialsRemoteDataSourceError> =
+        executeRemoteRequest(
+            TAG,
+            "loginWithCredentials",
+            logger,
+            LoginWithCredentialsRemoteDataSourceError::RemoteDataSource,
+        ) {
+            val response: ApiResponse<AuthTokensDto> = httpClient.post(AuthApiRoutes.LOGIN) {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    CredentialsLoginRequestDto(credentials.email.value, credentials.password.value),
+                )
+            }.body()
+            val data = response.data
+            if (response.success && data != null) {
+                ResultWithError.Success(data.toDomain())
+            } else {
+                ResultWithError.Failure(mapLoginWithCredentialsError(response.error))
+            }
         }
-    }
 
     override suspend fun loginWithGoogle(
         idToken: GoogleIdToken,
-    ): ResultWithError<AuthTokens, LoginWithGoogleError> = executeRemoteRequest(
+    ): ResultWithError<AuthTokens, LoginWithGoogleRemoteDataSourceError> = executeRemoteRequest(
         TAG,
         "loginWithGoogle",
         logger,
-        LoginWithGoogleError::RemoteDataSource,
+        LoginWithGoogleRemoteDataSourceError::RemoteDataSource,
     ) {
         val response: ApiResponse<AuthTokensDto> = httpClient.post(AuthApiRoutes.GOOGLE_LOGIN) {
             contentType(ContentType.Application.Json)
@@ -105,11 +106,11 @@ class RemoteAuthDataSourceImpl @Inject constructor(
     override suspend fun signupWithGoogle(
         idToken: GoogleIdToken,
         name: String,
-    ): ResultWithError<AuthTokens, SignupWithGoogleError> = executeRemoteRequest(
+    ): ResultWithError<AuthTokens, SignupWithGoogleRemoteDataSourceError> = executeRemoteRequest(
         TAG,
         "signupWithGoogle",
         logger,
-        SignupWithGoogleError::RemoteDataSource,
+        SignupWithGoogleRemoteDataSourceError::RemoteDataSource,
     ) {
         val response: ApiResponse<AuthTokensDto> =
             httpClient.post(AuthApiRoutes.GOOGLE_REGISTER) {
@@ -127,38 +128,50 @@ class RemoteAuthDataSourceImpl @Inject constructor(
     override suspend fun register(
         credentials: Credentials,
         name: String,
-    ): ResultWithError<AuthTokens, RegisterError> =
-        executeRemoteRequest(TAG, "register", logger, RegisterError::RemoteDataSource) {
-            val response: ApiResponse<AuthTokensDto> = httpClient.post(AuthApiRoutes.REGISTER) {
-                contentType(ContentType.Application.Json)
-                setBody(
-                    RegisterRequestDto(credentials.email.value, credentials.password.value, name),
-                )
-            }.body()
-            val data = response.data
-            if (response.success && data != null) {
-                ResultWithError.Success(data.toDomain())
-            } else {
-                ResultWithError.Failure(mapRegisterError(response.error))
-            }
+    ): ResultWithError<AuthTokens, RegisterRemoteDataSourceError> = executeRemoteRequest(
+        TAG,
+        "register",
+        logger,
+        RegisterRemoteDataSourceError::RemoteDataSource,
+    ) {
+        val response: ApiResponse<AuthTokensDto> = httpClient.post(AuthApiRoutes.REGISTER) {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequestDto(credentials.email.value, credentials.password.value, name),
+            )
+        }.body()
+        val data = response.data
+        if (response.success && data != null) {
+            ResultWithError.Success(data.toDomain())
+        } else {
+            ResultWithError.Failure(mapRegisterError(response.error))
         }
+    }
 
-    override suspend fun refresh(refreshToken: String): ResultWithError<AuthTokens, RefreshError> =
-        executeRemoteRequest(TAG, "refresh", logger, RefreshError::RemoteDataSource) {
-            val response: ApiResponse<AuthTokensDto> = httpClient.post(AuthApiRoutes.REFRESH) {
-                contentType(ContentType.Application.Json)
-                setBody(RefreshRequestDto(refreshToken))
-            }.body()
-            val data = response.data
-            if (response.success && data != null) {
-                ResultWithError.Success(data.toDomain())
-            } else {
-                ResultWithError.Failure(mapRefreshError(response.error))
-            }
+    override suspend fun refresh(
+        refreshToken: String,
+    ): ResultWithError<AuthTokens, RefreshRemoteDataSourceError> = executeRemoteRequest(
+        TAG,
+        "refresh",
+        logger,
+        RefreshRemoteDataSourceError::RemoteDataSource,
+    ) {
+        val response: ApiResponse<AuthTokensDto> = httpClient.post(AuthApiRoutes.REFRESH) {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshRequestDto(refreshToken))
+        }.body()
+        val data = response.data
+        if (response.success && data != null) {
+            ResultWithError.Success(data.toDomain())
+        } else {
+            ResultWithError.Failure(mapRefreshError(response.error))
         }
+    }
 
-    override suspend fun logout(accessToken: String): ResultWithError<Unit, LogoutError> =
-        executeRemoteRequest(TAG, "logout", logger, LogoutError::RemoteDataSource) {
+    override suspend fun logout(
+        accessToken: String,
+    ): ResultWithError<Unit, LogoutRemoteDataSourceError> =
+        executeRemoteRequest(TAG, "logout", logger, LogoutRemoteDataSourceError::RemoteDataSource) {
             val response: ApiResponse<Unit> = httpClient.post(AuthApiRoutes.LOGOUT) {
                 contentType(ContentType.Application.Json)
                 bearerAuth(accessToken)
@@ -189,59 +202,67 @@ class RemoteAuthDataSourceImpl @Inject constructor(
         }
     }
 
-    private fun mapLoginWithCredentialsError(apiError: ApiError?): LoginWithCredentialsError =
-        when (apiError?.code) {
-            CODE_INVALID_CREDENTIALS -> LoginWithCredentialsError.InvalidCredentials
-            CODE_EMAIL_NOT_VERIFIED -> LoginWithCredentialsError.EmailNotVerified
-            CODE_ACCOUNT_SUSPENDED -> LoginWithCredentialsError.AccountSuspended
-            else -> LoginWithCredentialsError.RemoteDataSource(infraError(apiError))
-        }
+    private fun mapLoginWithCredentialsError(
+        apiError: ApiError?,
+    ): LoginWithCredentialsRemoteDataSourceError = when (apiError?.code) {
+        CODE_INVALID_CREDENTIALS -> LoginWithCredentialsRemoteDataSourceError.InvalidCredentials
+        CODE_EMAIL_NOT_VERIFIED -> LoginWithCredentialsRemoteDataSourceError.EmailNotVerified
+        CODE_ACCOUNT_SUSPENDED -> LoginWithCredentialsRemoteDataSourceError.AccountSuspended
+        else -> LoginWithCredentialsRemoteDataSourceError.RemoteDataSource(infraError(apiError))
+    }
 
-    private fun mapSignupWithGoogleError(apiError: ApiError?): SignupWithGoogleError =
-        when (apiError?.code) {
-            CODE_INVALID_TOKEN -> SignupWithGoogleError.InvalidToken
-            CODE_ACCOUNT_ALREADY_EXISTS -> SignupWithGoogleError.AccountAlreadyExists
-            CODE_INVALID_NAME -> SignupWithGoogleError.InvalidName(
-                ProfileNameValidationError.UnknownRuleViolation(apiError.message),
-            )
-            else -> SignupWithGoogleError.RemoteDataSource(infraError(apiError))
-        }
-
-    private fun mapLoginWithGoogleError(apiError: ApiError?): LoginWithGoogleError =
-        when (apiError?.code) {
-            CODE_INVALID_TOKEN -> LoginWithGoogleError.InvalidToken
-            CODE_ACCOUNT_NOT_FOUND -> LoginWithGoogleError.AccountNotFound
-            CODE_ACCOUNT_SUSPENDED -> LoginWithGoogleError.AccountSuspended
-            else -> LoginWithGoogleError.RemoteDataSource(infraError(apiError))
-        }
-
-    private fun mapRegisterError(apiError: ApiError?): RegisterError = when (apiError?.code) {
-        CODE_EMAIL_TAKEN -> RegisterError.InvalidEmail(SignupEmailError.EmailTaken)
-        CODE_EMAIL_NOT_EXISTS -> RegisterError.InvalidEmail(
-            EmailUnknownError(CODE_EMAIL_NOT_EXISTS),
-        )
-        CODE_PASSWORD_TOO_SHORT -> RegisterError.InvalidPassword(
-            PasswordValidationError.PasswordTooShort(
-                apiError.details?.get("min_length")?.toIntOrNull(),
-            ),
-        )
-        CODE_PASSWORD_TOO_LONG -> RegisterError.InvalidPassword(
-            PasswordValidationError.PasswordTooLong(
-                apiError.details?.get("max_length")?.toIntOrNull(),
-            ),
-        )
-        CODE_INVALID_NAME -> RegisterError.InvalidName(
+    private fun mapSignupWithGoogleError(
+        apiError: ApiError?,
+    ): SignupWithGoogleRemoteDataSourceError = when (apiError?.code) {
+        CODE_INVALID_TOKEN -> SignupWithGoogleRemoteDataSourceError.InvalidToken
+        CODE_ACCOUNT_ALREADY_EXISTS -> SignupWithGoogleRemoteDataSourceError.AccountAlreadyExists
+        CODE_INVALID_NAME -> SignupWithGoogleRemoteDataSourceError.InvalidName(
             ProfileNameValidationError.UnknownRuleViolation(apiError.message),
         )
-        else -> RegisterError.RemoteDataSource(infraError(apiError))
+        else -> SignupWithGoogleRemoteDataSourceError.RemoteDataSource(
+            infraError(apiError),
+        )
     }
 
-    private fun mapRefreshError(apiError: ApiError?): RefreshError = when (apiError?.code) {
-        CODE_TOKEN_EXPIRED -> RefreshError.TokenExpired
-        CODE_SESSION_REVOKED -> RefreshError.SessionRevoked
-        else -> RefreshError.RemoteDataSource(infraError(apiError))
-    }
+    private fun mapLoginWithGoogleError(apiError: ApiError?): LoginWithGoogleRemoteDataSourceError =
+        when (apiError?.code) {
+            CODE_INVALID_TOKEN -> LoginWithGoogleRemoteDataSourceError.InvalidToken
+            CODE_ACCOUNT_NOT_FOUND -> LoginWithGoogleRemoteDataSourceError.AccountNotFound
+            CODE_ACCOUNT_SUSPENDED -> LoginWithGoogleRemoteDataSourceError.AccountSuspended
+            else -> LoginWithGoogleRemoteDataSourceError.RemoteDataSource(infraError(apiError))
+        }
 
-    private fun mapLogoutError(apiError: ApiError?): LogoutError =
-        LogoutError.RemoteDataSource(infraError(apiError))
+    private fun mapRegisterError(apiError: ApiError?): RegisterRemoteDataSourceError =
+        when (apiError?.code) {
+            CODE_EMAIL_TAKEN -> RegisterRemoteDataSourceError.InvalidEmail(
+                SignupEmailError.EmailTaken,
+            )
+            CODE_EMAIL_NOT_EXISTS -> RegisterRemoteDataSourceError.InvalidEmail(
+                EmailUnknownError(CODE_EMAIL_NOT_EXISTS),
+            )
+            CODE_PASSWORD_TOO_SHORT -> RegisterRemoteDataSourceError.InvalidPassword(
+                PasswordValidationError.PasswordTooShort(
+                    apiError.details?.get("min_length")?.toIntOrNull(),
+                ),
+            )
+            CODE_PASSWORD_TOO_LONG -> RegisterRemoteDataSourceError.InvalidPassword(
+                PasswordValidationError.PasswordTooLong(
+                    apiError.details?.get("max_length")?.toIntOrNull(),
+                ),
+            )
+            CODE_INVALID_NAME -> RegisterRemoteDataSourceError.InvalidName(
+                ProfileNameValidationError.UnknownRuleViolation(apiError.message),
+            )
+            else -> RegisterRemoteDataSourceError.RemoteDataSource(infraError(apiError))
+        }
+
+    private fun mapRefreshError(apiError: ApiError?): RefreshRemoteDataSourceError =
+        when (apiError?.code) {
+            CODE_TOKEN_EXPIRED -> RefreshRemoteDataSourceError.TokenExpired
+            CODE_SESSION_REVOKED -> RefreshRemoteDataSourceError.SessionRevoked
+            else -> RefreshRemoteDataSourceError.RemoteDataSource(infraError(apiError))
+        }
+
+    private fun mapLogoutError(apiError: ApiError?): LogoutRemoteDataSourceError =
+        LogoutRemoteDataSourceError.RemoteDataSource(infraError(apiError))
 }

@@ -19,7 +19,7 @@ interface LocalProfileDataSource {
      * @param userId The unique identifier of the user to observe
      * @return Flow emitting profile updates or errors
      */
-    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, LocalProfileDataSourceError>>
+    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, ProfileLocalDataSourceError>>
 
     /**
      * Updates profile using a transformation function.
@@ -29,10 +29,10 @@ interface LocalProfileDataSource {
      *
      * @param userId The unique identifier of the user
      * @param transform Function transforming the current profile to new profile
-     * @return Success or failure with [LocalProfileDataSourceError]
+     * @return Success or failure with [ProfileLocalDataSourceError]
      */
     suspend fun updateProfile(
         userId: UserId,
         transform: (Profile) -> Profile,
-    ): ResultWithError<Unit, LocalProfileDataSourceError>
+    ): ResultWithError<Unit, ProfileLocalDataSourceError>
 }

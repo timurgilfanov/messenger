@@ -54,12 +54,12 @@ class LocalAuthDataSourceImplTest {
 
         // When
         val saveResult = getStorage().saveSession(session)
-        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, AuthLocalDataSourceError>>(saveResult)
 
         val getResult = getStorage().getAccessToken()
 
         // Then
-        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getResult)
+        assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(getResult)
         assertEquals("access-token-1", getResult.data)
     }
 
@@ -71,12 +71,12 @@ class LocalAuthDataSourceImplTest {
 
         // When
         val saveResult = getStorage().saveSession(session)
-        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, AuthLocalDataSourceError>>(saveResult)
 
         val getResult = getStorage().getRefreshToken()
 
         // Then
-        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getResult)
+        assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(getResult)
         assertEquals("refresh-token-1", getResult.data)
     }
 
@@ -88,12 +88,12 @@ class LocalAuthDataSourceImplTest {
 
         // When
         val saveResult = getStorage().saveSession(session)
-        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, AuthLocalDataSourceError>>(saveResult)
 
         val getResult = getStorage().getAuthProvider()
 
         // Then
-        assertIs<ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>>(getResult)
+        assertIs<ResultWithError.Success<AuthProvider?, AuthLocalDataSourceError>>(getResult)
         assertEquals(AuthProvider.GOOGLE, getResult.data)
     }
 
@@ -104,19 +104,19 @@ class LocalAuthDataSourceImplTest {
         val initialTokens = AuthTokens("access-token-1", "refresh-token-1")
         val initialSession = AuthSession(initialTokens, AuthProvider.EMAIL)
         val saveSessionResult = getStorage().saveSession(initialSession)
-        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveSessionResult)
+        assertIs<ResultWithError.Success<Unit, AuthLocalDataSourceError>>(saveSessionResult)
 
         // When
         val newTokens = AuthTokens("access-token-2", "refresh-token-2")
         val saveResult = getStorage().saveTokens(newTokens)
-        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, AuthLocalDataSourceError>>(saveResult)
 
         val getAccessResult = getStorage().getAccessToken()
         val getRefreshResult = getStorage().getRefreshToken()
 
         // Then
-        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getAccessResult)
-        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getRefreshResult)
+        assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(getAccessResult)
+        assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(getRefreshResult)
         assertEquals("access-token-2", getAccessResult.data)
         assertEquals("refresh-token-2", getRefreshResult.data)
     }
@@ -127,16 +127,16 @@ class LocalAuthDataSourceImplTest {
         val initialTokens = AuthTokens("access-token-1", "refresh-token-1")
         val initialSession = AuthSession(initialTokens, AuthProvider.EMAIL)
         val saveSessionResult = getStorage().saveSession(initialSession)
-        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveSessionResult)
+        assertIs<ResultWithError.Success<Unit, AuthLocalDataSourceError>>(saveSessionResult)
 
         // When
         val newTokens = AuthTokens("access-token-2", "refresh-token-2")
         val saveTokensResult = getStorage().saveTokens(newTokens)
-        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveTokensResult)
+        assertIs<ResultWithError.Success<Unit, AuthLocalDataSourceError>>(saveTokensResult)
         val getProviderResult = getStorage().getAuthProvider()
 
         // Then
-        assertIs<ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>>(
+        assertIs<ResultWithError.Success<AuthProvider?, AuthLocalDataSourceError>>(
             getProviderResult,
         )
         assertEquals(AuthProvider.EMAIL, getProviderResult.data)
@@ -149,7 +149,7 @@ class LocalAuthDataSourceImplTest {
         val tokens = AuthTokens("access-token-1", "refresh-token-1")
         val session = AuthSession(tokens, AuthProvider.EMAIL)
         val saveResult = getStorage().saveSession(session)
-        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(saveResult)
+        assertIs<ResultWithError.Success<Unit, AuthLocalDataSourceError>>(saveResult)
 
         // When
         val clearResult = getStorage().clearSession()
@@ -158,10 +158,10 @@ class LocalAuthDataSourceImplTest {
         val getProviderResult = getStorage().getAuthProvider()
 
         // Then
-        assertIs<ResultWithError.Success<Unit, LocalAuthDataSourceError>>(clearResult)
-        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getAccessResult)
-        assertIs<ResultWithError.Success<String?, LocalAuthDataSourceError>>(getRefreshResult)
-        assertIs<ResultWithError.Success<AuthProvider?, LocalAuthDataSourceError>>(
+        assertIs<ResultWithError.Success<Unit, AuthLocalDataSourceError>>(clearResult)
+        assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(getAccessResult)
+        assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(getRefreshResult)
+        assertIs<ResultWithError.Success<AuthProvider?, AuthLocalDataSourceError>>(
             getProviderResult,
         )
         assertNull(getAccessResult.data)

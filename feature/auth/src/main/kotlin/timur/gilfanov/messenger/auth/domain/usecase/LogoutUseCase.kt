@@ -9,7 +9,7 @@ fun interface LogoutUseCase {
     /**
      * Clears the local session and revokes server-side tokens.
      * Returns [ResultWithError.Success] on completion, or [ResultWithError.Failure] with
-     * [LogoutError.LocalOperationFailed] or [LogoutError.RemoteOperationFailed] on failure.
+     * [LogoutUseCaseError.LocalOperationFailed] or [LogoutUseCaseError.RemoteOperationFailed] on failure.
      */
-    suspend operator fun invoke(): ResultWithError<Unit, LogoutError>
+    suspend operator fun invoke(): ResultWithError<Unit, LogoutUseCaseError>
 }

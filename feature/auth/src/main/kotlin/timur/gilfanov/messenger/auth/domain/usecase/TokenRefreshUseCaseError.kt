@@ -15,20 +15,20 @@ import timur.gilfanov.messenger.domain.usecase.common.RemoteError
  * - [LocalOperationFailed] — local storage read/write failed
  * - [RemoteOperationFailed] — remote token exchange failed
  */
-sealed interface TokenRefreshError {
-    data object SessionExpired : TokenRefreshError
-    data class LocalOperationFailed(val error: LocalStorageError) : TokenRefreshError
-    data class RemoteOperationFailed(val error: RemoteError) : TokenRefreshError
+sealed interface TokenRefreshUseCaseError {
+    data object SessionExpired : TokenRefreshUseCaseError
+    data class LocalOperationFailed(val error: LocalStorageError) : TokenRefreshUseCaseError
+    data class RemoteOperationFailed(val error: RemoteError) : TokenRefreshUseCaseError
 }
 
-internal fun RefreshRepositoryError.toUseCaseError(): TokenRefreshError = when (this) {
-    is RefreshRepositoryError.TokenExpired -> TokenRefreshError.SessionExpired
+internal fun RefreshRepositoryError.toUseCaseError(): TokenRefreshUseCaseError = when (this) {
+    is RefreshRepositoryError.TokenExpired -> TokenRefreshUseCaseError.SessionExpired
 
-    is RefreshRepositoryError.SessionRevoked -> TokenRefreshError.SessionExpired
+    is RefreshRepositoryError.SessionRevoked -> TokenRefreshUseCaseError.SessionExpired
 
     is RefreshRepositoryError.LocalOperationFailed ->
-        TokenRefreshError.LocalOperationFailed(error)
+        TokenRefreshUseCaseError.LocalOperationFailed(error)
 
     is RefreshRepositoryError.RemoteOperationFailed ->
-        TokenRefreshError.RemoteOperationFailed(error)
+        TokenRefreshUseCaseError.RemoteOperationFailed(error)
 }

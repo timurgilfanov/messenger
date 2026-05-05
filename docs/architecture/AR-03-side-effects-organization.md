@@ -65,7 +65,7 @@ Inner cases must be named after **what happened to the user**, not after the dom
 - Correct: `CredentialsRejected`, `NetworkUnavailable`, `ObserveFailed`
 - Incorrect: `AuthRepositoryReturnedInvalidCredentials`, `LocalStorageError`, `ObserveSettingsUseCaseFailed`
 
-Domain error types (sealed interfaces from the domain or data layer, e.g. `LocalStorageError`, `LogoutError`, `ObserveProfileRepositoryError`) must not appear as parameter types in the side effects interface. The ViewModel maps them to UI-relevant descriptors (booleans, enums, strings) before emitting.
+Domain error types (sealed interfaces from the domain or data layer, e.g. `LocalStorageError`, `LogoutUseCaseError`, `ObserveProfileRepositoryError`) must not appear as parameter types in the side effects interface. The ViewModel maps them to UI-relevant descriptors (booleans, enums, strings) before emitting.
 
 ## Rationale
 

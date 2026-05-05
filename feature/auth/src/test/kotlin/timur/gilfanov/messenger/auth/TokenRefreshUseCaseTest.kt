@@ -4,7 +4,7 @@ import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
+import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCaseError
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCaseImpl
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
@@ -64,8 +64,8 @@ class TokenRefreshUseCaseTest {
 
             val result = useCase()
 
-            assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
-            assertIs<TokenRefreshError.SessionExpired>(result.error)
+            assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshUseCaseError>>(result)
+            assertIs<TokenRefreshUseCaseError.SessionExpired>(result.error)
             assertIs<AuthState.Unauthenticated>(authRepositoryFake.currentAuthState)
         }
 
@@ -81,8 +81,8 @@ class TokenRefreshUseCaseTest {
 
             val result = useCase()
 
-            assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
-            assertIs<TokenRefreshError.SessionExpired>(result.error)
+            assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshUseCaseError>>(result)
+            assertIs<TokenRefreshUseCaseError.SessionExpired>(result.error)
             assertIs<AuthState.Unauthenticated>(authRepositoryFake.currentAuthState)
         }
 
@@ -97,8 +97,8 @@ class TokenRefreshUseCaseTest {
 
         val result = useCase()
 
-        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
-        assertIs<TokenRefreshError.LocalOperationFailed>(result.error)
+        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshUseCaseError>>(result)
+        assertIs<TokenRefreshUseCaseError.LocalOperationFailed>(result.error)
         assertIs<AuthState.Authenticated>(authRepositoryFake.currentAuthState)
     }
 
@@ -113,8 +113,8 @@ class TokenRefreshUseCaseTest {
 
         val result = useCase()
 
-        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
-        assertIs<TokenRefreshError.RemoteOperationFailed>(result.error)
+        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshUseCaseError>>(result)
+        assertIs<TokenRefreshUseCaseError.RemoteOperationFailed>(result.error)
         assertIs<AuthState.Authenticated>(authRepositoryFake.currentAuthState)
     }
 
@@ -131,8 +131,8 @@ class TokenRefreshUseCaseTest {
 
         val result = useCase()
 
-        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
-        assertIs<TokenRefreshError.LocalOperationFailed>(result.error)
+        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshUseCaseError>>(result)
+        assertIs<TokenRefreshUseCaseError.LocalOperationFailed>(result.error)
         assertIs<AuthState.Authenticated>(authRepositoryFake.currentAuthState)
     }
 
@@ -149,8 +149,8 @@ class TokenRefreshUseCaseTest {
 
         val result = useCase()
 
-        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
-        assertIs<TokenRefreshError.LocalOperationFailed>(result.error)
+        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshUseCaseError>>(result)
+        assertIs<TokenRefreshUseCaseError.LocalOperationFailed>(result.error)
         assertIs<AuthState.Authenticated>(authRepositoryFake.currentAuthState)
     }
 
@@ -167,8 +167,8 @@ class TokenRefreshUseCaseTest {
 
         val result = useCase()
 
-        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
-        assertIs<TokenRefreshError.SessionExpired>(result.error)
+        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshUseCaseError>>(result)
+        assertIs<TokenRefreshUseCaseError.SessionExpired>(result.error)
         assertIs<AuthState.Unauthenticated>(authRepositoryFake.currentAuthState)
     }
 
@@ -185,8 +185,8 @@ class TokenRefreshUseCaseTest {
 
         val result = useCase()
 
-        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshError>>(result)
-        assertIs<TokenRefreshError.SessionExpired>(result.error)
+        assertIs<ResultWithError.Failure<AuthTokens, TokenRefreshUseCaseError>>(result)
+        assertIs<TokenRefreshUseCaseError.SessionExpired>(result.error)
         assertIs<AuthState.Unauthenticated>(authRepositoryFake.currentAuthState)
     }
 }

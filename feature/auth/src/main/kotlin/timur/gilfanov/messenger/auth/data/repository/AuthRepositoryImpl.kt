@@ -9,15 +9,15 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import timur.gilfanov.messenger.auth.data.source.local.AuthLocalDataSourceError
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
-import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
-import timur.gilfanov.messenger.auth.data.source.remote.LoginWithCredentialsError
-import timur.gilfanov.messenger.auth.data.source.remote.LoginWithGoogleError
-import timur.gilfanov.messenger.auth.data.source.remote.LogoutError
-import timur.gilfanov.messenger.auth.data.source.remote.RefreshError
-import timur.gilfanov.messenger.auth.data.source.remote.RegisterError
+import timur.gilfanov.messenger.auth.data.source.remote.LoginWithCredentialsRemoteDataSourceError
+import timur.gilfanov.messenger.auth.data.source.remote.LoginWithGoogleRemoteDataSourceError
+import timur.gilfanov.messenger.auth.data.source.remote.LogoutRemoteDataSourceError
+import timur.gilfanov.messenger.auth.data.source.remote.RefreshRemoteDataSourceError
+import timur.gilfanov.messenger.auth.data.source.remote.RegisterRemoteDataSourceError
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSource
-import timur.gilfanov.messenger.auth.data.source.remote.SignupWithGoogleError
+import timur.gilfanov.messenger.auth.data.source.remote.SignupWithGoogleRemoteDataSourceError
 import timur.gilfanov.messenger.auth.di.ApplicationScope
 import timur.gilfanov.messenger.data.remote.toRemoteError
 import timur.gilfanov.messenger.data.remote.toUnauthRemoteError
@@ -330,75 +330,93 @@ class AuthRepositoryImpl @Inject constructor(
     }
 }
 
-private fun LocalAuthDataSourceError.toLocalError(): LocalStorageError = when (this) {
-    LocalAuthDataSourceError.AccessDenied -> LocalStorageError.AccessDenied
-    LocalAuthDataSourceError.KeystoreUnavailable -> LocalStorageError.TemporarilyUnavailable
-    LocalAuthDataSourceError.TemporarilyUnavailable -> LocalStorageError.TemporarilyUnavailable
-    LocalAuthDataSourceError.StorageFull -> LocalStorageError.StorageFull
-    LocalAuthDataSourceError.ReadOnly -> LocalStorageError.ReadOnly
-    LocalAuthDataSourceError.DataCorrupted -> LocalStorageError.Corrupted
-    is LocalAuthDataSourceError.UnknownError -> LocalStorageError.UnknownError(cause)
+private fun AuthLocalDataSourceError.toLocalError(): LocalStorageError = when (this) {
+    AuthLocalDataSourceError.AccessDenied -> LocalStorageError.AccessDenied
+    AuthLocalDataSourceError.KeystoreUnavailable -> LocalStorageError.TemporarilyUnavailable
+    AuthLocalDataSourceError.TemporarilyUnavailable -> LocalStorageError.TemporarilyUnavailable
+    AuthLocalDataSourceError.StorageFull -> LocalStorageError.StorageFull
+    AuthLocalDataSourceError.ReadOnly -> LocalStorageError.ReadOnly
+    AuthLocalDataSourceError.DataCorrupted -> LocalStorageError.Corrupted
+    is AuthLocalDataSourceError.UnknownError -> LocalStorageError.UnknownError(cause)
 }
 
-private fun mapLoginWithCredentialsError(error: LoginWithCredentialsError): LoginRepositoryError =
+private fun mapLoginWithCredentialsError(
+    error: LoginWithCredentialsRemoteDataSourceError,
+): LoginRepositoryError = when (error) {
+    LoginWithCredentialsRemoteDataSourceError.InvalidCredentials ->
+        LoginRepositoryError.InvalidCredentials
+
+    LoginWithCredentialsRemoteDataSourceError.EmailNotVerified ->
+        LoginRepositoryError.EmailNotVerified
+
+    LoginWithCredentialsRemoteDataSourceError.AccountSuspended ->
+        LoginRepositoryError.AccountSuspended
+
+    is LoginWithCredentialsRemoteDataSourceError.RemoteDataSource ->
+        LoginRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
+}
+
+private fun mapLoginWithGoogleError(
+    error: LoginWithGoogleRemoteDataSourceError,
+): GoogleLoginRepositoryError = when (error) {
+    LoginWithGoogleRemoteDataSourceError.InvalidToken ->
+        GoogleLoginRepositoryError.InvalidToken
+
+    LoginWithGoogleRemoteDataSourceError.AccountNotFound ->
+        GoogleLoginRepositoryError.AccountNotFound
+
+    LoginWithGoogleRemoteDataSourceError.AccountSuspended ->
+        GoogleLoginRepositoryError.AccountSuspended
+
+    is LoginWithGoogleRemoteDataSourceError.RemoteDataSource ->
+        GoogleLoginRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
+}
+
+private fun mapSignupWithGoogleError(
+    error: SignupWithGoogleRemoteDataSourceError,
+): GoogleSignupRepositoryError = when (error) {
+    SignupWithGoogleRemoteDataSourceError.InvalidToken -> GoogleSignupRepositoryError.InvalidToken
+
+    SignupWithGoogleRemoteDataSourceError.AccountAlreadyExists ->
+        GoogleSignupRepositoryError.AccountAlreadyExists
+
+    is SignupWithGoogleRemoteDataSourceError.InvalidName ->
+        GoogleSignupRepositoryError.InvalidName(error.reason)
+
+    is SignupWithGoogleRemoteDataSourceError.RemoteDataSource ->
+        GoogleSignupRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
+}
+
+private fun mapSignupError(error: RegisterRemoteDataSourceError): SignupRepositoryError =
     when (error) {
-        LoginWithCredentialsError.InvalidCredentials -> LoginRepositoryError.InvalidCredentials
+        is RegisterRemoteDataSourceError.InvalidEmail -> SignupRepositoryError.InvalidEmail(
+            error.reason,
+        )
 
-        LoginWithCredentialsError.EmailNotVerified -> LoginRepositoryError.EmailNotVerified
+        is RegisterRemoteDataSourceError.InvalidPassword -> SignupRepositoryError.InvalidPassword(
+            error.reason,
+        )
 
-        LoginWithCredentialsError.AccountSuspended -> LoginRepositoryError.AccountSuspended
+        is RegisterRemoteDataSourceError.InvalidName -> SignupRepositoryError.InvalidName(
+            error.reason,
+        )
 
-        is LoginWithCredentialsError.RemoteDataSource ->
-            LoginRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
+        is RegisterRemoteDataSourceError.RemoteDataSource ->
+            SignupRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
     }
 
-private fun mapLoginWithGoogleError(error: LoginWithGoogleError): GoogleLoginRepositoryError =
+private fun mapRefreshError(error: RefreshRemoteDataSourceError): RefreshRepositoryError =
     when (error) {
-        LoginWithGoogleError.InvalidToken -> GoogleLoginRepositoryError.InvalidToken
+        RefreshRemoteDataSourceError.TokenExpired -> RefreshRepositoryError.TokenExpired
 
-        LoginWithGoogleError.AccountNotFound -> GoogleLoginRepositoryError.AccountNotFound
+        RefreshRemoteDataSourceError.SessionRevoked -> RefreshRepositoryError.SessionRevoked
 
-        LoginWithGoogleError.AccountSuspended -> GoogleLoginRepositoryError.AccountSuspended
-
-        is LoginWithGoogleError.RemoteDataSource ->
-            GoogleLoginRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
+        is RefreshRemoteDataSourceError.RemoteDataSource ->
+            RefreshRepositoryError.RemoteOperationFailed(error.error.toRemoteError())
     }
 
-private fun mapSignupWithGoogleError(error: SignupWithGoogleError): GoogleSignupRepositoryError =
+private fun mapLogoutError(error: LogoutRemoteDataSourceError): LogoutRepositoryError =
     when (error) {
-        SignupWithGoogleError.InvalidToken -> GoogleSignupRepositoryError.InvalidToken
-
-        SignupWithGoogleError.AccountAlreadyExists ->
-            GoogleSignupRepositoryError.AccountAlreadyExists
-
-        is SignupWithGoogleError.InvalidName ->
-            GoogleSignupRepositoryError.InvalidName(error.reason)
-
-        is SignupWithGoogleError.RemoteDataSource ->
-            GoogleSignupRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
+        is LogoutRemoteDataSourceError.RemoteDataSource ->
+            LogoutRepositoryError.RemoteOperationFailed(error.error.toRemoteError())
     }
-
-private fun mapSignupError(error: RegisterError): SignupRepositoryError = when (error) {
-    is RegisterError.InvalidEmail -> SignupRepositoryError.InvalidEmail(error.reason)
-
-    is RegisterError.InvalidPassword -> SignupRepositoryError.InvalidPassword(error.reason)
-
-    is RegisterError.InvalidName -> SignupRepositoryError.InvalidName(error.reason)
-
-    is RegisterError.RemoteDataSource ->
-        SignupRepositoryError.RemoteOperationFailed(error.error.toUnauthRemoteError())
-}
-
-private fun mapRefreshError(error: RefreshError): RefreshRepositoryError = when (error) {
-    RefreshError.TokenExpired -> RefreshRepositoryError.TokenExpired
-
-    RefreshError.SessionRevoked -> RefreshRepositoryError.SessionRevoked
-
-    is RefreshError.RemoteDataSource ->
-        RefreshRepositoryError.RemoteOperationFailed(error.error.toRemoteError())
-}
-
-private fun mapLogoutError(error: LogoutError): LogoutRepositoryError = when (error) {
-    is LogoutError.RemoteDataSource ->
-        LogoutRepositoryError.RemoteOperationFailed(error.error.toRemoteError())
-}

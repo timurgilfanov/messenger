@@ -35,9 +35,9 @@ class LogoutUseCaseImplTest {
                 ResultWithError.Failure(LogoutRepositoryError.LocalOperationFailed(localError))
         }
         val result = createUseCase(repository)()
-        assertIs<ResultWithError.Failure<Unit, LogoutError>>(result)
-        assertIs<LogoutError.LocalOperationFailed>(result.error)
-        val resultLocalError = result.error as LogoutError.LocalOperationFailed
+        assertIs<ResultWithError.Failure<Unit, LogoutUseCaseError>>(result)
+        assertIs<LogoutUseCaseError.LocalOperationFailed>(result.error)
+        val resultLocalError = result.error as LogoutUseCaseError.LocalOperationFailed
         assertEquals(localError, resultLocalError.error)
     }
 
@@ -49,9 +49,9 @@ class LogoutUseCaseImplTest {
                 ResultWithError.Failure(LogoutRepositoryError.RemoteOperationFailed(remoteError))
         }
         val result = createUseCase(repository)()
-        assertIs<ResultWithError.Failure<Unit, LogoutError>>(result)
-        assertIs<LogoutError.RemoteOperationFailed>(result.error)
-        val resultRemoteError = result.error as LogoutError.RemoteOperationFailed
+        assertIs<ResultWithError.Failure<Unit, LogoutUseCaseError>>(result)
+        assertIs<LogoutUseCaseError.RemoteOperationFailed>(result.error)
+        val resultRemoteError = result.error as LogoutUseCaseError.RemoteOperationFailed
         assertEquals(remoteError, resultRemoteError.error)
     }
 }

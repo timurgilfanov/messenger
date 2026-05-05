@@ -89,9 +89,9 @@ class RemoteAuthDataSourceImplTest {
             )
 
             // Then
-            assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-            assertIs<RegisterError.InvalidPassword>(result.error)
-            val passwordError = result.error as RegisterError.InvalidPassword
+            assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+            assertIs<RegisterRemoteDataSourceError.InvalidPassword>(result.error)
+            val passwordError = result.error as RegisterRemoteDataSourceError.InvalidPassword
             assertIs<PasswordValidationError.PasswordTooShort>(passwordError.reason)
             assertEquals(8, passwordError.reason.minLength)
         }
@@ -121,9 +121,9 @@ class RemoteAuthDataSourceImplTest {
             )
 
             // Then
-            assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-            assertIs<RegisterError.InvalidPassword>(result.error)
-            val passwordError = result.error as RegisterError.InvalidPassword
+            assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+            assertIs<RegisterRemoteDataSourceError.InvalidPassword>(result.error)
+            val passwordError = result.error as RegisterRemoteDataSourceError.InvalidPassword
             assertIs<PasswordValidationError.PasswordTooShort>(passwordError.reason)
             assertEquals(null, passwordError.reason.minLength)
         }
@@ -153,9 +153,9 @@ class RemoteAuthDataSourceImplTest {
         )
 
         // Then
-        assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-        assertIs<RegisterError.InvalidPassword>(result.error)
-        val passwordError = result.error as RegisterError.InvalidPassword
+        assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+        assertIs<RegisterRemoteDataSourceError.InvalidPassword>(result.error)
+        val passwordError = result.error as RegisterRemoteDataSourceError.InvalidPassword
         assertIs<PasswordValidationError.PasswordTooShort>(passwordError.reason)
         assertEquals(null, passwordError.reason.minLength)
     }
@@ -186,9 +186,9 @@ class RemoteAuthDataSourceImplTest {
             )
 
             // Then
-            assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-            assertIs<RegisterError.InvalidPassword>(result.error)
-            val passwordError = result.error as RegisterError.InvalidPassword
+            assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+            assertIs<RegisterRemoteDataSourceError.InvalidPassword>(result.error)
+            val passwordError = result.error as RegisterRemoteDataSourceError.InvalidPassword
             assertIs<PasswordValidationError.PasswordTooLong>(passwordError.reason)
             assertEquals(128, passwordError.reason.maxLength)
         }
@@ -217,9 +217,9 @@ class RemoteAuthDataSourceImplTest {
         )
 
         // Then
-        assertIs<ResultWithError.Failure<*, RegisterError>>(result)
-        assertIs<RegisterError.InvalidPassword>(result.error)
-        val passwordError = result.error as RegisterError.InvalidPassword
+        assertIs<ResultWithError.Failure<*, RegisterRemoteDataSourceError>>(result)
+        assertIs<RegisterRemoteDataSourceError.InvalidPassword>(result.error)
+        val passwordError = result.error as RegisterRemoteDataSourceError.InvalidPassword
         assertIs<PasswordValidationError.PasswordTooLong>(passwordError.reason)
         assertEquals(null, passwordError.reason.maxLength)
     }

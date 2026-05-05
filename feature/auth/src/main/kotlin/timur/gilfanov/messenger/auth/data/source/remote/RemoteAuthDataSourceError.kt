@@ -8,55 +8,59 @@ import timur.gilfanov.messenger.domain.usecase.auth.repository.SignupEmailError
 /**
  * Errors for [RemoteAuthDataSource.loginWithCredentials].
  */
-sealed interface LoginWithCredentialsError {
-    data object InvalidCredentials : LoginWithCredentialsError
-    data object EmailNotVerified : LoginWithCredentialsError
-    data object AccountSuspended : LoginWithCredentialsError
-    data class RemoteDataSource(val error: RemoteDataSourceError) : LoginWithCredentialsError
+sealed interface LoginWithCredentialsRemoteDataSourceError {
+    data object InvalidCredentials : LoginWithCredentialsRemoteDataSourceError
+    data object EmailNotVerified : LoginWithCredentialsRemoteDataSourceError
+    data object AccountSuspended : LoginWithCredentialsRemoteDataSourceError
+    data class RemoteDataSource(val error: RemoteDataSourceError) :
+        LoginWithCredentialsRemoteDataSourceError
 }
 
 /**
  * Errors for [RemoteAuthDataSource.loginWithGoogle].
  */
-sealed interface LoginWithGoogleError {
-    data object InvalidToken : LoginWithGoogleError
-    data object AccountNotFound : LoginWithGoogleError
-    data object AccountSuspended : LoginWithGoogleError
-    data class RemoteDataSource(val error: RemoteDataSourceError) : LoginWithGoogleError
+sealed interface LoginWithGoogleRemoteDataSourceError {
+    data object InvalidToken : LoginWithGoogleRemoteDataSourceError
+    data object AccountNotFound : LoginWithGoogleRemoteDataSourceError
+    data object AccountSuspended : LoginWithGoogleRemoteDataSourceError
+    data class RemoteDataSource(val error: RemoteDataSourceError) :
+        LoginWithGoogleRemoteDataSourceError
 }
 
 /**
  * Errors for [RemoteAuthDataSource.register].
  */
-sealed interface RegisterError {
-    data class InvalidEmail(val reason: SignupEmailError) : RegisterError
-    data class InvalidPassword(val reason: PasswordValidationError) : RegisterError
-    data class InvalidName(val reason: ProfileNameValidationError) : RegisterError
-    data class RemoteDataSource(val error: RemoteDataSourceError) : RegisterError
+sealed interface RegisterRemoteDataSourceError {
+    data class InvalidEmail(val reason: SignupEmailError) : RegisterRemoteDataSourceError
+    data class InvalidPassword(val reason: PasswordValidationError) : RegisterRemoteDataSourceError
+    data class InvalidName(val reason: ProfileNameValidationError) : RegisterRemoteDataSourceError
+    data class RemoteDataSource(val error: RemoteDataSourceError) : RegisterRemoteDataSourceError
 }
 
 /**
  * Errors for [RemoteAuthDataSource.signupWithGoogle].
  */
-sealed interface SignupWithGoogleError {
-    data object InvalidToken : SignupWithGoogleError
-    data object AccountAlreadyExists : SignupWithGoogleError
-    data class InvalidName(val reason: ProfileNameValidationError) : SignupWithGoogleError
-    data class RemoteDataSource(val error: RemoteDataSourceError) : SignupWithGoogleError
+sealed interface SignupWithGoogleRemoteDataSourceError {
+    data object InvalidToken : SignupWithGoogleRemoteDataSourceError
+    data object AccountAlreadyExists : SignupWithGoogleRemoteDataSourceError
+    data class InvalidName(val reason: ProfileNameValidationError) :
+        SignupWithGoogleRemoteDataSourceError
+    data class RemoteDataSource(val error: RemoteDataSourceError) :
+        SignupWithGoogleRemoteDataSourceError
 }
 
 /**
  * Errors for [RemoteAuthDataSource.refresh].
  */
-sealed interface RefreshError {
-    data object TokenExpired : RefreshError
-    data object SessionRevoked : RefreshError
-    data class RemoteDataSource(val error: RemoteDataSourceError) : RefreshError
+sealed interface RefreshRemoteDataSourceError {
+    data object TokenExpired : RefreshRemoteDataSourceError
+    data object SessionRevoked : RefreshRemoteDataSourceError
+    data class RemoteDataSource(val error: RemoteDataSourceError) : RefreshRemoteDataSourceError
 }
 
 /**
  * Errors for [RemoteAuthDataSource.logout].
  */
-sealed interface LogoutError {
-    data class RemoteDataSource(val error: RemoteDataSourceError) : LogoutError
+sealed interface LogoutRemoteDataSourceError {
+    data class RemoteDataSource(val error: RemoteDataSourceError) : LogoutRemoteDataSourceError
 }

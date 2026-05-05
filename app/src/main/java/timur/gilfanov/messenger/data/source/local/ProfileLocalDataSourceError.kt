@@ -9,18 +9,18 @@ package timur.gilfanov.messenger.data.source.local
  * ## Common Errors
  * - [LocalDataSource] - Wraps common local data source errors
  */
-sealed interface LocalProfileDataSourceError {
+sealed interface ProfileLocalDataSourceError {
     /**
      * Profile data not found in local storage.
      *
      * Indicates the requested user does not exist in the local cache.
      */
-    data object UserDataNotFound : LocalProfileDataSourceError
+    data object UserDataNotFound : ProfileLocalDataSourceError
 
     /**
      * Common local data source errors.
      *
      * @property error The underlying local data source error
      */
-    data class LocalDataSource(val error: LocalDataSourceErrorV2) : LocalProfileDataSourceError
+    data class LocalDataSource(val error: LocalDataSourceErrorV2) : ProfileLocalDataSourceError
 }

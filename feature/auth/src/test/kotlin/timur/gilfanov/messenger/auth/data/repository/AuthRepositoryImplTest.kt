@@ -10,17 +10,17 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import timur.gilfanov.messenger.auth.data.source.local.AuthLocalDataSourceError
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSource
-import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceError
 import timur.gilfanov.messenger.auth.data.source.local.LocalAuthDataSourceFake
-import timur.gilfanov.messenger.auth.data.source.remote.LoginWithCredentialsError
-import timur.gilfanov.messenger.auth.data.source.remote.LoginWithGoogleError
-import timur.gilfanov.messenger.auth.data.source.remote.LogoutError
-import timur.gilfanov.messenger.auth.data.source.remote.RefreshError
-import timur.gilfanov.messenger.auth.data.source.remote.RegisterError
+import timur.gilfanov.messenger.auth.data.source.remote.LoginWithCredentialsRemoteDataSourceError
+import timur.gilfanov.messenger.auth.data.source.remote.LoginWithGoogleRemoteDataSourceError
+import timur.gilfanov.messenger.auth.data.source.remote.LogoutRemoteDataSourceError
+import timur.gilfanov.messenger.auth.data.source.remote.RefreshRemoteDataSourceError
+import timur.gilfanov.messenger.auth.data.source.remote.RegisterRemoteDataSourceError
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSource
 import timur.gilfanov.messenger.auth.data.source.remote.RemoteAuthDataSourceFake
-import timur.gilfanov.messenger.auth.data.source.remote.SignupWithGoogleError
+import timur.gilfanov.messenger.auth.data.source.remote.SignupWithGoogleRemoteDataSourceError
 import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthProvider
@@ -78,7 +78,7 @@ class AuthRepositoryImplTest {
     fun `loginWithCredentials InvalidCredentials returns error and storage not called`() = runTest {
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueLoginWithCredentials(
-            ResultWithError.Failure(LoginWithCredentialsError.InvalidCredentials),
+            ResultWithError.Failure(LoginWithCredentialsRemoteDataSourceError.InvalidCredentials),
         )
         val storage = LocalAuthDataSourceFake()
         val repo = createRepo(remoteDataSource = remote, sessionStorage = storage, testScope = this)
@@ -94,7 +94,7 @@ class AuthRepositoryImplTest {
     fun `loginWithCredentials storage failure returns LocalOperationFailed`() = runTest {
         val storage = LocalAuthDataSourceFake()
         storage.enqueueSaveSession(
-            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+            ResultWithError.Failure(AuthLocalDataSourceError.AccessDenied),
         )
         val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
@@ -109,7 +109,7 @@ class AuthRepositoryImplTest {
     fun `loginWithCredentials storage full maps to LocalStorageError StorageFull`() = runTest {
         val storage = LocalAuthDataSourceFake()
         storage.enqueueSaveSession(
-            ResultWithError.Failure(LocalAuthDataSourceError.StorageFull),
+            ResultWithError.Failure(AuthLocalDataSourceError.StorageFull),
         )
         val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
@@ -141,7 +141,7 @@ class AuthRepositoryImplTest {
     fun `loginWithGoogle storage failure returns LocalOperationFailed`() = runTest {
         val storage = LocalAuthDataSourceFake()
         storage.enqueueSaveSession(
-            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+            ResultWithError.Failure(AuthLocalDataSourceError.AccessDenied),
         )
         val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
@@ -170,7 +170,9 @@ class AuthRepositoryImplTest {
     fun `signup InvalidEmail returns error`() = runTest {
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueRegister(
-            ResultWithError.Failure(RegisterError.InvalidEmail(SignupEmailError.EmailTaken)),
+            ResultWithError.Failure(
+                RegisterRemoteDataSourceError.InvalidEmail(SignupEmailError.EmailTaken),
+            ),
         )
         val repo = createRepo(remoteDataSource = remote, testScope = this)
         advanceUntilIdle()
@@ -206,8 +208,8 @@ class AuthRepositoryImplTest {
         advanceUntilIdle()
 
         remote.enqueueLogout(
-            ResultWithError.Failure<Unit, LogoutError>(
-                LogoutError.RemoteDataSource(
+            ResultWithError.Failure<Unit, LogoutRemoteDataSourceError>(
+                LogoutRemoteDataSourceError.RemoteDataSource(
                     RemoteDataSourceError.ServerError,
                 ),
             ),
@@ -246,7 +248,7 @@ class AuthRepositoryImplTest {
         advanceUntilIdle()
 
         storage.enqueueClearSession(
-            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+            ResultWithError.Failure(AuthLocalDataSourceError.AccessDenied),
         )
         val result = repo.logout()
 
@@ -412,7 +414,7 @@ class AuthRepositoryImplTest {
         advanceUntilIdle()
 
         storage.enqueueSaveTokens(
-            ResultWithError.Failure(LocalAuthDataSourceError.AccessDenied),
+            ResultWithError.Failure(AuthLocalDataSourceError.AccessDenied),
         )
 
         val result = repo.refreshToken()
@@ -431,7 +433,9 @@ class AuthRepositoryImplTest {
 
         val remote = RemoteAuthDataSourceFake()
         remote.enqueueRefresh(
-            ResultWithError.Failure<AuthTokens, RefreshError>(RefreshError.TokenExpired),
+            ResultWithError.Failure<AuthTokens, RefreshRemoteDataSourceError>(
+                RefreshRemoteDataSourceError.TokenExpired,
+            ),
         )
         val repo2 =
             createRepo(remoteDataSource = remote, sessionStorage = storage, testScope = this)
@@ -470,21 +474,21 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
     val clearSessionStarted = CompletableDeferred<Unit>()
     val finishClearSession = CompletableDeferred<Unit>()
 
-    override suspend fun getAccessToken(): ResultWithError<String?, LocalAuthDataSourceError> =
+    override suspend fun getAccessToken(): ResultWithError<String?, AuthLocalDataSourceError> =
         ResultWithError.Success(accessToken)
 
-    override suspend fun getRefreshToken(): ResultWithError<String?, LocalAuthDataSourceError> =
+    override suspend fun getRefreshToken(): ResultWithError<String?, AuthLocalDataSourceError> =
         ResultWithError.Success(refreshToken)
 
     override suspend fun getAuthProvider(): ResultWithError<
         AuthProvider?,
-        LocalAuthDataSourceError,
+        AuthLocalDataSourceError,
         > =
         ResultWithError.Success(authProvider)
 
     override suspend fun saveTokens(
         tokens: AuthTokens,
-    ): ResultWithError<Unit, LocalAuthDataSourceError> {
+    ): ResultWithError<Unit, AuthLocalDataSourceError> {
         accessToken = tokens.accessToken
         refreshToken = tokens.refreshToken
         return ResultWithError.Success(Unit)
@@ -492,14 +496,14 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
 
     override suspend fun saveSession(
         session: AuthSession,
-    ): ResultWithError<Unit, LocalAuthDataSourceError> {
+    ): ResultWithError<Unit, AuthLocalDataSourceError> {
         accessToken = session.tokens.accessToken
         refreshToken = session.tokens.refreshToken
         authProvider = session.provider
         return ResultWithError.Success(Unit)
     }
 
-    override suspend fun clearSession(): ResultWithError<Unit, LocalAuthDataSourceError> {
+    override suspend fun clearSession(): ResultWithError<Unit, AuthLocalDataSourceError> {
         accessToken = null
         refreshToken = null
         authProvider = null
@@ -515,30 +519,36 @@ private class RefreshLogoutRaceRemoteAuthDataSource(
 ) : RemoteAuthDataSource {
     override suspend fun loginWithCredentials(
         credentials: Credentials,
-    ): ResultWithError<AuthTokens, LoginWithCredentialsError> =
+    ): ResultWithError<AuthTokens, LoginWithCredentialsRemoteDataSourceError> =
         ResultWithError.Success(refreshedTokens)
 
     override suspend fun loginWithGoogle(
         idToken: GoogleIdToken,
-    ): ResultWithError<AuthTokens, LoginWithGoogleError> = ResultWithError.Success(refreshedTokens)
+    ): ResultWithError<AuthTokens, LoginWithGoogleRemoteDataSourceError> =
+        ResultWithError.Success(refreshedTokens)
 
     override suspend fun signupWithGoogle(
         idToken: GoogleIdToken,
         name: String,
-    ): ResultWithError<AuthTokens, SignupWithGoogleError> = ResultWithError.Success(refreshedTokens)
+    ): ResultWithError<AuthTokens, SignupWithGoogleRemoteDataSourceError> =
+        ResultWithError.Success(refreshedTokens)
 
     override suspend fun register(
         credentials: Credentials,
         name: String,
-    ): ResultWithError<AuthTokens, RegisterError> = ResultWithError.Success(refreshedTokens)
+    ): ResultWithError<AuthTokens, RegisterRemoteDataSourceError> =
+        ResultWithError.Success(refreshedTokens)
 
-    override suspend fun refresh(refreshToken: String): ResultWithError<AuthTokens, RefreshError> {
+    override suspend fun refresh(
+        refreshToken: String,
+    ): ResultWithError<AuthTokens, RefreshRemoteDataSourceError> {
         refreshCanComplete.await()
         return ResultWithError.Success(refreshedTokens)
     }
 
-    override suspend fun logout(accessToken: String): ResultWithError<Unit, LogoutError> =
-        ResultWithError.Success(Unit)
+    override suspend fun logout(
+        accessToken: String,
+    ): ResultWithError<Unit, LogoutRemoteDataSourceError> = ResultWithError.Success(Unit)
 }
 
 private class StaleRefreshRemote(
@@ -548,29 +558,36 @@ private class StaleRefreshRemote(
 ) : RemoteAuthDataSource {
     override suspend fun loginWithCredentials(
         credentials: Credentials,
-    ): ResultWithError<AuthTokens, LoginWithCredentialsError> = ResultWithError.Success(loginTokens)
+    ): ResultWithError<AuthTokens, LoginWithCredentialsRemoteDataSourceError> =
+        ResultWithError.Success(loginTokens)
 
     override suspend fun loginWithGoogle(
         idToken: GoogleIdToken,
-    ): ResultWithError<AuthTokens, LoginWithGoogleError> = ResultWithError.Success(loginTokens)
+    ): ResultWithError<AuthTokens, LoginWithGoogleRemoteDataSourceError> =
+        ResultWithError.Success(loginTokens)
 
     override suspend fun signupWithGoogle(
         idToken: GoogleIdToken,
         name: String,
-    ): ResultWithError<AuthTokens, SignupWithGoogleError> = ResultWithError.Success(loginTokens)
+    ): ResultWithError<AuthTokens, SignupWithGoogleRemoteDataSourceError> =
+        ResultWithError.Success(loginTokens)
 
     override suspend fun register(
         credentials: Credentials,
         name: String,
-    ): ResultWithError<AuthTokens, RegisterError> = ResultWithError.Success(loginTokens)
+    ): ResultWithError<AuthTokens, RegisterRemoteDataSourceError> =
+        ResultWithError.Success(loginTokens)
 
-    override suspend fun refresh(refreshToken: String): ResultWithError<AuthTokens, RefreshError> {
+    override suspend fun refresh(
+        refreshToken: String,
+    ): ResultWithError<AuthTokens, RefreshRemoteDataSourceError> {
         refreshGate.await()
         return ResultWithError.Success(refreshedTokens)
     }
 
-    override suspend fun logout(accessToken: String): ResultWithError<Unit, LogoutError> =
-        ResultWithError.Success(Unit)
+    override suspend fun logout(
+        accessToken: String,
+    ): ResultWithError<Unit, LogoutRemoteDataSourceError> = ResultWithError.Success(Unit)
 }
 
 private class LogoutRaceRemote(
@@ -579,26 +596,34 @@ private class LogoutRaceRemote(
 ) : RemoteAuthDataSource {
     override suspend fun loginWithCredentials(
         credentials: Credentials,
-    ): ResultWithError<AuthTokens, LoginWithCredentialsError> = ResultWithError.Success(loginTokens)
+    ): ResultWithError<AuthTokens, LoginWithCredentialsRemoteDataSourceError> =
+        ResultWithError.Success(loginTokens)
 
     override suspend fun loginWithGoogle(
         idToken: GoogleIdToken,
-    ): ResultWithError<AuthTokens, LoginWithGoogleError> = ResultWithError.Success(loginTokens)
+    ): ResultWithError<AuthTokens, LoginWithGoogleRemoteDataSourceError> =
+        ResultWithError.Success(loginTokens)
 
     override suspend fun signupWithGoogle(
         idToken: GoogleIdToken,
         name: String,
-    ): ResultWithError<AuthTokens, SignupWithGoogleError> = ResultWithError.Success(loginTokens)
+    ): ResultWithError<AuthTokens, SignupWithGoogleRemoteDataSourceError> =
+        ResultWithError.Success(loginTokens)
 
     override suspend fun register(
         credentials: Credentials,
         name: String,
-    ): ResultWithError<AuthTokens, RegisterError> = ResultWithError.Success(loginTokens)
-
-    override suspend fun refresh(refreshToken: String): ResultWithError<AuthTokens, RefreshError> =
+    ): ResultWithError<AuthTokens, RegisterRemoteDataSourceError> =
         ResultWithError.Success(loginTokens)
 
-    override suspend fun logout(accessToken: String): ResultWithError<Unit, LogoutError> {
+    override suspend fun refresh(
+        refreshToken: String,
+    ): ResultWithError<AuthTokens, RefreshRemoteDataSourceError> =
+        ResultWithError.Success(loginTokens)
+
+    override suspend fun logout(
+        accessToken: String,
+    ): ResultWithError<Unit, LogoutRemoteDataSourceError> {
         logoutGate.await()
         return ResultWithError.Success(Unit)
     }

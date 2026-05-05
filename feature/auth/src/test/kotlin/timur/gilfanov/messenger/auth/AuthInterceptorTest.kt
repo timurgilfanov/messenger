@@ -18,8 +18,8 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshError
 import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCase
+import timur.gilfanov.messenger.auth.domain.usecase.TokenRefreshUseCaseError
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
@@ -156,7 +156,7 @@ class AuthInterceptorTest {
                 mockEngine = mockEngine,
                 authTokenStorage = authTokenStorage,
                 tokenRefreshUseCase = {
-                    ResultWithError.Failure(TokenRefreshError.SessionExpired)
+                    ResultWithError.Failure(TokenRefreshUseCaseError.SessionExpired)
                 },
                 scope = this,
             )
@@ -182,7 +182,7 @@ class AuthInterceptorTest {
             authTokenStorage = authTokenStorage,
             tokenRefreshUseCase = {
                 ResultWithError.Failure(
-                    TokenRefreshError.LocalOperationFailed(LocalStorageError.StorageFull),
+                    TokenRefreshUseCaseError.LocalOperationFailed(LocalStorageError.StorageFull),
                 )
             },
             scope = this,
@@ -209,7 +209,7 @@ class AuthInterceptorTest {
             authTokenStorage = authTokenStorage,
             tokenRefreshUseCase = {
                 ResultWithError.Failure(
-                    TokenRefreshError.RemoteOperationFailed(RemoteError.Failed.ServiceDown),
+                    TokenRefreshUseCaseError.RemoteOperationFailed(RemoteError.Failed.ServiceDown),
                 )
             },
             scope = this,
@@ -292,7 +292,7 @@ class AuthInterceptorTest {
             tokenRefreshUseCase = {
                 refreshInvocationCount++
                 releaseRefresh.await()
-                ResultWithError.Failure(TokenRefreshError.SessionExpired)
+                ResultWithError.Failure(TokenRefreshUseCaseError.SessionExpired)
             },
             scope = this,
         )

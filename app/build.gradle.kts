@@ -298,10 +298,6 @@ dependencies {
 
     // Networking
     implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.cio)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.client.logging)
 
     // Kotlin Extensions
     implementation(libs.kotlinx.datetime)
@@ -334,7 +330,9 @@ dependencies {
     // Test Utilities
     testImplementation(libs.hilt.android.testing)
     testImplementation(libs.androidx.room.testing)
+    testImplementation(libs.ktor.client.content.negotiation)
     testImplementation(libs.ktor.client.mock)
+    testImplementation(libs.ktor.serialization.kotlinx.json)
     testImplementation(libs.androidx.paging.testing)
     testImplementation(libs.androidx.work.testing)
 

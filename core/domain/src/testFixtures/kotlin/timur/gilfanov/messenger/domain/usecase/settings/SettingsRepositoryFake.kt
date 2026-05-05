@@ -1,8 +1,8 @@
 package timur.gilfanov.messenger.domain.usecase.settings
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.settings.SettingKey
@@ -18,6 +18,7 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.SyncSettingRe
 
 class SettingsRepositoryFake(
     initialSettings: Settings,
+    private val defaultSettings: Settings = initialSettings,
     private var changeResult: ResultWithError<Unit, ChangeLanguageRepositoryError> =
         ResultWithError.Success(Unit),
     private var deleteUserDataResult: ResultWithError<Unit, DeleteUserDataRepositoryError> =
@@ -29,10 +30,24 @@ class SettingsRepositoryFake(
     var deleteUserDataCallCount: Int = 0
         private set
 
-    private val settingsFlow =
-        MutableStateFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
-            ResultWithError.Success(initialSettings),
-        )
+    /**
+     * A new collector receives only the replay cache, which contains the latest value.
+     * After deleteUserData emits Failure(SettingsUnspecified) and then Success(defaultSettings),
+     * later collectors receive only the final Success because replay is 1.
+     *
+     * extraBufferCapacity lets active collectors that are briefly not keeping up observe both
+     * values in that sequence. It does not increase how many values are replayed to new collectors;
+     * replay = 2 would be required for that, which would be the wrong contract here.
+     */
+    private val _settingsFlow =
+        MutableSharedFlow<ResultWithError<Settings, GetSettingsRepositoryError>>(
+            replay = 1,
+            extraBufferCapacity = 1,
+        ).also { flow ->
+            flow.tryEmit(ResultWithError.Success(initialSettings))
+        }
+
+    private val settingsFlow = _settingsFlow.asSharedFlow()
 
     override fun observeSettings(
         userKey: UserScopeKey,
@@ -47,10 +62,11 @@ class SettingsRepositoryFake(
         language: UiLanguage,
     ): ResultWithError<Unit, ChangeLanguageRepositoryError> {
         if (changeResult is ResultWithError.Success) {
-            settingsFlow.update { current ->
-                (current as? ResultWithError.Success)?.let {
-                    ResultWithError.Success(it.data.copy(uiLanguage = language))
-                } ?: current
+            val current = _settingsFlow.replayCache.lastOrNull()
+            if (current is ResultWithError.Success) {
+                _settingsFlow.emit(
+                    ResultWithError.Success(current.data.copy(uiLanguage = language)),
+                )
             }
         }
         return changeResult
@@ -73,9 +89,10 @@ class SettingsRepositoryFake(
         lastDeleteUserDataKey = userKey
         deleteUserDataCallCount++
         if (deleteUserDataResult is ResultWithError.Success) {
-            settingsFlow.update {
-                ResultWithError.Failure(GetSettingsRepositoryError.SettingsResetToDefaults)
-            }
+            _settingsFlow.emit(
+                ResultWithError.Failure(GetSettingsRepositoryError.SettingsUnspecified),
+            )
+            _settingsFlow.emit(ResultWithError.Success(defaultSettings))
         }
         return deleteUserDataResult
     }

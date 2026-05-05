@@ -10,7 +10,7 @@ import timur.gilfanov.messenger.domain.usecase.settings.repository.GetSettingsRe
  * - [Unauthorized] - Not authenticated
  *
  * ## Logical Errors
- * - [SettingsResetToDefaults] - Settings were not found and reset to defaults
+ * - [SettingsUnspecified] - Settings are unspecified
  *
  * ## Data Source Errors
  * - [LocalOperationFailed] - Local storage operation failed
@@ -25,12 +25,9 @@ sealed interface ObserveUiLanguageError {
     data object Unauthorized : ObserveUiLanguageError
 
     /**
-     * Settings were not found and were reset to default values.
-     *
-     * Occurs when settings cannot be loaded from any available source
-     * and the system automatically created default settings.
+     * Settings are unspecified.
      */
-    data object SettingsResetToDefaults : ObserveUiLanguageError
+    data object SettingsUnspecified : ObserveUiLanguageError
 
     /**
      * Local storage operation failed.
@@ -45,8 +42,8 @@ sealed interface ObserveUiLanguageError {
  */
 internal fun GetSettingsRepositoryError.toObserveUiLanguageError(): ObserveUiLanguageError =
     when (this) {
-        GetSettingsRepositoryError.SettingsResetToDefaults ->
-            ObserveUiLanguageError.SettingsResetToDefaults
+        GetSettingsRepositoryError.SettingsUnspecified ->
+            ObserveUiLanguageError.SettingsUnspecified
         is GetSettingsRepositoryError.LocalOperationFailed ->
             ObserveUiLanguageError.LocalOperationFailed(error)
     }

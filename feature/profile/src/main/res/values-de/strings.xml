@@ -1,0 +1,5 @@
+<resources>
+    <string name="settings_get_profile_failed">Profil kann nicht abgerufen werden</string>
+    <string name="settings_profile_ready_placeholder">Profil</string>
+    <string name="settings_profile_loading_placeholder">Profil wird geladen...</string>
+</resources>

@@ -1,6 +1,8 @@
 package timur.gilfanov.messenger.data.source.local
 
 import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
+import timur.gilfanov.messenger.profile.data.source.local.LocalDataSourceReadError
+import timur.gilfanov.messenger.profile.data.source.local.LocalDataSourceWriteError
 
 /**
  * Errors that can occur during settings update operations.

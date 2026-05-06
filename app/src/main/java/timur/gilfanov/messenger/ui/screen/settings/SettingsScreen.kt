@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.profile.ui.screen.ProfileSection
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
@@ -39,28 +39,10 @@ fun SettingsScreen(
     onChangeLanguageClick: () -> Unit,
     onShowSnackbar: (String) -> Unit,
     modifier: Modifier = Modifier,
-    profileViewModel: ProfileViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val currentOnShowSnackbar by rememberUpdatedState(onShowSnackbar)
     val lifecycleOwner = LocalLifecycleOwner.current
-
-    val profileUiState by profileViewModel.state.collectAsStateWithLifecycle()
-
-    val getProfileErrorMessage = stringResource(R.string.settings_get_profile_failed)
-
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
-            profileViewModel.effects.collect { effects ->
-                when (effects) {
-                    is ProfileSideEffects.ObserveProfileFailed -> currentOnShowSnackbar(
-                        getProfileErrorMessage,
-                    )
-                }
-            }
-        }
-    }
-
     val settingsUiState by settingsViewModel.state.collectAsStateWithLifecycle()
 
     val getSettingsErrorMessage = stringResource(R.string.settings_get_settings_failed)
@@ -81,9 +63,13 @@ fun SettingsScreen(
         }
     }
     SettingsScreenContent(
-        profileUiState = profileUiState,
+        profileContent = {
+            ProfileSection(
+                onProfileEditClick = onProfileEditClick,
+                onShowSnackbar = currentOnShowSnackbar,
+            )
+        },
         settingsUiState = settingsUiState,
-        onProfileEditClick = onProfileEditClick,
         onChangeLanguageClick = onChangeLanguageClick,
         onLogoutClick = { settingsViewModel.logout() },
         modifier = modifier,
@@ -91,11 +77,10 @@ fun SettingsScreen(
 }
 
 @Composable
-@Suppress("LongParameterList") // it's ok for screen to have large number of effects handlers
+@Suppress("LongParameterList")
 internal fun SettingsScreenContent(
-    profileUiState: ProfileUiState,
+    profileContent: @Composable () -> Unit,
     settingsUiState: SettingsUiState,
-    onProfileEditClick: () -> Unit,
     onChangeLanguageClick: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -105,45 +90,11 @@ internal fun SettingsScreenContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        ProfileContent(
-            uiState = profileUiState,
-            onProfileEditClick = onProfileEditClick,
-        )
+        profileContent()
         SettingsContent(
             uiState = settingsUiState,
             onChangeLanguageClick = onChangeLanguageClick,
             onLogoutClick = onLogoutClick,
-        )
-    }
-}
-
-@Composable
-fun ProfileContent(
-    uiState: ProfileUiState,
-    @Suppress("unused") onProfileEditClick: () -> Unit, // will be used in future
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .height(200.dp)
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-    ) {
-        val text = when (uiState) {
-            is ProfileUiState.Ready -> R.string.settings_profile_ready_placeholder
-            ProfileUiState.Loading -> R.string.settings_profile_loading_placeholder
-        }
-        val testTag = when (uiState) {
-            is ProfileUiState.Ready -> "profile_ready"
-            ProfileUiState.Loading -> "profile_loading"
-        }
-        Text(
-            text = stringResource(text),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .testTag(testTag),
         )
     }
 }
@@ -264,44 +215,15 @@ private fun SettingsScreenContentGermanPreview() {
     Content(darkTheme = false)
 }
 
-@Preview
-@Composable
-private fun ProfileContentPreview() {
-    val state = ProfileUiState.Ready(
-        ProfileUi(
-            name = "Timur",
-            picture = null,
-        ),
-    )
-    MessengerTheme(darkTheme = false) {
-        ProfileContent(
-            uiState = state,
-            onProfileEditClick = { },
-            modifier = Modifier.background(MaterialTheme.colorScheme.background),
-        )
-    }
-}
-
 @Composable
 private fun Content(
     darkTheme: Boolean,
-    profileUiState: ProfileUiState = ProfileUiState.Ready(
-        ProfileUi(
-            name = "Timur",
-            picture = null,
-        ),
-    ),
-    settingsUiState: SettingsUiState = SettingsUiState.Ready(
-        SettingsUi(
-            language = UiLanguage.English,
-        ),
-    ),
+    settingsUiState: SettingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
 ) {
     MessengerTheme(darkTheme = darkTheme) {
         SettingsScreenContent(
-            profileUiState = profileUiState,
+            profileContent = { SettingsPreviewProfileContent() },
             settingsUiState = settingsUiState,
-            onProfileEditClick = {},
             onChangeLanguageClick = {},
             onLogoutClick = {},
         )
@@ -313,17 +235,7 @@ private fun Content(
 private fun SettingsScreenContentLoadingPreview() {
     Content(
         darkTheme = false,
-        profileUiState = ProfileUiState.Loading,
         settingsUiState = SettingsUiState.Loading,
-    )
-}
-
-@Preview
-@Composable
-private fun SettingsScreenContentProfileLoadingPreview() {
-    Content(
-        darkTheme = false,
-        profileUiState = ProfileUiState.Loading,
     )
 }
 
@@ -333,5 +245,14 @@ private fun SettingsScreenContentSettingsLoadingPreview() {
     Content(
         darkTheme = false,
         settingsUiState = SettingsUiState.Loading,
+    )
+}
+
+@Composable
+private fun SettingsPreviewProfileContent() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
     )
 }

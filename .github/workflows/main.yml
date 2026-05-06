@@ -94,7 +94,7 @@ jobs:
           check_name: "Architecture Test Results"
 
       - name: Build Mock Debug and AndroidTest APKs
-        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest :feature:auth:assembleDebug :feature:auth:assembleDebugAndroidTest
+        run: ./gradlew -Pcoverage assembleMockDebug assembleMockDebugAndroidTest :feature:auth:assembleDebug :feature:auth:assembleDebugAndroidTest :feature:profile:assembleDebug
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -125,6 +125,12 @@ jobs:
         with:
           name: feature-auth-kotlin-classfiles
           path: feature/auth/build/tmp/kotlin-classes/debug
+
+      - name: Upload feature-profile Kotlin class files
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-profile-kotlin-classfiles
+          path: feature/profile/build/tmp/kotlin-classes/debug
 
   build-production:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -227,6 +233,12 @@ jobs:
           name: production-release-classfiles
           path: app/build/tmp/kotlin-classes/productionRelease
 
+      - name: Upload feature-profile Production Release Kotlin class files
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature-profile-production-release-classfiles
+          path: feature/profile/build/tmp/kotlin-classes/release
+
   unit-component-tests:
     needs: build-mock
 
@@ -270,6 +282,7 @@ jobs:
             app/build/reports/tests/testMockDebugUnitTest
             core/domain/build/reports/tests/test
             feature/auth/reports/tests/testDebugUnitTest
+            feature/profile/build/reports/tests/testDebugUnitTest
           
       - name: Publish Unit Test Results (:app)
         uses: mikepenz/action-junit-report@v4
@@ -288,6 +301,12 @@ jobs:
         with:
           report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
           check_name: "Unit Test Results (:feature:auth)"
+
+      - name: Publish Unit Test Results (:feature:profile)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/profile/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Unit Test Results (:feature:profile)"
           
       - name: Run Component Tests
         id: run_component_tests
@@ -306,6 +325,7 @@ jobs:
             app/build/reports/tests/testMockDebugUnitTest
             core/domain/build/reports/tests/test
             feature/auth/build/reports/tests/testDebugUnitTest
+            feature/profile/build/reports/tests/testDebugUnitTest
 
       - name: Publish Component Test Results (:app)
         uses: mikepenz/action-junit-report@v4
@@ -324,6 +344,12 @@ jobs:
         with:
           report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
           check_name: "Component Test Results (:feature:auth)"
+
+      - name: Publish Component Test Results (:feature:profile)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/profile/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Component Test Results (:feature:profile)"
           
       - name: Fail if Unit or Component Tests Failed
         if: steps.run_unit_tests.outcome != 'success' || steps.run_component_tests.outcome != 'success'
@@ -337,6 +363,7 @@ jobs:
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildFlavor=mock -PbuildType=debug
           ./gradlew :core:domain:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildType=debug
+          ./gradlew :feature:profile:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Unit -PbuildType=debug
 
       - name: Upload Unit Coverage to Codecov (Unit)
         uses: codecov/codecov-action@v4
@@ -360,6 +387,7 @@ jobs:
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildFlavor=mock -PbuildType=debug
           ./gradlew :core:domain:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildType=debug
+          ./gradlew :feature:profile:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Component -PbuildType=debug
 
       - name: Upload Component Coverage to Codecov (Component)
         uses: codecov/codecov-action@v4
@@ -440,6 +468,7 @@ jobs:
           path: |
             app/build/reports/tests/testMockDebugUnitTest
             feature/auth/build/reports/tests/testDebugUnitTest
+            feature/profile/build/reports/tests/testDebugUnitTest
 
       - name: Publish Feature Test Results (:app)
         uses: mikepenz/action-junit-report@v4
@@ -453,6 +482,12 @@ jobs:
           report_paths: feature/auth/build/test-results/testDebugUnitTest/*.xml
           check_name: "Feature Test Results (:feature:auth)"
 
+      - name: Publish Feature Test Results (:feature:profile)
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: feature/profile/build/test-results/testDebugUnitTest/*.xml
+          check_name: "Feature Test Results (:feature:profile)"
+
       - name: Fail if Feature Tests Failed
         if: steps.run_feature_tests.outcome != 'success'
         run: |
@@ -464,6 +499,7 @@ jobs:
           ./gradlew :app:koverXmlReportMockDebug :app:koverXmlReportAllJvmModules :app:koverXmlReportAllAndroidLibraryModules
           ./gradlew :app:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildFlavor=mock -PbuildType=debug
           ./gradlew :feature:auth:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildType=debug
+          ./gradlew :feature:profile:generateCategorySpecificReports -PtestCategory=timur.gilfanov.messenger.annotations.Feature -PbuildType=debug
 
       - name: Upload Feature Coverage to Codecov (Feature)
         uses: codecov/codecov-action@v4
@@ -642,6 +678,12 @@ jobs:
           name: feature-auth-kotlin-classfiles
           path: feature/auth/build/tmp/kotlin-classes/debug
 
+      - name: Download feature-profile Kotlin class files for emulator coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: feature-profile-kotlin-classfiles
+          path: feature/profile/build/tmp/kotlin-classes/debug
+
       - name: Generate Emulator Coverage Reports
         run: |
           # Create directory for coverage reports
@@ -805,6 +847,12 @@ jobs:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/mockDebug
 
+      - name: Download feature-profile Kotlin class files for emulator coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: feature-profile-kotlin-classfiles
+          path: feature/profile/build/tmp/kotlin-classes/debug
+
       - name: Generate Emulator Coverage Reports
         run: |
           # Create directory for coverage reports
@@ -967,6 +1015,12 @@ jobs:
         with:
           name: kotlin-classfiles
           path: app/build/tmp/kotlin-classes/mockDebug
+
+      - name: Download feature-profile Kotlin class files
+        uses: actions/download-artifact@v4
+        with:
+          name: feature-profile-kotlin-classfiles
+          path: feature/profile/build/tmp/kotlin-classes/debug
 
       - name: Generate Device-Specific Coverage Reports
         run: |
@@ -1175,6 +1229,12 @@ jobs:
         with:
           name: production-release-classfiles
           path: app/build/tmp/kotlin-classes/productionRelease
+
+      - name: Download feature-profile Production Release Kotlin class files
+        uses: actions/download-artifact@v4
+        with:
+          name: feature-profile-production-release-classfiles
+          path: feature/profile/build/tmp/kotlin-classes/release
 
       - name: Generate Release Candidate Device-Specific Coverage Reports
         run: |

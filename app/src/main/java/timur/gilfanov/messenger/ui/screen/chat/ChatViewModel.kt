@@ -112,30 +112,44 @@ class ChatViewModel @AssistedInject constructor(
         if (value !is ChatUiState.Ready) return
         if (value.isSending) return
 
-        _state.update { (it as? ChatUiState.Ready)?.copy(isSending = true) ?: it }
-        viewModelScope.launch {
-            val request = SendRequest(messageId, now, currentInputText)
-            val message = textMessage(request.messageId, request.now, request.text)
-            sendMessageUseCase(currentChat!!, message).collect { result ->
-                when (result) {
-                    is ResultWithError.Success -> {
-                        if (result.data is TextMessage &&
-                            currentInputText == request.text
-                        ) {
-                            currentInputText = ""
-                            _effects.send(ChatSideEffect.ClearInputText)
+        val inputTextValidationError = validateInputText(currentInputText)
+        if (inputTextValidationError != null) {
+            _state.update {
+                (it as? ChatUiState.Ready)?.copy(
+                    inputTextValidationError = inputTextValidationError,
+                ) ?: it
+            }
+        } else {
+            _state.update {
+                (it as? ChatUiState.Ready)?.copy(
+                    inputTextValidationError = null,
+                    isSending = true,
+                ) ?: it
+            }
+            viewModelScope.launch {
+                val request = SendRequest(messageId, now, currentInputText)
+                val message = textMessage(request.messageId, request.now, request.text)
+                sendMessageUseCase(currentChat!!, message).collect { result ->
+                    when (result) {
+                        is ResultWithError.Success -> {
+                            if (result.data is TextMessage &&
+                                currentInputText == request.text
+                            ) {
+                                currentInputText = ""
+                                _effects.send(ChatSideEffect.ClearInputText)
+                            }
+                            _state.update {
+                                (it as? Ready)?.copy(isSending = false) ?: it
+                            }
                         }
-                        _state.update {
-                            (it as? Ready)?.copy(isSending = false) ?: it
-                        }
-                    }
 
-                    is ResultWithError.Failure -> {
-                        _state.update {
-                            (it as? Ready)?.copy(
-                                isSending = false,
-                                dialogError = SendMessageError(result.error),
-                            ) ?: it
+                        is ResultWithError.Failure -> {
+                            _state.update {
+                                (it as? Ready)?.copy(
+                                    isSending = false,
+                                    dialogError = SendMessageError(result.error),
+                                ) ?: it
+                            }
                         }
                     }
                 }

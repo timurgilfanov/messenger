@@ -217,7 +217,7 @@ tasks.register<JacocoReport>("jacocoExternalCoverageReport") {
         "**/*Preview*",
         "**/*PreviewKt*",
     )
-    val featureVariants = listOf(buildVariant, "debug").distinct()
+    val featureVariants = listOf(buildVariant, buildType, "debug").distinct()
     val featureFileTrees = featureProjects.flatMap { featureProject ->
         featureVariants.flatMap { variant ->
             listOf(

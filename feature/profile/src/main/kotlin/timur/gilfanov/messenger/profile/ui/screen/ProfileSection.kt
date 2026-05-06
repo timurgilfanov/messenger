@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.profile.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -21,6 +23,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import timur.gilfanov.messenger.profile.R
+import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
 fun ProfileSection(
@@ -80,6 +83,49 @@ fun ProfileContent(
             modifier = Modifier
                 .align(Alignment.Center)
                 .testTag(testTag),
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun ProfileContentReadyPreview() {
+    Content(
+        state = ProfileUiState.Ready(
+            ProfileUi(
+                name = "Timur",
+                picture = null,
+            ),
+        ),
+    )
+}
+
+@Preview
+@Composable
+private fun ProfileContentLoadingPreview() {
+    Content(state = ProfileUiState.Loading)
+}
+
+@Preview(locale = "de")
+@Composable
+private fun ProfileContentGermanPreview() {
+    Content(
+        state = ProfileUiState.Ready(
+            ProfileUi(
+                name = "Timur",
+                picture = null,
+            ),
+        ),
+    )
+}
+
+@Composable
+private fun Content(state: ProfileUiState) {
+    MessengerTheme(darkTheme = false) {
+        ProfileContent(
+            uiState = state,
+            onProfileEditClick = {},
+            modifier = Modifier.background(MaterialTheme.colorScheme.background),
         )
     }
 }

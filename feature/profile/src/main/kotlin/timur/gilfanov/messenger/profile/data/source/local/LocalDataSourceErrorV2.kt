@@ -12,7 +12,7 @@ import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
  *
  * ## Migration from LocalDataSourceError
  *
- * This interface replaces [LocalDataSourceError] with better separation of concerns:
+ * This interface replaces `LocalDataSourceError` with better separation of concerns:
  *
  * ### Errors moved to entity-specific interfaces:
  * - ChatNotFound, MessageNotFound, ParticipantNotFound → LocalChatDataSourceError, etc.

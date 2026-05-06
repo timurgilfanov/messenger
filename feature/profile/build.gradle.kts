@@ -94,7 +94,6 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
-    implementation(testFixtures(project(":core:domain")))
     testImplementation(project(":core:test"))
     testImplementation(testFixtures(project(":core:domain")))
     testFixturesImplementation(project(":core:domain"))

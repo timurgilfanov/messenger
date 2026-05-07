@@ -36,11 +36,8 @@ interface RemoteProfileDataSource {
     /**
      * Uploads and updates user's profile picture on the backend.
      *
-     * The implementation consumes and closes [pictureStream] after use, including
-     * on failure or cancellation. The returned flow emits upload progress values;
-     * successful upload is represented by normal flow completion after the final
-     * progress update. Failures are emitted before completion, and cancelling the
-     * collector cancels the upload.
+     * Emits upload progress updates through the returned Flow, allowing
+     * callers to track the upload status.
      *
      * @param userId The unique identifier of the user
      * @param pictureStream Input stream of the picture file

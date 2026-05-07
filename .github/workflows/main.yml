@@ -281,7 +281,7 @@ jobs:
           path: |
             app/build/reports/tests/testMockDebugUnitTest
             core/domain/build/reports/tests/test
-            feature/auth/reports/tests/testDebugUnitTest
+            feature/auth/build/reports/tests/testDebugUnitTest
             feature/profile/build/reports/tests/testDebugUnitTest
           
       - name: Publish Unit Test Results (:app)

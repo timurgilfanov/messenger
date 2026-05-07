@@ -64,21 +64,29 @@ detekt {
 }
 
 dependencies {
+    // ========== Core AndroidX ==========
+    // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui.tooling.preview)
 
+    // Core
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
+    // ========== Third-party Runtime Libraries ==========
+    // Dependency Injection
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
+    // Kotlin Extensions
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.kotlinx.coroutines.core)
 
+    // ========== Test Dependencies ==========
+    // Unit Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -88,9 +96,11 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     kspTest(libs.hilt.compiler)
 
+    // ========== Debug Dependencies ==========
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    // ========== Module Dependencies ==========
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
@@ -98,12 +108,17 @@ dependencies {
     testImplementation(testFixtures(project(":core:domain")))
     testFixturesImplementation(project(":core:domain"))
     testFixturesImplementation(testFixtures(project(":core:domain")))
+    // Compose runtime is required because the kotlin.compose plugin applies the Compose compiler
+    // to all source sets, including testFixtures which contains no Compose code.
     testFixturesImplementation(platform(libs.androidx.compose.bom))
     testFixturesImplementation(libs.androidx.compose.runtime)
+    // lifecycle-viewmodel is not pulled in by lifecycle-runtime, so ViewModel supertype
+    // is missing from the testFixtures compile classpath without this explicit dependency.
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel)
     testFixturesImplementation(libs.androidx.lifecycle.viewmodel.savedstate)
     testFixturesImplementation(libs.kotlinx.coroutines.core)
 
+    // ========== Dev Tool Dependencies ==========
     ktlintRuleset(libs.ktlint.compose)
     detektPlugins(libs.detekt.compose)
     detektPlugins(libs.detekt.formatting)

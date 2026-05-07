@@ -27,7 +27,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.settings.UiLanguage
+import timur.gilfanov.messenger.profile.ui.screen.ProfileContent
 import timur.gilfanov.messenger.profile.ui.screen.ProfileSection
+import timur.gilfanov.messenger.profile.ui.screen.ProfileUi
+import timur.gilfanov.messenger.profile.ui.screen.ProfileUiState
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @Composable
@@ -77,7 +80,6 @@ fun SettingsScreen(
 }
 
 @Composable
-@Suppress("LongParameterList")
 internal fun SettingsScreenContent(
     profileContent: @Composable () -> Unit,
     settingsUiState: SettingsUiState,
@@ -219,10 +221,21 @@ private fun SettingsScreenContentGermanPreview() {
 private fun Content(
     darkTheme: Boolean,
     settingsUiState: SettingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
+    profileUiState: ProfileUiState = ProfileUiState.Ready(
+        ProfileUi(
+            name = "Timur",
+            picture = null,
+        ),
+    ),
 ) {
     MessengerTheme(darkTheme = darkTheme) {
         SettingsScreenContent(
-            profileContent = { SettingsPreviewProfileContent() },
+            profileContent = {
+                ProfileContent(
+                    uiState = profileUiState,
+                    onProfileEditClick = {},
+                )
+            },
             settingsUiState = settingsUiState,
             onChangeLanguageClick = {},
             onLogoutClick = {},
@@ -235,6 +248,7 @@ private fun Content(
 private fun SettingsScreenContentLoadingPreview() {
     Content(
         darkTheme = false,
+        profileUiState = ProfileUiState.Loading,
         settingsUiState = SettingsUiState.Loading,
     )
 }
@@ -245,14 +259,5 @@ private fun SettingsScreenContentSettingsLoadingPreview() {
     Content(
         darkTheme = false,
         settingsUiState = SettingsUiState.Loading,
-    )
-}
-
-@Composable
-private fun SettingsPreviewProfileContent() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
     )
 }

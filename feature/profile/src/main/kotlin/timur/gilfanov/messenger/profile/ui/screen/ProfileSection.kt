@@ -91,6 +91,21 @@ fun ProfileContent(
 @Composable
 private fun ProfileContentReadyPreview() {
     Content(
+        darkTheme = false,
+        state = ProfileUiState.Ready(
+            ProfileUi(
+                name = "Timur",
+                picture = null,
+            ),
+        ),
+    )
+}
+
+@Preview
+@Composable
+private fun ProfileContentReadyDarkPreview() {
+    Content(
+        darkTheme = true,
         state = ProfileUiState.Ready(
             ProfileUi(
                 name = "Timur",
@@ -103,13 +118,14 @@ private fun ProfileContentReadyPreview() {
 @Preview
 @Composable
 private fun ProfileContentLoadingPreview() {
-    Content(state = ProfileUiState.Loading)
+    Content(darkTheme = false, state = ProfileUiState.Loading)
 }
 
 @Preview(locale = "de")
 @Composable
 private fun ProfileContentGermanPreview() {
     Content(
+        darkTheme = false,
         state = ProfileUiState.Ready(
             ProfileUi(
                 name = "Timur",
@@ -120,8 +136,8 @@ private fun ProfileContentGermanPreview() {
 }
 
 @Composable
-private fun Content(state: ProfileUiState) {
-    MessengerTheme(darkTheme = false) {
+private fun Content(darkTheme: Boolean, state: ProfileUiState) {
+    MessengerTheme(darkTheme = darkTheme) {
         ProfileContent(
             uiState = state,
             onProfileEditClick = {},

@@ -276,22 +276,8 @@ class MessengerRepositoryImpl @Inject constructor(
     // MessageRepository implementation
     override suspend fun sendMessage(
         message: Message,
-    ): Flow<ResultWithError<Message, SendMessageRepositoryError>> {
-        localDataSources.message.insertMessage(message)
-
-        return remoteDataSources.message.sendMessage(message).map { result ->
-            when (result) {
-                is ResultWithError.Success -> {
-                    localDataSources.message.updateMessage(result.data)
-                    ResultWithError.Success(result.data)
-                }
-
-                is ResultWithError.Failure -> {
-                    ResultWithError.Failure(mapRemoteErrorToSendMessageError(result.error))
-                }
-            }
-        }
-    }
+    ): Flow<ResultWithError<Message, SendMessageRepositoryError>> =
+        SendMessageFlowFactory(localDataSources, remoteDataSources).sendMessage(message)
 
     override suspend fun editMessage(
         message: Message,
@@ -457,19 +443,31 @@ private fun mapRemoteErrorToLeaveChatError(
     else -> error("Implement after remote data source operation error refactor. See #137.")
 }
 
-private fun mapRemoteErrorToSendMessageError(
+internal fun mapRemoteErrorToSendMessageError(
     error: RemoteDataSourceError,
 ): SendMessageRepositoryError = SendMessageRepositoryError.RemoteOperationFailed(
     when (error) {
         RemoteDataSourceError.NetworkNotAvailable -> RemoteError.Failed.NetworkNotAvailable
         RemoteDataSourceError.ServerUnreachable -> RemoteError.Failed.ServiceDown
         RemoteDataSourceError.ServerError -> RemoteError.Failed.ServiceDown
+        RemoteDataSourceError.RateLimitExceeded -> RemoteError.Failed.ServiceDown
+        is RemoteDataSourceError.CooldownActive -> RemoteError.Failed.Cooldown(error.remaining)
         RemoteDataSourceError.Unauthorized -> RemoteError.Unauthenticated
         is RemoteDataSourceError.UnknownError -> RemoteError.Failed.UnknownServiceError(
             ErrorReason("Unknown remote error: ${error.cause}"),
         )
 
-        else -> error("Implement after remote data source operation error refactor. See #137.")
+        RemoteDataSourceError.ChatNotFound,
+        RemoteDataSourceError.MessageNotFound,
+        RemoteDataSourceError.InvalidInviteLink,
+        RemoteDataSourceError.ExpiredInviteLink,
+        RemoteDataSourceError.ChatClosed,
+        RemoteDataSourceError.AlreadyJoined,
+        RemoteDataSourceError.ChatFull,
+        RemoteDataSourceError.UserBlocked,
+        -> RemoteError.Failed.UnknownServiceError(
+            ErrorReason("Unexpected send message error: $error"),
+        )
     },
 )
 

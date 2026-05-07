@@ -28,6 +28,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
@@ -767,10 +768,13 @@ class MessengerRepositoryImplTest {
             sender = testParticipant,
             recipient = testChat.id,
             createdAt = Instant.fromEpochMilliseconds(101_000),
-            deliveryStatus = DeliveryStatus.Sending(0),
         )
 
         repository.sendMessage(message).test {
+            val acceptedResult = awaitItem()
+            assertIs<ResultWithError.Success<Message, SendMessageRepositoryError>>(acceptedResult)
+            assertEquals(DeliveryStatus.Sending(0), acceptedResult.data.deliveryStatus)
+
             val result = awaitItem()
             assertIs<ResultWithError.Failure<Message, SendMessageRepositoryError>>(result)
             assertEquals(
@@ -779,7 +783,51 @@ class MessengerRepositoryImplTest {
                 ),
                 result.error,
             )
+
+            localDataSource.getMessage(message.id).let {
+                assertIs<ResultWithError.Success<TextMessage, LocalDataSourceError>>(it)
+                assertEquals(
+                    DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
+                    it.data.deliveryStatus,
+                )
+            }
+
             awaitComplete()
+        }
+    }
+
+    @Test
+    fun `sendMessage should not call remote when local insert fails`() = runTest {
+        localDataSource.insertChat(testChat)
+        localDataSource.simulateInsertMessageFailure(true)
+        remoteDataSource.addChatToServer(testChat)
+
+        repository = repositoryImpl(backgroundScope)
+
+        val message = TextMessage(
+            id = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004")),
+            text = "Test message",
+            parentId = null,
+            sender = testParticipant,
+            recipient = testChat.id,
+            createdAt = Instant.fromEpochMilliseconds(101_000),
+        )
+
+        repository.sendMessage(message).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<Message, SendMessageRepositoryError>>(result)
+            assertEquals(
+                SendMessageRepositoryError.LocalOperationFailed(
+                    LocalStorageError.TemporarilyUnavailable,
+                ),
+                result.error,
+            )
+            awaitComplete()
+        }
+
+        localDataSource.getMessage(message.id).let {
+            assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(it)
+            assertEquals(LocalDataSourceError.MessageNotFound, it.error)
         }
     }
 

@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.data.source.local
 
+import androidx.paging.PagingSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -160,6 +161,84 @@ class LocalMessageDataSourceImplTest {
     }
 
     @Test
+    fun `message paging source refresh loads newest page first`() = runTest {
+        val oldest = createTestMessage(
+            id = "00000000-0000-0000-0000-000000000101",
+            text = "Oldest",
+            createdAt = Instant.fromEpochMilliseconds(1000),
+            sentAt = Instant.fromEpochMilliseconds(1000),
+        )
+        val middle = createTestMessage(
+            id = "00000000-0000-0000-0000-000000000102",
+            text = "Middle",
+            createdAt = Instant.fromEpochMilliseconds(2000),
+            sentAt = Instant.fromEpochMilliseconds(2000),
+        )
+        val newest = createTestMessage(
+            id = "00000000-0000-0000-0000-000000000103",
+            text = "Newest",
+            createdAt = Instant.fromEpochMilliseconds(3000),
+            sentAt = Instant.fromEpochMilliseconds(3000),
+        )
+
+        localMessageDataSource.insertMessage(oldest)
+        localMessageDataSource.insertMessage(middle)
+        localMessageDataSource.insertMessage(newest)
+
+        val result = localMessageDataSource.getMessagePagingSource(defaultChatId()).load(
+            PagingSource.LoadParams.Refresh(
+                key = Long.MAX_VALUE,
+                loadSize = 2,
+                placeholdersEnabled = false,
+            ),
+        )
+
+        val page = assertIs<PagingSource.LoadResult.Page<Long, Message>>(result)
+        assertEquals(listOf("Newest", "Middle"), page.data.texts())
+        assertNull(page.prevKey)
+        assertEquals(2000, page.nextKey)
+    }
+
+    @Test
+    fun `message paging source append loads older page`() = runTest {
+        val oldest = createTestMessage(
+            id = "00000000-0000-0000-0000-000000000201",
+            text = "Oldest",
+            createdAt = Instant.fromEpochMilliseconds(1000),
+            sentAt = Instant.fromEpochMilliseconds(1000),
+        )
+        val middle = createTestMessage(
+            id = "00000000-0000-0000-0000-000000000202",
+            text = "Middle",
+            createdAt = Instant.fromEpochMilliseconds(2000),
+            sentAt = Instant.fromEpochMilliseconds(2000),
+        )
+        val newest = createTestMessage(
+            id = "00000000-0000-0000-0000-000000000203",
+            text = "Newest",
+            createdAt = Instant.fromEpochMilliseconds(3000),
+            sentAt = Instant.fromEpochMilliseconds(3000),
+        )
+
+        localMessageDataSource.insertMessage(oldest)
+        localMessageDataSource.insertMessage(middle)
+        localMessageDataSource.insertMessage(newest)
+
+        val result = localMessageDataSource.getMessagePagingSource(defaultChatId()).load(
+            PagingSource.LoadParams.Append(
+                key = 2000,
+                loadSize = 2,
+                placeholdersEnabled = false,
+            ),
+        )
+
+        val page = assertIs<PagingSource.LoadResult.Page<Long, Message>>(result)
+        assertEquals(listOf("Oldest"), page.data.texts())
+        assertEquals(1000, page.prevKey)
+        assertNull(page.nextKey)
+    }
+
+    @Test
     fun `insert message with parent successfully stores parent reference`() = runTest {
         // Given
         val parentMessage = createTestMessage(id = "5555555-5555-5555-5555-555555555555")
@@ -311,6 +390,12 @@ class LocalMessageDataSourceImplTest {
                 isModerator = false,
             ),
         )
+    }
+
+    private fun defaultChatId() = ChatId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+
+    private fun List<Message>.texts(): List<String> = map { message ->
+        assertIs<TextMessage>(message).text
     }
 
     @Suppress("LongParameterList") // Test helper needs flexibility

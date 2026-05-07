@@ -1,15 +1,18 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import java.util.UUID
-import kotlin.test.Ignore
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -21,6 +24,8 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
+import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
@@ -51,7 +56,6 @@ class ChatViewModelUpdatesTest {
     }
 
     @Test
-    @Ignore("Receiving messages from PagingData not implemented yet")
     fun `message from other participant appears in UI state`() = runTest {
         val chatId = TEST_CHAT_ID
         val currentUserId = TEST_CURRENT_USER_ID
@@ -85,8 +89,8 @@ class ChatViewModelUpdatesTest {
 
             val initialState = awaitItem()
             assertTrue(initialState is ChatUiState.Ready)
+            assertEquals(emptyList(), flowOf(initialState.messages.first()).asSnapshot())
 
-            // Add a new message to the chat
             val newMessage = createTestMessage(
                 senderId = otherUserId,
                 text = "Hello from other user!",
@@ -98,10 +102,13 @@ class ChatViewModelUpdatesTest {
             )
 
             chatFlow.value = Success(updatedChat)
+            testDispatcher.scheduler.advanceTimeBy(200L)
+            testDispatcher.scheduler.runCurrent()
 
-            // Verify the new message appears in UI state
-            val updatedState = awaitItem()
-            assertTrue(updatedState is ChatUiState.Ready)
+            assertEquals(
+                listOf("Hello from other user!"),
+                flowOf(initialState.messages.first()).asSnapshot().texts(),
+            )
         }
     }
 
@@ -172,7 +179,6 @@ class ChatViewModelUpdatesTest {
         }
     }
 
-    @Ignore("Receiving messages from PagingData not implemented yet")
     @Test
     fun `few rapid messages result in one chat update`() = runTest {
         val chatId = TEST_CHAT_ID
@@ -233,10 +239,16 @@ class ChatViewModelUpdatesTest {
                 initialChat.copy(messages = persistentListOf(message1, message2, message3)),
             )
             testDispatcher.scheduler.advanceTimeBy(200L) // Complete debounce delay
+            testDispatcher.scheduler.runCurrent()
 
-            // Only the final update should be emitted due to debounce
-            val finalState = awaitItem()
-            assertTrue(finalState is ChatUiState.Ready)
+            assertEquals(
+                listOf("Message 1", "Message 2", "Final Message"),
+                flowOf(initialState.messages.first()).asSnapshot().texts(),
+            )
         }
+    }
+
+    private fun List<Message>.texts(): List<String> = map { message ->
+        assertIs<TextMessage>(message).text
     }
 }

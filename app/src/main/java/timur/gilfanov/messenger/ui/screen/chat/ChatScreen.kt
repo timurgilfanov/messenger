@@ -1,15 +1,18 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -20,8 +23,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -29,7 +35,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
 import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import java.text.SimpleDateFormat
@@ -146,10 +154,21 @@ fun ChatContent(
 ) {
     val listState = rememberLazyListState()
 
-    // Collect paged messages for LazyColumn
     val messages = state.messages.collectAsLazyPagingItems()
+    var hasPositionedInitialMessages by rememberSaveable(state.id.id.toString()) {
+        mutableStateOf(false)
+    }
 
-    // Track visible messages and mark as read
+    LaunchedEffect(messages.loadState.refresh, messages.itemCount) {
+        if (!hasPositionedInitialMessages &&
+            messages.loadState.refresh is LoadState.NotLoading &&
+            messages.itemCount > 0
+        ) {
+            listState.scrollToItem(0)
+            hasPositionedInitialMessages = true
+        }
+    }
+
     val visibleItemsInfo = remember {
         derivedStateOf {
             listState.layoutInfo.visibleItemsInfo
@@ -162,15 +181,14 @@ fun ChatContent(
         delay(MARK_AS_VISIBLE_DEBOUNCE)
         val visibleItems = visibleItemsInfo.value
         if (visibleItems.isNotEmpty() && messages.itemCount > 0) {
-            // Get the last visible message index (bottom of the screen)
-            val lastVisibleIndex = visibleItems.minByOrNull { it.index }?.index
-            if (lastVisibleIndex != null &&
-                lastVisibleIndex >= 0 &&
-                lastVisibleIndex < messages.itemCount
+            val newestVisibleIndex = visibleItems.minOfOrNull { it.index }
+            if (newestVisibleIndex != null &&
+                newestVisibleIndex >= 0 &&
+                newestVisibleIndex < messages.itemCount
             ) {
-                val lastVisibleMessage = messages[lastVisibleIndex]
-                if (lastVisibleMessage != null) {
-                    currentOnMarkMessagesAsReadUpTo.value(lastVisibleMessage.id)
+                val newestVisibleMessage = messages[newestVisibleIndex]
+                if (newestVisibleMessage != null) {
+                    currentOnMarkMessagesAsReadUpTo.value(newestVisibleMessage.id)
                 }
             }
         }
@@ -203,25 +221,136 @@ fun ChatContent(
             )
         },
     ) { paddingValues ->
-        LazyColumn(
-            state = listState,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
+                .padding(paddingValues),
         ) {
-            items(
-                count = messages.itemCount,
-                key = messages.itemKey { message -> message.id.id },
-            ) { index ->
-                val message = messages[index]
-                if (message != null) {
-                    MessageBubble(
-                        message = message.toMessageUiModel(participants = state.participants),
-                        modifier = Modifier.padding(vertical = 4.dp),
+            MessageList(
+                messages = messages,
+                participants = state.participants,
+                listState = listState,
+            )
+            PagingRefreshOverlay(messages = messages)
+        }
+    }
+}
+
+@Composable
+private fun PagingRefreshOverlay(messages: LazyPagingItems<Message>) {
+    if (messages.itemCount > 0) return
+
+    when (val refresh = messages.loadState.refresh) {
+        LoadState.Loading -> PagingRefreshLoading()
+        is LoadState.Error -> PagingRefreshError(
+            error = refresh.error,
+            onRetry = messages::retry,
+        )
+        is LoadState.NotLoading -> Unit
+    }
+}
+
+@Composable
+private fun PagingRefreshLoading() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.testTag("paging_refresh_loading_indicator"),
+        )
+    }
+}
+
+@Composable
+private fun PagingRefreshError(error: Throwable, onRetry: () -> Unit) {
+    PagingLoadError(
+        error = error,
+        onRetry = onRetry,
+        modifier = Modifier.fillMaxSize(),
+        testTag = "paging_refresh_error",
+    )
+}
+
+@Composable
+private fun MessageList(
+    messages: LazyPagingItems<Message>,
+    participants: ImmutableList<ParticipantUiModel>,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+) {
+    LazyColumn(
+        state = listState,
+        reverseLayout = true,
+        verticalArrangement = Arrangement.Bottom,
+        contentPadding = PaddingValues(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .testTag("message_list"),
+    ) {
+        items(
+            count = messages.itemCount,
+            key = messages.itemKey { message -> message.id.id },
+        ) { index ->
+            val message = messages[index]
+            if (message != null) {
+                MessageBubble(
+                    message = message.toMessageUiModel(participants = participants),
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+        }
+
+        when (val append = messages.loadState.append) {
+            LoadState.Loading -> item(key = "older_messages_loading") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.testTag("paging_append_loading_indicator"),
                     )
                 }
             }
+            is LoadState.Error -> item(key = "older_messages_error") {
+                PagingLoadError(
+                    error = append.error,
+                    onRetry = messages::retry,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    testTag = "paging_append_error",
+                )
+            }
+            is LoadState.NotLoading -> Unit
+        }
+    }
+}
+
+@Composable
+private fun PagingLoadError(
+    error: Throwable,
+    onRetry: () -> Unit,
+    testTag: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.testTag(testTag),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "Messages failed to load: ${error.message ?: "Unknown error"}",
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.testTag("paging_error_message"),
+        )
+        Button(
+            onClick = onRetry,
+            modifier = Modifier.testTag("paging_retry_button"),
+        ) {
+            Text("Retry")
         }
     }
 }

@@ -54,6 +54,14 @@ class ChatViewModel @AssistedInject constructor(
     private val markMessagesAsReadUseCase: MarkMessagesAsReadUseCase,
 ) : ViewModel() {
 
+    private val chatId: ChatId = savedStateHandle.get<String>(KEY_CHAT_ID)?.let {
+        ChatId(UUID.fromString(it))
+    } ?: ChatId(chatIdUuid).also {
+        savedStateHandle[KEY_CHAT_ID] = it.id.toString()
+    }
+
+    private val pagedMessages = getPagedMessagesUseCase(chatId)
+
     private val _state = MutableStateFlow<ChatUiState>(ChatUiState.Loading())
     val state = _state.asStateFlow()
 
@@ -73,12 +81,6 @@ class ChatViewModel @AssistedInject constructor(
     private var currentInputText: String = ""
 
     private val textValidator = TextValidator(TextMessage.MAX_TEXT_LENGTH)
-
-    private val chatId: ChatId = savedStateHandle.get<String>(KEY_CHAT_ID)?.let {
-        ChatId(UUID.fromString(it))
-    } ?: ChatId(chatIdUuid).also {
-        savedStateHandle[KEY_CHAT_ID] = it.id.toString()
-    }
 
     @AssistedFactory
     interface ChatViewModelFactory {
@@ -232,7 +234,7 @@ class ChatViewModel @AssistedInject constructor(
             title = chat.name,
             participants = participantUiModels,
             isGroupChat = !chat.isOneToOne,
-            messages = getPagedMessagesUseCase(chat.id),
+            messages = pagedMessages,
             status = chatStatus,
             inputTextValidationError = inputTextValidationError,
             isSending = (state as? ChatUiState.Ready?)?.isSending == true,

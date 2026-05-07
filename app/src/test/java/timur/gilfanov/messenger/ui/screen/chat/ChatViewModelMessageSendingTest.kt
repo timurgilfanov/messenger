@@ -153,12 +153,11 @@ class ChatViewModelMessageSendingTest {
                     assertFalse(sentState.isSending)
 
                     viewModel.onInputTextChanged("Test message 2")
-                    awaitItem().let { state ->
-                        assertTrue(
-                            state is ChatUiState.Ready,
-                            "Expected Ready state, but got: $state",
-                        )
-                    }
+                    val state = viewModel.state.value
+                    assertTrue(
+                        state is ChatUiState.Ready,
+                        "Expected Ready state, but got: $state",
+                    )
                 }
 
                 val sentMessage = assertIs<TextMessage>(rep.sentMessages.single())

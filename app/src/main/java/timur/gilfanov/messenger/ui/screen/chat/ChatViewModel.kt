@@ -118,20 +118,34 @@ class ChatViewModel @AssistedInject constructor(
         if (value !is ChatUiState.Ready) return
         if (value.isSending) return
 
-        _state.update { (it as? ChatUiState.Ready)?.copy(isSending = true) ?: it }
-        viewModelScope.launch {
+        val inputTextValidationError = validateInputText(currentInputText)
+        if (inputTextValidationError != null) {
+            _state.update {
+                (it as? ChatUiState.Ready)?.copy(
+                    inputTextValidationError = inputTextValidationError,
+                ) ?: it
+            }
+        } else {
             val request = SendRequest(messageId, now, currentInputText)
-            val message = textMessage(request.messageId, request.now, request.text)
-            val progress = SendProgress()
-            sendMessageUseCase(currentChat!!, message).collect { result ->
-                when (result) {
-                    is ResultWithError.Success -> handleSendSuccess(
-                        result.data,
-                        request,
-                        progress,
-                    )
+            _state.update {
+                (it as? ChatUiState.Ready)?.copy(
+                    inputTextValidationError = null,
+                    isSending = true,
+                ) ?: it
+            }
+            viewModelScope.launch {
+                val message = textMessage(request.messageId, request.now, request.text)
+                val progress = SendProgress()
+                sendMessageUseCase(currentChat!!, message).collect { result ->
+                    when (result) {
+                        is ResultWithError.Success -> handleSendSuccess(
+                            result.data,
+                            request,
+                            progress,
+                        )
 
-                    is ResultWithError.Failure -> handleSendFailure(result.error, progress)
+                        is ResultWithError.Failure -> handleSendFailure(result.error, progress)
+                    }
                 }
             }
         }

@@ -1,0 +1,23 @@
+package timur.gilfanov.messenger.profile.ui.screen
+
+import android.net.Uri
+import android.os.Parcelable
+import androidx.compose.runtime.Immutable
+import androidx.core.net.toUri
+import kotlinx.parcelize.Parcelize
+import timur.gilfanov.messenger.domain.entity.profile.Profile
+
+/**
+ * UI model for user profile display.
+ *
+ * Represents user profile data in a UI-friendly format with Android-specific
+ * types (Uri for pictures).
+ *
+ * @property name User's display name
+ * @property picture URI to user's profile picture, null if no picture is set
+ */
+@Immutable
+@Parcelize
+data class ProfileUi(val name: String, val picture: Uri?) : Parcelable
+
+fun Profile.toProfileUi() = ProfileUi(name = name, picture = pictureUrl?.toUri())

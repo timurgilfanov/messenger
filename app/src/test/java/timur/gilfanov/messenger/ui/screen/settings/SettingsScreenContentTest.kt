@@ -1,10 +1,17 @@
 package timur.gilfanov.messenger.ui.screen.settings
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -28,9 +35,8 @@ class SettingsScreenContentTest {
         composeTestRule.setContent {
             MessengerTheme {
                 SettingsScreenContent(
-                    profileUiState = ProfileUiState.Loading,
+                    profileContent = { TestProfileContent() },
                     settingsUiState = SettingsUiState.Loading,
-                    onProfileEditClick = {},
                     onChangeLanguageClick = {},
                     onLogoutClick = {},
                 )
@@ -46,9 +52,8 @@ class SettingsScreenContentTest {
         composeTestRule.setContent {
             MessengerTheme {
                 SettingsScreenContent(
-                    profileUiState = ProfileUiState.Loading,
+                    profileContent = { TestProfileContent() },
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
-                    onProfileEditClick = {},
                     onChangeLanguageClick = {},
                     onLogoutClick = {},
                 )
@@ -63,9 +68,8 @@ class SettingsScreenContentTest {
         composeTestRule.setContent {
             MessengerTheme {
                 SettingsScreenContent(
-                    profileUiState = ProfileUiState.Loading,
+                    profileContent = { TestProfileContent() },
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
-                    onProfileEditClick = {},
                     onChangeLanguageClick = {},
                     onLogoutClick = {},
                 )
@@ -80,9 +84,8 @@ class SettingsScreenContentTest {
         composeTestRule.setContent {
             MessengerTheme {
                 SettingsScreenContent(
-                    profileUiState = ProfileUiState.Loading,
+                    profileContent = { TestProfileContent() },
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.German)),
-                    onProfileEditClick = {},
                     onChangeLanguageClick = {},
                     onLogoutClick = {},
                 )
@@ -99,9 +102,8 @@ class SettingsScreenContentTest {
         composeTestRule.setContent {
             MessengerTheme {
                 SettingsScreenContent(
-                    profileUiState = ProfileUiState.Loading,
+                    profileContent = { TestProfileContent() },
                     settingsUiState = SettingsUiState.Ready(SettingsUi(UiLanguage.English)),
-                    onProfileEditClick = {},
                     onChangeLanguageClick = { languageClicked = true },
                     onLogoutClick = {},
                 )
@@ -111,5 +113,15 @@ class SettingsScreenContentTest {
         composeTestRule.onNodeWithTag("settings_language_item").performClick()
 
         assertTrue(languageClicked)
+    }
+
+    @Composable
+    private fun TestProfileContent() {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .testTag("profile_loading"),
+        )
     }
 }

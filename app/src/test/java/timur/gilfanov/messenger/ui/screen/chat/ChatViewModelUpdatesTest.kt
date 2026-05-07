@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.paging.PagingData
 import androidx.paging.testing.asSnapshot
 import app.cash.turbine.test
 import java.util.UUID
@@ -10,6 +11,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -22,16 +24,25 @@ import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.chat.buildParticipant
 import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidatorImpl
+import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesError
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
+import timur.gilfanov.messenger.domain.usecase.chat.repository.MarkMessagesAsReadRepositoryError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.DeleteMessageMode
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
+import timur.gilfanov.messenger.domain.usecase.message.repository.DeleteMessageRepositoryError
+import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFake
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.MessengerRepositoryFakeWithPaging
@@ -65,10 +76,18 @@ class ChatViewModelUpdatesTest {
         val initialChat = createTestChat(chatId, currentUserId, otherUserId)
         val chatFlow =
             MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesError>>(Success(initialChat))
-
-        val repository = MessengerRepositoryFakeWithPaging(
-            initialChat = initialChat,
+        val newMessage = createTestMessage(
+            senderId = otherUserId,
+            text = "Hello from other user!",
+            joinedAt = now,
+            createdAt = now,
+        )
+        val updatedChat = initialChat.copy(
+            messages = persistentListOf(newMessage),
+        )
+        val repository = SequentialPagingRepository(
             chatFlow = chatFlow,
+            pagingSnapshots = listOf(emptyList(), updatedChat.messages),
         )
         val sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl())
         val receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository)
@@ -85,29 +104,21 @@ class ChatViewModelUpdatesTest {
         )
 
         viewModel.state.test {
-            awaitItem() // Loading
+            awaitItem()
 
             val initialState = awaitItem()
             assertTrue(initialState is ChatUiState.Ready)
             assertEquals(emptyList(), flowOf(initialState.messages.first()).asSnapshot())
 
-            val newMessage = createTestMessage(
-                senderId = otherUserId,
-                text = "Hello from other user!",
-                joinedAt = now,
-                createdAt = now,
-            )
-            val updatedChat = initialChat.copy(
-                messages = persistentListOf(newMessage),
-            )
-
             chatFlow.value = Success(updatedChat)
             testDispatcher.scheduler.advanceTimeBy(200L)
             testDispatcher.scheduler.runCurrent()
 
+            val updatedState = awaitItem()
+            assertTrue(updatedState is ChatUiState.Ready)
             assertEquals(
                 listOf("Hello from other user!"),
-                flowOf(initialState.messages.first()).asSnapshot().texts(),
+                flowOf(updatedState.messages.first()).asSnapshot().texts(),
             )
         }
     }
@@ -241,14 +252,64 @@ class ChatViewModelUpdatesTest {
             testDispatcher.scheduler.advanceTimeBy(200L) // Complete debounce delay
             testDispatcher.scheduler.runCurrent()
 
+            val updatedState = awaitItem()
+            assertTrue(updatedState is ChatUiState.Ready)
             assertEquals(
                 listOf("Message 1", "Message 2", "Final Message"),
-                flowOf(initialState.messages.first()).asSnapshot().texts(),
+                flowOf(updatedState.messages.first()).asSnapshot().texts(),
             )
         }
     }
 
     private fun List<Message>.texts(): List<String> = map { message ->
         assertIs<TextMessage>(message).text
+    }
+
+    private class SequentialPagingRepository(
+        private val chatFlow: Flow<
+            ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>,
+            >,
+        private val pagingSnapshots: List<List<Message>>,
+    ) : ChatRepository,
+        MessageRepository {
+
+        private var getPagedMessagesCallCount = 0
+
+        override suspend fun receiveChatUpdates(
+            chatId: ChatId,
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> = chatFlow
+
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
+            val messages = pagingSnapshots.getOrElse(getPagedMessagesCallCount) {
+                pagingSnapshots.last()
+            }
+            getPagedMessagesCallCount += 1
+            return flowOf(PagingData.from(messages))
+        }
+
+        override suspend fun sendMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> = flowOf(Success(message))
+
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdateApplying() = flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+
+        override suspend fun markMessagesAsRead(
+            chatId: ChatId,
+            upToMessageId: MessageId,
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = ResultWithError.Success(Unit)
+
+        override suspend fun editMessage(message: Message) = error("Not implemented")
+        override suspend fun deleteMessage(
+            messageId: MessageId,
+            mode: DeleteMessageMode,
+        ): ResultWithError<Unit, DeleteMessageRepositoryError> = error("Not implemented")
     }
 }

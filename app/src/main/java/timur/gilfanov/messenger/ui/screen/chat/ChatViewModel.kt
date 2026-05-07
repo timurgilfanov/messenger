@@ -60,8 +60,6 @@ class ChatViewModel @AssistedInject constructor(
         savedStateHandle[KEY_CHAT_ID] = it.id.toString()
     }
 
-    private val pagedMessages = getPagedMessagesUseCase(chatId)
-
     private val _state = MutableStateFlow<ChatUiState>(ChatUiState.Loading())
     val state = _state.asStateFlow()
 
@@ -234,7 +232,7 @@ class ChatViewModel @AssistedInject constructor(
             title = chat.name,
             participants = participantUiModels,
             isGroupChat = !chat.isOneToOne,
-            messages = pagedMessages,
+            messages = getPagedMessagesUseCase(chat.id),
             status = chatStatus,
             inputTextValidationError = inputTextValidationError,
             isSending = (state as? ChatUiState.Ready?)?.isSending == true,

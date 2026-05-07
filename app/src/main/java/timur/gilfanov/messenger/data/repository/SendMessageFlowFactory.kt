@@ -53,7 +53,7 @@ internal class SendMessageFlowFactory(
                 }
 
                 is ResultWithError.Failure -> {
-                    val failedMessage = acceptedMessage.withDeliveryStatus(
+                    val failedMessage = lastEmittedMessage.withDeliveryStatus(
                         DeliveryStatus.Failed(result.error.toDeliveryError()),
                     )
                     emit(updateFailedMessage(failedMessage, result.error))

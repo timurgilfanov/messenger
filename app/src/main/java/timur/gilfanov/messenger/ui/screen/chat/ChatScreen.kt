@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -276,7 +277,7 @@ private fun PagingRefreshError(error: Throwable, onRetry: () -> Unit) {
 private fun MessageList(
     messages: LazyPagingItems<Message>,
     participants: ImmutableList<ParticipantUiModel>,
-    listState: androidx.compose.foundation.lazy.LazyListState,
+    listState: LazyListState,
 ) {
     LazyColumn(
         state = listState,

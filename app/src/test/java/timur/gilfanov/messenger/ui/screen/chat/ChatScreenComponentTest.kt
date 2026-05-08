@@ -21,7 +21,7 @@ import androidx.paging.LoadStates
 import androidx.paging.PagingData
 import androidx.test.core.app.ApplicationProvider
 import java.util.UUID
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.flowOf
@@ -148,7 +148,7 @@ class ChatScreenComponentTest {
 
         // Note: In a real test, we would need to update the state and recompose
         // This test verifies that the callback is called
-        assertTrue(textFieldState.text == testMessage)
+        assertEquals(textFieldState.text, testMessage)
     }
 
     @Test

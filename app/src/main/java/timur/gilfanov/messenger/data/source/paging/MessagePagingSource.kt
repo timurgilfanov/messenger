@@ -17,6 +17,7 @@ import timur.gilfanov.messenger.domain.entity.message.Message
  * This source loads messages in reverse chronological order (newest first) to support
  * typical chat UI patterns where users see recent messages and can scroll up for history.
  *
+ * @property database Messenger database instance used for invalidation tracking
  * @property messageDao The DAO for accessing message data
  * @property chatDao The DAO for accessing chat and participant data
  * @property chatId The ID of the chat to load messages for

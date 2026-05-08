@@ -2,7 +2,9 @@ package timur.gilfanov.messenger.data.source.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import androidx.room.InvalidationTracker
 import kotlinx.coroutines.CancellationException
+import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toMessage
@@ -20,10 +22,24 @@ import timur.gilfanov.messenger.domain.entity.message.Message
  * @property chatId The ID of the chat to load messages for
  */
 class MessagePagingSource(
+    private val database: MessengerDatabase,
     private val messageDao: MessageDao,
     private val chatDao: ChatDao,
     private val chatId: ChatId,
 ) : PagingSource<Long, Message>() {
+
+    private val observer = object : InvalidationTracker.Observer("messages") {
+        override fun onInvalidated(tables: Set<String>) {
+            invalidate()
+        }
+    }
+
+    init {
+        database.invalidationTracker.addObserver(observer)
+        registerInvalidatedCallback {
+            database.invalidationTracker.removeObserver(observer)
+        }
+    }
 
     override fun getRefreshKey(state: PagingState<Long, Message>): Long? =
         state.anchorPosition?.let { anchorPosition ->

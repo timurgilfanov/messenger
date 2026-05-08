@@ -143,6 +143,7 @@ class LocalMessageDataSourceImpl @Inject constructor(
 
     override fun getMessagePagingSource(chatId: ChatId): PagingSource<Long, Message> =
         MessagePagingSource(
+            database = database,
             messageDao = messageDao,
             chatDao = chatDao,
             chatId = chatId,

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -104,8 +105,9 @@ class ChatViewModelUpdatesTest {
         )
 
         viewModel.state.test {
-            awaitItem()
+            awaitItem() // Loading
 
+            testDispatcher.scheduler.advanceTimeBy(200L)
             val initialState = awaitItem()
             assertTrue(initialState is ChatUiState.Ready)
             assertEquals(emptyList(), flowOf(initialState.messages.first()).asSnapshot())
@@ -114,7 +116,7 @@ class ChatViewModelUpdatesTest {
             testDispatcher.scheduler.advanceTimeBy(200L)
             testDispatcher.scheduler.runCurrent()
 
-            val updatedState = awaitItem()
+            val updatedState = viewModel.state.value
             assertTrue(updatedState is ChatUiState.Ready)
             assertEquals(
                 listOf("Hello from other user!"),
@@ -151,6 +153,9 @@ class ChatViewModelUpdatesTest {
         )
 
         viewModel.state.test {
+            awaitItem() // Loading
+
+            testDispatcher.scheduler.advanceTimeBy(200L)
             var initialState = awaitItem()
             while (initialState !is ChatUiState.Ready) {
                 initialState = awaitItem()
@@ -252,7 +257,7 @@ class ChatViewModelUpdatesTest {
             testDispatcher.scheduler.advanceTimeBy(200L) // Complete debounce delay
             testDispatcher.scheduler.runCurrent()
 
-            val updatedState = awaitItem()
+            val updatedState = viewModel.state.value
             assertTrue(updatedState is ChatUiState.Ready)
             assertEquals(
                 listOf("Message 1", "Message 2", "Final Message"),
@@ -266,9 +271,8 @@ class ChatViewModelUpdatesTest {
     }
 
     private class SequentialPagingRepository(
-        private val chatFlow: Flow<
-            ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>,
-            >,
+        private val chatFlow:
+        MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>,
         private val pagingSnapshots: List<List<Message>>,
     ) : ChatRepository,
         MessageRepository {
@@ -279,12 +283,12 @@ class ChatViewModelUpdatesTest {
             chatId: ChatId,
         ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> = chatFlow
 
-        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> = chatFlow.map {
             val messages = pagingSnapshots.getOrElse(getPagedMessagesCallCount) {
                 pagingSnapshots.last()
             }
             getPagedMessagesCallCount += 1
-            return flowOf(PagingData.from(messages))
+            PagingData.from(messages)
         }
 
         override suspend fun sendMessage(
@@ -304,7 +308,7 @@ class ChatViewModelUpdatesTest {
         override suspend fun markMessagesAsRead(
             chatId: ChatId,
             upToMessageId: MessageId,
-        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = ResultWithError.Success(Unit)
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = Success(Unit)
 
         override suspend fun editMessage(message: Message) = error("Not implemented")
         override suspend fun deleteMessage(

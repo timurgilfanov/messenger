@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.ui.screen.chat
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.cachedIn
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -50,7 +51,7 @@ class ChatViewModel @AssistedInject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val sendMessageUseCase: SendMessageUseCase,
     private val receiveChatUpdatesUseCase: ReceiveChatUpdatesUseCase,
-    private val getPagedMessagesUseCase: GetPagedMessagesUseCase,
+    getPagedMessagesUseCase: GetPagedMessagesUseCase,
     private val markMessagesAsReadUseCase: MarkMessagesAsReadUseCase,
 ) : ViewModel() {
 
@@ -60,7 +61,9 @@ class ChatViewModel @AssistedInject constructor(
         savedStateHandle[KEY_CHAT_ID] = it.id.toString()
     }
 
-    private val _state = MutableStateFlow<ChatUiState>(ChatUiState.Loading())
+    private val pagedMessages = getPagedMessagesUseCase(chatId).cachedIn(viewModelScope)
+
+    private val _state = MutableStateFlow<ChatUiState>(Loading())
     val state = _state.asStateFlow()
 
     private val _effects = Channel<ChatSideEffect>(capacity = Channel.BUFFERED)
@@ -94,7 +97,7 @@ class ChatViewModel @AssistedInject constructor(
     fun onInputTextChanged(text: String) {
         currentInputText = text
         _state.update { state ->
-            if (state is ChatUiState.Ready) {
+            if (state is Ready) {
                 state.copy(inputTextValidationError = validateInputText(text))
             } else {
                 state
@@ -109,19 +112,19 @@ class ChatViewModel @AssistedInject constructor(
         now: Instant = Clock.System.now(),
     ) {
         val value = _state.value
-        if (value !is ChatUiState.Ready) return
+        if (value !is Ready) return
         if (value.isSending) return
 
         val inputTextValidationError = validateInputText(currentInputText)
         if (inputTextValidationError != null) {
             _state.update {
-                (it as? ChatUiState.Ready)?.copy(
+                (it as? Ready)?.copy(
                     inputTextValidationError = inputTextValidationError,
                 ) ?: it
             }
         } else {
             _state.update {
-                (it as? ChatUiState.Ready)?.copy(
+                (it as? Ready)?.copy(
                     inputTextValidationError = null,
                     isSending = true,
                 ) ?: it
@@ -168,11 +171,11 @@ class ChatViewModel @AssistedInject constructor(
         )
 
     fun dismissDialogError() {
-        _state.update { if (it is ChatUiState.Ready) it.copy(dialogError = null) else it }
+        _state.update { if (it is Ready) it.copy(dialogError = null) else it }
     }
 
     fun markMessagesAsReadUpTo(messageId: MessageId) {
-        if (_state.value !is ChatUiState.Ready) return
+        if (_state.value !is Ready) return
         val unreadMessages = currentChat?.unreadMessagesCount ?: 0
         if (unreadMessages > 0) {
             viewModelScope.launch { markMessagesAsReadUseCase(chatId, messageId) }
@@ -200,9 +203,9 @@ class ChatViewModel @AssistedInject constructor(
                         is ReceiveChatUpdatesRepositoryError.RemoteOperationFailed,
                         -> _state.update { s ->
                             when (s) {
-                                is ChatUiState.Loading -> Loading(result.error)
-                                is ChatUiState.Ready -> s.copy(updateError = result.error)
-                                is ChatUiState.Error -> error("Unexpected UI state Error")
+                                is Loading -> Loading(result.error)
+                                is Ready -> s.copy(updateError = result.error)
+                                is Error -> error("Unexpected UI state Error")
                             }
                         }
                     }
@@ -210,7 +213,7 @@ class ChatViewModel @AssistedInject constructor(
             }
     }
 
-    private fun updateUiStateFromChat(state: ChatUiState, chat: Chat): ChatUiState.Ready {
+    private fun updateUiStateFromChat(state: ChatUiState, chat: Chat): Ready {
         val participantUiModels = chat.participants.map { participant ->
             ParticipantUiModel(
                 id = participant.id,
@@ -226,18 +229,18 @@ class ChatViewModel @AssistedInject constructor(
             ChatStatus.Group(chat.participants.size)
         }
 
-        val inputTextValidationError = (state as? ChatUiState.Ready?)?.inputTextValidationError
-        return ChatUiState.Ready(
+        val inputTextValidationError = (state as? Ready?)?.inputTextValidationError
+        return Ready(
             id = chat.id,
             title = chat.name,
             participants = participantUiModels,
             isGroupChat = !chat.isOneToOne,
-            messages = getPagedMessagesUseCase(chat.id),
+            messages = pagedMessages,
             status = chatStatus,
             inputTextValidationError = inputTextValidationError,
-            isSending = (state as? ChatUiState.Ready?)?.isSending == true,
+            isSending = (state as? Ready?)?.isSending == true,
             updateError = null,
-            dialogError = (state as? ChatUiState.Ready?)?.dialogError,
+            dialogError = (state as? Ready?)?.dialogError,
         )
     }
 }

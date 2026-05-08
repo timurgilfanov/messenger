@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
+import androidx.paging.LoadStates
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -45,16 +46,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.time.Clock
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -358,10 +362,10 @@ private fun PagingLoadError(
 
 @Preview(showBackground = true)
 @Composable
-private fun ChatContentPreview() {
+private fun RefreshMessagesLoadingPreview() {
     MessengerTheme {
-        ChatContent(
-            state = ChatUiState.Ready(
+        ChatScreenContent(
+            uiState = ChatUiState.Ready(
                 id = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
                 title = "Alice",
                 participants = persistentListOf(
@@ -385,14 +389,151 @@ private fun ChatContentPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun ChatLoadingPreview() {
+private fun RefreshMessagesErrorPreview() {
+    val messages = flowOf(
+        PagingData.from<Message>(
+            data = emptyList(),
+            sourceLoadStates = LoadStates(
+                refresh = LoadState.Error(RuntimeException("No internet connection")),
+                prepend = LoadState.NotLoading(false),
+                append = LoadState.NotLoading(false),
+            ),
+        ),
+    )
     MessengerTheme {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
+        ChatScreenContent(
+            uiState = ChatUiState.Ready(
+                id = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
+                title = "Alice",
+                participants = persistentListOf(
+                    ParticipantUiModel(
+                        id = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001")),
+                        name = "Alice",
+                        pictureUrl = null,
+                    ),
+                ),
+                isGroupChat = false,
+                messages = messages,
+                isSending = false,
+                status = ChatStatus.OneToOne(null),
+            ),
+            inputTextFieldState = TextFieldState(""),
+            onSendMessage = {},
+            onMarkMessagesAsReadUpTo = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatScreenLoadingPreview() {
+    MessengerTheme {
+        ChatScreenContent(
+            uiState = ChatUiState.Loading(),
+            inputTextFieldState = TextFieldState(""),
+            onSendMessage = {},
+            onMarkMessagesAsReadUpTo = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ChatScreenErrorPreview() {
+    MessengerTheme {
+        ChatScreenContent(
+            uiState = ChatUiState.Error(error = ReceiveChatUpdatesRepositoryError.ChatNotFound),
+            inputTextFieldState = TextFieldState(""),
+            onSendMessage = {},
+            onMarkMessagesAsReadUpTo = {},
+        )
+    }
+}
+
+private val SAMPLE_PARTICIPANT_ID =
+    ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+private val SAMPLE_CHAT_ID = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
+private val SAMPLE_PARTICIPANTS = persistentListOf(
+    ParticipantUiModel(
+        id = SAMPLE_PARTICIPANT_ID,
+        name = "Alice",
+        pictureUrl = null,
+    ),
+)
+private val SAMPLE_MESSAGE = TextMessage(
+    id = MessageId(UUID.fromString("00000000-0000-0000-0000-000000000001")),
+    parentId = null,
+    sender = Participant(
+        id = SAMPLE_PARTICIPANT_ID,
+        name = "Alice",
+        pictureUrl = null,
+        joinedAt = Clock.System.now(),
+        onlineAt = null,
+    ),
+    recipient = SAMPLE_CHAT_ID,
+    createdAt = Clock.System.now(),
+    text = "Hello! This is a sample message.",
+)
+
+@Preview(showBackground = true)
+@Composable
+private fun AppendPreviousMessagesLoadingPreview() {
+    val messages = flowOf(
+        PagingData.from<Message>(
+            data = listOf(SAMPLE_MESSAGE),
+            sourceLoadStates = LoadStates(
+                refresh = LoadState.NotLoading(false),
+                prepend = LoadState.NotLoading(false),
+                append = LoadState.Loading,
+            ),
+        ),
+    )
+    MessengerTheme {
+        ChatScreenContent(
+            uiState = ChatUiState.Ready(
+                id = SAMPLE_CHAT_ID,
+                title = "Alice",
+                participants = SAMPLE_PARTICIPANTS,
+                isGroupChat = false,
+                messages = messages,
+                isSending = false,
+                status = ChatStatus.OneToOne(null),
+            ),
+            inputTextFieldState = TextFieldState(""),
+            onSendMessage = {},
+            onMarkMessagesAsReadUpTo = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AppendPreviousMessagesErrorPreview() {
+    val messages = flowOf(
+        PagingData.from<Message>(
+            data = listOf(SAMPLE_MESSAGE),
+            sourceLoadStates = LoadStates(
+                refresh = LoadState.NotLoading(false),
+                prepend = LoadState.NotLoading(false),
+                append = LoadState.Error(RuntimeException("Failed to load older messages")),
+            ),
+        ),
+    )
+    MessengerTheme {
+        ChatScreenContent(
+            uiState = ChatUiState.Ready(
+                id = SAMPLE_CHAT_ID,
+                title = "Alice",
+                participants = SAMPLE_PARTICIPANTS,
+                isGroupChat = false,
+                messages = messages,
+                isSending = false,
+                status = ChatStatus.OneToOne(null),
+            ),
+            inputTextFieldState = TextFieldState(""),
+            onSendMessage = {},
+            onMarkMessagesAsReadUpTo = {},
+        )
     }
 }
 

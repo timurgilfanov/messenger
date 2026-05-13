@@ -280,6 +280,67 @@ class ChatViewModelMessageSendingTest {
     }
 
     @Test
+    fun `local storage failure after local acceptance shows dialog error`() = runTest {
+        val chat = createTestChat(TEST_CHAT_ID, TEST_CURRENT_USER_ID, TEST_OTHER_USER_ID)
+        val acceptedMessage = buildTextMessage {
+            sender = chat.participants.first { it.isCurrentUser }
+            recipient = TEST_CHAT_ID
+            createdAt = TEST_INSTANT
+            text = "Test message"
+            deliveryStatus = Sending(0)
+        }
+        val repository = MessengerRepositoryFake(
+            chat = chat,
+            flowSendMessageResult = flowOf(
+                ResultWithError.Success(acceptedMessage),
+                ResultWithError.Failure(
+                    SendMessageRepositoryError.LocalOperationFailed(
+                        LocalStorageError.TemporarilyUnavailable,
+                    ),
+                ),
+            ),
+        )
+        val viewModel = ChatViewModel(
+            chatIdUuid = TEST_CHAT_ID.id,
+            savedStateHandle = SavedStateHandle(),
+            sendMessageUseCase = SendMessageUseCase(repository, DeliveryStatusValidatorImpl()),
+            receiveChatUpdatesUseCase = ReceiveChatUpdatesUseCase(repository),
+            getPagedMessagesUseCase = GetPagedMessagesUseCase(repository),
+            markMessagesAsReadUseCase = MarkMessagesAsReadUseCase(repository),
+        )
+
+        viewModel.effects.test {
+            viewModel.state.test {
+                var readyState = awaitItem()
+                while (readyState !is ChatUiState.Ready) {
+                    readyState = awaitItem()
+                }
+
+                viewModel.onInputTextChanged("Test message")
+                viewModel.sendMessage(acceptedMessage.id, TEST_INSTANT)
+
+                val sendingState = awaitItem()
+                assertTrue(sendingState is ChatUiState.Ready)
+                assertTrue(sendingState.isSending)
+
+                val acceptedState = awaitItem()
+                assertTrue(acceptedState is ChatUiState.Ready)
+                assertFalse(acceptedState.isSending)
+                assertNull(acceptedState.dialogError)
+
+                val errorState = awaitItem()
+                assertTrue(errorState is ChatUiState.Ready)
+                assertIs<ReadyError.SendMessageError>(errorState.dialogError)
+                assertIs<SendMessageError.LocalOperationFailed>(
+                    (errorState.dialogError as ReadyError.SendMessageError).error,
+                )
+            }
+
+            assertIs<ChatSideEffect.ClearInputText>(awaitItem())
+        }
+    }
+
+    @Test
     fun `dismissDialogError clears error`() = runTest {
         val chatId = TEST_CHAT_ID
         val currentUserId = TEST_CURRENT_USER_ID

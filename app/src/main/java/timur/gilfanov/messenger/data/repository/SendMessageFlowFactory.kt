@@ -90,7 +90,7 @@ internal class SendMessageFlowFactory(
 
 private fun Message.withDeliveryStatus(status: DeliveryStatus): Message = when (this) {
     is TextMessage -> copy(deliveryStatus = status)
-    else -> this
+    else -> error("withDeliveryStatus not implemented for ${this::class.simpleName}")
 }
 
 private fun LocalDataSourceError.toLocalStorageError(): LocalStorageError = when (this) {

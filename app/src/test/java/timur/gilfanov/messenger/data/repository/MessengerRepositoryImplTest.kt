@@ -5,6 +5,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
@@ -672,10 +673,8 @@ class MessengerRepositoryImplTest {
                 assertEquals(2, secondResult.data.messages.size)
                 // Verify both original and new messages are present
                 val messageIds = secondResult.data.messages.map { it.id }
-                assert(testMessage.id in messageIds) {
-                    "Original message should still be present"
-                }
-                assert(newMessage.id in messageIds) { "New message should be present" }
+                assertTrue(testMessage.id in messageIds, "Original message should still be present")
+                assertTrue(newMessage.id in messageIds, "New message should be present")
             }
         }
 
@@ -849,8 +848,15 @@ class MessengerRepositoryImplTest {
         )
 
         repository.sendMessage(message).test {
-            assertIs<ResultWithError.Success<Message, SendMessageRepositoryError>>(awaitItem())
-            assertIs<ResultWithError.Success<Message, SendMessageRepositoryError>>(awaitItem())
+            val localAccepted =
+                assertIs<ResultWithError.Success<Message, SendMessageRepositoryError>>(awaitItem())
+            assertEquals(DeliveryStatus.Sending(0), localAccepted.data.deliveryStatus)
+
+            val remoteUpdate =
+                assertIs<ResultWithError.Success<Message, SendMessageRepositoryError>>(awaitItem())
+            assertEquals(DeliveryStatus.Sending(50), remoteUpdate.data.deliveryStatus)
+            assertEquals(sentAt, (remoteUpdate.data as TextMessage).sentAt)
+
             assertIs<ResultWithError.Failure<Message, SendMessageRepositoryError>>(awaitItem())
 
             localDataSource.getMessage(message.id).let {

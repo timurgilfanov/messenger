@@ -275,11 +275,12 @@ class ChatViewModel @AssistedInject constructor(
 
 private fun DeliveryStatus?.isAcceptedStatus(): Boolean = when (this) {
     is DeliveryStatus.Sending,
-    is DeliveryStatus.Failed,
     DeliveryStatus.Sent,
     DeliveryStatus.Delivered,
     DeliveryStatus.Read,
     -> true
 
-    null -> false
+    is DeliveryStatus.Failed,
+    null,
+    -> false
 }

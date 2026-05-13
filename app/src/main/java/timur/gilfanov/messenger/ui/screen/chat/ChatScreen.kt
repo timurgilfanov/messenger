@@ -10,11 +10,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +27,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,12 +43,16 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
+import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,18 +89,21 @@ fun ChatScreen(
         inputTextFieldState = inputTextFieldState,
         onSendMessage = viewModel::sendMessage,
         onMarkMessagesAsReadUpTo = viewModel::markMessagesAsReadUpTo,
+        onDismissDialogError = viewModel::dismissDialogError,
         modifier = modifier,
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongParameterList") // in Compose property drilling is preferred over wrapper
 fun ChatScreenContent(
     uiState: ChatUiState,
     inputTextFieldState: TextFieldState,
     onSendMessage: () -> Unit,
     onMarkMessagesAsReadUpTo: (MessageId) -> Unit,
     modifier: Modifier = Modifier,
+    onDismissDialogError: () -> Unit = {},
 ) {
     when (uiState) {
         is ChatUiState.Loading -> {
@@ -126,6 +136,7 @@ fun ChatScreenContent(
                 inputTextFieldState = inputTextFieldState,
                 onSendMessage = onSendMessage,
                 onMarkMessagesAsReadUpTo = onMarkMessagesAsReadUpTo,
+                onDismissDialogError = onDismissDialogError,
                 modifier = modifier,
             )
         }
@@ -136,13 +147,14 @@ private const val MARK_AS_VISIBLE_DEBOUNCE = 300L
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Suppress("LongMethod") // Complex UI composition requires length
+@Suppress("LongMethod", "LongParameterList") // Complex UI composition; property drilling preferred
 fun ChatContent(
     state: ChatUiState.Ready,
     inputTextFieldState: TextFieldState,
     onSendMessage: () -> Unit,
     onMarkMessagesAsReadUpTo: (MessageId) -> Unit,
     modifier: Modifier = Modifier,
+    onDismissDialogError: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
 
@@ -224,6 +236,59 @@ fun ChatContent(
             }
         }
     }
+
+    if (state.dialogError != null) {
+        AlertDialog(
+            onDismissRequest = onDismissDialogError,
+            title = { Text(text = stringResource(R.string.send_error_dialog_title)) },
+            text = { Text(text = readyErrorMessage(state.dialogError)) },
+            confirmButton = {
+                TextButton(onClick = onDismissDialogError) {
+                    Text(text = stringResource(R.string.send_error_dialog_dismiss))
+                }
+            },
+            modifier = Modifier.testTag("send_error_dialog"),
+        )
+    }
+}
+
+@Composable
+private fun readyErrorMessage(error: ReadyError): String = when (error) {
+    is ReadyError.SendMessageError -> sendMessageErrorMessage(error.error)
+}
+
+@Composable
+private fun sendMessageErrorMessage(error: SendMessageError): String = when (error) {
+    is SendMessageError.WaitDebounce ->
+        stringResource(R.string.send_error_dialog_wait_debounce, error.duration)
+    is SendMessageError.WaitAfterJoining ->
+        stringResource(R.string.send_error_dialog_wait_after_joining, error.duration)
+    is SendMessageError.LocalOperationFailed -> localStorageErrorMessage(error.error)
+    is SendMessageError.RemoteOperationFailed -> remoteErrorMessage(error.error)
+    else -> stringResource(R.string.send_error_dialog_message)
+}
+
+@Composable
+private fun localStorageErrorMessage(error: LocalStorageError): String = when (error) {
+    LocalStorageError.StorageFull -> stringResource(R.string.send_error_dialog_local_storage_full)
+    else -> stringResource(R.string.send_error_dialog_local_storage)
+}
+
+@Composable
+private fun remoteErrorMessage(error: RemoteError): String = when (error) {
+    is RemoteError.Failed.NetworkNotAvailable ->
+        stringResource(R.string.send_error_dialog_network_unavailable)
+    is RemoteError.Failed.ServiceDown ->
+        stringResource(R.string.send_error_dialog_service_down)
+    is RemoteError.Failed.Cooldown ->
+        stringResource(R.string.send_error_dialog_cooldown)
+    is RemoteError.Unauthenticated ->
+        stringResource(R.string.send_error_dialog_session_expired)
+    is RemoteError.InsufficientPermissions ->
+        stringResource(R.string.send_error_dialog_no_permission)
+    is RemoteError.UnknownStatus.ServiceTimeout ->
+        stringResource(R.string.send_error_dialog_request_timeout)
+    else -> stringResource(R.string.send_error_dialog_message)
 }
 
 @Preview(showBackground = true)

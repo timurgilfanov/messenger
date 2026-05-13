@@ -44,10 +44,24 @@ internal class SendMessageFlowFactory(
                 is ResultWithError.Success -> {
                     val updatedMessage = result.data
                     if (updatedMessage != lastEmittedMessage) {
-                        val updateResult = updateLocalMessage(updatedMessage)
-                        emit(updateResult)
-                        if (updateResult is ResultWithError.Success) {
-                            lastEmittedMessage = updatedMessage
+                        if (updatedMessage.deliveryStatus == null) {
+                            val failedMessage = lastEmittedMessage.withDeliveryStatus(
+                                DeliveryStatus.Failed(
+                                    RemoteDataSourceError.ServerError.toDeliveryError(),
+                                ),
+                            )
+                            emit(
+                                updateFailedMessage(
+                                    failedMessage,
+                                    RemoteDataSourceError.ServerError,
+                                ),
+                            )
+                        } else {
+                            val updateResult = updateLocalMessage(updatedMessage)
+                            emit(updateResult)
+                            if (updateResult is ResultWithError.Success) {
+                                lastEmittedMessage = updatedMessage
+                            }
                         }
                     }
                 }
@@ -116,8 +130,9 @@ private fun RemoteDataSourceError.toDeliveryError(): DeliveryError = when (this)
     RemoteDataSourceError.ServerUnreachable,
     RemoteDataSourceError.ServerError,
     RemoteDataSourceError.RateLimitExceeded,
-    is RemoteDataSourceError.CooldownActive,
     -> DeliveryError.ServerUnreachable
+
+    is RemoteDataSourceError.CooldownActive -> DeliveryError.RateLimitExceeded(remaining)
 
     RemoteDataSourceError.Unauthorized -> DeliveryError.UnknownError(
         errorCode = DELIVERY_ERROR_UNAUTHORIZED,
@@ -129,6 +144,8 @@ private fun RemoteDataSourceError.toDeliveryError(): DeliveryError = when (this)
         message = cause.message,
     )
 
+    RemoteDataSourceError.UserBlocked -> DeliveryError.RecipientBlocked
+
     RemoteDataSourceError.ChatNotFound,
     RemoteDataSourceError.MessageNotFound,
     RemoteDataSourceError.InvalidInviteLink,
@@ -136,7 +153,6 @@ private fun RemoteDataSourceError.toDeliveryError(): DeliveryError = when (this)
     RemoteDataSourceError.ChatClosed,
     RemoteDataSourceError.AlreadyJoined,
     RemoteDataSourceError.ChatFull,
-    RemoteDataSourceError.UserBlocked,
     -> DeliveryError.UnknownError(
         errorCode = DELIVERY_ERROR_UNEXPECTED,
         message = toString(),

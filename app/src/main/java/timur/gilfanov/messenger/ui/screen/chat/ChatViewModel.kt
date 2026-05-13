@@ -136,7 +136,7 @@ class ChatViewModel @AssistedInject constructor(
             viewModelScope.launch {
                 val message = textMessage(request.messageId, request.now, request.text)
                 val progress = SendProgress()
-                sendMessageUseCase(currentChat!!, message).collect { result ->
+                sendMessageUseCase(currentChat!!, message, request.now).collect { result ->
                     when (result) {
                         is ResultWithError.Success -> handleSendSuccess(
                             result.data,
@@ -158,6 +158,13 @@ class ChatViewModel @AssistedInject constructor(
     ) {
         if (!progress.acceptedLocally && message.deliveryStatus.isAcceptedStatus()) {
             progress.acceptedLocally = true
+            currentChat = currentChat?.let { chat ->
+                if (chat.messages.none { it.id == message.id }) {
+                    chat.copy(messages = chat.messages.add(message))
+                } else {
+                    chat
+                }
+            }
             _state.update {
                 (it as? Ready)?.copy(isSending = false) ?: it
             }
@@ -176,9 +183,9 @@ class ChatViewModel @AssistedInject constructor(
     private fun handleSendFailure(error: SendMessageUseCaseError, progress: SendProgress) {
         _state.update { state ->
             val showDialog = !progress.acceptedLocally ||
-                error is SendMessageUseCaseError.LocalOperationFailed
+                error !is SendMessageUseCaseError.RemoteOperationFailed
             (state as? Ready)?.copy(
-                isSending = false,
+                isSending = if (!progress.acceptedLocally) false else state.isSending,
                 dialogError = if (showDialog) {
                     ReadyError.SendMessageError(error)
                 } else {

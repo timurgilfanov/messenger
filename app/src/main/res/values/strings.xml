@@ -49,6 +49,11 @@
     <string name="settings_language_german">German</string>
     <string name="settings_language_change_failed">Cannot change language</string>
 
+    <!-- Chat Screen -->
+    <string name="chat_messages_failed_to_load">Messages failed to load</string>
+    <string name="chat_paging_retry">Retry</string>
+    <string name="chat_update_failed">Could not update chat</string>
+
     <!-- Common content description -->
     <string name="content_description_navigate_back">Navigate back</string>
 

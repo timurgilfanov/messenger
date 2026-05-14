@@ -510,6 +510,90 @@ class LocalSyncDataSourceImplTest {
         )
     }
 
+    @Test
+    fun `applyChatDelta with ChatCreatedDelta no current user returns InvalidData`() = runTest {
+        val chatId = ChatId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+        val delta = ChatCreatedDelta(
+            chatId = chatId,
+            chatMetadata = ChatMetadata(
+                name = "Invalid Chat",
+                participants = createParticipantsWithNoCurrentUser(),
+                pictureUrl = null,
+                rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
+                unreadMessagesCount = 0,
+                lastReadMessageId = null,
+                lastActivityAt = null,
+            ),
+            initialMessages = persistentListOf(),
+            timestamp = Instant.fromEpochMilliseconds(1000000),
+        )
+
+        val result = localSyncDataSource.applyChatDelta(delta)
+
+        assertIs<ResultWithError.Failure<Unit, LocalDataSourceError>>(result)
+        assertIs<LocalDataSourceError.InvalidData>(result.error)
+        assertNull(databaseRule.chatDao.getChatById(chatId.id.toString()))
+    }
+
+    @Test
+    fun `applyChatDelta with multiple current users returns InvalidData`() = runTest {
+        val chatId = ChatId(UUID.fromString("aaaaaaaa-bbbb-bbbb-bbbb-aaaaaaaaaaaa"))
+        val delta = ChatCreatedDelta(
+            chatId = chatId,
+            chatMetadata = ChatMetadata(
+                name = "Invalid Chat",
+                participants = createParticipantsWithMultipleCurrentUsers(),
+                pictureUrl = null,
+                rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
+                unreadMessagesCount = 0,
+                lastReadMessageId = null,
+                lastActivityAt = null,
+            ),
+            initialMessages = persistentListOf(),
+            timestamp = Instant.fromEpochMilliseconds(1000000),
+        )
+
+        val result = localSyncDataSource.applyChatDelta(delta)
+
+        assertIs<ResultWithError.Failure<Unit, LocalDataSourceError>>(result)
+        assertIs<LocalDataSourceError.InvalidData>(result.error)
+        assertNull(databaseRule.chatDao.getChatById(chatId.id.toString()))
+    }
+
+    @Test
+    fun `applyChatListDelta invalid participants fails without advancing timestamp`() = runTest {
+        val chatId = ChatId(UUID.fromString("aaaaaaaa-cccc-cccc-cccc-aaaaaaaaaaaa"))
+        val invalidDelta = ChatCreatedDelta(
+            chatId = chatId,
+            chatMetadata = ChatMetadata(
+                name = "Invalid Chat",
+                participants = createParticipantsWithNoCurrentUser(),
+                pictureUrl = null,
+                rules = persistentSetOf<timur.gilfanov.messenger.domain.entity.chat.Rule>(),
+                unreadMessagesCount = 0,
+                lastReadMessageId = null,
+                lastActivityAt = null,
+            ),
+            initialMessages = persistentListOf(),
+            timestamp = Instant.fromEpochMilliseconds(1000000),
+        )
+        val chatListDelta = ChatListDelta(
+            changes = persistentListOf(invalidDelta),
+            fromTimestamp = null,
+            toTimestamp = Instant.fromEpochMilliseconds(1000000),
+            hasMoreChanges = false,
+        )
+
+        val result = localSyncDataSource.applyChatListDelta(chatListDelta)
+
+        assertIs<ResultWithError.Failure<Unit, LocalDataSourceError>>(result)
+        assertIs<LocalDataSourceError.InvalidData>(result.error)
+        assertNull(databaseRule.chatDao.getChatById(chatId.id.toString()))
+        val timestampResult = localSyncDataSource.getLastSyncTimestamp()
+        assertIs<ResultWithError.Success<Instant?, LocalDataSourceError>>(timestampResult)
+        assertNull(timestampResult.data)
+    }
+
     private fun createTestParticipants() = persistentSetOf(
         Participant(
             id = ParticipantId(UUID.fromString("11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa")),
@@ -519,6 +603,7 @@ class LocalSyncDataSourceImplTest {
             onlineAt = null,
             isAdmin = false,
             isModerator = false,
+            isCurrentUser = true,
         ),
         Participant(
             id = ParticipantId(UUID.fromString("22222222-bbbb-bbbb-bbbb-bbbbbbbbbbbb")),
@@ -528,6 +613,43 @@ class LocalSyncDataSourceImplTest {
             onlineAt = null,
             isAdmin = true,
             isModerator = false,
+            isCurrentUser = false,
+        ),
+    )
+
+    private fun createParticipantsWithNoCurrentUser() = persistentSetOf(
+        Participant(
+            id = ParticipantId(UUID.fromString("11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa")),
+            name = "User 1",
+            pictureUrl = null,
+            joinedAt = Instant.fromEpochMilliseconds(1000000),
+            onlineAt = null,
+            isAdmin = false,
+            isModerator = false,
+            isCurrentUser = false,
+        ),
+    )
+
+    private fun createParticipantsWithMultipleCurrentUsers() = persistentSetOf(
+        Participant(
+            id = ParticipantId(UUID.fromString("11111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa")),
+            name = "User 1",
+            pictureUrl = null,
+            joinedAt = Instant.fromEpochMilliseconds(1000000),
+            onlineAt = null,
+            isAdmin = false,
+            isModerator = false,
+            isCurrentUser = true,
+        ),
+        Participant(
+            id = ParticipantId(UUID.fromString("22222222-bbbb-bbbb-bbbb-bbbbbbbbbbbb")),
+            name = "User 2",
+            pictureUrl = null,
+            joinedAt = Instant.fromEpochMilliseconds(1100000),
+            onlineAt = null,
+            isAdmin = false,
+            isModerator = false,
+            isCurrentUser = true,
         ),
     )
 

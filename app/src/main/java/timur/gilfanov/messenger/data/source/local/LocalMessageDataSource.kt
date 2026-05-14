@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.data.source.local
 
 import androidx.paging.PagingSource
+import timur.gilfanov.messenger.data.source.paging.MessageCursor
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.message.Message
@@ -39,5 +40,5 @@ interface LocalMessageDataSource {
      * @param chatId The ID of the chat to load messages for
      * @return PagingSource that loads messages in pages
      */
-    fun getMessagePagingSource(chatId: ChatId): PagingSource<Long, Message>
+    fun getMessagePagingSource(chatId: ChatId): PagingSource<MessageCursor, Message>
 }

@@ -19,6 +19,7 @@ import org.robolectric.annotation.Config
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.ParticipantEntity
+import timur.gilfanov.messenger.data.source.paging.MessageCursor
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
@@ -185,19 +186,78 @@ class LocalMessageDataSourceImplTest {
         localMessageDataSource.insertMessage(middle)
         localMessageDataSource.insertMessage(newest)
 
-        val result = localMessageDataSource.getMessagePagingSource(defaultChatId()).load(
+        val result = localMessageDataSource.getMessagePagingSource(defaultChatId).load(
             PagingSource.LoadParams.Refresh(
-                key = Long.MAX_VALUE,
+                key = null,
                 loadSize = 2,
                 placeholdersEnabled = false,
             ),
         )
 
-        val page = assertIs<PagingSource.LoadResult.Page<Long, Message>>(result)
+        val page = assertIs<PagingSource.LoadResult.Page<MessageCursor, Message>>(result)
         assertEquals(listOf("Newest", "Middle"), page.data.texts())
         assertNull(page.prevKey)
-        assertEquals(2000, page.nextKey)
+        assertEquals(
+            MessageCursor(2000, "00000000-0000-0000-0000-000000000102"),
+            page.nextKey,
+        )
     }
+
+    @Test
+    fun `message paging source anchored refresh includes anchor with same-millisecond collision`() =
+        runTest {
+            // 4 messages at the same timestamp; the anchor has the lexicographically lowest id.
+            // With the old `timestamp + 1` approach, the query returned `createdAt <= timestamp`
+            // ordered by id DESC, so when more than pageSize messages share the timestamp the
+            // low-id anchor was pushed off the first page.  The inclusive anchor query fixes this.
+            val sameTimestamp = Instant.fromEpochMilliseconds(7000)
+            val anchorId = "07000001-0000-0000-0000-000000000001"
+            val highIds = listOf(
+                "07000002-0000-0000-0000-000000000002",
+                "07000003-0000-0000-0000-000000000003",
+                "07000004-0000-0000-0000-000000000004",
+            )
+            (listOf(anchorId) + highIds).forEach { id ->
+                localMessageDataSource.insertMessage(
+                    createTestMessage(
+                        id = id,
+                        text = id,
+                        createdAt = sameTimestamp,
+                        sentAt = sameTimestamp,
+                    ),
+                )
+            }
+            // Two older messages to fill the page alongside the anchor.
+            localMessageDataSource.insertMessage(
+                createTestMessage(
+                    id = "06000001-0000-0000-0000-000000000001",
+                    text = "older-1",
+                    createdAt = Instant.fromEpochMilliseconds(6000),
+                    sentAt = Instant.fromEpochMilliseconds(6000),
+                ),
+            )
+            localMessageDataSource.insertMessage(
+                createTestMessage(
+                    id = "06000002-0000-0000-0000-000000000002",
+                    text = "older-2",
+                    createdAt = Instant.fromEpochMilliseconds(6000),
+                    sentAt = Instant.fromEpochMilliseconds(6000),
+                ),
+            )
+
+            val result = localMessageDataSource.getMessagePagingSource(defaultChatId).load(
+                PagingSource.LoadParams.Refresh(
+                    key = MessageCursor(7000, anchorId),
+                    loadSize = 3,
+                    placeholdersEnabled = false,
+                ),
+            )
+
+            val page = assertIs<PagingSource.LoadResult.Page<MessageCursor, Message>>(result)
+            val ids = page.data.map { it.id.id.toString() }
+            assertTrue(ids.contains(anchorId), "Anchor message must be in the refreshed page")
+            assertNotNull(page.prevKey)
+        }
 
     @Test
     fun `message paging source append loads older page`() = runTest {
@@ -224,17 +284,17 @@ class LocalMessageDataSourceImplTest {
         localMessageDataSource.insertMessage(middle)
         localMessageDataSource.insertMessage(newest)
 
-        val result = localMessageDataSource.getMessagePagingSource(defaultChatId()).load(
+        val result = localMessageDataSource.getMessagePagingSource(defaultChatId).load(
             PagingSource.LoadParams.Append(
-                key = 2000,
+                key = MessageCursor(2000, "00000000-0000-0000-0000-000000000202"),
                 loadSize = 2,
                 placeholdersEnabled = false,
             ),
         )
 
-        val page = assertIs<PagingSource.LoadResult.Page<Long, Message>>(result)
+        val page = assertIs<PagingSource.LoadResult.Page<MessageCursor, Message>>(result)
         assertEquals(listOf("Oldest"), page.data.texts())
-        assertEquals(1000, page.prevKey)
+        assertNull(page.prevKey)
         assertNull(page.nextKey)
     }
 
@@ -392,7 +452,7 @@ class LocalMessageDataSourceImplTest {
         )
     }
 
-    private fun defaultChatId() = ChatId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+    private val defaultChatId = ChatId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
 
     private fun List<Message>.texts(): List<String> = map { message ->
         assertIs<TextMessage>(message).text

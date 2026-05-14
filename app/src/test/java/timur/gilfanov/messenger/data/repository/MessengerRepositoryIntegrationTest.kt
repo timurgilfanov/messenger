@@ -594,6 +594,7 @@ class MessengerRepositoryIntegrationTest {
             chat = LocalChatDataSourceImpl(
                 database = databaseRule.database,
                 chatDao = databaseRule.chatDao,
+                messageDao = databaseRule.messageDao,
                 participantDao = databaseRule.participantDao,
                 logger = logger,
             ),

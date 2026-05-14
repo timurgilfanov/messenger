@@ -49,6 +49,12 @@ interface MessageDao {
     suspend fun getLastMessageInChat(chatId: String): MessageEntity?
 
     @Query(
+        "SELECT * FROM messages WHERE chatId = :chatId AND senderId = :senderId " +
+            "ORDER BY createdAt DESC LIMIT 1",
+    )
+    fun flowLastMessageBySenderInChat(chatId: String, senderId: String): Flow<MessageEntity?>
+
+    @Query(
         """SELECT COUNT(*) FROM messages 
            WHERE chatId = :chatId 
            AND createdAt > (SELECT createdAt FROM messages WHERE id = :lastReadMessageId)""",
@@ -56,15 +62,44 @@ interface MessageDao {
     suspend fun getUnreadMessageCount(chatId: String, lastReadMessageId: String): Int
 
     @Query(
-        """SELECT * FROM messages 
-           WHERE chatId = :chatId 
-           AND createdAt < :beforeTimestamp
-           ORDER BY createdAt DESC 
+        """SELECT * FROM messages
+           WHERE chatId = :chatId
+           AND (createdAt < :beforeTimestamp OR (createdAt = :beforeTimestamp AND id < :beforeMessageId))
+           ORDER BY createdAt DESC, id DESC
            LIMIT :limit""",
     )
     suspend fun getMessagesByChatIdPaged(
         chatId: String,
         beforeTimestamp: Long,
+        beforeMessageId: String,
+        limit: Int,
+    ): List<MessageEntity>
+
+    @Query(
+        """SELECT * FROM messages
+           WHERE chatId = :chatId
+           AND (createdAt < :anchorTimestamp OR (createdAt = :anchorTimestamp AND id <= :anchorId))
+           ORDER BY createdAt DESC, id DESC
+           LIMIT :limit""",
+    )
+    suspend fun getMessagesByChatIdPagedFromAnchor(
+        chatId: String,
+        anchorTimestamp: Long,
+        anchorId: String,
+        limit: Int,
+    ): List<MessageEntity>
+
+    @Query(
+        """SELECT * FROM messages
+           WHERE chatId = :chatId
+           AND (createdAt > :afterTimestamp OR (createdAt = :afterTimestamp AND id > :afterMessageId))
+           ORDER BY createdAt ASC, id ASC
+           LIMIT :limit""",
+    )
+    suspend fun getMessagesByChatIdPagedNewerThan(
+        chatId: String,
+        afterTimestamp: Long,
+        afterMessageId: String,
         limit: Int,
     ): List<MessageEntity>
 }

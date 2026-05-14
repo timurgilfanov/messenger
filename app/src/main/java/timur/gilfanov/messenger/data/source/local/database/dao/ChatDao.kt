@@ -10,6 +10,7 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
 
 /**
@@ -35,6 +36,10 @@ interface ChatDao {
 
     @Transaction
     @Query("SELECT * FROM chats WHERE id = :chatId")
+    suspend fun getChatWithParticipants(chatId: String): ChatWithParticipants?
+
+    @Transaction
+    @Query("SELECT * FROM chats WHERE id = :chatId")
     suspend fun getChatWithParticipantsAndMessages(chatId: String): ChatWithParticipantsAndMessages?
 
     @Query("SELECT * FROM chats ORDER BY updatedAt DESC")
@@ -43,6 +48,10 @@ interface ChatDao {
     @Transaction
     @Query("SELECT * FROM chats ORDER BY updatedAt DESC")
     fun flowAllChatsWithParticipantsAndMessages(): Flow<List<ChatWithParticipantsAndMessages>>
+
+    @Transaction
+    @Query("SELECT * FROM chats WHERE id = :chatId")
+    fun flowChatWithParticipants(chatId: String): Flow<ChatWithParticipants?>
 
     @Transaction
     @Query("SELECT * FROM chats WHERE id = :chatId")

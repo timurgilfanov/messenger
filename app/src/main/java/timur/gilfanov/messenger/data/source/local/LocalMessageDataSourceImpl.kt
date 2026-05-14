@@ -8,6 +8,7 @@ import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
+import timur.gilfanov.messenger.data.source.paging.MessageCursor
 import timur.gilfanov.messenger.data.source.paging.MessagePagingSource
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
@@ -84,7 +85,7 @@ class LocalMessageDataSourceImpl @Inject constructor(
     ): ResultWithError<Message, LocalDataSourceError> = try {
         val messageEntity = messageDao.getMessageById(messageId.id.toString())
         if (messageEntity != null) {
-            val chat = chatDao.getChatWithParticipantsAndMessages(messageEntity.chatId)
+            val chat = chatDao.getChatWithParticipants(messageEntity.chatId)
             val participants = chat?.participants ?: emptyList()
             val participantCrossRefs = chat?.participantCrossRefs ?: emptyList()
             val message = with(EntityMappers) {
@@ -141,7 +142,7 @@ class LocalMessageDataSourceImpl @Inject constructor(
     private fun validateMessageForUpdate(message: Message): LocalDataSourceError? =
         validateMessageForInsert(message)
 
-    override fun getMessagePagingSource(chatId: ChatId): PagingSource<Long, Message> =
+    override fun getMessagePagingSource(chatId: ChatId): PagingSource<MessageCursor, Message> =
         MessagePagingSource(
             database = database,
             messageDao = messageDao,

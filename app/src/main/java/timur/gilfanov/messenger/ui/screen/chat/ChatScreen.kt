@@ -24,14 +24,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,11 +44,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
+import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
@@ -160,19 +159,6 @@ fun ChatContent(
     val listState = rememberLazyListState()
 
     val messages = state.messages.collectAsLazyPagingItems()
-    var hasPositionedInitialMessages by rememberSaveable(state.id.id.toString()) {
-        mutableStateOf(false)
-    }
-
-    LaunchedEffect(messages.loadState.refresh, messages.itemCount) {
-        if (!hasPositionedInitialMessages &&
-            messages.loadState.refresh is LoadState.NotLoading &&
-            messages.itemCount > 0
-        ) {
-            listState.scrollToItem(0)
-            hasPositionedInitialMessages = true
-        }
-    }
 
     val visibleItemsInfo = remember {
         derivedStateOf {
@@ -206,9 +192,9 @@ fun ChatContent(
                 title = {
                     Column {
                         Text(text = state.title)
-                        state.updateError?.let { error ->
+                        state.updateError?.let {
                             Text(
-                                text = "Update failed: $error",
+                                text = stringResource(R.string.chat_update_failed),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -243,27 +229,38 @@ fun ChatContent(
 
 @Composable
 private fun PagingRefreshOverlay(messages: LazyPagingItems<Message>) {
-    if (messages.itemCount > 0) return
-
     when (val refresh = messages.loadState.refresh) {
-        LoadState.Loading -> PagingRefreshLoading()
-        is LoadState.Error -> PagingRefreshError(
-            error = refresh.error,
-            onRetry = messages::retry,
-        )
+        LoadState.Loading -> {
+            if (messages.itemCount == 0) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.testTag("paging_refresh_loading_indicator"),
+                    )
+                }
+            }
+        }
+        is LoadState.Error -> if (messages.itemCount == 0) {
+            PagingRefreshError(
+                error = refresh.error,
+                onRetry = messages::retry,
+            )
+        } else {
+            Box(modifier = Modifier.fillMaxSize()) {
+                PagingLoadError(
+                    error = refresh.error,
+                    onRetry = messages::retry,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    testTag = "paging_refresh_error",
+                )
+            }
+        }
         is LoadState.NotLoading -> Unit
-    }
-}
-
-@Composable
-private fun PagingRefreshLoading() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.testTag("paging_refresh_loading_indicator"),
-        )
     }
 }
 
@@ -293,6 +290,23 @@ private fun MessageList(
             .padding(horizontal = 16.dp)
             .testTag("message_list"),
     ) {
+        when (val prepend = messages.loadState.prepend) {
+            LoadState.Loading -> item(key = "newer_messages_loading") {
+                Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), Alignment.Center) {
+                    CircularProgressIndicator(Modifier.testTag("paging_prepend_loading_indicator"))
+                }
+            }
+            is LoadState.Error -> item(key = "newer_messages_error") {
+                PagingLoadError(
+                    error = prepend.error,
+                    onRetry = messages::retry,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    testTag = "paging_prepend_error",
+                )
+            }
+            is LoadState.NotLoading -> Unit
+        }
+
         items(
             count = messages.itemCount,
             key = messages.itemKey { message -> message.id.id },
@@ -308,24 +322,15 @@ private fun MessageList(
 
         when (val append = messages.loadState.append) {
             LoadState.Loading -> item(key = "older_messages_loading") {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.testTag("paging_append_loading_indicator"),
-                    )
+                Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), Alignment.Center) {
+                    CircularProgressIndicator(Modifier.testTag("paging_append_loading_indicator"))
                 }
             }
             is LoadState.Error -> item(key = "older_messages_error") {
                 PagingLoadError(
                     error = append.error,
                     onRetry = messages::retry,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     testTag = "paging_append_error",
                 )
             }
@@ -347,7 +352,7 @@ private fun PagingLoadError(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "Messages failed to load: ${error.message ?: "Unknown error"}",
+            text = stringResource(R.string.chat_messages_failed_to_load),
             color = MaterialTheme.colorScheme.error,
             modifier = Modifier.testTag("paging_error_message"),
         )
@@ -355,7 +360,7 @@ private fun PagingLoadError(
             onClick = onRetry,
             modifier = Modifier.testTag("paging_retry_button"),
         ) {
-            Text("Retry")
+            Text(stringResource(R.string.chat_paging_retry))
         }
     }
 }
@@ -363,6 +368,15 @@ private fun PagingLoadError(
 @Preview(showBackground = true)
 @Composable
 private fun RefreshMessagesLoadingPreview() {
+    val messages = flowOf(
+        PagingData.empty<Message>(
+            sourceLoadStates = LoadStates(
+                refresh = LoadState.Loading,
+                prepend = LoadState.NotLoading(false),
+                append = LoadState.NotLoading(false),
+            ),
+        ),
+    )
     MessengerTheme {
         ChatScreenContent(
             uiState = ChatUiState.Ready(
@@ -376,7 +390,7 @@ private fun RefreshMessagesLoadingPreview() {
                     ),
                 ),
                 isGroupChat = false,
-                messages = flowOf(PagingData.empty()),
+                messages = messages,
                 isSending = false,
                 status = ChatStatus.OneToOne(null),
             ),
@@ -467,11 +481,11 @@ private val SAMPLE_MESSAGE = TextMessage(
         id = SAMPLE_PARTICIPANT_ID,
         name = "Alice",
         pictureUrl = null,
-        joinedAt = Clock.System.now(),
+        joinedAt = Instant.fromEpochMilliseconds(1_000_000L),
         onlineAt = null,
     ),
     recipient = SAMPLE_CHAT_ID,
-    createdAt = Clock.System.now(),
+    createdAt = Instant.fromEpochMilliseconds(1_000_000L),
     text = "Hello! This is a sample message.",
 )
 

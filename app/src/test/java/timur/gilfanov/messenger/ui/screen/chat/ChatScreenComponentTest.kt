@@ -22,6 +22,7 @@ import androidx.paging.PagingData
 import androidx.test.core.app.ApplicationProvider
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.flowOf
@@ -148,7 +149,7 @@ class ChatScreenComponentTest {
 
         // Note: In a real test, we would need to update the state and recompose
         // This test verifies that the callback is called
-        assertEquals(textFieldState.text, testMessage)
+        assertEquals(testMessage, textFieldState.text.toString())
     }
 
     @Test
@@ -285,6 +286,38 @@ class ChatScreenComponentTest {
     }
 
     @Test
+    fun `chat screen shows retryable refresh error state when stale messages are present`() {
+        val (alice, _) = ChatScreenTestFixtures.createAliceAndCurrentUser()
+        val message = ChatScreenTestFixtures.createTextMessage(sender = alice)
+        val readyState = readyStateWithPagingData(
+            PagingData.from(
+                data = listOf<Message>(message),
+                sourceLoadStates = LoadStates(
+                    refresh = LoadState.Error(
+                        IllegalStateException("Refresh failed with stale data"),
+                    ),
+                    prepend = LoadState.NotLoading(endOfPaginationReached = false),
+                    append = LoadState.NotLoading(endOfPaginationReached = false),
+                ),
+            ),
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatScreenContent(
+                    uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
+                    onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("paging_refresh_error").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("paging_retry_button").assertIsDisplayed()
+    }
+
+    @Test
     fun `chat screen shows older message loading state`() {
         val (alice, _) = ChatScreenTestFixtures.createAliceAndCurrentUser()
         val message = ChatScreenTestFixtures.createTextMessage(sender = alice)
@@ -344,6 +377,65 @@ class ChatScreenComponentTest {
     }
 
     @Test
+    fun `chat screen shows newer message loading state`() {
+        val (alice, _) = ChatScreenTestFixtures.createAliceAndCurrentUser()
+        val message = ChatScreenTestFixtures.createTextMessage(sender = alice)
+        val readyState = readyStateWithPagingData(
+            PagingData.from(
+                data = listOf<Message>(message),
+                sourceLoadStates = LoadStates(
+                    refresh = LoadState.NotLoading(endOfPaginationReached = false),
+                    prepend = LoadState.Loading,
+                    append = LoadState.NotLoading(endOfPaginationReached = false),
+                ),
+            ),
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatScreenContent(
+                    uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
+                    onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("paging_prepend_loading_indicator").assertIsDisplayed()
+    }
+
+    @Test
+    fun `chat screen shows retryable newer message error state`() {
+        val (alice, _) = ChatScreenTestFixtures.createAliceAndCurrentUser()
+        val message = ChatScreenTestFixtures.createTextMessage(sender = alice)
+        val readyState = readyStateWithPagingData(
+            PagingData.from(
+                data = listOf<Message>(message),
+                sourceLoadStates = LoadStates(
+                    refresh = LoadState.NotLoading(endOfPaginationReached = false),
+                    prepend = LoadState.Error(IllegalStateException("Newer load failed")),
+                    append = LoadState.NotLoading(endOfPaginationReached = false),
+                ),
+            ),
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatScreenContent(
+                    uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
+                    onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("paging_prepend_error").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("paging_retry_button").assertIsDisplayed()
+    }
+
+    @Test
     fun `repeat message input text updates`() {
         val textFieldState = TextFieldState("")
         val readyState = ChatScreenTestFixtures.createChatUiStateReady(
@@ -397,7 +489,7 @@ class ChatScreenComponentTest {
         }
 
         composeTestRule.onNodeWithTag("send_button").performClick()
-        assert(sendClicked)
+        assertTrue(sendClicked)
     }
 
     @Test
@@ -495,7 +587,9 @@ class ChatScreenComponentTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Update failed: $updateError").assertIsDisplayed()
+        val context: Context = ApplicationProvider.getApplicationContext()
+        composeTestRule.onNodeWithText(context.getString(R.string.chat_update_failed))
+            .assertIsDisplayed()
     }
 
     @Test

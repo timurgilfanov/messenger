@@ -23,6 +23,7 @@ import timur.gilfanov.messenger.data.source.remote.ChatListDelta
 import timur.gilfanov.messenger.data.source.remote.ChatUpdatedDelta
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
+import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.util.Logger
 
 class LocalSyncDataSourceImpl @Inject constructor(
@@ -77,6 +78,13 @@ class LocalSyncDataSourceImpl @Inject constructor(
         ResultWithError.Success(Unit)
     } catch (e: SQLiteException) {
         ResultWithError.Failure(errorHandler.mapException(e))
+    } catch (@Suppress("SwallowedException") e: InvalidParticipantContractException) {
+        ResultWithError.Failure(
+            LocalDataSourceError.InvalidData(
+                "participants",
+                e.message ?: "Invalid participant data",
+            ),
+        )
     }
 
     override suspend fun applyChatListDelta(
@@ -105,9 +113,28 @@ class LocalSyncDataSourceImpl @Inject constructor(
         ResultWithError.Failure(errorHandler.mapException(e))
     } catch (@Suppress("SwallowedException") e: androidx.datastore.core.IOException) {
         ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
+    } catch (@Suppress("SwallowedException") e: InvalidParticipantContractException) {
+        ResultWithError.Failure(
+            LocalDataSourceError.InvalidData(
+                "participants",
+                e.message ?: "Invalid participant data",
+            ),
+        )
     }
 
+    private fun validateParticipantContract(participants: Collection<Participant>) {
+        val currentUserCount = participants.count { it.isCurrentUser }
+        if (currentUserCount != 1) {
+            throw InvalidParticipantContractException(
+                "Expected exactly one current user participant, found $currentUserCount",
+            )
+        }
+    }
+
+    private class InvalidParticipantContractException(message: String) : Exception(message)
+
     private suspend fun applyChatCreatedDelta(delta: ChatCreatedDelta) {
+        validateParticipantContract(delta.chatMetadata.participants)
         val chat = Chat(
             id = delta.chatId,
             name = delta.chatMetadata.name,
@@ -143,6 +170,7 @@ class LocalSyncDataSourceImpl @Inject constructor(
     }
 
     private suspend fun applyChatUpdatedDelta(delta: ChatUpdatedDelta) {
+        validateParticipantContract(delta.chatMetadata.participants)
         val existingChatEntity = chatDao.getChatById(delta.chatId.id.toString())
         if (existingChatEntity != null) {
             val updatedChat = Chat(

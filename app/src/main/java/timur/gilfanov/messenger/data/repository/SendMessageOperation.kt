@@ -1,7 +1,6 @@
 package timur.gilfanov.messenger.data.repository
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import timur.gilfanov.messenger.data.source.local.LocalDataSourceError
 import timur.gilfanov.messenger.data.source.local.LocalDataSources
@@ -144,8 +143,6 @@ private fun RemoteDataSourceError.toDeliveryError(): DeliveryError = when (this)
         message = cause.message,
     )
 
-    RemoteDataSourceError.UserBlocked -> DeliveryError.RecipientBlocked
-
     RemoteDataSourceError.ChatNotFound,
     RemoteDataSourceError.MessageNotFound,
     RemoteDataSourceError.InvalidInviteLink,
@@ -153,6 +150,7 @@ private fun RemoteDataSourceError.toDeliveryError(): DeliveryError = when (this)
     RemoteDataSourceError.ChatClosed,
     RemoteDataSourceError.AlreadyJoined,
     RemoteDataSourceError.ChatFull,
+    RemoteDataSourceError.UserBlocked,
     -> DeliveryError.UnknownError(
         errorCode = DELIVERY_ERROR_UNEXPECTED,
         message = toString(),

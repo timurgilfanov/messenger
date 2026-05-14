@@ -232,12 +232,11 @@ class MessengerRepositoryImpl @Inject constructor(
                         when (localResult.error) {
                             LocalDataSourceError.StorageUnavailable ->
                                 LocalStorageError.TemporarilyUnavailable
-                            else -> LocalStorageError.UnknownError(
+                            else ->
                                 error(
                                     "use localResult.error after local " +
                                         "data source errors refactoring. See #137.",
-                                ),
-                            )
+                                )
                         },
                     ),
                 )
@@ -457,17 +456,7 @@ internal fun mapRemoteErrorToSendMessageError(
             ErrorReason("Unknown remote error: ${error.cause}"),
         )
 
-        RemoteDataSourceError.ChatNotFound,
-        RemoteDataSourceError.MessageNotFound,
-        RemoteDataSourceError.InvalidInviteLink,
-        RemoteDataSourceError.ExpiredInviteLink,
-        RemoteDataSourceError.ChatClosed,
-        RemoteDataSourceError.AlreadyJoined,
-        RemoteDataSourceError.ChatFull,
-        RemoteDataSourceError.UserBlocked,
-        -> RemoteError.Failed.UnknownServiceError(
-            ErrorReason("Unexpected send message error: $error"),
-        )
+        else -> error("Implement after remote data source operation error refactor. See #137.")
     },
 )
 

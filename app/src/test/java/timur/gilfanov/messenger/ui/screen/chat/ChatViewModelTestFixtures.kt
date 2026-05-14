@@ -92,20 +92,36 @@ object ChatViewModelTestFixtures {
         private val flowChat: Flow<
             ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>,
             >? = null,
+        private val flowSendMessage: Flow<Message>? = null,
         private val flowSendMessageResult: Flow<
             ResultWithError<Message, SendMessageRepositoryError>,
             >? = null,
-        private val flowSendMessage: Flow<Message>? = null,
         private val pagedMessages: List<Message>? = null,
+        private val perCallSendFlows:
+        List<Flow<ResultWithError<Message, SendMessageRepositoryError>>>? = null,
     ) : ChatRepository,
         MessageRepository {
 
         val sentMessages = mutableListOf<Message>()
+        private var sendCallIndex = 0
 
         override suspend fun sendMessage(
             message: Message,
         ): Flow<ResultWithError<Message, SendMessageRepositoryError>> {
             sentMessages += message
+            if (perCallSendFlows != null) {
+                val index = sendCallIndex++
+                return perCallSendFlows.getOrElse(index) {
+                    flowOf(
+                        ResultWithError.Success<Message, SendMessageRepositoryError>(
+                            when (message) {
+                                is TextMessage -> message.copy(deliveryStatus = Sending(0))
+                                else -> message
+                            },
+                        ),
+                    )
+                }
+            }
             return flowSendMessageResult ?: flowSendMessage?.map {
                 ResultWithError.Success<Message, SendMessageRepositoryError>(it)
             }

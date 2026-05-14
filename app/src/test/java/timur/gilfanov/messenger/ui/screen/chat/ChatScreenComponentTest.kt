@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.paging.PagingData
 import androidx.test.core.app.ApplicationProvider
 import java.util.UUID
+import kotlin.test.assertTrue
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
@@ -29,9 +30,11 @@ import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
 import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError.RemoteOperationFailed
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
 import timur.gilfanov.messenger.ui.theme.MessengerTheme
 
 @RunWith(RobolectricTestRunner::class)
@@ -346,5 +349,43 @@ class ChatScreenComponentTest {
         composeTestRule.onNodeWithTag("send_button")
             .assertIsDisplayed()
             .assertIsEnabled()
+    }
+
+    @Test
+    fun `chat screen shows send error dialog and calls dismiss on confirm`() {
+        val dialogError = ReadyError.SendMessageError(
+            SendMessageError.DeliveryStatusUpdateNotValid(
+                DeliveryStatusValidationError.CannotChangeAnyStatusToUndefined,
+            ),
+        )
+        val readyState = ChatUiState.Ready(
+            id = testChatId,
+            title = "Test Chat",
+            participants = persistentListOf(),
+            isGroupChat = false,
+            messages = flowOf(PagingData.empty()),
+            isSending = false,
+            status = ChatStatus.OneToOne(null),
+            dialogError = dialogError,
+        )
+
+        var dismissed = false
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatScreenContent(
+                    uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
+                    onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
+                    onDismissDialogError = { dismissed = true },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("send_error_dialog").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Failed to Send").assertIsDisplayed()
+        composeTestRule.onNodeWithText("OK").performClick()
+        assertTrue(dismissed)
     }
 }

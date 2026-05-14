@@ -25,6 +25,8 @@ import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
+import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
@@ -33,11 +35,11 @@ import timur.gilfanov.messenger.domain.usecase.chat.MarkMessagesAsReadUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.ReceiveChatUpdatesUseCase
 import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
 import timur.gilfanov.messenger.domain.usecase.message.GetPagedMessagesUseCase
+import timur.gilfanov.messenger.domain.usecase.message.SendMessageError as SendMessageUseCaseError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageUseCase
 import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Error
 import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Loading
 import timur.gilfanov.messenger.ui.screen.chat.ChatUiState.Ready
-import timur.gilfanov.messenger.ui.screen.chat.ReadyError.SendMessageError
 import timur.gilfanov.messenger.util.repeatOnSubscription
 
 private val STATE_UPDATE_DEBOUNCE = 200.milliseconds
@@ -61,6 +63,10 @@ class ChatViewModel @AssistedInject constructor(
     val effects = _effects.receiveAsFlow()
 
     private data class SendRequest(val messageId: MessageId, val now: Instant, val text: String)
+    private data class SendProgress(
+        var acceptedLocally: Boolean = false,
+        var clearInputSent: Boolean = false,
+    )
 
     init {
         viewModelScope.launch {
@@ -120,6 +126,7 @@ class ChatViewModel @AssistedInject constructor(
                 ) ?: it
             }
         } else {
+            val request = SendRequest(messageId, now, currentInputText)
             _state.update {
                 (it as? ChatUiState.Ready)?.copy(
                     inputTextValidationError = null,
@@ -127,33 +134,64 @@ class ChatViewModel @AssistedInject constructor(
                 ) ?: it
             }
             viewModelScope.launch {
-                val request = SendRequest(messageId, now, currentInputText)
                 val message = textMessage(request.messageId, request.now, request.text)
-                sendMessageUseCase(currentChat!!, message).collect { result ->
+                val progress = SendProgress()
+                sendMessageUseCase(currentChat!!, message, request.now).collect { result ->
                     when (result) {
-                        is ResultWithError.Success -> {
-                            if (result.data is TextMessage &&
-                                currentInputText == request.text
-                            ) {
-                                currentInputText = ""
-                                _effects.send(ChatSideEffect.ClearInputText)
-                            }
-                            _state.update {
-                                (it as? Ready)?.copy(isSending = false) ?: it
-                            }
-                        }
+                        is ResultWithError.Success -> handleSendSuccess(
+                            result.data,
+                            request,
+                            progress,
+                        )
 
-                        is ResultWithError.Failure -> {
-                            _state.update {
-                                (it as? Ready)?.copy(
-                                    isSending = false,
-                                    dialogError = SendMessageError(result.error),
-                                ) ?: it
-                            }
-                        }
+                        is ResultWithError.Failure -> handleSendFailure(result.error, progress)
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun handleSendSuccess(
+        message: Message,
+        request: SendRequest,
+        progress: SendProgress,
+    ) {
+        if (!progress.acceptedLocally && message.deliveryStatus.isAcceptedStatus()) {
+            progress.acceptedLocally = true
+            currentChat = currentChat?.let { chat ->
+                if (chat.messages.none { it.id == message.id }) {
+                    chat.copy(messages = chat.messages.add(message))
+                } else {
+                    chat
+                }
+            }
+            _state.update {
+                (it as? Ready)?.copy(isSending = false) ?: it
+            }
+        }
+
+        if (progress.acceptedLocally &&
+            !progress.clearInputSent &&
+            currentInputText == request.text
+        ) {
+            progress.clearInputSent = true
+            currentInputText = ""
+            _effects.send(ChatSideEffect.ClearInputText)
+        }
+    }
+
+    private fun handleSendFailure(error: SendMessageUseCaseError, progress: SendProgress) {
+        _state.update { state ->
+            val showDialog = !progress.acceptedLocally ||
+                error !is SendMessageUseCaseError.RemoteOperationFailed
+            (state as? Ready)?.copy(
+                isSending = if (!progress.acceptedLocally) false else state.isSending,
+                dialogError = if (showDialog) {
+                    ReadyError.SendMessageError(error)
+                } else {
+                    state.dialogError
+                },
+            ) ?: state
         }
     }
 
@@ -240,4 +278,16 @@ class ChatViewModel @AssistedInject constructor(
             dialogError = (state as? ChatUiState.Ready?)?.dialogError,
         )
     }
+}
+
+private fun DeliveryStatus?.isAcceptedStatus(): Boolean = when (this) {
+    is DeliveryStatus.Sending,
+    DeliveryStatus.Sent,
+    DeliveryStatus.Delivered,
+    DeliveryStatus.Read,
+    -> true
+
+    is DeliveryStatus.Failed,
+    null,
+    -> false
 }

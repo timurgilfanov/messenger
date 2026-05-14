@@ -44,7 +44,6 @@ import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWi
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithDeltas
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithNetworkError
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSuccessfulChat
-import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithSuccessfulMessage
 import timur.gilfanov.messenger.data.source.remote.MockServerScenarios.respondWithTimeout
 import timur.gilfanov.messenger.data.source.remote.RemoteChatDataSourceImpl
 import timur.gilfanov.messenger.data.source.remote.RemoteDataSources
@@ -60,6 +59,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
@@ -381,7 +381,16 @@ class MessengerRepositoryIntegrationTest {
                         "messages",
                     ) &&
                         request.method == HttpMethod.Post -> {
-                        respondWithSuccessfulMessage()
+                        val sentMessage = testMessage.copy(deliveryStatus = DeliveryStatus.Sent)
+                        val response = ApiResponse(data = sentMessage.toDto(), success = true)
+                        respond(
+                            content = json.encodeToString<ApiResponse<MessageDto>>(response),
+                            status = HttpStatusCode.OK,
+                            headers = headersOf(
+                                HttpHeaders.ContentType,
+                                ContentType.Application.Json.toString(),
+                            ),
+                        )
                     }
 
                     request.url.segments.contains("deltas") -> {
@@ -393,14 +402,21 @@ class MessengerRepositoryIntegrationTest {
             },
         )
 
+        insertTestChatLocally()
+
         // When
         val resultFlow = repository.sendMessage(testMessage)
         val results = resultFlow.toList()
 
         // Then
         assertTrue(results.isNotEmpty())
+        val acceptedResult = results.first()
+        assertIs<ResultWithError.Success<Message, *>>(acceptedResult)
+        assertEquals(DeliveryStatus.Sending(0), acceptedResult.data.deliveryStatus)
+
         val finalResult = results.last()
         assertIs<ResultWithError.Success<Message, *>>(finalResult)
+        assertEquals(DeliveryStatus.Sent, finalResult.data.deliveryStatus)
     }
 
     @Test
@@ -512,9 +528,14 @@ class MessengerRepositoryIntegrationTest {
                 }
             },
         )
+        insertTestChatLocally()
 
         // When & Then
         repository.sendMessage(testMessage).test {
+            val acceptedResult = awaitItem()
+            assertIs<ResultWithError.Success<Message, *>>(acceptedResult)
+            assertEquals(DeliveryStatus.Sending(0), acceptedResult.data.deliveryStatus)
+
             val result = awaitItem()
             assertIs<ResultWithError.Failure<*, SendMessageRepositoryError>>(result)
             val sendMessageError = result.error
@@ -576,6 +597,15 @@ class MessengerRepositoryIntegrationTest {
         recipient = testChatId,
         createdAt = testTimestamp,
     )
+
+    private suspend fun insertTestChatLocally() {
+        LocalChatDataSourceImpl(
+            database = databaseRule.database,
+            chatDao = databaseRule.chatDao,
+            participantDao = databaseRule.participantDao,
+            logger = logger,
+        ).insertChat(createTestChat())
+    }
 
     private fun setupRepository(scope: CoroutineScope, mockEngine: MockEngine) {
         // Create DataStore with test scope

@@ -15,7 +15,7 @@ import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.message.repository.SendMessageRepositoryError
 
-internal class SendMessageFlowFactory(
+internal class SendMessageOperation(
     private val localDataSources: LocalDataSources,
     private val remoteDataSources: RemoteDataSources,
 ) {

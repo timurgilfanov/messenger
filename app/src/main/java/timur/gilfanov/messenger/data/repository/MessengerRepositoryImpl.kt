@@ -277,7 +277,7 @@ class MessengerRepositoryImpl @Inject constructor(
     override suspend fun sendMessage(
         message: Message,
     ): Flow<ResultWithError<Message, SendMessageRepositoryError>> =
-        SendMessageFlowFactory(localDataSources, remoteDataSources).sendMessage(message)
+        SendMessageOperation(localDataSources, remoteDataSources).sendMessage(message)
 
     override suspend fun editMessage(
         message: Message,

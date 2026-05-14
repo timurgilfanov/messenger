@@ -205,7 +205,7 @@ class ChatViewModel @AssistedInject constructor(
                             when (s) {
                                 is Loading -> Loading(result.error)
                                 is Ready -> s.copy(updateError = result.error)
-                                is Error -> error("Unexpected UI state Error")
+                                is Error -> s
                             }
                         }
                     }

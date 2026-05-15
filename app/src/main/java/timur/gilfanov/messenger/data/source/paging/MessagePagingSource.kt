@@ -48,7 +48,11 @@ class MessagePagingSource(
     private val onHistoryLoaded: () -> Unit = {},
 ) : PagingSource<MessageCursor, Message>() {
 
-    private val observer = object : InvalidationTracker.Observer("messages") {
+    private val observer = object : InvalidationTracker.Observer(
+        "messages",
+        "participants",
+        "chat_participants",
+    ) {
         override fun onInvalidated(tables: Set<String>) {
             invalidate()
         }
@@ -79,22 +83,25 @@ class MessagePagingSource(
     @Suppress("TooGenericExceptionCaught")
     override suspend fun load(
         params: LoadParams<MessageCursor>,
-    ): LoadResult<MessageCursor, Message> {
-        if (params is LoadParams.Append ||
-            (params is LoadParams.Refresh && params.key != null)
-        ) {
+    ): LoadResult<MessageCursor, Message> = try {
+        val result = when (params) {
+            is LoadParams.Prepend -> loadNewerThan(params)
+            else -> loadOlderOrRefresh(params)
+        }
+        if (result is LoadResult.Page && isHistoryLoadParams(params)) {
             onHistoryLoaded()
         }
-        return try {
-            when (params) {
-                is LoadParams.Prepend -> loadNewerThan(params)
-                else -> loadOlderOrRefresh(params)
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            LoadResult.Error(e)
-        }
+        result
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        LoadResult.Error(e)
+    }
+
+    private fun isHistoryLoadParams(params: LoadParams<MessageCursor>): Boolean = when (params) {
+        is LoadParams.Append -> true
+        is LoadParams.Refresh -> params.key != null
+        else -> false
     }
 
     @Suppress("ReturnCount")

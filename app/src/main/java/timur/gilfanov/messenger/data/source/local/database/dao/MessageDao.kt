@@ -49,12 +49,6 @@ interface MessageDao {
     suspend fun getLastMessageInChat(chatId: String): MessageEntity?
 
     @Query(
-        "SELECT * FROM messages WHERE chatId = :chatId AND senderId = :senderId " +
-            "ORDER BY createdAt DESC LIMIT 1",
-    )
-    fun flowLastMessageBySenderInChat(chatId: String, senderId: String): Flow<MessageEntity?>
-
-    @Query(
         "SELECT * FROM messages WHERE chatId = :chatId " +
             "ORDER BY createdAt DESC, id DESC LIMIT 1",
     )

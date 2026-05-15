@@ -163,8 +163,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                             ),
                         )
                     }
-                    val currentUserId = currentUserCrossRefs.first().participantId
-                    messageDao.flowLastMessageBySenderInChat(chatId.id.toString(), currentUserId)
+                    messageDao.flowLastMessageInChat(chatId.id.toString())
                         .distinctUntilChanged()
                         .map { lastMessageEntity ->
                             val lastMessages = listOfNotNull(lastMessageEntity)
@@ -179,6 +178,14 @@ class LocalChatDataSourceImpl @Inject constructor(
                 when (e) {
                     is SQLiteException -> emit(
                         ResultWithError.Failure(errorHandler.mapException(e)),
+                    )
+                    is IllegalStateException -> emit(
+                        ResultWithError.Failure(
+                            LocalDataSourceError.InvalidData(
+                                "participants",
+                                e.message ?: "Mapping error",
+                            ),
+                        ),
                     )
                     else -> throw e
                 }

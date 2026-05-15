@@ -142,11 +142,16 @@ class LocalMessageDataSourceImpl @Inject constructor(
     private fun validateMessageForUpdate(message: Message): LocalDataSourceError? =
         validateMessageForInsert(message)
 
-    override fun getMessagePagingSource(chatId: ChatId): PagingSource<MessageCursor, Message> =
-        MessagePagingSource(
-            database = database,
-            messageDao = messageDao,
-            chatDao = chatDao,
-            chatId = chatId,
-        )
+    override fun getMessagePagingSource(
+        chatId: ChatId,
+        isHistoryLoaded: () -> Boolean,
+        onHistoryLoaded: () -> Unit,
+    ): PagingSource<MessageCursor, Message> = MessagePagingSource(
+        database = database,
+        messageDao = messageDao,
+        chatDao = chatDao,
+        chatId = chatId,
+        isHistoryLoaded = isHistoryLoaded,
+        onHistoryLoaded = onHistoryLoaded,
+    )
 }

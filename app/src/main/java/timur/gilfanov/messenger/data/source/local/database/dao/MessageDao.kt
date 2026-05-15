@@ -55,6 +55,12 @@ interface MessageDao {
     fun flowLastMessageBySenderInChat(chatId: String, senderId: String): Flow<MessageEntity?>
 
     @Query(
+        "SELECT * FROM messages WHERE chatId = :chatId " +
+            "ORDER BY createdAt DESC, id DESC LIMIT 1",
+    )
+    fun flowLastMessageInChat(chatId: String): Flow<MessageEntity?>
+
+    @Query(
         """SELECT COUNT(*) FROM messages 
            WHERE chatId = :chatId 
            AND createdAt > (SELECT createdAt FROM messages WHERE id = :lastReadMessageId)""",

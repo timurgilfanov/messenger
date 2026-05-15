@@ -149,8 +149,11 @@ class MessengerRepositoryImpl @Inject constructor(
                     if (deltaResult is ResultWithError.Success) {
                         logger.d(TAG, "Received delta updates: ${deltaResult.data}")
                         isChatListUpdateApplying.value = true
-                        val applyResult = localDataSources.sync.applyChatListDelta(deltaResult.data)
-                        isChatListUpdateApplying.value = false
+                        val applyResult = try {
+                            localDataSources.sync.applyChatListDelta(deltaResult.data)
+                        } finally {
+                            isChatListUpdateApplying.value = false
+                        }
                         if (applyResult is ResultWithError.Failure) {
                             val applyError = applyResult.error
                             if (applyError is LocalDataSourceError.InvalidData) {
@@ -381,16 +384,23 @@ class MessengerRepositoryImpl @Inject constructor(
             }
         }
 
-    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> = Pager(
-        config = PagingConfig(
-            pageSize = MessagePagingSource.DEFAULT_PAGE_SIZE,
-            prefetchDistance = MessagePagingSource.PREFETCH_DISTANCE,
-            enablePlaceholders = false,
-        ),
-        pagingSourceFactory = {
-            localDataSources.message.getMessagePagingSource(chatId)
-        },
-    ).flow
+    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
+        val hasLoadedHistory = java.util.concurrent.atomic.AtomicBoolean(false)
+        return Pager(
+            config = PagingConfig(
+                pageSize = MessagePagingSource.DEFAULT_PAGE_SIZE,
+                prefetchDistance = MessagePagingSource.PREFETCH_DISTANCE,
+                enablePlaceholders = false,
+            ),
+            pagingSourceFactory = {
+                localDataSources.message.getMessagePagingSource(
+                    chatId = chatId,
+                    isHistoryLoaded = { hasLoadedHistory.get() },
+                    onHistoryLoaded = { hasLoadedHistory.set(true) },
+                )
+            },
+        ).flow
+    }
 }
 
 // Error mapping functions

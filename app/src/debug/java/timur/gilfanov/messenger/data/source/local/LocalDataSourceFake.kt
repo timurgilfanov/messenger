@@ -200,7 +200,11 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         return ResultWithError.Failure(LocalDataSourceError.MessageNotFound)
     }
 
-    override fun getMessagePagingSource(chatId: ChatId): PagingSource<MessageCursor, Message> {
+    override fun getMessagePagingSource(
+        chatId: ChatId,
+        isHistoryLoaded: () -> Boolean,
+        onHistoryLoaded: () -> Unit,
+    ): PagingSource<MessageCursor, Message> {
         TODO("Not yet implemented")
     }
 

@@ -44,6 +44,8 @@ class MessagePagingSource(
     private val messageDao: MessageDao,
     private val chatDao: ChatDao,
     private val chatId: ChatId,
+    private val isHistoryLoaded: () -> Boolean = { false },
+    private val onHistoryLoaded: () -> Unit = {},
 ) : PagingSource<MessageCursor, Message>() {
 
     private val observer = object : InvalidationTracker.Observer("messages") {
@@ -59,16 +61,11 @@ class MessagePagingSource(
         }
     }
 
-    // True once the user has scrolled into history (an Append load or an anchored Refresh has run).
-    // When false, getRefreshKey returns null so that a fresh load from Long.MAX_VALUE is used,
-    // ensuring newly arrived messages are visible when the user is at the live edge.
-    @Volatile private var hasLoadedHistory = false
-
     override fun getRefreshKey(state: PagingState<MessageCursor, Message>): MessageCursor? {
         // reverseLayout = true means index 0 is the newest message (live edge).
-        // Returning null when !hasLoadedHistory or when at the live edge forces a fresh load
+        // Returning null when !isHistoryLoaded() or when at the live edge forces a fresh load
         // from Long.MAX_VALUE so any newly arrived messages are included.
-        val anchorPosition = state.anchorPosition?.takeIf { hasLoadedHistory && it > 0 }
+        val anchorPosition = state.anchorPosition?.takeIf { isHistoryLoaded() && it > 0 }
         return anchorPosition?.let { position ->
             state.closestItemToPosition(position)?.let { item ->
                 MessageCursor(
@@ -86,7 +83,7 @@ class MessagePagingSource(
         if (params is LoadParams.Append ||
             (params is LoadParams.Refresh && params.key != null)
         ) {
-            hasLoadedHistory = true
+            onHistoryLoaded()
         }
         return try {
             when (params) {

@@ -38,7 +38,17 @@ interface LocalMessageDataSource {
      * This enables efficient pagination for large message histories.
      *
      * @param chatId The ID of the chat to load messages for
+     * @param isHistoryLoaded shared state that persists across PagingSource invalidations;
+     *   returns true once the user has scrolled past the live edge (an Append or anchored Refresh
+     *   has run), so that [getRefreshKey] can anchor subsequent refreshes to preserve scroll
+     *   position instead of always reloading from the live edge
+     * @param onHistoryLoaded callback invoked when an Append or anchored Refresh occurs, to set
+     *   the shared [isHistoryLoaded] flag
      * @return PagingSource that loads messages in pages
      */
-    fun getMessagePagingSource(chatId: ChatId): PagingSource<MessageCursor, Message>
+    fun getMessagePagingSource(
+        chatId: ChatId,
+        isHistoryLoaded: () -> Boolean = { false },
+        onHistoryLoaded: () -> Unit = {},
+    ): PagingSource<MessageCursor, Message>
 }

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import timur.gilfanov.messenger.data.source.paging.MessageCursor
 import timur.gilfanov.messenger.data.source.remote.ChatCreatedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDeletedDelta
 import timur.gilfanov.messenger.data.source.remote.ChatDelta
@@ -204,7 +205,11 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         return ResultWithError.Failure(LocalDataSourceError.MessageNotFound)
     }
 
-    override fun getMessagePagingSource(chatId: ChatId): PagingSource<Long, Message> {
+    override fun getMessagePagingSource(
+        chatId: ChatId,
+        isHistoryLoaded: () -> Boolean,
+        onHistoryLoaded: () -> Unit,
+    ): PagingSource<MessageCursor, Message> {
         TODO("Not yet implemented")
     }
 

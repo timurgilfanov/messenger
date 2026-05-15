@@ -149,8 +149,26 @@ class MessengerRepositoryImpl @Inject constructor(
                     if (deltaResult is ResultWithError.Success) {
                         logger.d(TAG, "Received delta updates: ${deltaResult.data}")
                         isChatListUpdateApplying.value = true
-                        localDataSources.sync.applyChatListDelta(deltaResult.data)
-                        isChatListUpdateApplying.value = false
+                        val applyResult = try {
+                            localDataSources.sync.applyChatListDelta(deltaResult.data)
+                        } finally {
+                            isChatListUpdateApplying.value = false
+                        }
+                        if (applyResult is ResultWithError.Failure) {
+                            val applyError = applyResult.error
+                            if (applyError is LocalDataSourceError.InvalidData) {
+                                logger.e(
+                                    TAG,
+                                    "Skipping invalid chat list delta (bad backend payload): $applyError",
+                                )
+                            } else {
+                                logger.e(
+                                    TAG,
+                                    "Failed to apply chat list delta, stopping sync loop: $applyError",
+                                )
+                                error("Failed to apply chat list delta: $applyError")
+                            }
+                        }
                     } else {
                         logger.w(TAG, "Delta result was failure: $deltaResult")
                     }
@@ -251,9 +269,51 @@ class MessengerRepositoryImpl @Inject constructor(
         localDataSources.chat.flowChatUpdates(chatId).map { localResult ->
             when (localResult) {
                 is ResultWithError.Success -> ResultWithError.Success(localResult.data)
-                is ResultWithError.Failure -> ResultWithError.Failure(
-                    ReceiveChatUpdatesRepositoryError.ChatNotFound,
-                )
+                is ResultWithError.Failure -> {
+                    val localError = localResult.error
+                    ResultWithError.Failure(
+                        when (localError) {
+                            LocalDataSourceError.ChatNotFound ->
+                                ReceiveChatUpdatesRepositoryError.ChatNotFound
+                            is LocalDataSourceError.InvalidData ->
+                                ReceiveChatUpdatesRepositoryError.LocalOperationFailed(
+                                    LocalStorageError.UnknownError(
+                                        IllegalStateException(
+                                            "${localError.field}: ${localError.reason}",
+                                        ),
+                                    ),
+                                )
+                            LocalDataSourceError.StorageUnavailable ->
+                                ReceiveChatUpdatesRepositoryError.LocalOperationFailed(
+                                    LocalStorageError.TemporarilyUnavailable,
+                                )
+                            LocalDataSourceError.StorageFull ->
+                                ReceiveChatUpdatesRepositoryError.LocalOperationFailed(
+                                    LocalStorageError.StorageFull,
+                                )
+                            LocalDataSourceError.ConcurrentModificationError ->
+                                ReceiveChatUpdatesRepositoryError.LocalOperationFailed(
+                                    LocalStorageError.TemporarilyUnavailable,
+                                )
+                            is LocalDataSourceError.UnknownError ->
+                                ReceiveChatUpdatesRepositoryError.LocalOperationFailed(
+                                    LocalStorageError.UnknownError(localError.cause),
+                                )
+                            LocalDataSourceError.MessageNotFound,
+                            LocalDataSourceError.ParticipantNotFound,
+                            is LocalDataSourceError.DuplicateEntity,
+                            is LocalDataSourceError.RelatedEntityMissing,
+                            ->
+                                ReceiveChatUpdatesRepositoryError.LocalOperationFailed(
+                                    LocalStorageError.UnknownError(
+                                        IllegalStateException(
+                                            "Unexpected local error for chat updates: $localError",
+                                        ),
+                                    ),
+                                )
+                        },
+                    )
+                }
             }
         }
 
@@ -309,16 +369,23 @@ class MessengerRepositoryImpl @Inject constructor(
             }
         }
 
-    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> = Pager(
-        config = PagingConfig(
-            pageSize = MessagePagingSource.DEFAULT_PAGE_SIZE,
-            prefetchDistance = MessagePagingSource.PREFETCH_DISTANCE,
-            enablePlaceholders = false,
-        ),
-        pagingSourceFactory = {
-            localDataSources.message.getMessagePagingSource(chatId)
-        },
-    ).flow
+    override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
+        val hasLoadedHistory = java.util.concurrent.atomic.AtomicBoolean(false)
+        return Pager(
+            config = PagingConfig(
+                pageSize = MessagePagingSource.DEFAULT_PAGE_SIZE,
+                prefetchDistance = MessagePagingSource.PREFETCH_DISTANCE,
+                enablePlaceholders = false,
+            ),
+            pagingSourceFactory = {
+                localDataSources.message.getMessagePagingSource(
+                    chatId = chatId,
+                    isHistoryLoaded = { hasLoadedHistory.get() },
+                    onHistoryLoaded = { hasLoadedHistory.set(true) },
+                )
+            },
+        ).flow
+    }
 }
 
 // Error mapping functions

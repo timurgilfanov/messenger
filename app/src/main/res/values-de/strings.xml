@@ -57,6 +57,21 @@
     <!-- Common content description -->
     <string name="content_description_navigate_back">Zurück navigieren</string>
 
+    <!-- Chat Screen -->
+    <string name="send_error_dialog_title">Senden fehlgeschlagen</string>
+    <string name="send_error_dialog_message">Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.</string>
+    <string name="send_error_dialog_dismiss">OK</string>
+    <string name="send_error_dialog_wait_debounce">Bitte warten Sie %s, bevor Sie eine weitere Nachricht senden.</string>
+    <string name="send_error_dialog_wait_after_joining">Bitte warten Sie %s nach dem Beitreten, bevor Sie Nachrichten senden.</string>
+    <string name="send_error_dialog_local_storage_full">Gerätespeicher ist voll. Speicherplatz freigeben und erneut versuchen.</string>
+    <string name="send_error_dialog_local_storage">Nachricht konnte nicht lokal gespeichert werden. Bitte erneut versuchen.</string>
+    <string name="send_error_dialog_network_unavailable">Keine Internetverbindung. Netzwerk prüfen und erneut versuchen.</string>
+    <string name="send_error_dialog_service_down">Server ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.</string>
+    <string name="send_error_dialog_cooldown">Nachrichten werden zu schnell gesendet. Bitte warten Sie, bevor Sie es erneut versuchen.</string>
+    <string name="send_error_dialog_session_expired">Sitzung abgelaufen. Bitte erneut anmelden.</string>
+    <string name="send_error_dialog_no_permission">Sie haben keine Berechtigung, Nachrichten in diesem Chat zu senden.</string>
+    <string name="send_error_dialog_request_timeout">Anfrage abgelaufen. Bitte erneut versuchen.</string>
+
     <!-- Main Screen -->
     <string name="main_tab_chats">Chats</string>
     <string name="main_tab_settings">Einstellungen</string>

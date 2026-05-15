@@ -57,6 +57,21 @@
     <!-- Common content description -->
     <string name="content_description_navigate_back">Navigate back</string>
 
+    <!-- Chat Screen -->
+    <string name="send_error_dialog_title">Failed to Send</string>
+    <string name="send_error_dialog_message">Failed to send message. Please try again.</string>
+    <string name="send_error_dialog_dismiss">OK</string>
+    <string name="send_error_dialog_wait_debounce">Please wait %s before sending another message.</string>
+    <string name="send_error_dialog_wait_after_joining">Please wait %s after joining before sending messages.</string>
+    <string name="send_error_dialog_local_storage_full">Device storage is full. Free up space and try again.</string>
+    <string name="send_error_dialog_local_storage">Failed to save message locally. Please try again.</string>
+    <string name="send_error_dialog_network_unavailable">No internet connection. Check your network and try again.</string>
+    <string name="send_error_dialog_service_down">Server is temporarily unavailable. Please try again later.</string>
+    <string name="send_error_dialog_cooldown">You\'re sending messages too fast. Please wait before trying again.</string>
+    <string name="send_error_dialog_session_expired">Session expired. Please log in again.</string>
+    <string name="send_error_dialog_no_permission">You don\'t have permission to send messages in this chat.</string>
+    <string name="send_error_dialog_request_timeout">Request timed out. Please try again.</string>
+
     <!-- Main Screen -->
     <string name="main_tab_chats">Chats</string>
     <string name="main_tab_settings">Settings</string>

@@ -682,7 +682,7 @@ class ChatScreenComponentTest {
         composeTestRule.onNodeWithText("OK").performClick()
         assertTrue(dismissed)
     }
-     
+
     private fun readyStateWithPagingData(pagingData: PagingData<Message>) = ChatUiState.Ready(
         id = testChatId,
         title = "Test Chat",

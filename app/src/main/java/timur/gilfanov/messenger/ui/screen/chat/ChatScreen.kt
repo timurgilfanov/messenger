@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions") // many of them are previews
+
 package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.compose.foundation.background
@@ -236,11 +238,25 @@ fun ChatContent(
             PagingRefreshOverlay(messages = messages)
         }
     }
+
+    if (state.dialogError != null) {
+        AlertDialog(
+            onDismissRequest = onDismissDialogError,
+            title = { Text(text = stringResource(R.string.send_error_dialog_title)) },
+            text = { Text(text = readyErrorMessage(state.dialogError)) },
+            confirmButton = {
+                TextButton(onClick = onDismissDialogError) {
+                    Text(text = stringResource(R.string.send_error_dialog_dismiss))
+                }
+            },
+            modifier = Modifier.testTag("send_error_dialog"),
+        )
+    }
 }
 
 @Composable
 private fun PagingRefreshOverlay(messages: LazyPagingItems<Message>) {
-    when (val refresh = messages.loadState.refresh) {
+    when (messages.loadState.refresh) {
         LoadState.Loading -> {
             if (messages.itemCount == 0) {
                 Box(
@@ -255,13 +271,11 @@ private fun PagingRefreshOverlay(messages: LazyPagingItems<Message>) {
         }
         is LoadState.Error -> if (messages.itemCount == 0) {
             PagingRefreshError(
-                error = refresh.error,
                 onRetry = messages::retry,
             )
         } else {
             Box(modifier = Modifier.fillMaxSize()) {
                 PagingLoadError(
-                    error = refresh.error,
                     onRetry = messages::retry,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -277,9 +291,8 @@ private fun PagingRefreshOverlay(messages: LazyPagingItems<Message>) {
 }
 
 @Composable
-private fun PagingRefreshError(error: Throwable, onRetry: () -> Unit) {
+private fun PagingRefreshError(onRetry: () -> Unit) {
     PagingLoadError(
-        error = error,
         onRetry = onRetry,
         modifier = Modifier.fillMaxSize(),
         testTag = "paging_refresh_error",
@@ -302,7 +315,7 @@ private fun MessageList(
             .padding(horizontal = 16.dp)
             .testTag("message_list"),
     ) {
-        when (val prepend = messages.loadState.prepend) {
+        when (messages.loadState.prepend) {
             LoadState.Loading -> item(key = "newer_messages_loading") {
                 Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), Alignment.Center) {
                     CircularProgressIndicator(Modifier.testTag("paging_prepend_loading_indicator"))
@@ -310,7 +323,6 @@ private fun MessageList(
             }
             is LoadState.Error -> item(key = "newer_messages_error") {
                 PagingLoadError(
-                    error = prepend.error,
                     onRetry = messages::retry,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     testTag = "paging_prepend_error",
@@ -332,7 +344,7 @@ private fun MessageList(
             }
         }
 
-        when (val append = messages.loadState.append) {
+        when (messages.loadState.append) {
             LoadState.Loading -> item(key = "older_messages_loading") {
                 Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), Alignment.Center) {
                     CircularProgressIndicator(Modifier.testTag("paging_append_loading_indicator"))
@@ -340,7 +352,6 @@ private fun MessageList(
             }
             is LoadState.Error -> item(key = "older_messages_error") {
                 PagingLoadError(
-                    error = append.error,
                     onRetry = messages::retry,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     testTag = "paging_append_error",
@@ -353,7 +364,6 @@ private fun MessageList(
 
 @Composable
 private fun PagingLoadError(
-    error: Throwable,
     onRetry: () -> Unit,
     testTag: String,
     modifier: Modifier = Modifier,
@@ -374,20 +384,6 @@ private fun PagingLoadError(
         ) {
             Text(stringResource(R.string.chat_paging_retry))
         }
-    }
-
-    if (state.dialogError != null) {
-        AlertDialog(
-            onDismissRequest = onDismissDialogError,
-            title = { Text(text = stringResource(R.string.send_error_dialog_title)) },
-            text = { Text(text = readyErrorMessage(state.dialogError)) },
-            confirmButton = {
-                TextButton(onClick = onDismissDialogError) {
-                    Text(text = stringResource(R.string.send_error_dialog_dismiss))
-                }
-            },
-            modifier = Modifier.testTag("send_error_dialog"),
-        )
     }
 }
 

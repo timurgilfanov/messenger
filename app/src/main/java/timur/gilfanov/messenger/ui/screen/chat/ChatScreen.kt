@@ -363,11 +363,7 @@ private fun MessageList(
 }
 
 @Composable
-private fun PagingLoadError(
-    onRetry: () -> Unit,
-    testTag: String,
-    modifier: Modifier = Modifier,
-) {
+private fun PagingLoadError(onRetry: () -> Unit, testTag: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.testTag(testTag),
         horizontalAlignment = Alignment.CenterHorizontally,

@@ -1,11 +1,11 @@
 package timur.gilfanov.messenger.domain.usecase.profile.repository
 
 import kotlinx.coroutines.flow.Flow
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.PictureUri
 import timur.gilfanov.messenger.domain.entity.profile.Profile
 import timur.gilfanov.messenger.domain.entity.profile.UserId
-import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 
 /**
  * Repository for managing user profile data.
@@ -16,12 +16,14 @@ import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
  */
 interface ProfileRepository {
     /**
-     * Observes profile changes for a specific user.
+     * Observes the authenticated user's global profile.
      *
-     * @param userId The unique identifier of the user to observe
+     * @param userKey Opaque local key identifying the authenticated user's cache partition
      * @return Flow emitting profile updates or errors
      */
-    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, ObserveProfileError>>
+    fun observeCurrentProfile(
+        userKey: UserScopeKey,
+    ): Flow<ResultWithError<Profile, ObserveProfileRepositoryError>>
 
     /**
      * Updates user's display name.

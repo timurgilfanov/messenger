@@ -52,6 +52,10 @@ class ProfileViewModel @Inject constructor(
                                     "Profile observation failed with Unauthorized error",
                                 )
                             }
+
+                            is ObserveProfileError.LocalOperationFailed,
+                            is ObserveProfileError.RemoteOperationFailed,
+                            -> _effects.send(ProfileSideEffects.ObserveProfileFailed(error))
                         }
                     }
                 }

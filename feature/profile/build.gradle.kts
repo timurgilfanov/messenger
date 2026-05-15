@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kover)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
     id("kotlin-parcelize")
 }
 
@@ -75,6 +76,14 @@ dependencies {
     // Core
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
+    // Data Storage
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // Networking
+    implementation(libs.ktor.client.core)
+
     // ========== Third-party Runtime Libraries ==========
     // Dependency Injection
     implementation(libs.hilt.android)
@@ -84,6 +93,7 @@ dependencies {
     // Kotlin Extensions
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
 
     // ========== Test Dependencies ==========
     // Unit Testing
@@ -94,6 +104,9 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.ktor.client.mock)
+    testImplementation(libs.ktor.serialization.kotlinx.json)
     kspTest(libs.hilt.compiler)
 
     // ========== Debug Dependencies ==========

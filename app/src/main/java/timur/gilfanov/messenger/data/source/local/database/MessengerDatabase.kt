@@ -17,6 +17,8 @@ import timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipan
 import timur.gilfanov.messenger.data.source.local.database.entity.MessageEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.ParticipantEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
+import timur.gilfanov.messenger.profile.data.source.local.ProfileDao
+import timur.gilfanov.messenger.profile.data.source.local.ProfileEntity
 
 /**
  * Room database for the Messenger application.
@@ -29,12 +31,14 @@ import timur.gilfanov.messenger.data.source.local.database.entity.SettingEntity
         ParticipantEntity::class,
         ChatParticipantCrossRef::class,
         SettingEntity::class,
+        ProfileEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 3, to = 4, spec = MessengerDatabase.Migration3To4::class),
         AutoMigration(from = 4, to = 5),
+        AutoMigration(from = 5, to = 6),
     ],
 )
 @TypeConverters(Converters::class)
@@ -43,6 +47,7 @@ abstract class MessengerDatabase : RoomDatabase() {
     abstract fun messageDao(): MessageDao
     abstract fun participantDao(): ParticipantDao
     abstract fun settingsDao(): SettingsDao
+    abstract fun profileDao(): ProfileDao
 
     @RenameColumn(tableName = "settings", fromColumnName = "userId", toColumnName = "userKey")
     class Migration3To4 : AutoMigrationSpec {

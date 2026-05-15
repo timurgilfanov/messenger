@@ -17,6 +17,7 @@ import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Profile
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
+import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -107,6 +108,21 @@ class ProfileViewModelObservationTest {
 
         viewModel.state.test {
             assertIs<ProfileUiState.Loading>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `local profile failure posts side effect`() = runTest {
+        val error = ObserveProfileError.LocalOperationFailed(LocalStorageError.AccessDenied)
+        val viewModel = createViewModel(
+            flowOf(ResultWithError.Failure(error)),
+        )
+
+        backgroundScope.launch { viewModel.state.collect {} }
+
+        viewModel.effects.test {
+            val effect = assertIs<ProfileSideEffects.ObserveProfileFailed>(awaitItem())
+            assertEquals(error, effect.error)
         }
     }
 }

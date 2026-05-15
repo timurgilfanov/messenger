@@ -8,17 +8,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.di.ApplicationScope
 import timur.gilfanov.messenger.domain.UserScopeKey
+import timur.gilfanov.messenger.domain.UserScopedDataCleaner
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.auth.AuthState
 import timur.gilfanov.messenger.domain.toUserScopeKey
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
-import timur.gilfanov.messenger.domain.usecase.settings.repository.SettingsRepository
 import timur.gilfanov.messenger.util.Logger
 
 @Singleton
 class AuthCleanupObserverImpl @Inject constructor(
     private val authRepository: Lazy<AuthRepository>,
-    private val settingsRepository: Lazy<SettingsRepository>,
+    private val dataCleaners: Lazy<Set<@JvmSuppressWildcards UserScopedDataCleaner>>,
     @ApplicationScope private val scope: CoroutineScope,
     private val logger: Logger,
 ) : AuthCleanupObserver {
@@ -65,9 +65,11 @@ class AuthCleanupObserverImpl @Inject constructor(
     }
 
     private suspend fun deleteUserData(userKey: UserScopeKey) {
-        val result = settingsRepository.get().deleteUserData(userKey)
-        if (result is ResultWithError.Failure) {
-            logger.e(TAG, "Failed to clean up user-scoped settings: ${result.error}")
+        dataCleaners.get().forEach { cleaner ->
+            val result = cleaner.deleteUserData(userKey)
+            if (result is ResultWithError.Failure) {
+                logger.e(TAG, "Failed to clean up user-scoped data: ${result.error}")
+            }
         }
     }
 }

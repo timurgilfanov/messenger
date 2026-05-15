@@ -346,4 +346,41 @@ class ChatListViewModelComponentTest {
             },
         )
     }
+
+    @Test
+    fun `logs when observeProfile returns local operation failure`() = runTest {
+        val loggedMessages = mutableListOf<Pair<String, String>>()
+        val capturingLogger = object : timur.gilfanov.messenger.util.Logger {
+            override fun d(tag: String, message: String) = Unit
+            override fun i(tag: String, message: String) = Unit
+            override fun w(tag: String, message: String) = Unit
+            override fun w(tag: String, message: String, throwable: Throwable) = Unit
+            override fun e(tag: String, message: String) {
+                loggedMessages.add(tag to message)
+            }
+            override fun e(tag: String, message: String, throwable: Throwable) = Unit
+        }
+
+        val observeProfileUseCase = ObserveProfileUseCaseStub(
+            flowOf(
+                ResultWithError.Failure(
+                    ObserveProfileError.LocalOperationFailed(LocalStorageError.AccessDenied),
+                ),
+            ),
+        )
+        val repository = RepositoryFake()
+        val useCase = FlowChatListUseCase(repository)
+        val viewModel =
+            ChatListViewModel(observeProfileUseCase, useCase, repository, capturingLogger)
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+
+        assertTrue(
+            loggedMessages.any {
+                it.first == "ChatListViewModel" &&
+                    it.second.startsWith("Profile observation failed:")
+            },
+        )
+    }
 }

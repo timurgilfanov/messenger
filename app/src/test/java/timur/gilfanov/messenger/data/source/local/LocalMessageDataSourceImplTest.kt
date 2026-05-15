@@ -448,6 +448,7 @@ class LocalMessageDataSourceImplTest {
                 joinedAt = Instant.fromEpochMilliseconds(900000),
                 isAdmin = false,
                 isModerator = false,
+                isCurrentUser = true,
             ),
         )
     }

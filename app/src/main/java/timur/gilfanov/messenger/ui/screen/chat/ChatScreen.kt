@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -255,6 +256,7 @@ private fun PagingRefreshOverlay(messages: LazyPagingItems<Message>) {
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     testTag = "paging_refresh_error",
                 )

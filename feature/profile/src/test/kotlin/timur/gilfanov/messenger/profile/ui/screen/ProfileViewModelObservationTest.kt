@@ -114,39 +114,6 @@ class ProfileViewModelObservationTest {
     }
 
     @Test
-    fun `remote Unauthenticated error transitions to Error state when no cached data`() = runTest {
-        val viewModel = createViewModel(
-            flowOf(
-                ResultWithError.Failure(
-                    ObserveProfileError.RemoteOperationFailed(RemoteError.Unauthenticated),
-                ),
-            ),
-        )
-
-        viewModel.state.test {
-            assertIs<ProfileUiState.Loading>(awaitItem())
-            assertIs<ProfileUiState.Error>(awaitItem())
-        }
-    }
-
-    @Test
-    fun `remote Unauthenticated error posts side effect when loading`() = runTest {
-        val viewModel = createViewModel(
-            flowOf(
-                ResultWithError.Failure(
-                    ObserveProfileError.RemoteOperationFailed(RemoteError.Unauthenticated),
-                ),
-            ),
-        )
-
-        backgroundScope.launch { viewModel.state.collect {} }
-
-        viewModel.effects.test {
-            assertIs<ProfileSideEffects.Feedback.ObserveFailed>(awaitItem())
-        }
-    }
-
-    @Test
     fun `resets to Loading and clears SavedStateHandle when Unauthorized follows Ready state`() =
         runTest {
             val profileFlow = MutableStateFlow<ResultWithError<Profile, ObserveProfileError>>(

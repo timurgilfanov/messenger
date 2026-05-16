@@ -1,6 +1,5 @@
 package timur.gilfanov.messenger.domain.usecase.auth
 
-import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -100,7 +99,7 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
         return AuthSession(
             tokens = tokens,
             provider = provider,
-            sessionId = UUID.randomUUID().toString(),
+            sessionId = "$prefix-session-$tokenCounter",
         )
     }
 

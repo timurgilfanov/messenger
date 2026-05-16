@@ -16,6 +16,7 @@ import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Profile
+import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 import timur.gilfanov.messenger.domain.usecase.profile.repository.ObserveProfileRepositoryError
 import timur.gilfanov.messenger.profile.data.source.local.LocalDataSourceErrorV2
@@ -36,6 +37,7 @@ class ProfileRepositoryImplTest {
         val repository = ProfileRepositoryImpl(
             localDataSource = localDataSource,
             remoteDataSource = FakeRemoteProfileDataSource(Profile("Remote", "avatar")),
+            logger = NoOpLogger(),
         )
 
         repository.observeCurrentProfile(userKey).test {
@@ -51,6 +53,7 @@ class ProfileRepositoryImplTest {
         val repository = ProfileRepositoryImpl(
             localDataSource = localDataSource,
             remoteDataSource = FakeRemoteProfileDataSource(Profile("Remote", null)),
+            logger = NoOpLogger(),
         )
 
         repository.observeCurrentProfile(userKey).test {
@@ -70,6 +73,7 @@ class ProfileRepositoryImplTest {
                     RemoteDataSourceError.RateLimitExceeded,
                 ),
             ),
+            logger = NoOpLogger(),
         )
 
         repository.observeCurrentProfile(userKey).test {
@@ -87,6 +91,7 @@ class ProfileRepositoryImplTest {
                     RemoteDataSourceError.RateLimitExceeded,
                 ),
             ),
+            logger = NoOpLogger(),
         )
 
         repository.observeCurrentProfile(userKey).test {
@@ -103,6 +108,7 @@ class ProfileRepositoryImplTest {
         val repository = ProfileRepositoryImpl(
             localDataSource = FakeLocalProfileDataSource(upsertError = upsertError),
             remoteDataSource = FakeRemoteProfileDataSource(Profile("Remote", null)),
+            logger = NoOpLogger(),
         )
 
         repository.observeCurrentProfile(userKey).test {
@@ -119,6 +125,7 @@ class ProfileRepositoryImplTest {
         val repository = ProfileRepositoryImpl(
             localDataSource = localDataSource,
             remoteDataSource = FakeRemoteProfileDataSource(Profile("Remote", "avatar")),
+            logger = NoOpLogger(),
         )
 
         repository.observeCurrentProfile(userKey).test {
@@ -139,6 +146,7 @@ class ProfileRepositoryImplTest {
         val repository = ProfileRepositoryImpl(
             localDataSource = FakeLocalProfileDataSource(observeError = readError),
             remoteDataSource = FakeRemoteProfileDataSource(Profile("Remote", null)),
+            logger = NoOpLogger(),
         )
 
         repository.observeCurrentProfile(userKey).test {

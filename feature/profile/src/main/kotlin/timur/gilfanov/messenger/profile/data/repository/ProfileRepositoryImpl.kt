@@ -27,12 +27,18 @@ import timur.gilfanov.messenger.profile.data.source.local.ProfileLocalDataSource
 import timur.gilfanov.messenger.profile.data.source.remote.RemoteProfileDataSource
 import timur.gilfanov.messenger.profile.data.source.remote.RemoteProfileDataSourceError
 import timur.gilfanov.messenger.profile.data.source.remote.toRemoteError
+import timur.gilfanov.messenger.util.Logger
 
 @Singleton
 class ProfileRepositoryImpl @Inject constructor(
     private val localDataSource: LocalProfileDataSource,
     private val remoteDataSource: RemoteProfileDataSource,
+    private val logger: Logger,
 ) : ProfileRepository {
+
+    companion object {
+        private const val TAG = "ProfileRepositoryImpl"
+    }
 
     override fun observeCurrentProfile(
         userKey: UserScopeKey,
@@ -57,7 +63,13 @@ class ProfileRepositoryImpl @Inject constructor(
 
         when (val remoteResult = remoteDataSource.getCurrentProfile()) {
             is ResultWithError.Success -> {
-                localDataSource.upsertProfile(userKey = userKey, profile = remoteResult.data)
+                val upsertResult = localDataSource.upsertProfile(
+                    userKey = userKey,
+                    profile = remoteResult.data,
+                )
+                if (upsertResult is ResultWithError.Failure) {
+                    logger.w(TAG, "Failed to cache profile locally: ${upsertResult.error}")
+                }
                 emit(ResultWithError.Success(remoteResult.data))
             }
 

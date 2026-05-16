@@ -42,12 +42,16 @@ class LocalAuthDataSourceImpl internal constructor(
     private val keyAccessToken = stringPreferencesKey("access_token")
     private val keyRefreshToken = stringPreferencesKey("refresh_token")
     private val keyAuthProvider = stringPreferencesKey("auth_provider")
+    private val keySessionId = stringPreferencesKey("session_id")
 
     override suspend fun getAccessToken(): ResultWithError<String?, AuthLocalDataSourceError> =
         getToken(keyAccessToken)
 
     override suspend fun getRefreshToken(): ResultWithError<String?, AuthLocalDataSourceError> =
         getToken(keyRefreshToken)
+
+    override suspend fun getSessionId(): ResultWithError<String?, AuthLocalDataSourceError> =
+        readPreference(keySessionId)
 
     override suspend fun getAuthProvider(): ResultWithError<
         AuthProvider?,
@@ -71,7 +75,7 @@ class LocalAuthDataSourceImpl internal constructor(
     override suspend fun saveTokens(
         tokens: AuthTokens,
     ): ResultWithError<Unit, AuthLocalDataSourceError> =
-        encryptTokenPair(tokens.accessToken, tokens.refreshToken).fold(
+        authSessionCipher.encryptTokenPair(tokens.accessToken, tokens.refreshToken).fold(
             onSuccess = { (encryptedAccessToken, encryptedRefreshToken) ->
                 writePreferences { preferences ->
                     preferences[keyAccessToken] = encryptedAccessToken
@@ -83,17 +87,20 @@ class LocalAuthDataSourceImpl internal constructor(
 
     override suspend fun saveSession(
         session: AuthSession,
-    ): ResultWithError<Unit, AuthLocalDataSourceError> =
-        encryptTokenPair(session.tokens.accessToken, session.tokens.refreshToken).fold(
-            onSuccess = { (encryptedAccessToken, encryptedRefreshToken) ->
-                writePreferences { preferences ->
-                    preferences[keyAccessToken] = encryptedAccessToken
-                    preferences[keyRefreshToken] = encryptedRefreshToken
-                    preferences[keyAuthProvider] = session.provider.name
-                }
-            },
-            onFailure = { ResultWithError.Failure(it) },
-        )
+    ): ResultWithError<Unit, AuthLocalDataSourceError> = authSessionCipher.encryptTokenPair(
+        session.tokens.accessToken,
+        session.tokens.refreshToken,
+    ).fold(
+        onSuccess = { (encryptedAccessToken, encryptedRefreshToken) ->
+            writePreferences { preferences ->
+                preferences[keyAccessToken] = encryptedAccessToken
+                preferences[keyRefreshToken] = encryptedRefreshToken
+                preferences[keyAuthProvider] = session.provider.name
+                preferences[keySessionId] = session.sessionId
+            }
+        },
+        onFailure = { ResultWithError.Failure(it) },
+    )
 
     override suspend fun clearSession(): ResultWithError<Unit, AuthLocalDataSourceError> =
         writePreferences { it.clear() }
@@ -121,22 +128,6 @@ class LocalAuthDataSourceImpl internal constructor(
         onFailure = { ResultWithError.Failure(it) },
     )
 
-    private fun encryptTokenPair(
-        accessToken: String,
-        refreshToken: String,
-    ): ResultWithError<Pair<String, String>, AuthLocalDataSourceError> =
-        authSessionCipher.encrypt(accessToken).toLocalResult().fold(
-            onSuccess = { encryptedAccessToken ->
-                authSessionCipher.encrypt(refreshToken).toLocalResult().fold(
-                    onSuccess = { encryptedRefreshToken ->
-                        ResultWithError.Success(encryptedAccessToken to encryptedRefreshToken)
-                    },
-                    onFailure = { ResultWithError.Failure(it) },
-                )
-            },
-            onFailure = { ResultWithError.Failure(it) },
-        )
-
     private suspend fun readPreference(
         key: Preferences.Key<String>,
     ): ResultWithError<String?, AuthLocalDataSourceError> = runCatching {
@@ -163,6 +154,22 @@ class LocalAuthDataSourceImpl internal constructor(
         },
     )
 }
+
+private fun AuthSessionCipher.encryptTokenPair(
+    accessToken: String,
+    refreshToken: String,
+): ResultWithError<Pair<String, String>, AuthLocalDataSourceError> =
+    encrypt(accessToken).toLocalResult().fold(
+        onSuccess = { encryptedAccessToken ->
+            encrypt(refreshToken).toLocalResult().fold(
+                onSuccess = { encryptedRefreshToken ->
+                    ResultWithError.Success(encryptedAccessToken to encryptedRefreshToken)
+                },
+                onFailure = { ResultWithError.Failure(it) },
+            )
+        },
+        onFailure = { ResultWithError.Failure(it) },
+    )
 
 private fun createDataStore(context: Context): DataStore<Preferences> =
     PreferenceDataStoreFactory.create { context.preferencesDataStoreFile(FILE_NAME) }

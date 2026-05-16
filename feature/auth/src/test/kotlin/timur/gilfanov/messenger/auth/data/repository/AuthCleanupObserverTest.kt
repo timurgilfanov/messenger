@@ -27,10 +27,12 @@ class AuthCleanupObserverTest {
     private val session1 = AuthSession(
         tokens = AuthTokens(accessToken = "access-1", refreshToken = "refresh-1"),
         provider = AuthProvider.EMAIL,
+        sessionId = "session-id-1",
     )
     private val session2 = AuthSession(
         tokens = AuthTokens(accessToken = "access-2", refreshToken = "refresh-2"),
         provider = AuthProvider.EMAIL,
+        sessionId = "session-id-2",
     )
 
     private fun createObserver(
@@ -87,7 +89,23 @@ class AuthCleanupObserverTest {
         }
 
     @Test
-    fun `when token changes but scope key remains same then NO cleanup`() =
+    fun `when only access token changes then NO cleanup`() = runTest(UnconfinedTestDispatcher()) {
+        val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
+        val dataCleaner = UserScopedDataCleanerFake()
+        val observer = createObserver(authRepository, dataCleaner, backgroundScope)
+
+        observer.start()
+
+        val session1AccessUpdated = session1.copy(
+            tokens = session1.tokens.copy(accessToken = "access-1-updated"),
+        )
+        authRepository.setState(AuthState.Authenticated(session1AccessUpdated))
+
+        assertNull(dataCleaner.lastDeleteUserDataKey)
+    }
+
+    @Test
+    fun `when both tokens rotate but session ID is unchanged then NO cleanup`() =
         runTest(UnconfinedTestDispatcher()) {
             val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
             val dataCleaner = UserScopedDataCleanerFake()
@@ -95,11 +113,13 @@ class AuthCleanupObserverTest {
 
             observer.start()
 
-            // Change access token but keep refresh token (which determines the key)
-            val session1Updated = session1.copy(
-                tokens = session1.tokens.copy(accessToken = "access-1-updated"),
+            val session1TokensRotated = session1.copy(
+                tokens = AuthTokens(
+                    accessToken = "access-1-rotated",
+                    refreshToken = "refresh-1-rotated",
+                ),
             )
-            authRepository.setState(AuthState.Authenticated(session1Updated))
+            authRepository.setState(AuthState.Authenticated(session1TokensRotated))
 
             assertNull(dataCleaner.lastDeleteUserDataKey)
         }

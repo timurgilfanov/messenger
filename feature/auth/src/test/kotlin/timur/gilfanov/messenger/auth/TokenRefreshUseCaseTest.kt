@@ -27,6 +27,7 @@ class TokenRefreshUseCaseTest {
             refreshToken = "initial-refresh-token",
         ),
         provider = AuthProvider.EMAIL,
+        sessionId = "test-session-id",
     )
     private val newTokens = AuthTokens(
         accessToken = "new-access-token",

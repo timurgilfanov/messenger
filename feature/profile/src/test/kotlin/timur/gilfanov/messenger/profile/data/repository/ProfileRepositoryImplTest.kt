@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -15,7 +16,9 @@ import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Profile
+import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 import timur.gilfanov.messenger.domain.usecase.profile.repository.ObserveProfileRepositoryError
+import timur.gilfanov.messenger.profile.data.source.local.LocalDataSourceErrorV2
 import timur.gilfanov.messenger.profile.data.source.local.LocalProfileDataSource
 import timur.gilfanov.messenger.profile.data.source.local.ProfileLocalDataSourceError
 import timur.gilfanov.messenger.profile.data.source.remote.RemoteProfileDataSource
@@ -38,7 +41,7 @@ class ProfileRepositoryImplTest {
         repository.observeCurrentProfile(userKey).test {
             assertEquals(Profile("Cached", null), awaitSuccess())
             assertEquals(Profile("Remote", "avatar"), awaitSuccess())
-            cancelAndIgnoreRemainingEvents()
+            expectNoEvents()
         }
     }
 
@@ -52,7 +55,7 @@ class ProfileRepositoryImplTest {
 
         repository.observeCurrentProfile(userKey).test {
             assertEquals(Profile("Remote", null), awaitSuccess())
-            cancelAndIgnoreRemainingEvents()
+            expectNoEvents()
         }
 
         assertEquals(Profile("Remote", null), localDataSource.cachedProfile)
@@ -71,7 +74,7 @@ class ProfileRepositoryImplTest {
 
         repository.observeCurrentProfile(userKey).test {
             assertIs<ObserveProfileRepositoryError.RemoteOperationFailed>(awaitFailure())
-            cancelAndIgnoreRemainingEvents()
+            expectNoEvents()
         }
     }
 
@@ -89,7 +92,58 @@ class ProfileRepositoryImplTest {
         repository.observeCurrentProfile(userKey).test {
             assertEquals(Profile("Cached", null), awaitSuccess())
             expectNoEvents()
-            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `observeCurrentProfile emits remote data when upsert fails`() = runTest {
+        val upsertError = ProfileLocalDataSourceError.LocalDataSource(
+            LocalDataSourceErrorV2.WriteError(ErrorReason("disk full")),
+        )
+        val repository = ProfileRepositoryImpl(
+            localDataSource = FakeLocalProfileDataSource(upsertError = upsertError),
+            remoteDataSource = FakeRemoteProfileDataSource(Profile("Remote", null)),
+        )
+
+        repository.observeCurrentProfile(userKey).test {
+            assertEquals(Profile("Remote", null), awaitSuccess())
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `observeCurrentProfile stops streaming when profile data is deleted`() = runTest {
+        val localDataSource = FakeLocalProfileDataSource(
+            initialProfile = Profile("Cached", null),
+        )
+        val repository = ProfileRepositoryImpl(
+            localDataSource = localDataSource,
+            remoteDataSource = FakeRemoteProfileDataSource(Profile("Remote", "avatar")),
+        )
+
+        repository.observeCurrentProfile(userKey).test {
+            assertEquals(Profile("Cached", null), awaitSuccess())
+            assertEquals(Profile("Remote", "avatar"), awaitSuccess())
+
+            localDataSource.deleteProfile(userKey)
+
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `observeCurrentProfile emits local failure and stops when initial read fails`() = runTest {
+        val readError = ProfileLocalDataSourceError.LocalDataSource(
+            LocalDataSourceErrorV2.ReadError(ErrorReason("io error")),
+        )
+        val repository = ProfileRepositoryImpl(
+            localDataSource = FakeLocalProfileDataSource(observeError = readError),
+            remoteDataSource = FakeRemoteProfileDataSource(Profile("Remote", null)),
+        )
+
+        repository.observeCurrentProfile(userKey).test {
+            assertIs<ObserveProfileRepositoryError.LocalOperationFailed>(awaitFailure())
+            awaitComplete()
         }
     }
 
@@ -109,21 +163,28 @@ class ProfileRepositoryImplTest {
         return result.error
     }
 
-    private class FakeLocalProfileDataSource(initialProfile: Profile? = null) :
-        LocalProfileDataSource {
+    private class FakeLocalProfileDataSource(
+        initialProfile: Profile? = null,
+        private val upsertError: ProfileLocalDataSourceError? = null,
+        private val observeError: ProfileLocalDataSourceError? = null,
+    ) : LocalProfileDataSource {
         private val profile = MutableStateFlow(initialProfile)
         val cachedProfile: Profile?
             get() = profile.value
 
         override fun observeProfile(
             userKey: UserScopeKey,
-        ): Flow<ResultWithError<Profile, ProfileLocalDataSourceError>> = profile.map {
-            if (it == null) {
-                ResultWithError.Failure<Profile, ProfileLocalDataSourceError>(
-                    ProfileLocalDataSourceError.UserDataNotFound,
-                )
-            } else {
-                ResultWithError.Success<Profile, ProfileLocalDataSourceError>(it)
+        ): Flow<ResultWithError<Profile, ProfileLocalDataSourceError>> {
+            val error = observeError
+            if (error != null) return flowOf(ResultWithError.Failure(error))
+            return profile.map {
+                if (it == null) {
+                    ResultWithError.Failure<Profile, ProfileLocalDataSourceError>(
+                        ProfileLocalDataSourceError.UserDataNotFound,
+                    )
+                } else {
+                    ResultWithError.Success<Profile, ProfileLocalDataSourceError>(it)
+                }
             }
         }
 
@@ -131,6 +192,8 @@ class ProfileRepositoryImplTest {
             userKey: UserScopeKey,
             profile: Profile,
         ): ResultWithError<kotlin.Unit, ProfileLocalDataSourceError> {
+            val error = upsertError
+            if (error != null) return ResultWithError.Failure(error)
             this.profile.value = profile
             return ResultWithError.Success(kotlin.Unit)
         }

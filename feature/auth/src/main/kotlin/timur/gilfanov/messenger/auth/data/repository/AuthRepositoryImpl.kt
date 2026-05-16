@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.auth.data.repository
 
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -89,13 +90,35 @@ class AuthRepositoryImpl @Inject constructor(
                 null
             },
         )
+        val getSessionIdResult = localDataSource.getSessionId()
+        val sessionIdFromStore = getSessionIdResult.fold(
+            onSuccess = { it },
+            onFailure = { e ->
+                logger.e(TAG, "Failed to restore session ID: $e")
+                null
+            },
+        )
+        val sessionId = sessionIdFromStore ?: UUID.randomUUID().toString()
+        val sessionIdWasMissing =
+            (getSessionIdResult is ResultWithError.Success && sessionIdFromStore == null) ||
+                getSessionIdResult is ResultWithError.Failure
         val restoredState = if (accessToken != null && refreshToken != null && provider != null) {
-            AuthState.Authenticated(
-                AuthSession(
-                    tokens = AuthTokens(accessToken, refreshToken),
-                    provider = provider,
-                ),
+            val session = AuthSession(
+                tokens = AuthTokens(accessToken, refreshToken),
+                provider = provider,
+                sessionId = sessionId,
             )
+            if (sessionIdWasMissing) {
+                sessionMutex.withLock {
+                    localDataSource.saveSession(session).fold(
+                        onSuccess = {},
+                        onFailure = { e ->
+                            logger.e(TAG, "Failed to persist generated session ID: $e")
+                        },
+                    )
+                }
+            }
+            AuthState.Authenticated(session)
         } else {
             AuthState.Unauthenticated
         }
@@ -107,7 +130,11 @@ class AuthRepositoryImpl @Inject constructor(
     ): ResultWithError<AuthSession, LoginRepositoryError> =
         remoteDataSource.loginWithCredentials(credentials).fold(
             onSuccess = { tokens ->
-                val session = AuthSession(tokens = tokens, provider = AuthProvider.EMAIL)
+                val session = AuthSession(
+                    tokens = tokens,
+                    provider = AuthProvider.EMAIL,
+                    sessionId = UUID.randomUUID().toString(),
+                )
                 sessionMutex.withLock {
                     localDataSource.saveSession(session).fold(
                         onSuccess = {
@@ -135,7 +162,11 @@ class AuthRepositoryImpl @Inject constructor(
     ): ResultWithError<AuthSession, GoogleLoginRepositoryError> =
         remoteDataSource.loginWithGoogle(idToken).fold(
             onSuccess = { tokens ->
-                val session = AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE)
+                val session = AuthSession(
+                    tokens = tokens,
+                    provider = AuthProvider.GOOGLE,
+                    sessionId = UUID.randomUUID().toString(),
+                )
                 sessionMutex.withLock {
                     localDataSource.saveSession(session).fold(
                         onSuccess = {
@@ -167,7 +198,11 @@ class AuthRepositoryImpl @Inject constructor(
     ): ResultWithError<AuthSession, GoogleSignupRepositoryError> =
         remoteDataSource.signupWithGoogle(idToken, name).fold(
             onSuccess = { tokens ->
-                val session = AuthSession(tokens = tokens, provider = AuthProvider.GOOGLE)
+                val session = AuthSession(
+                    tokens = tokens,
+                    provider = AuthProvider.GOOGLE,
+                    sessionId = UUID.randomUUID().toString(),
+                )
                 sessionMutex.withLock {
                     localDataSource.saveSession(session).fold(
                         onSuccess = {
@@ -199,7 +234,11 @@ class AuthRepositoryImpl @Inject constructor(
     ): ResultWithError<AuthSession, SignupRepositoryError> =
         remoteDataSource.register(credentials, name).fold(
             onSuccess = { tokens ->
-                val session = AuthSession(tokens = tokens, provider = AuthProvider.EMAIL)
+                val session = AuthSession(
+                    tokens = tokens,
+                    provider = AuthProvider.EMAIL,
+                    sessionId = UUID.randomUUID().toString(),
+                )
                 sessionMutex.withLock {
                     localDataSource.saveSession(session).fold(
                         onSuccess = {

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.takeWhile
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.bimap
@@ -15,14 +16,12 @@ import timur.gilfanov.messenger.domain.entity.profile.PictureUri
 import timur.gilfanov.messenger.domain.entity.profile.Profile
 import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
-import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.profile.repository.ObserveProfileRepositoryError
 import timur.gilfanov.messenger.domain.usecase.profile.repository.ProfileRepository
 import timur.gilfanov.messenger.domain.usecase.profile.repository.RemovePictureRepositoryError
 import timur.gilfanov.messenger.domain.usecase.profile.repository.UpdateNameRepositoryError
 import timur.gilfanov.messenger.domain.usecase.profile.repository.UpdatePictureRepositoryError
-import timur.gilfanov.messenger.profile.data.source.local.LocalDataSourceErrorV2
 import timur.gilfanov.messenger.profile.data.source.local.LocalProfileDataSource
 import timur.gilfanov.messenger.profile.data.source.local.ProfileLocalDataSourceError
 import timur.gilfanov.messenger.profile.data.source.remote.RemoteProfileDataSource
@@ -58,19 +57,8 @@ class ProfileRepositoryImpl @Inject constructor(
 
         when (val remoteResult = remoteDataSource.getCurrentProfile()) {
             is ResultWithError.Success -> {
-                val upsertResult = localDataSource.upsertProfile(
-                    userKey = userKey,
-                    profile = remoteResult.data,
-                )
-                when (upsertResult) {
-                    is ResultWithError.Success -> {
-                        emit(ResultWithError.Success(remoteResult.data))
-                    }
-
-                    is ResultWithError.Failure -> {
-                        emit(ResultWithError.Failure(upsertResult.error.toObserveProfileError()))
-                    }
-                }
+                localDataSource.upsertProfile(userKey = userKey, profile = remoteResult.data)
+                emit(ResultWithError.Success(remoteResult.data))
             }
 
             is ResultWithError.Failure -> {
@@ -83,6 +71,12 @@ class ProfileRepositoryImpl @Inject constructor(
         emitAll(
             localDataSource.observeProfile(userKey)
                 .drop(1)
+                .takeWhile { result ->
+                    !(
+                        result is ResultWithError.Failure &&
+                            result.error is ProfileLocalDataSourceError.UserDataNotFound
+                        )
+                }
                 .map { result ->
                     result.bimap(
                         onSuccess = { it },
@@ -123,22 +117,3 @@ private fun ProfileLocalDataSourceError.toObserveProfileError(): ObserveProfileR
 
 private fun RemoteProfileDataSourceError.toObserveProfileError(): ObserveProfileRepositoryError =
     ObserveProfileRepositoryError.RemoteOperationFailed(toRemoteError())
-
-private fun ProfileLocalDataSourceError.toLocalStorageError(): LocalStorageError = when (this) {
-    ProfileLocalDataSourceError.UserDataNotFound ->
-        LocalStorageError.UnknownError(IllegalStateException("Profile cache row not found"))
-
-    is ProfileLocalDataSourceError.LocalDataSource -> error.toLocalStorageError()
-}
-
-private fun LocalDataSourceErrorV2.toLocalStorageError(): LocalStorageError = when (this) {
-    is LocalDataSourceErrorV2.ReadError,
-    is LocalDataSourceErrorV2.WriteError,
-    -> LocalStorageError.TemporarilyUnavailable
-
-    is LocalDataSourceErrorV2.SerializationError ->
-        LocalStorageError.UnknownError(IllegalStateException(reason.value))
-
-    is LocalDataSourceErrorV2.DeserializationError ->
-        LocalStorageError.UnknownError(IllegalStateException(reason.value))
-}

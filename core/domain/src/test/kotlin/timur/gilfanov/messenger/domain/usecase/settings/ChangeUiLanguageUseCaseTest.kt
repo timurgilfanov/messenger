@@ -21,6 +21,7 @@ class ChangeUiLanguageUseCaseTest {
     private val session = AuthSession(
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
+        sessionId = "test-session-id",
     )
     private val authRepository: AuthRepositoryFake =
         AuthRepositoryFake(AuthState.Authenticated(session))

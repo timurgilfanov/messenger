@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -18,6 +19,7 @@ import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Profile
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileUseCaseStub
 import timur.gilfanov.messenger.testutil.MainDispatcherRule
@@ -112,6 +114,65 @@ class ProfileViewModelObservationTest {
     }
 
     @Test
+    fun `remote Unauthenticated error transitions to Error state when no cached data`() = runTest {
+        val viewModel = createViewModel(
+            flowOf(
+                ResultWithError.Failure(
+                    ObserveProfileError.RemoteOperationFailed(RemoteError.Unauthenticated),
+                ),
+            ),
+        )
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `remote Unauthenticated error posts side effect when loading`() = runTest {
+        val viewModel = createViewModel(
+            flowOf(
+                ResultWithError.Failure(
+                    ObserveProfileError.RemoteOperationFailed(RemoteError.Unauthenticated),
+                ),
+            ),
+        )
+
+        backgroundScope.launch { viewModel.state.collect {} }
+
+        viewModel.effects.test {
+            assertIs<ProfileSideEffects.Feedback.ObserveFailed>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `resets to Loading and clears SavedStateHandle when Unauthorized follows Ready state`() =
+        runTest {
+            val profileFlow = MutableStateFlow<ResultWithError<Profile, ObserveProfileError>>(
+                ResultWithError.Success(Profile("Timur", null)),
+            )
+            val savedStateHandle = SavedStateHandle()
+            val viewModel = ProfileViewModel(
+                observeProfile = ObserveProfileUseCaseStub(profileFlow),
+                logger = NoOpLogger(),
+                savedStateHandle = savedStateHandle,
+            )
+
+            viewModel.state.test {
+                assertIs<ProfileUiState.Loading>(awaitItem())
+                assertIs<ProfileUiState.Ready>(awaitItem())
+
+                profileFlow.update {
+                    ResultWithError.Failure(ObserveProfileError.Unauthorized)
+                }
+
+                assertIs<ProfileUiState.Loading>(awaitItem())
+                assertNull(savedStateHandle.get<ProfileUi>("profile"))
+            }
+        }
+
+    @Test
     fun `local profile failure posts side effect`() = runTest {
         val error = ObserveProfileError.LocalOperationFailed(LocalStorageError.AccessDenied)
         val viewModel = createViewModel(
@@ -121,8 +182,183 @@ class ProfileViewModelObservationTest {
         backgroundScope.launch { viewModel.state.collect {} }
 
         viewModel.effects.test {
-            val effect = assertIs<ProfileSideEffects.ObserveProfileFailed>(awaitItem())
-            assertEquals(error, effect.error)
+            assertIs<ProfileSideEffects.Feedback.ObserveFailed>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `local profile failure transitions to Error state when no cached data`() = runTest {
+        val error = ObserveProfileError.LocalOperationFailed(LocalStorageError.AccessDenied)
+        val viewModel = createViewModel(
+            flowOf(ResultWithError.Failure(error)),
+        )
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `remote profile failure transitions to Error state when no cached data`() = runTest {
+        val error = ObserveProfileError.RemoteOperationFailed(
+            RemoteError.Failed.NetworkNotAvailable,
+        )
+        val viewModel = createViewModel(
+            flowOf(ResultWithError.Failure(error)),
+        )
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `InsufficientPermissions transitions to Error state when no cached data`() = runTest {
+        val error = ObserveProfileError.RemoteOperationFailed(
+            RemoteError.InsufficientPermissions,
+        )
+        val viewModel = createViewModel(
+            flowOf(ResultWithError.Failure(error)),
+        )
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `InsufficientPermissions posts side effect when no cached data`() = runTest {
+        val error = ObserveProfileError.RemoteOperationFailed(
+            RemoteError.InsufficientPermissions,
+        )
+        val viewModel = createViewModel(
+            flowOf(ResultWithError.Failure(error)),
+        )
+
+        backgroundScope.launch { viewModel.state.collect {} }
+
+        viewModel.effects.test {
+            assertIs<ProfileSideEffects.Feedback.ObserveFailed>(awaitItem())
+        }
+    }
+
+    @Test
+    fun `profile failure keeps Ready state when cached data exists`() = runTest {
+        val profileFlow = MutableStateFlow<ResultWithError<Profile, ObserveProfileError>>(
+            ResultWithError.Success(Profile("Timur", null)),
+        )
+        val viewModel = createViewModel(profileFlow)
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Ready>(awaitItem())
+
+            profileFlow.update {
+                ResultWithError.Failure(
+                    ObserveProfileError.RemoteOperationFailed(
+                        RemoteError.Failed.NetworkNotAvailable,
+                    ),
+                )
+            }
+
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `error state is persisted to SavedStateHandle on first-load remote failure`() = runTest {
+        val error = ObserveProfileError.RemoteOperationFailed(
+            RemoteError.Failed.NetworkNotAvailable,
+        )
+        val savedStateHandle = SavedStateHandle()
+        val viewModel = ProfileViewModel(
+            observeProfile = ObserveProfileUseCaseStub(flowOf(ResultWithError.Failure(error))),
+            logger = NoOpLogger(),
+            savedStateHandle = savedStateHandle,
+        )
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+            assertEquals(true, savedStateHandle.get<Boolean>("error_state"))
+        }
+    }
+
+    @Test
+    fun `error state is persisted to SavedStateHandle on first-load local failure`() = runTest {
+        val error = ObserveProfileError.LocalOperationFailed(LocalStorageError.AccessDenied)
+        val savedStateHandle = SavedStateHandle()
+        val viewModel = ProfileViewModel(
+            observeProfile = ObserveProfileUseCaseStub(flowOf(ResultWithError.Failure(error))),
+            logger = NoOpLogger(),
+            savedStateHandle = savedStateHandle,
+        )
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+            assertEquals(true, savedStateHandle.get<Boolean>("error_state"))
+        }
+    }
+
+    @Test
+    fun `initial state is Error when SavedStateHandle contains error flag`() {
+        val savedStateHandle = SavedStateHandle(mapOf("error_state" to true))
+        val viewModel = ProfileViewModel(
+            observeProfile = ObserveProfileUseCaseStub(kotlinx.coroutines.flow.emptyFlow()),
+            logger = NoOpLogger(),
+            savedStateHandle = savedStateHandle,
+        )
+
+        assertIs<ProfileUiState.Error>(viewModel.state.value)
+    }
+
+    @Test
+    fun `error flag is cleared from SavedStateHandle on successful observation`() = runTest {
+        val savedStateHandle = SavedStateHandle(mapOf("error_state" to true))
+        val viewModel = ProfileViewModel(
+            observeProfile = ObserveProfileUseCaseStub(
+                flowOf(ResultWithError.Success(Profile("Timur", null))),
+            ),
+            logger = NoOpLogger(),
+            savedStateHandle = savedStateHandle,
+        )
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Error>(awaitItem())
+            assertIs<ProfileUiState.Ready>(awaitItem())
+            assertNull(savedStateHandle.get<Boolean>("error_state"))
+        }
+    }
+
+    @Test
+    fun `error flag is cleared from SavedStateHandle on Unauthorized`() = runTest {
+        val profileFlow = MutableStateFlow<ResultWithError<Profile, ObserveProfileError>>(
+            ResultWithError.Failure(
+                ObserveProfileError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+            ),
+        )
+        val savedStateHandle = SavedStateHandle()
+        val viewModel = ProfileViewModel(
+            observeProfile = ObserveProfileUseCaseStub(profileFlow),
+            logger = NoOpLogger(),
+            savedStateHandle = savedStateHandle,
+        )
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+            assertEquals(true, savedStateHandle.get<Boolean>("error_state"))
+
+            profileFlow.update {
+                ResultWithError.Failure(ObserveProfileError.Unauthorized)
+            }
+
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertNull(savedStateHandle.get<Boolean>("error_state"))
         }
     }
 }

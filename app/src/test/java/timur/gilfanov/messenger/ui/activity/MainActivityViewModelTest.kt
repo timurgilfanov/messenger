@@ -72,6 +72,7 @@ class MainActivityViewModelTest {
             refreshToken = "test-refresh-token",
         ),
         provider = AuthProvider.EMAIL,
+        sessionId = "test-session-id",
     )
 
     private fun createViewModel(authRepository: AuthRepository): MainActivityViewModel =

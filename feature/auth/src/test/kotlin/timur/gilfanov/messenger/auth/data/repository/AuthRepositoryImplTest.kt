@@ -451,6 +451,7 @@ class AuthRepositoryImplTest {
         val initialSession = AuthSession(
             tokens = AuthTokens("old-access", "old-refresh"),
             provider = AuthProvider.EMAIL,
+            sessionId = "test-session-id",
         )
         val newTokens = AuthTokens("new-access", "new-refresh")
         val storage = RefreshLogoutRaceLocalAuthDataSource(initialSession)
@@ -675,6 +676,29 @@ class AuthRepositoryImplTest {
             assertIs<AuthState.Authenticated>(awaitItem())
         }
     }
+
+    @Test
+    fun `getSessionId read failure generates and persists a stable session ID`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueGetAccessToken(ResultWithError.Success("access-token"))
+        storage.enqueueGetRefreshToken(ResultWithError.Success("refresh-token"))
+        storage.enqueueGetAuthProvider(ResultWithError.Success(AuthProvider.EMAIL))
+        storage.enqueueGetSessionId(
+            ResultWithError.Failure(AuthLocalDataSourceError.TemporarilyUnavailable),
+        )
+
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        repo.authState.test {
+            assertIs<AuthState.Authenticated>(awaitItem())
+        }
+        val persistedSessionId =
+            assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(
+                storage.getSessionId(),
+            )
+        kotlin.test.assertNotNull(persistedSessionId.data)
+    }
 }
 
 private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) :
@@ -684,6 +708,7 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
     var refreshToken: String? = initialSession.tokens.refreshToken
         private set
     private var authProvider: AuthProvider? = initialSession.provider
+    private var sessionId: String? = initialSession.sessionId
 
     val clearSessionStarted = CompletableDeferred<Unit>()
     val finishClearSession = CompletableDeferred<Unit>()
@@ -700,6 +725,9 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
         > =
         ResultWithError.Success(authProvider)
 
+    override suspend fun getSessionId(): ResultWithError<String?, AuthLocalDataSourceError> =
+        ResultWithError.Success(sessionId)
+
     override suspend fun saveTokens(
         tokens: AuthTokens,
     ): ResultWithError<Unit, AuthLocalDataSourceError> {
@@ -714,6 +742,7 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
         accessToken = session.tokens.accessToken
         refreshToken = session.tokens.refreshToken
         authProvider = session.provider
+        sessionId = session.sessionId
         return ResultWithError.Success(Unit)
     }
 
@@ -721,6 +750,7 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
         accessToken = null
         refreshToken = null
         authProvider = null
+        sessionId = null
         clearSessionStarted.complete(Unit)
         finishClearSession.await()
         return ResultWithError.Success(Unit)

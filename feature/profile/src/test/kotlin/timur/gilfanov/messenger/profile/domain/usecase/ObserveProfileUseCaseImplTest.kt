@@ -18,10 +18,10 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.profile.PictureUri
 import timur.gilfanov.messenger.domain.entity.profile.Profile
 import timur.gilfanov.messenger.domain.entity.profile.UserId
-import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.toUserScopeKey
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepositoryFake
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
+import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.profile.ObserveProfileError
 import timur.gilfanov.messenger.domain.usecase.profile.repository.ObserveProfileRepositoryError
 import timur.gilfanov.messenger.domain.usecase.profile.repository.ProfileRepository
@@ -34,6 +34,7 @@ class ObserveProfileUseCaseImplTest {
     private val session = AuthSession(
         tokens = AuthTokens(accessToken = "access", refreshToken = "refresh"),
         provider = AuthProvider.EMAIL,
+        sessionId = "test-session-id",
     )
 
     @Test
@@ -44,7 +45,6 @@ class ObserveProfileUseCaseImplTest {
         val useCase = ObserveProfileUseCaseImpl(
             authRepository = AuthRepositoryFake(AuthState.Authenticated(session)),
             profileRepository = repository,
-            logger = NoOpLogger(),
         )
 
         useCase().test {
@@ -52,7 +52,7 @@ class ObserveProfileUseCaseImplTest {
 
             assertEquals(Profile("Timur", null), result.data)
             assertEquals(session.toUserScopeKey(), repository.lastUserKey)
-            cancelAndIgnoreRemainingEvents()
+            expectNoEvents()
         }
     }
 
@@ -61,14 +61,13 @@ class ObserveProfileUseCaseImplTest {
         val useCase = ObserveProfileUseCaseImpl(
             authRepository = AuthRepositoryFake(AuthState.Unauthenticated),
             profileRepository = ProfileRepositoryFake(),
-            logger = NoOpLogger(),
         )
 
         useCase().test {
             val result = assertIs<ResultWithError.Failure<*, ObserveProfileError>>(awaitItem())
 
             assertIs<ObserveProfileError.Unauthorized>(result.error)
-            cancelAndIgnoreRemainingEvents()
+            expectNoEvents()
         }
     }
 
@@ -83,7 +82,6 @@ class ObserveProfileUseCaseImplTest {
                     ),
                 ),
             ),
-            logger = NoOpLogger(),
         )
 
         useCase().test {
@@ -91,9 +89,100 @@ class ObserveProfileUseCaseImplTest {
 
             val error = assertIs<ObserveProfileError.LocalOperationFailed>(result.error)
             assertEquals(LocalStorageError.AccessDenied, error.error)
-            cancelAndIgnoreRemainingEvents()
+            expectNoEvents()
         }
     }
+
+    @Test
+    fun `repository remote failure maps to use case remote failure`() = runTest {
+        val useCase = ObserveProfileUseCaseImpl(
+            authRepository = AuthRepositoryFake(AuthState.Authenticated(session)),
+            profileRepository = ProfileRepositoryFake(
+                result = ResultWithError.Failure(
+                    ObserveProfileRepositoryError.RemoteOperationFailed(
+                        RemoteError.Failed.NetworkNotAvailable,
+                    ),
+                ),
+            ),
+        )
+
+        useCase().test {
+            val result = assertIs<ResultWithError.Failure<*, ObserveProfileError>>(awaitItem())
+
+            val error = assertIs<ObserveProfileError.RemoteOperationFailed>(result.error)
+            assertEquals(RemoteError.Failed.NetworkNotAvailable, error.error)
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `repository remote Unauthenticated failure maps to Unauthorized`() = runTest {
+        val useCase = ObserveProfileUseCaseImpl(
+            authRepository = AuthRepositoryFake(AuthState.Authenticated(session)),
+            profileRepository = ProfileRepositoryFake(
+                result = ResultWithError.Failure(
+                    ObserveProfileRepositoryError.RemoteOperationFailed(
+                        RemoteError.Unauthenticated,
+                    ),
+                ),
+            ),
+        )
+
+        useCase().test {
+            val result = assertIs<ResultWithError.Failure<*, ObserveProfileError>>(awaitItem())
+
+            assertIs<ObserveProfileError.Unauthorized>(result.error)
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `profile observation does not restart when only access token changes`() = runTest {
+        val authFake = AuthRepositoryFake(AuthState.Authenticated(session))
+        val useCase = ObserveProfileUseCaseImpl(
+            authRepository = authFake,
+            profileRepository = ProfileRepositoryFake(
+                result = ResultWithError.Success(Profile("Timur", null)),
+            ),
+        )
+
+        useCase().test {
+            assertIs<ResultWithError.Success<Profile, *>>(awaitItem())
+
+            val refreshedSession = session.copy(
+                tokens = session.tokens.copy(accessToken = "new-access"),
+            )
+            authFake.setState(AuthState.Authenticated(refreshedSession))
+
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `profile observation does not restart when both tokens rotate but session ID unchanged`() =
+        runTest {
+            val authFake = AuthRepositoryFake(AuthState.Authenticated(session))
+            val useCase = ObserveProfileUseCaseImpl(
+                authRepository = authFake,
+                profileRepository = ProfileRepositoryFake(
+                    result = ResultWithError.Success(Profile("Timur", null)),
+                ),
+            )
+
+            useCase().test {
+                assertIs<ResultWithError.Success<Profile, *>>(awaitItem())
+
+                val rotatedSession = session.copy(
+                    tokens = AuthTokens(
+                        accessToken = "new-access",
+                        refreshToken = "new-refresh",
+                    ),
+                )
+                authFake.setState(AuthState.Authenticated(rotatedSession))
+
+                expectNoEvents()
+            }
+        }
 
     private class ProfileRepositoryFake(
         private val result: ResultWithError<Profile, ObserveProfileRepositoryError> =

@@ -19,7 +19,6 @@ import timur.gilfanov.messenger.profile.data.source.local.LocalProfileDataSource
 import timur.gilfanov.messenger.profile.data.source.remote.RemoteProfileDataSource
 import timur.gilfanov.messenger.profile.data.source.remote.RemoteProfileDataSourceImpl
 import timur.gilfanov.messenger.profile.domain.usecase.ObserveProfileUseCaseImpl
-import timur.gilfanov.messenger.util.Logger
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -56,6 +55,5 @@ object ProfileModule {
     fun provideObserveProfileUseCase(
         authRepository: AuthRepository,
         profileRepository: ProfileRepository,
-        logger: Logger,
-    ): ObserveProfileUseCase = ObserveProfileUseCaseImpl(authRepository, profileRepository, logger)
+    ): ObserveProfileUseCase = ObserveProfileUseCaseImpl(authRepository, profileRepository)
 }

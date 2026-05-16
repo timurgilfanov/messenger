@@ -2,11 +2,16 @@ package timur.gilfanov.messenger.profile.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,7 +46,7 @@ fun ProfileSection(
         lifecycleOwner.lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
             viewModel.effects.collect { effects ->
                 when (effects) {
-                    is ProfileSideEffects.ObserveProfileFailed -> currentOnShowSnackbar(
+                    is ProfileSideEffects.Feedback.ObserveFailed -> currentOnShowSnackbar(
                         getProfileErrorMessage,
                     )
                 }
@@ -52,6 +57,7 @@ fun ProfileSection(
     ProfileContent(
         uiState = profileUiState,
         onProfileEditClick = onProfileEditClick,
+        onRetry = viewModel::retry,
         modifier = modifier,
     )
 }
@@ -60,6 +66,7 @@ fun ProfileSection(
 fun ProfileContent(
     uiState: ProfileUiState,
     @Suppress("unused") onProfileEditClick: () -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -68,21 +75,68 @@ fun ProfileContent(
             .fillMaxWidth()
             .padding(bottom = 8.dp),
     ) {
-        val text = when (uiState) {
-            is ProfileUiState.Ready -> R.string.settings_profile_ready_placeholder
-            ProfileUiState.Loading -> R.string.settings_profile_loading_placeholder
+        when (uiState) {
+            is ProfileUiState.Ready -> ProfileReadyContent(
+                profile = uiState.profile,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .testTag("profile_ready"),
+            )
+
+            ProfileUiState.Loading -> Text(
+                text = stringResource(R.string.settings_profile_loading_placeholder),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .testTag("profile_loading"),
+            )
+
+            ProfileUiState.Error -> Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .testTag("profile_error"),
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_profile_error_placeholder),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                TextButton(onClick = onRetry) {
+                    Text(text = stringResource(R.string.settings_profile_retry))
+                }
+            }
         }
-        val testTag = when (uiState) {
-            is ProfileUiState.Ready -> "profile_ready"
-            ProfileUiState.Loading -> "profile_loading"
+    }
+}
+
+@Composable
+private fun ProfileReadyContent(profile: ProfileUi, modifier: Modifier = Modifier) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier,
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(72.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = CircleShape,
+                ),
+        ) {
+            Text(
+                text = profile.name.firstOrNull()?.uppercase() ?: "",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
         }
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = stringResource(text),
+            text = profile.name,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .testTag(testTag),
         )
     }
 }
@@ -141,6 +195,7 @@ private fun Content(darkTheme: Boolean, state: ProfileUiState) {
         ProfileContent(
             uiState = state,
             onProfileEditClick = {},
+            onRetry = {},
             modifier = Modifier.background(MaterialTheme.colorScheme.background),
         )
     }

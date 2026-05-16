@@ -64,6 +64,7 @@ class SettingsRepositoryIntegrationTest {
     private val testSession = AuthSession(
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
+        sessionId = "test-session-id",
     )
     private val testUserKey = testSession.toUserScopeKey()
     private val testTimestamp = Instant.parse("2024-01-15T10:30:00Z")

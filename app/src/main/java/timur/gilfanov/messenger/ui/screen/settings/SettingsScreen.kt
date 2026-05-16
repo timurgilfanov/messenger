@@ -234,6 +234,7 @@ private fun Content(
                 ProfileContent(
                     uiState = profileUiState,
                     onProfileEditClick = {},
+                    onRetry = {},
                 )
             },
             settingsUiState = settingsUiState,

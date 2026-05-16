@@ -2,8 +2,6 @@ package timur.gilfanov.messenger.profile.data.source.local
 
 import android.database.sqlite.SQLiteAccessPermException
 import android.database.sqlite.SQLiteDatabaseCorruptException
-import android.database.sqlite.SQLiteDatabaseLockedException
-import android.database.sqlite.SQLiteDiskIOException
 import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteFullException
 import android.database.sqlite.SQLiteReadOnlyDatabaseException
@@ -75,28 +73,42 @@ class LocalProfileDataSourceImpl @Inject constructor(
 
     private fun mapReadException(exception: SQLiteException): ProfileLocalDataSourceError {
         logger.e(TAG, "Failed to read profile", exception)
-        return ProfileLocalDataSourceError.LocalDataSource(
-            LocalDataSourceErrorV2.ReadError(exception.toErrorReason()),
-        )
+        val error = when (exception) {
+            is SQLiteDatabaseCorruptException -> LocalDataSourceErrorV2.CorruptedError(
+                exception.toErrorReason(),
+            )
+            is SQLiteFullException -> LocalDataSourceErrorV2.StorageFullError(
+                exception.toErrorReason(),
+            )
+            is SQLiteReadOnlyDatabaseException -> LocalDataSourceErrorV2.ReadOnlyError(
+                exception.toErrorReason(),
+            )
+            is SQLiteAccessPermException -> LocalDataSourceErrorV2.AccessDeniedError(
+                exception.toErrorReason(),
+            )
+            else -> LocalDataSourceErrorV2.ReadError(exception.toErrorReason())
+        }
+        return ProfileLocalDataSourceError.LocalDataSource(error)
     }
 
     private fun mapWriteException(exception: SQLiteException): ProfileLocalDataSourceError {
         logger.e(TAG, "Failed to write profile", exception)
-        return ProfileLocalDataSourceError.LocalDataSource(
-            when (exception) {
-                is SQLiteDatabaseCorruptException ->
-                    LocalDataSourceErrorV2.SerializationError(exception.toErrorReason())
-
-                is SQLiteAccessPermException,
-                is SQLiteFullException,
-                is SQLiteReadOnlyDatabaseException,
-                is SQLiteDatabaseLockedException,
-                is SQLiteDiskIOException,
-                -> LocalDataSourceErrorV2.WriteError(exception.toErrorReason())
-
-                else -> LocalDataSourceErrorV2.WriteError(exception.toErrorReason())
-            },
-        )
+        val error = when (exception) {
+            is SQLiteDatabaseCorruptException -> LocalDataSourceErrorV2.CorruptedError(
+                exception.toErrorReason(),
+            )
+            is SQLiteFullException -> LocalDataSourceErrorV2.StorageFullError(
+                exception.toErrorReason(),
+            )
+            is SQLiteReadOnlyDatabaseException -> LocalDataSourceErrorV2.ReadOnlyError(
+                exception.toErrorReason(),
+            )
+            is SQLiteAccessPermException -> LocalDataSourceErrorV2.AccessDeniedError(
+                exception.toErrorReason(),
+            )
+            else -> LocalDataSourceErrorV2.WriteError(exception.toErrorReason())
+        }
+        return ProfileLocalDataSourceError.LocalDataSource(error)
     }
 
     private fun SQLiteException.toErrorReason(): ErrorReason =

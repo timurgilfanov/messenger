@@ -1,5 +1,6 @@
 package timur.gilfanov.messenger.domain.usecase.auth
 
+import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -94,6 +95,15 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
         )
     }
 
+    private fun nextSession(prefix: String, provider: AuthProvider): AuthSession {
+        val tokens = nextTokens(prefix)
+        return AuthSession(
+            tokens = tokens,
+            provider = provider,
+            sessionId = UUID.randomUUID().toString(),
+        )
+    }
+
     override suspend fun loginWithCredentials(
         credentials: Credentials,
     ): ResultWithError<AuthSession, LoginRepositoryError> {
@@ -101,10 +111,7 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
             loginWithCredentialsQueue.removeFirst()
         } else {
             defaultLoginWithCredentialsResult ?: ResultWithError.Success(
-                AuthSession(
-                    tokens = nextTokens("credentials-login"),
-                    provider = AuthProvider.EMAIL,
-                ),
+                nextSession("credentials-login", AuthProvider.EMAIL),
             )
         }
         if (result is ResultWithError.Success) {
@@ -120,10 +127,7 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
             loginWithGoogleQueue.removeFirst()
         } else {
             defaultLoginWithGoogleResult ?: ResultWithError.Success(
-                AuthSession(
-                    tokens = nextTokens("google-login"),
-                    provider = AuthProvider.GOOGLE,
-                ),
+                nextSession("google-login", AuthProvider.GOOGLE),
             )
         }
         if (result is ResultWithError.Success) {
@@ -140,10 +144,7 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
             signupWithGoogleQueue.removeFirst()
         } else {
             defaultSignupWithGoogleResult ?: ResultWithError.Success(
-                AuthSession(
-                    tokens = nextTokens("google-signup"),
-                    provider = AuthProvider.GOOGLE,
-                ),
+                nextSession("google-signup", AuthProvider.GOOGLE),
             )
         }
         if (result is ResultWithError.Success) {
@@ -160,10 +161,7 @@ class AuthRepositoryFake(initialAuthState: AuthState = Unauthenticated) : AuthRe
             signupQueue.removeFirst()
         } else {
             defaultSignupResult ?: ResultWithError.Success(
-                AuthSession(
-                    tokens = nextTokens("signup"),
-                    provider = AuthProvider.EMAIL,
-                ),
+                nextSession("signup", AuthProvider.EMAIL),
             )
         }
         if (result is ResultWithError.Success) {

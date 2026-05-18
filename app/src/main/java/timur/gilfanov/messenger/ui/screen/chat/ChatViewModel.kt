@@ -134,7 +134,14 @@ class ChatViewModel @AssistedInject constructor(
                 ) ?: it
             }
             viewModelScope.launch {
-                val message = textMessage(request.messageId, request.now, request.text)
+                val message = TextMessage(
+                    id = request.messageId,
+                    parentId = null,
+                    sender = currentChat!!.participants.first { it.isCurrentUser },
+                    recipient = chatId,
+                    createdAt = request.now,
+                    text = request.text,
+                )
                 val progress = SendProgress()
                 sendMessageUseCase(currentChat!!, message, request.now).collect { result ->
                     when (result) {
@@ -195,15 +202,35 @@ class ChatViewModel @AssistedInject constructor(
         }
     }
 
-    private fun textMessage(messageId: MessageId, now: Instant, text: String): TextMessage =
-        TextMessage(
-            id = messageId,
-            parentId = null,
-            sender = currentChat!!.participants.first { it.isCurrentUser },
-            recipient = chatId,
-            createdAt = now,
-            text = text,
-        )
+    /**
+     * Re-sends a previously failed outgoing message, reusing its id and text.
+     *
+     * No-op when the chat is not [ChatUiState.Ready], when [messageId] is absent from the
+     * current timeline, or when its delivery status is not [DeliveryStatus.Failed]. Only the
+     * delivery status is reset (to `null`) so the send use case accepts the message; the
+     * Sending/Sent/Failed transition is reflected through the message timeline rather than
+     * the composer state, so this neither toggles the sending indicator nor clears the input.
+     * A repeated failure follows the same dialog policy as [sendMessage] and keeps the
+     * message failed and retryable.
+     */
+    fun retryMessage(messageId: MessageId, now: Instant = Clock.System.now()) {
+        val chat = currentChat.takeIf { _state.value is ChatUiState.Ready } ?: return
+        val failed = chat.messages
+            .filterIsInstance<TextMessage>()
+            .firstOrNull { it.id == messageId && it.deliveryStatus is DeliveryStatus.Failed }
+            ?: return
+
+        val retry = failed.copy(deliveryStatus = null)
+        viewModelScope.launch {
+            sendMessageUseCase(chat, retry, now).collect { result ->
+                when (result) {
+                    is ResultWithError.Success -> Unit
+                    is ResultWithError.Failure ->
+                        handleSendFailure(result.error, SendProgress(acceptedLocally = true))
+                }
+            }
+        }
+    }
 
     fun dismissDialogError() {
         _state.update { if (it is ChatUiState.Ready) it.copy(dialogError = null) else it }

@@ -249,6 +249,13 @@ object ChatViewModelTestFixtures {
         val sentMessages = mutableListOf<Message>()
         private var sendCallIndex = 0
 
+        /**
+         * The current observable timeline — exactly what `getPagedMessages` (and therefore the
+         * ViewModel-exposed message list) presents. Deterministic to sample after the test
+         * scheduler is idle, unlike collecting the infinite paged flow.
+         */
+        val timeline: List<Message> get() = chatFlow.value.messages
+
         override suspend fun sendMessage(
             message: Message,
         ): Flow<ResultWithError<Message, SendMessageRepositoryError>> {

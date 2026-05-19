@@ -30,14 +30,18 @@
 - Related patterns found: MVI (`StateFlow` + `Channel` effects), `ResultWithError`,
   fixed-UUID/Instant test constants, Turbine `test {}`, `MainDispatcherRule`,
   `@Category(Component::class)`.
-- Dependencies identified: none new. `SendMessageUseCase`, `MessageRepository`, and the
-  `Message` entity already support retry unchanged.
+- Dependencies identified: none new. `MessageRepository` and the `Message` entity support
+  retry unchanged. `SendMessageUseCase` required one minimal change: its debounce baseline
+  must exclude the message being (re)sent (a first send is unaffected since the id is not
+  yet in the timeline) — see Task 1 / Technical Details.
 
 ## Development Approach
 
 - **Testing approach**: Regular (code first, then tests).
 - Complete each task fully (its tests passing) before the next.
-- Make small, focused changes; no refactor of the existing send path.
+- Make small, focused changes. The only send-path change is a minimal, in-scope domain
+  fix: `SendMessageUseCase` now excludes the (re)sent message from its own debounce
+  baseline (see Task 1 / Technical Details). No other refactor of the send path.
 - **Every task includes its tests**; all tests must pass before the next task.
 - No KDoc except where the contract is non-obvious — add a short KDoc on `retryMessage`
   documenting the no-op contract.
@@ -46,8 +50,10 @@
 
 ## Testing Strategy
 
-- **Unit tests**: required (Task 3) — retry success, retry local failure (dialog), retry
-  remote failure (silent), no-op for unknown/non-failed id.
+- **Unit tests**: required (Task 3) — retry success (timeline reaches Sent), retry local
+  failure (dialog), retry remote failure (silent), debounce-baseline regression,
+  same-id/distinct-id concurrent retry, no-op for unknown/non-failed/in-flight id and
+  not-ready chat, plus a domain-layer debounce self-exclusion test.
 - **E2E tests**: none — this is a ViewModel-only change; UI wiring of a retry tap is tracked
   separately under #213.
 
@@ -61,10 +67,20 @@
 
 ### Task 1: Add `retryMessage` + `handleRetryFailure` to ChatViewModel
 
-- [x] Added public `fun retryMessage(messageId, now)`: single guard
+- [x] Added public `fun retryMessage(messageId, now)`: guard
   `currentChat.takeIf { _state.value is Ready } ?: return`, then
-  `messages.filterIsInstance<TextMessage>().firstOrNull { id match && deliveryStatus is Failed } ?: return`,
+  `messages.filterIsInstance<TextMessage>().firstOrNull { id match && deliveryStatus is Failed }`,
   `failed.copy(deliveryStatus = null)`, launch `sendMessageUseCase(...).collect { Success -> Unit; Failure -> ... }`.
+- [x] ➕ Added a per-ViewModel `retryingMessageIds: MutableSet<MessageId>` in-flight guard:
+  the id is added before `launch` (`if (failed == null || !retryingMessageIds.add(messageId)) return`)
+  and removed in a `finally`, so a double-invoke cannot launch concurrent sends for the same
+  message; distinct messages may still retry concurrently. Relies on ViewModel actions being
+  main-thread-confined (no extra synchronization).
+- [x] ➕ Minimal in-scope domain change: `SendMessageUseCase.checkDebounceRule` now excludes
+  the message being (re)sent from the debounce baseline (`Chat.lastMessageBy` takes
+  `excluding: MessageId`). Without it a retry under an active `Debounce` rule spuriously
+  fails with `WaitDebounce` against its own failed timeline entry. A first send is
+  unaffected (id not yet in the timeline).
 - [x] Reused existing `handleSendFailure(error, SendProgress(acceptedLocally = true))` for the
   failure branch instead of a new `handleRetryFailure` — identical policy (dialog unless
   `RemoteOperationFailed`, `isSending` left unchanged) and avoids the `TooManyFunctions`
@@ -96,19 +112,35 @@ seed `sendMessage` call — removes the call-0 flow and debounce-timing dependen
 `backgroundScope` collector keeps `repeatOnSubscription`/`observeChatUpdates` alive while
 asserting on `state.value`.
 
-- [x] `retry re-sends same id and text with cleared status and no dialog` — retry flow
-  `Success(Sending(0)), Success(Sent)`; asserts `sentMessages.single()` has id ==
-  FAILED_MESSAGE_ID, text equal, `deliveryStatus == null`, final `Ready`,
-  `dialogError == null`, no side effects from retry.
-- [x] `retry local failure shows dialog and message stays retryable` — flow ends
+- [x] `retry re-sends same id and text, clears status, and reaches Sent` — retry flow
+  `Success(Sending(0)), Success(Sent)`; asserts the captured sent message has id ==
+  FAILED_MESSAGE_ID, text equal, `deliveryStatus == null`, original `createdAt` preserved,
+  final `Ready`, `dialogError == null`, `isSending == false`, no side effects, timeline Sent.
+- [x] `retry local failure shows dialog and message stays failed and retryable` — flow ends
   `Failure(LocalOperationFailed(TemporarilyUnavailable))`; asserts `dialogError` wraps
-  `SendMessageError.LocalOperationFailed`; second `retryMessage` → `sentMessages.size == 2`.
-- [x] `retry remote failure stays silent and message stays retryable` — flow ends
-  `Failure(RemoteOperationFailed(NetworkNotAvailable))`; asserts `dialogError == null`;
-  second `retryMessage` grows `sentMessages` to 2.
+  `SendMessageError.LocalOperationFailed`, timeline back to `Failed`; second `retryMessage`
+  → `sentMessages.size == 2`. Pins the captured sent message id/status.
+- [x] `retry remote failure stays silent and message stays failed and retryable` — flow ends
+  `Failure(RemoteOperationFailed(NetworkNotAvailable))`; asserts `dialogError == null`,
+  timeline back to `Failed`; second `retryMessage` grows `sentMessages` to 2. Pins the
+  captured sent message id/status.
+- [x] ➕ `retry succeeds under debounce rule despite its own failed timeline entry` — chat
+  has `CreateMessageRule.Debounce(5s)`, retry within the window still sends and reaches
+  `Sent` (ViewModel-level regression guard for the `SendMessageUseCase` debounce-baseline
+  change). Pins the captured sent message id/status.
+- [x] ➕ `concurrent retry of the same message launches only one send` — two `retryMessage`
+  calls against a gated send → `sentMessages.size == 1`, stays 1 after the gate drains.
+- [x] ➕ `concurrent retry of distinct messages launches a send for each` — two distinct
+  failed messages, independently gated → `sentMessages.size == 2` with both ids (verifies
+  the in-flight guard is id-scoped, not a single boolean).
 - [x] `retry is a no-op for unknown message id` — no-failed-match → no send, no dialog.
 - [x] ➕ `retry is a no-op for a non-failed message` — message present but `Sent` → no send.
-- [x] `./gradlew :app:testMockDebugUnitTest --tests "...ChatViewModelRetryTest"` — 5/5 pass
+- [x] ➕ `retry is a no-op for an in-flight Sending message` — message `Sending(0)` → no send.
+- [x] ➕ `retry is a no-op when chat is not ready` — `Loading` state → no send.
+- [x] ➕ Domain test `debounce excludes the message being re-sent from its own baseline` in
+  `CreateMessageUseCaseTest` — pins the `SendMessageUseCase` change at its own layer; the
+  existing `test debounce rule failure` (distinct ids) covers the unchanged first-send path.
+- [x] `./gradlew :app:testMockDebugUnitTest --tests "...ChatViewModelRetryTest"` — all pass
 - [x] `./gradlew ktlintFormat detekt --auto-correct` — green
 
 ### Task 4: Verify acceptance criteria & regressions
@@ -122,17 +154,29 @@ asserting on `state.value`.
 
 ## Technical Details
 
-- `retryMessage` reuses `SendMessageUseCase` unchanged: rules re-validated with `now`,
+- `retryMessage` reuses the `SendMessageUseCase` flow: rules re-validated with `now`,
   `validate()` still passes (same text), `deliveryStatus == null` clears the
-  `DeliveryStatusAlreadySet` guard.
+  `DeliveryStatusAlreadySet` guard. `SendMessageUseCase.checkDebounceRule` was changed to
+  exclude the message being (re)sent from the debounce baseline (`Chat.lastMessageBy` now
+  takes `excluding: MessageId`) — without this a retry under an active `Debounce` rule
+  spuriously fails with `WaitDebounce` against its own failed timeline entry. A first send
+  is unaffected (id not yet in the timeline). `CanNotWriteAfterJoining` needs no analogous
+  change: `checkRules` runs before `repository.sendMessage`, so a message can only be in
+  the timeline (incl. as `Failed`) if it already passed the join rule, and `now - joinedAt`
+  only grows, so a later retry always passes it too.
 - Original `createdAt` preserved via `copy` so the retried message keeps its timeline
   position; `now` is used only for rule evaluation (matches `sendMessage`).
 - Success branch is intentionally a no-op: the timeline is the source of truth and
   `currentChat` is refreshed by `receiveChatUpdatesUseCase`; the bubble transitions
   Sending → Sent without ViewModel state mutation.
-- `handleRetryFailure` treats the message as already accepted (it is in the timeline), so
-  it applies only the post-acceptance dialog rule (`!RemoteOperationFailed → dialog`) and
-  never resets `isSending`.
+- The failure branch reuses `handleSendFailure(error, SendProgress(acceptedLocally = true))`:
+  treating the message as already accepted (it is in the timeline) applies only the
+  post-acceptance dialog rule (`!RemoteOperationFailed → dialog`) and never resets
+  `isSending`.
+- Concurrent-retry safety: `retryMessage` adds `messageId` to a private
+  `retryingMessageIds` set before launching and removes it in a `finally`; a second invoke
+  for an id already in the set is a no-op. Distinct messages may still retry concurrently.
+  ViewModel actions are main-thread-confined so the set needs no extra synchronization.
 
 ## Post-Completion
 

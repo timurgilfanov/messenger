@@ -110,6 +110,8 @@ class ChatViewModel @AssistedInject constructor(
 
     private var currentChat: Chat? = null
 
+    private val retryingMessageIds = mutableSetOf<MessageId>()
+
     fun sendMessage(
         messageId: MessageId = MessageId(UUID.randomUUID()),
         now: Instant = Clock.System.now(),
@@ -206,8 +208,10 @@ class ChatViewModel @AssistedInject constructor(
      * Re-sends a previously failed outgoing message, reusing its id and text.
      *
      * No-op when the chat is not [ChatUiState.Ready], when [messageId] is absent from the
-     * current timeline, or when its delivery status is not [DeliveryStatus.Failed]. Only the
-     * delivery status is reset (to `null`) so the send use case accepts the message; the
+     * current timeline, when its delivery status is not [DeliveryStatus.Failed], or when a
+     * retry for the same [messageId] is already in flight (so a double-invoke cannot launch
+     * concurrent sends for one message; distinct messages may still retry concurrently). Only
+     * the delivery status is reset (to `null`) so the send use case accepts the message; the
      * Sending/Sent/Failed transition is reflected through the message timeline rather than
      * the composer state, so this neither toggles the sending indicator nor clears the input.
      * A repeated failure follows the same dialog policy as [sendMessage] and keeps the
@@ -218,16 +222,20 @@ class ChatViewModel @AssistedInject constructor(
         val failed = chat.messages
             .filterIsInstance<TextMessage>()
             .firstOrNull { it.id == messageId && it.deliveryStatus is DeliveryStatus.Failed }
-            ?: return
+        if (failed == null || !retryingMessageIds.add(messageId)) return
 
         val retry = failed.copy(deliveryStatus = null)
         viewModelScope.launch {
-            sendMessageUseCase(chat, retry, now).collect { result ->
-                when (result) {
-                    is ResultWithError.Success -> Unit
-                    is ResultWithError.Failure ->
-                        handleSendFailure(result.error, SendProgress(acceptedLocally = true))
+            try {
+                sendMessageUseCase(chat, retry, now).collect { result ->
+                    when (result) {
+                        is ResultWithError.Success -> Unit
+                        is ResultWithError.Failure ->
+                            handleSendFailure(result.error, SendProgress(acceptedLocally = true))
+                    }
                 }
+            } finally {
+                retryingMessageIds.remove(messageId)
             }
         }
     }

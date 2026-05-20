@@ -330,6 +330,40 @@ class ChatViewModelRetryTest {
         val state = viewModel.state.value
         assertTrue(state is ChatUiState.Ready)
         assertNull(state.dialogError)
+        val terminalStatuses = repository.timeline
+            .filterIsInstance<TextMessage>()
+            .associate { it.id to it.deliveryStatus }
+        assertEquals(DeliveryStatus.Sent, terminalStatuses[FAILED_MESSAGE_ID])
+        assertEquals(DeliveryStatus.Sent, terminalStatuses[secondId])
+    }
+
+    @Test
+    fun `retry succeeds under CanNotWriteAfterJoining rule`() = runTest {
+        val (baseChat, currentUser) =
+            chatWith(DeliveryStatus.Failed(DeliveryError.NetworkUnavailable))
+        val chat = baseChat.copy(
+            rules = persistentSetOf(CreateMessageRule.CanNotWriteAfterJoining(5.seconds)),
+        )
+        val retryFlow: Flow<ResultWithError<Message, SendMessageRepositoryError>> = flowOf(
+            ResultWithError.Success(progress(currentUser, Sending(0))),
+            ResultWithError.Success(progress(currentUser, DeliveryStatus.Sent)),
+        )
+        val repository = MessengerRepositoryFakeWithTimeline(chat, listOf(retryFlow))
+        val viewModel = createViewModel(repository)
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+
+        val afterJoinWindow = currentUser.joinedAt + 10.seconds
+        viewModel.retryMessage(FAILED_MESSAGE_ID, afterJoinWindow)
+        advanceUntilIdle()
+
+        assertEquals(1, repository.sentMessages.size)
+        repository.assertRetriedMessageIsFailedOne()
+        val state = viewModel.state.value
+        assertTrue(state is ChatUiState.Ready)
+        assertNull(state.dialogError)
+        assertEquals(DeliveryStatus.Sent, repository.timelineMessage().deliveryStatus)
     }
 
     @Test

@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.ui.screen.chat
 import androidx.lifecycle.SavedStateHandle
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -144,16 +145,12 @@ class ChatViewModelRetryTest {
         advanceUntilIdle()
 
         assertEquals(1, repository.sentMessages.size)
-        val retried = assertIs<TextMessage>(repository.sentMessages.single())
-        assertEquals(FAILED_MESSAGE_ID, retried.id)
-        assertEquals(TEXT, retried.text)
-        assertNull(retried.deliveryStatus)
-        assertEquals(TEST_INSTANT, retried.createdAt)
+        repository.assertRetriedMessageIsFailedOne()
 
         val state = viewModel.state.value
         assertTrue(state is ChatUiState.Ready)
         assertNull(state.dialogError)
-        assertEquals(false, state.isSending)
+        assertFalse(state.isSending)
         assertTrue(effects.isEmpty())
         assertEquals(DeliveryStatus.Sent, repository.timelineMessage().deliveryStatus)
     }
@@ -221,6 +218,29 @@ class ChatViewModelRetryTest {
         viewModel.retryMessage(FAILED_MESSAGE_ID, TEST_INSTANT)
         advanceUntilIdle()
         assertEquals(2, repository.sentMessages.size)
+    }
+
+    @Test
+    fun `retry shows dialog when use case rejects status transition`() = runTest {
+        val (chat, currentUser) = chatWith(DeliveryStatus.Failed(DeliveryError.NetworkUnavailable))
+        val invalidRetry: Flow<ResultWithError<Message, SendMessageRepositoryError>> = flowOf(
+            ResultWithError.Success(progress(currentUser, DeliveryStatus.Sent)),
+        )
+        val repository = MessengerRepositoryFakeWithTimeline(chat, listOf(invalidRetry))
+        val viewModel = createViewModel(repository)
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+
+        viewModel.retryMessage(FAILED_MESSAGE_ID, TEST_INSTANT)
+        advanceUntilIdle()
+
+        assertEquals(1, repository.sentMessages.size)
+        repository.assertRetriedMessageIsFailedOne()
+        val afterFailure = viewModel.state.value
+        assertTrue(afterFailure is ChatUiState.Ready)
+        val dialogError = assertIs<ReadyError.SendMessageError>(afterFailure.dialogError)
+        assertIs<SendMessageError.DeliveryStatusUpdateNotValid>(dialogError.error)
     }
 
     @Test

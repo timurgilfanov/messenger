@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -208,20 +209,32 @@ class ChatViewModel @AssistedInject constructor(
      * Re-sends a previously failed outgoing message, reusing its id and text.
      *
      * No-op when the chat is not [ChatUiState.Ready], when [messageId] is absent from the
-     * current timeline, when its delivery status is not [DeliveryStatus.Failed], or when a
-     * retry for the same [messageId] is already in flight (so a double-invoke cannot launch
-     * concurrent sends for one message; distinct messages may still retry concurrently). Only
-     * the delivery status is reset (to `null`) so the send use case accepts the message; the
-     * Sending/Sent/Failed transition is reflected through the message timeline rather than
+     * current timeline, when its delivery status is not [DeliveryStatus.Failed], when the
+     * message was not sent by the current user, or when a retry for the same [messageId] is
+     * already in flight (so a double-invoke cannot launch concurrent sends for one message;
+     * distinct messages may still retry concurrently). The current-user check mirrors the
+     * sender that [sendMessage] stamps on a new message and guards against re-sending a
+     * foreign message — e.g. a corrupted synced entry that deserialized to
+     * [DeliveryStatus.Failed] — as the authenticated user.
+     *
+     * Only the delivery status is reset (to `null`) so the send use case accepts the message;
+     * the Sending/Sent/Failed transition is reflected through the message timeline rather than
      * the composer state, so this neither toggles the sending indicator nor clears the input.
-     * A repeated failure follows the same dialog policy as [sendMessage] and keeps the
-     * message failed and retryable.
+     * A repeated failure follows the same dialog policy as [sendMessage]; whether the message
+     * stays retryable is governed by its timeline delivery status, which the send path
+     * persists as [DeliveryStatus.Failed] on a normal failure. The ViewModel never mutates
+     * the timeline itself on failure.
      */
     fun retryMessage(messageId: MessageId, now: Instant = Clock.System.now()) {
         val chat = currentChat.takeIf { _state.value is ChatUiState.Ready } ?: return
+        val currentUserId = chat.participants.first { it.isCurrentUser }.id
         val failed = chat.messages
             .filterIsInstance<TextMessage>()
-            .firstOrNull { it.id == messageId && it.deliveryStatus is DeliveryStatus.Failed }
+            .firstOrNull {
+                it.id == messageId &&
+                    it.deliveryStatus is DeliveryStatus.Failed &&
+                    it.sender.id == currentUserId
+            }
         if (failed == null || !retryingMessageIds.add(messageId)) return
 
         val retry = failed.copy(deliveryStatus = null)
@@ -256,14 +269,16 @@ class ChatViewModel @AssistedInject constructor(
     private suspend fun observeChatUpdates() {
         receiveChatUpdatesUseCase(chatId)
             .distinctUntilChanged()
+            .onEach { result ->
+                if (result is ResultWithError.Success) {
+                    currentChat = result.data
+                }
+            }
             .debounce(STATE_UPDATE_DEBOUNCE)
             .collect { result ->
                 when (result) {
-                    is ResultWithError.Success -> {
-                        val chat = result.data
-                        currentChat = chat
-                        _state.value = updateUiStateFromChat(_state.value, chat)
-                    }
+                    is ResultWithError.Success ->
+                        _state.value = updateUiStateFromChat(_state.value, result.data)
 
                     is ResultWithError.Failure -> when (result.error) {
                         ReceiveChatUpdatesRepositoryError.ChatNotFound ->

@@ -423,6 +423,34 @@ class ChatViewModelRetryTest {
     }
 
     @Test
+    fun `retry is a no-op for a failed message sent by another participant`() = runTest {
+        val baseChat = createTestChat(TEST_CHAT_ID, TEST_CURRENT_USER_ID, TEST_OTHER_USER_ID)
+        val otherUser = baseChat.participants.first { !it.isCurrentUser }
+        val foreignFailed = buildTextMessage {
+            id = FAILED_MESSAGE_ID
+            sender = otherUser
+            recipient = TEST_CHAT_ID
+            createdAt = TEST_INSTANT
+            text = TEXT
+            deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable)
+        }
+        val chat = baseChat.copy(messages = persistentListOf(foreignFailed))
+        val repository = MessengerRepositoryFakeWithTimeline(chat, emptyList())
+        val viewModel = createViewModel(repository)
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+
+        viewModel.retryMessage(FAILED_MESSAGE_ID, TEST_INSTANT)
+        advanceUntilIdle()
+
+        assertTrue(repository.sentMessages.isEmpty())
+        val state = viewModel.state.value
+        assertTrue(state is ChatUiState.Ready)
+        assertNull(state.dialogError)
+    }
+
+    @Test
     fun `retry is a no-op for an in-flight Sending message`() = runTest {
         val (chat, _) = chatWith(Sending(0))
         val repository = MessengerRepositoryFakeWithTimeline(chat, emptyList())

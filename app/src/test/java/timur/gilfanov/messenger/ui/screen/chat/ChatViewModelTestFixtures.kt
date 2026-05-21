@@ -22,6 +22,7 @@ import timur.gilfanov.messenger.domain.entity.auth.AuthTokens
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.DeliveryError
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus.Sending
 import timur.gilfanov.messenger.domain.entity.message.Message
@@ -228,6 +229,103 @@ object ChatViewModelTestFixtures {
 
         override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
             flowOf(PagingData.empty())
+    }
+
+    /**
+     * Repository fake whose send outcome is scripted per `sendMessage` call while the chat
+     * timeline mirrors each emission. Each [perCallSendFlows] entry drives one send: every
+     * `Success` upserts the message into the observable chat; a `Failure` marks the message
+     * `DeliveryStatus.Failed` in the chat. Lets a test seed a failed timeline message via a
+     * first send and then script a distinct retry outcome.
+     */
+    class MessengerRepositoryFakeWithTimeline(
+        chat: Chat,
+        private val perCallSendFlows:
+        List<Flow<ResultWithError<Message, SendMessageRepositoryError>>>,
+    ) : ChatRepository,
+        MessageRepository {
+
+        private val chatFlow = MutableStateFlow(chat)
+        val sentMessages = mutableListOf<Message>()
+        private var sendCallIndex = 0
+
+        /**
+         * The current observable timeline — exactly what `getPagedMessages` (and therefore the
+         * ViewModel-exposed message list) presents. Deterministic to sample after the test
+         * scheduler is idle, unlike collecting the infinite paged flow.
+         */
+        val timeline: List<Message> get() = chatFlow.value.messages
+
+        override suspend fun sendMessage(
+            message: Message,
+        ): Flow<ResultWithError<Message, SendMessageRepositoryError>> {
+            sentMessages += message
+            val flow = perCallSendFlows.getOrElse(sendCallIndex++) {
+                flowOf(
+                    Success(
+                        when (message) {
+                            is TextMessage -> message.copy(deliveryStatus = Sending(0))
+                            else -> message
+                        },
+                    ),
+                )
+            }
+            return flow.onEach { result ->
+                delay(10) // to pass immediate state updates, like text input
+                when (result) {
+                    is Success -> upsert(result.data)
+                    is Failure -> markFailed(message.id)
+                }
+            }
+        }
+
+        private fun upsert(message: Message) = chatFlow.update { current ->
+            val messages = current.messages.toMutableList().apply {
+                val index = indexOfFirst { it.id == message.id }
+                if (index != -1) this[index] = message else add(message)
+            }.toPersistentList()
+            current.copy(messages = messages)
+        }
+
+        private fun markFailed(messageId: MessageId) = chatFlow.update { current ->
+            val messages = current.messages.map { existing ->
+                if (existing.id == messageId && existing is TextMessage) {
+                    existing.copy(
+                        deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
+                    )
+                } else {
+                    existing
+                }
+            }.toPersistentList()
+            current.copy(messages = messages)
+        }
+
+        override suspend fun receiveChatUpdates(
+            chatId: ChatId,
+        ): Flow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>> =
+            chatFlow.map { Success(it) }
+
+        override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> =
+            chatFlow.map { PagingData.from(it.messages) }
+
+        // Implement other required ChatRepository methods as not implemented for this test
+        override suspend fun flowChatList() = error("Not implemented")
+        override fun isChatListUpdateApplying() = kotlinx.coroutines.flow.flowOf(false)
+        override suspend fun createChat(chat: Chat) = error("Not implemented")
+        override suspend fun deleteChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun joinChat(chatId: ChatId, inviteLink: String?) =
+            error("Not implemented")
+
+        override suspend fun leaveChat(chatId: ChatId) = error("Not implemented")
+        override suspend fun markMessagesAsRead(
+            chatId: ChatId,
+            upToMessageId: MessageId,
+        ): ResultWithError<Unit, MarkMessagesAsReadRepositoryError> = ResultWithError.Success(Unit)
+
+        // Implement other required MessageRepository methods as not implemented for this test
+        override suspend fun editMessage(message: Message) = error("Not implemented")
+        override suspend fun deleteMessage(messageId: MessageId, mode: DeleteMessageMode) =
+            error("Not implemented")
     }
 
     /**

@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.data.repository
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -355,7 +356,7 @@ class MessengerRepositoryImpl @Inject constructor(
         }
 
     override fun getPagedMessages(chatId: ChatId): Flow<PagingData<Message>> {
-        val hasLoadedHistory = java.util.concurrent.atomic.AtomicBoolean(false)
+        val hasLoadedHistory = AtomicBoolean(false)
         return Pager(
             config = PagingConfig(
                 pageSize = MessagePagingSource.DEFAULT_PAGE_SIZE,

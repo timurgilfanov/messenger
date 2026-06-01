@@ -149,25 +149,10 @@ class MessengerRepositoryImpl @Inject constructor(
                     if (deltaResult is ResultWithError.Success) {
                         logger.d(TAG, "Received delta updates: ${deltaResult.data}")
                         isChatListUpdateApplying.value = true
-                        val applyResult = try {
+                        try {
                             localDataSources.sync.applyChatListDelta(deltaResult.data)
                         } finally {
                             isChatListUpdateApplying.value = false
-                        }
-                        if (applyResult is ResultWithError.Failure) {
-                            val applyError = applyResult.error
-                            if (applyError is LocalDataSourceError.InvalidData) {
-                                logger.e(
-                                    TAG,
-                                    "Skipping invalid chat list delta (bad backend payload): $applyError",
-                                )
-                            } else {
-                                logger.e(
-                                    TAG,
-                                    "Failed to apply chat list delta, stopping sync loop: $applyError",
-                                )
-                                error("Failed to apply chat list delta: $applyError")
-                            }
                         }
                     } else {
                         logger.w(TAG, "Delta result was failure: $deltaResult")

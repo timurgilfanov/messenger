@@ -170,7 +170,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                             val chat = with(EntityMappers) {
                                 chatWithParticipants.toChat(lastMessages)
                             }
-                            ResultWithError.Success<Chat, LocalDataSourceError>(chat)
+                            ResultWithError.Success(chat)
                         }
                 }
             }

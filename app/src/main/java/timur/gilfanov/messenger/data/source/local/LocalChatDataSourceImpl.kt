@@ -133,6 +133,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                     is SQLiteException -> emit(
                         ResultWithError.Failure(errorHandler.mapException(e)),
                     )
+
                     else -> throw e
                 }
             }
@@ -179,14 +180,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                     is SQLiteException -> emit(
                         ResultWithError.Failure(errorHandler.mapException(e)),
                     )
-                    is IllegalStateException -> emit(
-                        ResultWithError.Failure(
-                            LocalDataSourceError.InvalidData(
-                                "participants",
-                                e.message ?: "Mapping error",
-                            ),
-                        ),
-                    )
+
                     else -> throw e
                 }
             }
@@ -194,11 +188,13 @@ class LocalChatDataSourceImpl @Inject constructor(
     private fun validateChatForInsert(chat: Chat): LocalDataSourceError? = when {
         chat.name.isBlank() ->
             LocalDataSourceError.InvalidData("name", "Chat name cannot be blank")
+
         chat.participants.isEmpty() ->
             LocalDataSourceError.InvalidData(
                 "participants",
                 "Chat must have at least one participant",
             )
+
         else -> null
     }
 

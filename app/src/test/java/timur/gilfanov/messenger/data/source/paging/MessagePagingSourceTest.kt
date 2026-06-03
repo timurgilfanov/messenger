@@ -68,10 +68,10 @@ class MessagePagingSourceTest {
 
     @Test
     fun `anchored refresh includes anchor with same-millisecond collision`() = runTest {
-        // 4 messages at the same timestamp; the anchor has the lexicographically lowest id.
-        // With the old `timestamp + 1` approach, the query returned `createdAt <= timestamp`
-        // ordered by id DESC, so when more than pageSize messages share the timestamp the
-        // low-id anchor was pushed off the first page.  The inclusive anchor query fixes this.
+        // Regression guard: an anchored refresh must keep the anchor in the page even when more
+        // than loadSize messages share its exact millisecond timestamp. The keyset query is
+        // inclusive on the anchor id (createdAt = anchorTs AND id <= anchorId), so the
+        // lexicographically lowest-id anchor is not pushed off the first page by higher-id siblings.
         val sameTimestamp = Instant.fromEpochMilliseconds(SAME_TIMESTAMP)
         val highIds = listOf(HIGH_ID_2, HIGH_ID_3, HIGH_ID_4)
         (listOf(ANCHOR_ID) + highIds).forEach { id ->

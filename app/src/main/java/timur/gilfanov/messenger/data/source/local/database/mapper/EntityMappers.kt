@@ -138,31 +138,6 @@ object EntityMappers {
     )
 
     /**
-     * Maps ChatWithParticipantsAndMessages to Chat domain model.
-     */
-    fun ChatWithParticipantsAndMessages.toChat(): Chat = Chat(
-        id = ChatId(UUID.fromString(chat.id)),
-        name = chat.name,
-        pictureUrl = chat.pictureUrl,
-        messages = messages.map {
-            it.toMessage(participants, participantCrossRefs)
-        }.toPersistentList(),
-        participants = participants.mapIndexed { index, participant ->
-            val crossRef = participantCrossRefs.find { it.participantId == participant.id }
-                ?: error("No cross-reference found for participant ${participant.id}")
-            participant.toParticipant(crossRef)
-        }.toPersistentSet(),
-        rules = chat.rules.let { rulesJson ->
-            json.decodeFromString<List<RuleDto>>(rulesJson).map { it.toDomain() }.toImmutableSet()
-        },
-        unreadMessagesCount = chat.unreadMessagesCount,
-        lastReadMessageId = chat.lastReadMessageId?.let { MessageId(UUID.fromString(it)) },
-        isClosed = false, // Default value, can be extended with a field in ChatEntity
-        isArchived = false, // Default value, can be extended with a field in ChatEntity
-        isOneToOne = participants.size == 2, // Inferred from participant count
-    )
-
-    /**
      * Maps ChatWithParticipantsAndMessages to ChatPreview domain model.
      */
     fun ChatWithParticipantsAndMessages.toChatPreview(): ChatPreview {

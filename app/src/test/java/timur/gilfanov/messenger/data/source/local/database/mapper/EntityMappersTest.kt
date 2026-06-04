@@ -16,7 +16,6 @@ import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Unit
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.createChatParticipantCrossRefs
-import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toChat
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toChatEntity
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toChatPreview
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toMessage
@@ -215,36 +214,6 @@ class EntityMappersTest {
         assertEquals(chat.unreadMessagesCount, entity.unreadMessagesCount)
         assertEquals(chat.lastReadMessageId?.id?.toString(), entity.lastReadMessageId)
         assertNotNull(entity.rules) // JSON string should not be null
-    }
-
-    @Test
-    fun `ChatWithParticipantsAndMessages to Chat preserves all data`() {
-        // Given
-        val chatEntity = testChat.toChatEntity()
-        val participantEntities = testChat.participants.map { it.toParticipantEntity() }
-        val messageEntities = testChat.messages.map { it.toMessageEntity() }
-        val participantCrossRefs = testChat.participants.map { participant ->
-            with(EntityMappers) { participant.toChatParticipantCrossRef(testChat.id.id.toString()) }
-        }
-
-        val chatWithRelations = ChatWithParticipantsAndMessages(
-            chat = chatEntity,
-            participants = participantEntities,
-            participantCrossRefs = participantCrossRefs,
-            messages = messageEntities,
-        )
-
-        // When
-        val restoredChat = chatWithRelations.toChat()
-
-        // Then
-        assertEquals(testChat.id, restoredChat.id)
-        assertEquals(testChat.name, restoredChat.name)
-        assertEquals(testChat.pictureUrl, restoredChat.pictureUrl)
-        assertEquals(testChat.unreadMessagesCount, restoredChat.unreadMessagesCount)
-        assertEquals(testChat.lastReadMessageId, restoredChat.lastReadMessageId)
-        assertEquals(testChat.participants.size, restoredChat.participants.size)
-        assertEquals(testChat.messages.size, restoredChat.messages.size)
     }
 
     @Test

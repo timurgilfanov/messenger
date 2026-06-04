@@ -131,6 +131,10 @@ class LocalSyncDataSourceImpl @Inject constructor(
         }
     }
 
+    /**
+     * Thrown to abort the enclosing Room transaction when the participant contract is violated.
+     * Caught at the data-source boundary and mapped to [LocalDataSourceError.InvalidData].
+     */
     private class InvalidParticipantContractException(message: String) : Exception(message)
 
     private suspend fun applyChatCreatedDelta(delta: ChatCreatedDelta) {

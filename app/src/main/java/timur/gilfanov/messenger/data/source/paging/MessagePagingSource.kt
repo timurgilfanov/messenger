@@ -119,7 +119,7 @@ class MessagePagingSource(
                 limit = params.loadSize,
             )
         } else {
-            messageDao.getMessagesByChatIdPaged(
+            messageDao.getMessagesByChatIdPagedOlderThan(
                 chatId = chatId.id.toString(),
                 beforeTimestamp = cursor.timestamp,
                 beforeMessageId = cursor.messageId,

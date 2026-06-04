@@ -86,7 +86,7 @@ class ChatViewModelUpdatesTest {
         val updatedChat = initialChat.copy(
             messages = persistentListOf(newMessage),
         )
-        val repository = SequentialPagingRepository(
+        val repository = SequentialPagingRepositoryFake(
             chatFlow = chatFlow,
             pagingSnapshots = listOf(emptyList(), updatedChat.messages),
         )
@@ -270,7 +270,7 @@ class ChatViewModelUpdatesTest {
         assertIs<TextMessage>(message).text
     }
 
-    private class SequentialPagingRepository(
+    private class SequentialPagingRepositoryFake(
         private val chatFlow:
         MutableStateFlow<ResultWithError<Chat, ReceiveChatUpdatesRepositoryError>>,
         private val pagingSnapshots: List<List<Message>>,

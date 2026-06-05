@@ -8,6 +8,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
 import timur.gilfanov.messenger.data.source.local.database.entity.MessageEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.MessageType
@@ -110,16 +111,18 @@ object EntityMappers {
     }
 
     /**
-     * Maps ChatWithParticipantsAndMessages to Chat domain model.
+     * Maps ChatWithParticipants to Chat domain model.
+     * Accepts a bounded list of message entities for rule-checking purposes (e.g. debounce);
+     * the full message history is loaded separately via paging.
      */
-    fun ChatWithParticipantsAndMessages.toChat(): Chat = Chat(
+    fun ChatWithParticipants.toChat(lastMessages: List<MessageEntity>): Chat = Chat(
         id = ChatId(UUID.fromString(chat.id)),
         name = chat.name,
         pictureUrl = chat.pictureUrl,
-        messages = messages.map {
+        messages = lastMessages.map {
             it.toMessage(participants, participantCrossRefs)
         }.toPersistentList(),
-        participants = participants.mapIndexed { index, participant ->
+        participants = participants.map { participant ->
             val crossRef = participantCrossRefs.find { it.participantId == participant.id }
                 ?: error("No cross-reference found for participant ${participant.id}")
             participant.toParticipant(crossRef)
@@ -129,9 +132,9 @@ object EntityMappers {
         },
         unreadMessagesCount = chat.unreadMessagesCount,
         lastReadMessageId = chat.lastReadMessageId?.let { MessageId(UUID.fromString(it)) },
-        isClosed = false, // Default value, can be extended with a field in ChatEntity
-        isArchived = false, // Default value, can be extended with a field in ChatEntity
-        isOneToOne = participants.size == 2, // Inferred from participant count
+        isClosed = false,
+        isArchived = false,
+        isOneToOne = participants.size == 2,
     )
 
     /**

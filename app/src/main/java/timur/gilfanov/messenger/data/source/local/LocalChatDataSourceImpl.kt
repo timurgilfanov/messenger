@@ -3,12 +3,16 @@ package timur.gilfanov.messenger.data.source.local
 import android.database.sqlite.SQLiteException
 import androidx.room.withTransaction
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
+import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
@@ -21,6 +25,7 @@ import timur.gilfanov.messenger.util.Logger
 class LocalChatDataSourceImpl @Inject constructor(
     private val database: MessengerDatabase,
     private val chatDao: ChatDao,
+    private val messageDao: MessageDao,
     private val participantDao: ParticipantDao,
     logger: Logger,
 ) : LocalChatDataSource {
@@ -128,25 +133,46 @@ class LocalChatDataSourceImpl @Inject constructor(
                     is SQLiteException -> emit(
                         ResultWithError.Failure(errorHandler.mapException(e)),
                     )
+
                     else -> throw e
                 }
             }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun flowChatUpdates(
         chatId: ChatId,
     ): Flow<ResultWithError<Chat, LocalDataSourceError>> =
-        chatDao.flowChatWithParticipantsAndMessages(chatId.id.toString())
+        chatDao.flowChatWithParticipants(chatId.id.toString())
             .distinctUntilChanged()
-            .map { relation ->
-                if (relation != null) {
-                    val chat = with(EntityMappers) {
-                        relation.toChat()
-                    }
-                    ResultWithError.Success(chat)
-                } else {
-                    ResultWithError.Failure<Chat, LocalDataSourceError>(
-                        LocalDataSourceError.ChatNotFound,
+            .flatMapLatest { chatWithParticipants ->
+                if (chatWithParticipants == null) {
+                    flowOf(
+                        ResultWithError.Failure<Chat, LocalDataSourceError>(
+                            LocalDataSourceError.ChatNotFound,
+                        ),
                     )
+                } else {
+                    val currentUserCrossRefs = chatWithParticipants.participantCrossRefs
+                        .filter { it.isCurrentUser }
+                    if (currentUserCrossRefs.size != 1) {
+                        return@flatMapLatest flowOf(
+                            ResultWithError.Failure<Chat, LocalDataSourceError>(
+                                LocalDataSourceError.InvalidData(
+                                    "participants",
+                                    "Expected exactly one current user participant, found ${currentUserCrossRefs.size}",
+                                ),
+                            ),
+                        )
+                    }
+                    messageDao.flowLastMessageInChat(chatId.id.toString())
+                        .distinctUntilChanged()
+                        .map { lastMessageEntity ->
+                            val lastMessages = listOfNotNull(lastMessageEntity)
+                            val chat = with(EntityMappers) {
+                                chatWithParticipants.toChat(lastMessages)
+                            }
+                            ResultWithError.Success(chat)
+                        }
                 }
             }
             .catch { e ->
@@ -154,6 +180,7 @@ class LocalChatDataSourceImpl @Inject constructor(
                     is SQLiteException -> emit(
                         ResultWithError.Failure(errorHandler.mapException(e)),
                     )
+
                     else -> throw e
                 }
             }
@@ -161,11 +188,13 @@ class LocalChatDataSourceImpl @Inject constructor(
     private fun validateChatForInsert(chat: Chat): LocalDataSourceError? = when {
         chat.name.isBlank() ->
             LocalDataSourceError.InvalidData("name", "Chat name cannot be blank")
+
         chat.participants.isEmpty() ->
             LocalDataSourceError.InvalidData(
                 "participants",
                 "Chat must have at least one participant",
             )
+
         else -> null
     }
 

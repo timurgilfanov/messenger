@@ -105,6 +105,9 @@ class AndroidTestRepositoryWithRealImplementation(
                         AndroidTestDataHelper.prepopulateDatabase(database)
                         AndroidTestDataHelper.prepopulateRemoteDataSource(remoteDataSourceFake)
                     }
+                    AndroidTestDataHelper.DataScenario.LONG_CONVERSATION -> {
+                        AndroidTestDataHelper.prepopulateLongConversation(database)
+                    }
                 }
             }
 
@@ -112,6 +115,7 @@ class AndroidTestRepositoryWithRealImplementation(
                 chat = LocalChatDataSourceImpl(
                     database = database,
                     chatDao = database.chatDao(),
+                    messageDao = database.messageDao(),
                     participantDao = database.participantDao(),
                     logger = logger,
                 ),

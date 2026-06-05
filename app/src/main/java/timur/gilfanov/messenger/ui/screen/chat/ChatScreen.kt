@@ -1,16 +1,25 @@
+@file:Suppress("TooManyFunctions") // many of them are previews
+
 package timur.gilfanov.messenger.ui.screen.chat
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -32,24 +41,30 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.PagingData
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
+import timur.gilfanov.messenger.domain.entity.chat.Participant
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.TextMessage
+import timur.gilfanov.messenger.domain.entity.message.validation.TextValidationError
+import timur.gilfanov.messenger.domain.usecase.chat.repository.ReceiveChatUpdatesRepositoryError
 import timur.gilfanov.messenger.domain.usecase.common.LocalStorageError
 import timur.gilfanov.messenger.domain.usecase.common.RemoteError
 import timur.gilfanov.messenger.domain.usecase.message.SendMessageError
@@ -145,9 +160,8 @@ fun ChatScreenContent(
 
 private const val MARK_AS_VISIBLE_DEBOUNCE = 300L
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Suppress("LongMethod", "LongParameterList") // Complex UI composition; property drilling preferred
+@Suppress("LongParameterList") // in Compose property drilling is preferred over wrapper
 fun ChatContent(
     state: ChatUiState.Ready,
     inputTextFieldState: TextFieldState,
@@ -158,10 +172,8 @@ fun ChatContent(
 ) {
     val listState = rememberLazyListState()
 
-    // Collect paged messages for LazyColumn
     val messages = state.messages.collectAsLazyPagingItems()
 
-    // Track visible messages and mark as read
     val visibleItemsInfo = remember {
         derivedStateOf {
             listState.layoutInfo.visibleItemsInfo
@@ -171,33 +183,77 @@ fun ChatContent(
     val currentOnMarkMessagesAsReadUpTo = rememberUpdatedState(onMarkMessagesAsReadUpTo)
 
     LaunchedEffect(visibleItemsInfo.value, messages.itemCount) {
-        delay(MARK_AS_VISIBLE_DEBOUNCE)
+        delay(MARK_AS_VISIBLE_DEBOUNCE.milliseconds)
         val visibleItems = visibleItemsInfo.value
         if (visibleItems.isNotEmpty() && messages.itemCount > 0) {
-            // Get the last visible message index (bottom of the screen)
-            val lastVisibleIndex = visibleItems.minByOrNull { it.index }?.index
-            if (lastVisibleIndex != null &&
-                lastVisibleIndex >= 0 &&
-                lastVisibleIndex < messages.itemCount
+            val newestVisibleIndex = visibleItems.minOfOrNull { it.index }
+            if (newestVisibleIndex != null &&
+                newestVisibleIndex >= 0 &&
+                newestVisibleIndex < messages.itemCount
             ) {
-                val lastVisibleMessage = messages[lastVisibleIndex]
-                if (lastVisibleMessage != null) {
-                    currentOnMarkMessagesAsReadUpTo.value(lastVisibleMessage.id)
+                val newestVisibleMessage = messages[newestVisibleIndex]
+                if (newestVisibleMessage != null) {
+                    currentOnMarkMessagesAsReadUpTo.value(newestVisibleMessage.id)
                 }
             }
         }
     }
 
+    ChatReadyScaffold(
+        title = state.title,
+        showUpdateError = state.updateError != null,
+        inputTextFieldState = inputTextFieldState,
+        inputTextValidationError = state.inputTextValidationError,
+        isSending = state.isSending,
+        onSendMessage = onSendMessage,
+        dialogError = state.dialogError,
+        onDismissDialogError = onDismissDialogError,
+        modifier = modifier,
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+        ) {
+            MessageList(
+                messages = messages,
+                participants = state.participants,
+                listState = listState,
+            )
+            PagingRefreshOverlay(
+                refresh = messages.loadState.refresh,
+                itemCount = messages.itemCount,
+                onRetry = messages::retry,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+@Suppress("LongParameterList") // in Compose property drilling is preferred over wrapper
+private fun ChatReadyScaffold(
+    title: String,
+    showUpdateError: Boolean,
+    inputTextFieldState: TextFieldState,
+    inputTextValidationError: TextValidationError?,
+    isSending: Boolean,
+    onSendMessage: () -> Unit,
+    dialogError: ReadyError?,
+    onDismissDialogError: () -> Unit,
+    modifier: Modifier = Modifier,
+    messagesContent: @Composable (PaddingValues) -> Unit,
+) {
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
                 title = {
                     Column {
-                        Text(text = state.title)
-                        state.updateError?.let { error ->
+                        Text(text = title)
+                        if (showUpdateError) {
                             Text(
-                                text = "Update failed: $error",
+                                text = stringResource(R.string.chat_update_failed),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -209,39 +265,19 @@ fun ChatContent(
         bottomBar = {
             MessageInput(
                 state = inputTextFieldState,
-                textValidationError = state.inputTextValidationError,
-                isSending = state.isSending,
+                textValidationError = inputTextValidationError,
+                isSending = isSending,
                 onSendMessage = onSendMessage,
             )
         },
-    ) { paddingValues ->
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-        ) {
-            items(
-                count = messages.itemCount,
-                key = messages.itemKey { message -> message.id.id },
-            ) { index ->
-                val message = messages[index]
-                if (message != null) {
-                    MessageBubble(
-                        message = message.toMessageUiModel(participants = state.participants),
-                        modifier = Modifier.padding(vertical = 4.dp),
-                    )
-                }
-            }
-        }
-    }
+        content = messagesContent,
+    )
 
-    if (state.dialogError != null) {
+    if (dialogError != null) {
         AlertDialog(
             onDismissRequest = onDismissDialogError,
             title = { Text(text = stringResource(R.string.send_error_dialog_title)) },
-            text = { Text(text = readyErrorMessage(state.dialogError)) },
+            text = { Text(text = readyErrorMessage(dialogError)) },
             confirmButton = {
                 TextButton(onClick = onDismissDialogError) {
                     Text(text = stringResource(R.string.send_error_dialog_dismiss))
@@ -249,6 +285,176 @@ fun ChatContent(
             },
             modifier = Modifier.testTag("send_error_dialog"),
         )
+    }
+}
+
+@Composable
+private fun PagingRefreshOverlay(refresh: LoadState, itemCount: Int, onRetry: () -> Unit) {
+    when (refresh) {
+        LoadState.Loading -> {
+            if (itemCount == 0) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.testTag("paging_refresh_loading_indicator"),
+                    )
+                }
+            }
+        }
+        is LoadState.Error -> if (itemCount == 0) {
+            PagingRefreshError(
+                onRetry = onRetry,
+            )
+        } else {
+            Box(modifier = Modifier.fillMaxSize()) {
+                PagingLoadError(
+                    onRetry = onRetry,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    testTag = "paging_refresh_error",
+                )
+            }
+        }
+        is LoadState.NotLoading -> Unit
+    }
+}
+
+@Composable
+private fun PagingRefreshError(onRetry: () -> Unit) {
+    PagingLoadError(
+        onRetry = onRetry,
+        modifier = Modifier.fillMaxSize(),
+        testTag = "paging_refresh_error",
+    )
+}
+
+@Composable
+private fun MessageList(
+    messages: LazyPagingItems<Message>,
+    participants: ImmutableList<ParticipantUiModel>,
+    listState: LazyListState,
+) {
+    LazyColumn(
+        state = listState,
+        reverseLayout = true,
+        verticalArrangement = Arrangement.Bottom,
+        contentPadding = PaddingValues(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .testTag("message_list"),
+    ) {
+        prependLoadStateItem(messages.loadState.prepend, messages::retry)
+
+        items(
+            count = messages.itemCount,
+            key = messages.itemKey { message -> message.id.id },
+        ) { index ->
+            val message = messages[index]
+            if (message != null) {
+                MessageBubble(
+                    message = message.toMessageUiModel(participants = participants),
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+        }
+
+        appendLoadStateItem(messages.loadState.append, messages::retry)
+    }
+}
+
+@Composable
+private fun StaticMessageList(
+    messages: ImmutableList<MessageUiModel>,
+    prepend: LoadState,
+    append: LoadState,
+    listState: LazyListState,
+) {
+    LazyColumn(
+        state = listState,
+        reverseLayout = true,
+        verticalArrangement = Arrangement.Bottom,
+        contentPadding = PaddingValues(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .testTag("message_list"),
+    ) {
+        prependLoadStateItem(prepend, onRetry = {})
+
+        items(items = messages, key = { it.id }) { message ->
+            MessageBubble(
+                message = message,
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+        }
+
+        appendLoadStateItem(append, onRetry = {})
+    }
+}
+
+private fun LazyListScope.prependLoadStateItem(state: LoadState, onRetry: () -> Unit) {
+    when (state) {
+        LoadState.Loading -> item(key = "newer_messages_loading") {
+            PagingLoadingRow(testTag = "paging_prepend_loading_indicator")
+        }
+        is LoadState.Error -> item(key = "newer_messages_error") {
+            PagingLoadError(
+                onRetry = onRetry,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                testTag = "paging_prepend_error",
+            )
+        }
+        is LoadState.NotLoading -> Unit
+    }
+}
+
+private fun LazyListScope.appendLoadStateItem(state: LoadState, onRetry: () -> Unit) {
+    when (state) {
+        LoadState.Loading -> item(key = "older_messages_loading") {
+            PagingLoadingRow(testTag = "paging_append_loading_indicator")
+        }
+        is LoadState.Error -> item(key = "older_messages_error") {
+            PagingLoadError(
+                onRetry = onRetry,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                testTag = "paging_append_error",
+            )
+        }
+        is LoadState.NotLoading -> Unit
+    }
+}
+
+@Composable
+private fun PagingLoadingRow(testTag: String) {
+    Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), Alignment.Center) {
+        CircularProgressIndicator(Modifier.testTag(testTag))
+    }
+}
+
+@Composable
+private fun PagingLoadError(onRetry: () -> Unit, testTag: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.testTag(testTag),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.chat_messages_failed_to_load),
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.testTag("paging_error_message"),
+        )
+        Button(
+            onClick = onRetry,
+            modifier = Modifier.testTag("paging_retry_button"),
+        ) {
+            Text(stringResource(R.string.chat_paging_retry))
+        }
     }
 }
 
@@ -293,24 +499,10 @@ private fun remoteErrorMessage(error: RemoteError): String = when (error) {
 
 @Preview(showBackground = true)
 @Composable
-private fun ChatContentPreview() {
+private fun ChatScreenLoadingPreview() {
     MessengerTheme {
-        ChatContent(
-            state = ChatUiState.Ready(
-                id = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000")),
-                title = "Alice",
-                participants = persistentListOf(
-                    ParticipantUiModel(
-                        id = ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001")),
-                        name = "Alice",
-                        pictureUrl = null,
-                    ),
-                ),
-                isGroupChat = false,
-                messages = flowOf(PagingData.empty()),
-                isSending = false,
-                status = ChatStatus.OneToOne(null),
-            ),
+        ChatScreenContent(
+            uiState = ChatUiState.Loading(),
             inputTextFieldState = TextFieldState(""),
             onSendMessage = {},
             onMarkMessagesAsReadUpTo = {},
@@ -320,15 +512,227 @@ private fun ChatContentPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun ChatLoadingPreview() {
+private fun ChatScreenErrorPreview() {
     MessengerTheme {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
+        ChatScreenContent(
+            uiState = ChatUiState.Error(error = ReceiveChatUpdatesRepositoryError.ChatNotFound),
+            inputTextFieldState = TextFieldState(""),
+            onSendMessage = {},
+            onMarkMessagesAsReadUpTo = {},
+        )
+    }
+}
+
+private val SAMPLE_PARTICIPANT_ID =
+    ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"))
+private val SAMPLE_CHAT_ID = ChatId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
+private val SAMPLE_PARTICIPANTS = persistentListOf(
+    ParticipantUiModel(
+        id = SAMPLE_PARTICIPANT_ID,
+        name = "Alice",
+        pictureUrl = null,
+    ),
+)
+
+private val SAMPLE_CURRENT_USER_ID =
+    ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
+private val SAMPLE_BOB_ID =
+    ParticipantId(UUID.fromString("550e8400-e29b-41d4-a716-446655440003"))
+
+private val SAMPLE_ALICE = Participant(
+    id = SAMPLE_PARTICIPANT_ID,
+    name = "Alice",
+    pictureUrl = null,
+    joinedAt = Instant.fromEpochMilliseconds(1_000_000L),
+    onlineAt = null,
+)
+private val SAMPLE_BOB = Participant(
+    id = SAMPLE_BOB_ID,
+    name = "Bob",
+    pictureUrl = null,
+    joinedAt = Instant.fromEpochMilliseconds(1_000_000L),
+    onlineAt = null,
+)
+private val SAMPLE_CURRENT_USER = Participant(
+    id = SAMPLE_CURRENT_USER_ID,
+    name = "You",
+    pictureUrl = null,
+    joinedAt = Instant.fromEpochMilliseconds(1_000_000L),
+    onlineAt = null,
+    isCurrentUser = true,
+)
+
+private val SAMPLE_GROUP_PARTICIPANTS = persistentListOf(
+    ParticipantUiModel(id = SAMPLE_PARTICIPANT_ID, name = "Alice", pictureUrl = null),
+    ParticipantUiModel(id = SAMPLE_BOB_ID, name = "Bob", pictureUrl = null),
+)
+
+@Suppress("MagicNumber")
+private fun sampleTextMessage(
+    idSuffix: Int,
+    sender: Participant,
+    text: String,
+    status: DeliveryStatus,
+) = TextMessage(
+    id = MessageId(UUID.fromString("00000000-0000-0000-0000-00000000000$idSuffix")),
+    parentId = null,
+    sender = sender,
+    recipient = SAMPLE_CHAT_ID,
+    createdAt = Instant.fromEpochMilliseconds(1_000_000L + idSuffix * 60_000L),
+    deliveryStatus = status,
+    text = text,
+)
+
+// Newest first: with reverseLayout the head of the list renders at the bottom.
+@Suppress("MagicNumber")
+private fun sampleConversation(): List<Message> = listOf(
+    sampleTextMessage(4, SAMPLE_CURRENT_USER, "See you tomorrow!", DeliveryStatus.Read),
+    sampleTextMessage(3, SAMPLE_ALICE, "Sounds great, thanks!", DeliveryStatus.Read),
+    sampleTextMessage(2, SAMPLE_CURRENT_USER, "I'll send the docs over.", DeliveryStatus.Delivered),
+    sampleTextMessage(1, SAMPLE_ALICE, "Hello! This is a sample message.", DeliveryStatus.Read),
+)
+
+@Suppress("MagicNumber")
+private fun sampleGroupConversation(): List<Message> = listOf(
+    sampleTextMessage(7, SAMPLE_CURRENT_USER, "On my way!", DeliveryStatus.Sent),
+    sampleTextMessage(6, SAMPLE_BOB, "Let's meet at 5.", DeliveryStatus.Read),
+    sampleTextMessage(5, SAMPLE_ALICE, "Hi everyone!", DeliveryStatus.Read),
+)
+
+private fun sampleConversationUiModels(): ImmutableList<MessageUiModel> =
+    sampleConversation().map { it.toMessageUiModel(SAMPLE_PARTICIPANTS) }.toImmutableList()
+
+private fun sampleGroupConversationUiModels(): ImmutableList<MessageUiModel> =
+    sampleGroupConversation().map {
+        it.toMessageUiModel(SAMPLE_GROUP_PARTICIPANTS)
+    }.toImmutableList()
+
+// Renders the Ready screen from static data so previews show real content. Production collects
+// messages via Paging, whose async delivery never runs in a static @Preview, leaving the list
+// permanently in its initial refresh-loading state. The previews drive the same stateless
+// composables (ChatReadyScaffold, StaticMessageList, PagingRefreshOverlay) with explicit data.
+@Composable
+@Suppress("LongParameterList") // preview factory; defaults keep call sites terse
+private fun ChatReadyPreview(
+    messages: ImmutableList<MessageUiModel>,
+    title: String = "Alice",
+    showUpdateError: Boolean = false,
+    dialogError: ReadyError? = null,
+    refresh: LoadState = LoadState.NotLoading(false),
+    prepend: LoadState = LoadState.NotLoading(false),
+    append: LoadState = LoadState.NotLoading(false),
+) {
+    MessengerTheme {
+        ChatReadyScaffold(
+            title = title,
+            showUpdateError = showUpdateError,
+            inputTextFieldState = rememberTextFieldState(),
+            inputTextValidationError = null,
+            isSending = false,
+            onSendMessage = {},
+            dialogError = dialogError,
+            onDismissDialogError = {},
+        ) { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+            ) {
+                StaticMessageList(
+                    messages = messages,
+                    prepend = prepend,
+                    append = append,
+                    listState = rememberLazyListState(),
+                )
+                PagingRefreshOverlay(refresh = refresh, itemCount = messages.size, onRetry = {})
+            }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ConversationPreview() {
+    ChatReadyPreview(messages = sampleConversationUiModels())
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun GroupConversationPreview() {
+    ChatReadyPreview(messages = sampleGroupConversationUiModels(), title = "Weekend plans")
+}
+
+// The send-error AlertDialog renders in a separate Dialog window that a static @Preview does not
+// composite; view it via Interactive Preview, which runs the real production dialog path.
+@Preview(showBackground = true)
+@Composable
+private fun SendErrorDialogPreview() {
+    ChatReadyPreview(
+        messages = sampleConversationUiModels(),
+        dialogError = ReadyError.SendMessageError(
+            SendMessageError.RemoteOperationFailed(RemoteError.Failed.NetworkNotAvailable),
+        ),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun UpdateErrorPreview() {
+    ChatReadyPreview(messages = sampleConversationUiModels(), showUpdateError = true)
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PrependNewerMessagesLoadingPreview() {
+    ChatReadyPreview(messages = sampleConversationUiModels(), prepend = LoadState.Loading)
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PrependNewerMessagesErrorPreview() {
+    ChatReadyPreview(
+        messages = sampleConversationUiModels(),
+        prepend = LoadState.Error(RuntimeException("Failed to load newer messages")),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AppendOlderMessagesLoadingPreview() {
+    ChatReadyPreview(messages = sampleConversationUiModels(), append = LoadState.Loading)
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AppendOlderMessagesErrorPreview() {
+    ChatReadyPreview(
+        messages = sampleConversationUiModels(),
+        append = LoadState.Error(RuntimeException("Failed to load older messages")),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RefreshLoadingPreview() {
+    ChatReadyPreview(messages = persistentListOf(), refresh = LoadState.Loading)
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RefreshErrorEmptyPreview() {
+    ChatReadyPreview(
+        messages = persistentListOf(),
+        refresh = LoadState.Error(RuntimeException("No internet connection")),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RefreshErrorWithMessagesPreview() {
+    ChatReadyPreview(
+        messages = sampleConversationUiModels(),
+        refresh = LoadState.Error(RuntimeException("No internet connection")),
+    )
 }
 
 /**

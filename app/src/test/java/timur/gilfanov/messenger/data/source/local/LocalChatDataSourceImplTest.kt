@@ -38,6 +38,7 @@ class LocalChatDataSourceImplTest {
     private val localChatDataSource: LocalChatDataSource by lazy {
         LocalChatDataSourceImpl(
             chatDao = databaseRule.chatDao,
+            messageDao = databaseRule.messageDao,
             participantDao = databaseRule.participantDao,
             database = databaseRule.database,
             logger = NoOpLogger(),
@@ -293,6 +294,35 @@ class LocalChatDataSourceImplTest {
         }
     }
 
+    @Test
+    fun `flowChatUpdates returns InvalidData when no participant is current user`() = runTest {
+        // Given - chat with no current user (violates backend contract)
+        val chat = createTestChatWithNoCurrentUser()
+        localChatDataSource.insertChat(chat)
+
+        // When & Then
+        localChatDataSource.flowChatUpdates(chat.id).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(result)
+            assertIs<LocalDataSourceError.InvalidData>(result.error)
+        }
+    }
+
+    @Test
+    fun `flowChatUpdates returns InvalidData when multiple participants are current user`() =
+        runTest {
+            // Given - chat with two current users (violates backend contract)
+            val chat = createTestChatWithMultipleCurrentUsers()
+            localChatDataSource.insertChat(chat)
+
+            // When & Then
+            localChatDataSource.flowChatUpdates(chat.id).test {
+                val result = awaitItem()
+                assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(result)
+                assertIs<LocalDataSourceError.InvalidData>(result.error)
+            }
+        }
+
     // Validation error tests
     @Test
     fun `insert chat with blank name returns InvalidData error`() = runTest {
@@ -409,12 +439,59 @@ class LocalChatDataSourceImplTest {
                 name = "User 1",
                 joinedAt = Instant.fromEpochMilliseconds(1000000),
                 onlineAt = null,
+                isCurrentUser = true,
             ),
             DomainTestFixtures.createTestParticipant(
                 id = ParticipantId(UUID.fromString("55555555-5555-5555-5555-555555555555")),
                 name = "User 2",
                 joinedAt = Instant.fromEpochMilliseconds(1100000),
                 onlineAt = null,
+            ),
+        ),
+    )
+
+    private fun createTestChatWithNoCurrentUser(
+        id: String = "aaaa0000-0000-0000-0000-000000000000",
+    ) = DomainTestFixtures.createTestChat(
+        id = ChatId(UUID.fromString(id)),
+        name = "No Current User Chat",
+        participants = setOf(
+            DomainTestFixtures.createTestParticipant(
+                id = ParticipantId(UUID.fromString("44444444-4444-4444-4444-444444444444")),
+                name = "User 1",
+                joinedAt = Instant.fromEpochMilliseconds(1000000),
+                onlineAt = null,
+                isCurrentUser = false,
+            ),
+            DomainTestFixtures.createTestParticipant(
+                id = ParticipantId(UUID.fromString("55555555-5555-5555-5555-555555555555")),
+                name = "User 2",
+                joinedAt = Instant.fromEpochMilliseconds(1100000),
+                onlineAt = null,
+                isCurrentUser = false,
+            ),
+        ),
+    )
+
+    private fun createTestChatWithMultipleCurrentUsers(
+        id: String = "bbbb0000-0000-0000-0000-000000000000",
+    ) = DomainTestFixtures.createTestChat(
+        id = ChatId(UUID.fromString(id)),
+        name = "Multiple Current Users Chat",
+        participants = setOf(
+            DomainTestFixtures.createTestParticipant(
+                id = ParticipantId(UUID.fromString("44444444-4444-4444-4444-444444444444")),
+                name = "User 1",
+                joinedAt = Instant.fromEpochMilliseconds(1000000),
+                onlineAt = null,
+                isCurrentUser = true,
+            ),
+            DomainTestFixtures.createTestParticipant(
+                id = ParticipantId(UUID.fromString("55555555-5555-5555-5555-555555555555")),
+                name = "User 2",
+                joinedAt = Instant.fromEpochMilliseconds(1100000),
+                onlineAt = null,
+                isCurrentUser = true,
             ),
         ),
     )

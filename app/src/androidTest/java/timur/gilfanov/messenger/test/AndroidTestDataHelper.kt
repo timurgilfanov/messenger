@@ -26,6 +26,7 @@ object AndroidTestDataHelper {
     enum class DataScenario {
         EMPTY,
         NON_EMPTY,
+        LONG_CONVERSATION,
     }
 
     // Test user and chat IDs - reusing same constants for consistency with unit tests
@@ -37,6 +38,17 @@ object AndroidTestDataHelper {
     const val ALICE_MESSAGE_1_ID = "550e8400-e29b-41d4-a716-446655440003"
     const val ALICE_MESSAGE_2_ID = "550e8400-e29b-41d4-a716-446655440004"
     const val BOB_MESSAGE_1_ID = "550e8400-e29b-41d4-a716-446655440007"
+
+    // Long conversation scenario: enough messages to overflow the screen and span more than one
+    // page (DEFAULT_PAGE_SIZE = 25), so scroll-position-preservation can be exercised.
+    const val LONG_CHAT_ID = "550e8400-e29b-41d4-a716-4466554409ff"
+    const val LONG_CONVERSATION_SIZE = 40
+    private const val LONG_CONVERSATION_BASE_MS = 1672534800000L // 2023-01-01 01:00:00 UTC
+
+    fun longConversationMessageText(index: Int): String = "Conversation message $index"
+
+    private fun longConversationMessageId(index: Int): String =
+        "550e8400-e29b-41d4-a716-${index.toString().padStart(12, '0')}"
 
     const val ALICE_TEXT_1 = "Hello! 👋"
     const val ALICE_TEXT_2 = "How are you doing today?"
@@ -147,6 +159,78 @@ object AndroidTestDataHelper {
             ),
         ),
     )
+
+    // Seeds a single chat ("Alice") with LONG_CONVERSATION_SIZE messages, oldest (index 1) to
+    // newest (index LONG_CONVERSATION_SIZE), alternating between the current user and Alice. Only
+    // local persistence is seeded: both chat metadata and paged messages are sourced from the
+    // local database (see MessengerRepositoryImpl.receiveChatUpdates / getPagedMessages).
+    suspend fun prepopulateLongConversation(database: MessengerDatabase) {
+        database.withTransaction {
+            val participantDao = database.participantDao()
+            participantDao.insertParticipant(
+                ParticipantEntity(USER_ID, "You", null, FIXED_TIMESTAMP),
+            )
+            participantDao.insertParticipant(
+                ParticipantEntity(ALICE_USER_ID, "Alice", null, ALICE_JOIN_TIME),
+            )
+
+            val chatDao = database.chatDao()
+            chatDao.insertChat(
+                ChatEntity(
+                    id = LONG_CHAT_ID,
+                    name = "Alice",
+                    pictureUrl = null,
+                    rules = "[]",
+                    unreadMessagesCount = 0,
+                    lastReadMessageId = null,
+                    updatedAt = FIXED_TIMESTAMP,
+                ),
+            )
+            chatDao.insertChatParticipantCrossRef(
+                ChatParticipantCrossRef(
+                    chatId = LONG_CHAT_ID,
+                    participantId = USER_ID,
+                    joinedAt = FIXED_TIMESTAMP,
+                    isAdmin = false,
+                    isModerator = false,
+                    isCurrentUser = true,
+                ),
+            )
+            chatDao.insertChatParticipantCrossRef(
+                ChatParticipantCrossRef(
+                    chatId = LONG_CHAT_ID,
+                    participantId = ALICE_USER_ID,
+                    joinedAt = ALICE_JOIN_TIME,
+                    isAdmin = false,
+                    isModerator = false,
+                ),
+            )
+
+            val messageDao = database.messageDao()
+            val path = """timur.gilfanov.messenger.data.source.local.database.mapper"""
+            (1..LONG_CONVERSATION_SIZE).forEach { index ->
+                val time = Instant.fromEpochMilliseconds(
+                    LONG_CONVERSATION_BASE_MS + index * 60_000L,
+                )
+                messageDao.insertMessage(
+                    MessageEntity(
+                        id = longConversationMessageId(index),
+                        chatId = LONG_CHAT_ID,
+                        senderId = if (index % 2 == 0) USER_ID else ALICE_USER_ID,
+                        parentId = null,
+                        type = MessageType.TEXT,
+                        text = longConversationMessageText(index),
+                        imageUrl = null,
+                        deliveryStatus = """{"type":"$path.DeliveryStatusDto.Read"}""",
+                        createdAt = time,
+                        sentAt = time,
+                        deliveredAt = time,
+                        editedAt = null,
+                    ),
+                )
+            }
+        }
+    }
 
     suspend fun prepopulateDatabase(database: MessengerDatabase) {
         database.withTransaction {

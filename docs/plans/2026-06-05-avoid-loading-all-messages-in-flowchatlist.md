@@ -50,9 +50,9 @@
 - Modify: `app/src/main/java/timur/gilfanov/messenger/data/source/local/database/mapper/EntityMappers.kt`
 - Modify: `app/src/test/java/timur/gilfanov/messenger/data/source/local/database/mapper/EntityMappersTest.kt`
 
-- [ ] Change extension to `ChatWithParticipants.toChatPreview(lastMessage: MessageEntity?)`, mirroring `toChat(lastMessages)`; drop the `messages.maxByOrNull` logic and use the passed `lastMessage`
-- [ ] Update EntityMappersTest: rewrite the two `ChatWithParticipantsAndMessages` cases to build `ChatWithParticipants` and pass a `lastMessage`, plus a null-`lastMessage` case
-- [ ] Run `./gradlew :app:testMockDebugUnitTest --tests "*EntityMappersTest"` — must pass before Task 3
+- [x] Change extension to `ChatWithParticipants.toChatPreview(lastMessage: MessageEntity?)`, mirroring `toChat(lastMessages)`; drop the `messages.maxByOrNull` logic and use the passed `lastMessage`
+- [x] Update EntityMappersTest: rewrite the two `ChatWithParticipantsAndMessages` cases to build `ChatWithParticipants` and pass a `lastMessage`, plus a null-`lastMessage` case
+- [x] Run `./gradlew :app:testMockDebugUnitTest --tests "*EntityMappersTest"` — must pass before Task 3
 
 ### Task 3: Rewire `flowChatList` in LocalChatDataSourceImpl
 

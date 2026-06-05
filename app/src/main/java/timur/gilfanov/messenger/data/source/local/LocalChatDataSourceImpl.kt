@@ -14,6 +14,7 @@ import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
 import timur.gilfanov.messenger.domain.entity.ResultWithError
@@ -124,7 +125,13 @@ class LocalChatDataSourceImpl @Inject constructor(
                 ResultWithError<List<ChatPreview>, LocalDataSourceError>,
                 > { chatsWithRelations ->
                 val chatPreviews = chatsWithRelations.map { relation ->
-                    with(EntityMappers) { relation.toChatPreview() }
+                    val lastMessage = relation.messages.maxByOrNull { it.createdAt }
+                    val chatWithParticipants = ChatWithParticipants(
+                        chat = relation.chat,
+                        participantCrossRefs = relation.participantCrossRefs,
+                        participants = relation.participants,
+                    )
+                    with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
                 }
                 ResultWithError.Success(chatPreviews)
             }

@@ -105,6 +105,9 @@ class AndroidTestRepositoryWithRealImplementation(
                         AndroidTestDataHelper.prepopulateDatabase(database)
                         AndroidTestDataHelper.prepopulateRemoteDataSource(remoteDataSourceFake)
                     }
+                    AndroidTestDataHelper.DataScenario.LONG_CONVERSATION -> {
+                        AndroidTestDataHelper.prepopulateLongConversation(database)
+                    }
                 }
             }
 

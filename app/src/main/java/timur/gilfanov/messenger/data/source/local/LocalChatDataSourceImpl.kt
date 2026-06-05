@@ -6,6 +6,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -14,8 +15,6 @@ import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
-import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
-import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -118,23 +117,20 @@ class LocalChatDataSourceImpl @Inject constructor(
         }
 
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
-        chatDao.flowAllChatsWithParticipantsAndMessages()
-            .distinctUntilChanged()
-            .map<
-                List<ChatWithParticipantsAndMessages>,
-                ResultWithError<List<ChatPreview>, LocalDataSourceError>,
-                > { chatsWithRelations ->
-                val chatPreviews = chatsWithRelations.map { relation ->
-                    val lastMessage = relation.messages.maxByOrNull { it.createdAt }
-                    val chatWithParticipants = ChatWithParticipants(
-                        chat = relation.chat,
-                        participantCrossRefs = relation.participantCrossRefs,
-                        participants = relation.participants,
-                    )
-                    with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
-                }
-                ResultWithError.Success(chatPreviews)
+        combine(
+            chatDao.flowAllChatsWithParticipants(),
+            messageDao.flowLastMessagesPerChat(),
+        ) { chatsWithParticipants, lastMessages ->
+            val lastMessageByChatId = lastMessages.associateBy { it.chatId }
+            val chatPreviews = chatsWithParticipants.map { chatWithParticipants ->
+                val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
+                with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
             }
+            val result: ResultWithError<List<ChatPreview>, LocalDataSourceError> =
+                ResultWithError.Success(chatPreviews)
+            result
+        }
+            .distinctUntilChanged()
             .catch { e ->
                 when (e) {
                     is SQLiteException -> emit(

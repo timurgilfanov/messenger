@@ -6,6 +6,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentSetOf
@@ -23,6 +24,7 @@ import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.MessageId
+import timur.gilfanov.messenger.domain.entity.message.TextMessage
 import timur.gilfanov.messenger.domain.testutil.DomainTestFixtures
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.testutil.InMemoryDatabaseRule
@@ -260,6 +262,51 @@ class LocalChatDataSourceImplTest {
             assertEquals(2, chatPreviews.size)
             assertTrue(chatPreviews.any { it.name == "Chat 1" })
             assertTrue(chatPreviews.any { it.name == "Chat 2" })
+        }
+    }
+
+    @Test
+    fun `flowChatList preview reflects most-recent message and null for empty chat`() = runTest {
+        // Given - chat1 with two messages, chat2 with none
+        val chat1 = createTestChat(id = "77777777-7777-7777-7777-777777777777", name = "Chat 1")
+        val chat2 = createTestChat(id = "88888888-8888-8888-8888-888888888888", name = "Chat 2")
+        localChatDataSource.insertChat(chat1)
+        localChatDataSource.insertChat(chat2)
+
+        val olderMessage = DomainTestFixtures.createTestTextMessage(
+            id = MessageId(UUID.fromString("33333333-cccc-cccc-cccc-cccccccccccc")),
+            text = "Older",
+            sender = chat1.participants.first(),
+            recipient = chat1.id,
+            createdAt = Instant.fromEpochMilliseconds(1000),
+        )
+        val newerMessage = DomainTestFixtures.createTestTextMessage(
+            id = MessageId(UUID.fromString("44444444-cccc-cccc-cccc-cccccccccccc")),
+            text = "Newer",
+            sender = chat1.participants.first(),
+            recipient = chat1.id,
+            createdAt = Instant.fromEpochMilliseconds(2000),
+        )
+        databaseRule.messageDao.insertMessages(
+            with(EntityMappers) {
+                listOf(olderMessage.toMessageEntity(), newerMessage.toMessageEntity())
+            },
+        )
+
+        // When & Then
+        localChatDataSource.flowChatList().test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, LocalDataSourceError>>(result)
+
+            val preview1 = result.data.first { it.name == "Chat 1" }
+            val lastMessage = preview1.lastMessage
+            assertIs<TextMessage>(lastMessage)
+            assertEquals("Newer", lastMessage.text)
+            assertEquals(Instant.fromEpochMilliseconds(2000), preview1.lastActivityAt)
+
+            val preview2 = result.data.first { it.name == "Chat 2" }
+            assertNull(preview2.lastMessage)
+            assertNull(preview2.lastActivityAt)
         }
     }
 

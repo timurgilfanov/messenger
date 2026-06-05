@@ -60,9 +60,9 @@
 - Modify: `app/src/main/java/timur/gilfanov/messenger/data/source/local/LocalChatDataSourceImpl.kt`
 - Modify: `app/src/test/java/timur/gilfanov/messenger/data/source/local/LocalChatDataSourceImplTest.kt`
 
-- [ ] Replace the `flowAllChatsWithParticipantsAndMessages` source with `combine(flowAllChatsWithParticipants(), flowLastMessagesPerChat())`; build a `chatId → lastMessage` map and map each chat via the new `toChatPreview(lastMessage)`; keep `distinctUntilChanged()` and the existing `SQLiteException` `catch`
-- [ ] Extend LocalChatDataSourceImplTest: keep the existing previews test and add one asserting `lastMessage`/`lastActivityAt` reflect the most-recent message and are null for an empty chat
-- [ ] Run `./gradlew :app:testMockDebugUnitTest --tests "*LocalChatDataSourceImplTest"` — must pass before Task 4
+- [x] Replace the `flowAllChatsWithParticipantsAndMessages` source with `combine(flowAllChatsWithParticipants(), flowLastMessagesPerChat())`; build a `chatId → lastMessage` map and map each chat via the new `toChatPreview(lastMessage)`; keep `distinctUntilChanged()` and the existing `SQLiteException` `catch`
+- [x] Extend LocalChatDataSourceImplTest: keep the existing previews test and add one asserting `lastMessage`/`lastActivityAt` reflect the most-recent message and are null for an empty chat
+- [x] Run `./gradlew :app:testMockDebugUnitTest --tests "*LocalChatDataSourceImplTest"` — must pass before Task 4
 
 ### Task 4: Delete dead code and repoint orphaned tests
 
@@ -72,10 +72,10 @@
 - Modify: `app/src/test/java/timur/gilfanov/messenger/data/source/local/database/dao/ChatDaoTest.kt`
 - Modify: `app/src/test/java/timur/gilfanov/messenger/data/source/local/database/dao/ParticipantDaoTest.kt`
 
-- [ ] Delete `ChatWithParticipantsAndMessages.kt`
-- [ ] Remove `ChatDao.flowAllChatsWithParticipantsAndMessages`, `getChatWithParticipantsAndMessages`, `flowChatWithParticipantsAndMessages` and the now-unused import
-- [ ] Repoint orphaned tests: ChatDaoTest `flow chat with participants and messages emits updates` → `flowChatWithParticipants`; ChatDaoTest `chat with participants and messages returns complete data` → `getChatWithParticipants` for participants plus `MessageDao.getLastMessageInChat` for the message assertion; ParticipantDaoTest two `getChatWithParticipantsAndMessages` call sites → `getChatWithParticipants`
-- [ ] Run `./gradlew :app:testMockDebugUnitTest --tests "*ChatDaoTest" --tests "*ParticipantDaoTest"` — must pass before Task 5
+- [x] Delete `ChatWithParticipantsAndMessages.kt`
+- [x] Remove `ChatDao.flowAllChatsWithParticipantsAndMessages`, `getChatWithParticipantsAndMessages`, `flowChatWithParticipantsAndMessages` and the now-unused import
+- [x] Repoint orphaned tests: ChatDaoTest `flow chat with participants and messages emits updates` → `flowChatWithParticipants`; ChatDaoTest `chat with participants and messages returns complete data` → `getChatWithParticipants` for participants plus `MessageDao.getLastMessageInChat` for the message assertion; ParticipantDaoTest two `getChatWithParticipantsAndMessages` call sites → `getChatWithParticipants`
+- [x] Run `./gradlew :app:testMockDebugUnitTest --tests "*ChatDaoTest" --tests "*ParticipantDaoTest"` — must pass before Task 5
 
 ### Task 5: Verify acceptance criteria
 

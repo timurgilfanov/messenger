@@ -68,7 +68,7 @@ interface MessageDao {
            ORDER BY createdAt DESC, id DESC
            LIMIT :limit""",
     )
-    suspend fun getMessagesByChatIdPaged(
+    suspend fun getMessagesByChatIdPagedOlderThan(
         chatId: String,
         beforeTimestamp: Long,
         beforeMessageId: String,

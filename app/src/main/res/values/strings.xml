@@ -58,6 +58,9 @@
     <string name="content_description_navigate_back">Navigate back</string>
 
     <!-- Chat Screen -->
+    <string name="chat_messages_failed_to_load">Messages failed to load</string>
+    <string name="chat_paging_retry">Retry</string>
+    <string name="chat_update_failed">Could not update chat</string>
     <string name="send_error_dialog_title">Failed to Send</string>
     <string name="send_error_dialog_message">Failed to send message. Please try again.</string>
     <string name="send_error_dialog_dismiss">OK</string>

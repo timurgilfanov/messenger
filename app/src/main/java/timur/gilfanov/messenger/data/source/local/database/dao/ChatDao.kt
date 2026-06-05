@@ -47,6 +47,10 @@ interface ChatDao {
 
     @Transaction
     @Query("SELECT * FROM chats ORDER BY updatedAt DESC")
+    fun flowAllChatsWithParticipants(): Flow<List<ChatWithParticipants>>
+
+    @Transaction
+    @Query("SELECT * FROM chats ORDER BY updatedAt DESC")
     fun flowAllChatsWithParticipantsAndMessages(): Flow<List<ChatWithParticipantsAndMessages>>
 
     @Transaction

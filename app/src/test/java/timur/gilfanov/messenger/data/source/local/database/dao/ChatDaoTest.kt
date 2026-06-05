@@ -115,6 +115,40 @@ class ChatDaoTest {
     }
 
     @Test
+    fun `flow all chats with participants loads participants without messages`() = runTest {
+        // Given
+        val chatId = UUID.randomUUID().toString()
+        val participantId = UUID.randomUUID().toString()
+        val messageId = UUID.randomUUID().toString()
+
+        val chat = createTestChat(chatId)
+        val participant = createTestParticipant(participantId)
+        val message = createTestMessage(messageId, chatId, participantId)
+        val crossRef = ChatParticipantCrossRef(
+            chatId = chatId,
+            participantId = participantId,
+            joinedAt = Instant.fromEpochMilliseconds(1000),
+            isAdmin = false,
+            isModerator = false,
+        )
+
+        // When
+        participantDao.insertParticipant(participant)
+        chatDao.insertChat(chat)
+        messageDao.insertMessage(message)
+        chatDao.insertChatParticipantCrossRef(crossRef)
+
+        val result = chatDao.flowAllChatsWithParticipants().first()
+
+        // Then
+        assertEquals(1, result.size)
+        val chatWithParticipants = result.first()
+        assertEquals(chatId, chatWithParticipants.chat.id)
+        assertEquals(1, chatWithParticipants.participants.size)
+        assertEquals(participantId, chatWithParticipants.participants.first().id)
+    }
+
+    @Test
     fun `delete chat removes chat and cross references`() = runTest {
         // Given
         val chatId = UUID.randomUUID().toString()

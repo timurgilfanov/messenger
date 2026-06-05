@@ -79,10 +79,10 @@
 
 ### Task 5: Verify acceptance criteria
 
-- [ ] Run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] Run `./gradlew :app:testMockDebugUnitTest`
-- [ ] Verify no remaining references to `ChatWithParticipantsAndMessages` or the removed DAO methods (grep)
-- [ ] Verify touched-code coverage meets 80%+
+- [x] Run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] Run `./gradlew :app:testMockDebugUnitTest`
+- [x] Verify no remaining references to `ChatWithParticipantsAndMessages` or the removed DAO methods (grep)
+- [x] Verify touched-code coverage meets 80%+ (LocalChatDataSourceImpl 81%, EntityMappers 86%, ChatDao_Impl 92%, MessageDao_Impl 87%)
 
 ### Task 6: Update documentation
 

@@ -86,6 +86,6 @@
 
 ### Task 6: Update documentation
 
-- [ ] No README.md changes expected (no user-facing changes)
-- [ ] No CLAUDE.md changes expected (internal data-layer refactor; no new patterns)
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] No README.md changes expected (no user-facing changes)
+- [x] No CLAUDE.md changes expected (internal data-layer refactor; no new patterns)
+- [x] Move this plan to `docs/plans/completed/`

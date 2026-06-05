@@ -311,6 +311,63 @@ class LocalChatDataSourceImplTest {
     }
 
     @Test
+    fun `flowChatList emits empty list when no chats exist`() = runTest {
+        // When & Then - combine must still emit once both upstream flows yield their empty results
+        localChatDataSource.flowChatList().test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, LocalDataSourceError>>(result)
+            assertTrue(result.data.isEmpty())
+        }
+    }
+
+    @Test
+    fun `flowChatList attributes each chat its own last message`() = runTest {
+        // Given - two non-empty chats, each with a distinct last message
+        val chat1 = createTestChat(id = "77777777-7777-7777-7777-777777777777", name = "Chat 1")
+        val chat2 = createTestChat(id = "88888888-8888-8888-8888-888888888888", name = "Chat 2")
+        localChatDataSource.insertChat(chat1)
+        localChatDataSource.insertChat(chat2)
+
+        val chat1Message = DomainTestFixtures.createTestTextMessage(
+            id = MessageId(UUID.fromString("33333333-cccc-cccc-cccc-cccccccccccc")),
+            text = "From chat 1",
+            sender = chat1.participants.first(),
+            recipient = chat1.id,
+            createdAt = Instant.fromEpochMilliseconds(1000),
+        )
+        val chat2Message = DomainTestFixtures.createTestTextMessage(
+            id = MessageId(UUID.fromString("44444444-cccc-cccc-cccc-cccccccccccc")),
+            text = "From chat 2",
+            sender = chat2.participants.first(),
+            recipient = chat2.id,
+            createdAt = Instant.fromEpochMilliseconds(2000),
+        )
+        databaseRule.messageDao.insertMessages(
+            with(EntityMappers) {
+                listOf(chat1Message.toMessageEntity(), chat2Message.toMessageEntity())
+            },
+        )
+
+        // When & Then
+        localChatDataSource.flowChatList().test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<List<ChatPreview>, LocalDataSourceError>>(result)
+
+            val preview1 = result.data.first { it.name == "Chat 1" }
+            val lastMessage1 = preview1.lastMessage
+            assertIs<TextMessage>(lastMessage1)
+            assertEquals("From chat 1", lastMessage1.text)
+            assertEquals(Instant.fromEpochMilliseconds(1000), preview1.lastActivityAt)
+
+            val preview2 = result.data.first { it.name == "Chat 2" }
+            val lastMessage2 = preview2.lastMessage
+            assertIs<TextMessage>(lastMessage2)
+            assertEquals("From chat 2", lastMessage2.text)
+            assertEquals(Instant.fromEpochMilliseconds(2000), preview2.lastActivityAt)
+        }
+    }
+
+    @Test
     fun `flowChatUpdates emits updates for specific chat`() = runTest {
         // Given
         val chat = createTestChat()

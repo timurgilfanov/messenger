@@ -120,16 +120,12 @@ class LocalChatDataSourceImpl @Inject constructor(
         combine(
             chatDao.flowAllChatsWithParticipants(),
             messageDao.flowLastMessagesPerChat(),
-        ) { chatsWithParticipants, lastMessages ->
-            val lastMessageByChatId = lastMessages.associateBy { it.chatId }
-            val chatPreviews = chatsWithParticipants.map { chatWithParticipants ->
-                val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
-                with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
+        ) { _, _ -> }
+            .map {
+                val result: ResultWithError<List<ChatPreview>, LocalDataSourceError> =
+                    ResultWithError.Success(readChatPreviews())
+                result
             }
-            val result: ResultWithError<List<ChatPreview>, LocalDataSourceError> =
-                ResultWithError.Success(chatPreviews)
-            result
-        }
             .distinctUntilChanged()
             .catch { e ->
                 when (e) {
@@ -140,6 +136,15 @@ class LocalChatDataSourceImpl @Inject constructor(
                     else -> throw e
                 }
             }
+
+    private suspend fun readChatPreviews(): List<ChatPreview> = database.withTransaction {
+        val chatsWithParticipants = chatDao.getAllChatsWithParticipants()
+        val lastMessageByChatId = messageDao.getLastMessagesPerChat().associateBy { it.chatId }
+        chatsWithParticipants.map { chatWithParticipants ->
+            val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
+            with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun flowChatUpdates(

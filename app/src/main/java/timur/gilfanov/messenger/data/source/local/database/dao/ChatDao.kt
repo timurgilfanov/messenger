@@ -10,7 +10,7 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef
-import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
 
 /**
  * Data Access Object for chat-related database operations.
@@ -35,18 +35,22 @@ interface ChatDao {
 
     @Transaction
     @Query("SELECT * FROM chats WHERE id = :chatId")
-    suspend fun getChatWithParticipantsAndMessages(chatId: String): ChatWithParticipantsAndMessages?
+    suspend fun getChatWithParticipants(chatId: String): ChatWithParticipants?
 
     @Query("SELECT * FROM chats ORDER BY updatedAt DESC")
     fun flowAllChats(): Flow<List<ChatEntity>>
 
     @Transaction
     @Query("SELECT * FROM chats ORDER BY updatedAt DESC")
-    fun flowAllChatsWithParticipantsAndMessages(): Flow<List<ChatWithParticipantsAndMessages>>
+    fun flowAllChatsWithParticipants(): Flow<List<ChatWithParticipants>>
+
+    @Transaction
+    @Query("SELECT * FROM chats ORDER BY updatedAt DESC")
+    suspend fun getAllChatsWithParticipants(): List<ChatWithParticipants>
 
     @Transaction
     @Query("SELECT * FROM chats WHERE id = :chatId")
-    fun flowChatWithParticipantsAndMessages(chatId: String): Flow<ChatWithParticipantsAndMessages?>
+    fun flowChatWithParticipants(chatId: String): Flow<ChatWithParticipants?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertChatParticipantCrossRef(crossRef: ChatParticipantCrossRef)

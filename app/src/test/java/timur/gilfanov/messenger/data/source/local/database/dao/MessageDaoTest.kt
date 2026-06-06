@@ -175,6 +175,41 @@ class MessageDaoTest {
     }
 
     @Test
+    fun `flow last messages per chat returns one latest message per chat`() = runTest {
+        // Given
+        val chatId1 = UUID.randomUUID().toString()
+        val chatId2 = UUID.randomUUID().toString()
+        val emptyChatId = UUID.randomUUID().toString()
+        val participantId = UUID.randomUUID().toString()
+        setupChatAndParticipant(chatId1, participantId)
+        setupChatAndParticipant(chatId2, participantId)
+        setupChatAndParticipant(emptyChatId, participantId)
+
+        val chat1Old = createTestMessage(UUID.randomUUID().toString(), chatId1, participantId)
+            .copy(createdAt = Instant.fromEpochMilliseconds(500000))
+        val chat1New = createTestMessage(UUID.randomUUID().toString(), chatId1, participantId)
+            .copy(createdAt = Instant.fromEpochMilliseconds(1500000))
+        // Tie-break: same createdAt, id DESC wins
+        val chat2TieLow = createTestMessage("aaa-low", chatId2, participantId)
+            .copy(createdAt = Instant.fromEpochMilliseconds(900000))
+        val chat2TieHigh = createTestMessage("zzz-high", chatId2, participantId)
+            .copy(createdAt = Instant.fromEpochMilliseconds(900000))
+
+        // When
+        messageDao.insertMessage(chat1Old)
+        messageDao.insertMessage(chat1New)
+        messageDao.insertMessage(chat2TieLow)
+        messageDao.insertMessage(chat2TieHigh)
+        val result = messageDao.flowLastMessagesPerChat().first()
+
+        // Then
+        assertEquals(2, result.size)
+        assertEquals(chat1New.id, result.first { it.chatId == chatId1 }.id)
+        assertEquals(chat2TieHigh.id, result.first { it.chatId == chatId2 }.id)
+        assertTrue(result.none { it.chatId == emptyChatId })
+    }
+
+    @Test
     fun `update delivery status updates only status field`() = runTest {
         // Given
         val chatId = UUID.randomUUID().toString()

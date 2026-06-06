@@ -5,10 +5,10 @@ import androidx.room.Junction
 import androidx.room.Relation
 
 /**
- * Data class representing a chat with its participants and messages.
- * Used by Room to fetch related data in a single query.
+ * Data class representing a chat with its participants only (without messages).
+ * Used for efficient lookups that need participant data but not the full message history.
  */
-data class ChatWithParticipantsAndMessages(
+data class ChatWithParticipants(
     @Embedded val chat: ChatEntity,
     @Relation(
         entity = ChatParticipantCrossRef::class,
@@ -27,9 +27,4 @@ data class ChatWithParticipantsAndMessages(
         ),
     )
     val participants: List<ParticipantEntity>,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "chatId",
-    )
-    val messages: List<MessageEntity>,
 )

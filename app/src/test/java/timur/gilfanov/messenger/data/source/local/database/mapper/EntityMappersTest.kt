@@ -14,9 +14,8 @@ import kotlinx.collections.immutable.persistentSetOf
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import timur.gilfanov.messenger.annotations.Unit
-import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.createChatParticipantCrossRefs
-import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toChat
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toChatEntity
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toChatPreview
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers.toMessage
@@ -218,65 +217,36 @@ class EntityMappersTest {
     }
 
     @Test
-    fun `ChatWithParticipantsAndMessages to Chat preserves all data`() {
+    fun `ChatWithParticipants to ChatPreview reflects passed lastMessage`() {
         // Given
         val chatEntity = testChat.toChatEntity()
         val participantEntities = testChat.participants.map { it.toParticipantEntity() }
-        val messageEntities = testChat.messages.map { it.toMessageEntity() }
+        val lastMessageEntity = testMessage.toMessageEntity()
         val participantCrossRefs = testChat.participants.map { participant ->
             with(EntityMappers) { participant.toChatParticipantCrossRef(testChat.id.id.toString()) }
         }
 
-        val chatWithRelations = ChatWithParticipantsAndMessages(
+        val chatWithRelations = ChatWithParticipants(
             chat = chatEntity,
             participants = participantEntities,
             participantCrossRefs = participantCrossRefs,
-            messages = messageEntities,
         )
 
         // When
-        val restoredChat = chatWithRelations.toChat()
-
-        // Then
-        assertEquals(testChat.id, restoredChat.id)
-        assertEquals(testChat.name, restoredChat.name)
-        assertEquals(testChat.pictureUrl, restoredChat.pictureUrl)
-        assertEquals(testChat.unreadMessagesCount, restoredChat.unreadMessagesCount)
-        assertEquals(testChat.lastReadMessageId, restoredChat.lastReadMessageId)
-        assertEquals(testChat.participants.size, restoredChat.participants.size)
-        assertEquals(testChat.messages.size, restoredChat.messages.size)
-    }
-
-    @Test
-    fun `ChatWithParticipantsAndMessages to ChatPreview creates correct preview`() {
-        // Given
-        val chatEntity = testChat.toChatEntity()
-        val participantEntities = testChat.participants.map { it.toParticipantEntity() }
-        val messageEntities = testChat.messages.map { it.toMessageEntity() }
-        val participantCrossRefs = testChat.participants.map { participant ->
-            with(EntityMappers) { participant.toChatParticipantCrossRef(testChat.id.id.toString()) }
-        }
-
-        val chatWithRelations = ChatWithParticipantsAndMessages(
-            chat = chatEntity,
-            participants = participantEntities,
-            participantCrossRefs = participantCrossRefs,
-            messages = messageEntities,
-        )
-
-        // When
-        val preview = chatWithRelations.toChatPreview()
+        val preview = chatWithRelations.toChatPreview(lastMessageEntity)
 
         // Then
         assertEquals(testChat.id, preview.id)
         assertEquals(testChat.name, preview.name)
         assertEquals(testChat.pictureUrl, preview.pictureUrl)
         assertEquals(testChat.unreadMessagesCount, preview.unreadMessagesCount)
-        assertNotNull(preview.lastMessage) // Should have last message since chat has messages
+        assertNotNull(preview.lastMessage)
+        assertEquals(testMessage.id, preview.lastMessage?.id)
+        assertEquals(testMessage.createdAt, preview.lastActivityAt)
     }
 
     @Test
-    fun `empty chat with no messages creates preview with null lastMessage`() {
+    fun `ChatWithParticipants to ChatPreview with null lastMessage has null activity`() {
         // Given
         val chatEntity = testChat.copy(messages = persistentListOf()).toChatEntity()
         val participantEntities = testChat.participants.map { it.toParticipantEntity() }
@@ -284,18 +254,18 @@ class EntityMappersTest {
             with(EntityMappers) { participant.toChatParticipantCrossRef(testChat.id.id.toString()) }
         }
 
-        val chatWithRelations = ChatWithParticipantsAndMessages(
+        val chatWithRelations = ChatWithParticipants(
             chat = chatEntity,
             participants = participantEntities,
             participantCrossRefs = participantCrossRefs,
-            messages = emptyList(),
         )
 
         // When
-        val preview = chatWithRelations.toChatPreview()
+        val preview = chatWithRelations.toChatPreview(null)
 
         // Then
         assertNull(preview.lastMessage)
+        assertNull(preview.lastActivityAt)
     }
 
     @Test

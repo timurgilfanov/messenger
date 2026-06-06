@@ -403,6 +403,7 @@ object MockServerScenarios {
         onlineAt = TEST_ONLINE_AT.toString(),
         isAdmin = false,
         isModerator = false,
+        isCurrentUser = true,
     )
 
     private fun createTestMessage(participant: ParticipantDto) = MessageDto(

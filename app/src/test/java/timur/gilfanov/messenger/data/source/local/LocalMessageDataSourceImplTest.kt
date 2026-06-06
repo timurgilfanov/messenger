@@ -77,8 +77,8 @@ class LocalMessageDataSourceImplTest {
         localMessageDataSource.insertMessage(originalMessage)
 
         val updatedMessage = originalMessage.copy(
-            text = "Updated message text",
-            editedAt = Instant.fromEpochMilliseconds(2000000),
+            text = UPDATED_TEXT,
+            editedAt = Instant.fromEpochMilliseconds(EDITED_AT),
         )
 
         // When
@@ -91,7 +91,7 @@ class LocalMessageDataSourceImplTest {
         // Verify in database
         val storedMessage = databaseRule.messageDao.getMessageById(updatedMessage.id.id.toString())
         assertNotNull(storedMessage)
-        assertEquals("Updated message text", storedMessage.text)
+        assertEquals(UPDATED_TEXT, storedMessage.text)
         assertNotNull(storedMessage.editedAt)
     }
 
@@ -115,8 +115,7 @@ class LocalMessageDataSourceImplTest {
     @Test
     fun `delete non-existent message returns MessageNotFound error`() = runTest {
         // Given
-        val nonExistentMessageId =
-            MessageId(UUID.fromString("99999999-9999-9999-9999-999999999999"))
+        val nonExistentMessageId = MessageId(UUID.fromString(NON_EXISTENT_MESSAGE_ID))
 
         // When
         val result = localMessageDataSource.deleteMessage(messageId = nonExistentMessageId)
@@ -148,8 +147,7 @@ class LocalMessageDataSourceImplTest {
     @Test
     fun `get non-existent message returns MessageNotFound error`() = runTest {
         // Given
-        val nonExistentMessageId =
-            MessageId(UUID.fromString("99999999-9999-9999-9999-999999999999"))
+        val nonExistentMessageId = MessageId(UUID.fromString(NON_EXISTENT_MESSAGE_ID))
 
         // When
         val result = localMessageDataSource.getMessage(nonExistentMessageId)
@@ -162,9 +160,9 @@ class LocalMessageDataSourceImplTest {
     @Test
     fun `insert message with parent successfully stores parent reference`() = runTest {
         // Given
-        val parentMessage = createTestMessage(id = "5555555-5555-5555-5555-555555555555")
+        val parentMessage = createTestMessage(id = PARENT_MESSAGE_ID)
         val replyMessage = createTestMessage(
-            id = "66666666-6666-6666-6666-666666666666",
+            id = REPLY_MESSAGE_ID,
             parentId = parentMessage.id,
         )
 
@@ -196,7 +194,7 @@ class LocalMessageDataSourceImplTest {
         assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
         val invalidDataError0 = result.error
         assertIs<LocalDataSourceError.InvalidData>(invalidDataError0)
-        assertEquals("text", invalidDataError0.field)
+        assertEquals(FIELD_TEXT, invalidDataError0.field)
         assertEquals("Message text cannot be blank", invalidDataError0.reason)
     }
 
@@ -214,7 +212,7 @@ class LocalMessageDataSourceImplTest {
         assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
         val invalidDataError1 = result.error
         assertIs<LocalDataSourceError.InvalidData>(invalidDataError1)
-        assertEquals("text", invalidDataError1.field)
+        assertEquals(FIELD_TEXT, invalidDataError1.field)
         assertTrue(invalidDataError1.reason.contains("cannot exceed"))
     }
 
@@ -223,8 +221,8 @@ class LocalMessageDataSourceImplTest {
         // Given
         setupTestChatAndParticipant()
         val invalidMessage = createTestMessage().copy(
-            createdAt = Instant.fromEpochMilliseconds(2000000),
-            sentAt = Instant.fromEpochMilliseconds(1500000), // sentAt before createdAt
+            createdAt = Instant.fromEpochMilliseconds(INVALID_CREATED_AT),
+            sentAt = Instant.fromEpochMilliseconds(INVALID_SENT_AT), // sentAt before createdAt
         )
 
         // When
@@ -234,7 +232,7 @@ class LocalMessageDataSourceImplTest {
         assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
         val invalidDataError2 = result.error
         assertIs<LocalDataSourceError.InvalidData>(invalidDataError2)
-        assertEquals("timestamps", invalidDataError2.field)
+        assertEquals(FIELD_TIMESTAMPS, invalidDataError2.field)
         assertEquals("Created time cannot be after sent time", invalidDataError2.reason)
     }
 
@@ -254,7 +252,7 @@ class LocalMessageDataSourceImplTest {
         assertIs<ResultWithError.Failure<Message, LocalDataSourceError>>(result)
         val invalidDataError3 = result.error
         assertIs<LocalDataSourceError.InvalidData>(invalidDataError3)
-        assertEquals("text", invalidDataError3.field)
+        assertEquals(FIELD_TEXT, invalidDataError3.field)
     }
 
     // Upsert behavior tests (Room uses OnConflictStrategy.REPLACE)
@@ -267,7 +265,7 @@ class LocalMessageDataSourceImplTest {
         assertIs<ResultWithError.Success<Message, LocalDataSourceError>>(insertResult)
 
         // When - insert same ID with different text
-        val updatedMessage = message.copy(text = "Updated message text via insert")
+        val updatedMessage = message.copy(text = UPDATED_VIA_INSERT_TEXT)
         val result = localMessageDataSource.insertMessage(updatedMessage)
 
         // Then - verify it succeeded and updated
@@ -276,25 +274,25 @@ class LocalMessageDataSourceImplTest {
 
         val storedMessage = databaseRule.messageDao.getMessageById(message.id.id.toString())
         assertNotNull(storedMessage)
-        assertEquals("Updated message text via insert", storedMessage.text)
+        assertEquals(UPDATED_VIA_INSERT_TEXT, storedMessage.text)
     }
 
     private suspend fun setupTestChatAndParticipant() {
         // Insert test chat
         val chatEntity = ChatEntity(
-            id = "11111111-1111-1111-1111-111111111111", // Fixed UUID to match message
+            id = CHAT_ID,
             name = "Test Chat",
             pictureUrl = null,
             rules = "[]",
             unreadMessagesCount = 0,
             lastReadMessageId = null,
-            updatedAt = Instant.fromEpochMilliseconds(1000000),
+            updatedAt = Instant.fromEpochMilliseconds(CHAT_UPDATED_AT),
         )
         databaseRule.chatDao.insertChat(chatEntity)
 
         // Insert test participant
         val participantEntity = ParticipantEntity(
-            id = "22222222-2222-2222-2222-222222222222", // Fixed UUID to match message
+            id = PARTICIPANT_ID,
             name = "Test Sender",
             pictureUrl = null,
             onlineAt = null,
@@ -304,24 +302,25 @@ class LocalMessageDataSourceImplTest {
         // Create association between chat and participant
         databaseRule.chatDao.insertChatParticipantCrossRef(
             timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef(
-                chatId = "11111111-1111-1111-1111-111111111111",
-                participantId = "22222222-2222-2222-2222-222222222222",
-                joinedAt = Instant.fromEpochMilliseconds(900000),
+                chatId = CHAT_ID,
+                participantId = PARTICIPANT_ID,
+                joinedAt = Instant.fromEpochMilliseconds(JOINED_AT),
                 isAdmin = false,
                 isModerator = false,
+                isCurrentUser = true,
             ),
         )
     }
 
     @Suppress("LongParameterList") // Test helper needs flexibility
     private fun createTestMessage(
-        id: String = "33333333-3333-3333-3333-333333333333",
-        chatId: String = "11111111-1111-1111-1111-111111111111",
-        senderId: String = "22222222-2222-2222-2222-222222222222",
+        id: String = MESSAGE_ID,
+        chatId: String = CHAT_ID,
+        senderId: String = PARTICIPANT_ID,
         parentId: MessageId? = null,
         text: String = "Test message content",
-        createdAt: Instant = Instant.fromEpochMilliseconds(1500000),
-        sentAt: Instant? = Instant.fromEpochMilliseconds(1500000),
+        createdAt: Instant = Instant.fromEpochMilliseconds(MESSAGE_TIME),
+        sentAt: Instant? = Instant.fromEpochMilliseconds(MESSAGE_TIME),
         deliveredAt: Instant? = null,
     ) = TextMessage(
         id = MessageId(UUID.fromString(id)),
@@ -330,7 +329,7 @@ class LocalMessageDataSourceImplTest {
             id = ParticipantId(UUID.fromString(senderId)),
             name = "Test Sender",
             pictureUrl = null,
-            joinedAt = Instant.fromEpochMilliseconds(900000),
+            joinedAt = Instant.fromEpochMilliseconds(JOINED_AT),
             onlineAt = null,
             isAdmin = false,
             isModerator = false,
@@ -343,4 +342,30 @@ class LocalMessageDataSourceImplTest {
         deliveredAt = deliveredAt,
         editedAt = null,
     )
+
+    companion object {
+        // Entity ids
+        private const val CHAT_ID = "11111111-1111-1111-1111-111111111111"
+        private const val PARTICIPANT_ID = "22222222-2222-2222-2222-222222222222"
+        private const val MESSAGE_ID = "33333333-3333-3333-3333-333333333333"
+        private const val NON_EXISTENT_MESSAGE_ID = "99999999-9999-9999-9999-999999999999"
+        private const val PARENT_MESSAGE_ID = "5555555-5555-5555-5555-555555555555"
+        private const val REPLY_MESSAGE_ID = "66666666-6666-6666-6666-666666666666"
+
+        // Timestamps (epoch millis)
+        private const val JOINED_AT = 900000L
+        private const val CHAT_UPDATED_AT = 1000000L
+        private const val MESSAGE_TIME = 1500000L
+        private const val EDITED_AT = 2000000L
+        private const val INVALID_CREATED_AT = 2000000L
+        private const val INVALID_SENT_AT = 1500000L
+
+        // Message texts
+        private const val UPDATED_TEXT = "Updated message text"
+        private const val UPDATED_VIA_INSERT_TEXT = "Updated message text via insert"
+
+        // Validation error field names
+        private const val FIELD_TEXT = "text"
+        private const val FIELD_TIMESTAMPS = "timestamps"
+    }
 }

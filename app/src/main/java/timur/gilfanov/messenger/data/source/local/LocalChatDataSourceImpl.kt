@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -15,6 +16,8 @@ import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
+import timur.gilfanov.messenger.data.source.local.database.entity.MessageEntity
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -120,12 +123,25 @@ class LocalChatDataSourceImpl @Inject constructor(
         combine(
             chatDao.flowAllChatsWithParticipants(),
             messageDao.flowLastMessagesPerChat(),
-        ) { _, _ -> }
-            .map {
-                val result: ResultWithError<List<ChatPreview>, LocalDataSourceError> =
-                    ResultWithError.Success(readChatPreviews())
-                result
-            }
+        ) { chatsWithParticipants, lastMessages ->
+            val lastMessageByChatId = lastMessages.associateBy { it.chatId }
+            val result: ResultWithError<List<ChatPreview>, LocalDataSourceError>? =
+                if (hasTornLastMessage(chatsWithParticipants, lastMessageByChatId)) {
+                    // The two flows are invalidated independently, so combine can transiently
+                    // pair a fresh last-message with a stale participant set that does not yet
+                    // contain its sender. That pair never existed as a committed database
+                    // state; skip it and wait for the next, consistent emission.
+                    null
+                } else {
+                    val chatPreviews = chatsWithParticipants.map { chatWithParticipants ->
+                        val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
+                        with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
+                    }
+                    ResultWithError.Success(chatPreviews)
+                }
+            result
+        }
+            .filterNotNull()
             .distinctUntilChanged()
             .catch { e ->
                 when (e) {
@@ -137,13 +153,13 @@ class LocalChatDataSourceImpl @Inject constructor(
                 }
             }
 
-    private suspend fun readChatPreviews(): List<ChatPreview> = database.withTransaction {
-        val chatsWithParticipants = chatDao.getAllChatsWithParticipants()
-        val lastMessageByChatId = messageDao.getLastMessagesPerChat().associateBy { it.chatId }
-        chatsWithParticipants.map { chatWithParticipants ->
-            val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
-            with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
-        }
+    private fun hasTornLastMessage(
+        chatsWithParticipants: List<ChatWithParticipants>,
+        lastMessageByChatId: Map<String, MessageEntity>,
+    ): Boolean = chatsWithParticipants.any { chatWithParticipants ->
+        val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
+        lastMessage != null &&
+            chatWithParticipants.participants.none { it.id == lastMessage.senderId }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

@@ -45,10 +45,6 @@ interface ChatDao {
     fun flowAllChatsWithParticipants(): Flow<List<ChatWithParticipants>>
 
     @Transaction
-    @Query("SELECT * FROM chats ORDER BY updatedAt DESC")
-    suspend fun getAllChatsWithParticipants(): List<ChatWithParticipants>
-
-    @Transaction
     @Query("SELECT * FROM chats WHERE id = :chatId")
     fun flowChatWithParticipants(chatId: String): Flow<ChatWithParticipants?>
 

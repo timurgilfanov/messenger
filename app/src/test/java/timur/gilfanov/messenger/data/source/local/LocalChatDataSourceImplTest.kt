@@ -330,47 +330,13 @@ class LocalChatDataSourceImplTest {
             val chat = createTestChat()
             localChatDataSource.insertChat(chat)
 
-            // A second chat introduces a globally-known participant that is NOT a member of `chat`,
-            // so the seeded message below is a real source-of-truth orphan, not a missing FK row.
-            val outsiderId =
-                ParticipantId(UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc"))
-            val otherChat = DomainTestFixtures.createTestChat(
-                id = ChatId(UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd")),
-                name = "Other Chat",
-                participants = setOf(
-                    DomainTestFixtures.createTestParticipant(
-                        id = outsiderId,
-                        name = "Outsider",
-                        joinedAt = Instant.fromEpochMilliseconds(1200000),
-                        onlineAt = null,
-                        isCurrentUser = true,
-                    ),
-                    DomainTestFixtures.createTestParticipant(
-                        id = ParticipantId(
-                            UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-                        ),
-                        name = "Outsider 2",
-                        joinedAt = Instant.fromEpochMilliseconds(1300000),
-                        onlineAt = null,
-                    ),
-                ),
-            )
-            localChatDataSource.insertChat(otherChat)
+            // Seed a real source-of-truth orphan: a message in `chat` whose sender is a
+            // globally-known participant that is NOT a member of `chat` (not a missing FK row).
+            val outsiderId = seedOrphanMessageInChat(chat)
 
-            // Seed the orphan: a message in `chat` sent by the outsider.
-            val orphanSender = otherChat.participants.first { it.id == outsiderId }
-            val orphanMessage = DomainTestFixtures.createTestTextMessage(
-                id = MessageId(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff")),
-                text = "orphan",
-                sender = orphanSender,
-                recipient = chat.id,
-                createdAt = Instant.fromEpochMilliseconds(2000000),
-            )
-            databaseRule.messageDao.insertMessage(
-                with(EntityMappers) { orphanMessage.toMessageEntity() },
-            )
-
-            // When & Then - flow stays alive and surfaces the orphan as a handled Failure
+            // When & Then - flow surfaces the orphan as a handled Failure, then stays alive:
+            // once the orphan is repaired (the sender becomes a participant of `chat`) a
+            // subsequent Success must be emitted on the same subscription.
             localChatDataSource.flowChatUpdates(chat.id).test {
                 val result = awaitItem()
                 assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(result)
@@ -379,6 +345,28 @@ class LocalChatDataSourceImplTest {
                 assertEquals("messages", error.field)
                 assertTrue(error.reason.contains(outsiderId.id.toString()))
                 assertTrue(error.reason.contains(chat.id.id.toString()))
+
+                // Repair the orphan: add the outsider as a (non-current-user) participant of
+                // `chat`, keeping exactly one current user so the only change is the now-valid
+                // sender. The flow must not have terminated on the Failure above.
+                val repairedChat = chat.copy(
+                    participants = chat.participants.add(
+                        DomainTestFixtures.createTestParticipant(
+                            id = outsiderId,
+                            name = "Outsider",
+                            joinedAt = Instant.fromEpochMilliseconds(1200000),
+                            onlineAt = null,
+                            isCurrentUser = false,
+                        ),
+                    ),
+                )
+                localChatDataSource.updateChat(repairedChat)
+
+                val recovered = awaitItem()
+                assertIs<ResultWithError.Success<Chat, LocalDataSourceError>>(recovered)
+                assertEquals(chat.id, recovered.data.id)
+                assertEquals(1, recovered.data.messages.size)
+                assertEquals(outsiderId, recovered.data.messages.first().sender.id)
             }
         }
 
@@ -512,6 +500,43 @@ class LocalChatDataSourceImplTest {
         assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(result)
         // Note: update doesn't check existence first, so this might pass
         // If it passes, the test documents actual behavior
+    }
+
+    private suspend fun seedOrphanMessageInChat(chat: Chat): ParticipantId {
+        val outsiderId = ParticipantId(UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc"))
+        val otherChat = DomainTestFixtures.createTestChat(
+            id = ChatId(UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd")),
+            name = "Other Chat",
+            participants = setOf(
+                DomainTestFixtures.createTestParticipant(
+                    id = outsiderId,
+                    name = "Outsider",
+                    joinedAt = Instant.fromEpochMilliseconds(1200000),
+                    onlineAt = null,
+                    isCurrentUser = true,
+                ),
+                DomainTestFixtures.createTestParticipant(
+                    id = ParticipantId(UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")),
+                    name = "Outsider 2",
+                    joinedAt = Instant.fromEpochMilliseconds(1300000),
+                    onlineAt = null,
+                ),
+            ),
+        )
+        localChatDataSource.insertChat(otherChat)
+
+        val orphanSender = otherChat.participants.first { it.id == outsiderId }
+        val orphanMessage = DomainTestFixtures.createTestTextMessage(
+            id = MessageId(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff")),
+            text = "orphan",
+            sender = orphanSender,
+            recipient = chat.id,
+            createdAt = Instant.fromEpochMilliseconds(2000000),
+        )
+        databaseRule.messageDao.insertMessage(
+            with(EntityMappers) { orphanMessage.toMessageEntity() },
+        )
+        return outsiderId
     }
 
     private fun createTestChat(

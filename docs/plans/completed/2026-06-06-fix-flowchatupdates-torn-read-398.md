@@ -61,5 +61,5 @@ This is consistent with the persistence-boundary fail-fast contract (CLAUDE.md):
 
 ### Task 3: Update documentation
 
-- [ ] no README/CLAUDE.md change expected (behavior fix following the existing #399 verify-path pattern, no new public API); revisit only if the discriminator warrants a shared note
-- [ ] move this plan to `docs/plans/completed/`
+- [x] no README/CLAUDE.md change expected (behavior fix following the existing #399 verify-path pattern, no new public API); revisit only if the discriminator warrants a shared note
+- [x] move this plan to `docs/plans/completed/`

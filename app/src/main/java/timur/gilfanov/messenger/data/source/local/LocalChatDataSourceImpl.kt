@@ -14,7 +14,9 @@ import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
+import timur.gilfanov.messenger.data.source.local.database.entity.MessageEntity
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.chat.Chat
@@ -138,6 +140,32 @@ class LocalChatDataSourceImpl @Inject constructor(
                 }
             }
 
+    /**
+     * Emits the chat and its last message whenever either changes.
+     *
+     * This joins two independently-invalidated Room flows: the outer captured participant snapshot
+     * ([ChatDao.flowChatWithParticipants]) and the inner last-message flow
+     * ([MessageDao.flowLastMessageInChat]). After a sync transaction that atomically adds a
+     * participant and a message from that participant, the inner flow can re-emit a fresh
+     * last-message against a still-stale captured participant set, making the sender appear to be a
+     * non-participant. This has two indistinguishable causes at flow level: a transient torn read
+     * (the committed DB is actually consistent) or a real source-of-truth orphan.
+     *
+     * To discriminate without silencing real orphans:
+     * - **Fast path**: when the captured participant snapshot already contains the last message's
+     *   sender, map directly with no extra DB read.
+     * - **Verify path**: when an apparent orphan is seen, [readChatUpdateConsistently] re-reads
+     *   participants and last message inside one `withTransaction`. If the orphan is gone it was a
+     *   transient torn read and emits [ResultWithError.Success]; if it persists it is a real
+     *   inconsistency and emits a handled [LocalDataSourceError.InvalidData] [ResultWithError.Failure],
+     *   keeping the flow alive and the error visible. Escalation (not a silent skip) is correct
+     *   because a real orphan would otherwise blank the chat forever.
+     *
+     * Note: with a single real Room DB the verify path's transient-recovery branch is not
+     * deterministically forceable through this public flow — a genuinely consistent DB always
+     * takes the fast path, and the only way to observe a persisting orphan is to seed a real one,
+     * which escalates. The recovery branch is therefore not unit-forceable here.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun flowChatUpdates(
         chatId: ChatId,
@@ -167,11 +195,16 @@ class LocalChatDataSourceImpl @Inject constructor(
                     messageDao.flowLastMessageInChat(chatId.id.toString())
                         .distinctUntilChanged()
                         .map { lastMessageEntity ->
-                            val lastMessages = listOfNotNull(lastMessageEntity)
-                            val chat = with(EntityMappers) {
-                                chatWithParticipants.toChat(lastMessages)
+                            if (findOrphanLastMessage(chatWithParticipants, lastMessageEntity)
+                                != null
+                            ) {
+                                readChatUpdateConsistently(chatId.id.toString())
+                            } else {
+                                val chat = with(EntityMappers) {
+                                    chatWithParticipants.toChat(listOfNotNull(lastMessageEntity))
+                                }
+                                ResultWithError.Success(chat)
                             }
-                            ResultWithError.Success(chat)
                         }
                 }
             }
@@ -184,6 +217,48 @@ class LocalChatDataSourceImpl @Inject constructor(
                     else -> throw e
                 }
             }
+
+    /**
+     * Returns [lastMessage] when it is non-null and its sender is absent from
+     * [chatWithParticipants]'s captured participant set (an apparent orphan), else null.
+     */
+    private fun findOrphanLastMessage(
+        chatWithParticipants: ChatWithParticipants,
+        lastMessage: MessageEntity?,
+    ): MessageEntity? = lastMessage?.takeIf { message ->
+        chatWithParticipants.participants.none { it.id == message.senderId }
+    }
+
+    /**
+     * Re-reads participants and last message for [chatId] inside a single committed transaction to
+     * discriminate a transient torn read from a real source-of-truth orphan. Emits
+     * [LocalDataSourceError.InvalidData] only when the orphan persists against the consistent
+     * snapshot; otherwise builds the chat from the re-read snapshot.
+     */
+    private suspend fun readChatUpdateConsistently(
+        chatId: String,
+    ): ResultWithError<Chat, LocalDataSourceError> = database.withTransaction {
+        val chatWithParticipants = chatDao.getChatWithParticipants(chatId)
+            ?: return@withTransaction ResultWithError.Failure(
+                LocalDataSourceError.ChatNotFound,
+            )
+        val lastMessage = messageDao.getLastMessageInChat(chatId)
+        val orphan = findOrphanLastMessage(chatWithParticipants, lastMessage)
+        if (orphan != null) {
+            ResultWithError.Failure(
+                LocalDataSourceError.InvalidData(
+                    "messages",
+                    "Sender ${orphan.senderId} of message ${orphan.id} is not a participant " +
+                        "of chat $chatId",
+                ),
+            )
+        } else {
+            val chat = with(EntityMappers) {
+                chatWithParticipants.toChat(listOfNotNull(lastMessage))
+            }
+            ResultWithError.Success(chat)
+        }
+    }
 
     private fun validateChatForInsert(chat: Chat): LocalDataSourceError? = when {
         chat.name.isBlank() ->

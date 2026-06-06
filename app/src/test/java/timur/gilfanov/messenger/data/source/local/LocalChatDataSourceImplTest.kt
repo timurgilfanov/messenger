@@ -323,6 +323,91 @@ class LocalChatDataSourceImplTest {
             }
         }
 
+    @Test
+    fun `flowChatUpdates escalates to InvalidData when last message sender is not a participant`() =
+        runTest {
+            // Given - target chat with current user + another participant
+            val chat = createTestChat()
+            localChatDataSource.insertChat(chat)
+
+            // A second chat introduces a globally-known participant that is NOT a member of `chat`,
+            // so the seeded message below is a real source-of-truth orphan, not a missing FK row.
+            val outsiderId =
+                ParticipantId(UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc"))
+            val otherChat = DomainTestFixtures.createTestChat(
+                id = ChatId(UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd")),
+                name = "Other Chat",
+                participants = setOf(
+                    DomainTestFixtures.createTestParticipant(
+                        id = outsiderId,
+                        name = "Outsider",
+                        joinedAt = Instant.fromEpochMilliseconds(1200000),
+                        onlineAt = null,
+                        isCurrentUser = true,
+                    ),
+                    DomainTestFixtures.createTestParticipant(
+                        id = ParticipantId(
+                            UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+                        ),
+                        name = "Outsider 2",
+                        joinedAt = Instant.fromEpochMilliseconds(1300000),
+                        onlineAt = null,
+                    ),
+                ),
+            )
+            localChatDataSource.insertChat(otherChat)
+
+            // Seed the orphan: a message in `chat` sent by the outsider.
+            val orphanSender = otherChat.participants.first { it.id == outsiderId }
+            val orphanMessage = DomainTestFixtures.createTestTextMessage(
+                id = MessageId(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff")),
+                text = "orphan",
+                sender = orphanSender,
+                recipient = chat.id,
+                createdAt = Instant.fromEpochMilliseconds(2000000),
+            )
+            databaseRule.messageDao.insertMessage(
+                with(EntityMappers) { orphanMessage.toMessageEntity() },
+            )
+
+            // When & Then - flow stays alive and surfaces the orphan as a handled Failure
+            localChatDataSource.flowChatUpdates(chat.id).test {
+                val result = awaitItem()
+                assertIs<ResultWithError.Failure<Chat, LocalDataSourceError>>(result)
+                val error = result.error
+                assertIs<LocalDataSourceError.InvalidData>(error)
+                assertEquals("messages", error.field)
+            }
+        }
+
+    @Test
+    fun `flowChatUpdates emits Success when last message sender is a participant`() = runTest {
+        // Given - chat whose last message is sent by an actual participant (fast path)
+        val chat = createTestChat()
+        localChatDataSource.insertChat(chat)
+        val sender = chat.participants.first { it.isCurrentUser }
+        val message = DomainTestFixtures.createTestTextMessage(
+            id = MessageId(UUID.fromString("33333333-cccc-cccc-cccc-cccccccccccc")),
+            text = "Hello",
+            sender = sender,
+            recipient = chat.id,
+            createdAt = Instant.fromEpochMilliseconds(1500000),
+        )
+        databaseRule.messageDao.insertMessage(
+            with(EntityMappers) { message.toMessageEntity() },
+        )
+
+        // When & Then
+        localChatDataSource.flowChatUpdates(chat.id).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Chat, LocalDataSourceError>>(result)
+            val emittedChat = result.data
+            assertEquals(chat.id, emittedChat.id)
+            assertEquals(1, emittedChat.messages.size)
+            assertEquals(sender.id, emittedChat.messages.first().sender.id)
+        }
+    }
+
     // Validation error tests
     @Test
     fun `insert chat with blank name returns InvalidData error`() = runTest {

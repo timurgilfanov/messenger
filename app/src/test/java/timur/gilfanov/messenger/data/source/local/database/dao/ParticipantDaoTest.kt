@@ -156,7 +156,7 @@ class ParticipantDaoTest {
         chatDao.insertChat(chat)
         chatDao.insertChatParticipantCrossRef(crossRef)
 
-        val chatWithDetails = chatDao.getChatWithParticipantsAndMessages(chatId)
+        val chatWithDetails = chatDao.getChatWithParticipants(chatId)
 
         // Then
         assertNotNull(chatWithDetails)
@@ -200,7 +200,7 @@ class ParticipantDaoTest {
         chatDao.insertChat(chat)
         chatDao.insertChatParticipantCrossRef(crossRef)
 
-        val chatWithDetails = chatDao.getChatWithParticipantsAndMessages(chatId)
+        val chatWithDetails = chatDao.getChatWithParticipants(chatId)
 
         // Then
         assertNotNull(chatWithDetails)

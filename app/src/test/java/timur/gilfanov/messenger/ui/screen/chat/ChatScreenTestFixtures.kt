@@ -30,6 +30,7 @@ object ChatScreenTestFixtures {
         onlineAt: Instant? = null,
         isAdmin: Boolean = false,
         isModerator: Boolean = false,
+        isCurrentUser: Boolean = false,
     ) = Participant(
         id = id,
         name = name,
@@ -38,6 +39,7 @@ object ChatScreenTestFixtures {
         onlineAt = onlineAt,
         isAdmin = isAdmin,
         isModerator = isModerator,
+        isCurrentUser = isCurrentUser,
     )
 
     fun createParticipantUiModel(
@@ -106,6 +108,7 @@ object ChatScreenTestFixtures {
         val currentUser = createParticipant(
             id = defaultCurrentUserId,
             name = "You",
+            isCurrentUser = true,
         )
         return alice to currentUser
     }

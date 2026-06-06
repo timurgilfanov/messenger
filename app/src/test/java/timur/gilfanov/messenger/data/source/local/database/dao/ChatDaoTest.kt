@@ -94,7 +94,7 @@ class ChatDaoTest {
     }
 
     @Test
-    fun `flow chat with participants and messages emits updates`() = runTest {
+    fun `flow chat with participants emits updates`() = runTest {
         // Given
         val chatId = UUID.randomUUID().toString()
         val chat = createTestChat(chatId)
@@ -102,16 +102,50 @@ class ChatDaoTest {
 
         // When
         chatDao.insertChat(chat)
-        val initialResult = chatDao.flowChatWithParticipantsAndMessages(chatId).first()
+        val initialResult = chatDao.flowChatWithParticipants(chatId).first()
 
         chatDao.updateChat(updatedChat)
-        val updatedResult = chatDao.flowChatWithParticipantsAndMessages(chatId).first()
+        val updatedResult = chatDao.flowChatWithParticipants(chatId).first()
 
         // Then
         assertNotNull(initialResult)
         assertEquals(chat.name, initialResult.chat.name)
         assertNotNull(updatedResult)
         assertEquals("Updated Name", updatedResult.chat.name)
+    }
+
+    @Test
+    fun `flow all chats with participants loads participants without messages`() = runTest {
+        // Given
+        val chatId = UUID.randomUUID().toString()
+        val participantId = UUID.randomUUID().toString()
+        val messageId = UUID.randomUUID().toString()
+
+        val chat = createTestChat(chatId)
+        val participant = createTestParticipant(participantId)
+        val message = createTestMessage(messageId, chatId, participantId)
+        val crossRef = ChatParticipantCrossRef(
+            chatId = chatId,
+            participantId = participantId,
+            joinedAt = Instant.fromEpochMilliseconds(1000),
+            isAdmin = false,
+            isModerator = false,
+        )
+
+        // When
+        participantDao.insertParticipant(participant)
+        chatDao.insertChat(chat)
+        messageDao.insertMessage(message)
+        chatDao.insertChatParticipantCrossRef(crossRef)
+
+        val result = chatDao.flowAllChatsWithParticipants().first()
+
+        // Then
+        assertEquals(1, result.size)
+        val chatWithParticipants = result.first()
+        assertEquals(chatId, chatWithParticipants.chat.id)
+        assertEquals(1, chatWithParticipants.participants.size)
+        assertEquals(participantId, chatWithParticipants.participants.first().id)
     }
 
     @Test
@@ -142,15 +176,13 @@ class ChatDaoTest {
     }
 
     @Test
-    fun `chat with participants and messages returns complete data`() = runTest {
+    fun `chat with participants returns complete data`() = runTest {
         // Given
         val chatId = UUID.randomUUID().toString()
         val participantId = UUID.randomUUID().toString()
-        val messageId = UUID.randomUUID().toString()
 
         val chat = createTestChat(chatId)
         val participant = createTestParticipant(participantId)
-        val message = createTestMessage(messageId, chatId, participantId)
         val crossRef = ChatParticipantCrossRef(
             chatId = chatId,
             participantId = participantId,
@@ -162,17 +194,14 @@ class ChatDaoTest {
         // When
         participantDao.insertParticipant(participant)
         chatDao.insertChat(chat)
-        messageDao.insertMessage(message)
         chatDao.insertChatParticipantCrossRef(crossRef)
 
-        val result = chatDao.getChatWithParticipantsAndMessages(chatId)
+        val result = chatDao.getChatWithParticipants(chatId)
 
         // Then
         assertNotNull(result)
         assertEquals(1, result.participants.size)
         assertEquals(participantId, result.participants.first().id)
-        assertEquals(1, result.messages.size)
-        assertEquals(messageId, result.messages.first().id)
     }
 
     @Test

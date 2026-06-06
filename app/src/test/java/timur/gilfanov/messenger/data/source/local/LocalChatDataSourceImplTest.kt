@@ -377,6 +377,8 @@ class LocalChatDataSourceImplTest {
                 val error = result.error
                 assertIs<LocalDataSourceError.InvalidData>(error)
                 assertEquals("messages", error.field)
+                assertTrue(error.reason.contains(outsiderId.id.toString()))
+                assertTrue(error.reason.contains(chat.id.id.toString()))
             }
         }
 

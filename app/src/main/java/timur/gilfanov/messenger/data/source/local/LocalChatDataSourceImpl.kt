@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -125,23 +124,21 @@ class LocalChatDataSourceImpl @Inject constructor(
             messageDao.flowLastMessagesPerChat(),
         ) { chatsWithParticipants, lastMessages ->
             val lastMessageByChatId = lastMessages.associateBy { it.chatId }
-            val result: ResultWithError<List<ChatPreview>, LocalDataSourceError>? =
-                if (hasTornLastMessage(chatsWithParticipants, lastMessageByChatId)) {
+            val result: ResultWithError<List<ChatPreview>, LocalDataSourceError> =
+                if (findOrphanLastMessage(chatsWithParticipants, lastMessageByChatId) != null) {
                     // The two flows are invalidated independently, so combine can transiently
                     // pair a fresh last-message with a stale participant set that does not yet
-                    // contain its sender. That pair never existed as a committed database
-                    // state; skip it and wait for the next, consistent emission.
-                    null
+                    // contain its sender. That apparent inconsistency may be a transient torn
+                    // pair or a genuine source-of-truth violation; re-read a single committed
+                    // snapshot to tell them apart.
+                    readChatPreviewsConsistently()
                 } else {
-                    val chatPreviews = chatsWithParticipants.map { chatWithParticipants ->
-                        val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
-                        with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
-                    }
-                    ResultWithError.Success(chatPreviews)
+                    ResultWithError.Success(
+                        buildChatPreviews(chatsWithParticipants, lastMessageByChatId),
+                    )
                 }
             result
         }
-            .filterNotNull()
             .distinctUntilChanged()
             .catch { e ->
                 when (e) {
@@ -153,13 +150,45 @@ class LocalChatDataSourceImpl @Inject constructor(
                 }
             }
 
-    private fun hasTornLastMessage(
+    private suspend fun readChatPreviewsConsistently() = database.withTransaction {
+        val chatsWithParticipants = chatDao.getAllChatsWithParticipants()
+        val lastMessageByChatId = messageDao.getLastMessagesPerChat().associateBy { it.chatId }
+        val orphan = findOrphanLastMessage(chatsWithParticipants, lastMessageByChatId)
+        val result: ResultWithError<List<ChatPreview>, LocalDataSourceError> =
+            if (orphan != null) {
+                // The orphan persists in a single committed snapshot, so this is a real
+                // source-of-truth inconsistency rather than a transient torn read.
+                ResultWithError.Failure(
+                    LocalDataSourceError.InvalidData(
+                        "messages",
+                        "Sender ${orphan.senderId} of message ${orphan.id} is not a " +
+                            "participant of chat ${orphan.chatId}",
+                    ),
+                )
+            } else {
+                ResultWithError.Success(
+                    buildChatPreviews(chatsWithParticipants, lastMessageByChatId),
+                )
+            }
+        result
+    }
+
+    private fun buildChatPreviews(
         chatsWithParticipants: List<ChatWithParticipants>,
         lastMessageByChatId: Map<String, MessageEntity>,
-    ): Boolean = chatsWithParticipants.any { chatWithParticipants ->
+    ): List<ChatPreview> = chatsWithParticipants.map { chatWithParticipants ->
         val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
-        lastMessage != null &&
-            chatWithParticipants.participants.none { it.id == lastMessage.senderId }
+        with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
+    }
+
+    private fun findOrphanLastMessage(
+        chatsWithParticipants: List<ChatWithParticipants>,
+        lastMessageByChatId: Map<String, MessageEntity>,
+    ): MessageEntity? = chatsWithParticipants.firstNotNullOfOrNull { chatWithParticipants ->
+        val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
+        lastMessage?.takeIf { message ->
+            chatWithParticipants.participants.none { it.id == message.senderId }
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

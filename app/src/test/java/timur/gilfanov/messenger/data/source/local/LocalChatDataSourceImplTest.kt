@@ -368,6 +368,48 @@ class LocalChatDataSourceImplTest {
     }
 
     @Test
+    fun `flowChatList escalates when last message sender is not a chat participant`() = runTest {
+        // Given - a chat whose last message is authored by someone who is not a member of it.
+        // The sender exists globally (a member of another chat), so this is a genuine
+        // source-of-truth inconsistency that persists in a committed snapshot, not a transient
+        // torn read between the two combined flows.
+        val chat = createTestChat(id = "77777777-7777-7777-7777-777777777777", name = "Chat 1")
+        val otherChat = DomainTestFixtures.createTestChat(
+            id = ChatId(UUID.fromString("88888888-8888-8888-8888-888888888888")),
+            name = "Other Chat",
+            participants = setOf(
+                DomainTestFixtures.createTestParticipant(
+                    id = ParticipantId(UUID.fromString("99999999-9999-9999-9999-999999999999")),
+                    name = "Outsider",
+                    joinedAt = Instant.fromEpochMilliseconds(1000000),
+                    onlineAt = null,
+                    isCurrentUser = true,
+                ),
+            ),
+        )
+        localChatDataSource.insertChat(chat)
+        localChatDataSource.insertChat(otherChat)
+
+        val orphanMessage = DomainTestFixtures.createTestTextMessage(
+            id = MessageId(UUID.fromString("33333333-cccc-cccc-cccc-cccccccccccc")),
+            text = "From an outsider",
+            sender = otherChat.participants.first(),
+            recipient = chat.id,
+            createdAt = Instant.fromEpochMilliseconds(1000),
+        )
+        databaseRule.messageDao.insertMessages(
+            with(EntityMappers) { listOf(orphanMessage.toMessageEntity()) },
+        )
+
+        // When & Then - the inconsistency is escalated as a handled error, not silently dropped
+        localChatDataSource.flowChatList().test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<List<ChatPreview>, LocalDataSourceError>>(result)
+            assertIs<LocalDataSourceError.InvalidData>(result.error)
+        }
+    }
+
+    @Test
     fun `flowChatUpdates emits updates for specific chat`() = runTest {
         // Given
         val chat = createTestChat()

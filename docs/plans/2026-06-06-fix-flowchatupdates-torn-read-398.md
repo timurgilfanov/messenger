@@ -55,9 +55,9 @@ This is consistent with the persistence-boundary fail-fast contract (CLAUDE.md):
 
 ### Task 2: Verify acceptance criteria
 
-- [ ] run `./gradlew ktlintFormat detekt --auto-correct`
-- [ ] run `./gradlew :app:testMockDebugUnitTest --tests "*LocalChatDataSourceImplTest"`
-- [ ] verify the touched flow keeps 80%+ coverage (fast path, verify-path escalation, `ChatNotFound`, exactly-one-current-user branches all exercised)
+- [x] run `./gradlew ktlintFormat detekt --auto-correct`
+- [x] run `./gradlew :app:testMockDebugUnitTest --tests "*LocalChatDataSourceImplTest"`
+- [x] verify the touched flow keeps 80%+ coverage (fast path, verify-path escalation, `ChatNotFound`, exactly-one-current-user branches all exercised) — `LocalChatDataSourceImpl` line coverage 86.2% via koverXmlReportMockDebug; all listed branches exercised. Only uncovered lines are the documented not-unit-forceable verify-path transient-recovery branch.
 
 ### Task 3: Update documentation
 

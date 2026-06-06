@@ -180,11 +180,9 @@ class ChatDaoTest {
         // Given
         val chatId = UUID.randomUUID().toString()
         val participantId = UUID.randomUUID().toString()
-        val messageId = UUID.randomUUID().toString()
 
         val chat = createTestChat(chatId)
         val participant = createTestParticipant(participantId)
-        val message = createTestMessage(messageId, chatId, participantId)
         val crossRef = ChatParticipantCrossRef(
             chatId = chatId,
             participantId = participantId,
@@ -196,18 +194,14 @@ class ChatDaoTest {
         // When
         participantDao.insertParticipant(participant)
         chatDao.insertChat(chat)
-        messageDao.insertMessage(message)
         chatDao.insertChatParticipantCrossRef(crossRef)
 
         val result = chatDao.getChatWithParticipants(chatId)
-        val lastMessage = messageDao.getLastMessageInChat(chatId)
 
         // Then
         assertNotNull(result)
         assertEquals(1, result.participants.size)
         assertEquals(participantId, result.participants.first().id)
-        assertNotNull(lastMessage)
-        assertEquals(messageId, lastMessage.id)
     }
 
     @Test

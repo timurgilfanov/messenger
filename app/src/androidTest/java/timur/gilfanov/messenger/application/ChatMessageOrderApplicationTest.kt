@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.application
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -122,6 +123,10 @@ class ChatMessageOrderApplicationTest {
             waitUntilExactlyOneExists(hasText(oldestVisibleText), timeoutMillis = 5_000L)
             waitUntilExactlyOneExists(hasText(middleVisibleText), timeoutMillis = 5_000L)
             waitUntilExactlyOneExists(hasText(newestVisibleText), timeoutMillis = 5_000L)
+
+            onNodeWithText(oldestVisibleText).assertIsDisplayed()
+            onNodeWithText(middleVisibleText).assertIsDisplayed()
+            onNodeWithText(newestVisibleText).assertIsDisplayed()
 
             val oldestTop = onNodeWithText(oldestVisibleText).getBoundsInRoot().top
             val middleTop = onNodeWithText(middleVisibleText).getBoundsInRoot().top

@@ -1,6 +1,7 @@
 package timur.gilfanov.messenger.application
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -132,6 +133,10 @@ class ChatLiveAppendOrderApplicationTest {
             onNodeWithTag("message_input").performTextInput(replyText)
             onNodeWithTag("send_button").performClick()
             waitUntilExactlyOneExists(hasText(replyText), timeoutMillis = 5_000L)
+
+            onNodeWithText(BOB_TEXT_1).assertIsDisplayed()
+            onNodeWithText(receivedText).assertIsDisplayed()
+            onNodeWithText(replyText).assertIsDisplayed()
 
             val seededTop = onNodeWithText(BOB_TEXT_1).getBoundsInRoot().top
             val receivedTop = onNodeWithText(receivedText).getBoundsInRoot().top

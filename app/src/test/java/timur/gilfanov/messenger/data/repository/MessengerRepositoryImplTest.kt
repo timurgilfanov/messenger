@@ -759,6 +759,40 @@ class MessengerRepositoryImplTest {
     }
 
     @Test
+    fun `flowChatList maps InvalidData to handled UnknownError without crashing`() = runTest {
+        // Given: local data source surfaces an orphan-message inconsistency as InvalidData
+        localDataSource.simulateFlowChatListFailure(
+            true,
+            LocalDataSourceError.InvalidData(
+                field = "messages",
+                reason = "Sender s1 of message m1 is not a participant of chat c1",
+            ),
+        )
+
+        repository = repositoryImpl(backgroundScope)
+
+        // When & Then: it is surfaced as a handled LocalOperationFailed, not a thrown exception
+        repository.flowChatList().test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Failure<List<ChatPreview>, FlowChatListRepositoryError>>(
+                result,
+            )
+            val error = result.error
+            assertIs<FlowChatListRepositoryError.LocalOperationFailed>(error)
+            val localError = error.error
+            assertIs<LocalStorageError.UnknownError>(localError)
+            assertIs<IllegalStateException>(localError.cause)
+            assertEquals(
+                "messages: Sender s1 of message m1 is not a participant of chat c1",
+                localError.cause.message,
+            )
+        }
+
+        // Cleanup
+        localDataSource.simulateFlowChatListFailure(false)
+    }
+
+    @Test
     fun `sendMessage should handle network failures`() = runTest {
         localDataSource.insertChat(testChat)
         remoteDataSource.setConnectionState(false)

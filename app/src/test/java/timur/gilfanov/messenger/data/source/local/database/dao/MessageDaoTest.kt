@@ -205,8 +205,8 @@ class MessageDaoTest {
         assertNotNull(result)
         assertEquals(higherIdMessage.id, result.id)
     }
-    
-    @Test       
+
+    @Test
     fun `flow last messages per chat returns one latest message per chat`() = runTest {
         // Given
         val chatId1 = UUID.randomUUID().toString()

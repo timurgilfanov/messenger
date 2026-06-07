@@ -9,7 +9,6 @@ import kotlinx.serialization.json.Json
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatParticipantCrossRef
 import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
-import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
 import timur.gilfanov.messenger.data.source.local.database.entity.MessageEntity
 import timur.gilfanov.messenger.data.source.local.database.entity.MessageType
 import timur.gilfanov.messenger.data.source.local.database.entity.ParticipantEntity
@@ -138,30 +137,29 @@ object EntityMappers {
     )
 
     /**
-     * Maps ChatWithParticipantsAndMessages to ChatPreview domain model.
+     * Maps ChatWithParticipants to ChatPreview domain model.
+     * Accepts the single most-recent message of the chat (or null for an empty chat);
+     * it is loaded separately rather than via an eager message relation.
      */
-    fun ChatWithParticipantsAndMessages.toChatPreview(): ChatPreview {
-        val lastMessage = messages.maxByOrNull { it.createdAt }
-        return ChatPreview(
-            id = ChatId(UUID.fromString(chat.id)),
-            participants = participants.map { participant ->
-                val crossRef = participantCrossRefs.find { it.participantId == participant.id }
-                    ?: error("No cross-reference found for participant ${participant.id}")
-                participant.toParticipant(crossRef)
-            }.toImmutableSet(),
-            name = chat.name,
-            pictureUrl = chat.pictureUrl,
-            rules = chat.rules.let { rulesJson ->
-                json.decodeFromString<List<RuleDto>>(rulesJson).map {
-                    it.toDomain()
-                }.toImmutableSet()
-            },
-            unreadMessagesCount = chat.unreadMessagesCount,
-            lastReadMessageId = chat.lastReadMessageId?.let { MessageId(UUID.fromString(it)) },
-            lastMessage = lastMessage?.toMessage(participants, participantCrossRefs),
-            lastActivityAt = lastMessage?.createdAt,
-        )
-    }
+    fun ChatWithParticipants.toChatPreview(lastMessage: MessageEntity?): ChatPreview = ChatPreview(
+        id = ChatId(UUID.fromString(chat.id)),
+        participants = participants.map { participant ->
+            val crossRef = participantCrossRefs.find { it.participantId == participant.id }
+                ?: error("No cross-reference found for participant ${participant.id}")
+            participant.toParticipant(crossRef)
+        }.toImmutableSet(),
+        name = chat.name,
+        pictureUrl = chat.pictureUrl,
+        rules = chat.rules.let { rulesJson ->
+            json.decodeFromString<List<RuleDto>>(rulesJson).map {
+                it.toDomain()
+            }.toImmutableSet()
+        },
+        unreadMessagesCount = chat.unreadMessagesCount,
+        lastReadMessageId = chat.lastReadMessageId?.let { MessageId(UUID.fromString(it)) },
+        lastMessage = lastMessage?.toMessage(participants, participantCrossRefs),
+        lastActivityAt = lastMessage?.createdAt,
+    )
 
     /**
      * Maps ParticipantEntity to Participant domain model.

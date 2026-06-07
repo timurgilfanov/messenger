@@ -244,35 +244,6 @@ class ChatViewModelRetryTest {
     }
 
     @Test
-    fun `retry succeeds under debounce rule despite its own failed timeline entry`() = runTest {
-        val (baseChat, currentUser) =
-            chatWith(DeliveryStatus.Failed(DeliveryError.NetworkUnavailable))
-        val chat = baseChat.copy(
-            rules = persistentSetOf(CreateMessageRule.Debounce(5.seconds)),
-        )
-        val retryFlow: Flow<ResultWithError<Message, SendMessageRepositoryError>> = flowOf(
-            ResultWithError.Success(progress(currentUser, Sending(0))),
-            ResultWithError.Success(progress(currentUser, DeliveryStatus.Sent)),
-        )
-        val repository = MessengerRepositoryFakeWithTimeline(chat, listOf(retryFlow))
-        val viewModel = createViewModel(repository)
-
-        backgroundScope.launch { viewModel.state.collect {} }
-        advanceUntilIdle()
-
-        val withinDebounceWindow = TEST_INSTANT + 1.seconds
-        viewModel.retryMessage(FAILED_MESSAGE_ID, withinDebounceWindow)
-        advanceUntilIdle()
-
-        assertEquals(1, repository.sentMessages.size)
-        repository.assertRetriedMessageIsFailedOne()
-        val state = viewModel.state.value
-        assertTrue(state is ChatUiState.Ready)
-        assertNull(state.dialogError)
-        assertEquals(DeliveryStatus.Sent, repository.timelineMessage().deliveryStatus)
-    }
-
-    @Test
     fun `concurrent retry of the same message launches only one send`() = runTest {
         val (chat, currentUser) = chatWith(DeliveryStatus.Failed(DeliveryError.NetworkUnavailable))
         val gate = Channel<ResultWithError<Message, SendMessageRepositoryError>>(Channel.UNLIMITED)

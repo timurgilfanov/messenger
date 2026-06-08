@@ -197,28 +197,18 @@ class LocalChatDataSourceImpl @Inject constructor(
     /**
      * Emits the chat and its last message whenever either changes.
      *
-     * This joins two independently-invalidated Room flows: the outer captured participant snapshot
-     * ([ChatDao.flowChatWithParticipants]) and the inner last-message flow
-     * ([MessageDao.flowLastMessageInChat]). After a sync transaction that atomically adds a
-     * participant and a message from that participant, the inner flow can re-emit a fresh
-     * last-message against a still-stale captured participant set, making the sender appear to be a
-     * non-participant. This has two indistinguishable causes at flow level: a transient torn read
-     * (the committed DB is actually consistent) or a real source-of-truth orphan.
+     * Joins two independently-invalidated Room flows: the captured participant snapshot
+     * ([ChatDao.flowChatWithParticipants]) and the last-message flow
+     * ([MessageDao.flowLastMessageInChat]). These can transiently pair a fresh last-message with a
+     * stale participant set, making the sender appear to be a non-participant — either a torn read
+     * (committed DB is consistent) or a real source-of-truth orphan.
      *
-     * To discriminate without silencing real orphans:
-     * - **Fast path**: when the captured participant snapshot already contains the last message's
-     *   sender, map directly with no extra DB read.
-     * - **Verify path**: when an apparent orphan is seen, [readChatUpdateConsistently] re-reads
-     *   participants and last message inside one `withTransaction`. If the orphan is gone it was a
-     *   transient torn read and emits [ResultWithError.Success]; if it persists it is a real
-     *   inconsistency and emits a handled [LocalDataSourceError.InvalidData] [ResultWithError.Failure],
-     *   keeping the flow alive and the error visible. Escalation (not a silent skip) is correct
-     *   because a real orphan would otherwise blank the chat forever.
-     *
-     * Note: with a single real Room DB the verify path's transient-recovery branch is not
-     * deterministically forceable through this public flow — a genuinely consistent DB always
-     * takes the fast path, and the only way to observe a persisting orphan is to seed a real one,
-     * which escalates. The recovery branch is therefore not unit-forceable here.
+     * - **Fast path**: when the captured snapshot already contains the sender, map with no extra
+     *   read.
+     * - **Verify path**: on an apparent orphan, [readChatUpdateConsistently] re-reads both inside
+     *   one `withTransaction`. If the orphan is gone, emits [ResultWithError.Success]; if it
+     *   persists, emits a handled [LocalDataSourceError.InvalidData] [ResultWithError.Failure] so a
+     *   real inconsistency stays visible rather than blanking the chat.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun flowChatUpdates(

@@ -2,10 +2,14 @@ package timur.gilfanov.messenger.ui.screen.chat
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -218,5 +222,114 @@ class MessageBubbleComponentTest {
 
         composeTestRule.onNodeWithText("14:50").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Delivered").assertIsDisplayed()
+    }
+
+    @Test
+    fun `failed current user message shows enabled retry control`() {
+        val message = MessageUiModel(
+            id = "9",
+            text = "This message failed to send.",
+            senderId = "current-user",
+            senderName = "You",
+            createdAt = "14:55",
+            deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
+            isFromCurrentUser = true,
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                MessageBubble(message = message)
+            }
+        }
+
+        composeTestRule.onNodeWithTag("message_retry_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("message_retry_button").assertIsEnabled()
+    }
+
+    @Test
+    fun `failed incoming message shows no retry control`() {
+        val message = MessageUiModel(
+            id = "10",
+            text = "Incoming message failed to send.",
+            senderId = "other-user",
+            senderName = "Alice",
+            createdAt = "14:56",
+            deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
+            isFromCurrentUser = false,
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                MessageBubble(message = message)
+            }
+        }
+
+        composeTestRule.onNodeWithTag("message_retry_button").assertDoesNotExist()
+    }
+
+    @Test
+    fun `non failed current user message shows no retry control`() {
+        val message = MessageUiModel(
+            id = "11",
+            text = "This message was delivered.",
+            senderId = "current-user",
+            senderName = "You",
+            createdAt = "14:57",
+            deliveryStatus = DeliveryStatus.Delivered,
+            isFromCurrentUser = true,
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                MessageBubble(message = message)
+            }
+        }
+
+        composeTestRule.onNodeWithTag("message_retry_button").assertDoesNotExist()
+    }
+
+    @Test
+    fun `clicking retry invokes onRetry callback`() {
+        var retryInvoked = false
+        val message = MessageUiModel(
+            id = "12",
+            text = "This message failed to send.",
+            senderId = "current-user",
+            senderName = "You",
+            createdAt = "14:58",
+            deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
+            isFromCurrentUser = true,
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                MessageBubble(message = message, onRetry = { retryInvoked = true })
+            }
+        }
+
+        composeTestRule.onNodeWithTag("message_retry_button").performClick()
+
+        assertTrue(retryInvoked)
+    }
+
+    @Test
+    fun `retry control exposes accessibility content description`() {
+        val message = MessageUiModel(
+            id = "13",
+            text = "This message failed to send.",
+            senderId = "current-user",
+            senderName = "You",
+            createdAt = "14:59",
+            deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
+            isFromCurrentUser = true,
+        )
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                MessageBubble(message = message)
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Retry sending message").assertIsDisplayed()
     }
 }

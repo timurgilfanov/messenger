@@ -45,7 +45,10 @@ interface MessageDao {
     @Query("UPDATE messages SET deliveryStatus = :status WHERE id = :messageId")
     suspend fun updateMessageDeliveryStatus(messageId: String, status: String)
 
-    @Query("SELECT * FROM messages WHERE chatId = :chatId ORDER BY createdAt DESC LIMIT 1")
+    @Query(
+        "SELECT * FROM messages WHERE chatId = :chatId " +
+            "ORDER BY createdAt DESC, id DESC LIMIT 1",
+    )
     suspend fun getLastMessageInChat(chatId: String): MessageEntity?
 
     @Query(

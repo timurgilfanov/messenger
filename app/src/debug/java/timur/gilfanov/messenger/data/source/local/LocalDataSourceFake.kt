@@ -42,6 +42,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     // Test control flags for simulating failures
     private var shouldFailGetLastSyncTimestamp = false
     private var shouldFailFlowChatList = false
+    private var flowChatListError: LocalDataSourceError = LocalDataSourceError.StorageUnavailable
     private var shouldFailInsertMessage = false
 
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
@@ -90,7 +91,7 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
         chatsFlow.map { chats ->
             if (shouldFailFlowChatList) {
-                ResultWithError.Failure(LocalDataSourceError.StorageUnavailable)
+                ResultWithError.Failure(flowChatListError)
             } else {
                 val chatPreviews = chats.values.map { chat -> ChatPreview.fromChat(chat) }
                 ResultWithError.Success(chatPreviews)
@@ -321,8 +322,12 @@ class LocalDataSourceFake @Inject constructor(private val logger: Logger) :
         shouldFailGetLastSyncTimestamp = shouldFail
     }
 
-    fun simulateFlowChatListFailure(shouldFail: Boolean) {
+    fun simulateFlowChatListFailure(
+        shouldFail: Boolean,
+        error: LocalDataSourceError = LocalDataSourceError.StorageUnavailable,
+    ) {
         shouldFailFlowChatList = shouldFail
+        flowChatListError = error
     }
 
     fun simulateInsertMessageFailure(shouldFail: Boolean) {

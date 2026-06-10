@@ -169,6 +169,55 @@ class CreateMessageUseCaseTest {
     }
 
     @Test
+    fun `debounce excludes the message being re-sent from its own baseline`() = runTest {
+        val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
+        val messageCreatedAt = customTime - 1.seconds
+        val debounceDelay = 30.seconds
+        val messageId = MessageId(UUID.fromString("00000000-0000-0000-0000-000000000007"))
+
+        val participant = buildParticipant {
+            name = ""
+            this.joinedAt = customTime - 10.minutes
+        }
+
+        val timelineEntry = buildMessage {
+            id = messageId
+            sender = participant
+            createdAt = messageCreatedAt
+        }
+
+        val message = buildMessage {
+            id = messageId
+            sender = participant
+            createdAt = messageCreatedAt
+        }
+
+        val chat = buildChat {
+            participants = persistentSetOf(participant)
+            rules = persistentSetOf(CreateMessageRule.Debounce(debounceDelay))
+            messages = persistentListOf(timelineEntry)
+        }
+
+        val repository =
+            RepositoryFake(sendMessageResult = flowOf(ResultWithError.Success(message)))
+        val useCase = SendMessageUseCase(
+            repository = repository,
+            deliveryStatusValidator = DeliveryStatusValidatorFake(),
+        )
+
+        useCase(
+            chat = chat,
+            message = message,
+            now = customTime,
+        ).test {
+            val result = awaitItem()
+            assertIs<ResultWithError.Success<Message, SendMessageError>>(result)
+            assertEquals(message, result.data)
+            awaitComplete()
+        }
+    }
+
+    @Test
     fun `test multiple rules success`() = runTest {
         val customTime = Instant.Companion.fromEpochMilliseconds(1000000)
         val joinedAt = customTime - 10.minutes

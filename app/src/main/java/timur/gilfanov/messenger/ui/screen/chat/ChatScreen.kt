@@ -104,6 +104,7 @@ fun ChatScreen(
         inputTextFieldState = inputTextFieldState,
         onSendMessage = viewModel::sendMessage,
         onMarkMessagesAsReadUpTo = viewModel::markMessagesAsReadUpTo,
+        onRetryMessage = viewModel::retryMessage,
         onDismissDialogError = viewModel::dismissDialogError,
         modifier = modifier,
     )
@@ -118,6 +119,7 @@ fun ChatScreenContent(
     onSendMessage: () -> Unit,
     onMarkMessagesAsReadUpTo: (MessageId) -> Unit,
     modifier: Modifier = Modifier,
+    onRetryMessage: (MessageId) -> Unit = {},
     onDismissDialogError: () -> Unit = {},
 ) {
     when (uiState) {
@@ -151,6 +153,7 @@ fun ChatScreenContent(
                 inputTextFieldState = inputTextFieldState,
                 onSendMessage = onSendMessage,
                 onMarkMessagesAsReadUpTo = onMarkMessagesAsReadUpTo,
+                onRetryMessage = onRetryMessage,
                 onDismissDialogError = onDismissDialogError,
                 modifier = modifier,
             )
@@ -168,6 +171,7 @@ fun ChatContent(
     onSendMessage: () -> Unit,
     onMarkMessagesAsReadUpTo: (MessageId) -> Unit,
     modifier: Modifier = Modifier,
+    onRetryMessage: (MessageId) -> Unit = {},
     onDismissDialogError: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
@@ -219,6 +223,7 @@ fun ChatContent(
                 messages = messages,
                 participants = state.participants,
                 listState = listState,
+                onRetryMessage = onRetryMessage,
             )
             PagingRefreshOverlay(
                 refresh = messages.loadState.refresh,
@@ -338,6 +343,7 @@ private fun MessageList(
     messages: LazyPagingItems<Message>,
     participants: ImmutableList<ParticipantUiModel>,
     listState: LazyListState,
+    onRetryMessage: (MessageId) -> Unit = {},
 ) {
     LazyColumn(
         state = listState,
@@ -360,6 +366,7 @@ private fun MessageList(
                 MessageBubble(
                     message = message.toMessageUiModel(participants = participants),
                     modifier = Modifier.padding(vertical = 4.dp),
+                    onRetry = { onRetryMessage(message.id) },
                 )
             }
         }

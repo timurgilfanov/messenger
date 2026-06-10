@@ -89,7 +89,10 @@ fun ChatScreen(
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { sideEffect ->
             when (sideEffect) {
-                ChatSideEffect.ClearInputText -> inputTextFieldState.setTextAndPlaceCursorAtEnd("")
+                is ChatSideEffect.UiCommand -> when (sideEffect) {
+                    ChatSideEffect.UiCommand.InputCleared ->
+                        inputTextFieldState.setTextAndPlaceCursorAtEnd("")
+                }
             }
         }
     }

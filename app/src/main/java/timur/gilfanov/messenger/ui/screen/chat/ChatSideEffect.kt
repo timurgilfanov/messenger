@@ -1,5 +1,7 @@
 package timur.gilfanov.messenger.ui.screen.chat
 
 sealed interface ChatSideEffect {
-    data object ClearInputText : ChatSideEffect
+    sealed interface UiCommand : ChatSideEffect {
+        data object InputCleared : UiCommand
+    }
 }

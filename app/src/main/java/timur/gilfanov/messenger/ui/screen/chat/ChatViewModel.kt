@@ -189,7 +189,7 @@ class ChatViewModel @AssistedInject constructor(
         ) {
             progress.clearInputSent = true
             currentInputText = ""
-            _effects.send(ChatSideEffect.ClearInputText)
+            _effects.send(ChatSideEffect.UiCommand.InputCleared)
         }
     }
 

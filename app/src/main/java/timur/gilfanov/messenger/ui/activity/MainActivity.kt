@@ -70,18 +70,20 @@ internal fun applyMainActivityEffect(
     backStack: MutableList<NavKey>,
 ) {
     when (effect) {
-        MainActivitySideEffect.Unauthenticated -> {
-            val top = backStack.lastOrNull()
-            if (top !is Login && top !is Signup) {
-                backStack.clear()
-                backStack.add(Login)
+        is MainActivitySideEffect.Navigation -> when (effect) {
+            MainActivitySideEffect.Navigation.Unauthenticated -> {
+                val top = backStack.lastOrNull()
+                if (top !is Login && top !is Signup) {
+                    backStack.clear()
+                    backStack.add(Login)
+                }
             }
-        }
-        MainActivitySideEffect.Authenticated -> {
-            val top = backStack.lastOrNull()
-            if (top == null || top is Login || top is Signup) {
-                backStack.clear()
-                backStack.add(Main)
+            MainActivitySideEffect.Navigation.Authenticated -> {
+                val top = backStack.lastOrNull()
+                if (top == null || top is Login || top is Signup) {
+                    backStack.clear()
+                    backStack.add(Main)
+                }
             }
         }
     }

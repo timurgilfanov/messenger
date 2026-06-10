@@ -1,7 +1,7 @@
 # Architecture Rule 3: Side effects organization in ViewModels
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 ViewModels emit one-off side effects through a `Channel`-backed `Flow`. Two naming conventions have appeared in the codebase:

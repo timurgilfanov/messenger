@@ -12,8 +12,8 @@ Session expiry, initial auth resolution, successful login, and token-refresh re-
 Centralize auth-driven navigation in two places:
 
 1. **`MainActivityViewModel`** collects `AuthRepository.authState` and emits a `MainActivitySideEffect` on every transition:
-    - `AuthState.Authenticated` → `MainActivitySideEffect.Authenticated`
-    - `AuthState.Unauthenticated` → `MainActivitySideEffect.Unauthenticated`
+    - `AuthState.Authenticated` → `MainActivitySideEffect.Navigation.Authenticated`
+    - `AuthState.Unauthenticated` → `MainActivitySideEffect.Navigation.Unauthenticated`
 
    Effects are **state-descriptive** (what happened), not **action-imperative** (what to do). The ViewModel cannot know the right action because it cannot see the back stack.
 

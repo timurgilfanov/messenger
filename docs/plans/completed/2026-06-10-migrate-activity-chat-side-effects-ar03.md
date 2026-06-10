@@ -82,5 +82,5 @@ sealed interface ChatSideEffect {
 
 ### Task 4: Update documentation
 
-- [ ] No README/CLAUDE.md changes expected (no user-facing change or new internal pattern); AR-03 already documents the shape
-- [ ] Move this plan to `docs/plans/completed/`
+- [x] No README/CLAUDE.md changes expected (no user-facing change or new internal pattern); AR-03 already documents the shape. Updated stale `MainActivitySideEffect.Authenticated/Unauthenticated` references in `ADR-004` to the nested `Navigation.*` names.
+- [x] Move this plan to `docs/plans/completed/`

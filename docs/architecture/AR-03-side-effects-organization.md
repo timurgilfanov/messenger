@@ -51,8 +51,8 @@ sealed interface LoginSideEffects {
     }
 }
 
-sealed interface ChatSideEffects {
-    sealed interface UiCommand : ChatSideEffects {
+sealed interface ChatSideEffect {
+    sealed interface UiCommand : ChatSideEffect {
         data object InputCleared : UiCommand
     }
 }

@@ -6,17 +6,22 @@ import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import timur.gilfanov.messenger.data.source.local.LocalDataSourceError.InvalidData
 import timur.gilfanov.messenger.data.source.local.database.MessengerDatabase
 import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
-import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipantsAndMessages
+import timur.gilfanov.messenger.data.source.local.database.entity.ChatWithParticipants
+import timur.gilfanov.messenger.data.source.local.database.entity.MessageEntity
 import timur.gilfanov.messenger.data.source.local.database.mapper.EntityMappers
 import timur.gilfanov.messenger.domain.entity.ResultWithError
+import timur.gilfanov.messenger.domain.entity.ResultWithError.Failure
+import timur.gilfanov.messenger.domain.entity.ResultWithError.Success
 import timur.gilfanov.messenger.domain.entity.chat.Chat
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ChatPreview
@@ -33,9 +38,9 @@ class LocalChatDataSourceImpl @Inject constructor(
     private val errorHandler = DatabaseErrorHandler(logger)
 
     override suspend fun insertChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
-        val validationError = validateChatForInsert(chat)
+        val validationError = validateChat(chat)
         if (validationError != null) {
-            return ResultWithError.Failure(validationError)
+            return Failure(validationError)
         }
 
         return try {
@@ -58,16 +63,16 @@ class LocalChatDataSourceImpl @Inject constructor(
                 chatDao.insertChatParticipantCrossRefs(crossRefs)
             }
 
-            ResultWithError.Success(chat)
+            Success(chat)
         } catch (e: SQLiteException) {
-            ResultWithError.Failure(errorHandler.mapException(e))
+            Failure(errorHandler.mapException(e))
         }
     }
 
     override suspend fun updateChat(chat: Chat): ResultWithError<Chat, LocalDataSourceError> {
-        val validationError = validateChatForUpdate(chat)
+        val validationError = validateChat(chat)
         if (validationError != null) {
-            return ResultWithError.Failure(validationError)
+            return Failure(validationError)
         }
 
         return try {
@@ -92,9 +97,9 @@ class LocalChatDataSourceImpl @Inject constructor(
                 chatDao.insertChatParticipantCrossRefs(crossRefs)
             }
 
-            ResultWithError.Success(chat)
+            Success(chat)
         } catch (e: SQLiteException) {
-            ResultWithError.Failure(errorHandler.mapException(e))
+            Failure(errorHandler.mapException(e))
         }
     }
 
@@ -105,39 +110,106 @@ class LocalChatDataSourceImpl @Inject constructor(
                 if (chatEntity != null) {
                     chatDao.deleteChat(chatEntity)
                     participantDao.deleteOrphanedParticipants()
-                    ResultWithError.Success(Unit)
+                    Success(Unit)
                 } else {
-                    ResultWithError.Failure(
+                    Failure(
                         LocalDataSourceError.ChatNotFound,
                     )
                 }
             }
         } catch (e: SQLiteException) {
-            ResultWithError.Failure(errorHandler.mapException(e))
+            Failure(errorHandler.mapException(e))
         }
 
     override fun flowChatList(): Flow<ResultWithError<List<ChatPreview>, LocalDataSourceError>> =
-        chatDao.flowAllChatsWithParticipantsAndMessages()
-            .distinctUntilChanged()
-            .map<
-                List<ChatWithParticipantsAndMessages>,
-                ResultWithError<List<ChatPreview>, LocalDataSourceError>,
-                > { chatsWithRelations ->
-                val chatPreviews = chatsWithRelations.map { relation ->
-                    with(EntityMappers) { relation.toChatPreview() }
+        combine(
+            chatDao.flowAllChatsWithParticipants(),
+            messageDao.flowLastMessagesPerChat(),
+        ) { chatsWithParticipants, lastMessages ->
+            val lastMessageByChatId = lastMessages.associateBy { it.chatId }
+            val result: ResultWithError<List<ChatPreview>, LocalDataSourceError> =
+                if (findOrphanLastMessage(chatsWithParticipants, lastMessageByChatId) != null) {
+                    // The two flows are invalidated independently, so combine can transiently
+                    // pair a fresh last-message with a stale participant set that does not yet
+                    // contain its sender. That apparent inconsistency may be a transient torn
+                    // pair or a genuine source-of-truth violation; re-read a single committed
+                    // snapshot to tell them apart.
+                    database.withTransaction {
+                        val chatsWithParticipants = chatDao.getAllChatsWithParticipants()
+                        val lastMessageByChatId =
+                            messageDao.getLastMessagesPerChat().associateBy { it.chatId }
+                        val orphan =
+                            findOrphanLastMessage(chatsWithParticipants, lastMessageByChatId)
+                        val result: ResultWithError<List<ChatPreview>, LocalDataSourceError> =
+                            if (orphan != null) {
+                                // The orphan persists in a single committed snapshot, so this is a real
+                                // source-of-truth inconsistency rather than a transient torn read.
+                                Failure(
+                                    InvalidData(
+                                        "messages",
+                                        "Sender ${orphan.senderId} of message ${orphan.id} is " +
+                                            "not a participant of chat ${orphan.chatId}",
+                                    ),
+                                )
+                            } else {
+                                Success(
+                                    buildChatPreviews(chatsWithParticipants, lastMessageByChatId),
+                                )
+                            }
+                        result
+                    }
+                } else {
+                    Success(
+                        buildChatPreviews(chatsWithParticipants, lastMessageByChatId),
+                    )
                 }
-                ResultWithError.Success(chatPreviews)
-            }
+            result
+        }
+            .distinctUntilChanged()
             .catch { e ->
                 when (e) {
                     is SQLiteException -> emit(
-                        ResultWithError.Failure(errorHandler.mapException(e)),
+                        Failure(errorHandler.mapException(e)),
                     )
 
                     else -> throw e
                 }
             }
 
+    private fun buildChatPreviews(
+        chatsWithParticipants: List<ChatWithParticipants>,
+        lastMessageByChatId: Map<String, MessageEntity>,
+    ): List<ChatPreview> = chatsWithParticipants.map { chatWithParticipants ->
+        val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
+        with(EntityMappers) { chatWithParticipants.toChatPreview(lastMessage) }
+    }
+
+    private fun findOrphanLastMessage(
+        chatsWithParticipants: List<ChatWithParticipants>,
+        lastMessageByChatId: Map<String, MessageEntity>,
+    ): MessageEntity? = chatsWithParticipants.firstNotNullOfOrNull { chatWithParticipants ->
+        val lastMessage = lastMessageByChatId[chatWithParticipants.chat.id]
+        lastMessage?.takeIf { message ->
+            chatWithParticipants.participants.none { it.id == message.senderId }
+        }
+    }
+
+    /**
+     * Emits the chat and its last message whenever either changes.
+     *
+     * Joins two independently-invalidated Room flows: the captured participant snapshot
+     * ([ChatDao.flowChatWithParticipants]) and the last-message flow
+     * ([MessageDao.flowLastMessageInChat]). These can transiently pair a fresh last-message with a
+     * stale participant set, making the sender appear to be a non-participant — either a torn read
+     * (committed DB is consistent) or a real source-of-truth orphan.
+     *
+     * - **Fast path**: when the captured snapshot already contains the sender, map with no extra
+     *   read.
+     * - **Verify path**: on an apparent orphan, [readChatUpdateConsistently] re-reads both inside
+     *   one `withTransaction`. If the orphan is gone, emits [ResultWithError.Success]; if it
+     *   persists, emits a handled [LocalDataSourceError.InvalidData] [ResultWithError.Failure] so a
+     *   real inconsistency stays visible rather than blanking the chat.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun flowChatUpdates(
         chatId: ChatId,
@@ -147,7 +219,7 @@ class LocalChatDataSourceImpl @Inject constructor(
             .flatMapLatest { chatWithParticipants ->
                 if (chatWithParticipants == null) {
                     flowOf(
-                        ResultWithError.Failure<Chat, LocalDataSourceError>(
+                        Failure<Chat, LocalDataSourceError>(
                             LocalDataSourceError.ChatNotFound,
                         ),
                     )
@@ -156,8 +228,8 @@ class LocalChatDataSourceImpl @Inject constructor(
                         .filter { it.isCurrentUser }
                     if (currentUserCrossRefs.size != 1) {
                         return@flatMapLatest flowOf(
-                            ResultWithError.Failure<Chat, LocalDataSourceError>(
-                                LocalDataSourceError.InvalidData(
+                            Failure<Chat, LocalDataSourceError>(
+                                InvalidData(
                                     "participants",
                                     "Expected exactly one current user participant, found ${currentUserCrossRefs.size}",
                                 ),
@@ -167,37 +239,80 @@ class LocalChatDataSourceImpl @Inject constructor(
                     messageDao.flowLastMessageInChat(chatId.id.toString())
                         .distinctUntilChanged()
                         .map { lastMessageEntity ->
-                            val lastMessages = listOfNotNull(lastMessageEntity)
-                            val chat = with(EntityMappers) {
-                                chatWithParticipants.toChat(lastMessages)
+                            if (findOrphanLastMessage(chatWithParticipants, lastMessageEntity)
+                                != null
+                            ) {
+                                readChatUpdateConsistently(chatId.id.toString())
+                            } else {
+                                val chat = with(EntityMappers) {
+                                    chatWithParticipants.toChat(listOfNotNull(lastMessageEntity))
+                                }
+                                Success(chat)
                             }
-                            ResultWithError.Success(chat)
                         }
                 }
             }
             .catch { e ->
                 when (e) {
                     is SQLiteException -> emit(
-                        ResultWithError.Failure(errorHandler.mapException(e)),
+                        Failure(errorHandler.mapException(e)),
                     )
 
                     else -> throw e
                 }
             }
 
-    private fun validateChatForInsert(chat: Chat): LocalDataSourceError? = when {
-        chat.name.isBlank() ->
-            LocalDataSourceError.InvalidData("name", "Chat name cannot be blank")
+    /**
+     * Returns [lastMessage] when it is non-null and its sender is absent from
+     * [chatWithParticipants]'s captured participant set (an apparent orphan), else null.
+     */
+    private fun findOrphanLastMessage(
+        chatWithParticipants: ChatWithParticipants,
+        lastMessage: MessageEntity?,
+    ): MessageEntity? = lastMessage?.takeIf { message ->
+        chatWithParticipants.participants.none { it.id == message.senderId }
+    }
+
+    /**
+     * Re-reads participants and last message for [chatId] inside a single committed transaction to
+     * discriminate a transient torn read from a real source-of-truth orphan. Emits
+     * [LocalDataSourceError.InvalidData] only when the orphan persists against the consistent
+     * snapshot; otherwise builds the chat from the re-read snapshot.
+     */
+    private suspend fun readChatUpdateConsistently(
+        chatId: String,
+    ): ResultWithError<Chat, LocalDataSourceError> = database.withTransaction {
+        val chatWithParticipants = chatDao.getChatWithParticipants(chatId)
+            ?: return@withTransaction Failure(
+                LocalDataSourceError.ChatNotFound,
+            )
+        val lastMessage = messageDao.getLastMessageInChat(chatId)
+        val orphan = findOrphanLastMessage(chatWithParticipants, lastMessage)
+        if (orphan != null) {
+            Failure(
+                InvalidData(
+                    "messages",
+                    "Sender ${orphan.senderId} of message ${orphan.id} is not a participant " +
+                        "of chat $chatId",
+                ),
+            )
+        } else {
+            val chat = with(EntityMappers) {
+                chatWithParticipants.toChat(listOfNotNull(lastMessage))
+            }
+            Success(chat)
+        }
+    }
+
+    private fun validateChat(chat: Chat): LocalDataSourceError? = when {
+        chat.name.isBlank() -> InvalidData("name", "Chat name cannot be blank")
 
         chat.participants.isEmpty() ->
-            LocalDataSourceError.InvalidData(
+            InvalidData(
                 "participants",
                 "Chat must have at least one participant",
             )
 
         else -> null
     }
-
-    private fun validateChatForUpdate(chat: Chat): LocalDataSourceError? =
-        validateChatForInsert(chat)
 }

@@ -231,19 +231,40 @@ class MessengerRepositoryImpl @Inject constructor(
         localDataSources.chat.flowChatList().map { localResult ->
             when (localResult) {
                 is ResultWithError.Success -> ResultWithError.Success(localResult.data)
-                is ResultWithError.Failure -> ResultWithError.Failure(
-                    FlowChatListRepositoryError.LocalOperationFailed(
-                        when (localResult.error) {
-                            LocalDataSourceError.StorageUnavailable ->
-                                LocalStorageError.TemporarilyUnavailable
-                            else ->
-                                error(
-                                    "use localResult.error after local " +
-                                        "data source errors refactoring. See #137.",
-                                )
-                        },
-                    ),
-                )
+                is ResultWithError.Failure -> {
+                    val localError = localResult.error
+                    ResultWithError.Failure(
+                        FlowChatListRepositoryError.LocalOperationFailed(
+                            when (localError) {
+                                LocalDataSourceError.StorageUnavailable ->
+                                    LocalStorageError.TemporarilyUnavailable
+                                LocalDataSourceError.StorageFull ->
+                                    LocalStorageError.StorageFull
+                                LocalDataSourceError.ConcurrentModificationError ->
+                                    LocalStorageError.TemporarilyUnavailable
+                                is LocalDataSourceError.InvalidData ->
+                                    LocalStorageError.UnknownError(
+                                        IllegalStateException(
+                                            "${localError.field}: ${localError.reason}",
+                                        ),
+                                    )
+                                is LocalDataSourceError.UnknownError ->
+                                    LocalStorageError.UnknownError(localError.cause)
+                                LocalDataSourceError.ChatNotFound,
+                                LocalDataSourceError.MessageNotFound,
+                                LocalDataSourceError.ParticipantNotFound,
+                                is LocalDataSourceError.DuplicateEntity,
+                                is LocalDataSourceError.RelatedEntityMissing,
+                                ->
+                                    LocalStorageError.UnknownError(
+                                        IllegalStateException(
+                                            "Unexpected local error for chat list: $localError",
+                                        ),
+                                    )
+                            },
+                        ),
+                    )
+                }
             }
         }
 

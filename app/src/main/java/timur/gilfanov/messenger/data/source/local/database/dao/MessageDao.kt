@@ -45,7 +45,10 @@ interface MessageDao {
     @Query("UPDATE messages SET deliveryStatus = :status WHERE id = :messageId")
     suspend fun updateMessageDeliveryStatus(messageId: String, status: String)
 
-    @Query("SELECT * FROM messages WHERE chatId = :chatId ORDER BY createdAt DESC LIMIT 1")
+    @Query(
+        "SELECT * FROM messages WHERE chatId = :chatId " +
+            "ORDER BY createdAt DESC, id DESC LIMIT 1",
+    )
     suspend fun getLastMessageInChat(chatId: String): MessageEntity?
 
     @Query(
@@ -53,6 +56,28 @@ interface MessageDao {
             "ORDER BY createdAt DESC, id DESC LIMIT 1",
     )
     fun flowLastMessageInChat(chatId: String): Flow<MessageEntity?>
+
+    @Query(
+        """SELECT * FROM messages m
+           WHERE m.id = (
+               SELECT m2.id FROM messages m2
+               WHERE m2.chatId = m.chatId
+               ORDER BY m2.createdAt DESC, m2.id DESC
+               LIMIT 1
+           )""",
+    )
+    fun flowLastMessagesPerChat(): Flow<List<MessageEntity>>
+
+    @Query(
+        """SELECT * FROM messages m
+           WHERE m.id = (
+               SELECT m2.id FROM messages m2
+               WHERE m2.chatId = m.chatId
+               ORDER BY m2.createdAt DESC, m2.id DESC
+               LIMIT 1
+           )""",
+    )
+    suspend fun getLastMessagesPerChat(): List<MessageEntity>
 
     @Query(
         """SELECT COUNT(*) FROM messages 

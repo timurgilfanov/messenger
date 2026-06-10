@@ -36,6 +36,8 @@ import timur.gilfanov.messenger.R
 import timur.gilfanov.messenger.annotations.Component
 import timur.gilfanov.messenger.domain.entity.chat.ChatId
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
+import timur.gilfanov.messenger.domain.entity.message.DeliveryError
+import timur.gilfanov.messenger.domain.entity.message.DeliveryStatus
 import timur.gilfanov.messenger.domain.entity.message.Message
 import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidationError
@@ -48,6 +50,7 @@ import timur.gilfanov.messenger.ui.theme.MessengerTheme
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 @Category(Component::class)
+@Suppress("LargeClass") // Comprehensive chat screen test suite
 class ChatScreenComponentTest {
 
     @get:Rule
@@ -681,6 +684,41 @@ class ChatScreenComponentTest {
         composeTestRule.onNodeWithText("Failed to Send").assertIsDisplayed()
         composeTestRule.onNodeWithText("OK").performClick()
         assertTrue(dismissed)
+    }
+
+    @Test
+    fun `chat screen retry on failed outgoing message invokes callback with message id`() {
+        val (_, currentUser) = ChatScreenTestFixtures.createAliceAndCurrentUser()
+        val failedMessageId = MessageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440099"))
+        val failedMessage = ChatScreenTestFixtures.createTextMessage(
+            id = failedMessageId,
+            sender = currentUser,
+            text = "This message failed to send.",
+            deliveryStatus = DeliveryStatus.Failed(DeliveryError.NetworkUnavailable),
+        )
+        val readyState = ChatScreenTestFixtures.createChatUiStateReady(
+            id = testChatId,
+            title = "Alice",
+            messages = listOf(failedMessage),
+        )
+
+        var retriedMessageId: MessageId? = null
+
+        composeTestRule.setContent {
+            MessengerTheme {
+                ChatScreenContent(
+                    uiState = readyState,
+                    inputTextFieldState = TextFieldState(""),
+                    onSendMessage = {},
+                    onMarkMessagesAsReadUpTo = {},
+                    onRetryMessage = { retriedMessageId = it },
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("message_retry_button").performClick()
+        assertEquals(failedMessageId, retriedMessageId)
     }
 
     private fun readyStateWithPagingData(pagingData: PagingData<Message>) = ChatUiState.Ready(

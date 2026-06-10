@@ -12,6 +12,7 @@ import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule.CanNotWrite
 import timur.gilfanov.messenger.domain.entity.chat.CreateMessageRule.Debounce
 import timur.gilfanov.messenger.domain.entity.chat.ParticipantId
 import timur.gilfanov.messenger.domain.entity.message.Message
+import timur.gilfanov.messenger.domain.entity.message.MessageId
 import timur.gilfanov.messenger.domain.entity.message.validation.DeliveryStatusValidator
 import timur.gilfanov.messenger.domain.entity.onFailure
 import timur.gilfanov.messenger.domain.entity.onSuccess
@@ -100,13 +101,20 @@ class SendMessageUseCase(
         }
     }
 
+    /**
+     * The message being (re)sent is excluded from the debounce baseline: a message must never
+     * debounce against its own timeline entry. This is a no-op for a first send (the id is not
+     * yet in the timeline) and is what makes a retry of a failed message succeed instead of
+     * spuriously failing with [WaitDebounce] against the very message it is retrying.
+     */
     private fun checkDebounceRule(
         chat: Chat,
         message: Message,
         now: Instant,
         rule: Debounce,
     ): ResultWithError<Unit, SendMessageError> {
-        val lastMessage = chat.lastMessageBy(message.sender.id) ?: return Success(Unit)
+        val lastMessage = chat.lastMessageBy(message.sender.id, excluding = message.id)
+            ?: return Success(Unit)
         val timeFromLastMessage = now - lastMessage.createdAt
 
         return if (timeFromLastMessage < rule.delay) {
@@ -116,7 +124,8 @@ class SendMessageUseCase(
         }
     }
 
-    private fun Chat.lastMessageBy(participantId: ParticipantId): Message? = messages
-        .filter { it.sender.id == participantId }
-        .maxByOrNull { it.createdAt }
+    private fun Chat.lastMessageBy(participantId: ParticipantId, excluding: MessageId): Message? =
+        messages
+            .filter { it.sender.id == participantId && it.id != excluding }
+            .maxByOrNull { it.createdAt }
 }

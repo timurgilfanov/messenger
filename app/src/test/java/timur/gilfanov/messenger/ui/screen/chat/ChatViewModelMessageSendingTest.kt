@@ -174,7 +174,7 @@ class ChatViewModelMessageSendingTest {
 
                 val sentMessage = assertIs<TextMessage>(rep.sentMessages.single())
                 assertEquals("Test message", sentMessage.text)
-                assertIs<ChatSideEffect.ClearInputText>(awaitItem())
+                assertIs<ChatSideEffects.UiCommand.ClearInput>(awaitItem())
                 expectNoEvents()
             }
         }
@@ -279,7 +279,7 @@ class ChatViewModelMessageSendingTest {
                 assertNull(acceptedState.dialogError)
             }
 
-            assertIs<ChatSideEffect.ClearInputText>(awaitItem())
+            assertIs<ChatSideEffects.UiCommand.ClearInput>(awaitItem())
         }
 
         advanceUntilIdle()
@@ -345,7 +345,7 @@ class ChatViewModelMessageSendingTest {
                 )
             }
 
-            assertIs<ChatSideEffect.ClearInputText>(awaitItem())
+            assertIs<ChatSideEffects.UiCommand.ClearInput>(awaitItem())
         }
     }
 
@@ -410,7 +410,7 @@ class ChatViewModelMessageSendingTest {
                 )
             }
 
-            assertIs<ChatSideEffect.ClearInputText>(awaitItem())
+            assertIs<ChatSideEffects.UiCommand.ClearInput>(awaitItem())
         }
     }
 
@@ -583,7 +583,7 @@ class ChatViewModelMessageSendingTest {
                     expectNoEvents()
                 }
 
-                assertIs<ChatSideEffect.ClearInputText>(awaitItem())
+                assertIs<ChatSideEffects.UiCommand.ClearInput>(awaitItem())
                 expectNoEvents()
             }
 

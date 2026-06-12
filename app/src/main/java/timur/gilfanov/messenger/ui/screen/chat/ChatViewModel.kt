@@ -69,7 +69,7 @@ class ChatViewModel @AssistedInject constructor(
     private val _state = MutableStateFlow<ChatUiState>(Loading())
     val state = _state.asStateFlow()
 
-    private val _effects = Channel<ChatSideEffect>(capacity = Channel.BUFFERED)
+    private val _effects = Channel<ChatSideEffects>(capacity = Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
     private data class SendRequest(val messageId: MessageId, val now: Instant, val text: String)
@@ -189,7 +189,7 @@ class ChatViewModel @AssistedInject constructor(
         ) {
             progress.clearInputSent = true
             currentInputText = ""
-            _effects.send(ChatSideEffect.UiCommand.InputCleared)
+            _effects.send(ChatSideEffects.UiCommand.ClearInput)
         }
     }
 

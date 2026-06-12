@@ -27,7 +27,7 @@ Standard categories:
 | `Navigation` | Route-agnostic transition the user must experience | `Authenticated`, `Unauthenticated`, `SignupRequested` |
 | `Feedback` | Ambient information the user should receive (toast, snackbar, banner) | `NetworkUnavailable`, `LogoutFailed(isRetryable: Boolean)` |
 | `System` | OS-level intent the app must fire | `OpenAppSettings`, `OpenStorageSettings` |
-| `UiCommand` | Transient local UI command that is neither navigation, feedback, nor an OS intent | `InputCleared`, `Focused`, `ScrolledToTop` |
+| `UiCommand` | Transient local UI command that is neither navigation, feedback, nor an OS intent | `ClearInput`, `FocusInput`, `ScrollToTop` |
 
 ```kotlin
 sealed interface SettingsSideEffects {
@@ -51,9 +51,9 @@ sealed interface LoginSideEffects {
     }
 }
 
-sealed interface ChatSideEffect {
-    sealed interface UiCommand : ChatSideEffect {
-        data object InputCleared : UiCommand
+sealed interface ChatSideEffects {
+    sealed interface UiCommand : ChatSideEffects {
+        data object ClearInput : UiCommand
     }
 }
 ```
@@ -66,6 +66,8 @@ Inner cases must be named after **what happened to the user**, not after the dom
 - Incorrect: `AuthRepositoryReturnedInvalidCredentials`, `LocalStorageError`, `ObserveSettingsUseCaseFailed`
 
 Domain error types (sealed interfaces from the domain or data layer, e.g. `LocalStorageError`, `LogoutUseCaseError`, `ObserveProfileRepositoryError`) must not appear as parameter types in the side effects interface. The ViewModel maps them to UI-relevant descriptors (booleans, enums, strings) before emitting.
+
+**Event-style vs command-style names.** `Navigation` and `Feedback` cases report something that has already happened or become true — they read as past-tense events (`Authenticated`, `CredentialsRejected`, `NetworkUnavailable`), and the handler reacts. `System` and `UiCommand` cases instead name an action the handler must still perform — the OS intent has not fired and the local UI has not changed at emission time — so they use the imperative verb form (`OpenAppSettings`, `ClearInput`, `FocusInput`, `ScrollToTop`), not a misleading past tense like `InputCleared` (the input is not cleared until the handler clears it).
 
 ## Rationale
 
@@ -81,7 +83,7 @@ Domain error types (sealed interfaces from the domain or data layer, e.g. `Local
 - ViewModel must map domain errors to UI-relevant descriptors before emitting
 - Feature ViewModels do not emit per-screen auth navigation effects; auth routing follows ADR-004
 - `ShowSnackbar` is no longer a valid effect name — use `Feedback.XxxEvent`; the UI handler decides the widget
-- Transient local UI commands use `UiCommand.XxxEvent`; do not force input clearing, focus, or scroll commands into `Feedback`, `Navigation`, or `System`
+- Transient local UI commands use `UiCommand.<ImperativeVerb>` (e.g. `ClearInput`); do not force input clearing, focus, or scroll commands into `Feedback`, `Navigation`, or `System`
 - UI handlers dispatch on the outer category first, then branch on inner case for content
 
 ## Enforcement

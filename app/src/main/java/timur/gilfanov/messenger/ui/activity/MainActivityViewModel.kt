@@ -19,7 +19,7 @@ class MainActivityViewModel @Inject constructor(
     private val logger: Logger,
 ) : ViewModel() {
 
-    private val _effects = Channel<MainActivitySideEffect>(Channel.BUFFERED)
+    private val _effects = Channel<MainActivitySideEffects>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
     init {
@@ -33,9 +33,9 @@ class MainActivityViewModel @Inject constructor(
                 _effects.send(
                     when (state) {
                         is AuthState.Authenticated ->
-                            MainActivitySideEffect.Navigation.Authenticated
+                            MainActivitySideEffects.Navigation.Authenticated
                         AuthState.Unauthenticated ->
-                            MainActivitySideEffect.Navigation.Unauthenticated
+                            MainActivitySideEffects.Navigation.Unauthenticated
                     },
                 )
             }

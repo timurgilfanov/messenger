@@ -136,7 +136,7 @@ class ChatViewModelRetryTest {
         val viewModel = createViewModel(repository)
 
         backgroundScope.launch { viewModel.state.collect {} }
-        val effects = mutableListOf<ChatSideEffect>()
+        val effects = mutableListOf<ChatSideEffects>()
         backgroundScope.launch { viewModel.effects.collect { effects += it } }
         advanceUntilIdle()
 

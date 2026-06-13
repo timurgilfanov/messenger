@@ -58,10 +58,13 @@ abstract class MessengerDatabase : RoomDatabase() {
         }
     }
 
+    /**
+     * Clears the settings table after the `userKey` derivation changed from
+     * `sha256(refreshToken)` to `sha256(sessionId)`. Existing rows are keyed by the old
+     * derivation and would never match a valid key, so they are dropped as orphaned data.
+     */
     class Migration5To6 : AutoMigrationSpec {
         override fun onPostMigrate(db: SupportSQLiteDatabase) {
-            // Clear settings because the userKey derivation changed (sha256(refreshToken) →
-            // sha256(sessionId)); existing rows would never match any valid key.
             db.execSQL("DELETE FROM settings")
         }
     }

@@ -4,6 +4,7 @@ import dagger.Lazy
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timur.gilfanov.messenger.auth.di.ApplicationScope
@@ -66,9 +67,19 @@ class AuthCleanupObserverImpl @Inject constructor(
 
     private suspend fun deleteUserData(userKey: UserScopeKey) {
         dataCleaners.get().forEach { cleaner ->
-            val result = cleaner.deleteUserData(userKey)
-            if (result is ResultWithError.Failure) {
-                logger.e(TAG, "Failed to clean up user-scoped data: ${result.error}")
+            try {
+                val result = cleaner.deleteUserData(userKey)
+                if (result is ResultWithError.Failure) {
+                    logger.e(TAG, "Failed to clean up user-scoped data: ${result.error}")
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (@Suppress("TooGenericExceptionCaught") cause: Throwable) {
+                logger.e(
+                    TAG,
+                    "Cleaner threw while deleting user-scoped data for $userKey",
+                    cause,
+                )
             }
         }
     }

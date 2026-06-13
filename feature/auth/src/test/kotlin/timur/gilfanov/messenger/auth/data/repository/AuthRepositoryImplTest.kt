@@ -693,11 +693,22 @@ class AuthRepositoryImplTest {
         repo.authState.test {
             assertIs<AuthState.Authenticated>(awaitItem())
         }
-        val persistedSessionId =
+        val firstPersistedSessionId =
             assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(
                 storage.getSessionId(),
             )
-        kotlin.test.assertNotNull(persistedSessionId.data)
+        kotlin.test.assertNotNull(firstPersistedSessionId.data)
+
+        val repo2 = createRepo(sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+        repo2.authState.test {
+            assertIs<AuthState.Authenticated>(awaitItem())
+        }
+        val secondPersistedSessionId =
+            assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(
+                storage.getSessionId(),
+            )
+        kotlin.test.assertEquals(firstPersistedSessionId.data, secondPersistedSessionId.data)
     }
 }
 

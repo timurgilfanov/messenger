@@ -68,7 +68,7 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun restoreAuthState() {
+    private suspend fun restoreAuthState() = sessionMutex.withLock {
         val accessToken = localDataSource.getAccessToken().fold(
             onSuccess = { it },
             onFailure = { e ->
@@ -109,14 +109,12 @@ class AuthRepositoryImpl @Inject constructor(
                 sessionId = sessionId,
             )
             if (sessionIdWasMissing) {
-                sessionMutex.withLock {
-                    localDataSource.saveSession(session).fold(
-                        onSuccess = {},
-                        onFailure = { e ->
-                            logger.e(TAG, "Failed to persist generated session ID: $e")
-                        },
-                    )
-                }
+                localDataSource.saveSession(session).fold(
+                    onSuccess = {},
+                    onFailure = { e ->
+                        logger.e(TAG, "Failed to persist generated session ID: $e")
+                    },
+                )
             }
             AuthState.Authenticated(session)
         } else {

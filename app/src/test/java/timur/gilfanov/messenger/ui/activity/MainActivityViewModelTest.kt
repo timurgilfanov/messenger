@@ -100,7 +100,7 @@ class MainActivityViewModelTest {
 
         viewModel.effects.test {
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.Authenticated, awaitItem())
+            assertEquals(MainActivitySideEffects.Navigation.Authenticated, awaitItem())
         }
     }
 
@@ -112,7 +112,7 @@ class MainActivityViewModelTest {
 
         viewModel.effects.test {
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.Unauthenticated, awaitItem())
+            assertEquals(MainActivitySideEffects.Navigation.Unauthenticated, awaitItem())
         }
     }
 
@@ -123,11 +123,11 @@ class MainActivityViewModelTest {
 
         viewModel.effects.test {
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.Authenticated, awaitItem())
+            assertEquals(MainActivitySideEffects.Navigation.Authenticated, awaitItem())
 
             authRepository.setState(AuthState.Unauthenticated)
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.Unauthenticated, awaitItem())
+            assertEquals(MainActivitySideEffects.Navigation.Unauthenticated, awaitItem())
         }
     }
 
@@ -138,11 +138,11 @@ class MainActivityViewModelTest {
 
         viewModel.effects.test {
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.Unauthenticated, awaitItem())
+            assertEquals(MainActivitySideEffects.Navigation.Unauthenticated, awaitItem())
 
             authRepository.setState(AuthState.Authenticated(testSession))
             advanceUntilIdle()
-            assertEquals(MainActivitySideEffect.Authenticated, awaitItem())
+            assertEquals(MainActivitySideEffects.Navigation.Authenticated, awaitItem())
         }
     }
 }

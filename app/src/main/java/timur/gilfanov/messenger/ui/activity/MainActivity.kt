@@ -66,22 +66,24 @@ class MainActivity : AppCompatActivity() {
 
 @VisibleForTesting
 internal fun applyMainActivityEffect(
-    effect: MainActivitySideEffect,
+    effect: MainActivitySideEffects,
     backStack: MutableList<NavKey>,
 ) {
     when (effect) {
-        MainActivitySideEffect.Unauthenticated -> {
-            val top = backStack.lastOrNull()
-            if (top !is Login && top !is Signup) {
-                backStack.clear()
-                backStack.add(Login)
+        is MainActivitySideEffects.Navigation -> when (effect) {
+            MainActivitySideEffects.Navigation.Unauthenticated -> {
+                val top = backStack.lastOrNull()
+                if (top !is Login && top !is Signup) {
+                    backStack.clear()
+                    backStack.add(Login)
+                }
             }
-        }
-        MainActivitySideEffect.Authenticated -> {
-            val top = backStack.lastOrNull()
-            if (top == null || top is Login || top is Signup) {
-                backStack.clear()
-                backStack.add(Main)
+            MainActivitySideEffects.Navigation.Authenticated -> {
+                val top = backStack.lastOrNull()
+                if (top == null || top is Login || top is Signup) {
+                    backStack.clear()
+                    backStack.add(Main)
+                }
             }
         }
     }
@@ -89,7 +91,7 @@ internal fun applyMainActivityEffect(
 
 @Composable
 @Suppress("ModifierMissing", "ktlint:compose:modifier-missing-check")
-fun MessengerApp(googleSignInClient: GoogleSignInClient, effects: Flow<MainActivitySideEffect>) {
+fun MessengerApp(googleSignInClient: GoogleSignInClient, effects: Flow<MainActivitySideEffects>) {
     val backStack = rememberNavBackStack<NavKey>()
     val lifecycleOwner = LocalLifecycleOwner.current
 

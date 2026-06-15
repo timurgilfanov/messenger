@@ -101,7 +101,7 @@ class ProfileRepositoryImplTest {
     }
 
     @Test
-    fun `observeCurrentProfile emits remote data when upsert fails`() = runTest {
+    fun `observeCurrentProfile emits local failure when upsert fails`() = runTest {
         val upsertError = ProfileLocalDataSourceError.LocalDataSource(
             LocalDataSourceErrorV2.WriteError(ErrorReason("disk full")),
         )
@@ -112,7 +112,7 @@ class ProfileRepositoryImplTest {
         )
 
         repository.observeCurrentProfile(userKey).test {
-            assertEquals(Profile("Remote", null), awaitSuccess())
+            assertIs<ObserveProfileRepositoryError.LocalOperationFailed>(awaitFailure())
             expectNoEvents()
         }
     }

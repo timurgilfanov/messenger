@@ -67,10 +67,15 @@ class ProfileRepositoryImpl @Inject constructor(
                     userKey = userKey,
                     profile = remoteResult.data,
                 )
-                if (upsertResult is ResultWithError.Failure) {
-                    logger.w(TAG, "Failed to cache profile locally: ${upsertResult.error}")
+                when (upsertResult) {
+                    is ResultWithError.Success ->
+                        emit(ResultWithError.Success(remoteResult.data))
+
+                    is ResultWithError.Failure -> {
+                        logger.w(TAG, "Failed to cache profile locally: ${upsertResult.error}")
+                        emit(ResultWithError.Failure(upsertResult.error.toObserveProfileError()))
+                    }
                 }
-                emit(ResultWithError.Success(remoteResult.data))
             }
 
             is ResultWithError.Failure -> {

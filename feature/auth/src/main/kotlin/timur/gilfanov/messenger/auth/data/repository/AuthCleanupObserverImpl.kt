@@ -20,6 +20,9 @@ import timur.gilfanov.messenger.util.Logger
 @Singleton
 class AuthCleanupObserverImpl @Inject constructor(
     private val authRepository: Lazy<AuthRepository>,
+    // @JvmSuppressWildcards: Dagger multibindings provide an invariant
+    // Set<UserScopedDataCleaner>; without it Kotlin emits Set<? extends UserScopedDataCleaner>
+    // and the binding fails to resolve.
     private val dataCleaners: Lazy<Set<@JvmSuppressWildcards UserScopedDataCleaner>>,
     @ApplicationScope private val scope: CoroutineScope,
     private val logger: Logger,

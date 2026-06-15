@@ -25,6 +25,7 @@ import timur.gilfanov.messenger.domain.entity.fold
 private const val FILE_NAME = "auth_session"
 
 @Singleton
+@Suppress("TooManyFunctions")
 class LocalAuthDataSourceImpl internal constructor(
     private val dataStore: DataStore<Preferences>,
     private val authSessionCipher: AuthSessionCipher,
@@ -75,7 +76,7 @@ class LocalAuthDataSourceImpl internal constructor(
     override suspend fun saveTokens(
         tokens: AuthTokens,
     ): ResultWithError<Unit, AuthLocalDataSourceError> =
-        authSessionCipher.encryptTokenPair(tokens.accessToken, tokens.refreshToken).fold(
+        encryptTokenPair(tokens.accessToken, tokens.refreshToken).fold(
             onSuccess = { (encryptedAccessToken, encryptedRefreshToken) ->
                 writePreferences { preferences ->
                     preferences[keyAccessToken] = encryptedAccessToken
@@ -87,7 +88,7 @@ class LocalAuthDataSourceImpl internal constructor(
 
     override suspend fun saveSession(
         session: AuthSession,
-    ): ResultWithError<Unit, AuthLocalDataSourceError> = authSessionCipher.encryptTokenPair(
+    ): ResultWithError<Unit, AuthLocalDataSourceError> = encryptTokenPair(
         session.tokens.accessToken,
         session.tokens.refreshToken,
     ).fold(
@@ -104,6 +105,22 @@ class LocalAuthDataSourceImpl internal constructor(
 
     override suspend fun clearSession(): ResultWithError<Unit, AuthLocalDataSourceError> =
         writePreferences { it.clear() }
+
+    private fun encryptTokenPair(
+        accessToken: String,
+        refreshToken: String,
+    ): ResultWithError<Pair<String, String>, AuthLocalDataSourceError> =
+        authSessionCipher.encrypt(accessToken).toLocalResult().fold(
+            onSuccess = { encryptedAccessToken ->
+                authSessionCipher.encrypt(refreshToken).toLocalResult().fold(
+                    onSuccess = { encryptedRefreshToken ->
+                        ResultWithError.Success(encryptedAccessToken to encryptedRefreshToken)
+                    },
+                    onFailure = { ResultWithError.Failure(it) },
+                )
+            },
+            onFailure = { ResultWithError.Failure(it) },
+        )
 
     private suspend fun getToken(
         key: Preferences.Key<String>,
@@ -154,22 +171,6 @@ class LocalAuthDataSourceImpl internal constructor(
         },
     )
 }
-
-private fun AuthSessionCipher.encryptTokenPair(
-    accessToken: String,
-    refreshToken: String,
-): ResultWithError<Pair<String, String>, AuthLocalDataSourceError> =
-    encrypt(accessToken).toLocalResult().fold(
-        onSuccess = { encryptedAccessToken ->
-            encrypt(refreshToken).toLocalResult().fold(
-                onSuccess = { encryptedRefreshToken ->
-                    ResultWithError.Success(encryptedAccessToken to encryptedRefreshToken)
-                },
-                onFailure = { ResultWithError.Failure(it) },
-            )
-        },
-        onFailure = { ResultWithError.Failure(it) },
-    )
 
 private fun createDataStore(context: Context): DataStore<Preferences> =
     PreferenceDataStoreFactory.create { context.preferencesDataStoreFile(FILE_NAME) }

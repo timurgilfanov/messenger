@@ -90,35 +90,23 @@ class AuthRepositoryImpl @Inject constructor(
                 null
             },
         )
-        val getSessionIdResult = localDataSource.getSessionId()
-        val sessionIdFromStore = getSessionIdResult.fold(
+        val sessionId = localDataSource.getSessionId().fold(
             onSuccess = { it },
             onFailure = { e ->
                 logger.e(TAG, "Failed to restore session ID: $e")
                 null
             },
         )
-        val sessionId = sessionIdFromStore ?: UUID.randomUUID().toString()
-        val sessionIdWasMissing =
-            (getSessionIdResult is ResultWithError.Success && sessionIdFromStore == null) ||
-                getSessionIdResult is ResultWithError.Failure
-        val restoredState = if (accessToken != null && refreshToken != null && provider != null) {
-            val session = AuthSession(
-                tokens = AuthTokens(accessToken, refreshToken),
-                provider = provider,
-                sessionId = sessionId,
+        val restoredState = when {
+            accessToken == null || refreshToken == null -> AuthState.Unauthenticated
+            provider == null || sessionId == null -> AuthState.Unauthenticated
+            else -> AuthState.Authenticated(
+                AuthSession(
+                    tokens = AuthTokens(accessToken, refreshToken),
+                    provider = provider,
+                    sessionId = sessionId,
+                ),
             )
-            if (sessionIdWasMissing) {
-                localDataSource.saveSession(session).fold(
-                    onSuccess = {},
-                    onFailure = { e ->
-                        logger.e(TAG, "Failed to persist generated session ID: $e")
-                    },
-                )
-            }
-            AuthState.Authenticated(session)
-        } else {
-            AuthState.Unauthenticated
         }
         _authState.compareAndSet(null, restoredState)
     }

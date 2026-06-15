@@ -668,6 +668,7 @@ class AuthRepositoryImplTest {
         storage.enqueueGetAccessToken(ResultWithError.Success("access-token"))
         storage.enqueueGetRefreshToken(ResultWithError.Success("refresh-token"))
         storage.enqueueGetAuthProvider(ResultWithError.Success(AuthProvider.EMAIL))
+        storage.enqueueGetSessionId(ResultWithError.Success("session-id"))
 
         val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
@@ -678,7 +679,26 @@ class AuthRepositoryImplTest {
     }
 
     @Test
-    fun `getSessionId read failure generates and persists a stable session ID`() = runTest {
+    fun `session ID missing restores Unauthenticated`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueGetAccessToken(ResultWithError.Success("access-token"))
+        storage.enqueueGetRefreshToken(ResultWithError.Success("refresh-token"))
+        storage.enqueueGetAuthProvider(ResultWithError.Success(AuthProvider.EMAIL))
+        storage.enqueueGetSessionId(
+            ResultWithError.Success<String?, AuthLocalDataSourceError>(null),
+        )
+
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        repo.authState.test {
+            assertIs<AuthState.Unauthenticated>(awaitItem())
+        }
+        kotlin.test.assertEquals(0, storage.saveSessionCallCount)
+    }
+
+    @Test
+    fun `getSessionId read failure restores Unauthenticated without persisting`() = runTest {
         val storage = LocalAuthDataSourceFake()
         storage.enqueueGetAccessToken(ResultWithError.Success("access-token"))
         storage.enqueueGetRefreshToken(ResultWithError.Success("refresh-token"))
@@ -691,24 +711,9 @@ class AuthRepositoryImplTest {
         advanceUntilIdle()
 
         repo.authState.test {
-            assertIs<AuthState.Authenticated>(awaitItem())
+            assertIs<AuthState.Unauthenticated>(awaitItem())
         }
-        val firstPersistedSessionId =
-            assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(
-                storage.getSessionId(),
-            )
-        kotlin.test.assertNotNull(firstPersistedSessionId.data)
-
-        val repo2 = createRepo(sessionStorage = storage, testScope = this)
-        advanceUntilIdle()
-        repo2.authState.test {
-            assertIs<AuthState.Authenticated>(awaitItem())
-        }
-        val secondPersistedSessionId =
-            assertIs<ResultWithError.Success<String?, AuthLocalDataSourceError>>(
-                storage.getSessionId(),
-            )
-        kotlin.test.assertEquals(firstPersistedSessionId.data, secondPersistedSessionId.data)
+        kotlin.test.assertEquals(0, storage.saveSessionCallCount)
     }
 }
 

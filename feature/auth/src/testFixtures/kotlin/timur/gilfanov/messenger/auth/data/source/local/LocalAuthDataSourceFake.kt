@@ -12,6 +12,9 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
     private var authProvider: AuthProvider? = null
     private var sessionId: String? = null
 
+    var saveSessionCallCount: Int = 0
+        private set
+
     private val getAccessTokenQueue =
         ArrayDeque<ResultWithError<String?, AuthLocalDataSourceError>>()
     private val getRefreshTokenQueue =
@@ -105,6 +108,7 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
     override suspend fun saveSession(
         session: AuthSession,
     ): ResultWithError<Unit, AuthLocalDataSourceError> {
+        saveSessionCallCount++
         val result = if (saveSessionQueue.isNotEmpty()) {
             saveSessionQueue.removeFirst()
         } else {

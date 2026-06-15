@@ -140,7 +140,7 @@ class ProfileViewModelObservationTest {
         }
 
     @Test
-    fun `local profile failure posts side effect`() = runTest {
+    fun `local profile failure posts no side effect when no cached data`() = runTest {
         val error = ObserveProfileError.LocalOperationFailed(LocalStorageError.AccessDenied)
         val viewModel = createViewModel(
             flowOf(ResultWithError.Failure(error)),
@@ -149,7 +149,8 @@ class ProfileViewModelObservationTest {
         backgroundScope.launch { viewModel.state.collect {} }
 
         viewModel.effects.test {
-            assertIs<ProfileSideEffects.Feedback.ObserveFailed>(awaitItem())
+            advanceUntilIdle()
+            expectNoEvents()
         }
     }
 
@@ -197,7 +198,7 @@ class ProfileViewModelObservationTest {
     }
 
     @Test
-    fun `InsufficientPermissions posts side effect when no cached data`() = runTest {
+    fun `InsufficientPermissions posts no side effect when no cached data`() = runTest {
         val error = ObserveProfileError.RemoteOperationFailed(
             RemoteError.InsufficientPermissions,
         )
@@ -208,7 +209,8 @@ class ProfileViewModelObservationTest {
         backgroundScope.launch { viewModel.state.collect {} }
 
         viewModel.effects.test {
-            assertIs<ProfileSideEffects.Feedback.ObserveFailed>(awaitItem())
+            advanceUntilIdle()
+            expectNoEvents()
         }
     }
 
@@ -232,6 +234,29 @@ class ProfileViewModelObservationTest {
             }
 
             expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `profile failure posts side effect when cached data exists`() = runTest {
+        val profileFlow = MutableStateFlow<ResultWithError<Profile, ObserveProfileError>>(
+            ResultWithError.Success(Profile("Timur", null)),
+        )
+        val viewModel = createViewModel(profileFlow)
+
+        backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+
+        viewModel.effects.test {
+            profileFlow.update {
+                ResultWithError.Failure(
+                    ObserveProfileError.RemoteOperationFailed(
+                        RemoteError.Failed.NetworkNotAvailable,
+                    ),
+                )
+            }
+            advanceUntilIdle()
+            assertIs<ProfileSideEffects.Feedback.ObserveFailed>(awaitItem())
         }
     }
 

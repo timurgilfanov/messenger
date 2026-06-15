@@ -68,29 +68,31 @@ class ProfileViewModel @Inject constructor(
                                 savedStateHandle.remove<Boolean>(KEY_ERROR_STATE)
                             }
 
-                            is ObserveProfileError.LocalOperationFailed -> {
-                                if (_state.value is ProfileUiState.Loading) {
-                                    _state.value = ProfileUiState.Error
-                                    savedStateHandle[KEY_ERROR_STATE] = true
-                                }
-                                _effects.send(Feedback.ObserveFailed)
-                            }
+                            is ObserveProfileError.LocalOperationFailed ->
+                                handleObserveFailure()
 
                             is ObserveProfileError.RemoteOperationFailed -> {
                                 logger.i(
                                     TAG,
                                     "Profile observation remote failure: ${error.error}",
                                 )
-                                if (_state.value is ProfileUiState.Loading) {
-                                    _state.value = ProfileUiState.Error
-                                    savedStateHandle[KEY_ERROR_STATE] = true
-                                }
-                                _effects.send(Feedback.ObserveFailed)
+                                handleObserveFailure()
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun handleObserveFailure() {
+        when (_state.value) {
+            is ProfileUiState.Ready -> _effects.send(Feedback.ObserveFailed)
+            ProfileUiState.Loading -> {
+                _state.value = ProfileUiState.Error
+                savedStateHandle[KEY_ERROR_STATE] = true
+            }
+            ProfileUiState.Error -> Unit
         }
     }
 

@@ -123,6 +123,8 @@ class AuthRepositoryImpl @Inject constructor(
         _authState.compareAndSet(null, restoredState)
     }
 
+    private fun generateSessionId(): String = UUID.randomUUID().toString()
+
     override suspend fun loginWithCredentials(
         credentials: Credentials,
     ): ResultWithError<AuthSession, LoginRepositoryError> =
@@ -131,7 +133,7 @@ class AuthRepositoryImpl @Inject constructor(
                 val session = AuthSession(
                     tokens = tokens,
                     provider = AuthProvider.EMAIL,
-                    sessionId = UUID.randomUUID().toString(),
+                    sessionId = generateSessionId(),
                 )
                 sessionMutex.withLock {
                     localDataSource.saveSession(session).fold(
@@ -163,7 +165,7 @@ class AuthRepositoryImpl @Inject constructor(
                 val session = AuthSession(
                     tokens = tokens,
                     provider = AuthProvider.GOOGLE,
-                    sessionId = UUID.randomUUID().toString(),
+                    sessionId = generateSessionId(),
                 )
                 sessionMutex.withLock {
                     localDataSource.saveSession(session).fold(
@@ -199,7 +201,7 @@ class AuthRepositoryImpl @Inject constructor(
                 val session = AuthSession(
                     tokens = tokens,
                     provider = AuthProvider.GOOGLE,
-                    sessionId = UUID.randomUUID().toString(),
+                    sessionId = generateSessionId(),
                 )
                 sessionMutex.withLock {
                     localDataSource.saveSession(session).fold(
@@ -235,7 +237,7 @@ class AuthRepositoryImpl @Inject constructor(
                 val session = AuthSession(
                     tokens = tokens,
                     provider = AuthProvider.EMAIL,
-                    sessionId = UUID.randomUUID().toString(),
+                    sessionId = generateSessionId(),
                 )
                 sessionMutex.withLock {
                     localDataSource.saveSession(session).fold(

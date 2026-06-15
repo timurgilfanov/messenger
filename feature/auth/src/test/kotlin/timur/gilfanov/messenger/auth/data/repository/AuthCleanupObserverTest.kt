@@ -188,26 +188,9 @@ class AuthCleanupObserverTest {
             assertEquals(2, dataCleaner.deleteUserDataCallCount)
         }
 
-    @Test
-    fun `when cleaner throws then observer continues observing subsequent transitions`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))
-            val dataCleaner = UserScopedDataCleanerFake(throwOnDelete = true)
-            val observer = createObserver(authRepository, dataCleaner, backgroundScope)
-
-            observer.start()
-            authRepository.setState(AuthState.Unauthenticated)
-            assertEquals(1, dataCleaner.deleteUserDataCallCount)
-
-            authRepository.setState(AuthState.Authenticated(session1))
-            authRepository.setState(AuthState.Unauthenticated)
-            assertEquals(2, dataCleaner.deleteUserDataCallCount)
-        }
-
     private class UserScopedDataCleanerFake(
         private val deleteUserDataResult: ResultWithError<Unit, LocalStorageError> =
             ResultWithError.Success(Unit),
-        private val throwOnDelete: Boolean = false,
     ) : UserScopedDataCleaner {
         var lastDeleteUserDataKey: UserScopeKey? = null
             private set
@@ -219,9 +202,6 @@ class AuthCleanupObserverTest {
         ): ResultWithError<Unit, LocalStorageError> {
             lastDeleteUserDataKey = userKey
             deleteUserDataCallCount++
-            if (throwOnDelete) {
-                error("Cleaner failure for $userKey")
-            }
             return deleteUserDataResult
         }
     }

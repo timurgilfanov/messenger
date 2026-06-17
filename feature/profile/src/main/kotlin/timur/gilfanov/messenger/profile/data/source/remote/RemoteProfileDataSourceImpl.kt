@@ -3,15 +3,19 @@ package timur.gilfanov.messenger.profile.data.source.remote
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import java.io.InputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import timur.gilfanov.messenger.data.remote.ApiError
 import timur.gilfanov.messenger.data.remote.ApiResponse
 import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.data.remote.executeRemoteRequest
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Profile
+import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 import timur.gilfanov.messenger.util.Logger
 
@@ -51,6 +55,40 @@ class RemoteProfileDataSourceImpl @Inject constructor(
                 else -> ResultWithError.Failure(mapApiError(response.error))
             }
         }
+
+    override suspend fun updateName(
+        userId: UserId,
+        name: String,
+    ): ResultWithError<Unit, UpdateNameRemoteDataSourceError> = ResultWithError.Failure(
+        UpdateNameRemoteDataSourceError.RemoteProfileDataSource(editNotImplementedError()),
+    )
+
+    override suspend fun updatePicture(
+        userId: UserId,
+        pictureStream: InputStream,
+        mimeType: String,
+        contentLength: Long,
+    ): Flow<ResultWithError<UploadProgress, UpdatePictureRemoteDataSourceError>> = flowOf(
+        ResultWithError.Failure(
+            UpdatePictureRemoteDataSourceError.RemoteProfileDataSource(
+                editNotImplementedError(),
+            ),
+        ),
+    )
+
+    override suspend fun removePicture(
+        userId: UserId,
+        pictureUrl: String,
+    ): ResultWithError<Unit, RemovePictureRemoteDataSourceError> = ResultWithError.Failure(
+        RemovePictureRemoteDataSourceError.RemoteProfileDataSource(editNotImplementedError()),
+    )
+
+    private fun editNotImplementedError(): RemoteProfileDataSourceError =
+        RemoteProfileDataSourceError.RemoteDataSource(
+            RemoteDataSourceError.UnknownServiceError(
+                ErrorReason("Profile edit operations are not implemented in the retrieval layer"),
+            ),
+        )
 
     private fun missingDataError(): RemoteProfileDataSourceError =
         RemoteProfileDataSourceError.RemoteDataSource(

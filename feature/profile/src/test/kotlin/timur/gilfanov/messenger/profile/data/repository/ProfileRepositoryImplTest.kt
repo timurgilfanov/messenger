@@ -2,6 +2,7 @@ package timur.gilfanov.messenger.profile.data.repository
 
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import java.io.InputStream
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +17,7 @@ import timur.gilfanov.messenger.data.remote.RemoteDataSourceError
 import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Profile
+import timur.gilfanov.messenger.domain.entity.profile.UserId
 import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.common.ErrorReason
 import timur.gilfanov.messenger.domain.usecase.profile.repository.ObserveProfileRepositoryError
@@ -24,6 +26,10 @@ import timur.gilfanov.messenger.profile.data.source.local.LocalProfileDataSource
 import timur.gilfanov.messenger.profile.data.source.local.ProfileLocalDataSourceError
 import timur.gilfanov.messenger.profile.data.source.remote.RemoteProfileDataSource
 import timur.gilfanov.messenger.profile.data.source.remote.RemoteProfileDataSourceError
+import timur.gilfanov.messenger.profile.data.source.remote.RemovePictureRemoteDataSourceError
+import timur.gilfanov.messenger.profile.data.source.remote.UpdateNameRemoteDataSourceError
+import timur.gilfanov.messenger.profile.data.source.remote.UpdatePictureRemoteDataSourceError
+import timur.gilfanov.messenger.profile.data.source.remote.UploadProgress
 
 @Category(Unit::class)
 class ProfileRepositoryImplTest {
@@ -226,5 +232,37 @@ class ProfileRepositoryImplTest {
             > =
             error?.let { ResultWithError.Failure<Profile, RemoteProfileDataSourceError>(it) }
                 ?: ResultWithError.Success(requireNotNull(profile))
+
+        override suspend fun updateName(
+            userId: UserId,
+            name: String,
+        ): ResultWithError<kotlin.Unit, UpdateNameRemoteDataSourceError> = ResultWithError.Failure(
+            UpdateNameRemoteDataSourceError.RemoteProfileDataSource(
+                RemoteProfileDataSourceError.InsufficientPermissions,
+            ),
+        )
+
+        override suspend fun updatePicture(
+            userId: UserId,
+            pictureStream: InputStream,
+            mimeType: String,
+            contentLength: Long,
+        ): Flow<ResultWithError<UploadProgress, UpdatePictureRemoteDataSourceError>> = flowOf(
+            ResultWithError.Failure(
+                UpdatePictureRemoteDataSourceError.RemoteProfileDataSource(
+                    RemoteProfileDataSourceError.InsufficientPermissions,
+                ),
+            ),
+        )
+
+        override suspend fun removePicture(
+            userId: UserId,
+            pictureUrl: String,
+        ): ResultWithError<kotlin.Unit, RemovePictureRemoteDataSourceError> =
+            ResultWithError.Failure(
+                RemovePictureRemoteDataSourceError.RemoteProfileDataSource(
+                    RemoteProfileDataSourceError.InsufficientPermissions,
+                ),
+            )
     }
 }

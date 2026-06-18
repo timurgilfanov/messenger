@@ -124,7 +124,8 @@ private fun ProfileReadyContent(profile: ProfileUi, modifier: Modifier = Modifie
                 .background(
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shape = CircleShape,
-                ),
+                )
+                .testTag("profile_avatar"),
         ) {
             Text(
                 text = profile.name.firstOrNull()?.uppercase() ?: "",
@@ -137,6 +138,7 @@ private fun ProfileReadyContent(profile: ProfileUi, modifier: Modifier = Modifie
             text = profile.name,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.testTag("profile_name"),
         )
     }
 }

@@ -75,6 +75,92 @@ class RemoteProfileDataSourceImplTest {
     }
 
     @Test
+    fun `getCurrentProfile maps SESSION_REVOKED to authentication error`() = runTest {
+        val dataSource = RemoteProfileDataSourceImpl(
+            createMockClient(errorResponse("SESSION_REVOKED")),
+            NoOpLogger(),
+        )
+
+        val result = dataSource.getCurrentProfile()
+
+        val failure = assertIs<ResultWithError.Failure<*, RemoteProfileDataSourceError>>(result)
+        assertIs<RemoteProfileDataSourceError.Authentication.SessionRevoked>(failure.error)
+    }
+
+    @Test
+    fun `getCurrentProfile maps INSUFFICIENT_PERMISSIONS to insufficient permissions`() = runTest {
+        val dataSource = RemoteProfileDataSourceImpl(
+            createMockClient(errorResponse("INSUFFICIENT_PERMISSIONS")),
+            NoOpLogger(),
+        )
+
+        val result = dataSource.getCurrentProfile()
+
+        val failure = assertIs<ResultWithError.Failure<*, RemoteProfileDataSourceError>>(result)
+        assertIs<RemoteProfileDataSourceError.InsufficientPermissions>(failure.error)
+    }
+
+    @Test
+    fun `getCurrentProfile maps COOLDOWN_ACTIVE with remaining_ms to cooldown`() = runTest {
+        val dataSource = RemoteProfileDataSourceImpl(
+            createMockClient(
+                errorResponse("COOLDOWN_ACTIVE", details = mapOf("remaining_ms" to "5000")),
+            ),
+            NoOpLogger(),
+        )
+
+        val result = dataSource.getCurrentProfile()
+
+        val failure = assertIs<ResultWithError.Failure<*, RemoteProfileDataSourceError>>(result)
+        val error = assertIs<RemoteProfileDataSourceError.RemoteDataSource>(failure.error)
+        assertIs<RemoteDataSourceError.CooldownActive>(error.error)
+    }
+
+    @Test
+    fun `getCurrentProfile maps COOLDOWN_ACTIVE missing remaining_ms to unknown service error`() =
+        runTest {
+            val dataSource = RemoteProfileDataSourceImpl(
+                createMockClient(errorResponse("COOLDOWN_ACTIVE")),
+                NoOpLogger(),
+            )
+
+            val result = dataSource.getCurrentProfile()
+
+            val failure =
+                assertIs<ResultWithError.Failure<*, RemoteProfileDataSourceError>>(result)
+            val error = assertIs<RemoteProfileDataSourceError.RemoteDataSource>(failure.error)
+            assertIs<RemoteDataSourceError.UnknownServiceError>(error.error)
+        }
+
+    @Test
+    fun `getCurrentProfile maps SERVER_ERROR to server error`() = runTest {
+        val dataSource = RemoteProfileDataSourceImpl(
+            createMockClient(errorResponse("SERVER_ERROR")),
+            NoOpLogger(),
+        )
+
+        val result = dataSource.getCurrentProfile()
+
+        val failure = assertIs<ResultWithError.Failure<*, RemoteProfileDataSourceError>>(result)
+        val error = assertIs<RemoteProfileDataSourceError.RemoteDataSource>(failure.error)
+        assertIs<RemoteDataSourceError.ServerError>(error.error)
+    }
+
+    @Test
+    fun `getCurrentProfile maps unknown error code to unknown service error`() = runTest {
+        val dataSource = RemoteProfileDataSourceImpl(
+            createMockClient(errorResponse("SOMETHING_UNEXPECTED")),
+            NoOpLogger(),
+        )
+
+        val result = dataSource.getCurrentProfile()
+
+        val failure = assertIs<ResultWithError.Failure<*, RemoteProfileDataSourceError>>(result)
+        val error = assertIs<RemoteProfileDataSourceError.RemoteDataSource>(failure.error)
+        assertIs<RemoteDataSourceError.UnknownServiceError>(error.error)
+    }
+
+    @Test
     fun `getCurrentProfile maps missing success data to unknown service error`() = runTest {
         val response = json.encodeToString(ApiResponse<ProfileDto>(data = null, success = true))
         val dataSource = RemoteProfileDataSourceImpl(createMockClient(response), NoOpLogger())
@@ -120,12 +206,15 @@ class RemoteProfileDataSourceImplTest {
         }
     }
 
-    private fun errorResponse(code: String, message: String = "error"): String =
-        json.encodeToString(
-            ApiResponse<Unit>(
-                data = null,
-                success = false,
-                error = ApiError(code = code, message = message),
-            ),
-        )
+    private fun errorResponse(
+        code: String,
+        message: String = "error",
+        details: Map<String, String>? = null,
+    ): String = json.encodeToString(
+        ApiResponse<Unit>(
+            data = null,
+            success = false,
+            error = ApiError(code = code, message = message, details = details),
+        ),
+    )
 }

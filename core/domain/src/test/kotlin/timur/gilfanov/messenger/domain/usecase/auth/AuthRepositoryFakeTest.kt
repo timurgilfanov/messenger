@@ -3,6 +3,7 @@ package timur.gilfanov.messenger.domain.usecase.auth
 import app.cash.turbine.test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -17,6 +18,7 @@ import timur.gilfanov.messenger.domain.entity.auth.Email
 import timur.gilfanov.messenger.domain.entity.auth.GoogleIdToken
 import timur.gilfanov.messenger.domain.entity.auth.Password
 import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleLoginRepositoryError
+import timur.gilfanov.messenger.domain.usecase.auth.repository.GoogleSignupRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LoginRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.LogoutRepositoryError
 import timur.gilfanov.messenger.domain.usecase.auth.repository.RefreshRepositoryError
@@ -288,4 +290,35 @@ class AuthRepositoryFakeTest {
             assertEquals(RefreshRepositoryError.SessionRevoked, result.error)
             assertEquals(AuthState.Unauthenticated, repository.currentAuthState)
         }
+
+    @Test
+    fun `loginWithGoogle default success generates a Google session`() = runTest {
+        val result = AuthRepositoryFake().loginWithGoogle(GoogleIdToken("id-token"))
+
+        val success =
+            assertIs<ResultWithError.Success<AuthSession, GoogleLoginRepositoryError>>(result)
+        assertEquals(AuthProvider.GOOGLE, success.data.provider)
+        assertTrue(success.data.sessionId.isNotBlank())
+    }
+
+    @Test
+    fun `signupWithGoogle default success generates a Google session`() = runTest {
+        val result = AuthRepositoryFake().signupWithGoogle(GoogleIdToken("id-token"), name = "Tim")
+
+        val success =
+            assertIs<ResultWithError.Success<AuthSession, GoogleSignupRepositoryError>>(result)
+        assertEquals(AuthProvider.GOOGLE, success.data.provider)
+        assertTrue(success.data.sessionId.isNotBlank())
+    }
+
+    @Test
+    fun `signup default success generates an email session`() = runTest {
+        val credentials = Credentials(email = Email("a@b.com"), password = Password("pass"))
+
+        val result = AuthRepositoryFake().signup(credentials = credentials, name = "Tim")
+
+        val success = assertIs<ResultWithError.Success<AuthSession, SignupRepositoryError>>(result)
+        assertEquals(AuthProvider.EMAIL, success.data.provider)
+        assertTrue(success.data.sessionId.isNotBlank())
+    }
 }

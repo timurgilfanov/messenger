@@ -215,6 +215,40 @@ class ProfileViewModelObservationTest {
     }
 
     @Test
+    fun `failure while already in Error state is a no-op`() = runTest {
+        val error = ObserveProfileError.RemoteOperationFailed(
+            RemoteError.Failed.NetworkNotAvailable,
+        )
+        val viewModel = createViewModel(
+            flowOf(ResultWithError.Failure(error), ResultWithError.Failure(error)),
+        )
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `retry resets Error state to Loading and re-observes`() = runTest {
+        val error = ObserveProfileError.RemoteOperationFailed(
+            RemoteError.Failed.NetworkNotAvailable,
+        )
+        val viewModel = createViewModel(flowOf(ResultWithError.Failure(error)))
+
+        viewModel.state.test {
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+
+            viewModel.retry()
+
+            assertIs<ProfileUiState.Loading>(awaitItem())
+            assertIs<ProfileUiState.Error>(awaitItem())
+        }
+    }
+
+    @Test
     fun `profile failure keeps Ready state when cached data exists`() = runTest {
         val profileFlow = MutableStateFlow<ResultWithError<Profile, ObserveProfileError>>(
             ResultWithError.Success(Profile("Timur", null)),

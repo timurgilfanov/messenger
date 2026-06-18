@@ -39,6 +39,18 @@ class LocalProfileDataSourceImplTest {
     }
 
     @Test
+    fun `observeProfile rethrows non-SQLite exceptions`() = runTest {
+        val dataSource = LocalProfileDataSourceImpl(
+            FakeProfileDao(observeException = IllegalStateException("boom")),
+            NoOpLogger(),
+        )
+
+        dataSource.observeProfile(userKey).test {
+            assertIs<IllegalStateException>(awaitError())
+        }
+    }
+
+    @Test
     fun `upsertProfile stores row observed by observeProfile`() = runTest {
         val dataSource = LocalProfileDataSourceImpl(FakeProfileDao(), NoOpLogger())
 
@@ -211,7 +223,7 @@ class LocalProfileDataSourceImplTest {
     }
 
     private class FakeProfileDao(
-        private val observeException: SQLiteException? = null,
+        private val observeException: Throwable? = null,
         private val writeException: SQLiteException? = null,
     ) : ProfileDao {
         private val rows = MutableStateFlow<Map<String, ProfileEntity>>(emptyMap())

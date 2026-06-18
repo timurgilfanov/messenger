@@ -128,6 +128,7 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.GOOGLE,
+                sessionId = "test-session-id",
             ),
         )
 
@@ -198,6 +199,7 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.EMAIL,
+                sessionId = "test-session-id",
             ),
         )
 
@@ -226,6 +228,7 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.EMAIL,
+                sessionId = "test-session-id",
             ),
         )
 
@@ -254,6 +257,7 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.EMAIL,
+                sessionId = "test-session-id",
             ),
         )
 
@@ -279,6 +283,7 @@ class LocalAuthDataSourceImplTest {
             AuthSession(
                 tokens = AuthTokens("access", "refresh"),
                 provider = AuthProvider.EMAIL,
+                sessionId = "test-session-id",
             ),
         )
 

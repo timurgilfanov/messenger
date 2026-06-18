@@ -24,6 +24,7 @@ class ObserveSettingsUseCaseImplTest {
     private fun createTestSession(): AuthSession = AuthSession(
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
+        sessionId = "test-session-id",
     )
 
     private fun createTestSettings(language: UiLanguage = UiLanguage.English): Settings = Settings(
@@ -106,6 +107,7 @@ class ObserveSettingsUseCaseImplTest {
         val session2 = AuthSession(
             tokens = AuthTokens(accessToken = "test-access-2", refreshToken = "test-refresh-2"),
             provider = AuthProvider.EMAIL,
+            sessionId = "test-session-id-2",
         )
 
         val authRepository = AuthRepositoryFake(AuthState.Authenticated(session1))

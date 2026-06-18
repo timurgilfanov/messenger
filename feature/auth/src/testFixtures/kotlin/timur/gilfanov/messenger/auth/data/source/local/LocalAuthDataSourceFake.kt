@@ -10,6 +10,10 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
     private var accessToken: String? = null
     private var refreshToken: String? = null
     private var authProvider: AuthProvider? = null
+    private var sessionId: String? = null
+
+    var saveSessionCallCount: Int = 0
+        private set
 
     private val getAccessTokenQueue =
         ArrayDeque<ResultWithError<String?, AuthLocalDataSourceError>>()
@@ -17,6 +21,8 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         ArrayDeque<ResultWithError<String?, AuthLocalDataSourceError>>()
     private val getAuthProviderQueue =
         ArrayDeque<ResultWithError<AuthProvider?, AuthLocalDataSourceError>>()
+    private val getSessionIdQueue =
+        ArrayDeque<ResultWithError<String?, AuthLocalDataSourceError>>()
     private val saveTokensQueue = ArrayDeque<ResultWithError<Unit, AuthLocalDataSourceError>>()
     private val saveSessionQueue = ArrayDeque<ResultWithError<Unit, AuthLocalDataSourceError>>()
     private val clearSessionQueue = ArrayDeque<ResultWithError<Unit, AuthLocalDataSourceError>>()
@@ -33,6 +39,10 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         vararg results: ResultWithError<AuthProvider?, AuthLocalDataSourceError>,
     ) {
         results.forEach { getAuthProviderQueue.addLast(it) }
+    }
+
+    fun enqueueGetSessionId(vararg results: ResultWithError<String?, AuthLocalDataSourceError>) {
+        results.forEach { getSessionIdQueue.addLast(it) }
     }
 
     fun enqueueSaveTokens(vararg results: ResultWithError<Unit, AuthLocalDataSourceError>) {
@@ -71,6 +81,13 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
             ResultWithError.Success(authProvider)
         }
 
+    override suspend fun getSessionId(): ResultWithError<String?, AuthLocalDataSourceError> =
+        if (getSessionIdQueue.isNotEmpty()) {
+            getSessionIdQueue.removeFirst()
+        } else {
+            ResultWithError.Success(sessionId)
+        }
+
     override suspend fun saveTokens(
         tokens: AuthTokens,
     ): ResultWithError<Unit, AuthLocalDataSourceError> {
@@ -91,6 +108,7 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
     override suspend fun saveSession(
         session: AuthSession,
     ): ResultWithError<Unit, AuthLocalDataSourceError> {
+        saveSessionCallCount++
         val result = if (saveSessionQueue.isNotEmpty()) {
             saveSessionQueue.removeFirst()
         } else {
@@ -102,6 +120,7 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
             accessToken = session.tokens.accessToken
             refreshToken = session.tokens.refreshToken
             authProvider = session.provider
+            sessionId = session.sessionId
         }
         return result
     }
@@ -118,6 +137,7 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
             accessToken = null
             refreshToken = null
             authProvider = null
+            sessionId = null
         }
         return result
     }

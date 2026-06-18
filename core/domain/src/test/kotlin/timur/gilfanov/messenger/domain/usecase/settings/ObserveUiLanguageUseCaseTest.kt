@@ -26,6 +26,7 @@ class ObserveUiLanguageUseCaseTest {
     private val testSession = AuthSession(
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
+        sessionId = "test-session-id",
     )
     private val logger = NoOpLogger()
 

@@ -77,6 +77,12 @@ class ChatListViewModel @Inject constructor(
                                 "Profile observation failed with Unauthorized error",
                             )
                         }
+
+                        is ObserveProfileError.LocalOperationFailed,
+                        is ObserveProfileError.RemoteOperationFailed,
+                        -> {
+                            logger.e(TAG, "Profile observation failed: ${result.error}")
+                        }
                     }
                 }
             }

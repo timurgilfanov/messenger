@@ -72,6 +72,57 @@ sealed interface LocalDataSourceErrorV2 {
     data class DeserializationError(val reason: ErrorReason) :
         LocalDataSourceErrorV2,
         LocalDataSourceReadError
+
+    /**
+     * Local database is corrupted.
+     *
+     * Occurs when the SQLite database file is physically damaged.
+     * Requires clearing app data to recover.
+     *
+     * @property reason Description for logging of the cause of corruption detection
+     */
+    data class CorruptedError(val reason: ErrorReason) :
+        LocalDataSourceErrorV2,
+        LocalDataSourceReadError,
+        LocalDataSourceWriteError
+
+    /**
+     * Local storage is full and cannot complete the operation.
+     *
+     * Occurs when the device storage is exhausted. Requires freeing storage space.
+     * Can occur during reads in WAL mode due to temp file creation or checkpoint operations.
+     *
+     * @property reason Description for logging of the cause of storage full condition
+     */
+    data class StorageFullError(val reason: ErrorReason) :
+        LocalDataSourceErrorV2,
+        LocalDataSourceReadError,
+        LocalDataSourceWriteError
+
+    /**
+     * Local database is in read-only mode.
+     *
+     * May require app restart or clearing data to recover. Can occur during reads in WAL mode
+     * because checkpoints require write access even for read operations.
+     *
+     * @property reason Description for logging of the cause of read-only condition
+     */
+    data class ReadOnlyError(val reason: ErrorReason) :
+        LocalDataSourceErrorV2,
+        LocalDataSourceReadError,
+        LocalDataSourceWriteError
+
+    /**
+     * Insufficient permissions to access local storage.
+     *
+     * Requires granting storage permissions to the app.
+     *
+     * @property reason Description for logging of the cause of access denial
+     */
+    data class AccessDeniedError(val reason: ErrorReason) :
+        LocalDataSourceErrorV2,
+        LocalDataSourceReadError,
+        LocalDataSourceWriteError
 }
 
 /**

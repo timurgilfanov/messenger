@@ -25,6 +25,7 @@ import timur.gilfanov.messenger.domain.entity.fold
 private const val FILE_NAME = "auth_session"
 
 @Singleton
+@Suppress("TooManyFunctions")
 class LocalAuthDataSourceImpl internal constructor(
     private val dataStore: DataStore<Preferences>,
     private val authSessionCipher: AuthSessionCipher,
@@ -42,12 +43,16 @@ class LocalAuthDataSourceImpl internal constructor(
     private val keyAccessToken = stringPreferencesKey("access_token")
     private val keyRefreshToken = stringPreferencesKey("refresh_token")
     private val keyAuthProvider = stringPreferencesKey("auth_provider")
+    private val keySessionId = stringPreferencesKey("session_id")
 
     override suspend fun getAccessToken(): ResultWithError<String?, AuthLocalDataSourceError> =
         getToken(keyAccessToken)
 
     override suspend fun getRefreshToken(): ResultWithError<String?, AuthLocalDataSourceError> =
         getToken(keyRefreshToken)
+
+    override suspend fun getSessionId(): ResultWithError<String?, AuthLocalDataSourceError> =
+        readPreference(keySessionId)
 
     override suspend fun getAuthProvider(): ResultWithError<
         AuthProvider?,
@@ -83,17 +88,20 @@ class LocalAuthDataSourceImpl internal constructor(
 
     override suspend fun saveSession(
         session: AuthSession,
-    ): ResultWithError<Unit, AuthLocalDataSourceError> =
-        encryptTokenPair(session.tokens.accessToken, session.tokens.refreshToken).fold(
-            onSuccess = { (encryptedAccessToken, encryptedRefreshToken) ->
-                writePreferences { preferences ->
-                    preferences[keyAccessToken] = encryptedAccessToken
-                    preferences[keyRefreshToken] = encryptedRefreshToken
-                    preferences[keyAuthProvider] = session.provider.name
-                }
-            },
-            onFailure = { ResultWithError.Failure(it) },
-        )
+    ): ResultWithError<Unit, AuthLocalDataSourceError> = encryptTokenPair(
+        session.tokens.accessToken,
+        session.tokens.refreshToken,
+    ).fold(
+        onSuccess = { (encryptedAccessToken, encryptedRefreshToken) ->
+            writePreferences { preferences ->
+                preferences[keyAccessToken] = encryptedAccessToken
+                preferences[keyRefreshToken] = encryptedRefreshToken
+                preferences[keyAuthProvider] = session.provider.name
+                preferences[keySessionId] = session.sessionId
+            }
+        },
+        onFailure = { ResultWithError.Failure(it) },
+    )
 
     override suspend fun clearSession(): ResultWithError<Unit, AuthLocalDataSourceError> =
         writePreferences { it.clear() }

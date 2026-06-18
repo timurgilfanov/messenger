@@ -23,6 +23,7 @@ object LanguageViewModelTestFixtures {
     private val TEST_SESSION = AuthSession(
         tokens = AuthTokens(accessToken = "test-access", refreshToken = "test-refresh"),
         provider = AuthProvider.EMAIL,
+        sessionId = "test-session-id",
     )
 
     fun createTestSettings(language: UiLanguage = UiLanguage.English): Settings = Settings(

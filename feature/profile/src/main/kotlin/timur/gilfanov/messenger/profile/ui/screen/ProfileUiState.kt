@@ -6,4 +6,5 @@ import androidx.compose.runtime.Immutable
 sealed interface ProfileUiState {
     data object Loading : ProfileUiState
     data class Ready(val profile: ProfileUi) : ProfileUiState
+    data object Error : ProfileUiState
 }

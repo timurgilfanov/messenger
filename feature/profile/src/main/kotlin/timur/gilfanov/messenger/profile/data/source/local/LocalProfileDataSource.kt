@@ -1,9 +1,9 @@
 package timur.gilfanov.messenger.profile.data.source.local
 
 import kotlinx.coroutines.flow.Flow
+import timur.gilfanov.messenger.domain.UserScopeKey
 import timur.gilfanov.messenger.domain.entity.ResultWithError
 import timur.gilfanov.messenger.domain.entity.profile.Profile
-import timur.gilfanov.messenger.domain.entity.profile.UserId
 
 /**
  * Local data source for user profile data.
@@ -14,25 +14,34 @@ import timur.gilfanov.messenger.domain.entity.profile.UserId
  */
 interface LocalProfileDataSource {
     /**
-     * Observes profile changes for a specific user.
+     * Observes profile changes for a specific user scope.
      *
-     * @param userId The unique identifier of the user to observe
+     * @param userKey Opaque key identifying the authenticated user's local cache partition
      * @return Flow emitting profile updates or errors
      */
-    fun observeProfile(userId: UserId): Flow<ResultWithError<Profile, ProfileLocalDataSourceError>>
+    fun observeProfile(
+        userKey: UserScopeKey,
+    ): Flow<ResultWithError<Profile, ProfileLocalDataSourceError>>
 
     /**
-     * Updates profile using a transformation function.
+     * Inserts or replaces the cached profile for a user scope.
      *
-     * Atomically reads the current profile, applies the transformation,
-     * and writes the result back to local storage.
-     *
-     * @param userId The unique identifier of the user
-     * @param transform Function transforming the current profile to new profile
+     * @param userKey Opaque key identifying the authenticated user's local cache partition
+     * @param profile Profile to cache locally
      * @return Success or failure with [ProfileLocalDataSourceError]
      */
-    suspend fun updateProfile(
-        userId: UserId,
-        transform: (Profile) -> Profile,
+    suspend fun upsertProfile(
+        userKey: UserScopeKey,
+        profile: Profile,
+    ): ResultWithError<Unit, ProfileLocalDataSourceError>
+
+    /**
+     * Deletes all cached profile data for a user scope.
+     *
+     * @param userKey Opaque key identifying the authenticated user's local cache partition
+     * @return Success or failure with [ProfileLocalDataSourceError]
+     */
+    suspend fun deleteProfile(
+        userKey: UserScopeKey,
     ): ResultWithError<Unit, ProfileLocalDataSourceError>
 }

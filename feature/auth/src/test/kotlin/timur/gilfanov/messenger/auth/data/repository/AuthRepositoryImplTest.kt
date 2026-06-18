@@ -451,6 +451,7 @@ class AuthRepositoryImplTest {
         val initialSession = AuthSession(
             tokens = AuthTokens("old-access", "old-refresh"),
             provider = AuthProvider.EMAIL,
+            sessionId = "test-session-id",
         )
         val newTokens = AuthTokens("new-access", "new-refresh")
         val storage = RefreshLogoutRaceLocalAuthDataSource(initialSession)
@@ -667,6 +668,7 @@ class AuthRepositoryImplTest {
         storage.enqueueGetAccessToken(ResultWithError.Success("access-token"))
         storage.enqueueGetRefreshToken(ResultWithError.Success("refresh-token"))
         storage.enqueueGetAuthProvider(ResultWithError.Success(AuthProvider.EMAIL))
+        storage.enqueueGetSessionId(ResultWithError.Success("session-id"))
 
         val repo = createRepo(sessionStorage = storage, testScope = this)
         advanceUntilIdle()
@@ -674,6 +676,44 @@ class AuthRepositoryImplTest {
         repo.authState.test {
             assertIs<AuthState.Authenticated>(awaitItem())
         }
+    }
+
+    @Test
+    fun `session ID missing restores Unauthenticated`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueGetAccessToken(ResultWithError.Success("access-token"))
+        storage.enqueueGetRefreshToken(ResultWithError.Success("refresh-token"))
+        storage.enqueueGetAuthProvider(ResultWithError.Success(AuthProvider.EMAIL))
+        storage.enqueueGetSessionId(
+            ResultWithError.Success<String?, AuthLocalDataSourceError>(null),
+        )
+
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        repo.authState.test {
+            assertIs<AuthState.Unauthenticated>(awaitItem())
+        }
+        kotlin.test.assertEquals(0, storage.saveSessionCallCount)
+    }
+
+    @Test
+    fun `getSessionId read failure restores Unauthenticated without persisting`() = runTest {
+        val storage = LocalAuthDataSourceFake()
+        storage.enqueueGetAccessToken(ResultWithError.Success("access-token"))
+        storage.enqueueGetRefreshToken(ResultWithError.Success("refresh-token"))
+        storage.enqueueGetAuthProvider(ResultWithError.Success(AuthProvider.EMAIL))
+        storage.enqueueGetSessionId(
+            ResultWithError.Failure(AuthLocalDataSourceError.TemporarilyUnavailable),
+        )
+
+        val repo = createRepo(sessionStorage = storage, testScope = this)
+        advanceUntilIdle()
+
+        repo.authState.test {
+            assertIs<AuthState.Unauthenticated>(awaitItem())
+        }
+        kotlin.test.assertEquals(0, storage.saveSessionCallCount)
     }
 }
 
@@ -684,6 +724,7 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
     var refreshToken: String? = initialSession.tokens.refreshToken
         private set
     private var authProvider: AuthProvider? = initialSession.provider
+    private var sessionId: String? = initialSession.sessionId
 
     val clearSessionStarted = CompletableDeferred<Unit>()
     val finishClearSession = CompletableDeferred<Unit>()
@@ -700,6 +741,9 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
         > =
         ResultWithError.Success(authProvider)
 
+    override suspend fun getSessionId(): ResultWithError<String?, AuthLocalDataSourceError> =
+        ResultWithError.Success(sessionId)
+
     override suspend fun saveTokens(
         tokens: AuthTokens,
     ): ResultWithError<Unit, AuthLocalDataSourceError> {
@@ -714,6 +758,7 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
         accessToken = session.tokens.accessToken
         refreshToken = session.tokens.refreshToken
         authProvider = session.provider
+        sessionId = session.sessionId
         return ResultWithError.Success(Unit)
     }
 
@@ -721,6 +766,7 @@ private class RefreshLogoutRaceLocalAuthDataSource(initialSession: AuthSession) 
         accessToken = null
         refreshToken = null
         authProvider = null
+        sessionId = null
         clearSessionStarted.complete(Unit)
         finishClearSession.await()
         return ResultWithError.Success(Unit)

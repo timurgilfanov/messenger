@@ -33,6 +33,9 @@ import timur.gilfanov.messenger.domain.testutil.NoOpLogger
 import timur.gilfanov.messenger.domain.usecase.auth.AuthRepository
 import timur.gilfanov.messenger.domain.usecase.chat.ChatRepository
 import timur.gilfanov.messenger.domain.usecase.message.MessageRepository
+import timur.gilfanov.messenger.domain.usecase.profile.ProfileRepositoryStub
+import timur.gilfanov.messenger.domain.usecase.profile.repository.ProfileRepository
+import timur.gilfanov.messenger.profile.di.ProfileDataModule
 import timur.gilfanov.messenger.testutil.RepositoryCleanupRule
 import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createAuthenticatedRepository
 
@@ -42,6 +45,7 @@ import timur.gilfanov.messenger.ui.screen.chat.ChatViewModelTestFixtures.createA
     RepositoryModule::class,
     timur.gilfanov.messenger.di.TestChatModule::class,
     AuthDataModule::class,
+    ProfileDataModule::class,
 )
 @Config(sdk = [33], application = HiltTestApplication::class)
 @Category(Feature::class)
@@ -76,6 +80,14 @@ class ChatFeatureTest {
         @Provides
         @Singleton
         fun provideAuthRepository(): AuthRepository = createAuthenticatedRepository()
+    }
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object TestProfileModule {
+        @Provides
+        @Singleton
+        fun provideProfileRepository(): ProfileRepository = ProfileRepositoryStub()
     }
 
     @Module

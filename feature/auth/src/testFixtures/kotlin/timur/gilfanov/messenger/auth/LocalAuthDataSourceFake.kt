@@ -11,6 +11,7 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
     var accessToken: String? = null
     var refreshToken: String? = null
     var authProvider: AuthProvider? = null
+    var sessionId: String? = null
 
     override suspend fun getAccessToken(): ResultWithError<String?, AuthLocalDataSourceError> =
         ResultWithError.Success(accessToken)
@@ -23,6 +24,9 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         AuthLocalDataSourceError,
         > =
         ResultWithError.Success(authProvider)
+
+    override suspend fun getSessionId(): ResultWithError<String?, AuthLocalDataSourceError> =
+        ResultWithError.Success(sessionId)
 
     override suspend fun saveTokens(
         tokens: AuthTokens,
@@ -38,6 +42,7 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         accessToken = session.tokens.accessToken
         refreshToken = session.tokens.refreshToken
         authProvider = session.provider
+        sessionId = session.sessionId
         return ResultWithError.Success(Unit)
     }
 
@@ -45,6 +50,7 @@ class LocalAuthDataSourceFake : LocalAuthDataSource {
         accessToken = null
         refreshToken = null
         authProvider = null
+        sessionId = null
         return ResultWithError.Success(Unit)
     }
 }

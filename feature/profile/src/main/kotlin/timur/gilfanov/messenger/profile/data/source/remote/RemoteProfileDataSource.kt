@@ -14,12 +14,11 @@ import timur.gilfanov.messenger.domain.entity.profile.UserId
  */
 interface RemoteProfileDataSource {
     /**
-     * Retrieves profile from the backend.
+     * Retrieves the authenticated user's profile from the backend.
      *
-     * @param userId The unique identifier of the user
      * @return Success with [Profile] or failure with [RemoteProfileDataSourceError]
      */
-    suspend fun getProfile(userId: UserId): ResultWithError<Profile, RemoteProfileDataSourceError>
+    suspend fun getCurrentProfile(): ResultWithError<Profile, RemoteProfileDataSourceError>
 
     /**
      * Updates user's display name on the backend.

@@ -14,6 +14,7 @@ import timur.gilfanov.messenger.data.source.local.database.dao.ChatDao
 import timur.gilfanov.messenger.data.source.local.database.dao.MessageDao
 import timur.gilfanov.messenger.data.source.local.database.dao.ParticipantDao
 import timur.gilfanov.messenger.data.source.local.database.dao.SettingsDao
+import timur.gilfanov.messenger.profile.data.source.local.ProfileDao
 
 /**
  * Hilt module that provides Room database dependencies.
@@ -56,4 +57,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideSettingsDao(database: MessengerDatabase): SettingsDao = database.settingsDao()
+
+    @Provides
+    @Singleton
+    fun provideProfileDao(database: MessengerDatabase): ProfileDao = database.profileDao()
 }
